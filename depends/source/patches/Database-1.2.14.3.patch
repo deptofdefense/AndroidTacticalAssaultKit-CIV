@@ -1,0 +1,12 @@
+--- ./Jackcess/src/java/com/healthmarketscience/jackcess/Database.java	2013-06-01 22:23:36.000000000 -0400
++++ ./Jackcess/src/java/com/healthmarketscience/jackcess/Database.java 	2016-12-19 12:16:20.290706470 -0500
+@@ -209,8 +209,7 @@
+     System.getProperty(RESOURCE_PATH_PROPERTY, DEFAULT_RESOURCE_PATH);
+ 
+   /** whether or not this jvm has "broken" nio support */
+-  static final boolean BROKEN_NIO = Boolean.TRUE.toString().equalsIgnoreCase(
+-      System.getProperty(BROKEN_NIO_PROPERTY));
++  static final boolean BROKEN_NIO = true;
+   
+   /** System catalog always lives on page 2 */
+   private static final int PAGE_SYSTEM_CATALOG = 2;

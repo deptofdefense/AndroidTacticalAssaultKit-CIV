@@ -1,0 +1,22 @@
+<set>
+   <broadcast>
+    <action>com.atakmap.android.MED_LINE</action>
+        <extras>
+            <!-- if the type is changed you need to change it in MenuMapAdapter as well, sorry-->
+            <string key='point'>@{targetPoint}</string>
+            <string key='type'>b-r-f-h-c</string>
+            <string key='how'>h-g-i-g-o</string>
+            <boolean key='readiness'>false</boolean>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+    
+</set>

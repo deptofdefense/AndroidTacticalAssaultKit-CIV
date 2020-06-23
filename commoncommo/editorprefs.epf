@@ -1,0 +1,8 @@
+#Thu Nov 05 17:32:03 EST 2015
+file_export_version=3.0
+@org.eclipse.cdt.ui=5.10.0.201506070905
+/instance/org.eclipse.cdt.ui/content_assist_disabled_computers=org.eclipse.cdt.ui.textProposalCategory\u0000org.eclipse.cdt.ui.parserProposalCategory\u0000
+/instance/org.eclipse.cdt.ui/spelling_locale_initialized=true
+/instance/org.eclipse.cdt.ui/sourceHoverBackgroundColor=255,255,255
+\!/=
+/instance/org.eclipse.cdt.ui/formatter_profile=_NoTabs

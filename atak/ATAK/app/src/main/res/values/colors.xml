@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="red">#ffff0000</color>
+    <color name="color_group">#30808080</color>
+    <color name="color_child1">#30ffffff</color>
+    <color name="color_child2">#30ffffff</color>
+    <color name="color_child_missing">#4FFF3333</color>
+
+    <!-- COMMON -->
+    <color name="white">#ffffff</color>
+    <color name="light_gray">#cccccc</color>
+    <color name="lighter_gray">#555555</color>
+    <color name="gray">#585858</color>
+    <color name="dark_gray">#272727</color>
+    <color name="darker_gray">#121212</color>
+    <color name="green">#92a844</color>
+    <color name="black_overlay">#ff1f2122</color>
+
+    <color name="heading_yellow">#dfb228</color>
+
+
+    <!-- LED -->
+    <color name="led_green">#92a844</color>
+    <color name="led_red">#c92424</color>
+
+    <!-- PRESET -->
+
+    <color name="actionbar_background">#99000000</color>
+    <color name="actionbar_background_empty">#44000000</color>
+    <color name="light_blue">#33b5e5</color>
+
+    <color name="th_green">#ff00ff00</color>
+</resources>

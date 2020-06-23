@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="#FF000000" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:paddingBottom="2dp"
+                android:paddingTop="2dp"
+                android:text="@string/radio_controls"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold" />
+        </RelativeLayout>
+    </LinearLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#FFDDDDDD" >
+    </RelativeLayout>
+
+     <ScrollView
+         android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+
+        android:fadeScrollbars="false" >
+ 
+       <LinearLayout
+           android:id="@+id/radioList"
+           android:layout_width="match_parent"
+           android:layout_height="wrap_content"
+           android:layout_marginStart="5dp"
+           android:layout_marginEnd="5dp"
+           android:orientation="vertical" />   
+
+     </ScrollView>
+
+</LinearLayout>

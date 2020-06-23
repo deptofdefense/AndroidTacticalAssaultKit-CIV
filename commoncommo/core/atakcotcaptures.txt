@@ -1,0 +1,374 @@
+From Shawn: {
+    Datagram port #'s ATAK listens on:
+       non-chat = 6969
+       chat = 17012
+
+    UIDs in messages are for the message.  
+    They don't identify the event originator. Only consider unique 
+    id for a contact if the contact info is present.
+    
+}
+
+
+
+File xfer from commo->atak
+ACK from ATAK->commo:
+{
+<?xml version="1.0"?>
+<event version="2.0" uid="95b24edf-a0f1-43e4-9b72-8047f0d5a780" type="b-f-t-r"
+ time="2016-02-05T17:26:36.000Z" start="2016-02-05T17:26:36.000Z" 
+ stale="2016-02-05T17:26:46.000Z" how="h-e">
+ <point lat="36.5262" lon="-77.3863" hae="9999999" ce="9999999" le="9999999"/>
+ <detail>
+ <fileshare filename="test.zip" senderUrl="http://192.168.167.184:8080/getfile?file=0&amp;sender=jcommo" 
+ sizeInBytes="1814" 
+ sha256="72fbcc94207812f67580f2fb246dc3f0c2b3777249c5ccd6ca4af04a0e8671ed" 
+ senderUid="commoncommo-jcommo" senderCallsign="jcommo" name="test.zip"/>
+ <ackrequest uid="2d35c256-8740-4c39-a8c6-211cbb18fc55" ackrequested="true" tag="test.zip"/>
+ </detail></event>
+
+
+<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
+<event version='2.0' uid='2d35c256-8740-4c39-a8c6-211cbb18fc55' type='b-f-t-a'
+    time='2016-02-05T17:23:39.779Z' start='2016-02-05T17:23:39.779Z' stale='2016-02-05T17:23:49.779Z' how='m-g'>
+<point lat='38.56228271836961' lon='-83.89081307757283' hae='235.30418983969474' ce='9999999' le='9999999' />
+<detail>
+<contact callsign='ANDROID-48:5A:3F:49:93:24'/>
+<ackresponse uid='2d35c256-8740-4c39-a8c6-211cbb18fc55' sizeInBytes='1814' 
+    sha256='72fbcc94207812f67580f2fb246dc3f0c2b3777249c5ccd6ca4af04a0e8671ed' 
+    senderUid='ANDROID-48:5A:3F:49:93:24'
+    reason='File already exists' success='true' tag='test.zip'/>
+    <precisionlocation geopointsrc='User' altsrc='DTED0'/>
+    </detail></event>
+
+
+
+}
+
+
+
+
+File transfer captures from ATAK - send from GEMINI (.167) -> jcommo (.181) {
+
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<event version="2.0" uid="ANDROID-48:5A:3F:49:93:24" type="a-f-G-U-C" 
+        time="2016-01-13T20:43:37.842Z" start="2016-01-13T20:43:37.842Z" 
+        stale="2016-01-13T20:44:04.842Z" how="h-e">
+    <point lat="37.954121501941216" lon="-87.97179289978664"
+            hae="80.85387849113384" ce="9999999" le="9999999"/>
+    <detail>
+        <contact endpoint="192.168.167.167:4242:tcp" callsign="GEMINI"/>
+        <uid Droid="GEMINI"/>
+        <__group role="Team Member" name="Cyan"/>
+        <status battery="0"/>
+        <track course="114.66817017909176" speed="0.0"/>
+        <precisionlocation geopointsrc="User" altsrc="DTED0"/>
+    </detail>
+</event>
+
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<event version="2.0" uid="2fd76ad1-f03a-4773-84ba-d70ee44d62dc" 
+        type="b-f-t-r" time="2016-01-13T20:43:33.706Z" 
+        start="2016-01-13T20:43:33.706Z"
+        stale="2016-01-13T20:43:43.706Z" how="h-e">
+    <point lat="37.954121501941216" lon="-87.97179289978664" 
+            hae="80.85387849113384" ce="9999999" le="9999999"/>
+    <detail>
+        <fileshare sha256="72fbcc94207812f67580f2fb246dc3f0c2b3777249c5ccd6ca4af04a0e8671ed" 
+                name="MP-GEMINI" 
+                md5="31ff6bd1ca3d2dde1a0b569e0566bc1f" 
+                filename="MP-GEMINI_f0a6029a.zip" 
+                senderUrl="http://192.168.167.167:8080/getfile?file=9&amp;sender=GEMINI"
+                sizeInBytes="1814"
+                senderUid="ANDROID-48:5A:3F:49:93:24"
+                senderCallsign="GEMINI"/>
+        <ackrequest uid="abed75ec-c4b7-42c1-b002-ece7f96254a9" 
+                ackrequested="true" tag="MP-GEMINI" 
+                endpoint="192.168.167.167:4242:tcp"/>
+        <precisionlocation geopointsrc="User" altsrc="DTED0"/>
+    </detail>
+</event>
+
+}
+
+File transfer over TAK server (from GEMINI -> jcommo as captured at jcommo
+{
+
+
+141932: <?xml version="1.0" encoding="UTF-8"?>
+<event version="2.0" uid="ANDROID-48:5A:3F:49:93:24" type="a-f-G-U-C"
+        time="2016-01-14T19:18:08.133Z" start="2016-01-14T19:18:08.133Z"
+        stale="2016-01-14T19:24:23.133Z" how="h-e">
+    <point lat="36.72459169511786" lon="-86.70106407887" 
+            hae="173.88848408788164" ce="9999999"
+            le="9999999"/>
+    <detail>
+        <contact endpoint="192.168.167.167:4242:tcp"
+                callsign="GEMINI"/>
+        <uid Droid="GEMINI"/>
+        <__group role="Team Member" name="Cyan"/>
+        <status battery="100"/>
+        <track course="228.70356179340502" speed="0.0"/>
+        <precisionlocation geopointsrc="User" altsrc="DTED0"/>
+        <_flow-tags_ takServer1="2016-01-14T19:16:48.750Z"/>
+    </detail>
+</event>
+
+<event version="2.0" uid="0377f926-87cd-4bbf-9d59-29e36dcc2ae4"
+        type="b-f-t-r" time="2016-01-14T19:17:38.154Z"
+        start="2016-01-14T19:17:38.154Z" stale="2016-01-14T19:17:48.154Z"
+        how="h-e">
+    <point lat="36.72459169511786" lon="-86.70106407887" 
+        hae="173.88848408788164" ce="9999999" le="9999999"/>
+    <detail>
+        <fileshare filename="MP-GEMINI.zip" 
+            senderUrl="http://192.168.135.160:8080/Marti/sync/content?uid=72fbcc94207812f67
+            sizeInBytes="1814"
+            sha256="72fbcc94207812f67580f2fb246dc3f0c2b3777249c5ccd6ca4af04a0e8671ed"
+            senderUid="ANDROID-48:5A:3F:49:93:24" senderCallsign="GEMINI"
+            name="MP-GEMINI"/>
+        <ackrequest uid="a5fc4772-8a72-44b3-975e-28931db33d8e"
+                ackrequested="true" tag="MP-GEMINI"
+                endpoint="192.168.167.167:4242:tcp"/>
+        <precisionlocation geopointsrc="User" altsrc="DTED0"/>
+        <_flow-tags_ takServer1="2016-01-14T19:17:14.970Z"/>
+    </detail><
+/event>
+
+
+
+
+}
+
+
+
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<event version="2.0" uid="ANDROID-10:A5:D0:FF:7C:8F"
+       type="a-f-G-U-C-I" time="2015-11-20T18:35:12.456Z"
+       start="2015-10-15T20:24:12.456Z" 
+       stale="2016-10-15T20:30:27.456Z" how="h-e">
+    <point lat="36.5261810013514" lon="-77.3862509255614" hae="9999999.0"
+           ce="9999999" le="9999999"/>
+    <detail>
+        <contact phone="3152545187" endpoint="*:-1:stcp"
+                 callsign="JDOG"/>
+        <uid Droid="JDOG"/>
+        <__group name="Cyan" role="Team Member"/>
+        <status battery="100"/>
+        <track speed="0.0" course="56.23885995781046"/>
+        <precisionlocation geopointsrc="User" altsrc="???"/>
+    </detail>
+</event>
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<event version="2.0" uid="ANDROID-1C:99:4C:BB:BB:AA"
+        type="a-f-G-U-C" time="2015-10-15T20:23:45.410Z" 
+        start="2015-10-15T20:23:45.410Z" 
+        stale="2015-10-15T20:24:30.410Z" how="m-g">
+    <point lat="41.61282081" lon="-93.70333123" hae="265.4508049222226"
+            ce="3" le="9999999"/>
+    <detail>
+        <contact endpoint="192.168.1.138:4242:tcp" callsign="JAKAL"/>
+        <uid Droid="JAKAL"/><__group role="Team Member" name="Cyan"/>
+        <status battery="100"/>
+        <track course="283.3728066578361" speed="0.0"/>
+        <precisionlocation geopointsrc="GPS" altsrc="GPS"/>
+    </detail>
+</event>
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<event version="2.0" uid="ANDROID-90:B6:86:D8:71:E5" 
+        type="a-f-G-U-C" time="2015-10-15T20:23:51.1Z"
+        start="2015-10-15T20:23:51.1Z"
+        stale="2015-10-15T20:24:36.1Z" how="m-g">
+    <point lat="38.62289038" lon="-90.1963035" hae="127.00476702242095"
+            ce="35" le="35"/>
+    <detail>
+        <contact phone="3142023802" endpoint="100.84.254.195:4242:tcp"
+                callsign="MAG. 1. Cavada"/>
+        <uid Droid="MAG. 1. Cavada"/>
+        <__group name="Cyan" role="Team Member"/>
+        <status battery="31"/>
+        <track speed="0.0" course="204.75209003798224"/>
+        <precisionlocation geopointsrc="GPS" altsrc="GPS"/>
+    </detail>
+</event>
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<event version="2.0" uid="ANDROID-78:4B:87:D8:13:58"
+        type="a-f-G-U-C" time="2015-10-15T20:22:10.952Z"
+        start="2015-10-15T20:22:10.952Z"
+        stale="2015-10-15T20:28:25.952Z" how="h-e">
+    <point lat="38.62284601" lon="-90.19663325" hae="166.90458116849402"
+            ce="242" le="9999999"/>
+    <detail>
+        <contact endpoint="192.168.14.32:4242:tcp" 
+                phone="3145028884" callsign="NITRATE"/>
+         <uid Droid="NITRATE"/>
+         <__group role="Team Member" name="Cyan"/>
+         <status battery="100"/>
+        <track course="162.95746134537168" speed="0.0"/>
+        <precisionlocation geopointsrc="GPS" altsrc="GPS"/>
+    </detail>
+</event>
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<event version="2.0" uid="ANDROID-10:A5:D0:FF:7C:8F"
+        type="a-f-G-U-C-I" time="2015-10-15T20:17:30.042Z"
+        start="2015-10-15T20:17:30.042Z" stale="2015-10-15T20:23:45.042Z"
+        how="h-e">
+    <point lat="36.5261810013514" lon="-77.3862509255614" hae="9999999.0"
+            ce="9999999" le="9999999"/>
+    <detail>
+        <contact phone="3152545187" endpoint="10.233.154.103:4242:tcp"
+            callsign="JDOG"/>
+        <uid Droid="JDOG"/>
+        <__group name="Cyan" role="Team Member"/>
+        <status battery="100"/>
+        <track speed="0.0" course="56.237668843673276"/>
+        <precisionlocation geopointsrc="User" altsrc="???"/>
+    </detail>
+</event>
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<event version="2.0" uid="ANDROID-FC:C2:DE:93:81:44" 
+        type="a-f-G-U-C" time="2015-10-15T20:23:56.839Z" 
+        start="2015-10-15T20:23:56.839Z" 
+        stale="2015-10-15T20:30:11.839Z" how="m-g">
+    <point lat="38.62291907" lon="-90.19628261" hae="117.6048216056216"
+            ce="242" le="9999999"/>
+    <detail>
+        <contact phone="3145028680" endpoint="100.75.0.147:4242:tcp" callsign="PINETREE"/>
+        <uid Droid="PINETREE"/>
+        <__group name="Cyan" role="Team Member"/>
+        <status battery="89"/>
+        <track speed="0.0" course="139.27579989122026"/>
+        <precisionlocation geopointsrc="GPS" altsrc="GPS"/>
+    </detail>
+</event>
+
+
+
+
+
+
+
+
+
+
+
+
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<event version="2.0" uid="pc-0834cb51-df3f-4f96-9787-db227b07d2d0.NMEA.SA"
+        type="a-f-G-U-C-I" time="2015-10-15T20:30:55.4Z"
+        start="2015-10-15T20:30:55.4Z"
+        stale="2015-10-15T20:31:10.4Z" how="h-e">
+    <point lat="32.9003577057377" lon="-93.2551740758162" hae="0"
+            ce="9999999.0" le="9999999.0" />
+    <detail>
+        <contact callsign="SkrienJ-LT" endpoint="192.168.135.185:8087:tcp" />
+        <uid Droid="SkrienJ-LT" />
+        <__group name="Cyan" role="Team Member" />
+        <track course="0" speed="0" />
+    </detail>
+</event>
+
+
+receive[source=192.168.79.119:47836][dest=239.2.3.1:6969][size=588]
+<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
+<event version='2.0' uid='ANDROID-88:32:9B:A5:F2:4C'
+        type='a-f-G-U-C' time='2015-10-15T20:29:46.850Z'
+        start='2015-10-15T20:29:46.850Z'
+        stale='2015-10-15T20:30:09.850Z' how='h-g-i-g-o'>
+    <point lat='0.0' lon='0.0' hae='9999999.0' ce='9999999' le='9999999' />
+    <detail>
+        <contact endpoint='192.168.79.119:4242:tcp' phone='' callsign='TORY'/>
+        <uid Droid='TORY'/>
+        <__group role='Team Member' name='Yellow'/>
+        <status battery='53'/>
+        <track course='225.44040970078385' speed='0.0'/>
+        <precisionlocation geopointsrc='???' altsrc='???'/>
+    </detail>
+</event>
+
+receive[source=192.168.79.105:49282][dest=239.2.3.1:6969][size=615]
+<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
+<event version='2.0' uid='ANDROID-48:5A:3F:0E:90:05' 
+        type='a-f-G-U-C-I' time='2015-10-15T20:31:11.792Z'
+        start='2015-10-15T20:31:11.792Z'
+        stale='2015-10-15T20:31:38.792Z' how='h-e'>
+    <point lat='37.16608132321532' lon='-87.91177612789751' hae='9999999.0'
+            ce='9999999' le='9999999' />
+    <detail>
+        <contact endpoint='192.168.79.105:4242:tcp' callsign='DRAGONFIRE'/>
+        <uid Droid='DRAGONFIRE'/>
+        <__group role='Team Member' name='Cyan'/>
+        <status battery='100'/>
+        <track course='331.4322249255462' speed='0.0'/>
+        <precisionlocation geopointsrc='User' altsrc='???'/>
+    </detail>
+</event>
+
+
+receive[source=192.168.135.185:7633][dest=239.2.3.1:6969][size=538]
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<event version="2.0" uid="pc-0834cb51-df3f-4f96-9787-db227b07d2d0.NMEA.SA"
+        type="a-f-G-U-C-I" time="2015-10-15T20:30:56.4Z"
+        start="2015-10-15T20:30:56.4Z"
+        stale="2015-10-15T20:31:11.4Z" how="h-e">
+    <point lat="32.9003589047799" lon="-93.2551747333654" hae="0"
+            ce="9999999.0" le="9999999.0" />
+    <detail>
+        <contact callsign="SkrienJ-LT" endpoint="192.168.135.185:8087:tcp" />
+        <uid Droid="SkrienJ-LT" />
+        <__group name="Cyan" role="Team Member" />
+        <track course="0" speed="0" />
+    </detail>
+</event>
+
+
+receive[source=192.168.135.185:7633][dest=239.2.3.1:6969][size=538]
+<?xml version="1.0" encoding="utf-16" standalone="yes"?>
+<event version="2.0" uid="pc-0834cb51-df3f-4f96-9787-db227b07d2d0.NMEA.SA"
+        type="a-f-G-U-C-I" time="2015-10-15T20:30:57.4Z" 
+        start="2015-10-15T20:30:57.4Z"
+        stale="2015-10-15T20:31:12.4Z" how="h-e">
+    <point lat="32.9003585549809" lon="-93.2551758114637" hae="0"
+            ce="9999999.0" le="9999999.0" />
+    <detail>
+        <contact callsign="SkrienJ-LT" endpoint="192.168.135.185:8087:tcp" />
+        <uid Droid="SkrienJ-LT" />
+        <__group name="Cyan" role="Team Member" />
+        <track course="0" speed="0" />
+    </detail>
+</event>
+
+
+----- captured using -----------
+./listen --chat
+receive[source=192.168.79.115:27365][dest=224.10.10.1:17012][size=850]
+<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
+<event version='2.0' uid='GeoChat.ANDROID-88:32:9B:40:EC:D0.All Chat Rooms.b4936fac-b0ca-4fd3-892d-35596f0dc749' 
+                     type='b-t-f' time='2015-11-02T13:30:10.794Z' 
+                     start='2015-11-02T13:30:10.794Z' stale='2015-11-03T13:30:10.794Z' 
+                     how='h-g-i-g-o'>
+               <point lat='0.0' lon='0.0' hae='9999999.0' ce='9999999' le='9999999' />
+       <detail>
+             <__chat id='All Chat Rooms' chatroom='All Chat Rooms'>
+                  <chatgrp id='All Chat Rooms' uid0='ANDROID-88:32:9B:40:EC:D0' uid1='All Chat Rooms'/>
+             </__chat>
+             <link relation='p-p' type='a-f-G-U-C' uid='ANDROID-88:32:9B:40:EC:D0'/>
+             <remarks source='BAO.F.ATAK.ANDROID-88:32:9B:40:EC:D0' 
+                      time='2015-11-02T13:30:10.794Z'>Roger</remarks>
+             <__serverdestination destinations='192.168.79.115:4242:tcp:ANDROID-88:32:9B:40:EC:D0'/>
+             <precisionlocation geopointsrc='???' altsrc='???'/> 
+       </detail>
+</event>
+

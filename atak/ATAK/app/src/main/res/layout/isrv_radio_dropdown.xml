@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              style="@style/ATAKTheme"
+              android:layout_width="match_parent"
+              android:layout_height="fill_parent"
+              android:background="#00ffffff"
+              android:orientation="vertical"
+              android:paddingStart="5dp"
+              android:paddingEnd="5dp" >
+
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="5dp"
+        android:paddingTop="5dp">
+
+        <TextView
+            android:id="@+id/roverStatus_tv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minLines="2"
+            android:paddingStart="3dp"
+            android:gravity="center"
+            android:text="@string/not_connected"
+            android:textColor="@color/red" />
+    </RelativeLayout>
+
+    <View
+        android:layout_width="wrap_content"
+        android:background="@drawable/radio_item_line_gradient"
+        android:layout_height="1dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="5dp"
+        android:paddingBottom="5dp">
+
+
+
+        <Button
+            android:id="@+id/mode_btn"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:layout_width="65dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:text="@string/ROVER_UPPER"
+            android:visibility="visible"
+            android:lines="1"
+            />
+
+        <Button
+            android:id="@+id/freq_btn"
+            style="@style/darkButton" android:padding="6dp"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:lines="1"
+            android:layout_weight="1"
+            android:text="@string/ghz"
+            android:textColor="#80FF00"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:visibility="visible"/>
+
+        <Button
+            android:id="@+id/chan_mod_btn"
+            style="@style/darkButton" android:padding="6dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:lines="1"
+            android:ems="5"
+            android:text="@string/m_channel"
+            android:textColor="#80FF00"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:layout_weight="1"
+            android:visibility="gone"/>
+
+        <ImageView
+            android:id="@+id/roverStatus_iv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/rover_reception_disabled"
+            />
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="wrap_content"
+        android:background="@drawable/radio_item_line_gradient"
+        android:layout_height="1dp" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="5dp"
+        android:paddingTop="5dp">
+
+        <Button
+            android:id="@+id/scanFreq_btn"
+            style="@style/darkButton"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            android:text="@string/scan"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/nextFreq_btn"
+            style="@style/darkButton"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            android:text="@string/next"
+            android:textSize="12sp" />
+
+        <Button
+            android:id="@+id/fav_btn"
+            style="@style/darkButton"
+            android:padding="8dp"
+            android:gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:lines="2"
+            android:text="@string/add_to_nfavorites"
+            android:textSize="12sp"
+            android:layout_weight="1"/>
+
+        <Button
+            android:id="@+id/nc_btn"
+            style="@style/darkButton"
+            android:padding="8dp"
+            android:gravity="center"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:lines="2"
+            android:text="@string/favorites"
+            android:textSize="12sp"
+            android:layout_weight="1"
+            />
+    </LinearLayout>
+
+    <View
+        android:layout_width="wrap_content"
+        android:background="@drawable/radio_item_line_gradient"
+        android:layout_height="1dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="bottom"
+        android:orientation="vertical" >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <Button
+                android:id="@+id/watchRover_btn"
+                style="@style/darkButton"
+                android:layout_width="0dip"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:text="@string/watch"
+                android:textSize="16sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:ems="3"
+            android:text="@string/preset_colon"
+            android:layout_weight="1"/>
+
+        <Spinner
+            android:textColor="@color/white"
+            android:padding="6dp" style="@style/darkButton"
+            android:id="@+id/roverPreset_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+</LinearLayout>

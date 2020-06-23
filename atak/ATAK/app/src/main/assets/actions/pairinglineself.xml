@@ -1,0 +1,17 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.PAIRING_LINE_SELF</action>
+        <extras>
+            <string key='startingUID'>${uid}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+</set>

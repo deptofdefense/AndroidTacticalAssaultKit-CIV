@@ -1,0 +1,368 @@
+--- configure.ac 2014-06-05 15:57:50.000000000 -0400
++++ configure.ac 2014-06-05 16:27:16.176311613 -0400
+@@ -4,9 +4,11 @@
+ AC_PREREQ(2.57)
+
+ AC_INIT(libkml, 1.3.0, http://code.google.com/p/libkml/issues)
++m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
++AC_CONFIG_MACRO_DIR([m4])
+ AC_CONFIG_SRCDIR(README)
+ AC_CONFIG_AUX_DIR(config)
+-AM_INIT_AUTOMAKE(-Wall -Werror)
++AM_INIT_AUTOMAKE([subdir-objects] -Wall -Werror)
+
+ AC_PROG_CPP
+ AC_PROG_CXX
+
+Index: src/kml/base/util.h
+===================================================================
+--- src/kml/base/util.h	(revision 864)
++++ src/kml/base/util.h	(working copy)
+@@ -26,7 +26,7 @@
+ #ifndef KML_BASE_UTIL_H__
+ #define KML_BASE_UTIL_H__
+ 
+-#ifndef _MSC_VER
++#if !defined(_MSC_VER) || (_MSC_VER >= 1800)
+ #include <stdint.h>  // For fixed-size interger typedefs in this file.
+ #endif
+ 
+@@ -38,7 +38,7 @@
+ 
+ typedef unsigned int uint;
+ // MSVC has no header for C99 typedefs.
+-#ifdef _MSC_VER
++#if defined(_MSC_VER) && (_MSC_VER < 1800)
+ typedef __int8  int8_t;
+ typedef __int16 int16_t;
+ typedef __int32 int32_t;
+diff -ubr ../libkml-orig/third_party/zlib-1.2.3/contrib/minizip/ioapi.h ./third_party/zlib-1.2.3/contrib/minizip/ioapi.h
+--- ../libkml-orig/third_party/zlib-1.2.3/contrib/minizip/ioapi.h	2015-09-08 15:44:57.852453693 -0400
++++ ./third_party/zlib-1.2.3/contrib/minizip/ioapi.h	2015-09-08 15:47:36.282274906 -0400
+@@ -31,6 +31,10 @@
+ #endif
+ #endif
+ 
++#if defined(_Z_OF) && !defined(OF)
++# define OF(a) _Z_OF(a)
++#endif
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+diff -ubr ../libkml-orig/third_party/zlib-1.2.3/contrib/minizip/unzip.h ./third_party/zlib-1.2.3/contrib/minizip/unzip.h
+--- ../libkml-orig/third_party/zlib-1.2.3/contrib/minizip/unzip.h	2015-09-08 15:44:57.852453693 -0400
++++ ./third_party/zlib-1.2.3/contrib/minizip/unzip.h	2015-09-08 15:48:23.310262699 -0400
+@@ -76,6 +76,11 @@
+ typedef voidp unzFile;
+ #endif
+ 
++#if defined(_Z_OF) && !defined(OF)
++# define OF(a) _Z_OF(a)
++#endif
++
++
+ 
+ #define UNZ_OK                          (0)
+ #define UNZ_END_OF_LIST_OF_FILE         (-100)
+--- ./src/kml/base/file_posix.cc        2015-03-05 07:54:15.198462824 -0500
++++ ./src/kml/base/file_posix.cc        2015-03-05 07:54:34.686559460 -0500
+@@ -29,6 +29,7 @@
+ #include "kml/base/file.h"
+ #include <stdlib.h>
+ #include <string.h>
++#include <unistd.h>
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ 
+
+--- src/kml/base/date_time.cc    2014-06-05 15:57:49.000000000 -0400
++++ src/kml/base/date_time.cc    2014-06-05 16:50:48.639315639 -0400
+@@ -28,6 +28,19 @@
+ #include "kml/base/date_time.h"
+ #include "boost/scoped_ptr.hpp"
+ #include <stdlib.h>
++#if defined(__ANDROID__) && !defined(__LP64__)
++#include <time64.h>
++
++time_t timegm(struct tm * const t) {
++        // time_t is signed on Android.
++        static const time_t kTimeMax = ~(1 << (sizeof (time_t) * CHAR_BIT - 1));
++        static const time_t kTimeMin = (1 << (sizeof (time_t) * CHAR_BIT - 1));
++        time64_t result = timegm64(t);
++        if (result < kTimeMin || result > kTimeMax)
++                return -1;
++        return result;
++}
++#endif
+
+ // TODO: fix this for real.
+ #ifdef _WIN32
+
+--- src/kml/engine/kml_file.cc          2014-06-05 15:57:48.000000000 -0400
++++ src/kml/engine/kml_file.cc          2015-04-27 09:31:51.000000000 -0400
+@@ -38,7 +38,7 @@
+ 
+ namespace kmlengine {
+ 
+-static const char kDefaultXmlns[] = "http://www.opengis.net/kml/2.2";
++// static const char kDefaultXmlns[] = "http://www.opengis.net/kml/2.2";
+ static const char kDefaultEncoding[] = "utf-8";
+ 
+ // static
+
+--- src/kml/regionator/regionator_util.cc       2014-06-05 15:57:48.000000000 -0400
++++ src/kml/regionator/regionator_util.cc       2015-04-27 09:31:51.000000000 -0400
+@@ -35,7 +35,7 @@
+ 
+ namespace kmlregionator {
+ 
+-static const int kAlignRegionMaxDepth = 24;
++// static const int kAlignRegionMaxDepth = 24;
+ 
+ using kmldom::AbstractLatLonBoxPtr;
+ using kmldom::CoordinatesPtr;
+
+--- src/kml/xsd/xsd_element.h           2014-06-05 15:57:48.000000000 -0400
++++ src/kml/xsd/xsd_element.h           2015-04-27 09:31:51.000000000 -0400
+@@ -102,8 +102,8 @@
+   bool ParseAttributes(const kmlbase::Attributes& attributes);
+   bool abstract_;
+   bool ref_;
+-  int min_occurs_;
+-  int max_occurs_;
++//  int min_occurs_;
++//  int max_occurs_;
+   string default_;
+   string name_;
+   string type_;
+
+--- src/kml/xsd/xsd_element.cc          2014-06-05 15:57:48.000000000 -0400
++++ src/kml/xsd/xsd_element.cc          2015-04-27 09:31:51.000000000 -0400
+@@ -38,8 +38,8 @@
+ XsdElement::XsdElement()
+   : abstract_(false),  // XSD default
+     ref_(false),
+-    min_occurs_(1),  // XSD default
+-    max_occurs_(1), // XSD default
++//    min_occurs_(1),  // XSD default
++//    max_occurs_(1), // XSD default
+     type_id_(XsdPrimitiveType::XSD_INVALID) {
+ }
+ 
+--- src/kml/base/file_win32.cc (original)
++++ src/kml/base/file_win32.cc (corrected)
+@@ -40,7 +40,7 @@
+ // Internal to the win32 file class. We need a conversion from string to
+ // LPCWSTR.
+ static std::wstring Str2Wstr(const string& str) {
+-  std::wstring wstr(str.length(), L'');
++  std::wstring wstr(str.length(), L'\0');
+   std::copy(str.begin(), str.end(), wstr.begin());
+   return wstr;
+ }
+
+--- third_party/boost_1_34_1/boost/config/compiler/visualc.hpp (original)
++++ third_party/boost_1_34_1/boost/config/compiler/visualc.hpp (updated)
+@@ -154,6 +154,16 @@
+ #     define BOOST_COMPILER_VERSION 7.1
+ #   elif _MSC_VER == 1400
+ #     define BOOST_COMPILER_VERSION 8.0
++#   elif _MSC_VER < 1600
++#     define BOOST_COMPILER_VERSION 9.0
++#   elif _MSC_VER < 1700
++#     define BOOST_COMPILER_VERSION 10.0
++#   elif _MSC_VER < 1800
++#     define BOOST_COMPILER_VERSION 11.0
++#   elif _MSC_VER < 1900
++#     define BOOST_COMPILER_VERSION 12.0
++#   elif _MSC_VER < 2000
++#     define BOOST_COMPILER_VERSION 14.0
+ #   else
+ #     define BOOST_COMPILER_VERSION _MSC_VER
+ #   endif
+@@ -168,8 +178,8 @@
+ #error "Compiler not supported or configured - please reconfigure"
+ #endif
+ //
+-// last known and checked version is 1400 (VC8):
+-#if (_MSC_VER > 1400)
++// last known and checked version is 19.00.23026 (VC++ 2015 RTM):
++#if (_MSC_VER > 1900)
+ #  if defined(BOOST_ASSERT_CONFIG)
+ #     error "Unknown compiler version - please run the configure tests and report the results"
+ #  else
+diff -U 10 -r third_party/zlib-1.2.3/contrib/minizip/ioapi.c third_party/zlib-1.2.3/contrib/minizip/ioapi.c
+--- third_party/zlib-1.2.3/contrib/minizip/ioapi.c	2019-09-30 13:25:35.053000000 -0400
++++ third_party/zlib-1.2.3/contrib/minizip/ioapi.c	2019-09-30 14:22:55.120000000 -0400
+@@ -3,21 +3,21 @@
+ 
+    Version 1.01e, February 12th, 2005
+ 
+    Copyright (C) 1998-2005 Gilles Vollant
+ */
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ 
+-#include "zlib.h"
++#include "zlibextern.h"
+ #include "ioapi.h"
+ 
+ 
+ 
+ /* I've found an old Unix (a SunOS 4.1.3_U1) without all SEEK_* defined.... */
+ 
+ #ifndef SEEK_CUR
+ #define SEEK_CUR    1
+ #endif
+ 
+diff -U 10 -r third_party/zlib-1.2.3/contrib/minizip/iowin32.c third_party/zlib-1.2.3/contrib/minizip/iowin32.c
+--- third_party/zlib-1.2.3/contrib/minizip/iowin32.c	2019-09-30 13:25:35.054000000 -0400
++++ third_party/zlib-1.2.3/contrib/minizip/iowin32.c	2019-09-30 14:23:05.153000000 -0400
+@@ -2,21 +2,21 @@
+    files using zlib + zip or unzip API
+    This IO API version uses the Win32 API (for Microsoft Windows)
+ 
+    Version 1.01e, February 12th, 2005
+ 
+    Copyright (C) 1998-2005 Gilles Vollant
+ */
+ 
+ #include <stdlib.h>
+ 
+-#include "zlib.h"
++#include "zlibextern.h"
+ #include "ioapi.h"
+ #include "iowin32.h"
+ 
+ #ifndef INVALID_HANDLE_VALUE
+ #define INVALID_HANDLE_VALUE (0xFFFFFFFF)
+ #endif
+ 
+ #ifndef INVALID_SET_FILE_POINTER
+ #define INVALID_SET_FILE_POINTER ((DWORD)-1)
+ #endif
+diff -U 10 -r third_party/zlib-1.2.3/contrib/minizip/unzip.c third_party/zlib-1.2.3/contrib/minizip/unzip.c
+--- third_party/zlib-1.2.3/contrib/minizip/unzip.c	2019-09-30 13:25:35.052000000 -0400
++++ third_party/zlib-1.2.3/contrib/minizip/unzip.c	2019-09-30 14:23:36.257000000 -0400
+@@ -31,21 +31,21 @@
+   This encryption code is a direct transcription of the algorithm from
+   Roger Schlafly, described by Phil Katz in the file appnote.txt.  This
+   file (appnote.txt) is distributed with the PKZIP program (even in the
+   version without encryption capabilities).
+  */
+ 
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include "zlib.h"
++#include "zlibextern.h"
+ #include "unzip.h"
+ 
+ #ifdef STDC
+ #  include <stddef.h>
+ #  include <string.h>
+ #  include <stdlib.h>
+ #endif
+ #ifdef NO_ERRNO_H
+     extern int errno;
+ #else
+diff -U 10 -r third_party/zlib-1.2.3/contrib/minizip/unzip.h third_party/zlib-1.2.3/contrib/minizip/unzip.h
+--- third_party/zlib-1.2.3/contrib/minizip/unzip.h	2019-09-30 13:25:35.061000000 -0400
++++ third_party/zlib-1.2.3/contrib/minizip/unzip.h	2019-09-30 14:22:21.756000000 -0400
+@@ -53,21 +53,21 @@
+  * library. It sets a maximum upper limit on the uncompressed size we'll
+  * allow minizip to handle. The PKZIP specification here:
+  * https://users.cs.jmu.edu/buchhofp/forensics/formats/pkzip.html
+  * defines the uncompressed size field to be 4 bytes wide. In unzip.c minizip
+  * uses an unsigned long, but iomem_simple.c uses a signed long. Hence, we
+  * use the maximum size of a 32-bit signed long integer.
+  */
+ #define ZIP_MAX_UNCOMPRESSED_SIZE 2147483647
+ 
+ #ifndef _ZLIB_H
+-#include "zlib.h"
++#include "zlibextern.h"
+ #endif
+ 
+ #ifndef _ZLIBIOAPI_H
+ #include "ioapi.h"
+ #endif
+ 
+ #if defined(STRICTUNZIP) || defined(STRICTZIPUNZIP)
+ /* like the STRICT of WIN32, we define a pointer that cannot be converted
+     from (void*) without cast */
+ typedef struct TagunzFile__ { int unused; } unzFile__;
+diff -U 10 -r third_party/zlib-1.2.3/contrib/minizip/zip.c third_party/zlib-1.2.3/contrib/minizip/zip.c
+--- third_party/zlib-1.2.3/contrib/minizip/zip.c	2019-09-30 13:25:35.058000000 -0400
++++ third_party/zlib-1.2.3/contrib/minizip/zip.c	2019-09-30 14:23:57.937000000 -0400
+@@ -7,21 +7,21 @@
+    Copyright (C) 1998-2005 Gilles Vollant
+ 
+    Read zip.h for more info
+ */
+ 
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <time.h>
+-#include "zlib.h"
++#include "zlibextern.h"
+ #include "zip.h"
+ 
+ #ifdef STDC
+ #  include <stddef.h>
+ #  include <string.h>
+ #  include <stdlib.h>
+ #endif
+ #ifdef NO_ERRNO_H
+     extern int errno;
+ #else
+diff -U 10 -r third_party/zlib-1.2.3/contrib/minizip/zip.h third_party/zlib-1.2.3/contrib/minizip/zip.h
+--- third_party/zlib-1.2.3/contrib/minizip/zip.h	2019-09-30 13:25:35.054000000 -0400
++++ third_party/zlib-1.2.3/contrib/minizip/zip.h	2019-09-30 14:24:04.801000000 -0400
+@@ -44,21 +44,21 @@
+ */
+ 
+ #ifndef _zip_H
+ #define _zip_H
+ 
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+ 
+ #ifndef _ZLIB_H
+-#include "zlib.h"
++#include "zlibextern.h"
+ #endif
+ 
+ #ifndef _ZLIBIOAPI_H
+ #include "ioapi.h"
+ #endif
+ 
+ #if defined(STRICTZIP) || defined(STRICTZIPUNZIP)
+ /* like the STRICT of WIN32, we define a pointer that cannot be converted
+     from (void*) without cast */
+ typedef struct TagzipFile__ { int unused; } zipFile__;
+--- third_party/zlib-1.2.3/contrib/minizip/zlibextern.h	1969-12-31 19:00:00.000000000 -0500
++++ third_party/zlib-1.2.3/contrib/minizip/zlibextern.h	2019-09-30 14:20:33.157000000 -0400
+@@ -0,0 +1,15 @@
++#ifdef WIN32
++#define ZLIB_DLL
++#define ZLIB_WINAPI
++#endif
++#include "zlib.h"
++#ifdef WIN32
++#undef ZLIB_DLL
++#undef ZLIB_WINAPI
++#undef ZEXPORT
++#define ZEXPORT
++#undef ZEXTERN
++#define ZEXTERN extern
++#else
++#include "zlib.h"
++#endif

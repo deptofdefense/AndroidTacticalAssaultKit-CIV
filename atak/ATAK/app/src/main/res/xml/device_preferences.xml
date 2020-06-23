@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+  xmlns:android="http://schemas.android.com/apk/res/android">
+      <PreferenceCategory android:title="Device Preferences">
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:title="@string/my_callsign"
+            android:summary="@string/callsign_pref_summary"
+            android:inputType="textUri"
+            android:key="locationCallsign" />
+        <ListPreference
+            android:entryValues="@array/squad_values"
+            android:entries="@array/squad_names"
+            android:summary="@string/preferences_text78"
+            android:key="locationTeam"
+            android:title="@string/preferences_text79"
+            android:defaultValue="Cyan" />
+        <ListPreference
+            android:entryValues="@array/role_values" 
+            android:entries="@array/role_values" 
+            android:summary="@string/preferences_text80"
+            android:key="atakRoleType" 
+            android:title="@string/preferences_text81"
+            android:defaultValue="@string/preferences_text82" />
+        <ListPreference 
+            android:entryValues="@array/type_values" 
+            android:entries="@array/type_names" 
+            android:summary="@string/preferences_text83"
+            android:key="locationUnitType" 
+            android:title="@string/preferences_text84"
+            android:defaultValue="@string/default_cot_type" />
+        <Preference android:title="@string/networkGpsPreferences"
+            android:key="gpsSettings"
+            android:summary="@string/preferences_text267"
+            android:icon="@drawable/ic_menu_compass"/>
+        <CheckBoxPreference 
+            android:title="@string/wave_relay_callsign"
+            android:key="locationUseWRCallsign"
+            android:defaultValue="false"
+            android:summary="@string/wave_relay_callsign_summary"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/preferences_text87"
+        android:key="alternateContactCategory">
+        <CheckBoxPreference
+            android:icon="@drawable/phone_icon_settings"
+            android:title="@string/preferences_text88"
+            android:key="saHasPhoneNumber"
+            android:defaultValue="true"
+            android:summary="@string/preferences_text89"/>
+        <ListPreference
+            android:icon="@drawable/voip_icon_settings"
+            android:entryValues="@array/voip_assignment_values"
+            android:entries="@array/voip_assignment_values"
+            android:summary="@string/preferences_text90"
+            android:key="saSipAddressAssignment"
+            android:title="@string/preferences_text91"
+            android:defaultValue="@string/voip_assignment_disabled" />
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:icon="@drawable/voip_icon_settings"
+            android:title="@string/preferences_text92"
+            android:summary="@string/preferences_text93"
+            android:inputType="textUri"
+            android:key="saSipAddress"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:icon="@drawable/xmpp_logo_settings"
+            android:title="@string/preferences_text94"
+            android:summary="@string/preferences_text95"
+            android:inputType="textEmailAddress"
+            android:key="saXmppUsername"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:icon="@drawable/email_icon_settings"
+            android:title="@string/preferences_text96"
+            android:summary="@string/preferences_text97"
+            android:inputType="textEmailAddress"
+            android:key="saEmailAddress"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/preferences_text98">
+        <Preference android:title="@string/reportingPreferences"
+                    android:key="reportingSettings"
+                    android:summary="@string/preferences_text469"
+                    android:icon="@drawable/ic_self_pref"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="Encryption Passphrase">
+        <Preference android:title="Change Encryption Passphrase"
+            android:icon="@drawable/passphrase"
+            android:summary="Allow for changes to the encryption passphrase protecting databases containing map items, location information and chat."
+            android:key="encryptionPassphrase"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/preference_management">
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:title="@string/preferences_text121"
+            android:summary="@string/preferences_text122"
+            android:key="savePrefs"
+            android:dialogTitle="@string/preferences_text123"
+            android:icon="@drawable/ic_menu_save_pref"/>
+        <ListPreference
+            android:summary="@string/preferences_text124"
+            android:key="loadPrefs"
+            android:title="@string/preferences_text125"
+            android:entryValues="@array/filename_values"
+            android:entries="@array/filenames"
+            android:icon="@drawable/ic_menu_import_file"/>
+        <ListPreference
+            android:summary="@string/load_category_of_setting_summary"
+            android:key="loadPartialPrefs"
+            android:title="Load Preference Category"
+            android:entryValues="@array/filename_values"
+            android:entries="@array/filenames"
+            android:icon="@drawable/ic_menu_import_file"/>
+        <Preference android:title="@string/preferences_text126"
+            android:key="prepareForClone"
+            android:summary="@string/preferences_text127"
+            android:icon="@drawable/ic_atak_launcher"/>
+
+    </PreferenceCategory>
+</PreferenceScreen>

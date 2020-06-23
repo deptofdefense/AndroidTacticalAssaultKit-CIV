@@ -1,0 +1,23 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.toolbar.SET_TOOLBAR</action>
+        <extras>
+            <string key='toolbar'>com.atakmap.android.mortar.toolbar</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.rad.cff.MissionGridScreen.TARGET_SELECTED</action>
+        <extras>
+            <string key='targetUid'>${uid}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

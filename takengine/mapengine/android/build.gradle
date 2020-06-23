@@ -1,0 +1,248 @@
+ buildscript {
+    repositories {
+        jcenter()
+        google()
+        mavenCentral()
+        maven {
+            url "https://jitpack.io"
+        }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.5.3'
+    }
+ }
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url "https://jitpack.io"
+        }
+        jcenter()
+    }
+}
+
+
+apply plugin: 'com.android.library'
+
+
+android {
+    compileSdkVersion 26
+    buildToolsVersion "29.0.2"
+    ndkVersion "12.1.2977051"
+
+    defaultConfig {
+        minSdkVersion 21
+        ndk {
+            moduleName 'takengine'
+            abiFilters 'armeabi-v7a', 'x86', 'arm64-v8a'
+        }
+		
+        externalNativeBuild {
+            ndkBuild {
+                arguments "NDK_APPLICATION_MK:=jni/Application.mk"
+            }
+        }
+    }
+
+    externalNativeBuild {
+        ndkBuild {
+            path = 'jni/Android.mk'
+        }
+    }
+		
+    defaultConfig {
+        minSdkVersion 21
+    }
+
+    flavorDimensions "application"
+
+    productFlavors {
+        civ {
+            dimension "application"
+        }
+        civSmall {
+            dimension "application"
+        }
+    }
+
+    buildTypes {
+        all {
+        }
+
+        release {
+        }
+
+        debug {
+            jniDebuggable true
+        }
+    }
+
+    sourceSets {
+        main {
+        }
+    }
+}
+
+clean {
+    // JNI headers
+    // external unpacks
+    delete 'thirdparty/android-arm64-v8a-release'
+    delete 'thirdparty/android-armeabi-v7a-release'
+    delete 'thirdparty/android-x86-release'
+}
+
+// NDK build output installation
+android.libraryVariants.all { variant ->
+    task "install${variant.name.capitalize()}Outputs"(dependsOn: ["externalNativeBuild${variant.name.capitalize()}", "packageHeaders"]) {
+        doLast {
+            def jniLibsOutputDir;
+            if(project.hasProperty("jniLibs.outputDir"))
+                jniLibsOutputDir = project.property("jniLibs.outputDir")
+            else
+                jniLibsOutputDir = '../build/android'
+
+            println 'Installing libtakengine.so into ' + jniLibsOutputDir
+
+            // copy built .so's into the 'jniLibs' directory
+            copy {
+                from(buildDir.getAbsolutePath() + "/intermediates/ndkBuild/" + variant.name + "/obj/local/armeabi-v7a/") {
+                    include 'libtakengine.so'
+                }
+                from('../../../takthirdparty/builds/android-armeabi-v7a-release/lib/') {
+                    include 'libassimp.so'
+                    include 'libcharset.so'
+                    include 'libgdal.so'
+                    include 'libgdalconstjni.so'
+                    include 'libgdaljni.so'
+                    include 'libiconv.so'
+                    include 'libjassimp.so'
+                    include 'libltidsdk.so' // only available if DSDK present for build
+                    include 'libogdi.so'
+                    include 'libogrjni.so'
+                    include 'libosrjni.so'
+                    include 'libproj.so'
+                    include 'libspatialite.so'
+               }
+
+                into jniLibsOutputDir + '/armeabi-v7a/'
+
+                // always overwrite
+                duplicatesStrategy 'include'
+            }
+            copy {
+                from(buildDir.getAbsolutePath() + "/intermediates/ndkBuild/" + variant.name + "/obj/local/arm64-v8a/") {
+                    include 'libtakengine.so'
+                }
+                from('../../../takthirdparty/builds/android-arm64-v8a-release/lib/') {
+                    include 'libassimp.so'
+                    include 'libcharset.so'
+                    include 'libgdal.so'
+                    include 'libgdalconstjni.so'
+                    include 'libgdaljni.so'
+                    include 'libiconv.so'
+                    include 'libjassimp.so'
+                    include 'libltidsdk.so' // only available if DSDK present for build
+                    include 'libogdi.so'
+                    include 'libogrjni.so'
+                    include 'libosrjni.so'
+                    include 'libproj.so'
+                    include 'libspatialite.so'
+               }
+
+                into jniLibsOutputDir + '/arm64-v8a/'
+
+                // always overwrite
+                duplicatesStrategy 'include'
+            }
+            copy {
+                from(buildDir.getAbsolutePath() + "/intermediates/ndkBuild/" + variant.name + "/obj/local/x86/") {
+                    include 'libtakengine.so'
+                }
+                from('../../../takthirdparty/builds/android-armeabi-x86/lib/') {
+                    include 'libassimp.so'
+                    include 'libcharset.so'
+                    include 'libgdal.so'
+                    include 'libgdalconstjni.so'
+                    include 'libgdaljni.so'
+                    include 'libiconv.so'
+                    include 'libjassimp.so'
+                    include 'libltidsdk.so' // only available if DSDK present for build
+                    include 'libogdi.so'
+                    include 'libogrjni.so'
+                    include 'libosrjni.so'
+                    include 'libproj.so'
+                    include 'libspatialite.so'
+               }
+
+                into jniLibsOutputDir + '/x86/'
+
+                // always overwrite
+                duplicatesStrategy 'include'
+            }
+
+            if(project.hasProperty("includes.outputDir")) {
+                copy {
+                    from('../build') {
+                        include 'takengine-api.zip'
+                    }
+                    into project.property('includes.outputDir') + '/takengine'
+
+                    duplicatesStrategy 'include'
+                }
+                copy {
+                    from('thirdparty/android-armeabi-v7a-release') {
+                        include 'ttp-include.zip'
+
+                    }
+                    into project.property('includes.outputDir') + '/ttp'
+
+                    duplicatesStrategy 'include'
+                }
+
+                println 'Installing TAK Engine headers into ' + project.property('includes.outputDir')
+            } else {
+                println 'WARNING: Not installing TAK Engine headers'
+            }
+        }
+    }
+}
+
+task copyHeaders {
+    doLast {
+        def buildIncludeDir = '../build/include'
+
+        // clean the directory if it exists
+        if (new File(buildIncludeDir).exists())
+            delete buildIncludeDir
+
+        // copy all headers into 'mapengine/build/include'
+        copy {
+            include '**/*.h'
+            from '../sdk/src'
+            into buildIncludeDir + "/takengine"
+        }
+        copy {
+            include '**/*.h'
+            include '**/*.hh'
+            from '../../../pgsc-utils/src/'
+            into buildIncludeDir + "/pgsc-utils"
+        }
+    }
+}
+
+task packageHeaders(type: Zip, dependsOn: ['copyHeaders']) {
+    def buildIncludeDir = '../build/include'
+
+    from '../build'
+    include 'include/**/*.h'
+    include 'include/**/*.hh'
+    archiveName = 'takengine-api.zip'
+    destinationDir = file('../build')
+}
+
+android.libraryVariants.all { variant ->
+    // JNI lib merge relies on installation of NDK build output
+    tasks.getByName("merge${variant.name.capitalize()}JniLibFolders").dependsOn("install${variant.name.capitalize()}Outputs")
+}

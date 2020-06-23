@@ -1,0 +1,26 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:orientation="vertical"
+              android:background="@drawable/all_tools_grid"
+              android:descendantFocusability="blocksDescendants">
+ 
+    <ImageView
+        android:id="@+id/enter_location_group_childImage"
+        android:layout_width="32dp"
+        android:layout_height="32dp" 
+        android:layout_gravity="center_horizontal|top" />
+ 
+    <TextView
+        android:id="@+id/enter_location_group_childLabel"
+        android:layout_width="90dip"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:gravity="center_horizontal"
+        android:layout_gravity="center_horizontal|bottom"
+        android:textColor="@color/white"
+        android:textSize="10sp"
+        android:maxLines="1" >
+    </TextView>
+ 
+</LinearLayout>

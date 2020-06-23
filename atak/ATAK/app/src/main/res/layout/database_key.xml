@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    android:padding="10sp" >
+    <TextView
+        android:id="@+id/introduction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="15sp"
+        android:text="@string/encryption_passphrase_prompt"/>
+    
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" 
+        android:orientation="horizontal">
+        <TextView
+            android:id="@+id/key_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:textSize="15sp"
+            android:text="@string/passphrase"/>
+        <EditText
+            android:id="@+id/key_entry"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:ems="15"
+            android:textSize="15sp"
+            android:inputType="textPassword"
+            android:layout_toEndOf="@+id/key_label">
+        </EditText>
+    </RelativeLayout>
+    
+</LinearLayout>

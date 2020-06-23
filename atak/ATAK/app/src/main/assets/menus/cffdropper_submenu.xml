@@ -1,0 +1,8 @@
+<menu buttonRadius='65' buttonSpan='32.73' buttonWidth='60' buttonBg='bgs/button.xml'>
+    <button onClick='actions/drop9Line.xml'
+            prefValue='cas'
+            icon='icons/cas.png'/>
+    <button onClick='actions/drop5Line.xml'
+            prefValue='cff'
+            icon='icons/cff.png'/>
+</menu>

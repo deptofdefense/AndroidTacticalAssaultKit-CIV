@@ -1,0 +1,14 @@
+###########################################################
+# **Do not Modify**
+# Uses proguard to produce a main.jar that can be used by 
+# plugins when developing on trunk.
+#
+# Author:  Shawn Bisgrove
+###########################################################
+
+-dontobfuscate
+-dontoptimize
+-dontwarn **
+-dontpreverify
+-dontshrink
+-keepattributes LocalVariableTable

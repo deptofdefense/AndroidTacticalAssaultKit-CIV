@@ -1,0 +1,173 @@
+--- sqlite.pristine/config.sub	2018-05-30 13:52:51.774295548 -0400
++++ sqlite/config.sub	2018-05-30 13:54:00.595802594 -0400
+@@ -120,12 +120,16 @@
+ # Here we must recognize all the valid KERNEL-OS combinations.
+ maybe_os=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\2/'`
+ case $maybe_os in
+-  nto-qnx* | linux-gnu* | linux-dietlibc | linux-newlib* | linux-uclibc* | \
++  nto-qnx* | linux-gnu* | linux-android* | linux-dietlibc | linux-newlib* | linux-uclibc* | \
+   uclinux-uclibc* | uclinux-gnu* | kfreebsd*-gnu* | knetbsd*-gnu* | netbsd*-gnu* | \
+   storm-chaos* | os2-emx* | rtmk-nova*)
+     os=-$maybe_os
+     basic_machine=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\1/'`
+     ;;
++  android-linux)
++    os=-linux-android
++    basic_machine=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\1/'`-unknown
++    ;;
+   *)
+     basic_machine=`echo $1 | sed 's/-[^-]*$//'`
+     if [ $basic_machine != $1 ]
+@@ -246,6 +246,7 @@
+ 	| alpha64 | alpha64ev[4-8] | alpha64ev56 | alpha64ev6[78] | alpha64pca5[67] \
+ 	| am33_2.0 \
+ 	| arc | arm | arm[bl]e | arme[lb] | armv[2345] | armv[345][lb] | avr | avr32 \
++	| aarch64 \
+ 	| bfin \
+ 	| c4x | clipper \
+ 	| d10v | d30v | dlx | dsp16xx | dvp \
+@@ -1237,6 +1241,7 @@
+ 	      | -chorusos* | -chorusrdb* \
+ 	      | -cygwin* | -pe* | -psos* | -moss* | -proelf* | -rtems* \
+ 	      | -mingw32* | -linux-gnu* | -linux-newlib* | -linux-uclibc* \
++	      | -linux-android* \
+ 	      | -uxpv* | -beos* | -mpeix* | -udk* \
+ 	      | -interix* | -uwin* | -mks* | -rhapsody* | -darwin* | -opened* \
+ 	      | -openstep* | -oskit* | -conix* | -pw32* | -nonstopux* \
+--- sqlite.pristine/configure	2017-12-21 14:31:28.000000000 -0500
++++ sqlite/configure	2020-06-16 10:47:15.541000000 -0400
+@@ -14589,6 +14589,14 @@
+     ac_abs_top_srcdir=$ac_pwd/$srcdir ;;
+ esac
+ ac_abs_srcdir=$ac_abs_top_srcdir$ac_dir_suffix
++case "`uname`" in
++  CYGWIN*)
++    ac_abs_srcdir_cyg=`cygpath -m $ac_abs_srcdir`
++    ;;
++  *)
++    ac_abs_srcdir_cyg=$ac_abs_srcdir
++    ;;
++esac
+ 
+ 
+   case $ac_mode in
+@@ -14649,6 +14657,7 @@
+ s&@top_build_prefix@&$ac_top_build_prefix&;t t
+ s&@srcdir@&$ac_srcdir&;t t
+ s&@abs_srcdir@&$ac_abs_srcdir&;t t
++s&@abs_srcdir_cyg@&$ac_abs_srcdir_cyg&;t t
+ s&@top_srcdir@&$ac_top_srcdir&;t t
+ s&@abs_top_srcdir@&$ac_abs_top_srcdir&;t t
+ s&@builddir@&$ac_builddir&;t t
+--- sqlite.pristine/Makefile.in	2017-12-21 14:31:28.000000000 -0500
++++ sqlite/Makefile.in	2020-06-16 10:41:09.835000000 -0400
+@@ -17,6 +17,9 @@
+ #
+ TOP = @abs_srcdir@
+ 
++# Same as TOP but on cygwin host, this is the windows style path. On others
++# it is simply the same as TOP
++BTOP = @abs_srcdir_cyg@
+ 
+ # C Compiler and options for use in building executables that
+ # will run on the platform that is doing the build.
+@@ -632,7 +635,7 @@
+ 		$(TOP)/ext/misc/scrub.c sqlite3.lo $(TLIBS)
+ 
+ srcck1$(BEXE):	$(TOP)/tool/srcck1.c
+-	$(BCC) -o srcck1$(BEXE) $(TOP)/tool/srcck1.c
++	$(BCC) -o srcck1$(BEXE) $(BTOP)/tool/srcck1.c
+ 
+ sourcetest:	srcck1$(BEXE) sqlite3.c
+ 	./srcck1 sqlite3.c
+@@ -680,13 +683,13 @@
+ 	mkdir tsrc
+ 	cp -f $(SRC) tsrc
+ 	rm tsrc/sqlite.h.in tsrc/parse.y
+-	$(TCLSH_CMD) $(TOP)/tool/vdbe-compress.tcl $(OPTS) <tsrc/vdbe.c >vdbe.new
++	$(TCLSH_CMD) $(BTOP)/tool/vdbe-compress.tcl $(OPTS) <tsrc/vdbe.c >vdbe.new
+ 	mv vdbe.new tsrc/vdbe.c
+ 	cp fts5.c fts5.h tsrc
+ 	touch .target_source
+ 
+ sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
+-	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl
++	$(TCLSH_CMD) $(BTOP)/tool/mksqlite3c.tcl
+ 	cp tsrc/shell.c tsrc/sqlite3ext.h .
+ 	cp $(TOP)/ext/session/sqlite3session.h .
+ 
+@@ -700,7 +703,7 @@
+ 	cat $(TOP)/src/tclsqlite.c >>tclsqlite3.c
+ 
+ sqlite3-all.c:	sqlite3.c $(TOP)/tool/split-sqlite3c.tcl
+-	$(TCLSH_CMD) $(TOP)/tool/split-sqlite3c.tcl
++	$(TCLSH_CMD) $(BTOP)/tool/split-sqlite3c.tcl
+ 
+ # Rule to build the amalgamation
+ #
+@@ -710,7 +713,7 @@
+ # Rules to build the LEMON compiler generator
+ #
+ lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
+-	$(BCC) -o $@ $(TOP)/tool/lemon.c
++	$(BCC) -o $@ $(BTOP)/tool/lemon.c
+ 	cp $(TOP)/tool/lempar.c .
+ 
+ # Rules to build individual *.o files from generated *.c files. This
+@@ -975,10 +978,10 @@
+ # Rules to build opcodes.c and opcodes.h
+ #
+ opcodes.c:	opcodes.h $(TOP)/tool/mkopcodec.tcl
+-	$(TCLSH_CMD) $(TOP)/tool/mkopcodec.tcl opcodes.h >opcodes.c
++	$(TCLSH_CMD) $(BTOP)/tool/mkopcodec.tcl opcodes.h >opcodes.c
+ 
+ opcodes.h:	parse.h $(TOP)/src/vdbe.c $(TOP)/tool/mkopcodeh.tcl
+-	cat parse.h $(TOP)/src/vdbe.c | $(TCLSH_CMD) $(TOP)/tool/mkopcodeh.tcl >opcodes.h
++	cat parse.h $(TOP)/src/vdbe.c | $(TCLSH_CMD) $(BTOP)/tool/mkopcodeh.tcl >opcodes.h
+ 
+ # Rules to build parse.c and parse.h - the outputs of lemon.
+ #
+@@ -989,13 +992,13 @@
+ 	rm -f parse.h
+ 	./lemon$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) parse.y
+ 	mv parse.h parse.h.temp
+-	$(TCLSH_CMD) $(TOP)/tool/addopcodes.tcl parse.h.temp >parse.h
++	$(TCLSH_CMD) $(BTOP)/tool/addopcodes.tcl parse.h.temp >parse.h
+ 
+ sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest.uuid $(TOP)/VERSION
+-	$(TCLSH_CMD) $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
++	$(TCLSH_CMD) $(BTOP)/tool/mksqlite3h.tcl $(BTOP) >sqlite3.h
+ 
+ keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
+-	$(BCC) -o mkkeywordhash$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)/tool/mkkeywordhash.c
++	$(BCC) -o mkkeywordhash$(BEXE) $(OPT_FEATURE_FLAGS) $(OPTS) $(BTOP)/tool/mkkeywordhash.c
+ 	./mkkeywordhash$(BEXE) >keywordhash.h
+ 
+ 
+@@ -1101,7 +1104,7 @@
+ fts5parse.h: fts5parse.c
+ 
+ fts5.c: $(FTS5_SRC)
+-	$(TCLSH_CMD) $(TOP)/ext/fts5/tool/mkfts5c.tcl
++	$(TCLSH_CMD) $(BTOP)/ext/fts5/tool/mkfts5c.tcl
+ 	cp $(TOP)/ext/fts5/fts5.h .
+ 
+ fts5.lo:	fts5.c $(HDR) $(EXTHDR)
+@@ -1190,7 +1193,7 @@
+ 	cat sqlite3.c $(TOP)/src/tclsqlite.c >> $@
+ 	echo "static const char *tclsh_main_loop(void){" >> $@
+ 	echo "static const char *zMainloop = " >> $@
+-	$(TCLSH_CMD) $(TOP)/tool/tostr.tcl $(TOP)/tool/spaceanal.tcl >> $@
++	$(TCLSH_CMD) $(BTOP)/tool/tostr.tcl $(BTOP)/tool/spaceanal.tcl >> $@
+ 	echo "; return zMainloop; }" >> $@
+ 
+ sqlite3_analyzer$(TEXE): sqlite3_analyzer.c
+@@ -1275,7 +1278,7 @@
+ 	./threadtest3$(TEXE)
+ 
+ releasetest:	
+-	$(TCLSH_CMD) $(TOP)/test/releasetest.tcl
++	$(TCLSH_CMD) $(BTOP)/test/releasetest.tcl
+ 
+ # Standard install and cleanup targets
+ #

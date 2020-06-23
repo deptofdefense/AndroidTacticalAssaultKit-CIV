@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+ 
+<!-- Active -->
+<item android:drawable="@drawable/method_button_selected" android:state_enabled="true" android:state_focused="false" android:state_pressed="false" android:state_selected="true"/>
+<!-- Inactive -->
+<item android:drawable="@drawable/method_button_not_selected" android:state_enabled="true" android:state_focused="false" android:state_pressed="false" android:state_selected="false"/>
+<!-- Pressed -->
+<item android:drawable="@drawable/method_button_selected" android:state_enabled="true" android:state_focused="false" android:state_pressed="true" />
+<!-- Selected (using d-pad) -->
+<item android:drawable="@drawable/method_button_selected" android:state_enabled="true" android:state_focused="true" android:state_pressed="false" android:state_selected="true"/>
+<!-- Disable -->
+<item android:drawable="@drawable/method_button_not_selected" android:state_enabled="false"/>
+
+</selector>

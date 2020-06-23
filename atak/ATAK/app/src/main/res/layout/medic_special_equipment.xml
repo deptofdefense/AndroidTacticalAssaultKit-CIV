@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:id="@+id/med_special_equipment_r1"
+                android:orientation="vertical" >
+
+    <CheckBox
+        android:id="@+id/med_none"
+        android:layout_marginTop="7dp"
+        android:layout_marginStart="5dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:enabled="false"
+        android:text="@string/equipment_none_choice"
+        />
+
+    <CheckBox
+        android:id="@+id/med_hoist"
+        android:layout_marginTop="7dp"
+        android:layout_marginStart="5dp"
+        android:layout_below="@id/med_none"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/equipment_hoist_choice"
+        />
+
+    <CheckBox
+        android:id="@+id/med_extraction_equipment"
+        android:layout_marginTop="7dp"
+        android:layout_marginStart="5dp"
+        android:layout_below="@id/med_hoist"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/equipment_extraction_choice"
+        />
+
+    <CheckBox
+        android:id="@+id/med_ventilator"
+        android:layout_marginTop="7dp"
+        android:layout_marginStart="5dp"
+        android:layout_below="@id/med_extraction_equipment"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/equipment_vent_choice"
+        />
+
+    <CheckBox
+        android:id="@+id/med_equipment_other"
+        android:layout_marginTop="7dp"
+        android:layout_marginStart="5dp"
+        android:layout_below="@id/med_ventilator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/equipment_other_choice"
+        />
+
+</RelativeLayout>

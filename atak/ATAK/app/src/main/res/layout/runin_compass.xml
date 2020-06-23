@@ -1,0 +1,92 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/north_west"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:text="@string/north_west"/>
+
+            <Button
+                android:id="@+id/north"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:text="@string/north"/>
+
+            <ImageButton
+                android:id="@+id/north_east"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:text="@string/north_east"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/west"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:text="@string/west"/>
+
+            <Button
+                android:id="@+id/invis"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:text=""
+                android:visibility="invisible"/>
+
+            <Button
+                android:id="@+id/east"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:text="@string/east"/>
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/south_west"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:text="@string/south_west"/>
+
+            <Button
+                android:id="@+id/South"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:text="@string/south"/>
+
+            <Button
+                android:id="@+id/south_east"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:text="@string/south_east"/>
+
+        </LinearLayout>
+
+</LinearLayout>

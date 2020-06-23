@@ -1,0 +1,5 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+     <item>
+          <bitmap android:src="@drawable/pause" android:gravity="center"/>
+     </item>
+</selector>

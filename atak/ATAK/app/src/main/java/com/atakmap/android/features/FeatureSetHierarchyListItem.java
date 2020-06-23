@@ -1,0 +1,781 @@
+
+package com.atakmap.android.features;
+
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
+import android.database.CursorWindow;
+import android.net.Uri;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.BaseAdapter;
+import android.widget.ImageButton;
+
+import com.atakmap.android.data.URIContentHandler;
+import com.atakmap.android.data.URIContentManager;
+import com.atakmap.android.hierarchy.HierarchyListFilter;
+import com.atakmap.android.hierarchy.HierarchyListItem;
+import com.atakmap.android.hierarchy.action.Action;
+import com.atakmap.android.hierarchy.action.Delete;
+import com.atakmap.android.hierarchy.action.Export;
+import com.atakmap.android.hierarchy.action.GoTo;
+import com.atakmap.android.hierarchy.action.Search;
+import com.atakmap.android.hierarchy.action.Send;
+import com.atakmap.android.hierarchy.action.Visibility;
+import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem;
+import com.atakmap.android.importexport.ExportFileMarshal;
+import com.atakmap.android.importexport.ExportFilters;
+import com.atakmap.android.importexport.FormatNotSupportedException;
+import com.atakmap.android.importexport.ImportExportMapComponent;
+import com.atakmap.android.importexport.ImportReceiver;
+import com.atakmap.android.importexport.send.SendDialog;
+import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.maps.MapView;
+import com.atakmap.android.missionpackage.export.MissionPackageExportWrapper;
+import com.atakmap.app.R;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.log.Log;
+import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
+import com.atakmap.map.layer.feature.Feature;
+import com.atakmap.map.layer.feature.FeatureCursor;
+import com.atakmap.map.layer.feature.FeatureDataStore;
+import com.atakmap.map.layer.feature.FeatureSet;
+import com.atakmap.map.layer.feature.FeatureDataStore.FeatureQueryParameters;
+import com.atakmap.map.layer.feature.style.Style;
+import com.atakmap.map.layer.feature.geometry.Envelope;
+import com.atakmap.map.layer.feature.geometry.Geometry;
+import com.atakmap.map.layer.feature.geometry.Point;
+import com.atakmap.map.layer.feature.style.BasicPointStyle;
+import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
+import com.atakmap.math.MathUtils;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
+        implements View.OnClickListener, View.OnLongClickListener,
+        Visibility, Search, Delete, Export {
+
+    private static final String TAG = "FeatureSetHierarchyListItem";
+
+    public final static int MAX_DISTANCE_SORT = 2000;
+    private final static int MAX_WINDOW_SIZE = 500;
+    private final static int WINDOW_READ_SIZE = 100;
+
+    private final static int NUM_WINDOW_COLUMNS = 9;
+
+    private final static int WINDOW_COL_FID = 0;
+    private final static int WINDOW_COL_IS_POINT = 1;
+    private final static int WINDOW_COL_MIN_X = 2;
+    private final static int WINDOW_COL_MIN_Y = 3;
+    private final static int WINDOW_COL_MAX_X = 4;
+    private final static int WINDOW_COL_MAX_Y = 5;
+    private final static int WINDOW_COL_NAME = 6;
+    private final static int WINDOW_COL_ICON = 7;
+    private final static int WINDOW_COL_COLOR = 8;
+
+    private final Context context;
+    private final FeatureDataStore spatialDb;
+
+    private final String title;
+    private Sort order;
+    private final BaseAdapter listener;
+    private int featureChildCount;
+    private final String contentType;
+    private final String mimeType;
+    private final String iconUri;
+
+    private CursorWindow window;
+
+    private final FeatureDataStorePathUtils.PathEntry entry;
+    private int descendantCount;
+    private final String path;
+
+    public FeatureSetHierarchyListItem(Context context,
+            FeatureDataStore spatialDb, FeatureSet group,
+            Sort order, BaseAdapter listener, String contentType,
+            String mimeType, String iconUri) {
+
+        this(context, spatialDb, group, getTitle(group.getName()), order,
+                listener,
+                contentType, mimeType, iconUri);
+    }
+
+    public FeatureSetHierarchyListItem(Context context,
+            FeatureDataStore spatialDb, FeatureSet group,
+            String title, Sort order, BaseAdapter listener, String contentType,
+            String mimeType, String iconUri) {
+
+        this(context,
+                spatialDb,
+                new FeatureDataStorePathUtils.PathEntry(group.getId(),
+                        group.getName()),
+                title,
+                title,
+                order,
+                listener,
+                contentType,
+                mimeType,
+                iconUri);
+    }
+
+    public FeatureSetHierarchyListItem(Context context,
+            FeatureDataStore spatialDb, FeatureSet group,
+            String title, HierarchyListFilter filter, BaseAdapter listener,
+            String contentType,
+            String mimeType, String iconUri) {
+
+        this(context,
+                spatialDb,
+                new FeatureDataStorePathUtils.PathEntry(group.getId(),
+                        group.getName()),
+                title,
+                title,
+                (filter != null) ? filter.sort : new SortAlphabet(),
+                listener,
+                contentType,
+                mimeType,
+                iconUri);
+    }
+
+    public FeatureSetHierarchyListItem(Context context,
+            FeatureDataStore spatialDb,
+            FeatureDataStorePathUtils.PathEntry path,
+            HierarchyListFilter filter, BaseAdapter listener,
+            String contentType,
+            String mimeType, String iconUri) {
+
+        this(context,
+                spatialDb,
+                path,
+                (filter != null) ? filter.sort : new SortAlphabet(),
+                listener,
+                contentType,
+                mimeType,
+                iconUri);
+    }
+
+    public FeatureSetHierarchyListItem(Context context,
+            FeatureDataStore spatialDb,
+            FeatureDataStorePathUtils.PathEntry path,
+            Sort order, BaseAdapter listener, String contentType,
+            String mimeType, String iconUri) {
+
+        this(context,
+                spatialDb,
+                path,
+                path.folder,
+                path.folder,
+                order,
+                listener,
+                contentType,
+                mimeType,
+                iconUri);
+    }
+
+    private FeatureSetHierarchyListItem(Context context,
+            FeatureDataStore spatialDb,
+            FeatureDataStorePathUtils.PathEntry entry,
+            String title,
+            String path,
+            Sort order, BaseAdapter listener, String contentType,
+            String mimeType, String iconUri) {
+
+        this.context = context;
+        this.spatialDb = spatialDb;
+        this.entry = entry;
+        this.title = getTitle(title);
+        this.path = path;
+        this.order = order;
+        this.listener = listener;
+        this.contentType = contentType;
+        this.mimeType = mimeType;
+        this.iconUri = iconUri;
+
+        this.featureChildCount = -1;
+        this.window = new CursorWindow(null);
+        this.window.setNumColumns(NUM_WINDOW_COLUMNS);
+        this.window.setStartPosition(0);
+    }
+
+    private void prepareQueryParams(
+            FeatureDataStore.FeatureSetQueryParameters params) {
+        if (this.entry.fsid != FeatureDataStore.FEATURESET_ID_NONE
+                && this.entry.childFsids.isEmpty()) {
+            params.ids = Collections.singleton(this.entry.fsid);
+        } else {
+            params.names = new ArrayList<>(2);
+            params.names.add(this.path);
+            params.names.add(this.path + "/%");
+            params.ids = this.entry.childFsids;
+            if (this.entry.fsid != FeatureDataStore.FEATURESET_ID_NONE) {
+                params.ids = new HashSet<>(params.ids);
+                params.ids.add(this.entry.fsid);
+            }
+        }
+    }
+
+    private void prepareQueryParams(FeatureQueryParameters params) {
+        if (this.entry.fsid != FeatureDataStore.FEATURESET_ID_NONE
+                && this.entry.childFsids.isEmpty()) {
+            params.featureSetIds = Collections.singleton(this.entry.fsid);
+        } else {
+            params.featureSets = new ArrayList<>(2);
+            params.featureSets.add(this.path);
+            params.featureSets.add(this.path + "/%");
+            params.featureSetIds = this.entry.childFsids;
+            if (this.entry.fsid != FeatureDataStore.FEATURESET_ID_NONE) {
+                params.featureSetIds = new HashSet<>(params.featureSetIds);
+                params.featureSetIds.add(this.entry.fsid);
+            }
+        }
+    }
+
+    @Override
+    public String getTitle() {
+        return this.title;
+    }
+
+    @Override
+    public String getIconUri() {
+        return this.iconUri;
+    }
+
+    @Override
+    public int getChildCount() {
+        if (this.featureChildCount == -1) {
+            FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
+            params.featureSetIds = Collections.singleton(this.entry.fsid);
+
+            this.featureChildCount = this.spatialDb.queryFeaturesCount(params);
+        }
+        return this.entry.children.size() + this.featureChildCount;
+    }
+
+    @Override
+    public int getDescendantCount() {
+        if (this.descendantCount == -1) {
+            FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
+            params.featureSets = Collections.singleton(this.path + "/%");
+            params.featureSetIds = this.entry.childFsids;
+
+            this.descendantCount = this.spatialDb.queryFeaturesCount(params);
+
+            // initialize 'featureChildCount'
+            this.getChildCount();
+        }
+        return this.featureChildCount + this.descendantCount;
+    }
+
+    @Override
+    public HierarchyListItem getChildAt(int index) {
+        final int featureSetChildCount = this.entry.children.size();
+        if (index < featureSetChildCount) {
+            // XXX - ew
+            int i = 0;
+            for (FeatureDataStorePathUtils.PathEntry child : this.entry.children
+                    .values()) {
+                if (i == index) {
+                    String iconUri = "android.resource://"
+                            + context.getPackageName()
+                            + "/" + R.drawable.import_folder_icon;
+                    return new FeatureSetHierarchyListItem(context,
+                            spatialDb,
+                            child,
+                            child.folder,
+                            this.path + "/" + child.folder,
+                            order,
+                            listener,
+                            contentType,
+                            mimeType,
+                            iconUri);
+                }
+                i++;
+            }
+
+            throw new IllegalStateException();
+        }
+
+        // subtract off any nested groups
+        index -= featureSetChildCount;
+
+        int limit = this.window.getStartPosition()
+                + this.window.getNumRows();
+        // check if the index is included within the current window
+        if (index < this.window.getStartPosition() || index >= limit) {
+
+            if (index < this.window.getStartPosition() - WINDOW_READ_SIZE
+                    || index > limit + WINDOW_READ_SIZE) {
+                this.window.clear();
+                this.window.setNumColumns(NUM_WINDOW_COLUMNS);
+                this.window.setStartPosition(index);
+
+                // the index is outside of the read size, reset the limit to
+                // force a read starting from the index
+                limit = this.window.getStartPosition()
+                        + this.window.getNumRows();
+            }
+
+            if (index < this.window.getStartPosition()) {
+                // read from the index up to the current window into a new
+                // window
+                CursorWindow tmp = new CursorWindow(null);
+                tmp.setNumColumns(NUM_WINDOW_COLUMNS);
+                tmp.setStartPosition(index);
+                this.fillWindow(tmp, index, this.window.getStartPosition()
+                        - index);
+
+                int row = tmp.getStartPosition() + tmp.getNumRows();
+                if (row != this.window.getStartPosition()) {
+                    // XXX -
+                    throw new IllegalStateException();
+                }
+
+                // append the current window's content onto the newly read
+                // window
+                transfer(
+                        this.window,
+                        tmp,
+                        NUM_WINDOW_COLUMNS,
+                        tmp.getStartPosition() + tmp.getNumRows(),
+                        Math.min(this.window.getNumRows(), MAX_WINDOW_SIZE
+                                - tmp.getNumRows()));
+
+                // flip our window reference
+                this.window.clear();
+                this.window = tmp;
+            } else {
+                // append to the current window
+                this.fillWindow(this.window, limit, WINDOW_READ_SIZE);
+            }
+
+            if (this.window.getNumRows() > MAX_WINDOW_SIZE) {
+
+                // trim the window
+                CursorWindow tmp = new CursorWindow(null);
+                tmp.setNumColumns(NUM_WINDOW_COLUMNS);
+                tmp.setStartPosition(MathUtils.clamp(
+                        index - MAX_WINDOW_SIZE / 2,
+                        this.window.getStartPosition(),
+                        this.window.getStartPosition() +
+                                this.window.getNumRows() - MAX_WINDOW_SIZE));
+
+                transfer(this.window, tmp, NUM_WINDOW_COLUMNS,
+                        tmp.getStartPosition(),
+                        MAX_WINDOW_SIZE);
+
+                this.window.clear();
+                this.window = tmp;
+            }
+        }
+
+        FeatureHierarchyListItem item = null;
+        try {
+            item = new FeatureHierarchyListItem(
+                    this.spatialDb,
+                    this.window.getLong(index, WINDOW_COL_FID),
+                    this.window.getString(index, WINDOW_COL_NAME),
+                    this.window.getString(index, WINDOW_COL_ICON),
+                    this.window.getInt(index, WINDOW_COL_COLOR),
+                    this.window.getInt(index, WINDOW_COL_IS_POINT) != 0,
+                    this.window.getDouble(index, WINDOW_COL_MIN_X),
+                    this.window.getDouble(index, WINDOW_COL_MIN_Y),
+                    this.window.getDouble(index, WINDOW_COL_MAX_X),
+                    this.window.getDouble(index, WINDOW_COL_MAX_Y));
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to read child at index " + index);
+        }
+        return item;
+    }
+
+    @Override
+    public <T extends Action> T getAction(Class<T> clazz) {
+        if (clazz.equals(Visibility.class)) {
+            return clazz.cast(this);
+        } else if (clazz.equals(Search.class)) {
+            return clazz.cast(this);
+        } else if (clazz.equals(Delete.class)) {
+            return clazz.cast(this);
+        } else if (clazz.equals(Export.class)) {
+            return clazz.cast(this);
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public Object getUserObject() {
+        return null;
+    }
+
+    @Override
+    public View getExtraView() {
+        final File file = this.getGroupFile();
+        if (file == null)
+            return null;
+
+        URIContentHandler h = URIContentManager.getInstance().getHandler(file);
+
+        LayoutInflater inflater = LayoutInflater.from(context);
+        View view = inflater.inflate(R.layout.feature_set_extra, null);
+
+        ImageButton panBtn = view.findViewById(R.id.panButton);
+        panBtn.setVisibility(h != null && h.isActionSupported(GoTo.class)
+                ? View.VISIBLE
+                : View.GONE);
+
+        ImageButton sendBtn = view.findViewById(R.id.sendButton);
+        sendBtn.setVisibility(h != null && h.isActionSupported(Send.class)
+                || FileSystemUtils.isFile(file) ? View.VISIBLE : View.GONE);
+
+        panBtn.setOnClickListener(this);
+        sendBtn.setOnClickListener(this);
+
+        return view;
+    }
+
+    @Override
+    public Sort refresh(final Sort sort) {
+        MapView mv = MapView.getMapView();
+        if (mv == null)
+            return sort;
+        ((Activity) mv.getContext()).runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // Call this on UI thread so the window is synced up correctly
+                Sort s = sort;
+                if (order != s) {
+                    if (!(s instanceof SortDistanceFrom)
+                            || featureChildCount >= MAX_DISTANCE_SORT)
+                        s = new SortAlphabet();
+                    order = s;
+                    window.clear();
+                    window.setNumColumns(NUM_WINDOW_COLUMNS);
+
+                    if (listener != null)
+                        listener.notifyDataSetChanged();
+                }
+            }
+        });
+        return sort;
+    }
+
+    @Override
+    public Set<HierarchyListItem> find(String terms) {
+        FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
+        prepareQueryParams(params);
+        params.ignoredFields = FeatureQueryParameters.FIELD_ATTRIBUTES;
+        if (terms.length() >= 2)
+            terms = "%" + terms + "%";
+        else
+            terms = terms + "%";
+        params.featureNames = Collections.singleton(terms);
+
+        Set<HierarchyListItem> retval = new HashSet<>();
+        FeatureCursor result = null;
+        try {
+            result = this.spatialDb.queryFeatures(params);
+            while (result.moveToNext()) {
+                retval.add(new FeatureHierarchyListItem(
+                        this.spatialDb,
+                        result.get()));
+            }
+        } finally {
+            if (result != null)
+                result.close();
+        }
+        return retval;
+    }
+
+    /**************************************************************************/
+    // View On Item Long Click Listener
+
+    @Override
+    public void onClick(View v) {
+        final File file = this.getGroupFile();
+        if (file == null)
+            return;
+
+        int id = v.getId();
+
+        URIContentHandler handler = URIContentManager.getInstance()
+                .getHandler(file);
+
+        // Pan to file
+        if (id == R.id.panButton && handler != null
+                && handler.isActionSupported(GoTo.class)) {
+            ((GoTo) handler).goTo(false);
+        }
+
+        // Send file
+        else if (id == R.id.sendButton) {
+            MapView mv = MapView.getMapView();
+            if (mv == null)
+                return;
+            if (handler != null && handler.isActionSupported(Send.class))
+                ((Send) handler).promptSend();
+            else
+                new SendDialog.Builder(mv)
+                        .addFile(file, contentType)
+                        .show();
+        }
+    }
+
+    @Override
+    public boolean onLongClick(View view) {
+        final File fileToSend = this.getGroupFile();
+        if (fileToSend == null) {
+            Log.w(TAG, "Unable to send file");
+            return false;
+        }
+
+        return ExportFileMarshal.sendFile(this.context, this.contentType,
+                fileToSend, true, null);
+    }
+
+    private File getGroupFile() {
+        if (!(this.spatialDb instanceof DataSourceFeatureDataStore))
+            return null;
+
+        FeatureSet group;
+        if (this.entry.fsid != FeatureDataStore.FEATURESET_ID_NONE
+                && this.entry.childFsids.isEmpty()) {
+            group = this.spatialDb.getFeatureSet(this.entry.fsid);
+        } else {
+            FeatureDataStore.FeatureSetQueryParameters params = new FeatureDataStore.FeatureSetQueryParameters();
+            prepareQueryParams(params);
+
+            // XXX - delete all???
+            params.limit = 1;
+
+            FeatureDataStore.FeatureSetCursor result = null;
+            try {
+                result = this.spatialDb.queryFeatureSets(params);
+                if (!result.moveToNext())
+                    return null;
+                group = result.get();
+            } finally {
+                if (result != null)
+                    result.close();
+            }
+        }
+
+        if (group == null)
+            return null;
+
+        return ((DataSourceFeatureDataStore) this.spatialDb)
+                .getFile(group);
+    }
+
+    /**************************************************************************/
+
+    @Override
+    public boolean setVisible(boolean visible) {
+        if (this.entry.fsid != 0 && this.entry.childFsids.isEmpty()) {
+            this.spatialDb.setFeatureSetVisible(this.entry.fsid, visible);
+        } else {
+            FeatureDataStore.FeatureSetQueryParameters params = new FeatureDataStore.FeatureSetQueryParameters();
+            prepareQueryParams(params);
+
+            this.spatialDb.setFeatureSetsVisible(params, visible);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean isVisible() {
+        if (this.entry.fsid != 0 && this.entry.childFsids.isEmpty()) {
+            return this.spatialDb.isFeatureSetVisible(this.entry.fsid);
+        } else {
+            FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
+            prepareQueryParams(params);
+            params.visibleOnly = true;
+            params.limit = 1;
+
+            return (this.spatialDb.queryFeaturesCount(params) > 0);
+        }
+    }
+
+    @Override
+    public boolean delete() {
+        File file = getGroupFile();
+        if (file == null) {
+            Log.w(TAG, "Failed to find group file to delete");
+            return false;
+        }
+
+        Log.d(TAG,
+                "Delete: " + this.title + ", "
+                        + file.getAbsolutePath());
+        Intent deleteIntent = new Intent();
+        deleteIntent.setAction(ImportExportMapComponent.ACTION_DELETE_DATA);
+        deleteIntent.putExtra(ImportReceiver.EXTRA_CONTENT, this.contentType);
+        deleteIntent.putExtra(ImportReceiver.EXTRA_MIME_TYPE, this.mimeType);
+        deleteIntent.putExtra(ImportReceiver.EXTRA_URI, Uri.fromFile(file)
+                .toString());
+        AtakBroadcast.getInstance().sendBroadcast(deleteIntent);
+
+        return true;
+    }
+
+    private void fillWindow(CursorWindow resultsWindow, int off, int num) {
+        FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
+
+        FeatureCursor result = null;
+        try {
+            // XXX - avoid distance sort if there are a lot of children
+            if ((this.order instanceof SortDistanceFrom)
+                    && this.featureChildCount < MAX_DISTANCE_SORT) {
+                final SortDistanceFrom distanceFrom = (SortDistanceFrom) order;
+
+                params.order = Collections.<FeatureDataStore.FeatureQueryParameters.Order> singleton(
+                        new FeatureDataStore.FeatureQueryParameters.Distance(
+                                distanceFrom.location));
+            } else { // default to alphabetic sort
+                params.order = Collections.<FeatureDataStore.FeatureQueryParameters.Order> singleton(
+                        FeatureDataStore.FeatureQueryParameters.FeatureName.INSTANCE);
+            }
+
+            params.featureSetIds = Collections.singleton(this.entry.fsid);
+            params.ignoredFields = FeatureQueryParameters.FIELD_ATTRIBUTES;
+            params.limit = num;
+            params.offset = off;
+
+            result = this.spatialDb.queryFeatures(params);
+            int row = resultsWindow.getStartPosition()
+                    + resultsWindow.getNumRows();
+            Feature feature;
+            Geometry geom;
+            Envelope mbb;
+            while (result.moveToNext()) {
+                if (!resultsWindow.allocRow())
+                    return;
+
+                feature = result.get();
+                geom = feature.getGeometry();
+                if (geom != null) {
+                    mbb = geom.getEnvelope();
+
+                    resultsWindow.putLong(feature.getId(), row, WINDOW_COL_FID);
+
+                    // Item name
+                    final String name = feature.getName();
+                    if (name != null)
+                        resultsWindow.putString(name, row,
+                                WINDOW_COL_NAME);
+                    else
+                        resultsWindow.putNull(row, WINDOW_COL_NAME);
+
+                    // Marker icon
+                    Style style = feature.getStyle();
+                    if (style == null)
+                        style = geom instanceof Point
+                                ? new BasicPointStyle(-1, 0)
+                                : new BasicStrokeStyle(-1, 0);
+                    final String iconUri = FeatureHierarchyListItem
+                            .iconUriFromStyle(style);
+                    if (iconUri != null)
+                        resultsWindow.putString(iconUri, row, WINDOW_COL_ICON);
+                    else
+                        resultsWindow.putNull(row, WINDOW_COL_ICON);
+
+                    // Marker color
+                    resultsWindow.putLong(FeatureHierarchyListItem
+                            .colorFromStyle(style), row, WINDOW_COL_COLOR);
+
+                    // Location and bounds
+                    resultsWindow.putLong(((geom instanceof Point) ? 1 : 0),
+                            row, WINDOW_COL_IS_POINT);
+                    resultsWindow.putDouble(mbb.minX, row, WINDOW_COL_MIN_X);
+                    resultsWindow.putDouble(mbb.minY, row, WINDOW_COL_MIN_Y);
+                    resultsWindow.putDouble(mbb.maxX, row, WINDOW_COL_MAX_X);
+                    resultsWindow.putDouble(mbb.maxY, row, WINDOW_COL_MAX_Y);
+                }
+                row++;
+
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "bad database access: ", e);
+
+        } finally {
+            if (result != null)
+                result.close();
+        }
+    }
+
+    /**************************************************************************/
+
+    private static void transfer(CursorWindow src, CursorWindow dst,
+            int numColumns, int row,
+            int count) {
+        for (int i = 0; i < count; i++) {
+            if (!dst.allocRow())
+                throw new OutOfMemoryError();
+
+            for (int j = 0; j < numColumns; j++) {
+                switch (src.getType(row, j)) {
+                    case Cursor.FIELD_TYPE_BLOB:
+                        dst.putBlob(src.getBlob(row, j), row, j);
+                        break;
+                    case Cursor.FIELD_TYPE_FLOAT:
+                        dst.putDouble(src.getDouble(row, j), row, j);
+                        break;
+                    case Cursor.FIELD_TYPE_INTEGER:
+                        dst.putLong(src.getLong(row, j), row, j);
+                        break;
+                    case Cursor.FIELD_TYPE_NULL:
+                        dst.putNull(row, j);
+                        break;
+                    case Cursor.FIELD_TYPE_STRING:
+                        dst.putString(src.getString(row, j), row, j);
+                        break;
+                    default:
+                        throw new IllegalStateException();
+                }
+            }
+            row++;
+        }
+    }
+
+    @Override
+    public boolean isSupported(Class target) {
+        return MissionPackageExportWrapper.class.equals(target);
+    }
+
+    @Override
+    public Object toObjectOf(Class target, ExportFilters filters)
+            throws FormatNotSupportedException {
+
+        if (MissionPackageExportWrapper.class.equals(target)) {
+            return toMissionPackage();
+        }
+
+        return null;
+    }
+
+    private MissionPackageExportWrapper toMissionPackage() {
+        File file = getGroupFile();
+        if (!FileSystemUtils.isFile(file)) {
+            Log.w(TAG, "No file found");
+            return null;
+        }
+
+        return new MissionPackageExportWrapper(false, file.getAbsolutePath());
+    }
+
+    /**************************************************************************/
+
+    private static String getTitle(String groupName) {
+        if (groupName == null)
+            return null;
+        final int pathIdx = groupName.lastIndexOf('/');
+        if (pathIdx < 0)
+            return groupName;
+        else
+            return groupName.substring(pathIdx);
+    }
+}

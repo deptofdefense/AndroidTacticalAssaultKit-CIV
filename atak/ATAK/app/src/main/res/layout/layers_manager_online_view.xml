@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.layers.OnlineLayersManagerView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <ListView
+        android:id="@+id/layers_manager_online_list"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="10" />
+
+    <TextView 
+        android:id="@android:id/empty"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="1"
+        android:textColor="#FF444444"
+        android:gravity="center"
+        android:text="@string/no_mobile_data_found" />
+
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_marginBottom="3dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="5dp"
+        android:background="#FF333333"
+        android:orientation="horizontal" />
+
+    <LinearLayout
+        android:id="@+id/downloadProgressLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/darker_gray"
+        android:visibility="gone" >
+
+        <ProgressBar
+            android:id="@+id/downloadProgressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="0dp"
+            android:indeterminate="false"
+            android:max="0"
+            android:progress="0" />
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:layout_marginEnd="5dp"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:id="@+id/tileProgressTV"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:text="@string/connecting"
+                android:textColor="#FF06AC4A" />
+
+            <TextView
+                android:id="@+id/timeTV"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text=""
+                android:textColor="#FF06AC4A" />
+
+            <TextView
+                android:id="@+id/layerProgressTV"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:text=""
+                android:textColor="#FF06AC4A" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/label_layout"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:layout_marginEnd="5dp"
+            android:orientation="horizontal"
+            android:visibility="gone" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:text="@string/tiles"
+                android:textColor="#FF06AC4A" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toStartOf="@+id/queueProgressTV"
+                android:text="@string/layers"
+                android:textColor="#FF06AC4A" />
+
+            <TextView
+                android:id="@id/queueProgressTV"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:text="@string/tilesets_3"
+                android:textColor="#FF06AC4A" />
+        </RelativeLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/darker_gray"
+        android:paddingBottom="5dp"
+        android:orientation="vertical" >
+
+        <LinearLayout
+            android:id="@+id/mobileTools"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/darker_gray"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <Switch
+                android:id="@+id/offlineModeSwitch"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:layout_weight="1"
+                android:text="@string/map_source"
+                android:textSize="11sp" />
+            <CheckBox
+                android:id="@+id/showall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/show_all"
+                android:visibility="gone"
+                android:textSize="11sp" />
+
+            <ImageButton
+                android:id="@+id/more"
+                android:layout_width="@dimen/dropdown_bottom_bar_height"
+                android:layout_height="@dimen/dropdown_bottom_bar_height"
+                android:background="#00000000"
+                android:src="@drawable/arrow_right"/>
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:id="@+id/moreBar"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:orientation="horizontal" >
+
+            <Button
+                android:id="@+id/selectAreaBtn"
+                style="@style/darkButton"
+                android:layout_width="fill_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:text="@string/select_area" />
+
+            <Button
+                android:id="@+id/downloadBtn"
+                style="@style/darkButton"
+                android:layout_width="fill_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:enabled="false"
+                android:text="@string/download" />
+
+            <Button
+                android:id="@+id/cancelDownloadBtn"
+                style="@style/darkButton"
+                android:layout_width="fill_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:padding="0dp"
+                android:text="@string/cancel"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/addOnlineSource_btn"
+                style="@style/darkButton"
+                android:layout_width="fill_parent"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:layout_weight="1.2"
+                android:text="@string/_plus__"
+                android:textSize="23sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+</com.atakmap.android.layers.OnlineLayersManagerView>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <ImageButton
+        android:id="@+id/save"
+        android:layout_width="@dimen/dropdown_bottom_bar_height"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:padding="5dp"
+        android:src="@drawable/ic_menu_save2"
+        android:scaleType="fitXY"
+        android:background="@drawable/overlay_title_background"/>
+
+    <ImageButton
+        android:id="@+id/edit"
+        android:layout_width="@dimen/dropdown_bottom_bar_height"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:padding="5dp"
+        android:src="@drawable/edit"
+        android:scaleType="fitXY"
+        android:background="@drawable/overlay_title_background"/>
+
+    <ImageButton
+        android:id="@+id/create"
+        android:layout_width="@dimen/dropdown_bottom_bar_height"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:padding="5dp"
+        android:src="@drawable/ic_menu_plus"
+        android:scaleType="fitXY"
+        android:background="@drawable/overlay_title_background"/>
+
+    <ImageButton
+        android:id="@+id/download"
+        android:layout_width="@dimen/dropdown_bottom_bar_height"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:padding="5dp"
+        android:src="@drawable/ic_menu_import_file"
+        android:scaleType="fitXY"
+        android:background="@drawable/overlay_title_background"/>
+
+    <ImageButton
+        android:id="@+id/changes"
+        android:layout_width="@dimen/dropdown_bottom_bar_height"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:padding="5dp"
+        android:src="@drawable/details"
+        android:scaleType="fitXY"
+        android:background="@drawable/overlay_title_background"/>
+
+</LinearLayout>
+

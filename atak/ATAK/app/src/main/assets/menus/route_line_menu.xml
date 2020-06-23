@@ -1,0 +1,22 @@
+<menu buttonRadius='65' buttonSpan='90' buttonWidth='90' buttonBg='bgs/button.xml'>
+            
+    <button angle='-90'
+            icon='icons/delete.png'
+            onClick='actions/remove_route.xml' 
+            disabled='true'/>
+            
+    <button icon='icons/reference_point.png'
+            onClick='actions/insert_waypoint.xml' />
+
+    <button icon='icons/vertex.png'
+            onClick='actions/insert_vertex.xml' />
+
+          
+    <button icon='icons/move.png'
+            submenu='menus/mgrs_entry_vertex_submenu.xml'
+            disableSwap='true'
+            disableIconSwap='true'
+            onClick='actions/move_editable_polyline_vertex.xml'
+            disabled='!{${movable}}' />
+
+</menu>

@@ -1,0 +1,9 @@
+<menu buttonRadius='65' buttonSpan='32.73' buttonWidth='60' buttonBg='bgs/button.xml'>
+    <button selected='${mils_mag}'
+            icon='icons/mils_m.png'
+            onClick='actions/bullseye_bearing_mils.xml'/>
+
+    <button selected='${deg_mag}'
+            icon='icons/degs_m.png'
+            onClick='actions/bullseye_bearing_deg.xml'/>
+</menu>

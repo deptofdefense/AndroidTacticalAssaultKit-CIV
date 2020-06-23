@@ -1,0 +1,19 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.ROUTE_INSERT_WAYPOINT</action>
+        <extras>
+            <string key='routeUID'>${assocSetUID}</string>
+            <string key='uid'>${uid}</string>
+            <string key='point'>${last_touch}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+        <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

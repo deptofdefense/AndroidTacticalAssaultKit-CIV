@@ -1,0 +1,7 @@
+<broadcast>
+    <action>com.atakmap.android.maps.ZOOM</action>
+    <extras>
+        <double key='zoomLevel'>4000</double>
+        <string key='focusPoint'>@{touchPoint}</string>
+    </extras>
+</broadcast>

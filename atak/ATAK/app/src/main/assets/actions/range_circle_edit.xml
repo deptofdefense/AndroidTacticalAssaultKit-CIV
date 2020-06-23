@@ -1,0 +1,19 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.SHOW_RAB_CIRCLE_DROPDOWN</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+            <string key='shapeUID'>${shapeUID}</string>
+            <string key='edit'>true</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

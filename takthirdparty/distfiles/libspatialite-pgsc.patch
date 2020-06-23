@@ -1,0 +1,415 @@
+--- libspatialite.pristine/src/gaiaaux/gg_utf8.c	2018-02-26 14:52:34.000000000 -0500
++++ libspatialite/src/gaiaaux/gg_utf8.c	2018-02-26 14:55:25.000000000 -0500
+@@ -69,7 +69,18 @@
+ #include <localcharset.h>
+ #endif /* end localcharset */
+ #else /* not MINGW32 - WIN32 */
+-#if defined(__APPLE__) || defined(__ANDROID__)
++#if defined(__APPLE__) && defined(__MACH__) // Apple OSX and iOS (Darwin)
++ #include <TargetConditionals.h>
++ #if TARGET_IPHONE_SIMULATOR == 1 || TARGET_OS_IPHONE == 1
++  // iOS
++  #include <iconv.h>
++  #include <langinfo.h>
++ #else
++  // OS-X
++  #include <iconv.h>
++  #include <localcharset.h>
++ #endif
++#elif defined(__ANDROID__)
+ #include <iconv.h>
+ #include <localcharset.h>
+ #else /* neither Mac OsX nor Android */
+@@ -99,7 +99,7 @@
+ #if defined(__MINGW32__) || defined(_WIN32)
+     return locale_charset ();
+ #else /* not MINGW32 - WIN32 */
+-#if defined(__APPLE__) || defined(__ANDROID__)
++#if defined(__ANDROID__)
+     return locale_charset ();
+ #else /* neither Mac OsX nor Android */
+     return nl_langinfo (CODESET);
+diff -ur libspatialite.pristine/src/gaiageo/gg_shape.c libspatialite/src/gaiageo/gg_shape.c
+--- libspatialite.pristine/src/gaiageo/gg_shape.c	2018-02-26 15:12:04.000000000 -0500
++++ libspatialite/src/gaiageo/gg_shape.c	2018-02-26 15:16:21.000000000 -0500
+@@ -71,7 +71,18 @@
+ #include <localcharset.h>
+ #endif /* end localcharset */
+ #else /* not MINGW32 */
+-#if defined(__APPLE__) || defined(__ANDROID__)
++#if defined(__APPLE__) && defined(__MACH__) // Apple OSX and iOS (Darwin)
++ #include <TargetConditionals.h>
++ #if TARGET_IPHONE_SIMULATOR == 1 || TARGET_OS_IPHONE == 1
++  // iOS
++  #include <iconv.h>
++  #include <langinfo.h>
++ #else
++  // OS-X
++  #include <iconv.h>
++  #include <localcharset.h>
++ #endif
++#elif defined(__ANDROID__)
+ #include <iconv.h>
+ #include <localcharset.h>
+ #else /* neither Mac OsX nor Android */
+--- libspatialite.pristine/config.sub	2015-07-01 02:59:16.000000000 -0400
++++ libspatialite/config.sub	2017-08-24 12:58:11.742704171 -0400
+@@ -123,13 +124,17 @@
+ # Here we must recognize all the valid KERNEL-OS combinations.
+ maybe_os=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\2/'`
+ case $maybe_os in
+-  nto-qnx* | linux-gnu* | linux-dietlibc | linux-newlib* | linux-uclibc* | \
++  nto-qnx* | linux-gnu* | linux-android* | linux-dietlibc | linux-newlib* | linux-uclibc* | \
+   uclinux-uclibc* | uclinux-gnu* | kfreebsd*-gnu* | knetbsd*-gnu* | netbsd*-gnu* | \
+   kopensolaris*-gnu* | \
+   storm-chaos* | os2-emx* | rtmk-nova*)
+     os=-$maybe_os
+     basic_machine=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\1/'`
+     ;;
++  android-linux)
++    os=-linux-android
++    basic_machine=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\1/'`-unknown
++    ;;
+   *)
+     basic_machine=`echo $1 | sed 's/-[^-]*$//'`
+     if [ $basic_machine != $1 ]
+@@ -246,6 +246,7 @@
+ 	| alpha64 | alpha64ev[4-8] | alpha64ev56 | alpha64ev6[78] | alpha64pca5[67] \
+ 	| am33_2.0 \
+ 	| arc | arm | arm[bl]e | arme[lb] | armv[2345] | armv[345][lb] | avr | avr32 \
++	| aarch64 \
+ 	| bfin \
+ 	| c4x | clipper \
+ 	| d10v | d30v | dlx | dsp16xx | dvp \
+@@ -1295,6 +1306,7 @@
+ 	      | -chorusos* | -chorusrdb* | -cegcc* \
+ 	      | -cygwin* | -pe* | -psos* | -moss* | -proelf* | -rtems* \
+ 	      | -mingw32* | -linux-gnu* | -linux-newlib* | -linux-uclibc* \
++	      | -linux-android* \
+ 	      | -uxpv* | -beos* | -mpeix* | -udk* \
+ 	      | -interix* | -uwin* | -mks* | -rhapsody* | -darwin* | -opened* \
+ 	      | -openstep* | -oskit* | -conix* | -pw32* | -nonstopux* \
+--- libspatialite.pristine/configure	2015-09-07 09:56:45.000000000 -0400
++++ libspatialite/configure	2017-08-25 17:31:19.797256942 -0400
+@@ -12467,22 +12467,30 @@
+ # No shared lib support for Linux oldld, aout, or coff.
+ linux*oldld* | linux*aout* | linux*coff*)
+   dynamic_linker=no
+   ;;
+ 
+ # This must be Linux ELF.
+ linux* | k*bsd*-gnu | kopensolaris*-gnu)
+   version_type=linux
+   need_lib_prefix=no
+   need_version=no
+-  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
+-  soname_spec='${libname}${release}${shared_ext}$major'
++  case $host_os in
++  linux-android*)
++    library_names_spec='$libname${shared_ext}'
++    soname_spec='${libname}${release}${shared_ext}'
++    ;;
++  *)
++    library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
++    soname_spec='${libname}${release}${shared_ext}$major'
++    ;;
++  esac
+   finish_cmds='PATH="\$PATH:/sbin" ldconfig -n $libdir'
+   shlibpath_var=LD_LIBRARY_PATH
+   shlibpath_overrides_runpath=no
+ 
+   # Some binutils ld are patched to set DT_RUNPATH
+   if ${lt_cv_shlibpath_overrides_runpath+:} false; then :
+   $as_echo_n "(cached) " >&6
+ else
+   lt_cv_shlibpath_overrides_runpath=no
+     save_LDFLAGS=$LDFLAGS
+@@ -16304,22 +16312,30 @@
+ # No shared lib support for Linux oldld, aout, or coff.
+ linux*oldld* | linux*aout* | linux*coff*)
+   dynamic_linker=no
+   ;;
+ 
+ # This must be Linux ELF.
+ linux* | k*bsd*-gnu | kopensolaris*-gnu)
+   version_type=linux
+   need_lib_prefix=no
+   need_version=no
+-  library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
+-  soname_spec='${libname}${release}${shared_ext}$major'
++  case $host_os in
++  linux-android*)
++    library_names_spec='$libname${shared_ext}'
++    soname_spec='${libname}${release}${shared_ext}'
++    ;;
++  *)
++    library_names_spec='${libname}${release}${shared_ext}$versuffix ${libname}${release}${shared_ext}$major $libname${shared_ext}'
++    soname_spec='${libname}${release}${shared_ext}$major'
++    ;;
++  esac
+   finish_cmds='PATH="\$PATH:/sbin" ldconfig -n $libdir'
+   shlibpath_var=LD_LIBRARY_PATH
+   shlibpath_overrides_runpath=no
+ 
+   # Some binutils ld are patched to set DT_RUNPATH
+   if ${lt_cv_shlibpath_overrides_runpath+:} false; then :
+   $as_echo_n "(cached) " >&6
+ else
+   lt_cv_shlibpath_overrides_runpath=no
+     save_LDFLAGS=$LDFLAGS
+@@ -18040,7 +18040,7 @@
+         fi
+   fi
+   # Extract the linker and include flags
+-  GEOS_LDFLAGS=`$GEOSCONFIG --ldflags`
++  GEOS_LDFLAGS="`$GEOSCONFIG --ldflags` -lgeos_c -lgeos"
+   GEOS_CFLAGS=-I`$GEOSCONFIG --includes`
+ 
+ 
+@@ -18064,7 +18064,7 @@
+   CPPFLAGS="$CPPFLAGS_SAVE"
+   # Ensure we can link against libgeos_c
+   LIBS_SAVE="$LIBS"
+-  LIBS="$GEOS_LDFLAGS"
++  LIBS="$GEOS_LDFLAGS $LIBS"
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing GEOSCoveredBy" >&5
+ $as_echo_n "checking for library containing GEOSCoveredBy... " >&6; }
+ if ${ac_cv_search_GEOSCoveredBy+:} false; then :
+@@ -18124,7 +18124,7 @@
+ fi
+ 
+   LIBS="$LIBS_SAVE"
+-  LIBS="$LIBS $GEOS_LDFLAGS -lgeos_c"
++  LIBS="$GEOS_LDFLAGS $LIBS"
+ 
+   #-----------------------------------------------------------------------
+   #   --enable-controlpoints
+@@ -18589,6 +18589,10 @@
+ 
+ #-----------------------------------------------------------------------
+ 
++if test "$target_alias" = "" ; then
++  target_alias="$host_alias"
++fi
++
+ # Checking for MinGW
+  if test "$target_alias" = "mingw32"; then
+   MINGW_TRUE=
+@@ -18608,13 +18612,16 @@
+ fi
+ 
+ # Checking for Android
+- if test "$target_alias" = "android"; then
++case "$target_alias" in
++*android*)
+   ANDROID_TRUE=
+   ANDROID_FALSE='#'
+-else
++  ;;
++*)
+   ANDROID_TRUE='#'
+   ANDROID_FALSE=
+-fi
++  ;;
++esac
+ 
+ 
+ cat >confcache <<\_ACEOF
+diff -ubr libspatialite.pristine/src/spatialite/spatialite.c libspatialite/src/spatialite/spatialite.c
+--- libspatialite.pristine/src/spatialite/spatialite.c	2015-07-01 02:59:16.000000000 -0400
++++ libspatialite/src/spatialite/spatialite.c	2017-08-30 14:41:32.428582125 -0400
+@@ -29424,6 +29424,7 @@
+ }
+ #endif /* end FREEXL support */
+ 
++#ifndef OMIT_ICONV
+ static void
+ fnct_ImportDBF (sqlite3_context * context, int argc, sqlite3_value ** argv)
+ {
+@@ -29759,6 +29760,7 @@
+     else
+ 	sqlite3_result_int (context, rows);
+ }
++#endif
+ 
+ static void
+ fnct_ExportKML (sqlite3_context * context, int argc, sqlite3_value ** argv)
+@@ -30076,7 +30078,9 @@
+ 	"OR sql LIKE '%XB_StoreXML%' OR sql LIKE '%ImportDXF%' "
+ 	"OR sql LIKE '%ExportDXF%' OR sql LIKE '%ImportDBF%' "
+ 	"OR sql LIKE '%ExportDBF%' OR sql LIKE '%ImportSHP%' "
++#ifndef OMIT_ICONV
+ 	"OR sql LIKE '%ExportSHP%' OR sql LIKE '%ExportKML%' "
++#endif
+ 	"OR sql LIKE '%ExportGeoJSON%' OR sql LIKE '%eval%' "
+ 	"OR sql LIKE '%ImportWFS%' OR sql LIKE '%ImportXLS%')";
+     ret = sqlite3_get_table (sqlite, sql, &results, &rows, &columns, NULL);
+@@ -37236,6 +37240,7 @@
+ 	  sqlite3_create_function_v2 (db, "ExportDXF", 10,
+ 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, cache,
+ 				      fnct_ExportDXF, 0, 0, 0);
++#ifndef OMIT_ICONV
+ 	  sqlite3_create_function_v2 (db, "ImportDBF", 3,
+ 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+ 				      fnct_ImportDBF, 0, 0, 0);
+@@ -37281,6 +37286,7 @@
+ 	  sqlite3_create_function_v2 (db, "ExportSHP", 5,
+ 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+ 				      fnct_ExportSHP, 0, 0, 0);
++#endif
+ 	  sqlite3_create_function_v2 (db, "ExportKML", 3,
+ 				      SQLITE_UTF8 | SQLITE_DETERMINISTIC, 0,
+ 				      fnct_ExportKML, 0, 0, 0);
+--- libspatialite-4.3.0a/makefile.vc	2015-07-01 02:59:16.000000000 -0400
++++ libspatialite/makefile.vc	2017-09-05 22:05:21.397000000 -0400
+@@ -59,7 +59,7 @@
+ 	src\versioninfo\version.obj src\virtualtext\virtualtext.obj
+ SPATIALITE_DLL = spatialite$(VERSION).dll
+ 
+-CFLAGS = /nologo -I.\src\headers -I. -IC:\OSGeo4W\include $(OPTFLAGS)
++CFLAGS = /nologo -I.\src\headers -I. -I$(INSTDIR)\include -I$(INSTDIR)\include\libxml2 $(OPTFLAGS)
+ 
+ default:	all
+ 
+@@ -75,10 +75,10 @@
+ spatialite_i.lib:     $(LIBOBJ)
+ 	link /debug /dll /out:$(SPATIALITE_DLL) \
+ 		/implib:spatialite_i.lib $(LIBOBJ) \
+-		C:\OSGeo4W\lib\proj_i.lib C:\OSGeo4W\lib\geos_c.lib \
+-		C:\OSGeo4w\lib\freexl_i.lib C:\OSGeo4w\lib\iconv.lib \
+-		C:\OSGeo4W\lib\sqlite3_i.lib C:\OSGeo4W\lib\zlib.lib \
+-		C:\OSGeo4W\lib\libxml2.lib
++		$(INSTDIR)\lib\proj_i.lib $(INSTDIR)\lib\geos_c_i.lib \
++		$(INSTDIR)\lib\iconv.dll.lib \
++		$(INSTDIR)\lib\sqlite3_i.lib \
++		$(INSTDIR)\lib\libxml2.lib $(INSTDIR)\lib\zlibwapi.lib
+ 	if exist $(SPATIALITE_DLL).manifest mt -manifest \
+ 		$(SPATIALITE_DLL).manifest -outputresource:$(SPATIALITE_DLL);2
+ 		
+--- libspatialite-4.3.0a/nmake.opt	2015-07-01 02:59:16.000000000 -0400
++++ libspatialite/nmake.opt	2017-09-05 22:15:43.990000000 -0400
+@@ -1,9 +1,11 @@
+ # Directory tree where SpatiaLite will be installed.
++!IFNDEF INSTDIR
+ INSTDIR=C:\OSGeo4W
++!ENDIF
+ 
+ # Uncomment the first for an optimized build, or the second for debug.
+ OPTFLAGS=	/nologo /Ox /fp:precise /W3 /MD /D_CRT_SECURE_NO_WARNINGS \
+-		/DDLL_EXPORT /DYY_NO_UNISTD_H
++		/DDLL_EXPORT /DYY_NO_UNISTD_H /DZLIB_WINAPI
+ #OPTFLAGS=	/nologo /Zi /MD /Fdspatialite.pdb /DDLL_EXPORT
+ 
+ # Set the version number for the DLL.  Normally we leave this blank since
+--- libspatialite.pristine/config-msvc.h	2015-07-01 02:59:16.000000000 -0400
++++ libspatialite/config-msvc.h	2015-05-22 13:07:07.000000000 -0400
+@@ -24,19 +21,19 @@
+ /* #undef GEOS_TRUNK */
+ 
+ /* Define to 1 if you have the <dlfcn.h> header file. */
+-#define HAVE_DLFCN_H 1
++/* #undef HAVE_DLFCN_H */
+ 
+ /* Define to 1 if you have the <fcntl.h> header file. */
+ #define HAVE_FCNTL_H 1
+ 
+ /* Define to 1 if you have the `fdatasync' function. */
+-#define HAVE_FDATASYNC 1
++/* #undef HAVE_FDATASYNC */
+ 
+ /* Define to 1 if you have the <float.h> header file. */
+ #define HAVE_FLOAT_H 1
+ 
+ /* Define to 1 if you have the <freexl.h> header file. */
+-#define HAVE_FREEXL_H 1
++/* #define HAVE_FREEXL_H 1 */
+ 
+ /* Define to 1 if you have the `ftruncate' function. */
+ #define HAVE_FTRUNCATE 1
+@@ -57,7 +54,7 @@
+ #define HAVE_INTTYPES_H 1
+ 
+ /* Define to 1 if you have the <liblwgeom.h> header file. */
+-/* #undef HAVE_LIBLWGEOM_H */
++#define HAVE_LIBLWGEOM_H 1
+ 
+ /* Define to 1 if you have the `sqlite3' library (-lsqlite3). */
+ #define HAVE_LIBSQLITE3 1
+@@ -66,11 +63,11 @@
+ #define HAVE_LIBZ 1
+ 
+ /* Define to 1 if you have the `localtime_r' function. */
+-#define HAVE_LOCALTIME_R 1
++/* #undef HAVE_LOCALTIME_R */
+ 
+ /* Define to 1 if `lstat' has the bug that it succeeds when given the
+    zero-length file name argument. */
+-/* #undef HAVE_LSTAT_EMPTY_STRING_BUG */
++#define HAVE_LSTAT_EMPTY_STRING_BUG 1
+ 
+ /* Define to 1 if you have the <math.h> header file. */
+ #define HAVE_MATH_H 1
+@@ -94,7 +91,7 @@
+ #define HAVE_SQLITE3_H 1
+ 
+ /* Define to 1 if you have the `sqrt' function. */
+-/* #undef HAVE_SQRT */
++#define HAVE_SQRT 1
+ 
+ /* Define to 1 if `stat' has the bug that it succeeds when given the
+    zero-length file name argument. */
+@@ -113,7 +110,7 @@
+ #define HAVE_STDLIB_H 1
+ 
+ /* Define to 1 if you have the `strcasecmp' function. */
+-#define HAVE_STRCASECMP 1
++/* #undef HAVE_STRCASECMP */
+ 
+ /* Define to 1 if you have the `strerror' function. */
+ #define HAVE_STRERROR 1
+@@ -128,7 +125,7 @@
+ #define HAVE_STRING_H 1
+ 
+ /* Define to 1 if you have the `strncasecmp' function. */
+-#define HAVE_STRNCASECMP 1
++/* #undef HAVE_STRNCASECMP */
+ 
+ /* Define to 1 if you have the `strstr' function. */
+ #define HAVE_STRSTR 1
+@@ -143,14 +140,14 @@
+ #define HAVE_SYS_TYPES_H 1
+ 
+ /* Define to 1 if you have the <unistd.h> header file. */
+-#define HAVE_UNISTD_H 1
++/* #define HAVE_UNISTD_H 1 */
+ 
+ /* Define to 1 if you have the <zlib.h> header file. */
+ #define HAVE_ZLIB_H 1
+ 
+ /* Define to 1 if `lstat' dereferences a symlink specified with a trailing
+    slash. */
+-#define LSTAT_FOLLOWS_SLASHED_SYMLINK 1
++/* #undef LSTAT_FOLLOWS_SLASHED_SYMLINK */
+ 
+ /* Define to the sub-directory in which libtool stores uninstalled libraries.
+    */
+@@ -163,7 +160,7 @@
+ /* #undef OMIT_EPSG */
+ 
+ /* Should be defined in order to disable FREEXL support. */
+-/* #undef OMIT_FREEXL */
++#define OMIT_FREEXL 1
+ 
+ /* Should be defined in order to disable GEOCALLBACKS support. */
+ #define OMIT_GEOCALLBACKS 1
+--- libspatialite-4.3.0a/src/gaiageo/gg_extras.c	2015-07-01 02:59:16.000000000 -0400
++++ libspatialite/src/gaiageo/gg_extras.c	2017-09-07 11:24:11.006802000 -0400
+@@ -59,7 +59,7 @@
+ #include <spatialite/sqlite.h>
+ #include <spatialite/gaiageo.h>
+ 
+-#if defined(_WIN32) && !defined(__MINGW32__)
++#if defined(_WIN32) && !(defined(__MINGW32__) || (_MSV_VER < 1800))
+ static double
+ rint (double x)
+ {

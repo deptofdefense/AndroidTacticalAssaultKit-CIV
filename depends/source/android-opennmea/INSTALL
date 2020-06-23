@@ -1,0 +1,4 @@
+OpenNMEA Installation Instructions
+----------------------------------
+
+Copy lib/OpenNMEA.jar to your_jre_path/lib/ext, or import the contents of src into your project. That's all there is to it!

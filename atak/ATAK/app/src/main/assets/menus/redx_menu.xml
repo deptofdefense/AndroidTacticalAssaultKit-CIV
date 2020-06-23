@@ -1,0 +1,45 @@
+<menu buttonRadius='65' buttonSpan='45' buttonWidth='90' buttonBg='bgs/button.xml'>
+
+    <button angle='-90' icon='icons/delete.png'
+            onClick='actions/redx_remove.xml' />
+
+    <button icon='icons/target.png'
+            prefKey='spi_drop_point_type'
+            submenu='menus/drop_point_submenu.xml'
+            onClick='actions/dropspitarget.xml' />
+            
+    <button onClick='actions/drop9Line.xml'
+            icon='icons/cas.png'
+            dependsOnCapability='capability.fires'
+            prefKey='nineline_default_menu'
+            submenu='menus/cffdropper_submenu.xml'
+            disableSwap='false'/>
+
+    <button onClick='actions/redx_fah.xml'
+            icon='icons/fah_redx.png'
+            dependsOnCapability='capability.fires'
+            prefKey='redxfah_default_menu'
+            submenu='menus/redx_fah_submenu.xml'
+            disableSwap='false'/>
+            
+    <button icon='icons/pairing_line.png'
+            onClick='actions/pairingline.xml' />
+
+    <button icon='icons/move.png'
+            submenu='menus/mgrs_entry_submenu.xml'
+            disableSwap='true'
+            disableIconSwap='true'
+            onClick='actions/move.xml'
+            disabled='!{${preciseMove}}' />
+
+    <button icon='icons/compass_rose.png'
+            selected='${hostileBearingCircle}'
+            onClick='actions/hostile_compass.xml' />
+
+    <button icon='icons/pairing_line_to_self.png'
+            onClick='actions/pairinglineself.xml'
+            selected='${pairinglineself_on}' />
+
+            
+
+</menu>

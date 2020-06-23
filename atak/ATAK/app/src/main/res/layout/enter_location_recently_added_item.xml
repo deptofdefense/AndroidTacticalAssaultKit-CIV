@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+        
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="3"
+        android:paddingStart="5dp">
+    
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:id="@+id/enterLocationRecentlyAddedItemIcon"
+            android:layout_gravity="center"
+            android:layout_marginEnd="5dp"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp" />
+           
+        <LinearLayout
+             android:layout_width="0dp"
+             android:layout_height="wrap_content"
+             android:paddingTop="3dp"
+             android:paddingBottom="3dp"
+             android:orientation="vertical"
+             android:layout_weight="1.75">
+             
+             <TextView
+                 android:id="@+id/enterLocationRecentlyAddedItemTitle"
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:layout_gravity="start"
+                 android:maxLines="2"
+                 android:minLines="1"
+                 android:maxEms="15"
+                 android:text="@string/title_lower"
+                 android:textSize="@dimen/draper_small_font"
+                 android:textColor="#ffffffff" />
+             
+             <TextView
+                 android:id="@+id/enterLocationRecentlyAddedItemDesc"
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:layout_gravity="start"
+                 android:textColor="#FFF"
+                 android:text="@string/dashdashdash"
+                 android:textSize="@dimen/draper_small_font" />
+             
+              <TextView
+                android:id="@+id/enterLocationRecentlyAddedItemElText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:text="@string/ft_msl2"
+                android:textColor="#FFF"
+                android:textSize="@dimen/draper_small_font" />
+            
+         </LinearLayout>
+     
+        <RelativeLayout
+            android:layout_weight="1.25"
+              android:layout_width="0dp"
+              android:layout_height="match_parent">
+          
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_alignParentStart="true"
+                android:orientation="vertical">
+              
+                <TextView
+                    android:id="@+id/enterLocationRecentlyAddedItemDirText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start"
+                    android:maxLines="1"
+                    android:textColor="#FFF"
+                    android:text="@string/_7_0_mi"
+                    android:textSize="@dimen/draper_small_font" />
+            
+                <TextView
+                    android:id="@+id/enterLocationRecentlyAddedItemDirTextDeg"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start"
+                    android:textColor="#FFF"
+                    android:text="@string/details_text34"
+                    android:textSize="@dimen/draper_small_font" />
+                
+            </LinearLayout>
+
+            <RelativeLayout
+                android:id="@+id/enterLocationRecentlyAddedItemToggleClosed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:paddingEnd="3dp"
+                android:paddingStart="10dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/toggle_arrows_closed" />
+
+            </RelativeLayout>
+
+        </RelativeLayout>
+
+    </LinearLayout>
+        
+    <RelativeLayout 
+        android:id="@+id/enterLocationRecentlyAddedItemOptionsView"
+           android:layout_width="fill_parent"
+           android:layout_height="match_parent">
+        
+        <LinearLayout
+            android:id="@+id/enterLocationRecentlyAddedItemOptions"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_alignParentEnd="true"
+            android:background="#EEE"
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/enterLocationRecentlyAddedItemSend"
+                style="@style/darkButton" android:padding="6dp"
+                android:layout_gravity="center_vertical"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:textColor="#FFF"
+                android:text="@string/send_caps"
+                android:textSize="@dimen/draper_font" />
+
+            <Button
+                android:id="@+id/enterLocationRecentlyAddedItemRename"
+                style="@style/darkButton" android:padding="6dp"
+                android:layout_gravity="center_vertical"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:textColor="#FFF"
+                android:text="@string/rename_caps"
+                android:textSize="@dimen/draper_font" />
+        
+            <Button
+                android:id="@+id/enterLocationRecentlyAddedItemDelete"
+                style="@style/darkButton" android:padding="6dp"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:textColor="#FFF"
+                android:text="@string/del"
+                android:textSize="@dimen/draper_font" />
+
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/enterLocationRecentlyAddedItemToggleOpen"
+            android:layout_width="24dp"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:adjustViewBounds="true"
+            android:scaleType="centerInside"
+            android:layout_toStartOf="@id/enterLocationRecentlyAddedItemOptions"
+            android:src="@drawable/toggle_arrows_open" />
+
+    </RelativeLayout>
+
+</FrameLayout>

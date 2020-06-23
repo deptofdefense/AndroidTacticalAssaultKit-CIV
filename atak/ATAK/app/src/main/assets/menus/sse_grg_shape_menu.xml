@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<menu buttonRadius='65' buttonSpan='90' buttonWidth='90' buttonBg='bgs/button.xml'>
+    
+    <button angle='-90'
+            icon='icons/delete.png'
+            onClick='actions/grg_remove.xml' />
+    
+    <button icon='icons/details_progress.png'
+            onClick='actions/grg_details.xml'/>
+     
+    <button icon='icons/sse_survey_progress.xml'
+            selectable='true'
+            onClick='actions/sse_survey_completed_toggle.xml'
+            selected='${sseCompleted}'/>
+
+    <button icon='icons/edit2.png'
+            onClick='actions/grg_edit.xml' />
+
+</menu>

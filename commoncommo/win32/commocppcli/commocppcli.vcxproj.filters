@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="api headers">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="impl files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\commo_cli.h">
+      <Filter>api headers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\commoresult_cli.h">
+      <Filter>api headers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\netinterface_cli.h">
+      <Filter>api headers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\commologger_cli.h">
+      <Filter>api headers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\contactuid_cli.h">
+      <Filter>api headers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\cotmessageio_cli.h">
+      <Filter>api headers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\missionpackage_cli.h">
+      <Filter>api headers</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\loggerimpl.h">
+      <Filter>impl files</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\missionpackageimpl.h">
+      <Filter>impl files</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\cotmessageioimpl.h">
+      <Filter>impl files</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\contactuidimpl.h">
+      <Filter>impl files</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\netinterfaceimpl.h">
+      <Filter>impl files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\simplefileio_cli.h">
+      <Filter>api headers</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\simplefileioimpl.h">
+      <Filter>impl files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\cloudio_cli.h">
+      <Filter>api headers</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\commoimpl.h">
+      <Filter>impl files</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\cloudioimpl.h">
+      <Filter>impl files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="impl\commo_cli.cpp">
+      <Filter>impl files</Filter>
+    </ClCompile>
+    <ClCompile Include="impl\loggerimpl.cpp">
+      <Filter>impl files</Filter>
+    </ClCompile>
+    <ClCompile Include="impl\missionpackageimpl.cpp">
+      <Filter>impl files</Filter>
+    </ClCompile>
+    <ClCompile Include="impl\cotmessageioimpl.cpp">
+      <Filter>impl files</Filter>
+    </ClCompile>
+    <ClCompile Include="impl\contactuidimpl.cpp">
+      <Filter>impl files</Filter>
+    </ClCompile>
+    <ClCompile Include="impl\netinterfaceimpl.cpp">
+      <Filter>impl files</Filter>
+    </ClCompile>
+    <ClCompile Include="impl\simplefileioimpl.cpp">
+      <Filter>impl files</Filter>
+    </ClCompile>
+    <ClCompile Include="impl\cloudio_cli.cpp">
+      <Filter>impl files</Filter>
+    </ClCompile>
+    <ClCompile Include="impl\cloudioimpl.cpp">
+      <Filter>impl files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

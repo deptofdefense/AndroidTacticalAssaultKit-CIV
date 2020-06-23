@@ -1,0 +1,7 @@
+<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_video"  title="actionbar_videoplayer">
+   <ClickData actionType="click">
+      <broadcast>
+         <action>com.atakmap.android.video.VIDEO_TOOL</action>
+      </broadcast>
+   </ClickData>
+</PersistedActionMenu>

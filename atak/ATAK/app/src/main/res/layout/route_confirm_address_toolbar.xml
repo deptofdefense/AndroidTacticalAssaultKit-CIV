@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<com.atakmap.android.tools.ActionBarView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/auto_space_big">
+
+    <ImageView
+        android:id="@+id/route_address_reject"
+        android:layout_width="@dimen/dropdown_bottom_bar_height"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:padding="@dimen/auto_space_big"
+        android:src="@drawable/x"/>
+    
+    <ImageView
+        android:id="@+id/route_address_accept"
+        android:layout_width="@dimen/dropdown_bottom_bar_height"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:layout_marginStart="@dimen/auto_margin"
+        android:padding="@dimen/auto_space_big"
+        android:src="@drawable/check"/>
+        
+</com.atakmap.android.tools.ActionBarView>
+    

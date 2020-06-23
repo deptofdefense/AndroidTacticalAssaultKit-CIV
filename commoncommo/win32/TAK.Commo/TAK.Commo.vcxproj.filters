@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="impl\commo_cx.cpp">
+      <Filter>impl files</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>impl files</Filter>
+    </ClCompile>
+    <ClCompile Include="impl\loggerimpl.cpp">
+      <Filter>impl files</Filter>
+    </ClCompile>
+    <ClCompile Include="impl\contactuidimpl.cpp">
+      <Filter>impl files</Filter>
+    </ClCompile>
+    <ClCompile Include="impl\cotmessageioimpl.cpp">
+      <Filter>impl files</Filter>
+    </ClCompile>
+    <ClCompile Include="impl\missionpackageimpl.cpp">
+      <Filter>impl files</Filter>
+    </ClCompile>
+    <ClCompile Include="impl\netinterfaceimpl.cpp">
+      <Filter>impl files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\commo_cx.h">
+      <Filter>api headers</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>impl files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\commologger_cx.h">
+      <Filter>api headers</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\loggerimpl.h">
+      <Filter>impl files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\commoresult_cx.h">
+      <Filter>api headers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\contactuid_cx.h">
+      <Filter>api headers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\cotmessageio_cx.h">
+      <Filter>api headers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\missionpackage_cx.h">
+      <Filter>api headers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\netinterface_cx.h">
+      <Filter>api headers</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\contactuidimpl.h">
+      <Filter>impl files</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\cotmessageioimpl.h">
+      <Filter>impl files</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\missionpackageimpl.h">
+      <Filter>impl files</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\netinterfaceimpl.h">
+      <Filter>impl files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="impl files">
+      <UniqueIdentifier>{ea25cf94-8b56-46b2-b271-788236c9a220}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="api headers">
+      <UniqueIdentifier>{56f8d6e5-b83c-4fe4-a883-b34e86c93d9f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

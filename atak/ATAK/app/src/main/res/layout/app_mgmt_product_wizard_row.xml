@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content">
+    <ImageView
+        android:src="@drawable/ic_atak_launcher"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:padding="3dp"
+        android:id="@+id/app_mgmt_row_wizard_icon"/>
+
+    <TextView
+        android:text="@string/title"
+        android:layout_height="wrap_content"
+        android:id="@+id/app_mgmt_row_wizard_title"
+        android:layout_weight="1"
+        android:layout_gravity="center_vertical"
+        android:layout_width="0dp"/>
+</LinearLayout>

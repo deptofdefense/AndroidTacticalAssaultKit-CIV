@@ -1,0 +1,19 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.maps.images.DISPLAY</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+            <string key='imageDir'>${imageCacheDir}</string>
+            <string key='sort'>time</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

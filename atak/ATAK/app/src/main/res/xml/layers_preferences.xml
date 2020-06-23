@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+    android:title="@string/imageryLayerPreferences">
+        <ListPreference 
+            android:entryValues="@array/color_values" 
+            android:entries="@array/color_names" 
+            android:summary="@string/layer_outline_color_summary" 
+            android:key="pref_layer_outline_color" 
+            android:title="@string/layer_outline_color_title" 
+            android:defaultValue="#00ff00" />
+        <CheckBoxPreference 
+            android:title="@string/show_by_default"
+            android:key="prefs_layer_outlines_default_show"
+            android:summary="@string/show_by_default_layers"
+            android:defaultValue="false" />
+    </PreferenceCategory>
+</PreferenceScreen>

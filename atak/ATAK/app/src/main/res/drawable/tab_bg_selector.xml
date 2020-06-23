@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--  Active tab -->
+    <item android:state_selected="true"
+        android:state_pressed="false" android:drawable="@drawable/tab_holo_selected" />
+    <!--  Active Pressed Tab -->
+    <item android:state_selected="true"
+        android:state_pressed="true" android:drawable="@drawable/tab_holo_selected_pressed" />
+    <!--  Inactive Pressed tab -->
+    <item android:state_pressed="true" android:drawable="@drawable/tab_holo_unselected_pressed" />
+    <!--  Default State -->
+    <item android:drawable="@drawable/tab_holo_unselected" />
+</selector>

@@ -1,0 +1,5 @@
+<resources>
+
+    <string translatable="false" name="defaultTrustStorePassword">atakatak</string>
+
+</resources>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RadioGroup
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/select_color_group"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center">
+
+    <com.atakmap.android.gui.ImageRadioButton
+        android:id="@+id/white_btn"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:button="@drawable/whitedot"
+        style="@style/darkButton"/>
+
+    <com.atakmap.android.gui.ImageRadioButton
+        android:id="@+id/blue_btn"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:button="@drawable/bluedot"
+        style="@style/darkButton"/>
+
+    <com.atakmap.android.gui.ImageRadioButton
+        android:id="@+id/green_btn"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:button="@drawable/greendot"
+        style="@style/darkButton"/>
+
+    <com.atakmap.android.gui.ImageRadioButton
+        android:id="@+id/yellow_btn"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:button="@drawable/yellowdot"
+        style="@style/darkButton"/>
+
+    <com.atakmap.android.gui.ImageRadioButton
+        android:id="@+id/red_btn"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:button="@drawable/reddot"
+        style="@style/darkButton"/>
+</RadioGroup>

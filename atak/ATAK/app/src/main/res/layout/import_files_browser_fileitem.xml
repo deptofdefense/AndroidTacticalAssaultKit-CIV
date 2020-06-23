@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center_vertical" >
+    
+    <CheckBox 
+           android:id="@+id/importBrowserFileSelected"
+           android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+       </CheckBox>
+       <Button
+        android:id="@+id/importBrowserIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/draper_small_font"
+        android:textColor="#FFF"
+        android:gravity="center"
+        android:drawableTop="@drawable/import_folder_icon"
+        android:background="@android:color/transparent"/>
+       <TextView 
+        android:id="@+id/importBrowserFileName"
+        android:layout_width="175dip"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/draper_title_font"
+        android:textColor="#FFF"/>
+       <TextView 
+        android:id="@+id/importBrowserModifiedDate"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/draper_title_font"
+        android:textColor="#FFF"
+        android:gravity="end"/>
+    
+</LinearLayout>

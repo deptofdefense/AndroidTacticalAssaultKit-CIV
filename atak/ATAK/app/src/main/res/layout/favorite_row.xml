@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:paddingTop="4dp" >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="match_parent"
+        android:layout_toStartOf="@+id/linearLayout1"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/favTitle"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:text="@string/fav_title"
+            android:textColor="#FFFFFFFF"
+            android:textSize="18sp"
+            android:maxLines="1"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/favLocation"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/favMap"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:maxLines="1"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@id/linearLayout1"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignParentEnd="true"
+        android:orientation="horizontal" >
+
+        <ImageButton
+            style="@style/darkButton"
+            android:id="@+id/favDelete"
+            android:padding="6dp"
+            android:layout_width="52dp"
+            android:layout_height="50dp"
+            android:scaleType="center" />
+
+        <ImageButton
+            android:id="@+id/favEdit"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:scaleType="center" />
+
+        <ImageButton
+            android:id="@+id/favSend"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:scaleType="center" />
+    </LinearLayout>
+
+</RelativeLayout>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent">
+
+
+        <TextView android:id="@+id/manage_ip_name"
+                  android:text="@string/name_lower"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:padding="3dip" 
+                  android:textSize="20sp" 
+                  android:textStyle="bold"/>
+        
+        <TextView android:id="@+id/manage_ip_location"
+                  android:text="@string/desc"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:layout_below="@id/manage_ip_name"
+                  android:padding="3dip" />
+
+</RelativeLayout>

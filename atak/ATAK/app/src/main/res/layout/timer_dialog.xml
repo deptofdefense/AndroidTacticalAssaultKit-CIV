@@ -1,0 +1,122 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <TextView 
+            android:id="@+id/hour"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textSize="48sp"
+            android:text="@string/zedzed" />
+        <TextView 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="48sp"
+            android:text="@string/colon" />
+        <TextView 
+            android:id="@+id/minute"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textSize="48sp"
+            android:text="@string/zedzed" />
+        <TextView 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="48sp"
+            android:text="@string/colon" />
+        <TextView 
+            android:id="@+id/second"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textSize="48sp"
+            android:text="@string/zedzed" />
+        <TextView 
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="48sp"
+            android:text="@string/period" />
+        <TextView 
+            android:id="@+id/millisecond"
+            android:layout_width="wrap_content"
+            android:textColor="@color/white"
+            android:layout_height="wrap_content"
+            android:textSize="48sp"
+            android:text="@string/zed" />
+    </LinearLayout>
+        
+        
+
+    <LinearLayout 
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+      
+           <Button
+                android:id="@+id/timerStart"
+                style="@style/darkButton"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:paddingBottom="6dp"
+                android:paddingTop="6dp"
+                android:text="@string/start"
+                android:textSize="@dimen/fontSize"
+                />
+
+           <Button
+                android:id="@+id/timerPause"
+                style="@style/darkButton"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:paddingBottom="6dp"
+                android:paddingTop="6dp"
+                android:text="@string/pause"
+                android:textSize="@dimen/fontSize"
+                />
+
+           <Button
+                android:id="@+id/timerReset"
+                style="@style/darkButton"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:paddingBottom="6dp"
+                android:paddingTop="6dp"
+                android:text="@string/reset"
+                android:textSize="@dimen/fontSize"
+                />
+
+           <Button
+                android:id="@+id/timerStop"
+                style="@style/darkButton"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:paddingBottom="6dp"
+                android:paddingTop="6dp"
+                android:text="@string/stop"
+                android:textSize="@dimen/fontSize"
+                />
+
+     </LinearLayout>
+     <TextView 
+        android:id="@+id/clock"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:textSize="20sp"
+        android:text=""
+        android:gravity="center" />
+
+</LinearLayout>

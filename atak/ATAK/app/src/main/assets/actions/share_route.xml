@@ -1,0 +1,14 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.ROUTE_SHARE</action>
+        <extras>
+            <string key='routeUID'>${routeUID}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_COORDS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content">
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:fadeScrollbars="false"
+        android:layout_height="fill_parent"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+
+        <RelativeLayout
+            android:id="@+id/contactInfoTeamRoleLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/contactInfoTeamRoleLabel"
+                android:layout_alignParentTop="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/draper_font"
+                android:textColor="@color/heading_yellow"
+                android:text="@string/role"
+                android:layout_marginEnd="5dip"/>
+            <TextView
+                android:id="@+id/contactInfoTeamRole"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent"
+                android:gravity="start"
+                android:text="@string/role"
+                android:textColor="#FFF"
+                android:layout_below="@id/contactInfoTeamRoleLabel" />
+            <!--<ImageButton-->
+                <!--android:id="@+id/contact_info_fullnameEdit"-->
+                <!--style="@style/darkButton" android:padding="6dp"-->
+                <!--android:layout_width="32dp"-->
+                <!--android:layout_height="32dp"-->
+                <!--android:layout_alignParentRight="true"-->
+                <!--android:src="@drawable/takchat_edit"/>-->
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:padding="3dp"
+                android:layout_below="@id/contactInfoTeamRole" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/contactInfoAppVersionLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/contactInfoAppVersionLabel"
+                android:layout_alignParentTop="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/draper_font"
+                android:textColor="@color/heading_yellow"
+                android:text="@string/version"
+                android:layout_marginEnd="5dip"/>
+            <TextView
+                android:id="@+id/contactInfoAppVersion"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent"
+                android:layout_below="@id/contactInfoAppVersionLabel"
+                android:gravity="start"
+                android:text="@string/version"
+                android:textColor="#FFF" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:padding="1dp"
+                android:layout_below="@id/contactInfoAppVersion"/>
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/contactInfoNodeTypeLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/contactInfoNodeTypeLabel"
+                android:layout_alignParentTop="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/draper_font"
+                android:textColor="@color/heading_yellow"
+                android:text="@string/node_type"
+                android:layout_marginEnd="5dip"/>
+            <TextView
+                android:id="@+id/contactInfoNodeType"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent"
+                android:layout_below="@id/contactInfoNodeTypeLabel"
+                android:gravity="start"
+                android:text="@string/node_type"
+                android:textColor="#FFF" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:padding="1dp"
+                android:layout_below="@id/contactInfoNodeType"/>
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/contactInfoDefaultConnectorLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/contactInfoDefaultConnectorLabel"
+                android:layout_alignParentTop="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/draper_font"
+                android:textColor="@color/heading_yellow"
+                android:text="@string/default_connector"
+                android:layout_marginEnd="5dip"/>
+            <LinearLayout
+                android:layout_below="@id/contactInfoDefaultConnectorLabel"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/contactInfoDefaultConnectorIcon"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:padding="3dp"
+                    android:src="@drawable/email_icon"
+                    android:scaleType="fitCenter"
+                    android:adjustViewBounds="false" />
+
+                <TextView
+                    android:id="@+id/contactInfoDefaultConnectorText"
+                    android:layout_height="wrap_content"
+                    android:layout_width="0dip"
+                    android:layout_weight="1"
+                    android:gravity="start|center_vertical"
+                    android:text="@string/default_connector" />
+
+                <ImageView
+                    android:id="@+id/contactInfoDefaultConnectorProfile"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:padding="3dp"
+                    android:src="@drawable/ic_profile_white"
+                    android:scaleType="fitCenter"
+                    style="@style/darkButton"/>
+
+                <ImageButton
+                    android:id="@+id/contactInfoDefaultConnectorDetails"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:padding="3dp"
+                    android:src="@drawable/details"
+                    android:scaleType="fitCenter"
+                    style="@style/darkButton" />
+            </LinearLayout>
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:padding="1dp"/>
+
+        <RelativeLayout
+            android:id="@+id/contactInfoLastSeenTextLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/contactInfoLastSeenTextLabel"
+                android:layout_alignParentTop="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/draper_font"
+                android:textColor="@color/heading_yellow"
+                android:text="@string/last_report"
+                android:layout_marginEnd="5dip"/>
+            <TextView
+                android:id="@+id/contactInfoLastSeenText"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent"
+                android:layout_below="@id/contactInfoLastSeenTextLabel"
+                android:gravity="start"
+                android:text="@string/last_report"
+                android:textColor="#FFF" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:padding="1dp"
+                android:layout_below="@id/contactInfoLastSeenText" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/contactInfoBatteryLevelTextLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/contactInfoBatteryLevelTextLabel"
+                android:layout_alignParentTop="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/draper_font"
+                android:textColor="@color/heading_yellow"
+                android:text="@string/battery"
+                android:layout_marginEnd="5dip"/>
+            <TextView
+                android:id="@+id/contactInfoBatteryLevelText"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent"
+                android:layout_below="@id/contactInfoBatteryLevelTextLabel"
+                android:gravity="start"
+                android:text="@string/battery"
+                android:textColor="#FFF" />
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="3dp"
+                android:padding="1dp"
+                android:layout_below="@id/contactInfoBatteryLevelText"/>
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/contactInfoAvatarLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/contactInfoAvatarLabel"
+                android:layout_alignParentTop="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="8sp"
+                android:text="@string/profile_pic"
+                android:layout_marginEnd="5dip"/>
+
+            <ImageView
+                android:id="@+id/contactInfoAvatarPic"
+                android:layout_width="128dp"
+                android:layout_height="128dp"
+                android:src="@drawable/ic_menu_contact"
+                android:layout_gravity="center_horizontal"
+                android:layout_centerHorizontal="true"
+                android:layout_below="@id/contactInfoAvatarLabel"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:padding="3dp"
+                android:layout_below="@id/contactInfoAvatarPic"/>
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/contactInfoAdditionalProfilesLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/contactInfoAdditionalProfilesLabel"
+                android:layout_alignParentTop="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="8sp"
+                android:text="@string/additional_profiles"
+                android:layout_marginEnd="5dip"/>
+
+            <ImageView
+                android:id="@+id/contactInfoAdditionalProfilesIcon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:padding="3dp"
+                android:src="@drawable/email_icon"
+                android:scaleType="fitCenter"
+                style="@style/darkButton"
+                android:adjustViewBounds="false"
+                android:layout_below="@id/contactInfoAdditionalProfilesLabel"
+                android:layout_alignParentStart="true"/>
+        </RelativeLayout>
+    </LinearLayout>
+    </ScrollView>
+</RelativeLayout>

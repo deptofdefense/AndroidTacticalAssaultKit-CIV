@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<com.atakmap.android.tools.ActionBarView xmlns:android="http://schemas.android.com/apk/res/android"
+
+                                         android:layout_alignParentStart="true"
+                                         android:layout_width="wrap_content"
+
+                                         android:gravity="center|top"
+                                         android:layout_weight="1"
+                                         android:layout_height="fill_parent"
+                                         android:orientation="vertical"  >
+                    
+        <Button    
+            android:id="@+id/reverseButton"
+            style="@style/darkButton"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:text="@string/reverse_nav"
+            android:background="@drawable/btn_gray"
+            android:enabled="true"
+            android:textSize="13sp"
+        />
+        
+        <Button    
+            android:id="@+id/nextButton"
+            style="@style/darkButton"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:text="@string/next"
+            android:background="@drawable/btn_gray"
+            android:enabled="true"
+        />        
+        
+        <Button    
+            android:id="@+id/previousButton"
+            style="@style/darkButton"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:text="@string/prev_nav"
+            android:background="@drawable/btn_gray"
+            android:enabled="true"
+        />
+
+        <Button
+            style="@style/darkButton"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:text="@string/hide_nav"
+            android:background="@drawable/btn_gray"
+            android:enabled="true"/>
+        
+        <Button
+            style="@style/darkButton"
+            android:id="@+id/doneButton"
+            android:layout_width="70dp"
+            android:layout_height="70dp"
+            android:text="@string/quit_nav"
+            android:background="@drawable/btn_gray"
+            android:enabled="true"/>
+        
+        
+</com.atakmap.android.tools.ActionBarView>
+    

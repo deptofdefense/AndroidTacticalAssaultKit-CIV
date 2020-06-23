@@ -1,0 +1,33 @@
+--- expat-pristine/conftools/config.sub	2018-05-30 13:52:51.774295548 -0400
++++ expat/conftools/config.sub	2018-05-30 13:54:00.595802594 -0400
+@@ -246,6 +246,7 @@
+ 	| alpha64 | alpha64ev[4-8] | alpha64ev56 | alpha64ev6[78] | alpha64pca5[67] \
+ 	| am33_2.0 \
+ 	| arc | arm | arm[bl]e | arme[lb] | armv[2345] | armv[345][lb] | avr | avr32 \
++	| aarch64 \
+ 	| bfin \
+ 	| c4x | clipper \
+ 	| d10v | d30v | dlx | dsp16xx | dvp \
+--- expat-pristine/xmlwf/readfilemap.c	2009-11-12 11:51:39.000000000 -0500
++++ expat/xmlwf/readfilemap.c	2016-06-02 14:30:49.000000000 -0400
+@@ -16,7 +16,19 @@
+ #endif
+ #endif
+ 
+-#ifdef __BEOS__
++#ifdef COMPILED_FROM_DSP
++#include "winconfig.h"
++#elif defined(MACOS_CLASSIC)
++#include "macconfig.h"
++#elif defined(__amigaos__)
++#include "amigaconfig.h"
++#elif defined(__WATCOMC__)
++#include "watcomconfig.h"
++#elif defined(HAVE_EXPAT_CONFIG_H)
++#include <expat_config.h>
++#endif /* ndef COMPILED_FROM_DSP */
++
++#ifdef HAVE_UNISTD_H
+ #include <unistd.h>
+ #endif
+ 

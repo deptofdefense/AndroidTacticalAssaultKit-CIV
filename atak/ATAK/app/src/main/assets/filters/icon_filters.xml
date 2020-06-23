@@ -1,0 +1,74 @@
+<filters>
+    <filter type='b'>icons/b.png</filter>
+    <filter type='b-i'>icons/document.png</filter>
+    <filter type='b-i-x-i'>icons/camera.png</filter>
+
+    <filter type='b-a-g'>icons/alarm-geophysical.png</filter>
+    <filter type='b-a-o-opn'>icons/alarm-open.png</filter>
+    <filter type='b-a-o-pan'>icons/alarm-panic.png</filter>
+    <filter type='b-a-o-tbl'>icons/alarm-trouble.png</filter>
+
+
+    <filter type='u-d-z-c-c'>icons/reference_point.png</filter>  <!-- DZ circle center point -->
+    <filter type='u-r-b-c-c'>icons/reference_point.png</filter>  <!-- R+B circle center point -->
+    <filter type='u-r-b-bullseye'>icons/no_icon.png</filter>  <!-- R+B bullseye center point -->
+    <filter type='u-d-c-c'>icons/reference_point.png</filter>  <!-- Drawing circle center point -->
+    <filter type='b-m-p-s-p-i'>icons/b-m-p-s-p-i.png</filter>
+    <filter type='b-m-p-s-p-loc'>icons/sensor_location.png</filter>
+    <filter type='b-m-p-s-p-op'>icons/binos.png</filter>
+
+    <filter type='b-m-p-a' >icons/aimpoint.png</filter>
+    <filter type='b-m-p-c-z'>icons/blacktriangle.png</filter>
+    <filter type='b-m-p-w'>icons/gugpgpow------.png</filter>
+    <filter type='b-m-p-c-ip'>icons/piicon_initial.png</filter>
+    <filter type='b-m-p-c-cp'>icons/piicon_contact.png</filter>
+    <filter type='b-m-p-s-m'>icons/reference_point.png</filter>
+    <filter type='t-k-d'>icons/ninelineicon.png</filter>    
+    <filter type='b-m-p-j-basic'>icons/dip.png</filter>    
+    <filter type='b-m-p-j-dip'>icons/dip.png</filter>
+    <filter type='b-m-p-j-alt'>icons/alt_dip.png</filter>
+    <filter type='b-m-p-j-alt-yellow'>icons/alt_dip.png</filter>
+    <filter type='b-m-p-j-alt-green'>icons/alt_dip_green.png</filter>
+    <filter type='b-m-p-j-alt-gray'>icons/alt_dip_gray.png</filter>
+    <filter type='b-m-p-j-open'>icons/open.png</filter>
+    <filter type='b-m-p-j-prp'>icons/reference_point.png</filter>
+    <filter type='b-m-p-j-virtual-dz'>icons/virtual_dz.png</filter>
+    <filter type='b-m-p-j-last-out'>icons/redlight.png</filter>
+    <filter type='b-m-p-j-height-marker'>icons/reference_point.png</filter>
+    <filter type='b-m-p-j-height-marker-yellow'>icons/height_marker_yellow.png</filter>
+    <filter type='b-m-p-j-height-marker-red'>icons/height_marker_red.png</filter>
+    <filter type='b-m-p-j-harp'>icons/stoplight.png</filter>
+    <filter type='b-m-p-j-height-marker-gone'>icons/no_icon.png</filter>
+    <filter type='b-m-p-j-harp-ring'>icons/no_icon.png</filter>
+    <filter type='b-m-p-j-wind'>icons/b.png</filter>
+    <filter type='b-m-p-j-lp'>icons/reference_point.png</filter>
+    <filter type='b-m-p-w-GOTO'>icons/green_flag.png</filter>
+
+    <filter type='t-s'>icons/b.png</filter>
+
+    <filter type='inv_waypoint'>icons/cornerpoint.png</filter>
+    <filter type='vsd-marker'>icons/viewshed_eye.png</filter>
+    <filter type='u-X'>icons/reference_point.png</filter>
+    <filter type='u-d-p'>icons/reference_point.png</filter>
+    <filter type='u-o-p'>icons/reference_point.png</filter>
+    <filter type='line_marker'>icons/reference_point.png</filter>
+    <filter type='end_u-o-r'>icons/reference_point.png</filter>
+    <filter type='center_'>icons/reference_point.png</filter>
+    <filter type='crit_marker'>icons/reference_point.png</filter>
+    <filter type='line_corner'>icons/reference_point.png</filter>
+    <filter type='square_corner'>icons/reference_point.png</filter>
+    <filter type='square_marker'>icons/reference_point.png</filter>
+    <filter type='corner_'>icons/cornerpoint.png</filter>
+    <filter type='side_'>icons/middlepoint.png</filter>
+    <filter type='shape_marker'>icons/reference_point.png</filter>
+    <filter type='a-h-G-E-S-t'>icons/ttl-icon.png</filter>
+    <filter type='a-f-G-E-S-t'>icons/ttl-icon-f.png</filter>
+    <filter type='a-u-G-E-S-t'>icons/ttl-icon-u.png</filter>
+    <filter type='a-n-G-E-S-t'>icons/ttl-icon-n.png</filter>
+    <filter type='a-f-G-I-U-exp'>icons/green_flag.png</filter>
+    <filter type='center_b-e-r-u-d-r'>icons/sync_search.png</filter>
+
+    <filter type='stack'>icons/cas_stack.png</filter>
+
+    <filter type="b-t-i-a-A">icons/aircraft_blue.png</filter>
+</filters>

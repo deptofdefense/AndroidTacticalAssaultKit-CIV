@@ -1,0 +1,18 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.maps.DRAW_COMPASS_OVERLAY</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+            <string key='compassOverlay'>true</string>
+        </extras>
+    </broadcast>
+</set>

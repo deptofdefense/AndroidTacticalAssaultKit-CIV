@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+  xmlns:android="http://schemas.android.com/apk/res/android">
+      <PreferenceCategory android:title="@string/myDevice">
+          <Preference
+              android:icon="@drawable/my_prefs_settings"
+              android:title="@string/my_callsign"
+              android:summary="@string/callsign_pref_summary2"
+              android:key="myIdentity"/>
+          <Preference android:title="@string/my_servers"
+              android:icon="@drawable/ic_atak_launcher"
+              android:summary="@string/my_servers_summary"
+              android:key="myServers"/>
+          <Preference android:title="@string/app_mgmt_text1"
+              android:icon="@drawable/settings_menu_apps"
+              android:summary="@string/my_plugins_summary"
+              android:key="myPlugins"/>
+          <CheckBoxPreference
+              android:title="@string/preferences_text268"
+              android:summary="@string/preferences_text269"
+              android:defaultValue="false"
+              android:key="atakControlBluetooth"
+              android:icon="@drawable/bluetooth"/>
+          <Preference
+              android:title="@string/toolPreferences"
+              android:key="toolsPref"
+              android:summary="@string/preferences_text201"
+              android:icon="@drawable/ic_menu_tools"/>
+          <Preference
+              android:title="@string/displayPreferences"
+              android:key="generalDisplayPref"
+              android:summary="@string/preferences_text199"
+              android:icon="@drawable/ic_display_settings" />
+      </PreferenceCategory>
+
+      <PreferenceCategory android:title="@string/mySupport">
+        <Preference
+            android:title="@string/morePreferences"
+            android:key="atakControlOptions"
+            android:summary="@string/preferences_text2020"
+            android:icon="@drawable/ic_menu_settings"/>
+          <Preference android:title="@string/support"
+              android:key="documentation"
+              android:summary="@string/preferences_text203"
+              android:icon="@drawable/ic_menu_help"/>
+          <Preference android:title="@string/about"
+              android:key="about"
+              android:icon="@drawable/ic_atak_launcher"/>
+    </PreferenceCategory>
+</PreferenceScreen>

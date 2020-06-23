@@ -1,0 +1,13 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.maps.bullseye.TOGGLE_BEARING</action>
+        <extras>
+            <string key='marker_uid'>${uid}</string>
+            <string key='toggle_bearing'>${true}</string>
+            <string key='degrees'>${true}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

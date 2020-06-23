@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TableLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/auto_space_big"
+    android:orientation="vertical">
+
+    <!-- Model path -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/heading_yellow"
+        android:text="@string/model"
+        android:textSize="@dimen/draper_font"/>
+    <TextView
+        android:id="@+id/modelPath"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="@dimen/fontTiny"/>
+
+    <!-- Rotation -->
+    <TableRow
+        android:gravity="center_vertical"
+        android:layout_marginTop="@dimen/auto_margin">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/auto_margin"
+            android:textColor="@color/heading_yellow"
+            android:text="@string/dimensions"
+            android:textSize="@dimen/draper_font"/>
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+            <TextView
+                android:id="@+id/modelLength"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/length_fmt"
+                android:textSize="@dimen/fontTiny"/>
+            <TextView
+                android:id="@+id/modelWidth"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/width_fmt"
+                android:textSize="@dimen/fontTiny"/>
+            <TextView
+                android:id="@+id/modelHeight"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/height_fmt"
+                android:textSize="@dimen/fontTiny"/>
+        </LinearLayout>
+    </TableRow>
+
+    <!-- Rotation -->
+    <TableRow
+        android:gravity="center_vertical"
+        android:layout_marginTop="@dimen/auto_margin">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/auto_margin"
+            android:textColor="@color/heading_yellow"
+            android:text="@string/rotation"
+            android:textSize="@dimen/draper_font"/>
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+            <TextView
+                android:id="@+id/modelPitch"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/pitch_fmt"
+                android:textSize="@dimen/fontTiny"/>
+            <TextView
+                android:id="@+id/modelHeading"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/heading_fmt"
+                android:textSize="@dimen/fontTiny"/>
+            <TextView
+                android:id="@+id/modelRoll"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="@string/roll_fmt"
+                android:textSize="@dimen/fontTiny"/>
+        </LinearLayout>
+    </TableRow>
+
+    <!-- Scale -->
+    <TableRow
+        android:gravity="center_vertical"
+        android:layout_marginTop="@dimen/auto_margin"
+        android:layout_marginBottom="@dimen/auto_margin">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/auto_margin"
+            android:textColor="@color/heading_yellow"
+            android:text="@string/scale"
+            android:textSize="@dimen/draper_font"/>
+        <TextView
+            android:id="@+id/modelScale"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="@string/scale_fmt"
+            android:textSize="@dimen/fontTiny"
+            android:textColor="@color/white"/>
+    </TableRow>
+
+</TableLayout>

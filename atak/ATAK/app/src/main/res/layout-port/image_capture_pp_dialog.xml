@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/image_dlg_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/auto_space_big"
+        android:gravity="center"
+        android:text="@string/imgcap_output_title"/>
+
+    <LinearLayout
+        android:id="@+id/image_dlg_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="6"
+        android:orientation="vertical"
+        android:visibility="visible">
+
+        <ImageView
+            android:id="@+id/image_dlg_bitmap"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="3"
+            android:contentDescription="@string/imgcap_output_title"
+            android:background="#000"/>
+
+        <ScrollView
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:fadeScrollbars="false"
+            android:background="#222">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/scroll_margin"
+                android:layout_marginStart="@dimen/scroll_margin"
+                android:paddingTop="@dimen/auto_space"
+                android:orientation="vertical">
+
+                <CheckBox
+                    android:id="@+id/viz_cap_show_imagery"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#FFF"
+                    android:textSize="@dimen/smallFont"
+                    android:text="@string/map_imagery"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#FFF"
+                    android:textSize="@dimen/smallFont"
+                    android:text="@string/line_weight"/>
+
+                <EditText
+                    android:id="@+id/viz_cap_line_weight"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:maxLines="1"
+                    android:textColor="@color/light_blue"
+                    android:textSize="@dimen/smallFont"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#FFF"
+                    android:textSize="@dimen/smallFont"
+                    android:text="@string/icon_size"/>
+
+                <EditText
+                    android:id="@+id/viz_cap_icon_size"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:maxLines="1"
+                    android:textColor="@color/light_blue"
+                    android:textSize="@dimen/smallFont"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#FFF"
+                    android:textSize="@dimen/smallFont"
+                    android:text="@string/label_size"/>
+
+                <EditText
+                    android:id="@+id/viz_cap_label_size"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="number"
+                    android:maxLines="1"
+                    android:textColor="@color/light_blue"
+                    android:textSize="@dimen/smallFont"/>
+
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/image_dlg_loader"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="6"
+        android:padding="64dp"
+        android:indeterminate="true"
+        android:visibility="gone"/>
+
+</LinearLayout>

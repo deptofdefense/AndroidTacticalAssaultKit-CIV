@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+
+    <LinearLayout
+        android:id="@+id/cotInfoNameView"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:orientation="horizontal" >
+
+        <ImageButton
+            android:id="@+id/cotInfoNameTitle"
+            style="@style/darkButton"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:adjustViewBounds="false"
+            android:padding="3dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_self" />
+
+        <TextView
+            android:id="@+id/cotInfoNameTV"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:paddingLeft="5dp"
+            android:textColor="@color/white"
+            android:textSize="18sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/cotInfoCoordTitle"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_below="@id/cotInfoNameView"
+        android:text="@string/coordinate"
+        android:textColor="#FFF"
+        android:textSize="@dimen/draper_font"
+         />
+
+    <LinearLayout
+        android:id="@+id/cotInfoCoordInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/cotInfoCoordTitle"
+        android:orientation="horizontal" >
+
+        <Button
+            android:id="@+id/cotInfoCoordButton"
+            style="@style/darkButton"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.90"
+            android:gravity="start|center_vertical"
+            android:lines="2"
+            android:padding="7dp"
+            android:text="@string/point_dropper_text2"
+            android:textSize="@dimen/draper_title_font" />
+
+        <ImageButton
+            android:id="@+id/cotInfoPanButton"
+            android:layout_width="33dp"
+            android:layout_height="33dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginEnd="4dp"
+            android:layout_weight="0.10"
+            android:background="#0000"
+            android:scaleType="centerInside"
+            android:src="@drawable/panto_button" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/warnInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/cotInfoCoordInfo"
+        android:orientation="horizontal" >
+
+        <TextView
+            android:id="@+id/warningText"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingLeft="3dp"
+            android:textColor="#FFFF0000"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+</RelativeLayout>

@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.missionpackage.ui.MissionPackageQueryResultView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:orientation="horizontal"
+        android:padding="5dp"
+        android:layout_gravity="center_vertical"
+        android:background="#000">
+
+        <ImageView
+            android:id="@+id/iconMissionPackageQueryResultsIcon"
+            android:layout_width="@dimen/dropdown_bottom_bar_height"
+            android:layout_height="match_parent"
+            android:padding="3dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/missionpackage_icon"/>
+
+        <LinearLayout
+            android:id="@+id/title_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingStart="1dp"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/iconMissionPackageQueryResultsTitle"
+                android:text="@string/available_packages"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+            <TextView
+                android:id="@+id/iconMissionPackageQueryResultsServer"
+                android:text="@string/https_server"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:textStyle="bold"/>
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/btnMissionPackageQueryResultsRefresh"
+            android:layout_width="@dimen/dropdown_bottom_bar_height"
+            android:layout_height="@dimen/dropdown_bottom_bar_height"
+            android:padding="4dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/sync_original"
+            style="@style/darkButton"/>
+
+        <com.atakmap.android.hierarchy.SortSpinner
+            android:id="@+id/sort_spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:spinnerMode="dropdown"
+            android:popupBackground="#000"
+            android:background="@drawable/overlay_title_background"/>
+
+        <EditText
+            android:id="@+id/search_txt"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:hint="@string/search"
+            android:imeOptions="flagNoExtractUi|actionSearch"
+            android:singleLine="true"
+            android:lines="1"
+            android:maxLines="1"
+            android:focusable="true"
+            android:visibility="gone"
+            android:inputType="textNoSuggestions" />
+
+        <ImageButton
+            android:id="@+id/search_btn"
+            android:layout_width="@dimen/dropdown_bottom_bar_height"
+            android:layout_height="@dimen/dropdown_bottom_bar_height"
+            android:padding="2dp"
+            android:background="@drawable/overlay_title_background"
+            android:src="@android:drawable/ic_menu_search"/>
+
+    </LinearLayout>
+    
+    <LinearLayout 
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">    
+        <ListView
+            android:id="@+id/missionpackage_queryresults_listView"
+            android:layout_width="fill_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fadeScrollbars="false"/>
+    </LinearLayout>
+
+</com.atakmap.android.missionpackage.ui.MissionPackageQueryResultView>

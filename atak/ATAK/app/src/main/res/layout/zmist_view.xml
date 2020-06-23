@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.medline.ZMistView xmlns:android="http://schemas.android.com/apk/res/android"
+               android:orientation="vertical"
+               android:id="@+id/zmist_field"
+               android:layout_width="match_parent"
+               android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" >
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:id="@+id/zmistText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/zmist"
+                android:gravity="start|center_vertical"
+                android:layout_centerVertical="true"
+                android:textColor="@color/heading_yellow"
+                android:textSize="16sp"
+                />
+
+            <TextView
+                android:id="@+id/zmistCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="start|center_vertical"
+                android:layout_centerVertical="true"
+                android:text="@string/_paren_0_thesis_"
+                android:textSize="16sp"
+                android:layout_marginStart="5dp"
+                android:layout_toEndOf="@id/zmistText"/>
+
+            <Button
+                android:id="@+id/addZMist"
+                style="@style/darkButton"
+                android:padding="4dp"
+                android:layout_width="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_height="@dimen/nineline_line_height"
+                android:layout_alignParentTop="true"
+                android:text="@string/add"/>
+
+            <!--<TextView
+                android:id="@+id/showExtendedZMists"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="&#9654;"
+                android:textColor="#FFFFFFFF"
+                android:textSize="23sp"
+                android:textStyle="bold"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentRight="true"/>-->
+
+            <ImageButton
+                android:id="@+id/arrowClosed"
+                android:layout_width="wrap_content"
+                android:layout_height="20dp"
+                android:src="@drawable/arrowright"
+                android:layout_alignParentEnd="true"
+                android:background="#0000"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="10dp"/>
+
+            <ImageButton
+                android:id="@+id/arrowOpen"
+                android:layout_width="20dp"
+                android:layout_height="wrap_content"
+                android:src="@drawable/arrowopen"
+                android:layout_alignParentEnd="true"
+                android:background="#0000"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="10dp"
+                android:visibility="gone"/>
+
+        </RelativeLayout>
+
+        <LinearLayout
+            android:id="@+id/zMistsExpanded"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="visible"
+            android:orientation="vertical" >
+        </LinearLayout>
+    </LinearLayout>
+</com.atakmap.android.medline.ZMistView>

@@ -1,0 +1,18 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.track.TRACK_HISTORY</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+            <string key='track_dbid'>${track_dbid}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+        <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content" >
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp" >
+
+        <TextView
+            android:id="@+id/prc152_tv"
+            style="@style/RadioTitle"
+            android:text="@string/prc52" />
+
+        <TextView
+            android:id="@+id/prc152_sub_tv"
+            style="@style/RadioSubTitle"
+            android:layout_below="@+id/prc152_tv"
+            android:text="@string/ppp_mode_only"
+            android:visibility="visible" />
+
+        <TextView
+            android:id="@+id/prc152_state"
+            style="@style/RadioState"
+            android:layout_below="@+id/prc152_sub_tv"
+            android:text=""
+            android:visibility="visible" />
+
+        <ImageButton
+            android:id="@+id/fakeArrow"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentEnd="true"
+            android:background="#00000000"
+            android:src="@drawable/arrow_right"
+            android:visibility="invisible"  />
+
+        <ImageButton
+            android:id="@+id/prc152_cfg_btn"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:layout_centerVertical="true"
+            android:layout_toStartOf="@id/fakeArrow"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_menu_settings" />
+
+        <Switch
+            android:id="@+id/prc152_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toStartOf="@id/prc152_cfg_btn"
+            android:layout_centerVertical="true"
+            android:layout_gravity="end" />
+    </RelativeLayout>
+
+
+</LinearLayout>
+

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="horizontal" >
+    <LinearLayout 
+        android:id="@+id/splash"
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" />
+
+    <LinearLayout 
+        android:id="@+id/map_view"
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:visibility="gone" />
+
+    <!-- Seek bar control used for brightness and GRG visibility -->
+    <SeekBar
+        android:id="@+id/map_seek_bar_control"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="50dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:background="@color/actionbar_background"
+        android:visibility="gone"/>
+
+    <!-- Container for the floating toolbar -->
+    <LinearLayout
+        android:id="@+id/action_bar_drawer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:orientation="vertical"/>
+
+    <ImageView
+        android:id="@+id/sidepanehandle_background"
+        android:layout_width="43dp"
+        android:layout_height="104dp"
+        android:layout_marginEnd="-4dp"
+        android:paddingStart="5dp"
+        android:paddingEnd="-2dp"
+        android:paddingBottom="32dp"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:gravity="center_vertical"
+        android:scaleType="fitCenter"
+        android:src="@drawable/right_open"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/tophandle_background"
+        android:layout_width="48dp"
+        android:layout_height="24dp"
+        android:layout_marginTop="-4dp"
+        android:paddingTop="-4dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:scaleType="fitCenter"
+        android:src="@drawable/top_open"
+        android:visibility="gone" />
+
+
+    <ImageView
+        android:id="@+id/sidepanehandle_background_portrait"
+        android:layout_width="104dp"
+        android:layout_height="43dp"
+        android:layout_marginEnd="-4dp"
+        android:paddingEnd="-2dp"
+        android:paddingTop="5dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:gravity="center_horizontal"
+        android:scaleType="fitCenter"
+        android:src="@drawable/bottom_open"
+        android:visibility="gone" />
+
+</RelativeLayout>

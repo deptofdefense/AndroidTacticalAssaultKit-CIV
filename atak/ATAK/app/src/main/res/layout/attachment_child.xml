@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:orientation="horizontal"
+              android:baselineAligned="false">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginStart="5dp"
+        android:layout_weight="1">
+
+        <TextView 
+            android:id="@+id/attachment_name" 
+            android:layout_width="180dip"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:text="@string/name"/>
+
+        <TextView 
+            android:id="@+id/attachment_type" 
+            android:layout_width="180dip"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:text="@string/type"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="200dp">
+
+        <ImageButton
+            android:id="@+id/attachment_btnDetails"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            style="@style/darkButton" android:padding="6dp"
+            android:src="@drawable/details"
+            android:layout_margin="0dp"/>
+
+        <ImageButton
+            android:id="@+id/attachment_btnView"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            style="@style/darkButton" android:padding="6dp"
+            android:src="@drawable/attachment_view"
+            android:layout_margin="0dp"/>
+
+        <ImageButton
+            android:id="@+id/attachment_btnShare"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            style="@style/darkButton" android:padding="6dp"
+            android:src="@drawable/send_square"
+            android:layout_margin="0dp"/>
+
+        <ImageButton
+            android:id="@+id/attachment_btnDelete"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            style="@style/darkButton" android:padding="6dp"
+            android:src="@drawable/ic_menu_delete"
+            android:layout_margin="0dp"/>
+
+    </LinearLayout>
+
+</LinearLayout>

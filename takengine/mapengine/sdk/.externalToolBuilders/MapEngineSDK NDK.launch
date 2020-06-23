@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.ui.externaltools.ProgramBuilderLaunchConfigurationType">
+<booleanAttribute key="org.eclipse.debug.ui.ATTR_LAUNCH_IN_BACKGROUND" value="false"/>
+<stringAttribute key="org.eclipse.ui.externaltools.ATTR_LOCATION" value="/Users/scott/Documents/Work/android-ndk-r10d/ndk-build"/>
+<stringAttribute key="org.eclipse.ui.externaltools.ATTR_RUN_BUILD_KINDS" value="full,incremental,"/>
+<stringAttribute key="org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS" value="NDK_PROJECT_PATH=.&#10;NDK_MODULE_PATH=..&#10;NDK_APPLICATION_MK=Application.mk&#10;APP_BUILD_SCRIPT=Android.mk&#10;PGSC_UTILS_PATH=${project_loc}/../PGSC_Utils&#10;SPATIALITE_PATH=${project_loc}/../SpatiaLite&#10;GDAL_PATH=${project_loc}/../pgsc/agdaljni/jni&#10;STL_SOFT_PATH=${project_loc}/../STLSoft&#10;NDK_LOG=1"/>
+<booleanAttribute key="org.eclipse.ui.externaltools.ATTR_TRIGGERS_CONFIGURED" value="true"/>
+<stringAttribute key="org.eclipse.ui.externaltools.ATTR_WORKING_DIRECTORY" value="${workspace_loc:/MapEngineSDK}"/>
+</launchConfiguration>

@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+
+    <string-array name="brightness_names">
+        <item>لا احد </item>
+        <item>الاوطئ </item>
+        <item>25 في المئه</item>
+        <item>50 في المئه</item>
+        <item>75 في المئه</item>
+        <item>الاعلى </item>
+    </string-array>
+
+
+    <string-array name="tap_selfoverlay_names">
+        <item>لا تفعل شئ </item>
+        <item>تغيير الاحداثيات </item>
+        <item>ارجع لموقعي </item>
+    </string-array>
+
+
+
+
+    <string-array name="longpress_map_names">
+        <item>لاتفعل شئ </item>
+        <item>اخفاء او اظهار شريط الافعال </item>
+        <item>اسقط نقطه </item>
+    </string-array>
+
+
+
+
+    <string-array name="airplane_names">
+        <item>لا تفرض  </item>
+        <item>فرض اطفاء عام للراديو </item>
+        <item>فرض اطفاءعام الراديو واللاسلكي </item>
+    </string-array>
+
+
+
+    <string-array name="overlays_scaling_names">
+        <item>طبيعي </item>
+        <item>1.25x</item>
+        <item>1.5x</item>
+        <item>1.75x</item>
+        <item>2x</item>
+    </string-array>
+
+
+
+    <string-array name="label_scaling_names">
+        <item>طبيعي </item>
+        <item>كبير </item>
+        <item>كبير جدا </item>
+    </string-array>
+
+
+    <string-array name="fade_notification_names">
+        <item>30 ثانية</item>
+        <item>60 ثانيه</item>
+        <item>90 ثانيه</item>
+        <item>2 دقيقه </item>
+        <item>5 دقيقه</item>
+        <item>10 دقيقه</item>
+        <item>1 ساعه</item>
+        <item>لا تتضائل </item>
+    </string-array>
+
+
+    <string-array name="imagery_tab_names">
+        <item>تصوري </item>
+        <item>خرائط </item>
+    </string-array>
+
+    <string-array name="crumb_size">
+        <item>طبيعي </item>
+        <item>كبير </item>
+        <item> كبير جدا</item>
+    </string-array>
+
+    <string-array name="elevation_units_label">
+        <item>قدم (ق)</item>
+        <item>امتار (م)</item>
+    </string-array>
+    <string-array name="speed_units_label">
+        <item>ميل كل ساعه (ميل.س)</item>
+        <item>كيلومتر كل ساعه (كلم.س)</item>
+        <item>عقده سرعه ارضيه (عقده)</item>
+        <item>Meters Per Second (mps)</item>
+    </string-array>
+    <string-array name="alt_display_label">
+        <item>ارتفاع  فوق الاهليليجي(HAE)</item>
+        <item>مستوى سطح بحر (مس.سط.ب)</item>
+    </string-array>
+    <string-array name="coord_display_label">
+        <item>MGRS</item>
+        <item>درجه عشريه </item>
+        <item>دقيقه,درجه </item>
+        <item>درجه,دقيقه,ثانيه </item>
+        <item>UTM</item>
+    </string-array>
+
+
+
+    <string-array name="brg_units_label">
+        <item>درجات </item>
+        <item>مِلات </item>
+    </string-array>
+    <string-array name="rng_units_label">
+        <item>قدم/ميل </item>
+        <item>متر/كيلومتر </item>
+        <item>ميل بحري </item>
+    </string-array>
+    <string-array name="north_refs_label">
+        <item>شمال حقيقي </item>
+        <item>شمال مغناطيسي </item>
+        <item>Grid North</item>
+    </string-array>
+
+    <string-array name="colors_label">
+        <item>احمر </item>
+        <item>اصفر </item>
+        <item>اخضر </item>
+        <item>ازرق سماوي </item>
+        <item>ازرق </item>
+        <item>ارجواني </item>
+        <item>ابيض </item>
+        <item>اسود </item>
+    </string-array>
+    <string-array name="domain_labels">
+        <item>ارض </item>
+        <item>طيران </item>
+        <item>Maritime</item>
+    </string-array>
+
+
+
+    <string-array name="kml_exportroute_checkpointmode_strings">
+        <item>نقاط</item>
+        <item>خط </item>
+        <item>كلاهما  </item>
+    </string-array>
+
+
+    <!-- Needs to match GeoFence.Trigger -->
+    <string-array name="geofence_triggers">
+        <item>دخول </item>
+        <item>خروج </item>
+        <item>كلاهما </item>
+    </string-array>
+    <!-- Needs to match GeoFence.MonitoredTypes -->
+    <string-array name="geofence_tracked_types">
+        <item>TAK مستخدمي</item>
+        <item>صديق</item>
+        <item>عدائي </item>
+        <item>مخصص </item>
+        <item>الجميع </item>
+    </string-array>
+
+
+    <string-array name="rb_distance_label">
+        <item> مدى مائل</item>
+        <item>مشبك</item>
+    </string-array>
+
+
+    <string-array name="delete_stale_names">
+        <item>فورا </item>
+        <item>1 دقيقه</item>
+        <item>5 دقيقه</item>
+        <item>20 دقيقه</item>
+        <item>1 ساعه</item>
+        <item>6 ساعه</item>
+        <item>1 يوم</item>
+    </string-array>
+
+    <string-array name="overlay_manager_size_names">
+        <item>50%</item>
+        <item>33%</item>
+        <item>25%</item>
+    </string-array>
+
+    <string-array name="nineline_menu_types">
+        <item >CAS</item>
+        <item >CFF</item>
+    </string-array>
+
+    <string-array name="sead_supp_types">
+        <item>مستمر </item>
+        <item>متقطع </item>
+        <item>غير قياسي </item>
+        <item>لا احد </item>
+    </string-array>
+    <string-array name="location_marker_enteries">
+        <item>Default</item>
+        <item>1x</item>
+        <item>2x</item>
+        <item>3x</item>
+        <item>4x</item>
+    </string-array>
+    <string-array name="polar_distance_units">
+        <item>امتار </item>
+        <item>كيلومترات </item>
+        <item>اقدام </item>
+        <item>اميال </item>
+        <item>ميل بحري </item>
+    </string-array>
+    <string-array name="polar_north_options">
+        <item>حقيقي </item>
+        <item>مغناطيسي </item>
+        <item>Grid</item>
+    </string-array>
+    <string-array name="polar_radial_units">
+        <item>درجات </item>
+        <item>مِلات </item>
+    </string-array>
+    <string-array name="polar_zoom_method">
+        <item>زوغان الى </item>
+        <item>زوم ذاتي </item>
+    </string-array>
+    <string-array name="polar_action">
+        <item>ضع نقطه </item>
+        <item>انشا خط المدى+الاتجاه(متجه الى) </item>
+        <item>كلاهما </item>
+    </string-array>
+
+    <string-array name="option_names">
+        <item>  فقطGPS محلي</item>
+        <item>@string/wave_relay_gps</item>
+        <item>GPS خدمة</item>
+    </string-array>
+
+    <string-array name="color_names">
+        <item>ابيض </item>
+        <item>ارجواني </item>
+        <item>اخضر </item>
+        <item>اصفر </item>
+    </string-array>
+
+
+
+
+    <string-array name="squad_names">
+        <item>ابيض</item>
+        <item>اصفر </item>
+        <item>برتقالي </item>
+        <item>ارجواني </item>
+        <item>احمر</item>
+        <item>احمر غامق </item>
+        <item>بنفسجي</item>
+        <item>ازرق غامق </item>
+        <item>ازرق</item>
+        <item>ازرق </item>
+        <item>ازرق مخضر </item>
+        <item>اخضر </item>
+        <item>اخضر غامق </item>
+        <item>أسمر اللون</item>
+    </string-array>
+
+
+
+    <string-array name="reporting_strategy_names">
+        <item>Dynamic (ارسل في اغلب اوقات التحرك)</item>
+        <item>Constant (ارسل في فترات منتظمه)</item>
+    </string-array>
+
+</resources>

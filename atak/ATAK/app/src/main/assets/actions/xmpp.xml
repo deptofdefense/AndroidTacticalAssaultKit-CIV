@@ -1,0 +1,9 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.xmppAction</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+            <string key='xmppUsername'>${xmppUsername}</string>
+        </extras>
+    </broadcast>
+</set>

@@ -1,0 +1,112 @@
+
+package com.atakmap.android.missionpackage.ui;
+
+import com.atakmap.android.data.URIContentHandler;
+import com.atakmap.android.data.URIContentManager;
+import com.atakmap.android.maps.MapView;
+import com.atakmap.android.missionpackage.file.MissionPackageContent;
+import com.atakmap.android.missionpackage.file.NameValuePair;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.maps.assets.Icon;
+
+import java.io.File;
+
+/**
+ * UI convenience wrapper around File MissionPackageContent
+ * 
+ * 
+ */
+public class MissionPackageListFileItem extends MissionPackageListItem {
+
+    private static final String TAG = "MissionPackageListFileItem";
+
+    public MissionPackageListFileItem(Icon icon, String type, String name,
+            MissionPackageContent content) {
+        super(icon, type, name, content);
+    }
+
+    @Override
+    public boolean isFile() {
+        return true;
+    }
+
+    public String getPath() {
+        if (_content == null)
+            return null;
+
+        NameValuePair p = _content
+                .getParameter(MissionPackageContent.PARAMETER_LOCALPATH);
+        if (p == null || !p.isValid())
+            return null;
+
+        return p.getValue();
+    }
+
+    /**
+     * Get UID of marker this file is attached to, or null if not attached
+     *
+     * @return the marker uid
+     */
+    public String getMarkerUid() {
+        if (_content == null)
+            return null;
+
+        NameValuePair p = _content
+                .getParameter(MissionPackageContent.PARAMETER_UID);
+        if (p == null || !p.isValid())
+            return null;
+
+        return p.getValue();
+    }
+
+    @Override
+    public boolean exists(MapView mapView) {
+        return FileSystemUtils.isFile(getPath());
+    }
+
+    @Override
+    public void removeContent() {
+        File f = new File(getPath());
+
+        // Remove content from map via content handler
+        URIContentHandler handler = URIContentManager.getInstance()
+                .getHandler(f);
+        if (handler != null)
+            handler.deleteContent();
+
+        // Delete file
+        FileSystemUtils.delete(f);
+    }
+
+    @Override
+    public String toString() {
+        return getPath();
+    }
+
+    @Override
+    public long getsizeInBytes() {
+        String path = getPath();
+        if (!FileSystemUtils.isFile(path))
+            return 0;
+
+        return new File(path).length();
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object rhs) {
+        if (!(rhs instanceof MissionPackageListFileItem))
+            return false;
+
+        MissionPackageListFileItem rhsc = (MissionPackageListFileItem) rhs;
+
+        if (!FileSystemUtils.isEquals(getPath(), rhsc.getPath()))
+            return false;
+
+        return super.equals(rhs);
+    }
+}

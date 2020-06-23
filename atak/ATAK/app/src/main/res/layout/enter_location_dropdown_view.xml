@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/FullDropdownStyle"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/lastPoint_ll"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_alignParentBottom="true"
+        android:paddingBottom="3dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/lastPointIcon"
+            android:layout_gravity="center"
+            android:layout_marginEnd="5dp"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
+            android:maxWidth="24dp"
+            android:maxHeight="24dp"
+            android:minWidth="24dp"
+            android:minHeight="24dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/lastPointLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start|center_vertical"
+                android:maxLines="1"
+                android:text="@string/point_dropper_text8"
+                android:textSize="@dimen/draper_small_font"
+                android:textColor="#ffffffff"/>
+
+            <TextView
+                android:id="@+id/lastPointTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start|center_vertical"
+                android:maxLines="1"
+                android:text="@string/title_lower"
+                android:textSize="@dimen/draper_small_font"
+                android:textColor="#ffffffff" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="#EEE"
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/lastPointSend"
+                style="@style/darkButton" android:padding="4dp"
+                android:layout_gravity="center_vertical"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:textColor="#FFF"
+                android:text="@string/send"
+                android:textSize="@dimen/draper_small_font" />
+
+            <Button
+                android:id="@+id/lastPointRename"
+                style="@style/darkButton" android:padding="4dp"
+                android:layout_gravity="center_vertical"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:textColor="#FFF"
+                android:text="@string/rename"
+                android:textSize="@dimen/draper_small_font" />
+
+            <Button
+                android:id="@+id/lastPointDelete"
+                style="@style/darkButton" android:padding="4dp"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:textColor="#FFF"
+                android:text="@string/del_title"
+                android:textSize="@dimen/draper_small_font" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="0dip"
+        android:paddingBottom="0dip"
+        android:layout_above="@+id/lastPoint_ll">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" >
+
+               <ImageButton
+                   android:id="@+id/iconManagerSettings"
+                   style="@style/darkButton" android:padding="6dp"
+                   android:layout_alignParentEnd="true"
+                   android:layout_width="45dp"
+                   android:layout_height="@dimen/dropdown_bottom_bar_height"
+                   android:gravity="center"
+                   android:src="@drawable/ic_menu_settings"/>
+
+               <ImageButton
+                   android:id="@+id/iconManagerRecentlyAdded"
+                   style="@style/darkButton" android:padding="6dp"
+                   android:layout_toStartOf="@id/iconManagerSettings"
+                   android:layout_width="45dp"
+                   android:layout_height="@dimen/dropdown_bottom_bar_height"
+                   android:gravity="center"
+                   android:src="@drawable/clock"/>
+
+            <Button
+                android:id="@+id/enterLocationTitle"
+                android:layout_toStartOf="@id/iconManagerRecentlyAdded"
+                style="@style/darkButton" android:padding="6dp"
+                android:textColor="#FFFF"
+                android:layout_width="fill_parent"
+                android:layout_height="@dimen/dropdown_bottom_bar_height"
+                android:textSize="16sp"
+                android:text="@string/point_dropper_text9"
+                android:gravity="start"
+                android:maxLines="1"/>
+        </RelativeLayout>
+
+        <android.support.v4.view.ViewPager
+                android:id="@+id/enterLocationIconPalletPager"
+                android:layout_width="match_parent"
+                android:layout_height="fill_parent"/>
+    </LinearLayout>
+
+</RelativeLayout>

@@ -1,0 +1,12 @@
+diff -ur proj.pristine/src/jniproj.c proj/src/jniproj.c
+--- proj.pristine/src/jniproj.c	2017-08-23 15:50:17.447602012 -0400
++++ proj/src/jniproj.c	2017-08-23 15:51:24.710933967 -0400
+@@ -49,7 +49,7 @@
+ #include <math.h>
+ #include <string.h>
+ #include "projects.h"
+-#include "org_proj4_PJ.h"
++#include "org_proj4_Projections.h"
+ #include <jni.h>
+ 
+ #define PJ_FIELD_NAME "ptr"

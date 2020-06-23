@@ -1,0 +1,6 @@
+Due to how Android libraries and assets work, this asset directory was meant to be paired with the RadioControlLibrary.
+Once the FalconSA component is rewritten, this will be migrated back into res/raw
+
+
+remember for new files:   svn propset svn:mime-type application/octet-stream */rda*
+

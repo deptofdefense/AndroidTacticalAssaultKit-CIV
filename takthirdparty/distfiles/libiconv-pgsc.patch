@@ -1,0 +1,165 @@
+diff -U 10 -r libiconv-pristine/configure libiconv/configure
+--- libiconv-pristine/configure	2017-01-01 18:02:55.000000000 -0500
++++ libiconv/configure	2018-05-21 23:35:23.007000000 -0400
+@@ -6299,27 +6299,30 @@
+     && { (PATH='/bin:/bin'; FPATH=$PATH; sh -c :) >/dev/null 2>&1 \
+            || PATH_SEPARATOR=';'
+        }
+ fi
+ 
+ ac_prog=ld
+ if test "$GCC" = yes; then
+   # Check if gcc -print-prog-name=ld gives a path.
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+-  case $host in
+-  *-*-mingw*)
++#  case $host in
++#  *-*-mingw*)
+     # gcc leaves a trailing carriage return which upsets mingw
+-    ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+-  *)
+-    ac_prog=`($CC -print-prog-name=ld) 2>&5` ;;
+-  esac
++    # do it on all hosts as crosses on a cygwin/windows build host
++    # also trip this (windows building android for example)
++    ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'`
++    # ;;
++#  *)
++#    ac_prog=`($CC -print-prog-name=ld) 2>&5` ;;
++#  esac
+   case $ac_prog in
+     # Accept absolute paths.
+     [\\/]* | ?:[\\/]*)
+       re_direlt='/[^/][^/]*/\.\./'
+       # Canonicalize the pathname of ld
+       ac_prog=`echo "$ac_prog"| sed 's%\\\\%/%g'`
+       while echo "$ac_prog" | grep "$re_direlt" > /dev/null 2>&1; do
+         ac_prog=`echo $ac_prog| sed "s%$re_direlt%/%"`
+       done
+       test -z "$LD" && LD="$ac_prog"
+@@ -6887,27 +6890,30 @@
+   withval=$with_gnu_ld; test no = "$withval" || with_gnu_ld=yes
+ else
+   with_gnu_ld=no
+ fi
+ 
+ ac_prog=ld
+ if test yes = "$GCC"; then
+   # Check if gcc -print-prog-name=ld gives a path.
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+-  case $host in
+-  *-*-mingw*)
++#  case $host in
++#  *-*-mingw*)
+     # gcc leaves a trailing carriage return, which upsets mingw
+-    ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+-  *)
+-    ac_prog=`($CC -print-prog-name=ld) 2>&5` ;;
+-  esac
++    # do it on all hosts as crosses on a cygwin/windows build host
++    # also trip this (windows building android for example)
++    ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` 
++#    ;;
++#  *)
++#    ac_prog=`($CC -print-prog-name=ld) 2>&5` ;;
++#  esac
+   case $ac_prog in
+     # Accept absolute paths.
+     [\\/]* | ?:[\\/]*)
+       re_direlt='/[^/][^/]*/\.\./'
+       # Canonicalize the pathname of ld
+       ac_prog=`$ECHO "$ac_prog"| $SED 's%\\\\%/%g'`
+       while $ECHO "$ac_prog" | $GREP "$re_direlt" > /dev/null 2>&1; do
+ 	ac_prog=`$ECHO $ac_prog| $SED "s%$re_direlt%/%"`
+       done
+       test -z "$LD" && LD=$ac_prog
+diff -U 10 -r libiconv-pristine/libcharset/configure libiconv/libcharset/configure
+--- libiconv-pristine/libcharset/configure	2017-01-01 18:03:38.000000000 -0500
++++ libiconv/libcharset/configure	2018-05-21 23:34:40.615000000 -0400
+@@ -3967,27 +3967,30 @@
+   withval=$with_gnu_ld; test no = "$withval" || with_gnu_ld=yes
+ else
+   with_gnu_ld=no
+ fi
+ 
+ ac_prog=ld
+ if test yes = "$GCC"; then
+   # Check if gcc -print-prog-name=ld gives a path.
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+-  case $host in
+-  *-*-mingw*)
++#  case $host in
++#  *-*-mingw*)
+     # gcc leaves a trailing carriage return, which upsets mingw
+-    ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+-  *)
+-    ac_prog=`($CC -print-prog-name=ld) 2>&5` ;;
+-  esac
++    # do it on all hosts as crosses on a cygwin/windows build host
++    # also trip this (windows building android for example)
++    ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` 
++#   ;;
++#  *)
++#    ac_prog=`($CC -print-prog-name=ld) 2>&5` ;;
++#  esac
+   case $ac_prog in
+     # Accept absolute paths.
+     [\\/]* | ?:[\\/]*)
+       re_direlt='/[^/][^/]*/\.\./'
+       # Canonicalize the pathname of ld
+       ac_prog=`$ECHO "$ac_prog"| $SED 's%\\\\%/%g'`
+       while $ECHO "$ac_prog" | $GREP "$re_direlt" > /dev/null 2>&1; do
+ 	ac_prog=`$ECHO $ac_prog| $SED "s%$re_direlt%/%"`
+       done
+       test -z "$LD" && LD=$ac_prog
+diff -U 10 -r libiconv-pristine/preload/configure libiconv/preload/configure
+--- libiconv-pristine/preload/configure	2017-01-01 18:03:35.000000000 -0500
++++ libiconv/preload/configure	2018-05-21 23:41:55.838000000 -0400
+@@ -4042,27 +4042,28 @@
+   withval=$with_gnu_ld; test no = "$withval" || with_gnu_ld=yes
+ else
+   with_gnu_ld=no
+ fi
+ 
+ ac_prog=ld
+ if test yes = "$GCC"; then
+   # Check if gcc -print-prog-name=ld gives a path.
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+-  case $host in
+-  *-*-mingw*)
++#  case $host in
++#  *-*-mingw*)
+     # gcc leaves a trailing carriage return, which upsets mingw
+-    ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+-  *)
+-    ac_prog=`($CC -print-prog-name=ld) 2>&5` ;;
+-  esac
++    ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'`
++#   ;;
++#  *)
++#    ac_prog=`($CC -print-prog-name=ld) 2>&5` ;;
++#  esac
+   case $ac_prog in
+     # Accept absolute paths.
+     [\\/]* | ?:[\\/]*)
+       re_direlt='/[^/][^/]*/\.\./'
+       # Canonicalize the pathname of ld
+       ac_prog=`$ECHO "$ac_prog"| $SED 's%\\\\%/%g'`
+       while $ECHO "$ac_prog" | $GREP "$re_direlt" > /dev/null 2>&1; do
+ 	ac_prog=`$ECHO $ac_prog| $SED "s%$re_direlt%/%"`
+       done
+       test -z "$LD" && LD=$ac_prog
+--- libiconv.pristine/Makefile.in	2016-12-04 14:20:39.000000000 -0500
++++ libiconv/Makefile.in	2018-05-29 23:33:55.686853394 -0400
+@@ -45,6 +45,7 @@
+ # $(libdir) and $(includedir) - don't use $(prefix) and $(exec_prefix) here.
+ install-lib : all force
+ 	cd lib && $(MAKE) install-lib libdir='$(libdir)' includedir='$(includedir)'
++	cd libcharset && $(MAKE) install prefix='$(prefix)' exec_prefix='$(exec_prefix)' libdir='$(libdir)'
+ 	if [ ! -d $(includedir) ] ; then $(mkinstalldirs) $(includedir) ; fi
+ 	$(INSTALL_DATA) include/iconv.h.inst $(includedir)/iconv.h
+ 

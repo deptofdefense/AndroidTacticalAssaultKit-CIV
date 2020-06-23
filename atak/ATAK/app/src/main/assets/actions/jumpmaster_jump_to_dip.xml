@@ -1,0 +1,24 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.toolbar.SET_TOOLBAR</action>
+        <extras>
+            <string key='toolbar'>com.atakmap.android.jumpmaster.toolbar</string>
+        </extras>
+    </broadcast>            
+    <broadcast>
+        <action>com.atakmap.android.maps.toolbar.BEGIN_TOOL</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+            <string key='tool'>com.atakmap.android.maps.jumpmaster.JUMP_TOOL</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

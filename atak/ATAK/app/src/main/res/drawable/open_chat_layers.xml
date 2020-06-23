@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/open_chat"
+        android:drawable="@drawable/open_chat"
+        android:top="1dp" android:bottom="1dp"
+        android:right="1dp" android:left="1dp"
+        android:gravity="center" />
+
+    <!-- set a place holder Drawable so android:drawable isn't null -->
+    <item
+        android:id="@+id/ic_badge"
+        android:top="1dp" android:bottom="1dp"
+        android:right="1dp" android:left="1dp"
+        android:drawable="@drawable/open_chat" />
+</layer-list>

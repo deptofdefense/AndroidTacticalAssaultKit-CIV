@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="@dimen/auto_margin2">
+
+    <TextView
+        android:id="@+id/import_msg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/import_model_msg"
+        android:textSize="@dimen/fontSize"
+        android:textColor="#FFF"/>
+
+    <!-- Projection options -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/auto_space_big"
+        android:textSize="@dimen/fontSize"
+        android:text="@string/model_projection"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <RadioGroup
+            android:id="@+id/projection"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <RadioButton
+                android:id="@+id/projection_enu"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/model_projection_enu"
+                android:checked="true"/>
+            <RadioButton
+                android:id="@+id/projection_lla"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/model_projection_lla"/>
+        </RadioGroup>
+        <CheckBox
+            android:id="@+id/flip_yz"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/auto_space_big"
+            android:text="@string/model_flip_y_z"/>
+    </LinearLayout>
+
+</LinearLayout>

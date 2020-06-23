@@ -1,0 +1,6 @@
+OpenNMEA Change Log
+-------------------
+
+- Version 0.1
+  * Initial release
+  * Support for six different sentences (GGA, GLL, GSA, GSV, RMC, VTG)

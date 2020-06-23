@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="32dp"
+    android:paddingEnd="5dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal" >
+
+    <Button
+        android:id="@+id/unread_btn"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:padding="4dp"
+        android:focusableInTouchMode="false"
+        android:focusable="false"
+        android:textColor="#F33"
+        android:text="@string/_1"
+        style="@style/darkButton"/>
+
+</LinearLayout>

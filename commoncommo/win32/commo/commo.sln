@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "commo", "commo.vcxproj", "{A5E4DBFD-13D5-4EE2-8FD2-A509AEEF2CE9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{08D9B98F-3B9E-4233-8217-B7BBBFF476E8} = {08D9B98F-3B9E-4233-8217-B7BBBFF476E8}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "commoncommo", "..\commoncommo\commoncommo.vcxproj", "{08D9B98F-3B9E-4233-8217-B7BBBFF476E8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A5E4DBFD-13D5-4EE2-8FD2-A509AEEF2CE9}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A5E4DBFD-13D5-4EE2-8FD2-A509AEEF2CE9}.Debug|Win32.Build.0 = Debug|Win32
+		{A5E4DBFD-13D5-4EE2-8FD2-A509AEEF2CE9}.Release|Win32.ActiveCfg = Release|Win32
+		{A5E4DBFD-13D5-4EE2-8FD2-A509AEEF2CE9}.Release|Win32.Build.0 = Release|Win32
+		{08D9B98F-3B9E-4233-8217-B7BBBFF476E8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{08D9B98F-3B9E-4233-8217-B7BBBFF476E8}.Debug|Win32.Build.0 = Debug|Win32
+		{08D9B98F-3B9E-4233-8217-B7BBBFF476E8}.Release|Win32.ActiveCfg = Release|Win32
+		{08D9B98F-3B9E-4233-8217-B7BBBFF476E8}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

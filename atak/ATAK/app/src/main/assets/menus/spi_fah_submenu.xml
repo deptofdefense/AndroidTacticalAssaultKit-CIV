@@ -1,0 +1,15 @@
+<menu buttonRadius='65' buttonSpan='32.73' buttonWidth='60' buttonBg='bgs/button.xml'>
+
+    <button icon='icons/fah_redx.png'
+            onClick='actions/spi_fah.xml'
+            dependsOnCapability='capability.fires'
+            selectable='true'
+            selected='${fahon}' />
+
+    <button icon='icons/ic_laser_selected.png'
+            onClick='actions/spi_lb.xml'
+            dependsOnCapability='capability.fires'
+            selectable='true'
+            selected='${lbon}' />
+
+</menu>

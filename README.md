@@ -4,6 +4,9 @@ This repository contains the source code for the Android Tactical Assault Kit fo
 
 This website's source code is made available to the open source community with the hope that community contributions will improve functionality, add features, and mature this work.
 
+## Dependencies
+ATAK-CIV makes use of many open source libraries as dependencies. While each of these has a license that allows for use within ATAK-CIV, be sure to check that their license authorizes your particular use. A list of all dependencies and the license that binary/source is distributed under can be found in [THIRDPARTY.md](THIRDPARTY.md).
+
 ## Contributing
 For details on setting up your development environment and contributing to this project, see CONTRIBUTING.md.
 

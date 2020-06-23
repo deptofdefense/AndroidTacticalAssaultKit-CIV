@@ -1,0 +1,12 @@
+--- ./Jackcess/src/main/java/com/healthmarketscience/jackcess/impl/DatabaseImpl.java.orig	2016-12-19 16:07:11.477341463 -0500
++++ ./Jackcess/src/main/java/com/healthmarketscience/jackcess/impl/DatabaseImpl.java	2016-12-19 16:08:10.586630021 -0500
+@@ -102,8 +102,7 @@
+     System.getProperty(RESOURCE_PATH_PROPERTY, DEFAULT_RESOURCE_PATH);
+ 
+   /** whether or not this jvm has "broken" nio support */
+-  static final boolean BROKEN_NIO = Boolean.TRUE.toString().equalsIgnoreCase(
+-      System.getProperty(BROKEN_NIO_PROPERTY));
++  static final boolean BROKEN_NIO = true;
+ 
+   /** additional internal details about each FileFormat */
+   private static final Map<Database.FileFormat,FileFormatDetails> FILE_FORMAT_DETAILS =

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.gui.ImportFileBrowser xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <ImageButton
+            android:id="@+id/phone"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/btn_gray"
+            android:src="@drawable/phone"
+            android:scaleType="fitCenter"
+            android:layout_margin="3dp"/>
+        <ImageButton
+            android:id="@+id/sdcard"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/btn_gray"
+            android:src="@drawable/sdcard"
+            android:scaleType="fitCenter"
+            android:layout_margin="3dp"/>
+
+        <ImageButton
+            android:id="@+id/importManagerFileBrowserUpButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/btn_gray"
+            android:src="@drawable/navigation_previous_item"
+            android:scaleType="fitCenter"
+            android:layout_margin="3dp"/>
+        <TextView
+            android:id="@+id/importBrowserCurrentDirectory"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="@dimen/draper_title_font"
+            android:textColor="#FFF"/>
+    </LinearLayout>
+
+    <View 
+        android:layout_width="fill_parent"
+        android:layout_height="2dp"
+        android:background="#CCC"/>
+    <ListView 
+        android:id="@+id/importBrowserFileItemList"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"/>
+</com.atakmap.android.gui.ImportFileBrowser>

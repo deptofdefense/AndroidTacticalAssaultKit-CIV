@@ -1,0 +1,22 @@
+--- src/main/java/org/acra/util/HttpRequest.java.orig	2017-03-18 18:05:37.350011140 -0400
++++ src/main/java/org/acra/util/HttpRequest.java	2017-03-18 18:05:56.810429568 -0400
+@@ -209,9 +209,11 @@
+ 
+         final SchemeRegistry registry = new SchemeRegistry();
+         registry.register(new Scheme("http", new PlainSocketFactory(), 80));
+         if (ACRA.getConfig().disableSSLCertValidation()) {
+-            registry.register(new Scheme("https", (new FakeSocketFactory()), 443));
++            final HttpsSocketFactoryFactory factory = ACRA.getConfig().getHttpSocketFactoryFactory();
++            final SocketFactory socketFactory = factory.create(context);
++            registry.register(new Scheme("https", socketFactory, 443));
+         } else if (ACRA.getConfig().keyStore() != null) {
+             try {
+                 SSLSocketFactory sf = new SSLSocketFactory(ACRA.getConfig().keyStore());
+                 sf.setHostnameVerifier(SSLSocketFactory.STRICT_HOSTNAME_VERIFIER);
+@@ -314,4 +312,4 @@
+ 
+         return dataBfr.toString();
+     }
+-}
+\ No newline at end of file
++}

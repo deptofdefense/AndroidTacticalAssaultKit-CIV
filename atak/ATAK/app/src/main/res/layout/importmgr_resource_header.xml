@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="fill_parent"
+    android:orientation="horizontal" >
+
+    <ImageButton
+        android:id="@+id/add_resource_button"
+        android:layout_width="@dimen/dropdown_bottom_bar_height"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:layout_marginEnd="@dimen/auto_space_big"
+        android:padding="4dp"
+        android:background="@drawable/overlay_title_background"
+        android:src="@drawable/ic_menu_plus"/>
+
+</LinearLayout>

@@ -1,0 +1,25 @@
+<menu buttonRadius='65' buttonSpan='32.73' buttonWidth='60' buttonBg='bgs/button.xml'>
+    <button icon='icons/mils_t.png'
+            prefValue1='1'
+            prefValue2='0'/>
+
+    <button icon='icons/degs_t.png'
+            prefValue1='0'
+            prefValue2='0'/>
+
+    <button icon='icons/mils_m.png'
+            prefValue1='1'
+            prefValue2='1'/>
+
+    <button icon='icons/degs_m.png'
+            prefValue1='0'
+            prefValue2='1'/>
+
+    <button icon='icons/mils_g.png'
+            prefValue1='1'
+            prefValue2='2'/>
+
+    <button icon='icons/degs_g.png'
+            prefValue1='0'
+            prefValue2='2'/>
+</menu>

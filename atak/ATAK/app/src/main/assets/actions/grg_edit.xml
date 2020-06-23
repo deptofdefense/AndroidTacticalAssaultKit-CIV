@@ -1,0 +1,20 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+    
+    <broadcast>
+        <action>com.atakmap.android.maps.toolbar.BEGIN_TOOL</action>
+        <extras>
+            <string key='tool'>com.atakmap.android.sse.GRGEditTool</string>
+            <string key='assocSetUID'>${assocSetUID}</string>
+            <string key='uid'>${uid}</string>
+        </extras>
+    </broadcast>
+</set>

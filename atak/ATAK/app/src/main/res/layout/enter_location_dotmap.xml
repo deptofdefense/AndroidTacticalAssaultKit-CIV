@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:descendantFocusability="beforeDescendants">
+    <LinearLayout
+        android:id="@+id/customHolder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+    </LinearLayout>
+    <RelativeLayout
+        style="@style/FullDropdownStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:scrollbars="vertical">
+
+        <LinearLayout
+            android:id="@+id/enterLocationTypeSelectionRadioGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_marginBottom="-10dp"
+            android:orientation="horizontal"
+            android:weightSum="6" >
+
+            <ToggleButton
+                android:id="@+id/enterLocationTypePointWhite"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:background="@drawable/enter_location_spot_white"
+                android:button="@null" />
+
+            <ToggleButton
+                android:id="@+id/enterLocationTypePointYellow"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:background="@drawable/enter_location_spot_yellow"
+                android:button="@null" />
+
+            <ToggleButton
+                android:id="@+id/enterLocationTypePointOrange"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:background="@drawable/enter_location_spot_orange"
+                android:button="@null" />
+
+            <ToggleButton
+                android:id="@+id/enterLocationTypePointBrown"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:background="@drawable/enter_location_spot_brown"
+                android:button="@null" />
+
+            <ToggleButton
+                android:id="@+id/enterLocationTypePointRed"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:background="@drawable/enter_location_spot_red"
+                android:button="@null" />
+
+            <ToggleButton
+                android:id="@+id/enterLocationTypePointMagenta"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:background="@drawable/enter_location_spot_magenta"
+                android:button="@null" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/enterLocationTypeSelectionRadioGroup2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/enterLocationTypeSelectionRadioGroup"
+            android:layout_marginBottom="-10dp"
+            android:orientation="horizontal"
+            android:weightSum="6" >
+
+            <ToggleButton
+                android:id="@+id/enterLocationTypePointBlue"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:background="@drawable/enter_location_spot_blue"
+                android:button="@null" />
+
+            <ToggleButton
+                android:id="@+id/enterLocationTypePointCyan"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:background="@drawable/enter_location_spot_cyan"
+                android:button="@null" />
+
+            <ToggleButton
+                android:id="@+id/enterLocationTypePointGreen"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:background="@drawable/enter_location_spot_green"
+                android:button="@null" />
+
+            <ToggleButton
+                android:id="@+id/enterLocationTypePointGrey"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:background="@drawable/enter_location_spot_grey"
+                android:button="@null" />
+
+            <ToggleButton
+                android:id="@+id/enterLocationTypePointBlack"
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:background="@drawable/enter_location_spot_black"
+                android:button="@null" />
+
+            <RelativeLayout
+                android:layout_width="0dp"
+                android:layout_height="50dp"
+                android:layout_weight="1" >
+                <View
+                    android:id="@+id/enterLocationTypePointLabelBackground"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginTop="5dp"
+                    android:background="@color/white"/>
+
+                <ToggleButton
+                    android:id="@+id/enterLocationTypePointLabel"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:background="@drawable/enter_location_label" />
+            </RelativeLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/custom_ll_background"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/enterLocationTypeSelectionRadioGroup2"
+            android:orientation="horizontal" >
+
+            <Button
+                style="@style/darkButton"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="5dp"
+                android:layout_weight="2"
+                android:button="@null"
+                android:text="@string/custom_color"
+                android:visibility="invisible" />
+
+            <RelativeLayout
+                android:id="@+id/customColorButtonFirstBackgroundLayout"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="5dp"
+                android:layout_weight="1"
+                android:padding="7dp"
+                android:visibility="gone" >
+
+                <View
+                    android:id="@+id/customColorButtonFirstBackground"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:background="@color/gray"
+                    android:gravity="center" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/customColorButtonCenterBackgroundLayout"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="5dp"
+                android:layout_weight="1"
+                android:padding="7dp"
+                android:visibility="invisible" >
+
+                <ToggleButton
+                    android:id="@+id/customColorButtonCenterBackground"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:background="@drawable/enter_location_spot_custom_center"
+                    android:gravity="center" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/customColorButtonLastBackgroundLayout"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="5dp"
+                android:layout_weight="1"
+                android:padding="7dp"
+                android:visibility="gone" >
+
+                <ToggleButton
+                    android:id="@+id/customColorButtonLastBackground"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent"
+                    android:background="@drawable/enter_location_spot_custom_last"
+                    android:gravity="center" />
+            </RelativeLayout>
+
+            <View
+                android:id="@+id/customColorButtonSpacer1BackgroundLayout"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="5dp"
+                android:layout_weight="1"
+                android:padding="7dp"
+                android:visibility="gone" />
+
+            <View
+                android:id="@+id/customColorButtonSpacer2BackgroundLayout"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="5dp"
+                android:layout_weight="2"
+                android:padding="7dp"
+                android:visibility="invisible" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/enterLocationTypeSelectionRadioGroup2"
+            android:orientation="horizontal"
+            android:layout_alignBottom="@+id/custom_ll_background"
+            android:paddingTop="-10dp">
+
+            <Button
+                android:id="@+id/customButton"
+                style="@style/darkButton"
+                android:layout_width="0dp"
+                android:layout_height="fill_parent"
+                android:layout_weight="2"
+                android:button="@null"
+                android:text="@string/custom"/>
+
+            <ToggleButton
+                android:id="@+id/customColorButtonFirst"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/enter_location_spot_custom_first"
+                android:button="@null"
+                android:visibility="gone" />
+
+            <ToggleButton
+                android:id="@+id/customColorButtonCenter"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/enter_location_spot_custom_center"
+                android:button="@null"
+                android:visibility="gone"/>
+
+            <ToggleButton
+                android:id="@+id/customColorButtonLast"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/enter_location_spot_custom_last"
+                android:button="@null"
+                android:visibility="gone" />
+
+            <View
+                android:id="@+id/customColorButtonSpacer1"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="7dp"
+                android:layout_weight="1"
+                android:button="@null"
+                android:visibility="gone" />
+
+            <View
+                android:id="@+id/customColorButtonSpacer2"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_marginTop="7dp"
+                android:layout_weight="2"
+                android:button="@null"
+                android:visibility="invisible"
+                android:paddingTop="-10dp"/>
+        </LinearLayout>
+    </RelativeLayout>
+</LinearLayout>
+
+

@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<com.atakmap.android.hierarchy.HierarchyManagerView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <!-- Custom layout per hierarchy list view -->
+    <LinearLayout
+        android:id="@+id/hierarchy_custom_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:orientation="vertical">
+    </LinearLayout>
+
+    <!-- Main Overlay Manager view -->
+    <LinearLayout
+        android:id="@+id/hierarchy_action_layout"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="10"
+        android:orientation="vertical" >
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="40dp"
+            android:background="#000000"
+            android:paddingStart="5dp" >
+
+            <ImageButton
+                android:id="@+id/hierarchy_back_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:background="@drawable/overlay_title_background"
+                android:paddingBottom="8dp"
+                android:paddingEnd="5dp"
+                android:paddingTop="8dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true"
+                android:src="@drawable/overlay_back" />
+
+            <Button
+                android:id="@+id/hierarchy_title_textview"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_toStartOf="@+id/hierarchy_actions_layout"
+                android:layout_toEndOf="@id/hierarchy_back_button"
+                android:ellipsize="end"
+                android:background="@drawable/overlay_title_background"
+                android:gravity="center|start"
+                android:maxLines="2"
+                android:paddingStart="5dp"
+                android:paddingEnd="5dp"
+                android:text="@string/overlay_manager"
+                android:textColor="#FFFFFFFF"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/hierarchy_search"
+                android:layout_width="fill_parent"
+                android:layout_height="match_parent"
+                android:layout_marginStart="20dp"
+                android:layout_toStartOf="@id/hierarchy_actions_layout"
+                android:hint="@string/search"
+                android:imeOptions="flagNoExtractUi|actionSearch"
+                android:singleLine="true"
+                android:lines="1"
+                android:maxLines="1"
+                android:visibility="gone"
+                android:inputType="textNoSuggestions"
+                android:focusable="true"
+                android:focusableInTouchMode="true"/>
+
+            <LinearLayout
+                android:id="@id/hierarchy_actions_layout"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_alignParentEnd="true"
+                android:orientation="horizontal" >
+
+                <!-- List-based custom header view container -->
+                <LinearLayout
+                    android:id="@+id/hierarchy_list_header"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:gravity="end"
+                    android:visibility="gone">
+                </LinearLayout>
+
+                <com.atakmap.android.hierarchy.SortSpinner
+                    android:id="@+id/sort_spinner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:spinnerMode="dropdown"
+                    android:background="@drawable/overlay_title_background"
+                    android:popupBackground="#000"/>
+
+                <ImageButton
+                    android:id="@+id/hierarchy_clear_btn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/overlay_title_background"
+                    android:src="@drawable/hierarchy_clear"
+                    android:paddingTop="5dp"
+                    android:paddingBottom="5dp"
+                    android:paddingStart="2dp"
+                    android:paddingEnd="2dp"/>
+
+                <ImageButton
+                    android:id="@+id/hierarchy_multiselect_btn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/overlay_title_background"
+                    android:src="@drawable/multiselect"
+                    android:paddingStart="2dp"
+                    android:paddingTop="5dp"
+                    android:paddingEnd="2dp"
+                    android:paddingBottom="5dp"/>
+
+                <ImageButton
+                    android:id="@+id/hierarchy_search_btn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/overlay_title_background"
+                    android:paddingStart="2dp"
+                    android:paddingEnd="2dp"
+                    android:src="@android:drawable/ic_menu_search"
+                    android:visibility="gone"
+                    android:paddingTop="5dp"
+                    android:paddingBottom="5dp"/>
+
+                <ImageButton
+                    android:id="@+id/hierarchy_back_out_mode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/small_dark_btn"
+                    android:src="@android:drawable/ic_menu_revert"
+                    android:visibility="gone"/>
+
+                <Button
+                    android:id="@+id/hierarchy_process_user_selected_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/small_dark_btn"
+                    android:text="@string/process"
+                    android:textColor="#FFFFFFFF"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </RelativeLayout>
+
+        <LinearLayout
+            android:id="@+id/selectAll_layout"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="10dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:background="#FF606060"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="gone" >
+            <ImageView
+                android:id="@+id/selectAll_cb"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/btn_check_off"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/select_all_om"
+                android:textColor="#FFF"
+                android:textSize="16sp"/>
+        </LinearLayout>
+
+        <ListView
+            android:id="@+id/hierarchy_manager_list"
+            android:layout_width="fill_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fadeScrollbars="false"/>
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="#222"
+            android:orientation="horizontal">
+
+            <ProgressBar
+                android:id="@+id/search_progress"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="10dp"
+                android:visibility="gone"/>
+
+            <!-- List-based custom footer view container -->
+            <LinearLayout
+                android:id="@+id/hierarchy_list_footer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:visibility="gone">
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:orientation="horizontal" >
+                    <CheckBox
+                        android:id="@+id/showAll_cb"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="10dp"
+                        android:textSize="14sp"
+                        android:text="@string/show_all" />
+
+                    <ImageButton
+                        android:id="@+id/close_hmv"
+                        style="@style/darkButton"
+                        android:padding="6dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/close"
+                        android:gravity="center_vertical|center_horizontal"
+                        android:scaleType="fitCenter" />
+
+            </LinearLayout>
+
+             
+        </RelativeLayout>
+    </LinearLayout>
+
+</com.atakmap.android.hierarchy.HierarchyManagerView>

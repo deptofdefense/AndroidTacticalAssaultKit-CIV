@@ -1,0 +1,113 @@
+--- src/main/java/org/apache/commons/net/util/TrustManagerUtils.java.orig	2017-03-19 19:03:01.984495562 -0400
++++ src/main/java/org/apache/commons/net/util/TrustManagerUtils.java	2017-03-19 19:07:34.084588023 -0400
+@@ -34,48 +34,79 @@
+ {
+     private static final X509Certificate[] EMPTY_X509CERTIFICATE_ARRAY = new X509Certificate[]{};
+ 
+-    private static class TrustManager implements X509TrustManager {
++   static X509TrustManager ltm = null;
++   static X509TrustManager x509Tm = null;
+ 
+-        private final boolean checkServerValidity;
+ 
+-        TrustManager(boolean checkServerValidity) {
+-            this.checkServerValidity = checkServerValidity;
+-        }
++   static {
++       try { 
++           TrustManagerFactory tmf = TrustManagerFactory
++              .getInstance(TrustManagerFactory.getDefaultAlgorithm());
++              // Using null here initialises the TMF with the default trust store.
++           tmf.init((KeyStore) null);
++
++           // Get hold of the default trust manager
++           for (javax.net.ssl.TrustManager tm : tmf.getTrustManagers()) {
++               if (tm instanceof X509TrustManager) {
++                   x509Tm = (X509TrustManager) tm;
++               }
++           }
++       } catch (Exception e) {
++       }
++    }
++
++
++    /**
++     * Add in an additional trust manager.
++     */
++    public void setLocalTrustManager(TrustManager tm) { 
++        ltm = tm;
++    }
++
++    private static class TrustManager implements X509TrustManager {
+ 
+-        /**
+-         * Never generates a CertificateException.
+-         */
+-//        @Override
+-        public void checkClientTrusted(X509Certificate[] certificates, String authType)
+-        {
+-            return;
++        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
++           if (x509Tm != null) {
++                return x509Tm.getAcceptedIssuers();
++            } else {
++                return new java.security.cert.X509Certificate[0];
++            }
+         }
+ 
+-//        @Override
+-        public void checkServerTrusted(X509Certificate[] certificates, String authType)
+-            throws CertificateException
+-        {
+-            if (checkServerValidity) {
+-                for (X509Certificate certificate : certificates)
+-                {
+-                    certificate.checkValidity();
+-                }
++        public void checkClientTrusted(java.security.cert.X509Certificate[] certs,
++                String authType) throws CertificateException {
++
++            if (x509Tm != null) {
++                 x509Tm.checkClientTrusted(certs, authType);
++            } else { 
+             }
++
+         }
+ 
+-        /**
+-         * @return an empty array of certificates
+-         */
+-//        @Override
+-        public X509Certificate[] getAcceptedIssuers()
+-        {
+-            return EMPTY_X509CERTIFICATE_ARRAY;
++        public void checkServerTrusted(java.security.cert.X509Certificate[] certs,
++                String authType) throws CertificateException {
++
++            if ((certs != null) && (certs.length == 1)) {
++                System.out.println("certificate of chain length one encountered, validating");
++                certs[0].checkValidity();
++            } else {
++                if (x509Tm != null) {
++                    try {
++                        x509Tm.checkServerTrusted(certs, authType);
++                    } catch (CertificateException ce) {
++                        if (ltm != null) {
++                            ltm.checkServerTrusted(certs, authType);
++                        } else {
++                            throw ce;
++                        }
++                    }
++                }
++            }
+         }
+     }
+ 
+-    private static final X509TrustManager ACCEPT_ALL=new TrustManager(false);
+-
+-    private static final X509TrustManager CHECK_SERVER_VALIDITY=new TrustManager(true);
++    private static final X509TrustManager ACCEPT_ALL=new TrustManager();
++    private static final X509TrustManager CHECK_SERVER_VALIDITY=new TrustManager();
+ 
+     /**
+      * Generate a TrustManager that performs no checks.

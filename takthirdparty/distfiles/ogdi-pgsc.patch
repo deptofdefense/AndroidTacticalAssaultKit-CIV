@@ -1,0 +1,752 @@
+diff -U 10 -r ogdi-3.2.0-pristine/config/common.mak.in ogdi/config/common.mak.in
+--- ogdi-3.2.0-pristine/config/common.mak.in	2008-05-27 20:05:49.000000000 -0400
++++ ogdi/config/common.mak.in	2019-01-16 15:27:54.342669400 -0500
+@@ -225,26 +225,20 @@
+ 
+ ifeq ($(TARGETGEN),$(DYNAGEN))
+ default-install:
+ 	mkdir -p $(INST_LIB)/ogdi
+ 	cp $(TARGETGEN) $(INST_LIB)/ogdi
+ endif
+ 
+ ifeq ($(TARGETGEN),$(SHRDGEN))
+ default-install:
+ 	cp $(TARGETGEN) $(INST_LIB)
+-	cd $(INST_LIB); \
+-	      ln -s $(LIB_PREFIX)$(TOBEGEN).$(SHLIB_EXT).$(OGDI_MAJOR).$(OGDI_MINOR) \
+-	            $(LIB_PREFIX)$(TOBEGEN_STRIPPED).$(SHLIB_EXT).$(OGDI_MAJOR); \
+-	      ln -s $(LIB_PREFIX)$(TOBEGEN).$(SHLIB_EXT).$(OGDI_MAJOR).$(OGDI_MINOR) \
+-	            $(LIB_PREFIX)$(TOBEGEN_STRIPPED).$(SHLIB_EXT); \
+-	cd $(CURDIR)
+ endif
+ 
+ ifeq ($(TARGETGEN),$(ARCHGEN))
+ default-install:
+ endif
+ 
+ ifeq ($(TARGETGEN),$(PROGGEN))
+ default-install:
+ 	cp $(TARGETGEN) $(INST_BIN)
+ endif
+diff -U 10 -r ogdi-3.2.0-pristine/config/unix.mak ogdi/config/unix.mak
+--- ogdi-3.2.0-pristine/config/unix.mak	2008-01-07 15:11:17.000000000 -0500
++++ ogdi/config/unix.mak	2019-01-16 15:27:54.358269400 -0500
+@@ -84,25 +84,24 @@
+ $(ARCHGEN): $(OBJECTS)
+ 	@echo Making archive file: $@
+ 	$(AR) $@ $^ 
++	$(RANLIB) $@
+ 	@echo $@ made successfully ...
+ 
+ $(PROGGEN): $(OBJECTS)
+ 	@echo Making executable: $@
+ 	$(LD) $(COMMON_LDFLAGS) $(COMMON_CFLAGS) -o $@ $^ $(LINK_LIBS)
+ 	@echo $@ made successfully ...
+ 
+ $(SHRDGEN): $(OBJECTS)
+ 	@echo Making shared library: $@
+-	$(SHLIB_LD) $(SHLIB_LDFLAGS) $(COMMON_LDFLAGS) $(COMMON_CFLAGS) -Wl,-soname,$(LIB_PREFIX)$(TOBEGEN).$(SHLIB_EXT).$(OGDI_MAJOR) -o $@ $^ $(LINK_LIBS) 
+-	cd $(TOPDIR)/bin/$(TARGET); ln -s $(LIB_PREFIX)$(TOBEGEN).$(SHLIB_EXT).$(OGDI_MAJOR).$(OGDI_MINOR) $(LIB_PREFIX)$(TOBEGEN).$(SHLIB_EXT); \
+-	ln -s $(LIB_PREFIX)$(TOBEGEN).$(SHLIB_EXT).$(OGDI_MAJOR).$(OGDI_MINOR) $(LIB_PREFIX)$(TOBEGEN).$(SHLIB_EXT).$(OGDI_MAJOR); cd $(CURDIR)
++	$(SHLIB_LD) $(SHLIB_LDFLAGS) $(COMMON_LDFLAGS) $(COMMON_CFLAGS) -Wl,-soname,$(LIB_PREFIX)$(TOBEGEN).$(SHLIB_EXT) -o $@ $^ $(LINK_LIBS) 
+ 	@echo $@ made successfully ...
+ 
+ $(DYNAGEN): $(OBJECTS)
+ 	@echo Making dynamic library: $@
+ 	$(SHLIB_LD) $(SHLIB_LDFLAGS) $(COMMON_LDFLAGS) $(COMMON_CFLAGS) -o $@ $^ $(LINK_LIBS) 
+ 	@echo $@ made successfully ...
+ 
+ 
+ 
+ 
+diff -U 10 -r ogdi-3.2.0-pristine/config/win32.mak ogdi/config/win32.mak
+--- ogdi-3.2.0-pristine/config/win32.mak	2016-07-11 06:14:46.000000000 -0400
++++ ogdi/config/win32.mak	2019-01-16 15:27:54.358269400 -0500
+@@ -31,21 +31,21 @@
+ CC		= cl.exe /nologo
+ LD		= link.exe /nologo
+ SHLIB_LD	= link.exe /nologo
+ AR		= lib.exe /nologo
+ FILECOPY	= cp
+ MKDIR		= mkdir
+ DIRCOPY		= cp -rf
+ ifndef SHELL
+ SHELL		= /bin/sh
+ endif
+-MKINSTALLDIR	= $(TOPDIR)/config/mkinstalldirs
++MKINSTALLDIR	= mkdir -p
+ RSC             = rc.exe
+ RM		= rm
+ RMALL           = rm -rf
+ RMDIR           = rmdir
+ 
+ 
+ REVERSETOPDIR   = $(subst /,\,$(TOPDIR))
+ 
+ #
+ # File name extensions
+@@ -67,20 +67,30 @@
+ LIB_SW		= /
+ LINK_SW		= 
+ 
+ 
+ #
+ # Endian definition, could be little or big
+ #
+ 
+ BIG_ENDIAN          = 0
+ 
++PROJ_SETTING=external
++PROJ_INCLUDE :=	/I$(TOPDIR)/../include
++PROJ_STATICLIB := $(TOPDIR)/../lib/proj.lib
++ZLIB_SETTING=external
++ZLIB_INCLUDE :=	/I$(TOPDIR)/../include
++ZLIB_LINKLIB := $(TOPDIR)/../lib/zlibwapi.lib
++EXPAT_SETTING=external
++EXPAT_INCLUDE := /I$(TOPDIR)/../include
++EXPAT_LINKLIB := $(TOPDIR)/../lib/libexpat.lib
++
+ #
+ #Compilation and linking flags
+ #
+ 
+ # These flags are appropriate for a compiling with Visual C++ 5.0
+ # With these flags, you could run purify.
+ #
+ 
+ WINCPP_DEBUG	= /GX /D_DEBUG /Zi $(CPP_DEBUG) 
+ WINCPP_RELEASE	= /GX /Gi- /Gy /Od /DNDEBUG $(CPP_RELEASE) 
+diff -U 10 -r ogdi-3.2.0-pristine/configure ogdi/configure
+--- ogdi-3.2.0-pristine/configure	2016-07-19 08:17:07.000000000 -0400
++++ ogdi/configure	2019-01-16 15:27:54.358269400 -0500
+@@ -2071,9 +2071,9 @@
+   as_fn_error $? "Required TOPDIR environment variable not set, see README." "$LINENO" 5
+ fi
+ 
+-if test "$OS" = "Windows_NT" ; then
+-  as_fn_error $? "Please don't use configure for Windows, see README." "$LINENO" 5
+-fi
++#if test "$OS" = "Windows_NT" ; then
++#  as_fn_error $? "Please don't use configure for Windows, see README." "$LINENO" 5
++#fi
+ 
+ ac_ext=c
+ ac_cpp='$CPP $CPPFLAGS'
+@@ -3794,20 +3794,24 @@
+   fi
+ 
+   if test -r $with_proj/lib/libproj.so ; then
+     PROJ_LIB=$with_proj/lib/libproj.so
+     echo "checking for $PROJ_LIB ... found"
+ 
+   elif test -r $with_proj/lib/libproj.a ; then
+     PROJ_LIB=$with_proj/lib/libproj.a
+     echo "checking for $PROJ_LIB ... found"
+ 
++  elif test -r $with_proj/lib/libproj.dylib ; then
++    PROJ_LIB=$with_proj/lib/libproj.dylib
++    echo "checking for $PROJ_LIB ... found"
++
+   else
+     as_fn_error $? "Unable to find $with_proj/lib/libproj.{so,a}" "$LINENO" 5
+   fi
+ 
+   PROJ_SETTING=external
+ 
+ fi
+ 
+ 
+ # Check whether --with-projlib was given.
+@@ -5374,7 +5374,12 @@
+ 
+ 
+ target=`uname`
+-if test "$target" = "GNU/kFreeBSD" ; then
+-  target=Linux
+-fi
++case $target in
++    GNU/kFreeBSD)
++    target=Linux
++    ;;
++    CYGWIN*)
++    target=Linux
++    ;;
++esac
+ mv config/generic.mak config/$target.mak
+diff -U 10 -r ogdi-3.2.0-pristine/contrib/ogdi_import/shpopen.c ogdi/contrib/ogdi_import/shpopen.c
+--- ogdi-3.2.0-pristine/contrib/ogdi_import/shpopen.c	2007-02-12 11:09:06.000000000 -0500
++++ ogdi/contrib/ogdi_import/shpopen.c	2019-01-16 15:27:54.373869400 -0500
+@@ -843,21 +843,21 @@
+ /************************************************************************/
+ /*                           SHPWriteObject()                           */
+ /*                                                                      */
+ /*      Write out the vertices of a new structure.  Note that it is     */
+ /*      only possible to write vertices at the end of the file.         */
+ /************************************************************************/
+ 
+ int SHPWriteObject(SHPHandle psSHP, int nShapeId, SHPObject * psObject )
+ 		      
+ {
+-    int	       	nRecordOffset, i, nRecordSize;
++    int	       	nRecordOffset, i, nRecordSize = 0;
+     uchar	*pabyRec;
+     int32	i32;
+ 
+     psSHP->bUpdated = TRUE;
+ 
+ /* -------------------------------------------------------------------- */
+ /*      Ensure that shape object matches the type of the file it is     */
+ /*      being written to.                                               */
+ /* -------------------------------------------------------------------- */
+     assert( psObject->nSHPType == psSHP->nShapeType );
+diff -U 10 -r ogdi-3.2.0-pristine/contrib/ogdi_info/makefile ogdi/contrib/ogdi_info/makefile
+--- ogdi-3.2.0-pristine/contrib/ogdi_info/makefile	2001-02-18 23:12:21.000000000 -0500
++++ ogdi/contrib/ogdi_info/makefile	2019-01-16 15:27:54.373869400 -0500
+@@ -15,20 +15,20 @@
+ TARGETGEN=$(PROGGEN)
+ 
+ SOURCES = ogdi_info.c
+ 
+ INCLUDES = $(CURRENT_INCLUDE) $(OGDI_INCLUDE) $(PROJ_INCLUDE)\
+ 	   $(ZLIB_INCLUDE) $(GENERAL_INCLUDE) $(TCLTK_INCLUDE)
+ 
+ CFLAGS 	= $(INCLUDES) $(COMMON_CFLAGS) $(FLAGS_X86DEF)
+ 
+ LINK_LIBS= $(OGDI_LINKLIB) $(ZLIB_LINKLIB) $(RPC_LINKLIB) \
+-           $(PROJ_STATICLIB) $(MATH_LINKLIB) \
++           $(PROJ_STATICLIB) $(EXPAT_LINKLIB) $(MATH_LINKLIB) \
+ 	   $(LIBC_LINKLIB) $(UCB_STATICLIB) $(DL_LINKLIB) \
+ 	   $(WIN_LINKLIB)
+ 
+ include $(TOPDIR)/config/common.mak
+ 
+ all: MKOBJECTDIR ogdi_info.c
+ 	$(MAKE) --directory $(OBJDIR) -f ../makefile PASS='depend' $(TARGETGEN)
+ 
+ clean: default-clean
+diff -U 10 -r ogdi-3.2.0-pristine/include/Linux/ogdi_macro.h ogdi/include/Linux/ogdi_macro.h
+--- ogdi-3.2.0-pristine/include/Linux/ogdi_macro.h	2007-02-12 16:43:28.000000000 -0500
++++ ogdi/include/Linux/ogdi_macro.h	2019-01-16 15:27:54.373869400 -0500
+@@ -1,13 +1,13 @@
+ #include <signal.h>
+-#include <wait.h>
+-#include <rpc/xdr.h>
++#include <sys/wait.h>
++// #include <rpc/xdr.h>
+ #include <stdio.h>
+ 
+ #define ogdi_IXDR_PUT_LONG(buf, v) { \
+ 	    long ZF = ((long)IXDR_PUT_INT32(buf, (long)(v))); \
+ 	    ZF = ZF; \
+ 	    } 
+ 
+ #define ogdi_IXDR_PUT_U_LONG(buf, v)  	ogdi_IXDR_PUT_LONG(buf, (long)(v))
+ 
+ 
+diff -U 10 -r ogdi-3.2.0-pristine/ogdi/c-api/makefile ogdi/ogdi/c-api/makefile
+--- ogdi-3.2.0-pristine/ogdi/c-api/makefile	2007-02-19 14:31:33.000000000 -0500
++++ ogdi/ogdi/c-api/makefile	2019-01-16 15:27:54.373869400 -0500
+@@ -14,21 +14,21 @@
+ TOBEGEN	= ogdi
+ 
+ ifeq ($(TARGET),Linux)
+ TARGETGEN=$(SHRDGEN)
+ else
+ TARGETGEN=$(DYNAGEN)
+ endif
+ 
+ SOURCES = ecs_dyna.c ecsregex.c ecssplit.c \
+           ecsassoc.c ecshash.c ecstile.c server.c ecsdist.c \
+-          ecslist.c ecsinfo.c ecsgeo.c ecs_xdr.c ecs_xdrz.c\
++          ecslist.c ecsinfo.c ecsgeo.c \
+           matrix.c client.c ecs_capabilities.c
+ 
+ INCLUDES = $(CURRENT_INCLUDE) $(GENERAL_INCLUDE) $(OGDI_INCLUDE) \
+ 		$(GRASS_INCLUDE) $(ZLIB_INCLUDE) $(PROJ_INCLUDE) \
+ 		$(EXPAT_INCLUDE)
+ 
+ CFLAGS 	= $(INCLUDES) $(COMMON_CFLAGS) -DMODULES_PATH="\"$(INST_LIB)/ogdi/\""
+ 
+ LINK_LIBS= $(RPC_LINKLIB) $(ZLIB_LINKLIB) $(EXPAT_LINKLIB) $(WIN_LINKLIB) \
+ 		$(PROJ_STATICLIB) $(MATH_LINKLIB)
+diff -U 10 -r ogdi-3.2.0-pristine/ogdi/c-api/ogdi.def ogdi/ogdi/c-api/ogdi.def
+--- ogdi-3.2.0-pristine/ogdi/c-api/ogdi.def	2016-07-04 13:33:49.000000000 -0400
++++ ogdi/ogdi/c-api/ogdi.def	2019-01-16 15:27:54.373869400 -0500
+@@ -85,49 +85,20 @@
+ 	svr_SetServerLanguage
+ 	svr_SetServerProjection
+ 	svr_SetRasterConversion
+ 	svr_CloseLayer
+ 	svr_BroadCloseLayers
+ 	ecs_SetLayer
+ 	ecs_GetLayer
+ 	ecs_FreeLayer
+ 	ecs_RemoveDir
+ 	ecs_GetDefaultInfo
+-	xdr_ecs_Family
+-	xdr_ecs_Region
+-	xdr_ecs_Coordinate
+-	xdr_ecs_FeatureRing
+-	xdr_ecs_Area
+-	xdr_ecs_Line
+-	xdr_ecs_Point
+-	xdr_ecs_Matrix
+-	xdr_ecs_Image
+-	xdr_ecs_Text
+-	xdr_ecs_Node
+-	xdr_ecs_Edge
+-	xdr_ecs_TopoLevel
+-	xdr_ecs_Face
+-	xdr_ecs_AreaPrim
+-	xdr_ecs_Geometry
+-	xdr_ecs_Object
+-	xdr_ecs_AttributeFormat
+-	xdr_ecs_ObjAttribute
+-	xdr_ecs_ObjAttributeFormat
+-	xdr_ecs_Category
+-	xdr_ecs_RasterInfo
+-	xdr_ecs_ResultType
+-	xdr_ecs_ResultUnion
+-	xdr_ecs_Result
+-	xdr_ecs_LayerSelection
+-	xdr_ecs_RasterConversion
+-	xdr_ecs_Compression
+-	xdr_ecs_ProxyCreateServer
+ 	ecs_begin_ellipsoid_polygon_area
+ 	ecs_planimetric_polygon_area
+ 	ecs_ellipsoid_polygon_area
+ 	ecs_geodesic_distance
+ 	ecs_distance_meters
+ 	ecs_CalculateCentroid
+ 	ecs_CopyObject
+ 	ecs_CopyResult
+ 	ecs_FreeObject
+ 	pj_free
+diff -U 10 -r ogdi-3.2.0-pristine/ogdi/c-api/server.c ogdi/ogdi/c-api/server.c
+--- ogdi-3.2.0-pristine/ogdi/c-api/server.c	2016-07-06 04:59:20.000000000 -0400
++++ ogdi/ogdi/c-api/server.c	2019-01-16 15:27:54.389469400 -0500
+@@ -2069,25 +2069,21 @@
+     }
+     while(_findnext(hfile, &c_file) == 0);
+     _findclose(hfile);
+   }   
+   
+   
+   _chdir(current_dir);
+   
+   return (int) RemoveDirectory(path);
+ #else
+-  char buffer[256];
+-    
+-  sprintf(buffer,"rm -r %s",path);
+-  ogdi_system(buffer);
+-  return 1;
++  return 0;
+ #endif
+ }
+ 
+ /*
+    ********************************************************************
+ 
+    FUNCTION_INFORMATION
+ 
+    NAME
+       ecs_GetLateralDBConnection
+diff -U 10 -r ogdi-3.2.0-pristine/ogdi/driver/makefile ogdi/ogdi/driver/makefile
+--- ogdi-3.2.0-pristine/ogdi/driver/makefile	2000-10-29 15:58:28.000000000 -0500
++++ ogdi/ogdi/driver/makefile	2019-01-16 15:27:54.389469400 -0500
+@@ -13,21 +13,21 @@
+ 
+ # MOD: Bruno Savard, INFOMAR INC., bsavard@infomar.com, 1998/09/21
+ # Description: Addition of skeleton in the build subdirs list.
+ 
+ include $(TOPDIR)/config/common.mak
+ 
+ #
+ # Sub-directories that need to be built
+ #
+ # MOD START
+-subdirs	= adrg dted network rpf vrf skeleton
++subdirs	= adrg dted rpf vrf skeleton
+ # MOD END
+ 
+ #
+ # Default target to build everything in all sub-directories
+ #
+ all: $(subdirs)
+ 
+ #
+ # Target to allow individual sub-directories to be built 
+ # (e.g.  make cgmmod)
+diff -U 10 -r ogdi-3.2.0-pristine/ogdi/driver/rpf/rpf.h ogdi/ogdi/driver/rpf/rpf.h
+--- ogdi-3.2.0-pristine/ogdi/driver/rpf/rpf.h	2007-02-12 16:01:48.000000000 -0500
++++ ogdi/ogdi/driver/rpf/rpf.h	2019-01-16 15:30:31.530270400 -0500
+@@ -67,21 +67,23 @@
+ #ifndef max
+ #define max(x,y) ((x > y) ? x : y)
+ #endif
+ 
+ #define ushort         unsigned short
+ #define   uint         unsigned int
+ /* typedef's conflict with /usr/include/sys/types.h
+ typedef unsigned short ushort;
+ typedef unsigned long  uint;
+ */
++#if defined(_WINDOWS) || defined(__linux__)
+ typedef unsigned char  bool;
++#endif
+ typedef unsigned char  uchar;
+ typedef unsigned char* ucharp;
+ typedef char           ascii;
+ typedef float          real4;
+ typedef double         real8;
+ 
+ #ifndef BOOLEAN
+ #define BOOLEAN short
+ #endif
+ 
+diff -U 10 -r ogdi-3.2.0-pristine/ogdi/glutil/iofile.c ogdi/ogdi/glutil/iofile.c
+--- ogdi-3.2.0-pristine/ogdi/glutil/iofile.c	2007-02-12 16:01:48.000000000 -0500
++++ ogdi/ogdi/glutil/iofile.c	2019-01-16 15:27:54.389469400 -0500
+@@ -47,24 +47,20 @@
+ 	}
+ 	while(_findnext(hfile, &c_file) == 0);
+ 	_findclose(hfile);
+   }   
+   
+ 
+   _chdir(current_dir);
+  
+   return (int) RemoveDirectory(path);
+ #else
+- char buffer[256];
+- 
+- sprintf(buffer,"rm -r %s",path);
+- ogdi_system(buffer);
+  return 0;
+ #endif
+ }
+ 
+ /*
+  *----------------------------------------------------------------------
+  * ConvertFStoBSString --
+  *
+  *	Convert a string with forward slashes to a string with backslashes
+  *	The returned string must be freed with ckfree.
+diff -U 10 -r ogdi-3.2.0-pristine/ogdi/include/ecs.h ogdi/ogdi/include/ecs.h
+--- ogdi-3.2.0-pristine/ogdi/include/ecs.h	2000-11-10 12:02:24.000000000 -0500
++++ ogdi/ogdi/include/ecs.h	2019-01-16 15:27:54.389469400 -0500
+@@ -1,19 +1,19 @@
+ /*
+  * Please do not edit this file.
+  * It was generated using rpcgen.
+  */
+ 
+ #ifndef _ECSH_H_RPCGEN
+ #define	_ECSH_H_RPCGEN
+ 
+-#include <rpc/rpc.h>
++#include <sys/types.h>
+ 
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+ 
+ /* 
+  * fichier genere par RPCGEN a partir de ecs.x
+  *
+  *    Declaration des structures & prototypes de l'extension client/serveur.
+  *    Ce fichier est recu par rpcgen et ce dernier generera 4 fichiers pour
+@@ -27,20 +27,26 @@
+  * its documentation for any purpose and without fee is hereby granted,
+  * provided that the above copyright notice appear in all copies, that
+  * both the copyright notice and this permission notice appear in
+  * supporting documentation, and that the name of L.A.S. Inc not be used 
+  * in advertising or publicity pertaining to distribution of the software 
+  * without specific, written prior permission. L.A.S. Inc. makes no
+  * representations about the suitability of this software for any purpose.
+  * It is provided "as is" without express or implied warranty.
+  */
+ 
++#ifdef _WINDOWS
++typedef unsigned int u_int;
++typedef unsigned long u_long;
++#endif
++
++
+ extern u_int ecs_compression_type;
+ extern u_int ecs_compression_version;
+ extern u_int ecs_compression_blksize;
+ extern u_int ecs_compression_level;
+ extern u_int ecs_compression_fullsize;
+ 
+ #define	ECS_SUCCESS 0
+ #define	ECS_FAILURE 1
+ #define	ECS_RASTERSIZE 1000
+ #define	ECS_MTEXT 1024
+@@ -349,20 +355,21 @@
+ 	char *server_url;
+ };
+ typedef struct ecs_ProxyCreateServer ecs_ProxyCreateServer;
+ 
+ #include <ecs_util.h> /* Outils pour l'aide a ecs */
+ 
+ 
+ #define	ECSPROG ((unsigned long)(0x20000001))
+ #define	ECSVERS ((unsigned long)(1))
+ 
++#if 0
+ #if defined(__STDC__) || defined(__cplusplus)
+ #define	CREATESERVER ((unsigned long)(1))
+ extern  ecs_Result * createserver_1(char **, CLIENT *);
+ extern  ecs_Result * createserver_1_svc(char **, struct svc_req *);
+ #define	DESTROYSERVER ((unsigned long)(2))
+ extern  ecs_Result * destroyserver_1(void *, CLIENT *);
+ extern  ecs_Result * destroyserver_1_svc(void *, struct svc_req *);
+ #define	SELECTLAYER ((unsigned long)(3))
+ extern  ecs_Result * selectlayer_1(ecs_LayerSelection *, CLIENT *);
+ extern  ecs_Result * selectlayer_1_svc(ecs_LayerSelection *, struct svc_req *);
+@@ -663,16 +670,17 @@
+ extern bool_t xdr_ecs_Category();
+ extern bool_t xdr_ecs_RasterInfo();
+ extern bool_t xdr_ecs_Compression();
+ extern bool_t xdr_ecs_ResultType();
+ extern bool_t xdr_ecs_ResultUnion();
+ extern bool_t xdr_ecs_Result();
+ extern bool_t xdr_ecs_LayerSelection();
+ extern bool_t xdr_ecs_ProxyCreateServer();
+ 
+ #endif /* K&R C */
++#endif
+ 
+ #ifdef __cplusplus
+ }
+ #endif
+ 
+ #endif /* !_ECS.H_H_RPCGEN */
+diff -U 10 -r ogdi-3.2.0-pristine/ogdi/include/ecs_util.h ogdi/ogdi/include/ecs_util.h
+--- ogdi-3.2.0-pristine/ogdi/include/ecs_util.h	2016-07-11 05:13:29.000000000 -0400
++++ ogdi/ogdi/include/ecs_util.h	2019-01-16 15:27:54.405069400 -0500
+@@ -107,35 +107,41 @@
+ 
+ #ifndef ECS_UTIL
+ #define ECS_UTIL 1
+ 
+ #define OGDI_VERSION     320
+ #define OGDI_RELEASEDATE 20160705
+ 
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+-#include <rpc/rpc.h>
++// #include <rpc/rpc.h>
+ #include <math.h>
+ #include <memory.h>
+ #include <ctype.h>
+ 
+ #ifdef _WINDOWS
+ #include <windows.h>
+ #include <winsock.h>
+ #else
+ #include <dlfcn.h>
+ #endif
+ 
+ #include <sys/types.h>
+ #include <sys/stat.h>
++#include <inttypes.h>
+ 
++// Rename this on windows to avoid conflicts with declaration of PVALUE
++// in windows system headers
++#ifdef _WINDOWS
++#define PVALUE PROJVALUE
++#endif
+ #include "projects.h"
+ 
+ /* Ensure we are compatible with PROJ.4.4.x and PROJ.4.3.x */
+ #ifndef USE_PROJUV
+ #  define projUV UV
+ #endif
+ 
+ #include "ecs.h"
+ 
+ #ifdef _SCO
+diff -U 10 -r ogdi-3.2.0-pristine/ogdi/makefile ogdi/ogdi/makefile
+--- ogdi-3.2.0-pristine/ogdi/makefile	2001-02-19 22:41:55.000000000 -0500
++++ ogdi/ogdi/makefile	2019-01-16 15:27:54.405069400 -0500
+@@ -8,21 +8,21 @@
+ # to distribution of the software without specific, written prior
+ # permission.  Her Majesty the Queen in Right of Canada makes no
+ # representations about the suitability of this software for any purpose.
+ # It is provided "as is" without express or implied warranty.
+ 
+ include $(TOPDIR)/config/common.mak
+ 
+ #
+ # Sub-directories that need to be built
+ #
+-subdirs	= include c-api glutil attr_driver datum_driver driver gltpd examples
++subdirs	= include c-api glutil attr_driver datum_driver driver
+ 
+ #
+ # Default target to build everything in all sub-directories
+ #
+ all: $(subdirs)
+ 
+ #
+ # Target to allow individual sub-directories to be built 
+ # (e.g.  make driver)
+ #
+diff -U 10 -r ogdi-3.2.0-pristine/vpflib/coorgeom.c ogdi/vpflib/coorgeom.c
+--- ogdi-3.2.0-pristine/vpflib/coorgeom.c	2007-02-12 10:52:57.000000000 -0500
++++ ogdi/vpflib/coorgeom.c	2019-01-16 15:27:54.405069400 -0500
+@@ -30,22 +30,24 @@
+ #define MAXFLOAT FLT_MAX
+ #endif
+ 
+ #ifdef _MAC
+ #undef MAXFLOAT
+ #define MAXFLOAT    3.37E+38
+ #endif
+ 
+ #ifndef MISSING_FLOAT_H
+ #include <float.h>
++#ifndef MAXFLOAT
+ #define MAXFLOAT FLT_MAX
+ #endif
++#endif
+ 
+ #ifndef __COORGEOM_H__
+ #include "coorgeom.h"
+ #endif
+ 
+ 
+ 
+ /*************************************************************************
+  *
+  *N  gc_distance
+diff -U 10 -r ogdi-3.2.0-pristine/vpflib/include/machine.h ogdi/vpflib/include/machine.h
+--- ogdi-3.2.0-pristine/vpflib/include/machine.h	2016-07-11 05:13:29.000000000 -0400
++++ ogdi/vpflib/include/machine.h	2019-01-16 15:27:54.405069400 -0500
+@@ -1,17 +1,19 @@
+ #ifndef _MACHINE_
+ #define _MACHINE_ 1
+ 
+ #ifndef INCL_XVTH
+ #include "xvt.h"
+ #endif
+ 
++#include <inttypes.h>
++
+ #define LEAST_SIGNIFICANT 0
+ #define MOST_SIGNIFICANT  1
+ 
+ typedef struct
+ {
+     long            machine;
+     long            input;
+     long            output;
+ } xBYTE_ORDER;
+ 
+diff -U 10 -r ogdi-3.2.0-pristine/vpflib/reduce2.c ogdi/vpflib/reduce2.c
+--- ogdi-3.2.0-pristine/vpflib/reduce2.c	2007-02-12 10:52:57.000000000 -0500
++++ ogdi/vpflib/reduce2.c	2019-01-16 15:27:54.405069400 -0500
+@@ -4,22 +4,28 @@
+ #include <math.h>
+ #if 0
+ #include <stdio.h>
+ #include <malloc.h>
+ #endif
+ #include "machine.h"
+ #ifndef THIN_DIG_H
+ #include "reduce2.h"
+ #endif
+ 
+-//#define  MAX(m,n) (((m) > (n)) ? (m) : (n))
+-//#define  MIN(m,n) (((m) < (n)) ? (m) : (n))
++#ifndef MAX
++#define  MAX(m,n) (((m) > (n)) ? (m) : (n))
++#endif
++
++#ifndef MIN
++#define  MIN(m,n) (((m) < (n)) ? (m) : (n))
++#endif
++
+ #define  DOCNT(i,t,n)   (_d_l=n, (_d_m=(t-(i)+_d_l)/_d_l) > 0 ? _d_m : 0L )
+ 
+ /*    General purpose tools for polyline reduction:
+        Reduca -      Closed polygon reduction which preserves small shapes.
+        Reduc1 -      Preprocessor to set up reduction parameters.
+        Reduc2 -      Douglas Peuker reduction.
+        Xcheck -      Post processing check/repair to preserve topology.
+        Plnint -      Detects intersection of polylines.
+ 
+ 
+diff -U 10 -r ogdi-3.2.0-pristine/vpflib/vpfread.c ogdi/vpflib/vpfread.c
+--- ogdi-3.2.0-pristine/vpflib/vpfread.c	2016-07-11 05:54:45.000000000 -0400
++++ ogdi/vpflib/vpfread.c	2019-01-16 15:27:54.405069400 -0500
+@@ -1498,33 +1498,38 @@
+ 
+    switch (table.header[col].type) {
+       case 'X':
+          retvalue = NULL;
+          break;
+       case 'L':
+       case 'T':
+          if (table.header[col].count == 1) {
+             memcpy(value,row[col].ptr,sizeof(char));
+          } else {
+-            int i, ascii = 1;
++            int i;
++#ifdef HAVE_ICONV
++            int ascii = 1;
++#endif
+             retvalue = (char*)xvt_zmalloc (((size_t)2 * row[col].count + 1) *
+                                                                sizeof (char));
+             tptr = (char*)xvt_zmalloc (((size_t)row[col].count + 1) *
+                                                                sizeof (char));
+             memcpy (tptr, row[col].ptr, (size_t)row[col].count *
+                                                                sizeof (char));
+             tptr[row[col].count] = '\0';
+             for(i=0;tptr[i]!=0;i++)
+             {
+               if ((unsigned char)tptr[i] >= 128)
+               {
++#ifdef HAVE_ICONV
+                 ascii = 0;
++#endif
+                 if (table.header[col].type == 'T')
+                 {
+                   //fprintf(stderr, "a T column contains non-ASCII text\n");
+                 }
+                 break;
+               }
+             }
+ #ifndef HAVE_ICONV
+             strcpy((char *)retvalue,tptr);
+ #else
+diff -U 10 -r ogdi-3.2.0-pristine/vpflib/vpftidx.c ogdi/vpflib/vpftidx.c
+--- ogdi-3.2.0-pristine/vpflib/vpftidx.c	2016-06-28 10:32:45.000000000 -0400
++++ ogdi/vpflib/vpftidx.c	2019-01-16 15:27:54.420669400 -0500
+@@ -120,21 +120,21 @@
+ #include "strfunc.h"
+ #endif
+ #ifndef _VPFTABLE_H_
+ #include "vpftable.h"
+ #endif
+ #ifndef __VPFTIDX_H__
+ #include "vpftidx.h"
+ #endif
+ 
+ #ifndef __USE_BSD
+-#define bcopy(src,dest,size)  memcpy(dest,src,size)
++// #define bcopy(src,dest,size)  memcpy(dest,src,size)
+ #endif
+ 
+ #ifdef PROTO
+ int32 read_gazetteer_index_directory(
+                                    ThematicIndexDirectory **gid,
+                                    ThematicIndexHeader     *gi,
+                                    FILE                    *idx_fp);
+ 
+ int32 read_thematic_index_header ( ThematicIndexHeader *h,
+                                              FILE *ifp );

@@ -1,0 +1,20 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.Doghouse.CHANGE_DTD_ID</action>
+        <extras>
+            <string key='routeLeg'>${routeLeg}</string>
+            <string key='routeUID'>${routeUID}</string>
+            <string key='dtdId'>${DTD ID}</string>
+            <string key='cascade'>false</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

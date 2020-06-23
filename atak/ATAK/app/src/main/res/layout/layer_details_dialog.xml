@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/auto_margin2">
+
+        <!-- Layer name -->
+        <TableRow
+            android:layout_marginTop="@dimen/auto_space">
+            <TextView
+                android:layout_marginEnd="@dimen/auto_margin2"
+                android:text="@string/name"
+                android:textSize="@dimen/fontSize"/>
+            <TextView
+                android:id="@+id/layer_name"
+                android:layout_weight="1"
+                android:text="@string/item_name"
+                android:textColor="#FFF"
+                android:textSize="@dimen/fontSize"/>
+        </TableRow>
+
+        <!-- Layer path -->
+        <TableRow
+            android:layout_marginTop="@dimen/auto_space">
+            <TextView
+                android:layout_marginEnd="@dimen/auto_margin2"
+                android:text="@string/path"
+                android:textSize="@dimen/fontSize"/>
+            <TextView
+                android:id="@+id/layer_path"
+                android:layout_weight="1"
+                android:text="/sdcard/atak/imagery/Layer.xml"
+                android:textColor="#FFF"
+                android:textSize="@dimen/fontSize"/>
+        </TableRow>
+
+        <!-- Layer URL -->
+        <TableRow
+            android:id="@+id/layout_url"
+            android:layout_marginTop="@dimen/auto_space"
+            android:visibility="gone">
+            <TextView
+                android:layout_marginEnd="@dimen/auto_margin2"
+                android:text="@string/url"
+                android:textSize="@dimen/fontSize"/>
+            <TextView
+                android:id="@+id/layer_url"
+                android:layout_weight="1"
+                android:text="@string/xmlpull"
+                android:textColor="#FFF"
+                android:textSize="@dimen/fontSize"/>
+        </TableRow>
+
+    </TableLayout>
+
+</ScrollView>

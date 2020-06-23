@@ -1,0 +1,8 @@
+<menu buttonRadius='65' buttonSpan='32.73' buttonWidth='60' buttonBg='bgs/button.xml'>
+    <button selected='${hostileBearingCircle}'
+            onClick='actions/hostile_compass.xml'
+            icon='icons/compass_rose.png'/>
+    <button selected='${bullseyeOverlay}'
+            onClick='actions/bullseye_compass.xml'
+            icon='icons/bullseye.png'/>
+</menu>

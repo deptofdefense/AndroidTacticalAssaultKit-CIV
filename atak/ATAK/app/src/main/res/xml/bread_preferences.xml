@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PreferenceScreen
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="@string/trackHistoryPreferences">
+        <CheckBoxPreference
+            android:summary="@string/log_tracks_summ"
+            android:enabled="true"
+            android:defaultValue="true"
+            android:key="toggle_log_tracks"
+            android:title="@string/log_tracks_title"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:title="@string/self_track_prefix_title"
+            android:key="track_prefix"
+            android:summary="@string/self_track_prefix_summ"
+            android:defaultValue="track_" />
+        <CheckBoxPreference
+            android:summary="@string/toggle_rot_trackcolors_summ"
+            android:enabled="true"
+            android:defaultValue="true"
+            android:key="toggle_rotate_track_colors"
+            android:title="@string/toggle_rot_trackcolors_title"/>
+        <Preference
+            android:key="track_history_default_color"
+            android:title="@string/default_color_title" />
+        <CheckBoxPreference
+            android:summary="@string/csv_Export_Header_summ"
+            android:enabled="true"
+            android:defaultValue="true"
+            android:key="track_csv_export_headers"
+            android:title="@string/csv_Export_Header_title"/>
+        <CheckBoxPreference
+            android:summary="@string/kml_export_timestaps_summ"
+            android:defaultValue="false"
+            android:key="track_kml_export_timestamps"
+            android:title="@string/kml_export_timestaps_title"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:summary="@string/Server_track_time_gap_summ"
+            android:key="bread_track_timegap_threshold"
+            android:title="@string/Server_track_time_gap_title"
+            android:inputType = "number"
+            android:defaultValue="10"/>
+   </PreferenceCategory>
+   <PreferenceCategory  android:title="@string/breadcrumbPreferences">
+       <CheckBoxPreference
+           android:summary="@string/pers_self_track_summ"
+           android:defaultValue="false"
+           android:key="track_infinite"
+           android:title="@string/pers_self_track_title"/>
+
+       <com.atakmap.android.track.ui.SeekBarPreference
+            android:summary="@string/max_num_of_crumbs_summ"
+            android:key="max_num_bread_tracks"
+            android:title="@string/set_max_num_of_crumbs_title"
+            android:text="@string/set_max_num_of_crumbs_title"
+            android:defaultValue="100"
+            android:max="255"/>
+
+       <CheckBoxPreference
+           android:title="Render bread crumb line to ground in 3-D"
+           android:defaultValue="false"
+           android:key="track_line_to_surface"
+           android:summary="When rendering the bread crumb trail in 3-D view, draw a line to the ground for each crumb"/>
+
+
+       <ListPreference
+           android:entries="@array/crumb_size"
+           android:entryValues="@array/crumb_size_value"
+           android:key="track_crumb_size"
+           android:title="@string/default_crumb_size_title"
+           android:summary="@string/default_crumb_size_summ"
+           android:defaultValue="10"/>
+
+       <com.atakmap.android.gui.PanEditTextPreference
+            android:summary="@string/set_bread_crumb_dist_summ"
+            android:key="bread_dist_threshold"
+            android:title="@string/set_bread_crumb_dist_title"
+            android:inputType = "number"
+            android:defaultValue="5"/>
+    </PreferenceCategory>
+</PreferenceScreen>

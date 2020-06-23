@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="wrap_content"
+    android:layout_height="wrap_content" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true" >
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="13dp"
+            android:layout_marginTop="13dp"
+            android:orientation="horizontal" >
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" >
+
+                <TextView
+                    style="@style/RadioTitle"
+                    android:text="@string/isrv_rover" />
+
+                <TextView
+                    android:id="@+id/rover_sub_tv"
+                    style="@style/RadioSubTitle"
+                    android:text="@string/status_disconnected" />
+                <TextView
+                    android:id="@+id/rover_sub2_tv"
+                    style="@style/RadioState"
+                    android:text="" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/roverArrow"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_centerVertical="true"
+        android:layout_alignParentEnd="true"
+        android:background="#00000000"
+        android:src="@drawable/arrow_right" />
+
+
+    <ImageButton
+        android:id="@+id/rover_cfg_btn"
+        style="@style/darkButton"
+        android:padding="6dp"
+        android:layout_toStartOf="@id/roverArrow"
+        android:layout_centerVertical="true"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:paddingBottom="16dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_menu_settings" />
+
+    <Switch
+        android:id="@+id/rover_switch"
+        android:layout_width="wrap_content"
+        android:layout_toStartOf="@id/rover_cfg_btn"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:paddingBottom="16dp"
+        android:layout_gravity="end" />
+
+</RelativeLayout>
+

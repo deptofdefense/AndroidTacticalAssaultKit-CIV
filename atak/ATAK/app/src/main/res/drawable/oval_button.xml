@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:drawable="@drawable/oval_button_normal" android:state_enabled="true" android:state_selected="false" android:state_pressed="false"/>
+    <item android:drawable="@drawable/oval_button_pressed" android:state_enabled="true" android:state_selected="false" android:state_pressed="true"/>
+    <item android:drawable="@drawable/oval_button_pressed" android:state_enabled="true" android:state_selected="true"/>
+    <item android:drawable="@drawable/oval_button_normal" android:state_enabled="false"/>
+
+</selector>

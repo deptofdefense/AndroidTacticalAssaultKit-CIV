@@ -1,0 +1,19 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.maps.jumpmaster.DIP</action>
+        <extras>
+            <string key='point'>${targetPoint}</string>
+            <string key='uid'>${uid}</string>
+            <string key='command'>0</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

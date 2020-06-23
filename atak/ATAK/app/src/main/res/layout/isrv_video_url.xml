@@ -1,0 +1,577 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout  xmlns:android="http://schemas.android.com/apk/res/android"
+               style="@style/ATAKTheme"
+               android:layout_width="fill_parent"
+               android:layout_height="fill_parent"
+               android:layout_marginTop="3dp"
+               android:layout_marginBottom="3dp"
+               android:gravity="center_horizontal"
+               android:orientation="vertical" >
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:fadeScrollbars="false"
+        android:layout_height="wrap_content" >
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="7dp"
+            android:layout_marginStart="7dp"
+            android:orientation="vertical" >
+
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/white"
+                    android:layout_alignParentStart="true"
+                    android:gravity="center_vertical"
+                    android:text="@string/general"
+                    android:textSize="22sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:id="@+id/rover_version"
+                    android:gravity="center_vertical"
+                    android:text=""
+                    android:textSize="16sp" />
+             </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignBaseline="@+id/webAdmin_btn"
+                    android:gravity="center"
+                    android:text="@string/web_based_config"
+                    android:textSize="17sp"/>
+
+                <Button
+                    android:id="@+id/webAdmin_btn"
+                    style="@style/darkButton"
+                    android:layout_alignParentEnd="true"
+                    android:gravity="center"
+                    android:padding="6dp"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/launch" />
+            </RelativeLayout>
+            <include layout="@layout/radio_item_line"/>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/white"
+                    android:layout_alignParentStart="true"
+                    android:gravity="center_vertical"
+                    android:text="@string/troubleshooting"
+                    android:textSize="22sp" />
+            </RelativeLayout>
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:gravity="center_vertical"
+                    android:layout_alignBaseline="@+id/rover_ping_btn"
+                    android:text="@string/ping_radio"
+                    android:textSize="17sp"/>
+
+                <Button
+                    android:id="@+id/rover_ping_btn"
+                    style="@style/darkButton"
+                    android:layout_alignParentEnd="true"
+                    android:gravity="center"
+                    android:padding="6dp"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/ping" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignBaseline="@+id/rover_test_btn"
+                    android:gravity="center_vertical"
+                    android:text="@string/initiate_test_video"
+                    android:textSize="17sp"/>
+
+                <Button
+                    android:id="@+id/rover_test_btn"
+                    style="@style/darkButton"
+                    android:layout_alignParentEnd="true"
+                    android:gravity="center"
+                    android:padding="6dp"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/start" />
+            </RelativeLayout>
+
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignBaseline="@+id/raw_record_btn"
+                    android:gravity="center"
+                    android:text="@string/raw_video_recorder"
+                    android:textSize="17sp"/>
+
+                <Button
+                    android:id="@+id/raw_record_btn"
+                    style="@style/darkButton"
+                    android:layout_alignParentEnd="true"
+                    android:gravity="center"
+                    android:padding="6dp"
+                    android:layout_width="100dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/record" />
+            </RelativeLayout>
+
+
+            <include layout="@layout/radio_item_line"/>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@android:color/white"
+                    android:layout_alignParentStart="true"
+                    android:gravity="center_vertical"
+                    android:text="@string/advanced_options"
+                    android:textSize="22sp" />
+                <Button
+                    android:id="@+id/reset"
+                    style="@style/darkButton"
+                    android:layout_alignParentEnd="true"
+                    android:gravity="center"
+                    android:layout_width="100dp"
+                    android:padding="6dp"
+                    android:layout_height="wrap_content"
+                    android:text="@string/reset" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <CheckBox
+                    android:id="@+id/autoRoverAddress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:text="@string/auto_rover_address"
+                    android:textSize="17sp" />
+
+            </RelativeLayout>
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:id="@+id/manualRoverIP"
+                android:layout_height="wrap_content" >
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignBaseline="@+id/roverIP_et"
+                    android:gravity="center_vertical"
+                    android:paddingStart="7dp"
+                    android:text="@string/rover_address"
+                    android:textSize="17sp" />
+                <EditText
+                    android:id="@+id/roverIP_et"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ems="7"
+                    android:layout_alignParentEnd="true"
+                    android:gravity="center_vertical"
+                    android:inputType="numberDecimal"
+                    android:lines="1"
+                    android:maxLength="16"
+                    android:paddingEnd="7dp"
+                    android:digits="0123456789."
+                    android:text="@string/_192_168_80_1"/>
+                 <LinearLayout
+                    android:id="@+id/roverIP_classic"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/roverIP_et"
+                    android:gravity="start"
+                    android:orientation="horizontal" >
+                    <Button
+                        android:id="@+id/rover_common_btn"
+                        style="@style/darkButton"
+                        android:gravity="center"
+                        android:layout_width="200dp"
+                        android:layout_height="50dp"
+                        android:text="@string/fast_set_sir_address" />
+                </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/roverIP_tre"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/roverIP_classic"
+                    android:gravity="start"
+                    android:orientation="horizontal" >
+                    <Button
+                        android:id="@+id/rover_alt_btn"
+                        style="@style/darkButton"
+                        android:gravity="center"
+                        android:layout_width="200dp"
+                        android:layout_height="50dp"
+                        android:text="@string/fast_set_tre_address" />
+
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/roverIP_tre"
+                    android:gravity="start"
+                    android:orientation="horizontal" >
+                    <Button
+                        android:id="@+id/rover_alt1_btn"
+                        style="@style/darkButton"
+                        android:gravity="center"
+                        android:layout_width="200dp"
+                        android:layout_height="50dp"
+                        android:text="@string/fast_set_tre_uncommon_address" />
+
+                   </LinearLayout>
+
+            </RelativeLayout>
+
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+                <CheckBox
+                    android:id="@+id/sirlegacy"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:text="@string/older_firmware_sir_only_lt_1_7"
+                    android:textSize="17sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="7dp"
+                    android:layout_below="@id/sirlegacy"
+                    android:gravity="start"
+                    android:text="@string/sir_firmware_warning"
+                    android:textSize="11sp" />
+            </RelativeLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dp"
+                android:paddingStart="7dp"
+                android:gravity="center_vertical"
+                android:text="@string/analog"
+                android:textStyle="bold"
+                android:textSize="17sp" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:layout_alignParentEnd="true"
+                    android:paddingEnd="7dp"
+                    android:orientation="horizontal" >
+
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="7dp"
+                        android:text="@string/udp_url_prefix"
+                        android:textSize="17sp" />
+
+                    <EditText
+                        android:id="@+id/roverUrlA_et"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ems="7"
+                        android:inputType="numberDecimal"
+                        android:lines="1"
+                        android:maxLength="16"
+                        android:digits="0123456789."
+                        android:text="@string/_239_255_0_1">
+                    </EditText>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/colon_with_spaces" />
+
+                    <EditText
+                        android:id="@+id/roverPortA_et"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ems="4"
+                        android:inputType="number"
+                        android:maxLength="5"
+                        android:text="@string/_1841"
+                        android:textSize="17sp" >
+                    </EditText>
+                </LinearLayout>
+            </RelativeLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:paddingTop="5dp"
+                android:paddingStart="7dp"
+                android:text="@string/digital"
+                android:textStyle="bold"
+                android:textSize="17sp" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:layout_alignParentEnd="true"
+                    android:paddingEnd="7dp"
+                    android:orientation="horizontal" >
+
+
+
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="7dp"
+                        android:text="@string/udp_url_prefix"
+                        android:textSize="17sp" />
+
+                    <EditText
+                        android:id="@+id/roverUrlD_et"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ems="7"
+                        android:inputType="numberDecimal"
+                        android:lines="1"
+                        android:maxLength="16"
+                        android:digits="0123456789."
+                        android:text="@string/_239_255_0_1" >
+                    </EditText>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/colon_with_spaces" />
+
+                    <EditText
+                        android:id="@+id/roverPortD_et"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ems="4"
+                        android:inputType="number"
+                        android:maxLength="5"
+                        android:text="@string/_11841"
+                        android:textSize="17sp" >
+                    </EditText>
+                </LinearLayout>
+            </RelativeLayout>
+
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+                <CheckBox
+                    android:id="@+id/sirlegacyswap"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:text="@string/tacrover_e_quirks_mode"
+                    android:textSize="17sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="7dp"
+                    android:layout_below="@id/sirlegacyswap"
+                    android:gravity="start"
+                    android:text="@string/tre_firmware_warning"
+
+                    android:textSize="11sp" />
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" >
+
+                <CheckBox
+                    android:id="@+id/roversideband_cb"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/rover_sideband_klv"
+                    android:layout_alignParentStart="true"
+                    android:gravity="center_vertical"
+                    android:textSize="17sp" />
+
+                <EditText
+                    android:id="@+id/roversideband_port_et"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/_3002"
+                    android:ems="4"
+                    android:layout_alignParentEnd="true"
+                    android:gravity="center_vertical"
+                    android:paddingEnd="7dp"
+                    android:inputType="number"
+                    android:maxLength="5"
+                    android:textSize="17sp"
+                    android:visibility="gone" />
+             </RelativeLayout>
+
+             <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" >
+
+                <CheckBox
+                    android:id="@+id/ignoreklv_cb"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:gravity="center_vertical"
+                    android:text="@string/ignore_embedded_klv"
+                    android:textSize="17sp" />
+
+             </RelativeLayout>
+             <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" >
+
+                <CheckBox
+                    android:id="@+id/disablecot_cb"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:gravity="center_vertical"
+                    android:text="@string/disable_cot"
+                    android:textSize="17sp" />
+
+             </RelativeLayout>
+
+             <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" >
+
+                <CheckBox
+                    android:id="@+id/halfSize_cb"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:gravity="center_vertical"
+                    android:text="@string/encode_analog_video_half_size"
+                    android:textSize="17sp" />
+
+             </RelativeLayout>
+
+
+             <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" >
+
+                <CheckBox
+                    android:id="@+id/mpeg2_cb"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:gravity="center_vertical"
+                    android:text="@string/encode_analog_video_as_mpeg_2"
+                    android:textSize="17sp" />
+
+             </RelativeLayout>
+
+
+            <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" >
+
+                <TextView
+                    android:id="@+id/bitrateText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:layout_alignTop="@+id/roverBitRate"
+                    android:gravity="center_vertical"
+                    android:paddingStart="7dp"
+                    android:text="@string/video_bitrate"
+                    android:textStyle="bold"
+                    android:textSize="16sp" />
+                <EditText
+                    android:id="@+id/roverBitRate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ems="5"
+                    android:layout_alignParentEnd="true"
+                    android:gravity="center_vertical"
+                    android:inputType="number"
+                    android:lines="1"
+                    android:maxLength="4"
+                    android:paddingEnd="7dp"
+                    android:paddingTop="6dp"
+                    android:digits="0123456789"
+                    android:text="@string/_1500"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/bitrateText"
+                    android:gravity="center_vertical"
+                    android:paddingStart="7dp"
+                    android:text="@string/range_500_4000_default_1500"
+                    android:textSize="12sp" />
+            </RelativeLayout>
+
+             <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" >
+
+                <CheckBox
+                    android:id="@+id/roverWifi_cb"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:gravity="center_vertical"
+                    android:paddingTop="6dp"
+                    android:text="@string/rover_over_wifi"
+                    android:textSize="17sp" />
+
+             </RelativeLayout>
+
+
+
+            </LinearLayout>
+       </ScrollView>
+</LinearLayout>

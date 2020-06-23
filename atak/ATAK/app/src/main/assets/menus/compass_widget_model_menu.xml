@@ -1,0 +1,20 @@
+<menu buttonRadius='50' buttonSpan='30' buttonWidth='90' dragDismiss='true' buttonBg='bgs/button.xml'>
+
+    <button
+        angle='-75'
+        icon='icons/tilt_lock.png'
+        onClick='actions/compass_lock_tilt.xml'
+        disabled='!{${enable3D}}'
+        selected='${lockTilt}'/>
+
+    <button
+        icon='icons/toggle_3d.png'
+        onClick='actions/compass_toggle_3d.xml'
+        selected='${enable3D}'/>
+
+    <button
+        icon='icons/rotate.png'
+        onClick='actions/compass_toggle_user_up.xml'
+        selected='${userUp}'/>
+
+</menu>

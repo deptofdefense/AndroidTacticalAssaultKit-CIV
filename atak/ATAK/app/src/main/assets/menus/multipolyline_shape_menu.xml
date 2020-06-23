@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<menu
+    buttonBg='bgs/button.xml'
+    buttonRadius='65'
+    buttonSpan='120'
+    buttonWidth='90'>
+
+        <button
+            angle='-90'
+            icon='icons/delete.png'
+            onClick='actions/shape_delete.xml' />
+
+        <button
+            icon='icons/details.png'
+            onClick='actions/showdetails_multipolyline.xml' />
+
+        <button icon='icons/label.png'
+                onClick='actions/label_toggle.xml'
+                selected='${labels_on}'/>
+</menu>

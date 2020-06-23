@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory 
+        android:title="@string/wms_preferences">
+        <Preference android:title="@string/redeploy_wms_sources"
+                android:key="redeploywms" />
+        <Preference android:title="@string/wms_connect_tmeout"
+                android:key="wmsconnecttimeout" />
+
+        <CheckBoxPreference
+            android:title="@string/preferences_text58"
+            android:summary="@string/preferences_text59"
+            android:defaultValue="true"
+            android:key="volumemapswitcher" />
+       <CheckBoxPreference
+           android:title="@string/enable_grg_interact"
+           android:key="prefs_layer_grg_map_interaction"
+           android:summary="@string/enable_grg_interact_summ"
+           android:defaultValue="true"/>
+
+    </PreferenceCategory>
+</PreferenceScreen>

@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory
+        android:title="@string/basic_display_settings">
+        <Preference android:title="@string/unitDisplayPreferences"
+            android:key="unitPreferences"
+            android:summary="@string/preferences_text132"
+            android:icon="@drawable/ic_menu_ruler"/>
+        <CheckBoxPreference
+            android:title="@string/preferences_text133"
+            android:summary="@string/preferences_text134"
+            android:defaultValue="true"
+            android:key="map_scale_visible"
+            android:icon="@drawable/ic_mapscale"/>
+
+        <CheckBoxPreference
+            android:title="@string/preferences_text135"
+            android:summary="@string/preferences_text136"
+            android:defaultValue="false"
+            android:dependency="map_scale_visible"
+            android:key="map_scale_rounding"
+            android:icon="@drawable/ic_mapscale_rounding"/>
+
+        <CheckBoxPreference
+            android:title="@string/designate_map_center"
+            android:summary="@string/designate_map_center_summary"
+            android:defaultValue="false"
+            android:key="map_center_designator"
+            android:icon="@drawable/ic_center_designator"/>
+
+        <CheckBoxPreference
+            android:title="@string/display_self_coord"
+            android:summary="@string/display_self_coord_summary"
+            android:defaultValue="true"
+            android:key="show_self_coordinate_overlay" />
+    </PreferenceCategory>
+
+
+    <PreferenceCategory
+        android:title="@string/usability_settings">
+
+        <CheckBoxPreference
+            android:title="@string/preferences_text137"
+            android:summary="@string/preferences_text138"
+            android:defaultValue="false"
+            android:key="largeTextMode"
+            android:icon="@drawable/large_text_pref"/>
+
+        <CheckBoxPreference
+            android:title="@string/preferences_text139"
+            android:summary="@string/preferences_text140"
+            android:defaultValue="false"
+            android:key="largeActionBar"
+            android:icon="@drawable/large_actionbar"/>
+
+        <ListPreference
+            android:title="@string/preferences_text141"
+            android:entryValues="@array/overlays_scaling_values"
+            android:entries="@array/overlays_scaling_names"
+            android:summary="@string/preferences_text142"
+            android:key="relativeOverlaysScalingRadioList"
+            android:defaultValue="1.00"
+            android:icon="@drawable/large_icon"/>
+
+        <ListPreference
+            android:title="@string/preferences_text143"
+            android:entryValues="@array/label_scaling_values"
+            android:entries="@array/label_scaling_names"
+            android:summary="@string/preferences_text144"
+            android:key="label_text_size"
+            android:defaultValue="14"
+            android:icon="@drawable/text_size"/>
+
+        <CheckBoxPreference
+            android:icon="@drawable/ic_menu_map_brightness"
+            android:key="dim_map_with_brightness_key"
+            android:defaultValue="false"
+            android:summary="@string/preferences_text145"
+            android:title="@string/preferences_text146"/>
+
+        <CheckBoxPreference
+            android:icon="@drawable/ic_curved_display"
+            android:title="@string/pref_curved_display"
+            android:summary="@string/pref_curved_display_desc"
+            android:defaultValue="false"
+            android:key="atakAdjustCurvedDisplay" />
+
+        <Preference
+            android:title="@string/androidPreferences"
+            android:key="displaySettings"
+            android:summary="@string/preferences_text147"
+            android:icon="@drawable/ic_android_display_settings"/>
+
+
+        <CheckBoxPreference
+            android:title="@string/enable_faux"
+            android:summary="@string/faux_nav_bar_text"
+            android:defaultValue="false"
+            android:key="faux_nav_bar"
+            android:icon="@drawable/nav_bar"/>
+
+        <CheckBoxPreference
+            android:title="@string/enable_faux_reverse"
+            android:summary="@string/enable_faux_reverse_summ"
+            android:defaultValue="false"
+            android:dependency="faux_nav_bar"
+            android:key="faux_nav_bar_reverse"
+            android:icon="@drawable/rev_nav_bar"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/dex_options">
+
+    <CheckBoxPreference
+        android:title="@string/enable_dex_controls"
+            android:summary="@string/enable_dex_controls_summary"
+            android:defaultValue="false"
+            android:key="dexControls"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/rendering_3d_options">
+
+        <CheckBoxPreference
+            android:title="@string/globe_display"
+            android:summary="@string/globe_display_summary"
+            android:defaultValue="false"
+            android:key="atakGlobeModeEnabled" />
+
+    </PreferenceCategory>
+
+
+    <PreferenceCategory
+        android:title="@string/coloring_and_tinting">
+
+        <Preference
+            android:summary="@string/preferences_text128"
+            android:key="my_location_icon_color"
+            android:title="@string/preferences_text129"
+            android:icon="@drawable/ic_self_pref"/>
+
+        <Preference
+            android:summary="@string/preferences_text130"
+            android:key="my_actionbar_settings"
+            android:title="@string/preferences_text131"
+            android:icon="@drawable/customize_actionbar_pref_icon"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/other_misc_display_options">
+             <Preference android:title="@string/gridLinePreferences"
+                         android:key="gridLinesPreference"
+                         android:summary="@string/preferences_text148"
+                         android:icon="@drawable/ic_overlay_gridlines"/>
+             <Preference android:title="@string/imageryLayerPreferences"
+                         android:key="layerOutlinesPreference"
+                         android:summary="@string/preferences_text149"
+                         android:icon="@drawable/ic_menu_maps"/>
+             <Preference android:title="@string/offscreenIndPreferences"
+                         android:key="atakOffScrIndiOptions"
+                         android:summary="@string/preferences_text150"
+                         android:icon="@drawable/ic_overlay_offscrind"/>
+             <Preference android:title="@string/importStylePreferences"
+                         android:key="overlayStylePreference"
+                         android:summary="@string/preferences_text151"
+                         android:icon="@drawable/ic_menu_import_file"/>
+
+             <ListPreference
+                 android:title="@string/preferences_text152"
+                 android:entryValues="@array/overlay_manager_size_values"
+                 android:entries="@array/overlay_manager_size_names"
+                 android:summary="@string/preferences_text153"
+                 android:key="overlay_manager_width_height"
+                 android:defaultValue="33" />
+
+            <ListPreference
+                android:title="@string/preferences_text154"
+                android:entryValues="@array/brightness_values"
+                android:entries="@array/brightness_names"
+                android:summary="@string/preferences_text155"
+                android:key="atakForcedBrightness"
+                android:defaultValue="-1" />
+
+             <CheckBoxPreference
+                 android:title="@string/preferences_text156"
+                 android:summary="@string/preferences_text157"
+                 android:defaultValue="false"
+                 android:key="atakScreenLock" />
+
+             <CheckBoxPreference
+                 android:title="@string/preferences_text158"
+                 android:summary="@string/preferences_text159"
+                 android:defaultValue="true"
+                 android:key="atakDisableSoftkeyIllumination" />
+
+             <CheckBoxPreference
+                 android:title="@string/preferences_text160"
+                 android:summary="@string/preferences_text161"
+                 android:defaultValue="false"
+                 android:key="atakControlReverseOrientation" />
+
+             <CheckBoxPreference
+                 android:title="@string/preferences_text162"
+                 android:summary="@string/preferences_text163"
+                 android:defaultValue="false"
+                 android:key="atakControlShortenLabels" />
+
+             <CheckBoxPreference
+                 android:title="@string/preferences_text164"
+                 android:summary="@string/preferences_text165"
+                 android:defaultValue="true"
+                 android:key="atakControlShowLabels"/>
+
+             <CheckBoxPreference
+                 android:title="@string/preferences_text166"
+                 android:summary="@string/preferences_text167"
+                 android:defaultValue="true"
+                 android:key="atakControlOtherUserNotification"/>
+
+             <ListPreference
+                android:title="@string/preferences_text168"
+                android:entryValues="@array/fade_notification_values"
+                android:entries="@array/fade_notification_names"
+                android:summary="@string/preferences_text169"
+                android:key="fade_notification"
+                android:defaultValue="90" />
+
+             <ListPreference
+                 android:title="@string/preferences_text170"
+                 android:entryValues="@array/imagery_tab_values"
+                 android:entries="@array/imagery_tab_names"
+                 android:summary="@string/preferences_text171"
+                 android:key="imagery_tab_name"
+                 android:defaultValue="Imagery" />
+
+        </PreferenceCategory>
+</PreferenceScreen>

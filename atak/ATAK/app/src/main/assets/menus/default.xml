@@ -1,0 +1,22 @@
+<menu buttonRadius='65' buttonSpan='72' buttonWidth='90' buttonBg='bgs/button.xml'>
+    <button angle='30' 
+            icon='icons/friendly.png' 
+            onClick='actions/dropfriendly.xml' />
+            
+    <button    icon='icons/target.png' 
+            onClick='actions/droptarget.xml' />        
+            
+    <button icon='icons/neutral.png'
+            onClick='actions/dropneutral.xml' />            
+            
+    <button icon='icons/unknown.png'
+            onClick='actions/dropunknown.xml' />
+                                                    
+
+            
+    <button icon='icons/damaged.png'
+            onClick='actions/dropdamaged.xml' />
+            
+
+
+</menu>

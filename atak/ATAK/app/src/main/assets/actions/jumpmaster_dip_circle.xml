@@ -1,0 +1,12 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.maps.jumpmaster.DIP_BEARING_RING</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+            <string key='dipBearing'>true</string>
+        </extras>
+    </broadcast>
+</set>

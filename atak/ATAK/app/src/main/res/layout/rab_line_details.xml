@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:weightSum="52"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_weight="1"
+        android:padding="@dimen/auto_space_big">
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/name"
+                android:textColor="@color/heading_yellow"
+                android:layout_marginEnd="10dp"
+                android:textSize="@dimen/draper_font"/>
+            <com.atakmap.android.gui.EditText
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:id="@+id/nameEditText"
+                android:layout_weight="1"
+                android:maxLines="1"
+                android:textSize="@dimen/draper_title_font"
+                android:contentDescription="@string/name"
+                android:inputType="textNoSuggestions" />
+            <ImageButton
+                android:id="@+id/colorButton"
+                android:layout_width="@dimen/dropdown_bottom_bar_height"
+                android:layout_height="@dimen/dropdown_bottom_bar_height"
+                android:padding="12dp"
+                style="@android:style/Widget.Holo.Button"
+                android:src="@drawable/color_rectangle"/>
+            <ImageButton
+                android:id="@+id/rbPanTo"
+                android:layout_width="@dimen/dropdown_bottom_bar_height"
+                android:layout_height="@dimen/dropdown_bottom_bar_height"
+                android:padding="@dimen/auto_space_big"
+                android:background="#0000"
+                android:src="@drawable/panto_button"
+                android:scaleType="fitCenter"
+                android:adjustViewBounds="false"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <ScrollView
+    android:layout_width="match_parent"
+    android:layout_height="0dp"
+    android:layout_weight="50"
+    android:fadeScrollbars="false">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/auto_space_big">
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <ImageButton
+                android:layout_width="@dimen/dropdown_bottom_bar_height"
+                android:layout_height="match_parent"
+                android:id="@+id/reverseButton"
+                android:src="@drawable/arrow_down_selected"
+                android:scaleType="center"
+                android:paddingTop="12dp"
+                android:paddingBottom="12dp"
+                style="@style/darkButton"
+                android:baselineAlignBottom="false"/>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:padding="12dp"
+                    style="@style/darkButton"
+                    android:id="@+id/startPointButton" >
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:padding="@dimen/auto_space"
+                        android:id="@+id/startPointIcon"
+                        android:src="@drawable/ic_self"
+                        android:scaleType="fitCenter"
+                        android:adjustViewBounds="false"/>
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/auto_space"
+                        android:maxLines="1"
+                        android:id="@+id/startPointLabel"
+                        android:textColor="#FFFFFF"
+                        android:textIsSelectable="false"
+                        android:clickable="false"
+                        android:focusable="false"
+                        android:textSize="@dimen/draper_title_font"/>
+                </LinearLayout>
+                <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:id="@+id/endPointButton"
+                    android:padding="12dp"
+                    style="@style/darkButton">
+                    <ImageView
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:padding="@dimen/auto_space"
+                        android:id="@+id/endPointIcon"
+                        android:src="@drawable/hostile"
+                        android:scaleType="fitCenter"/>
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/auto_space"
+                        android:maxLines="1"
+                        android:id="@+id/endPointLabel"
+                        android:textColor="#FFFFFF"
+                        android:textIsSelectable="false"
+                        android:clickable="false"
+                        android:focusable="false"
+                        android:textSize="@dimen/draper_title_font"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+              android:id="@+id/cotInfoRangeBearingView"
+              android:layout_height="wrap_content"
+              android:layout_width="fill_parent"
+              android:orientation="horizontal">
+              <include layout="@layout/rab_layout" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/eta_and_speed_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="visible">
+
+            <LinearLayout
+                android:id="@+id/speed_group"
+                android:layout_width="0sp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/manual_speed_entry_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/heading_yellow"
+                    android:textSize="@dimen/draper_font" />
+
+                <EditText
+                    android:id="@+id/manual_speed_entry"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="@string/speed"
+                    android:imeOptions="actionGo"
+                    android:inputType="number" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/eta_group"
+                android:layout_width="0sp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/eta_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:text="@string/eta"
+                    android:textColor="@color/heading_yellow"
+                    android:textSize="@dimen/draper_font" />
+
+                <TextView
+                    android:id="@+id/eta_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <com.atakmap.android.hashtags.view.RemarksLayout
+            android:id="@+id/remarksLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/auto_margin"/>
+
+    </LinearLayout>
+</ScrollView>
+
+    <LinearLayout
+        android:id="@id/buttonLayout"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:layout_weight="1"
+        android:weightSum="1"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+
+
+        <ImageButton
+            android:id="@+id/sendLayout"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:src="@drawable/send_square"
+            android:layout_weight="0.5"
+            android:textSize="13sp"
+             />
+
+        <Button
+            android:id="@+id/elevationButton"
+            android:text="@string/elevation_profile"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="0.5"
+            style="@style/darkButton"
+            android:textSize="@dimen/draper_title_font" />
+    </LinearLayout>
+</LinearLayout>

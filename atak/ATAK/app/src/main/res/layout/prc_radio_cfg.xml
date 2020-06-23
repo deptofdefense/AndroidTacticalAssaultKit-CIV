@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="match_parent"
+    android:layout_marginBottom="3dp"
+    android:layout_marginTop="3dp"
+    android:gravity="center_horizontal"
+    android:orientation="vertical" >
+
+    <Spinner
+        android:id="@+id/prc_cfg_spin"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        />
+
+
+    <LinearLayout
+        android:id="@+id/pushLayout"
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="3">
+
+    <Button
+        android:id="@+id/prc_cfg_push"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/push_vulos_sa_configuration"
+        android:layout_weight="3"
+        />
+
+      <CheckBox
+         android:id="@+id/prc_localreport"
+         android:layout_width="wrap_content"
+         android:layout_height="fill_parent"
+         android:gravity="start|center_vertical"
+         android:textSize="9sp"
+         android:layout_margin="3dp"
+         android:layout_weight="0"
+         android:text="@string/locally_report_n_testing" />
+      </LinearLayout>
+
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="200dp"
+        android:layout_weight="1"
+        android:background="#FF313131"
+        android:fadeScrollbars="false"
+        android:padding="5dp" >
+
+
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/prc_cfg_info"
+            android:text=""
+            android:textSize="12sp" />
+
+     </ScrollView>
+
+
+      <CheckBox
+         android:id="@+id/prc_defroute"
+         android:layout_weight="0"
+         android:layout_width="wrap_content"
+         android:layout_height="fill_parent"
+         android:gravity="start|center_vertical"
+         android:textSize="9sp"
+         android:paddingBottom="3dp"
+         android:layout_margin="0dp"
+         android:text="@string/default_route_prc152" />
+    
+
+
+</LinearLayout>

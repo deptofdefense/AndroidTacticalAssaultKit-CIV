@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+         android:layout_width="wrap_content" 
+         android:layout_height="wrap_content" 
+         android:id="@+id/favRL1"
+         >
+
+    <RelativeLayout
+         android:layout_width="wrap_content" 
+         android:layout_height="wrap_content" 
+         android:orientation="horizontal"
+         android:id="@+id/favRL2"
+         >
+        <EditText
+            android:id="@+id/editTop1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:nextFocusDown="@+id/editTop2"
+            android:minEms="3"
+        android:inputType="numberDecimal"
+            android:maxEms="3" />
+        
+        <TextView
+            android:id="@+id/degSymbT"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/editTop1"
+            android:text="@string/u00b0"
+            android:width="10dp"
+            android:textSize="24sp"
+            android:textStyle="bold"
+           />
+    
+        <EditText
+            android:id="@+id/editTop2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/degSymbT"
+            android:nextFocusDown="@+id/editTop3"
+            android:minEms="2"
+            android:inputType="numberDecimal"
+            android:maxEms="2" />
+        
+         <TextView
+             android:id="@+id/minSymbT"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_toEndOf="@id/editTop2"
+             android:text="@string/apos"
+             android:width="10dp"
+             android:textSize="24sp"
+             android:textStyle="bold"
+           />
+        
+        
+        <EditText
+            android:id="@+id/editTop3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/minSymbT"
+            android:nextFocusDown="@+id/editBot1"
+            android:minEms="2"
+            android:inputType="numberDecimal"
+            android:maxEms="2" />
+        
+         <TextView
+             android:id="@+id/secSymbT"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_toEndOf="@id/editTop3"
+             android:text="@string/quote"
+             android:width="10dp"
+             android:textSize="24sp"
+             android:textStyle="bold"
+           />
+    
+        <EditText
+            android:id="@+id/editBot1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/editTop1"
+            android:nextFocusDown="@+id/editBot2"
+            android:minEms="3"
+                android:inputType="numberDecimal"
+            android:maxEms="3" />
+        
+         <TextView
+             android:id="@+id/degSymbB"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_below="@id/editTop1"
+             android:layout_toEndOf="@id/editBot1"
+             android:text="@string/u00b0"
+             android:width="10dp"
+             android:textSize="24sp"
+             android:textStyle="bold"
+           />
+    
+        <EditText
+            android:id="@+id/editBot2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/editTop1"
+            android:layout_toEndOf="@id/degSymbB"
+            android:nextFocusDown="@+id/editBot3"
+            android:minEms="2"
+            android:inputType="numberDecimal"
+            android:maxEms="2" />
+        
+        
+        <TextView
+            android:id="@+id/minSymbB"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/editTop1"
+            android:layout_toEndOf="@id/editBot2"
+            android:text="@string/apos"
+            android:width="10dp"
+            android:textSize="24sp"
+            android:textStyle="bold"
+           />
+    
+        <EditText
+            android:id="@+id/editBot3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/editTop1"
+            android:layout_toEndOf="@id/minSymbB"
+            android:minEms="2"
+            android:inputType="numberDecimal"
+            android:maxEms="2" />
+        
+         <TextView
+             android:id="@+id/secSymbB"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_below="@id/editTop1"
+             android:layout_toEndOf="@id/editBot3"
+             android:text="@string/quote"
+             android:width="10dp"
+             android:textSize="24sp"
+             android:textStyle="bold"
+           />
+    
+        <RadioGroup
+            android:id="@+id/favNorthSouth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_toEndOf="@id/secSymbT">
+            
+            <RadioButton
+                android:id="@+id/radioTop1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:ems="3"
+                android:text="@string/n" />
+    
+            <RadioButton
+                android:id="@+id/radioTop2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/s" />
+        </RadioGroup>
+        
+           <RadioGroup
+               android:id="@+id/favEastWest"
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               android:orientation="horizontal"
+               android:layout_below="@id/favNorthSouth"
+               android:layout_toEndOf="@+id/secSymbB">
+            <RadioButton
+                android:id="@+id/radioBot1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ems="3"
+                android:checked="true"
+                android:text="@string/e" />
+        
+            <RadioButton
+                android:id="@+id/radioBot2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/w" />
+        </RadioGroup>
+    
+        
+     
+        
+       <EditText
+           android:id="@+id/favEditDecTop"
+           android:layout_width="360dip"
+           android:layout_height="wrap_content"
+           android:nextFocusDown="@+id/favEditDecBot"
+           android:inputType="numberSigned|numberDecimal"
+           android:hint="@string/details_text14"
+           android:visibility="gone" />
+      <EditText
+           android:id="@+id/favEditDecBot"
+           android:layout_below="@id/favEditDecTop"
+           android:layout_width="360dip"
+           android:layout_height="wrap_content"
+           android:inputType="numberSigned|numberDecimal"
+           android:hint="@string/details_text15"
+           android:visibility="gone" />
+      
+      <EditText
+          android:id="@+id/favMGRS1" 
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:inputType="text"
+          android:nextFocusDown="@+id/favMGRS2"
+          android:visibility="gone"
+          android:minEms="3"
+            android:maxEms="3" 
+            />
+       <EditText
+           android:id="@+id/favMGRS2"
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"
+           android:inputType="text"
+           android:layout_toEndOf="@id/favMGRS1"
+           android:nextFocusDown="@+id/favMGRS3"
+           android:visibility="gone"
+           android:minEms="2"
+           android:maxEms="2"
+          />
+        <EditText
+            android:id="@+id/favMGRS3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/favMGRS2"
+            android:nextFocusDown="@+id/favMGRS4"
+            android:visibility="gone"
+            android:inputType="number"
+            android:minEms="5"
+            android:maxEms="5"
+          />
+         <EditText
+             android:id="@+id/favMGRS4"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_toEndOf="@id/favMGRS3"
+             android:visibility="gone"
+             android:inputType="number"
+             android:minEms="5"
+             android:maxEms="5"
+          />
+         
+    </RelativeLayout>
+
+  <RadioGroup
+        android:id="@+id/favCon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/favRL2"
+        android:orientation="horizontal"
+        >
+    
+         <RadioButton
+            android:id="@+id/radioBoss1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/d_m_s" />
+    
+         <RadioButton
+            android:id="@+id/radioBoss2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/decimal_degrees" />
+         <RadioButton
+             android:id="@+id/radioBoss3"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:text="@string/mgrs"
+             />
+    </RadioGroup>
+
+</RelativeLayout>

@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.atakmap.android.util.MyIpPreference
+        android:key="showIP" />
+    <PreferenceCategory android:title="Server Connections">
+         <Preference android:key="manageStreamingLink"
+              android:title="@string/preferences_text226"
+              android:summary="@string/preferences_text227"/>
+        <CheckBoxPreference
+            android:key="displayServerConnectionWidget"
+            android:title="@string/preferences_text228"
+            android:summary="@string/preferences_text229"
+            android:defaultValue="false" />
+        <CheckBoxPreference
+            android:key="monitorServerConnections"
+            android:title="@string/preferences_text230"
+            android:summary="@string/preferences_text231"
+            android:defaultValue="true" />
+        <Preference
+            android:title="@string/preferences_text232"
+            android:key="caLocation"
+            android:summary="@string/preferences_text233"
+            android:defaultValue="(built-in)" />
+        <com.atakmap.android.gui.EncryptedPanEditTextPreference
+            android:title="@string/preferences_text234"
+            android:key="caPassword"
+            android:inputType="textPassword"/>
+        <Preference
+            android:title="@string/preferences_text235"
+            android:key="certificateLocation"
+            android:summary="@string/preferences_text236"
+            android:defaultValue="(built-in)" />
+        <com.atakmap.android.gui.EncryptedPanEditTextPreference
+            android:title="@string/preferences_text237"
+            android:key="clientPassword"
+            android:inputType="textPassword"/>
+        <!--suppress AndroidUnknownAttribute -->
+        <com.atakmap.android.network.ui.CredentialsPreference
+            android:title="@string/preferences_text238"
+            android:key="default_client_credentials"
+            credentialsType="COT_SERVICE"
+            android:summary="@string/preferences_text239"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:title="@string/preferences_text240"
+            android:summary="@string/preferences_text241"
+            android:key="apiSecureServerPort"
+            android:inputType="number"
+            android:defaultValue="8443"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:title="@string/preferences_text242"
+            android:summary="@string/preferences_text243"
+            android:key="apiUnsecureServerPort"
+            android:inputType="number"
+            android:defaultValue="8080"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:title="@string/preferences_cert_enroll_port"
+            android:summary="@string/preferences_cert_enroll_port_desc"
+            android:key="apiCertEnrollmentPort"
+            android:inputType="number"
+            android:defaultValue="8446"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:title="@string/preferences_cert_enroll_key_length"
+            android:summary="@string/preferences_cert_enroll_key_length_desc"
+            android:key="apiCertEnrollmentKeyLength"
+            android:inputType="number"
+            android:defaultValue="4096"/>
+        <CheckBoxPreference
+            android:key="certEnrollmentExport"
+            android:title="@string/preferences_cert_enroll_export"
+            android:summary="@string/preferences_cert_enroll_export_desc"
+            android:defaultValue="false" />
+        <CheckBoxPreference
+            android:key="deviceProfileEnableOnConnect"
+            android:title="@string/device_profile_enable_on_connect"
+            android:summary="@string/device_profile_enable_on_connect_desc"
+            android:defaultValue="false" />
+    </PreferenceCategory>
+     <PreferenceCategory android:title="@string/preferences_text244">
+         <CheckBoxPreference
+             android:key="enableNonStreamingConnections"
+             android:title="@string/preferences_text245"
+             android:summary="@string/preferences_text246"
+             android:defaultValue="true" />
+         <Preference
+             android:key="configureNonStreamingEncryption"
+             android:title="Configure AES-256 Mesh Encryption"
+             android:summary="Allows for management AES-256 encryption of mesh network traffic."/>
+
+         <CheckBoxPreference
+             android:key="autoDisableMeshSAWhenStreaming"
+             android:title="@string/preferences_text2451"
+             android:summary="@string/preferences_text2461"
+             android:defaultValue="false"
+             android:dependency="enableNonStreamingConnections"/>
+         <Preference
+            android:title="@string/preferences_text247"
+            android:key="manageInputsLink"
+            android:summary="@string/preferences_text248" />
+        <Preference
+            android:title="@string/preferences_text249"
+            android:key="manageOutputsLink"
+            android:summary="@string/preferences_text250" />
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/preferences_text251">
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:key="tcpConnectTimeout"
+            android:title="@string/preferences_text253"
+            android:summary="@string/preferences_text254"
+            android:inputType="number"
+            android:defaultValue="20" />
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:key="udpNoDataTimeout"
+            android:title="@string/preferences_text255"
+            android:summary="@string/preferences_text256"
+            android:inputType="number"
+            android:defaultValue="30" />
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:key="multicastTTL"
+            android:title="@string/preferences_text258"
+            android:summary="@string/preferences_text259"
+            android:inputType="number"
+            android:defaultValue="64" />
+        <CheckBoxPreference 
+            android:key="network_multicast_loopback"
+            android:title="@string/preferences_text257a"
+            android:summary="@string/preferences_text257b"
+            android:defaultValue="false" />
+        <CheckBoxPreference 
+            android:key="ppp0_highspeed_capable"
+            android:title="@string/hsppplink"
+            android:summary="@string/hsppplink_summary"
+            android:defaultValue="false" />
+
+        <CheckBoxPreference 
+            android:key="waveRelayRedirect"
+            android:title="Legacy Wave Relay Redirect"
+            android:summary="Enable when using ATAK with a Wave Relay Radio when the Wave Relay Radio Control Plugin is not installed.  It is recommended that users install the Wave Relay Radio Plugin."
+            android:defaultValue="false" />
+
+
+        </PreferenceCategory>
+</PreferenceScreen>

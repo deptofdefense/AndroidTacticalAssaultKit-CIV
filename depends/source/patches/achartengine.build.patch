@@ -1,0 +1,23 @@
+--- build.xml.orig	2017-09-08 23:03:48.892754044 -0400
++++ build.xml	2017-09-08 23:04:30.837877170 -0400
+@@ -2,6 +2,11 @@
+ 
+ <project name="achartengine" default="dist" basedir=".">
+     <description>Build for project achartengine. </description>
++
++     <!-- Source and target versions for javac -->
++     <property name="common.javac.source" value="1.7"/>
++     <property name="common.javac.target" value="1.7"/>
++
+ 
+ 	<property name="app_name" value="achartengine"/>
+ 	<property name="app_version" value="1.2.0"/>	
+@@ -55,7 +60,7 @@
+     	</copy>
+         <javac srcdir="${src.dir}" includes="${achartengine.package}/**" destdir="${build.project.dir}"
+                failonerror="false" debug="true" debuglevel="lines,vars,source"
+-               excludes="**/*.gif **/*.html **/*.xml **/*.properties" source="1.6">
++               excludes="**/*.gif **/*.html **/*.xml **/*.properties" source="${common.javac.source}" target="${common.javac.target}" >
+ 
+             <compilerarg value="-Xlint" />
+             <compilerarg value="-Xlint:-serial" />

@@ -1,0 +1,381 @@
+
+package com.atakmap.app;
+
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.res.Resources;
+
+import com.atakmap.android.cot.CotMapComponent;
+import com.atakmap.android.gui.TileButtonDialog;
+import com.atakmap.android.importfiles.sort.ImportMissionPackageSort;
+import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.maps.MapView;
+import com.atakmap.android.update.AppMgmtActivity;
+import com.atakmap.app.preferences.MyPreferenceFragment;
+import com.atakmap.app.preferences.ToolsPreferenceFragment;
+import com.atakmap.comms.NetConnectString;
+import com.atakmap.comms.TAKServer;
+import com.atakmap.comms.app.CotStreamListActivity;
+import com.atakmap.comms.app.CredentialsDialog;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.log.Log;
+import com.atakmap.net.AtakAuthenticationCredentials;
+import com.atakmap.net.AtakAuthenticationDatabase;
+import com.atakmap.net.AtakCertificateDatabase;
+import com.atakmap.net.AtakCertificateDatabaseIFace;
+import com.atakmap.net.CertificateEnrollmentClient;
+
+/**
+ * Device startup wizard, displayed at startup.
+ * Once accepted, checks for credentials for streaming connections
+ */
+class DeviceSetupWizard implements CredentialsDialog.Callback {
+
+    private static final String TAG = "DeviceSetupWizard";
+
+    private ATAKActivity _context;
+    private MapView _mapView;
+    private SharedPreferences _controlPrefs;
+
+    /**
+     * Store state of wizard, so we can maintain integrity of wizard steps e.g. user click twice
+     * before UI events can be processed.
+     *
+     * Stores the last page processed, so starts with 0 and changes to 1 after the user has made
+     * his selection on the first page
+     */
+    private int wizardPage;
+    private int wizardPageTotal;
+
+    DeviceSetupWizard(ATAKActivity context, MapView mapView,
+            SharedPreferences controlPrefs) {
+        this._context = context;
+        this._mapView = mapView;
+        this._controlPrefs = controlPrefs;
+
+        wizardPage = 0;
+        wizardPageTotal = 2;
+    }
+
+    /**
+     * Builds the EULA prompt for the system.
+     * @param force true to force the device to run even if it has already been run before.
+     */
+    void init(boolean force) {
+
+        // The device wizard should be run if one of the well known preferences is not set
+        // In this case it is "screenViewLat", in future release, start to check for the 
+        // actual variable PerformedDeviceSetupWizard.   Start to set it now in preparation 
+        // to cut over for 3.16
+        //if (!_controlPrefs.getBoolean("PerformedDeviceSetupWizard", false) || force) {
+
+        if (_controlPrefs.getString("screenViewLat", null) == null || force) {
+            init_settings();
+            SharedPreferences.Editor editor = _controlPrefs.edit();
+            editor.putBoolean("PerformedDeviceSetupWizard", true);
+            editor.apply();
+        } else {
+            init_creds();
+        }
+    }
+
+    private void init_settings() {
+        if (wizardPage > 1) {
+            Log.d(TAG, "Skipping duplicate wizard event " + (wizardPage + 1)
+                    + "/" + wizardPageTotal);
+            return;
+        }
+
+        String title = _context.getString(R.string.preferences_text422b);
+        String message = _context.getString(R.string.choose_config_method);
+
+        Resources r = _mapView.getResources();
+        TileButtonDialog d = new TileButtonDialog(_mapView, _context, true);
+        d.addButton(r.getDrawable(R.drawable.my_prefs_settings),
+                r.getString(R.string.identity_title));
+        d.addButton(r.getDrawable(R.drawable.missionpackage_icon),
+                r.getString(R.string.mission_package_name));
+        d.addButton(r.getDrawable(R.drawable.ic_menu_plugins),
+                r.getString(R.string.manage_plugins));
+        d.addButton(r.getDrawable(R.drawable.ic_menu_import_file),
+                r.getString(R.string.preferences_text4372));
+        d.addButton(r.getDrawable(R.drawable.ic_menu_network),
+                r.getString(R.string.networkPreferences));
+        d.addButton(r.getDrawable(R.drawable.ic_menu_settings),
+                r.getString(R.string.more_settings));
+        d.show(title, message, true, _context.getString(R.string.done));
+        d.setOnClickListener(new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                if (which == TileButtonDialog.WHICH_CANCEL) {
+                    init_creds();
+                } else if (which == 0) {
+                    //callsign dialog
+                    MyPreferenceFragment.promptIdentity(_context);
+                } else if (which == 1) {
+                    //import MP
+                    ImportMissionPackageSort.importMissionPackage(_context);
+                } else if (which == 2) {
+                    //plugin loading
+                    Intent mgmtPlugins = new Intent(_context,
+                            AppMgmtActivity.class);
+                    _context.startActivityForResult(mgmtPlugins,
+                            ToolsPreferenceFragment.APP_MGMT_REQUEST_CODE);
+                } else if (which == 3) {
+                    //generic file import (including .prefs)
+                    AtakBroadcast.getInstance().sendBroadcast(
+                            new Intent(
+                                    "com.atakmap.android.importfiles.IMPORT_FILE"));
+                } else if (which == 4) {
+                    //Network
+                    if (CotMapComponent.hasServer()) {
+                        //display servers
+                        _context.startActivity(new Intent(_context,
+                                CotStreamListActivity.class));
+                    } else {
+                        MyPreferenceFragment.promptNetwork(_context);
+                    }
+                } else if (which == 5) {
+                    //open settings
+                    AtakBroadcast.getInstance().sendBroadcast(
+                            new Intent("com.atakmap.app.ADVANCED_SETTINGS"));
+                }
+            }
+        });
+
+        wizardPage = 2;
+    }
+
+    /**
+     * iterate through all the current connections and check to see if credentials
+     * are required, but missing.  Prompt user if this is the case.
+     * -->These pages are special - there is no way to determine double clicks determined by
+     * the wizardPage variable since there can be multiple credentials to enter. :(
+     * There might be a pretty way to to it though.
+     */
+    private void init_creds() {
+        final SharedPreferences prefs = _context
+                .getSharedPreferences("cot_streams", Context.MODE_PRIVATE);
+
+        int count = prefs.getInt("count", -1);
+        if (count == -1) {
+            return;
+        }
+
+        // iterate over connections
+        for (int i = 0; i < count; ++i) { //and grab their info
+            final String desc = prefs.getString("description" + i, "");
+            boolean isEnabled = prefs.getBoolean("enabled" + i, true);
+            boolean useAuth = prefs.getBoolean("useAuth" + i, false);
+            final String connectString = prefs
+                    .getString(TAKServer.CONNECT_STRING_KEY
+                            + i, "");
+            final String cacheCreds = prefs.getString("cacheCreds" + i, "");
+            final boolean enrollForCertificateWithTrust = prefs.getBoolean(
+                    "enrollForCertificateWithTrust" + i, false);
+
+            if (!isEnabled) {
+                continue;
+            }
+
+            NetConnectString ncs = NetConnectString.fromString(connectString);
+
+            boolean launchEnrollment = false;
+
+            //
+            // did this connection use certificate enrollment?
+            //
+            if (enrollForCertificateWithTrust) {
+                byte[] clientCert = AtakCertificateDatabase
+                        .getCertificateForServer(
+                                AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
+                                ncs.getHost());
+                AtakAuthenticationCredentials clientCertCredentials = AtakAuthenticationDatabase
+                        .getCredentials(
+                                AtakAuthenticationCredentials.TYPE_clientPassword,
+                                ncs.getHost());
+
+                if (clientCert == null) {
+                    clientCert = AtakCertificateDatabase
+                            .getCertificate(
+                                    AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE);
+                    clientCertCredentials = AtakAuthenticationDatabase
+                            .getCredentials(
+                                    AtakAuthenticationCredentials.TYPE_clientPassword);
+                }
+
+                //
+                // do we have an expired cert?
+                //
+                if (clientCert != null
+                        && clientCertCredentials != null
+                        && clientCertCredentials.password != null) {
+
+                    // if the cert was expired, re-enroll for a new one
+                    AtakCertificateDatabase.CeritficateValidity validity = AtakCertificateDatabase
+                            .checkValidity(clientCert,
+                                    clientCertCredentials.password);
+                    if (validity == null || !validity.isValid()) {
+                        launchEnrollment = true;
+                    }
+
+                    //
+                    // is the cert missing?
+                    //
+                } else if (clientCert == null
+                        || clientCertCredentials == null
+                        || clientCertCredentials.password == null) {
+                    launchEnrollment = true;
+                }
+
+            }
+
+            if (launchEnrollment) {
+                _mapView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        CertificateEnrollmentClient.getInstance()
+                                .enroll(
+                                        MapView.getMapView()
+                                                .getContext(),
+                                        desc, connectString,
+                                        cacheCreds, null, true);
+                    }
+                });
+
+                // if our connection uses authentication, only check for creds if we didnt just
+                // launch a re-enrollment... the re-enrollment process will pull credentials and
+                // force the user to enter them if expired
+            } else if (useAuth) {
+                AtakAuthenticationCredentials credentials = AtakAuthenticationDatabase
+                        .getCredentials(
+                                AtakAuthenticationCredentials.TYPE_COT_SERVICE,
+                                ncs.getHost());
+
+                String usernameString = null;
+                String passwordString = null;
+
+                if (credentials != null) {
+                    usernameString = credentials.username;
+                    passwordString = credentials.password;
+                }
+
+                if (FileSystemUtils.isEmpty(usernameString) ||
+                        FileSystemUtils.isEmpty(passwordString)) {
+
+                    CredentialsDialog.createCredentialDialog(desc,
+                            connectString, usernameString,
+                            passwordString, cacheCreds, _context, this); //display if credentials are missing
+                }
+            }
+        }
+    }
+
+    private int findConnectionIndex(String connectString) {
+        final SharedPreferences prefs = _context
+                .getSharedPreferences("cot_streams", Context.MODE_PRIVATE);
+        int count = prefs.getInt("count", -1);
+        if (count != -1) {
+            for (int i = 0; i < count; ++i) {
+
+                //
+                // find the stream that we just entered credentials for
+                //
+                final String nextConnectString = prefs.getString(
+                        TAKServer.CONNECT_STRING_KEY
+                                + i,
+                        "");
+                if (nextConnectString.compareTo(connectString) == 0) {
+                    return i;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    @Override
+    public void onCredentialsEntered(final String connectString,
+            String cacheCreds,
+            String description,
+            String username, String password) {
+
+        final int connectionIndex = findConnectionIndex(connectString);
+        if (connectionIndex == -1) {
+            Log.e(TAG,
+                    "unable to find connection index for : " + connectString);
+            return;
+        }
+
+        //
+        // if the connection is using certificate enrollment, go ahead and re-enroll
+        // with our new credentials
+        //
+        final SharedPreferences prefs = _context
+                .getSharedPreferences("cot_streams", Context.MODE_PRIVATE);
+        final boolean enrollForCertificateWithTrust = prefs.getBoolean(
+                "enrollForCertificateWithTrust" + connectionIndex, false);
+
+        if (enrollForCertificateWithTrust) {
+            final String finalDescription = description;
+            final String finalCacheCreds = cacheCreds;
+            _mapView.post(new Runnable() {
+                @Override
+                public void run() {
+                    CertificateEnrollmentClient.getInstance()
+                            .enroll(
+                                    MapView.getMapView()
+                                            .getContext(),
+                                    finalDescription, connectString,
+                                    finalCacheCreds, null, true);
+                }
+            });
+        }
+
+        CotMapComponent
+                .getInstance()
+                .getCotServiceRemote()
+                .setCredentialsForStream(
+                        connectString,
+                        username,
+                        password);
+    }
+
+    @Override
+    public void onCredentialsCancelled(final String connectString) {
+        Log.d(TAG, "cancelled out of CredentialsDialog");
+
+        final int connectionIndex = findConnectionIndex(connectString);
+        if (connectionIndex == -1) {
+            Log.e(TAG,
+                    "unable to find connection index for : " + connectString);
+            return;
+        }
+
+        NetConnectString ncs = NetConnectString.fromString(connectString);
+        final String host = ncs.getHost();
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(_context);
+        builder.setTitle("Missing Credentials");
+        builder.setIcon(R.drawable.ic_secure);
+        builder.setMessage("Disable authentication for " + host + "?");
+        builder.setPositiveButton(R.string.yes,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        CotMapComponent
+                                .getInstance()
+                                .getCotServiceRemote()
+                                .setUseAuthForStream(
+                                        connectString,
+                                        false);
+                    }
+                });
+        builder.setNegativeButton(R.string.no, null);
+        builder.show();
+    }
+}

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:padding="4dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/auto_margin"
+            android:layout_marginEnd="@dimen/auto_margin"
+            android:orientation="horizontal"
+            android:paddingRight="28dp"
+            android:weightSum="1">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight=".8"
+                android:text="@string/resection_point"
+                android:textColor="@color/heading_yellow"
+                android:textSize="@dimen/draper_large_font"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight=".1"
+                android:ems="8"
+                android:text="@string/resection_location"
+                android:textColor="@color/heading_yellow"
+                android:textSize="@dimen/draper_large_font"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight=".1"
+                android:ems="4"
+                android:text="@string/resection_bearing"
+                android:textColor="@color/heading_yellow"
+                android:textSize="@dimen/draper_large_font"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <ListView
+            android:id="@+id/landmark_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="@dimen/auto_margin"
+            android:layout_marginTop="2dp"
+            android:layout_marginRight="@dimen/auto_margin"
+            android:layout_marginBottom="2dp"
+            android:fadeScrollbars="false"
+            tools:listitem="@layout/resection_landmark_row" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/auto_margin"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Intersection:" />
+
+        <TextView
+            android:id="@+id/resection_location"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:padding="@dimen/auto_margin"
+            android:text="12S VB 23746 86122"
+            android:textColor="#FFF"
+            android:textSize="@dimen/draper_verylarge_font"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/panto_resection"
+            style="@style/darkButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:enabled="false"
+            android:padding="@dimen/auto_margin"
+            android:src="@drawable/panto_button" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="#FFF" />
+
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical|end"
+        android:layout_margin="@dimen/auto_margin"
+        android:gravity="center_vertical">
+
+        <ImageButton
+            android:id="@+id/add_landmark"
+            style="@style/darkButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginRight="10dp"
+            android:padding="@dimen/auto_margin"
+            android:src="@drawable/ic_add_landmark" />
+
+        <ImageButton
+            android:id="@+id/clear_resection"
+            style="@style/darkButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginRight="10dp"
+            android:padding="@dimen/auto_margin"
+            android:src="@drawable/ic_clear_results" />
+
+        <ImageButton
+            android:id="@+id/resection"
+            style="@style/darkButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="@dimen/auto_margin"
+            android:src="@drawable/ic_resection" />
+
+    </LinearLayout>
+
+</LinearLayout>

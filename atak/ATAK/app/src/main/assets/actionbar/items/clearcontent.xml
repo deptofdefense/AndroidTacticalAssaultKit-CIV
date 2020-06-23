@@ -1,0 +1,7 @@
+<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_clear_content"  title="actionbar_clearcontent">
+   <ClickData actionType="click">
+      <broadcast>
+         <action>com.atakmap.app.CLEAR_CONTENT</action>
+      </broadcast>
+   </ClickData>
+</PersistedActionMenu>

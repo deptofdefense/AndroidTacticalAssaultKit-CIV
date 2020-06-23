@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tga;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{83ac50e1-588f-4e97-be97-42741a16211b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{821a3bc6-6efb-4669-9925-5267769305cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\publicapi">
+      <UniqueIdentifier>{c55cdc80-c498-4357-b44c-067d781ea8c1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\core\impl\commo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\impl\commotime.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\impl\contactmanager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\impl\cotmessage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\impl\datagramsocketmanagement.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\impl\hwifscanner.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\impl\internalutils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\impl\missionpackagemanager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\impl\netsocket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\impl\platform.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\impl\streamingsocketmanagement.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\impl\threadedhandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="..\..\core\include\commo.h">
+      <Filter>Header Files\publicapi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\include\commologger.h">
+      <Filter>Header Files\publicapi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\include\commoresult.h">
+      <Filter>Header Files\publicapi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\include\commoutils.h">
+      <Filter>Header Files\publicapi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\include\contactuid.h">
+      <Filter>Header Files\publicapi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\include\cotmessageio.h">
+      <Filter>Header Files\publicapi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\include\missionpackage.h">
+      <Filter>Header Files\publicapi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\include\netinterface.h">
+      <Filter>Header Files\publicapi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\impl\commotime.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\impl\contactmanager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\impl\cotmessage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\impl\datagramsocketmanagement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\impl\hwifscanner.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\impl\internalutils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\impl\missionpackagemanager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\impl\netsocket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\impl\platform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\impl\streamingsocketmanagement.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\impl\threadedhandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

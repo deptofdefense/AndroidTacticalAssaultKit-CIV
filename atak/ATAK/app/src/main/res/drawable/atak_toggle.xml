@@ -1,0 +1,25 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true"
+        android:state_window_focused="false" android:state_enabled="true"
+        android:drawable="@drawable/toggle_atak_on_default" />
+    <item android:state_checked="true"
+        android:state_window_focused="false" android:state_enabled="false"
+        android:drawable="@drawable/toggle_atak_on_disabled" />
+    <item android:state_checked="true" android:state_pressed="true"
+        android:drawable="@drawable/toggle_atak_on_pressed" />
+    <item android:state_checked="true" android:state_enabled="true"
+        android:drawable="@drawable/toggle_atak_on_default" />
+    <item android:state_checked="true"
+         android:drawable="@drawable/toggle_atak_on_disabled" />
+
+    <item android:state_window_focused="false" android:state_enabled="true"
+        android:drawable="@drawable/toggle_atak_off_default" />
+    <item android:state_window_focused="false" android:state_enabled="false"
+        android:drawable="@drawable/toggle_atak_off_disabled" />
+    <item android:state_pressed="true"
+        android:drawable="@drawable/toggle_atak_off_pressed" />
+    <item android:state_enabled="true"
+        android:drawable="@drawable/toggle_atak_off_default" />
+    <item
+         android:drawable="@drawable/toggle_atak_off_disabled" />
+</selector>

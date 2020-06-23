@@ -1,0 +1,21 @@
+<menu buttonRadius='65' buttonSpan='72' buttonWidth='90' buttonBg='bgs/button.xml'>
+
+    <button angle='-90'
+            icon='icons/delete.png'
+            onClick='actions/remove.xml'
+            disabled='!{${removable}}' />
+
+    <button icon='icons/details.png'
+            onClick='actions/show_route.xml' />
+
+    <button icon='icons/edit2.png'
+            onClick='actions/edit_route.xml' />
+            
+    <button icon='icons/green_flag.png' 
+            onClick='actions/startnav.xml' />
+
+    <button icon='icons/label.png'
+            onClick='actions/label_toggle.xml'
+            selected='${labels_on}'/>
+
+</menu>

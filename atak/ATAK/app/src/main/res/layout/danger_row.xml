@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:minHeight="35dp"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/checkArea"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true">
+
+        <CheckBox
+            android:id="@+id/dangerCheck"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:textSize="10sp"
+            android:visibility="visible"/>
+
+        <CheckBox
+            android:id="@+id/addFavorite"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:textSize="10sp"
+            android:visibility="gone"/>
+
+        <CheckBox
+            android:id="@+id/removeFavorite"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:textSize="10sp"
+            android:visibility="gone"/>
+
+        <CheckBox
+            android:id="@+id/removeCustom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:textSize="10sp"
+            android:visibility="gone"/>
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/dangerRow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@id/checkArea"
+        android:layout_toEndOf="@id/checkArea"
+        android:paddingTop="5dp"
+        android:layout_marginStart="5dp"
+        android:textSize="16sp"
+        android:textColor="@color/white"/>
+
+    <TextView
+        android:id="@+id/dangerRowSubText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@id/checkArea"
+        android:layout_toEndOf="@id/dangerRow"
+        android:paddingTop="5dp"
+        android:layout_marginStart="5dp"
+        android:textSize="16sp"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/dangerDesc"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/dangerRow"
+        android:layout_toEndOf="@id/checkArea"
+        android:textSize="13sp"
+        android:visibility="gone"/>
+
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:descendantFocusability="blocksDescendants">
+
+        <TextView
+            android:id="@+id/dangerStandingRangeRow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textSize="13sp"
+            android:textColor="@color/white"/>
+
+        <ImageButton
+            android:id="@+id/dangerEdit"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginEnd="10dp"
+            android:layout_gravity="center"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:descendantFocusability="blocksDescendants"
+            android:background="@drawable/btn_default_normal"
+            android:src="@drawable/edit"
+            android:visibility="gone"/>
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/dangerNextArrow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:background="@drawable/navigation_next_item"
+        android:visibility="visible" />
+
+
+    <TextView
+        android:id="@+id/dangerActiveItems"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@id/dangerRow"
+        android:layout_toStartOf="@id/dangerNextArrow"
+        android:textColor="#00ff00"
+        android:textSize="15sp" />
+
+</RelativeLayout>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.gui.RangeBearingInputView 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="fill_parent"
+    android:orientation="vertical"
+    android:padding="10dp" >
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" >
+
+                <TextView
+                    android:layout_width="100dp"
+                    android:layout_height="fill_parent"
+                    android:gravity="end|fill_vertical"
+                    android:paddingEnd="10dp"
+                    android:text="@string/range_title" />
+
+                <EditText
+                    android:id="@+id/range_input"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="100dp"
+                    android:inputType="numberDecimal" />
+                
+                <Spinner
+                    android:textColor="@color/white"
+                    android:padding="6dp" style="@style/darkButton"
+                    android:id="@+id/range_type_spin"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" >
+
+                    <TextView
+                        android:layout_width="100dp"
+                        android:layout_height="fill_parent"
+                        android:gravity="end|fill_vertical"
+                        android:paddingEnd="10dp"
+                        android:text="@string/bearing_title" />
+
+                    <EditText
+                        android:id="@+id/bearing_input"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=""
+                        android:minWidth="100dp"
+                        android:inputType="numberDecimal" />
+                        
+                    <TextView
+                        android:layout_width="100dp"
+                        android:layout_height="fill_parent"
+                        android:gravity="start|fill_vertical"
+                        android:paddingStart="10dp"
+                        android:text="@string/rb_text3" />
+                </LinearLayout>
+</com.atakmap.android.gui.RangeBearingInputView>

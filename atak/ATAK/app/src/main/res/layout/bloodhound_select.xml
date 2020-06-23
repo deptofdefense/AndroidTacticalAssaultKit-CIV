@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="@dimen/nineline_line_height"
+        android:layout_weight="1"
+        android:layout_marginBottom="1dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ems="4"
+            android:text="@string/from"
+
+            android:textColor="@color/heading_yellow"
+            android:textSize="@dimen/fontSize"
+            />
+
+        <include
+            layout="@layout/atak_selection_flat"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="32dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:layout_marginRight="2dp"
+            android:layout_marginLeft="2dp"
+            android:id="@+id/btnFrom" />
+
+        <ImageButton
+            android:id="@+id/btnFromChoose"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
+            android:layout_width="0dp"
+            android:layout_weight=".15"
+            android:layout_height="@dimen/nineline_line_height"
+            android:background="#0000"
+            android:scaleType="centerInside"
+            android:src="@drawable/survey_entry_button"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="@dimen/nineline_line_height"
+        android:layout_weight="1"
+        android:layout_marginBottom="1dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ems="4"
+            android:text="@string/to_with_colon"
+            android:textColor="@color/heading_yellow"
+            android:textSize="@dimen/fontSize"
+            />
+
+        <include
+            layout="@layout/atak_selection_flat"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="32dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:layout_marginRight="2dp"
+            android:layout_marginLeft="2dp"
+            android:id="@+id/btnTo" />
+
+        <ImageButton
+            android:id="@+id/btnToChoose"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
+            android:layout_width="0dp"
+            android:layout_weight=".15"
+            android:layout_height="@dimen/nineline_line_height"
+            android:background="#0000"
+            android:scaleType="centerInside"
+            android:src="@drawable/survey_entry_button"/>
+
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="@dimen/nineline_line_height"
+        android:layout_weight="1"
+        android:layout_marginBottom="1dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/spinnerItemsLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ems="7"
+            android:text="@string/quick_select_spi"
+            android:textColor="@color/heading_yellow"
+            android:textSize="@dimen/fontSize"
+            />
+
+
+        <Spinner
+            android:id="@+id/spinnerItems"
+            android:layout_width="300dp"
+            android:layout_height="wrap_content"
+            android:background="@drawable/atak_dropdown"/>
+    </LinearLayout>
+
+
+</LinearLayout>

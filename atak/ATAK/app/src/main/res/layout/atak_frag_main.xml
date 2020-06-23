@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:baselineAligned="false"
+    android:orientation="vertical"
+    android:weightSum="12" >
+
+    <FrameLayout
+          android:id="@+id/top_side_panel_container"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content" />
+
+    <LinearLayout 
+         android:layout_width="fill_parent"
+         android:layout_height="0dp"
+         android:baselineAligned="false"
+         android:orientation="horizontal"
+         android:layout_weight="12"
+         android:weightSum="12" >
+
+
+         <RelativeLayout 
+              android:id="@+id/map_parent"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:layout_weight="12" >
+
+              <FrameLayout
+                  android:id="@+id/left_side_panel_container"
+                  android:layout_width="wrap_content"
+                  android:layout_height="match_parent" />
+     
+              <FrameLayout
+                  android:id="@+id/main_map_container"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent" >
+     
+                  <fragment
+                      android:id="@+id/atak_app_fragment"
+                      android:name="com.atakmap.app.ATAKFragment"
+                      android:layout_width="fill_parent"
+                      android:layout_height="fill_parent" />
+          
+              </FrameLayout>
+     
+              <FrameLayout
+                  android:id="@+id/right_side_panel_container"
+                  android:layout_width="wrap_content"
+                  android:layout_height="match_parent" />
+          
+         </RelativeLayout>
+
+
+
+         <include layout="@layout/atak_faux_button_landscape" />
+    </LinearLayout>
+
+    <FrameLayout
+          android:id="@+id/bottom_side_panel_container"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content" />
+
+    <include layout="@layout/atak_faux_button_portrait" />
+
+</LinearLayout>

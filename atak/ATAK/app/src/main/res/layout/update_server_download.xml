@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:layout_marginStart="5dp"
+        android:text="@string/an_update_is_available_approximate_size_70mb_would_you_like_to_download_it" />
+    <TextView
+        android:id="@+id/updateServerApkVersion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp"
+        android:textSize="22sp"/>
+    <CheckBox
+        android:id="@+id/updateServerDontRemindThisVersion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:layout_marginStart="5dp"
+        android:text="@string/don_t_remind_me_for_this_version" />
+    <CheckBox
+        android:id="@+id/updateServerDontRemindAtAll"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:layout_marginStart="5dp"
+        android:text="@string/don_t_check_for_future_updates" />
+
+</LinearLayout>

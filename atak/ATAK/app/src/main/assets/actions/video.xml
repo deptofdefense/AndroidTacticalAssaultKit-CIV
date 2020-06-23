@@ -1,0 +1,26 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.maps.video.DISPLAY</action>
+        <extras>
+            <string key='videoUID'>${videoUID}</string>
+            <string key='videoUrl'>${videoUrl}</string>
+            <string key='uid'>${uid}</string>
+            <string key='callsign'>${callsign}</string>
+            <string key='buffer'>${buffer}</string>
+            <string key='timeout'>${timeout}</string>
+            <string key='standalone'>${video_extplayer}</string>
+            <string key='spi_uid'>${video_spi_uid}</string>
+            <string key='sensor_uid'>${video_sensor_uid}</string>
+            <string key='cancelClose'>true</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

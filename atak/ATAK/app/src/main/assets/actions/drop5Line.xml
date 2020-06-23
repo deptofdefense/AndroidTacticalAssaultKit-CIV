@@ -1,0 +1,28 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.PLACE</action>
+        <extras>
+            <string key='atUID'>${uid}</string>
+            <string key='type'>a-h-G</string>
+            <string key='how'>h-g-i-g-o</string>
+            <string key='show_new_radial'>false</string>
+            <string key='show_cot_details'>false</string>
+            <string key="five_line">true</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

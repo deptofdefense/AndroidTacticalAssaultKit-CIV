@@ -1,0 +1,21 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNPIN_RAB_LINE</action>
+        <extras>
+            <string key='id'>${rabUUID}</string>
+            <string key='point'>start</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_HALO</action>
+    </broadcast>
+</set>

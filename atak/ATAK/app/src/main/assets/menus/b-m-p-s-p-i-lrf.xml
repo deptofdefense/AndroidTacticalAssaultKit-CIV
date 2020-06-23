@@ -1,0 +1,41 @@
+<menu buttonRadius='60' buttonSpan='45' buttonWidth='90' buttonBg='bgs/button.xml'>
+
+    <button angle='-90'
+            icon='icons/delete.png'
+            onClick='actions/remove.xml' 
+            disabled='!{${removable}}' />
+
+    <button icon='icons/camlock.xml'
+            selectable='true'
+            onClick='actions/lockcam.xml'
+            selected='${camLocked}' />
+
+    <button icon='icons/lrf_slide.png'
+            onClick='actions/lrfslide.xml'
+            selected='${lrfslide}' />
+
+    <button onClick='actions/spi_fah.xml'
+            icon='icons/fah_redx.png'
+            dependsOnCapability='capability.fires'
+            prefKey='redxfah_default_menu'
+            submenu='menus/spi_fah_submenu.xml'
+            disableSwap='false'/>
+
+    <button icon='icons/blast_rings.png'
+            dependsOnCapability='capability.weapons'
+            onClick='actions/dangerclose.xml' />
+
+    <button icon='icons/target.png'
+            prefKey='spi_drop_point_type'
+            submenu='menus/drop_point_submenu.xml'
+            onClick='actions/dropspitarget.xml' />
+
+    <button icon='icons/pairing_line_to_self.png'
+            onClick='actions/spipairinglineself.xml'
+            selected='${pairinglineself_on}' />
+
+    <button icon='icons/pairing_line.png'
+            onClick='actions/pairingline.xml'
+            selected='${pairingline_on}' />
+
+</menu>

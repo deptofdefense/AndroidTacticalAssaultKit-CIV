@@ -1,0 +1,9 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.emailAction</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+            <string key='emailAddress'>${emailAddress}</string>
+        </extras>
+    </broadcast>
+</set>

@@ -1,0 +1,15 @@
+Jeff Desktop Linux, add LAN receive, mcast, and send a file to GEMINI phone
+on LAN after 20s:
+./commocurses commoncommo-jcommo jcommo 2 inbound:c4ac41334455:6969 1 mcast:c4ac41334455:6969 20 filesend:test.zip:ANDROID-48:5A:3F:49:93:24
+
+UID for ANTLER: ANDROID-98:F1:70:07:40:9F
+
+WarrenTAK ssl
+commocurses commoncommo-jcommo jcommo 2 sstream:/home/heydowns/projects/atak/certs/atak_2.p12:/home/heydowns/projects/atak/certs/truststore.p12:atakatak:96.127.88.24:8089
+
+WarrenTAK auth'd ssl
+commocurses commoncommo-jcommo jcommo 2 sstream:/home/heydowns/projects/atak/certs/atak_2.p12:/home/heydowns/projects/atak/certs/truststore.p12:atakatak:user:test:96.127.88.24:8089
+
+WarrenTAK no ssl
+./commocurses commoncommo-jcommo jcommo 2 stream:96.127.88.24:8088
+

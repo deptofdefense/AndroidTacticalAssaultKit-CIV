@@ -1,0 +1,12 @@
+<menu buttonRadius='65' buttonSpan='180' buttonWidth='90' buttonBg='bgs/button.xml'>
+    
+    <button
+        angle='-90'
+        disabled='!{${removable}}'
+        icon='icons/delete.png'
+        onClick='actions/remove.xml' />
+        
+    <button
+        icon='icons/details.png'
+        onClick='actions/jm_reminder.xml'/> />
+</menu>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical">
+
+    <ImageButton
+        android:id="@+id/add_hashtag"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:padding="@dimen/auto_space_big"
+        android:background="@drawable/overlay_title_background"
+        android:src="@drawable/ic_menu_plus"/>
+
+    <ImageButton
+        android:id="@+id/sticky_hashtag"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:padding="@dimen/auto_space_big"
+        android:background="@drawable/overlay_title_background"
+        android:src="@drawable/ic_sticky_hashtag"/>
+
+</LinearLayout>

@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.items.MapItemDetailsView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+
+    <LinearLayout
+        android:id="@+id/mapItemNameView"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:orientation="horizontal" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/auto_margin"
+            android:text="@string/name"
+            android:textColor="#FFF"
+            android:textSize="@dimen/draper_font"/>
+
+        <TextView
+            android:id="@+id/mapItemNameEdit"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="start"
+            android:textSize="@dimen/draper_title_font"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/mapItemLocationView"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/mapItemNameView"
+        android:orientation="horizontal" >
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.90"
+            android:orientation="vertical" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/location2"
+                android:textColor="#FFF"
+                android:textSize="@dimen/draper_font"
+                 />
+
+            <Button
+                android:id="@+id/mapItemCenterButton"
+                style="@style/darkButton"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start|center_vertical"
+                android:minLines="2"
+                android:padding="6dp"
+                android:text="@string/point_dropper_text2"
+                android:textColor="#FFF"
+                android:textSize="@dimen/draper_title_font" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/mapItemGalleryButton"
+            style="@style/darkButton"
+            android:layout_width="32dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_margin="0dp"
+            android:layout_weight="0.10"
+            android:padding="6dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_gallery" />
+
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/mapItemSendEditView_rl"
+        android:layout_below="@+id/mapItemLocationView"
+        android:fadeScrollbars="false" >
+
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:alignmentMode="alignMargins"
+            android:padding="4dp"
+            android:columnCount="4"
+            android:orientation="horizontal" >
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_column="0"
+                android:layout_columnSpan="4"
+                android:layout_row="0"
+                android:layout_rowSpan="1"
+                android:orientation="vertical" >
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="0dp"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginEnd="10dp"
+                    android:layout_weight="0"
+                    android:text="@string/point_dropper_text3"
+                    android:textColor="#FFF"
+                    android:textSize="@dimen/draper_font"
+                     />
+
+                <TextView
+                    android:id="@+id/mapItemRangeBearingNoGps"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/point_dropper_text4"
+                    android:textColor="#FFF"
+                    android:textSize="@dimen/draper_title_font"
+                    android:visibility="gone" />
+
+
+                   <include layout="@layout/rab_layout" />
+            </LinearLayout>
+
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_column="0"
+                android:layout_columnSpan="1"
+                android:layout_row="3"
+                android:layout_rowSpan="1"
+                android:text="@string/remarks"
+                android:textColor="#FFF"
+                android:textSize="@dimen/draper_font"
+                 />
+
+            <CheckBox
+                android:id="@+id/mapItemRawRemarks"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_column="3"
+                android:layout_columnSpan="1"
+                android:layout_row="3"
+                android:layout_rowSpan="1"
+                android:text="@string/raw"
+                android:textColor="#FFF"
+                android:textSize="@dimen/draper_font"
+                 />
+
+
+            <TextView
+                android:id="@+id/mapItemRemarksEdit"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_column="0"
+                android:layout_columnSpan="4"
+                android:layout_gravity="fill_horizontal"
+                android:layout_row="4"
+                android:layout_rowSpan="1"
+                android:gravity="start"
+                android:minLines="1"
+                android:textSize="@dimen/draper_title_font" />
+        </GridLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:id="@id/mapItemSendEditView_rl"
+        android:layout_width="fill_parent"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical" >
+
+        <LinearLayout
+            android:id="@+id/mapItemSendExportView"
+            android:layout_width="fill_parent"
+            android:layout_height="match_parent"
+            android:weightSum="1"
+            android:orientation="horizontal" >
+
+            <ImageButton
+                android:id="@+id/mapItemSendButton"
+                android:layout_width="0dip"
+                android:layout_height="match_parent"
+                style="@style/darkButton"
+                android:layout_weight="5"
+                android:padding="6dp"
+                android:src="@drawable/send_square"
+                android:textSize="13sp"
+                 />
+
+
+            <Button
+                style="@style/darkButton" android:padding="6dp"
+                android:layout_width="0dip"
+                android:layout_height="wrap_content"
+                android:layout_weight="0.5"
+                android:text="@string/edit"
+                android:textSize="@dimen/draper_title_font"
+                 />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</com.atakmap.android.items.MapItemDetailsView>

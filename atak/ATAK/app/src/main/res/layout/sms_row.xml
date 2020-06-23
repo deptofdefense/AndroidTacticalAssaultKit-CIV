@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dip"
+        android:background="?android:attr/listDivider" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/number_title"
+            android:layout_weight="25"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:layout_gravity="center"/>
+        <TextView
+            android:id="@+id/smsNumberView"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="50"
+            android:layout_marginStart="10dp"
+            android:textColor="@color/white"
+            android:textSize="18sp"
+            android:layout_gravity="center"/>
+
+        <ImageButton
+            android:id="@+id/btnRemoveSMS"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="25"
+            android:layout_marginEnd="10dp"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            android:descendantFocusability="blocksDescendants"
+            android:background="@drawable/btn_default_normal"
+            android:src="@drawable/ic_menu_delete_32" />
+    </LinearLayout>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dip"
+        android:background="?android:attr/listDivider" />
+</LinearLayout>

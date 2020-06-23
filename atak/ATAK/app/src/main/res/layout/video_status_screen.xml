@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+
+
+    <ViewSwitcher
+        android:id="@+id/status_switcher"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" >
+
+        <RelativeLayout
+            android:id="@+id/status_connecting"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#000000" >
+
+            <ProgressBar
+                android:id="@+id/connection_progress"
+                style="?android:attr/progressBarStyleLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true" />
+
+            <Button
+                android:id="@+id/cancel_during_connect"
+                style="@style/darkButton"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:layout_centerHorizontal="true"
+                android:layout_below="@id/connection_progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/cancel"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <TextView
+                android:id="@+id/progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/cancel_during_connect"
+                android:layout_centerInParent="true"
+                android:layout_marginTop="20dp"
+                android:gravity="center_horizontal"
+                android:text="@string/connecting"
+                android:textSize="@dimen/draper_title_font"/>
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/status_failed"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#000000" >
+
+            <ImageView
+                android:id="@+id/failed_icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="80dp"
+                android:src="@drawable/ic_menu_stop" />
+
+            <TextView
+                android:id="@+id/failed_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/failed_icon"
+                android:layout_centerHorizontal="true"
+                android:layout_centerVertical="true"
+                android:text="@string/failed_to_connect"
+                android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/failed_text"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="50dp"
+                android:gravity="center_horizontal"
+                android:orientation="horizontal" >
+
+                <Button
+                    android:id="@+id/connect_cancel"
+                    style="@style/darkButton"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="6dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/cancel"
+                    android:textAppearance="?android:attr/textAppearanceLarge" />
+
+            </LinearLayout>
+        </RelativeLayout>
+    </ViewSwitcher>
+
+</RelativeLayout>

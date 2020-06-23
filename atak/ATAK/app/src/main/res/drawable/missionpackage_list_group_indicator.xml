@@ -1,0 +1,7 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:state_expanded="true"
+        android:drawable="@drawable/missionpackage_list_expanded" />
+    <item
+        android:drawable="@drawable/missionpackage_list_collapsed" />
+</selector>

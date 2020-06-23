@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:custom="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fadeScrollbars="false"
+            android:layout_alignParentTop="true"
+            android:layout_marginStart="3dp"
+            android:layout_marginEnd="3dp">
+
+    <RelativeLayout 
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/med_patient_national_rl"
+        android:orientation="vertical" >
+
+    
+        <TextView 
+            android:id="@+id/med_us_mil_text"
+            android:padding="5dp"
+            android:layout_marginTop="7dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/us_mil" />
+
+       <include
+            layout="@layout/atak_number_picker"
+            android:id="@+id/med_us_mil_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/med_us_mil_text"
+            android:layout_marginStart="55dp"
+            custom:minValue="0"
+            custom:startValue="0"
+           tools:ignore="MissingPrefix" />
+
+        <TextView
+            android:id="@+id/med_us_civ_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:padding="5dp"
+            android:layout_below="@id/med_us_mil_text"
+            android:text="@string/us_civ" />
+
+       <include
+            layout="@layout/atak_number_picker"
+            android:id="@+id/med_us_civ_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@id/med_us_mil_edit"
+            android:layout_alignBottom="@id/med_us_civ_text"
+            custom:minValue="0"
+            custom:startValue="0"
+           tools:ignore="MissingPrefix"
+            />
+
+        <TextView
+            android:id="@+id/med_non_us_mil_text"
+            android:layout_width="wrap_content"
+            android:padding="5dp"
+            android:layout_marginTop="20dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/med_us_civ_text"
+            android:layout_alignStart="@id/med_us_civ_text"
+            android:text="@string/non_us_mil" />
+
+       <include
+            layout="@layout/atak_number_picker"
+            android:id="@+id/med_non_us_mil_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@id/med_us_civ_edit"
+            android:layout_alignBottom="@id/med_non_us_mil_text"
+            custom:minValue="0"
+            custom:startValue="0"
+           tools:ignore="MissingPrefix"
+            />
+    
+        <TextView
+            android:id="@+id/med_non_us_civ_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/med_non_us_mil_text"
+            android:layout_marginTop="20dp"
+            android:layout_alignStart="@id/med_non_us_mil_text"
+            android:text="@string/non_us_civ"
+            android:padding="5dp"/>
+
+       <include
+            layout="@layout/atak_number_picker"
+            android:id="@+id/med_non_us_civ_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@id/med_non_us_mil_edit"
+            android:layout_alignBottom="@id/med_non_us_civ_text"
+            custom:minValue="0"
+            custom:startValue="0"
+           tools:ignore="MissingPrefix"
+            />
+        <TextView
+            android:id="@+id/med_epw_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@id/med_non_us_civ_text"
+            android:layout_below="@id/med_non_us_civ_text"
+            android:layout_marginTop="20dp"
+            android:padding="5dp"
+            android:text="@string/epw" />
+
+       <include
+            layout="@layout/atak_number_picker"
+            android:id="@+id/med_epw_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@id/med_non_us_civ_edit"
+            android:layout_alignBottom="@id/med_epw_text"
+            custom:minValue="0"
+            custom:startValue="0"
+           tools:ignore="MissingPrefix"
+            />
+        <TextView
+            android:id="@+id/med_child_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@id/med_epw_text"
+            android:layout_below="@id/med_epw_text"
+            android:layout_marginTop="20dp"
+            android:padding="5dp"
+            android:text="@string/child" />
+
+       <include
+            layout="@layout/atak_number_picker"
+            android:id="@+id/med_child_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignStart="@id/med_epw_edit"
+            android:layout_alignBottom="@id/med_child_text"
+            custom:minValue="0"
+            custom:startValue="0"
+           tools:ignore="MissingPrefix"
+            />
+    </RelativeLayout>
+</ScrollView>

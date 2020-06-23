@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project basedir="." default="all" name="jcommoncommo">
+
+    <!-- Override this value in common.xml for our project -->
+    <property name="common.depend.cache" value="depcache"/>
+
+<!-- Things to exclude from the JAR. Should contain mostly
+     excludes of specific extensions (*.java, for example).
+     Backups (*~) and things in CVS directories
+     are automagically ignored by FileSet behaviour, so don't put them here
+  -->
+<patternset id="common.jarexclusions">
+  <exclude name="**/*.java"/>
+  <exclude name="**/*.c"/>
+  <exclude name="**/*.h"/>
+  <exclude name="**/*.dll"/>
+  <exclude name="**/*.o"/>
+  <exclude name="**/*.so"/>
+  <exclude name="**/Makefile*"/>
+  <exclude name="**/.nbattrs"/>
+  <!-- Gimp template files -->
+  <exclude name="**/*.xcf"/>
+  <!-- Photoshop template files -->
+  <exclude name="**/*.psd"/>
+</patternset>
+
+
+<!-- Source and target versions for javac -->
+<property name="common.javac.source" value="1.6"/>
+<property name="common.javac.target" value="1.6"/>
+
+
+
+
+
+
+<!-- Directory under ${basedir} to be used as the build directory -->
+<property name="build.dir" value="build"/>
+
+<patternset id="jcommoncommo.dirs">
+    <include name="com/atakmap/commoncommo/"/>
+</patternset>
+
+    <fileset id="jcommoncommo.classes" dir=".">
+        <include name="com/atakmap/commoncommo/**/*.class"/>
+    </fileset>
+
+    <path id="jcommoncommo.classpath">
+      <!-- Not needed - here for reference
+          <pathelement location="blah"/>
+        -->
+    </path>
+
+    <target name="-compdeps-all" depends="init,compile-jcommoncommo"/>
+    <target name="compile" depends="init,-compdeps-all" description="Compile everything in jcommoncommo"/>
+    <target name="build" depends="init,clean,compile" description="Clean and recompile jcommoncommo"/>
+    <target name="clean" depends="init,clean-jcommoncommo" description="Clean all class files in jcommoncommo"/>
+    <target name="superclean" depends="init,clean" description="Clean all class files and *~ files in jcommoncommo">
+        <delete quiet="true">
+            <fileset defaultexcludes="no" dir="." includes="**/*~"/>
+            <fileset dir="${common.depend.cache}"/>
+        </delete>
+    </target>
+    <target name="all" depends="init,jar,javadoc" description="Clean, compile, jar, and javadoc"/>
+    <!-- Make sure everything is completely up to date; use build not compile -->
+    <target name="jar" depends="init,jar-jcommoncommo" description="Create JAR Archives"/>
+
+
+
+    <target name="compile-jcommoncommo" depends="init" description="Compile the jcommoncommo">
+        <!-- This is misleading - it sets ONLY IF it is not already set.... -->
+        <property name="dooptim" value="off"/>
+        <depend srcDir="." destDir="." cache="${common.depend.cache}">
+            <patternset refid="jcommoncommo.dirs"/>
+        </depend>
+
+        <javac deprecation="true" destdir="." srcdir="." optimize="${dooptim}" source="${common.javac.source}" target="1.6">
+            <classpath refid="jcommoncommo.classpath"/>
+            
+            <patternset refid="jcommoncommo.dirs"/>
+        </javac>
+    </target>
+
+
+    <target name="clean-jcommoncommo" depends="init" description="Clean class files in jcommoncommo">
+        <delete>
+            <fileset refid="jcommoncommo.classes"/>
+        </delete>
+    </target>
+
+    <target name="build-jcommoncommo" depends="init,clean-jcommoncommo,compile-jcommoncommo" description="Clean and recompile jcommoncommo"/>
+    <target name="all-jcommoncommo" depends="init,build-jcommoncommo,jar-jcommoncommo,javadoc" description="Clean, compile, jar, and javadoc"/>
+
+    <!-- Make sure everything is completely up to date; use build not compile -->
+    <target name="jar-jcommoncommo" depends="init,setoptim,build-jcommoncommo" description="Create JAR Archive">
+        <jar basedir="." compress="true" jarfile="jcommoncommo.jar" index="yes">
+            <!-- Include the directories -->
+            <patternset refid="jcommoncommo.dirs"/>
+            <patternset refid="common.jarexclusions"/>
+        </jar>
+    </target>
+
+
+    <target name="javadoc" depends="init,javadoc-gen" description="Javadoc ZIP File">
+        <zip destfile="jcommoncommo-javadoc.zip" basedir="jdoc"/>
+    </target>
+
+
+    <target name="javadoc-gen" depends="init" description="Javadoc generation">
+        <mkdir dir="jdoc"/>
+        <javadoc destdir="jdoc" 
+                 sourcepath="." 
+                 source="${common.javac.source}">
+            <packageset dir=".">
+                <patternset refid="jcommoncommo.dirs"/>
+            </packageset>
+        </javadoc>
+    </target>    
+
+
+    <target name="setoptim">
+        <property name="dooptim" value="on"/>
+    </target>
+
+    <target name="init">
+        <!-- Set time stamp info inside ANT -->
+        <tstamp/>    
+    </target>                
+    
+</project>

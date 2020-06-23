@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory 
+        android:title="@string/fires_prefs">
+        <com.atakmap.android.gui.PanEditTextPreference 
+            android:title="@string/spi_update_delay"
+            android:key="spiUpdateDelay" 
+            android:inputType="number"
+            android:summary="@string/spi_update_delay_summary"
+            android:defaultValue="5" />
+        <ListPreference
+            android:title="@string/hostileUpdatePreferences"
+            android:key="hostileUpdateDelay"
+            android:entryValues="@array/autobroadcast_update"
+            android:entries="@array/autobroadcast_update"
+            android:summary="@string/hostileUpdateSummary"
+            android:defaultValue="60" />
+        <CheckBoxPreference
+            android:title="@string/legacy_toolbar_mode"
+            android:summary="@string/summary_legacy_toolbar_mode"
+            android:key="legacyFiresToolbarMode"
+            android:defaultValue="false" />
+        <ListPreference
+            android:title="@string/fireSpiNumber"
+            android:key="firesNumberOfSpis"
+            android:entryValues="@array/spi_number"
+            android:entries="@array/spi_number"
+            android:summary="@string/fireSpiNumberSummary"
+            android:defaultValue="1" />
+
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:title="@string/spi_redx_fah"
+            android:key="spiFahSize"
+            android:inputType="number"
+            android:summary="@string/spi_redx_fah_summary"
+            android:defaultValue="30" />
+
+    </PreferenceCategory>
+
+      
+</PreferenceScreen>

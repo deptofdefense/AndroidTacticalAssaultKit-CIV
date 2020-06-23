@@ -1,0 +1,7 @@
+<resources>
+<!-- Putting res values in MapLibrary since most project libraries reference it -->
+    <dimen name="draper_large_font">13sp</dimen>
+    <dimen name="draper_title_font">11sp</dimen>
+    <dimen name="draper_font">8sp</dimen>
+    <dimen name="draper_small_font">6sp</dimen>
+</resources>

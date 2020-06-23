@@ -1,0 +1,21 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/mp_add_menu_add"
+        android:icon="@drawable/ic_menu_plus"
+        android:title="@string/add">
+    </item>
+    <item
+        android:id="@+id/mp_add_menu_remove"
+        android:enabled="false"
+        android:icon="@drawable/ic_menu_delete"
+        android:title="@string/remove_selected">
+    </item>
+    <item
+        android:id="@+id/mp_add_menu_remove_all"
+        android:enabled="false"
+        android:icon="@drawable/ic_menu_delete"
+        android:title="@string/remove_all">
+    </item>
+
+</menu>

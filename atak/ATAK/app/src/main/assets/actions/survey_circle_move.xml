@@ -1,0 +1,13 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.toolbar.BEGIN_TOOL</action>
+        <extras>
+            <string key='tool'>survey_circle_tool</string>
+            <string key='flags'>1</string>
+            <string key='uid'>${uid}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

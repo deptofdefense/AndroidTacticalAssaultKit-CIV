@@ -1,0 +1,15 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.ROUTE_EDIT_CUE</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+            <string key='routeUID'>${assocSetUID}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+</set>

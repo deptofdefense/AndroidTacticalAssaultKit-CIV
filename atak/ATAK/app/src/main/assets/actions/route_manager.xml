@@ -1,0 +1,3 @@
+<broadcast>
+    <action>com.atakmap.android.maps.MANAGE_ROUTES</action>
+</broadcast>

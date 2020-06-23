@@ -1,0 +1,38 @@
+-------------------------------------------------------------------------------
+This license only covers specific code defined in the thirdparty.txt file.
+-------------------------------------------------------------------------------
+
+
+Gv2F binaries are licensed for unrestricted use within the ATAK program.    
+This excludes certain libraries used to create gv2f covered in the 
+gv2f_thirdparty.html.   These libraries are covered by their respective licensing.
+
+
+Use, reproduction, or disclosure of the Gv2F binaries, application interface
+(API) or related information is restricted to the ATAK program.
+
+The most current version of the API can be found in gv2fapidoc.zip
+and additional technical information can be obtained 
+by emailing gv@partech.com and referencing the ATAK program.
+
+
+The files covered by this license are:
+  armeabi-v7a/*pgsc*.so
+  x86/*pgsc*.so
+  jpgscmedia.jar  
+  com.atakmap.android.video.RenderFactory
+
+
+Source code making use of these binaries is excluded from this license.
+
+
+More detailed information of the terms of the license can be obtained
+from by emailing gv@partech.com and referencing: 
+
+Gv2F TM RUNTIME ENTERPRISE LICENSE AGREEMENT ("ELA")
+for Gv2F TM used in the TAK Software Suite dated 12/28/2015
+
+
+
+
+

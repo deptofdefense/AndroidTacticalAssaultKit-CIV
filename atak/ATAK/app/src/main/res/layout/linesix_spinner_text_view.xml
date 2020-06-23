@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<com.atakmap.android.gui.AutoSizeTextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:maxLines="1"
+    android:textSize="@dimen/fontSize"
+    
+    android:id="@+id/spinnerTarget"
+    android:textColor="#000000"
+    android:gravity="start|center_vertical"
+/> 

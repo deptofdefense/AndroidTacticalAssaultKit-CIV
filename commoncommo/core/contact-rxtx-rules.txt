@@ -1,0 +1,117 @@
+Definitions:
+"contactEndpoint ="
+                  means set <contact> element under <details>, 
+                  endpoint= attribute **if it already exists in the message**
+                  AND set <ackrequest> element under <details>, 
+                  endpoint= attribute if the element exists, regardless of
+                  if the attribute existed already or not
+
+"takServerContacts ="
+                  means to remove <marti> node from <details> element;
+                  if set to non-NULL, add <marti> node under <details>
+                  and then, for each argument given,
+                  add <dest> node under <marti> with an attribute 
+                  callsign="the argument"
+                
+
+"Discovered or Discovery"
+             means finding or updating the endpoint associated with a Contact
+             by examination of received messages as explained 
+             in RECEIVING sections.
+
+
+
+SENDING TO A CONTACT (non-broadcast):
+An endpoint type is chosen by the following rules, in order:
+1. TCP endpoint of contact, if ever seen
+2. UDP endpoint of contact, if seen more recently than TCP
+3. Streaming endpoint, if known, and most recent seen time of
+   1 and 2 is more than 1 minute ago (or if 1 or 2 has never been seen)
+
+
+SENDING UDP
+* Unicast (sendCoT() to contact with active udp endpoint or "known" contact
+  from configKnownEndpointContact() having a unicast address destination):
+  1. contactEndpoint = NULL
+  2. Send out per routing table to contact's ip:port from
+     Discovery or "known endpoint"
+
+* Multicast broadcast (broadcastCoT():  
+  1. let outIp = IP address of interface message is leaving on
+  2. contactEndpoint = outIp:4242:tcp
+  3. Send on all active broadcast interfaces' who's type configuration
+  matches the message type (chat vs. anything else) on their specified ports
+  (see addBroadcastInterface())
+
+* Unicast broadcast (broadcastCoT())
+  1. contactEndpoint = tcpsrcreply:4242:srctcp
+  2. Send out per routing table to the IP address of unicast broadcast
+     interface (see addBroadcastInterface())
+
+* Directed multicast (sendCoT() to any Contact created via
+  configKnownEndpointContact() and having a configured endpoint that is a
+  mcast address or any contact Discovered with mcastIpAddr:anyPort:udp
+  endpoint description):
+  1. let outIp = IP address of interface message is leaving on
+  2. contactEndpoint = outIp:4242:tcp
+  3. Send on all configured outbound udp interfaces regardless of message type
+
+
+
+
+SENDING TCP (non-tak server)
+* Direct send (sendCoT() to any Contact Discovered with 
+    ipAddr:port:tcp or ipAddr:port:srctcp
+  1. contactEndpoint REMOVED from message
+  2. sent to IP and port of Discovered endpoint for destination Contact
+
+* Broadcast: n/a
+
+
+SENDING TO TAK SERVER CONTACT
+* Direct send (sendCoT()) to Contact with Streaming endpoint type chosen.
+  1. takServerContacts = callsignOfContactFromDiscovery
+  2. contactEndpoint = "*:-1:stcp"
+  3. sent to TAK server from which the Contact was Discovered
+
+* Broadcast (broadcastCoT())
+  1. contactEndpoint = "*:-1:stcp"
+  2. takServerContacts = NULL 
+  3. Send to all active TAK servers
+
+
+RECEIVING UDP
+* Discovery is performed based on message content as follows:
+1. If <contact> under <details> has endpoint= attribute...
+    ipAddr = start to first ':'
+    type = second ':' to end
+    port = first ':' to second ':' parsed as int.
+2. Based on above type....
+    if type is "udp": update UDP endpoint with ipAddr:6969 for SA 
+                      and ipAddr:17012 for chat
+    if type is "tcp": update TCP endpoint with ipAddr:port; if port is
+                      invalid int or <= 0, no update made
+    if type is "stcp": ignored, discovery ends
+    if type is "srctcp": override ipAddr=remote IP address
+                      of the sender of the UDP message, then update TCP
+                      endpoint as above
+3. Contact's callsign is set to value of attribute "callsign" of
+   <contact> if present, else set to empty string
+
+
+RECEIVING TCP (non-tak server)
+* No Discovery is performed
+
+RECEIVING TAK SERVER
+* Discovery is performed based on message content as follows:
+
+1.  Received message's endpoint is forced to "*:-1:stcp" as described in
+    SENDING TO TAK SERVER CONTACT.  This is for legacy compatibility and to
+    eliminate errant use of an invalid endpoint.
+2. Server from which message was received becomes active streaming endpoint
+   for contact.
+
+3. Contact's callsign is set to value of attribute "callsign" of
+   <contact> if present, else set to empty string
+
+

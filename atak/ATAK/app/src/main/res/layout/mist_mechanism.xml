@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:orientation="vertical" >
+    <EditText
+        android:id="@+id/mist_m_detail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textNoSuggestions" />
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <LinearLayout
+                      android:id="@+id/mist_m_buttons"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="vertical" >
+            <LinearLayout 
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal" >
+                <Button
+                    android:id="@+id/mist_m_blast"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp" style="@style/darkButton"
+                    android:text="@string/mist_m_blast_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_m_blunt"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp" style="@style/darkButton"
+                    android:text="@string/mist_m_blunt_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_m_gsw"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp" style="@style/darkButton"
+                    android:text="@string/mist_m_gsw_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_m_burn"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp" style="@style/darkButton"
+                    android:text="@string/mist_m_burn_abbr"
+                    />
+
+
+            </LinearLayout>
+            <LinearLayout 
+                          android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:orientation="horizontal" >
+                <Button
+                    android:id="@+id/mist_m_cold"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp" style="@style/darkButton"
+                    android:text="@string/mist_m_cold_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_m_heat"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp" style="@style/darkButton"
+                    android:text="@string/mist_m_heat_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_m_crush"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp" style="@style/darkButton"
+                    android:text="@string/mist_m_crush_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_m_fall"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp" style="@style/darkButton"
+                    android:text="@string/mist_m_fall_abbr"
+                    />
+
+            </LinearLayout>
+
+            <LinearLayout 
+                          android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:orientation="horizontal" >
+                <Button
+                    android:id="@+id/mist_m_frag_single"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp" style="@style/darkButton"
+                    android:text="@string/mist_m_frag_single_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_m_frag_multiple"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp" style="@style/darkButton"
+                    android:text="@string/mist_m_frag_multiple_abbr"
+                    />
+               <Button
+                    android:id="@+id/mist_m_knife"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp" style="@style/darkButton"
+                    android:text="@string/mist_m_knife_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_m_radiation"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp" style="@style/darkButton"
+                    android:text="@string/mist_m_radiation_abbr"
+                    />
+            </LinearLayout>
+
+            <LinearLayout 
+                          android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:orientation="horizontal" >
+
+                <Button
+                    android:id="@+id/mist_m_nuclear"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp" style="@style/darkButton"
+                    android:text="@string/mist_m_nuclear_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_m_chemical"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp" style="@style/darkButton"
+                    android:text="@string/mist_m_chemical_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_m_smoke"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp" style="@style/darkButton"
+                    android:text="@string/mist_m_smoke_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_m_sting"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="10dp" style="@style/darkButton"
+                    android:text="@string/mist_m_sting_abbr"
+                    />
+
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

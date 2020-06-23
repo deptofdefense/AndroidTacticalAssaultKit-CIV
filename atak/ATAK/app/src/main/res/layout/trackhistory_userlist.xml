@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.track.ui.UserListView xmlns:android="http://schemas.android.com/apk/res/android"
+      android:layout_width="fill_parent"
+      android:layout_height="fill_parent"
+      android:orientation="vertical" >
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/trackhistory_userlist_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:padding="4dp"
+            android:layout_alignParentStart="true"
+            android:src="@drawable/ic_track_userlist"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:layout_toEndOf="@+id/trackhistory_userlist_icon"
+            android:text="@string/track_user_list"/>
+    </RelativeLayout>
+
+    <ListView
+        android:id="@+id/trackhistory_users_list"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="10" />
+
+</com.atakmap.android.track.ui.UserListView>

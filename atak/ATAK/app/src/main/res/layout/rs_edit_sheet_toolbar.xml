@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<com.atakmap.android.tools.ActionBarView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/auto_margin"
+    android:gravity="center">
+
+    <LinearLayout
+        android:layout_width="80dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical">
+        <Button
+            android:id="@+id/dragBtn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/auto_margin"
+            android:text="@string/drag"
+            android:textSize="13sp"
+            style="@style/darkButton"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/pitchBtn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:padding="@dimen/auto_margin"
+                android:text="P"
+                android:textSize="13sp"
+                style="@style/darkButton"
+                android:visibility="gone"/>
+            <Button
+                android:id="@+id/headingBtn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:padding="@dimen/auto_margin"
+                android:text="@string/rotate"
+                android:textSize="13sp"
+                style="@style/darkButton"/>
+            <Button
+                android:id="@+id/rollBtn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:padding="@dimen/auto_margin"
+                android:text="R"
+                android:textSize="13sp"
+                style="@style/darkButton"
+                android:visibility="gone"/>
+        </LinearLayout>
+        <Button
+            android:id="@+id/elevBtn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/auto_margin"
+            android:text="@string/elevation"
+            android:textSize="13sp"
+            style="@style/darkButton"
+            android:visibility="gone"/>
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/close"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="@dimen/auto_margin"
+        android:src="@drawable/ic_menu_close_clear_cancel"/>
+
+</com.atakmap.android.tools.ActionBarView>
+    

@@ -1,0 +1,14 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.ROUTE_START</action>
+        <extras>
+            <string key='startingUID'>${uid}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_COORDS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

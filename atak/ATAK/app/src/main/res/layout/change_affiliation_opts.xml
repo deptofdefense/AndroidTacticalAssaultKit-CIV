@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RadioGroup
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/select_affiliation_group"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center">
+
+        <com.atakmap.android.gui.ImageRadioButton
+            android:id="@+id/unknown_btn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:button="@drawable/udot"
+            style="@style/darkButton"/>
+
+        <com.atakmap.android.gui.ImageRadioButton
+            android:id="@+id/neutral_btn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:button="@drawable/ndot"
+            style="@style/darkButton"/>
+
+        <com.atakmap.android.gui.ImageRadioButton
+            android:id="@+id/hostile_btn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:button="@drawable/hdot"
+            style="@style/darkButton"/>
+
+        <com.atakmap.android.gui.ImageRadioButton
+            android:id="@+id/friendly_btn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:button="@drawable/fdot"
+            style="@style/darkButton"/>
+</RadioGroup>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+    
+    <TextView
+         android:id="@+id/missionpackage_log_header_txtType"
+         android:text="@string/type"
+         android:layout_width="60dp"
+         android:layout_height="wrap_content"
+         android:textSize="16sp"
+         android:layout_marginStart="@dimen/auto_space_big"/>
+        
+    <TextView
+        android:id="@+id/missionpackage_log_header_txtName"
+        android:text="@string/name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="16sp"
+        android:layout_marginStart="@dimen/auto_space_big"/>
+     
+    <TextView
+        android:id="@+id/missionpackage_log_header_txtDate"
+        android:text="@string/date"
+        android:layout_width="@dimen/mission_package_transfer_date"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"
+        android:layout_marginStart="@dimen/auto_space_big"/>
+
+</LinearLayout>

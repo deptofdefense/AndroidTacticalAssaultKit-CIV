@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.slant.SlantExtendedInfoView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+
+     <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" >
+
+
+      <Button
+          android:id="@+id/cotInfoSlantButton"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          style="@style/darkButton"
+          android:padding="6dp"
+          android:text="@string/sse_slant" />
+     </LinearLayout>
+</com.atakmap.android.slant.SlantExtendedInfoView>
+

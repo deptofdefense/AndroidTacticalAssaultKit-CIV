@@ -1,0 +1,22 @@
+<menu buttonRadius='65' buttonSpan='90' buttonWidth='90' buttonBg='bgs/button.xml'>
+
+    <button angle='-90'
+            icon='icons/delete.png'
+            onClick='actions/rab_action_delete.xml' />
+
+    <button icon='icons/target.png'
+            submenu='menus/drop_point_submenu.xml'
+            onClick='actions/drophostile.xml' />
+
+    <button icon='icons/bloodhound.xml'
+            selectable='true'
+            onClick='actions/bloodhound.xml'
+            selected='${hounding}' />
+
+    <button icon='icons/move.png'
+            submenu='menus/mgrs_entry_submenu.xml'
+            disableSwap='true'
+            disableIconSwap='true'
+            onClick='actions/move.xml' />
+
+</menu>

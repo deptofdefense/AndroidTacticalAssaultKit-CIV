@@ -1,0 +1,1069 @@
+
+package com.atakmap.app.preferences;
+
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.os.Bundle;
+import android.widget.Toast;
+import android.util.Base64;
+import java.io.UnsupportedEncodingException;
+
+import com.atakmap.app.BuildConfig;
+
+import com.atakmap.android.cot.CotMapComponent;
+import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.app.R;
+import com.atakmap.comms.TAKServer;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.log.Log;
+import com.atakmap.comms.CotServiceRemote;
+import com.atakmap.comms.CotServiceRemote.ConnectionListener;
+import com.atakmap.net.AtakAuthenticationDatabase;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+import javax.xml.XMLConstants;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+public class PreferenceControl implements ConnectionListener {
+
+    static public final String TAG = "PreferenceControl";
+
+    /**
+     * App's current preference path (based on manifest package)
+     */
+    private final String DEFAULT_PREFERENCES_NAME;
+
+    public final String[] PreferenceGroups;
+    static private PreferenceControl _instance;
+    private final Context _context;
+
+    public static final String DIRNAME = FileSystemUtils.CONFIG_DIRECTORY
+            + File.separatorChar + "prefs";
+    public static final String DIRPATH = FileSystemUtils.getItem(DIRNAME)
+            .getPath();
+    private CotServiceRemote _remote;
+    private boolean connected;
+
+    /**
+     * Singleton class for exporting and importing external preferences into the system.
+     */
+    public static synchronized PreferenceControl getInstance(final Context c) {
+        if (_instance == null) {
+            _instance = new PreferenceControl(c);
+        }
+
+        return _instance;
+    }
+
+    public static synchronized void dispose() {
+        if (_instance != null)
+            _instance.disposeImpl();
+        _instance = null;
+    }
+
+    private PreferenceControl(Context context) {
+        _context = context;
+        connected = false;
+        DEFAULT_PREFERENCES_NAME = _context.getPackageName()
+                + "_preferences";
+        PreferenceGroups = new String[] {
+                "cot_inputs", "cot_outputs", "cot_streams",
+                DEFAULT_PREFERENCES_NAME
+        };
+    }
+
+    /**
+     * Preserves the original intent of connecting. Now that the PreferenceControl is started early,
+     * allow for this to be called in the original location. This should not be called during the
+     * ATAKActivity instantiation.
+     */
+    public void connect() {
+        _remote = new CotServiceRemote();
+        _remote.connect(this);
+    }
+
+    public void disconnect() {
+        try {
+            connected = false;
+            if (_remote != null)
+                _remote.disconnect();
+            _remote = null;
+        } catch (Exception e) {
+            Log.e(TAG, "disconnection error: " + e);
+        }
+    }
+
+    private void disposeImpl() {
+
+        try {
+            connected = false;
+            if (_remote != null)
+                _remote.disconnect();
+            _remote = null;
+        } catch (Exception e) {
+            Log.e(TAG, "disconnection error occurred during shutdown: " + e);
+        }
+    }
+
+    /**
+     * Obtains all of the Shared Preferences used by the system.   Please note that the preference
+     * do contain private device specific information.   If transfering to a new device please omit
+     * the key "bestDeviceUID", if cloning please omit the key "bestDeviceUID" and "locationCallsign".
+     * @return a hashmap containing the preference name as the key and the SharedPreference as a value.
+     */
+    public HashMap<String, SharedPreferences> getAllPreferences() {
+        HashMap<String, SharedPreferences> prefs = new HashMap<>();
+        for (String group : PreferenceGroups) {
+            SharedPreferences pref = _context.getSharedPreferences(
+                    group,
+                    Context.MODE_PRIVATE);
+            prefs.put(group, pref);
+        }
+        return prefs;
+    }
+
+    public void saveSettings(String path) {
+        File configFile = new File(DIRPATH, path);
+        boolean created = false;
+        try {
+            FileSystemUtils.deleteFile(configFile);
+            created = configFile.createNewFile();
+        } catch (IOException e1) {
+            Log.e(TAG, "error: ", e1);
+        }
+        if (!created) {
+            Toast.makeText(_context,
+                    R.string.preferences_text409,
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder(
+                "<?xml version='1.0' standalone='yes'?>\r\n");
+        sb.append("<preferences>\r\n");
+        for (String PreferenceGroup : PreferenceGroups) {
+            SharedPreferences pref = _context.getSharedPreferences(
+                    PreferenceGroup,
+                    Context.MODE_PRIVATE);
+
+            sb.append("<preference version=\"1\" name=\"")
+                    .append(PreferenceGroup).append("\">\r\n");
+            Map<String, ?> keyValuePairs = pref.getAll();
+
+            // filter two additional keys
+            String k1 = "-1";
+            String k2 = "-1";
+
+            try {
+                k1 = Base64.encodeToString(
+                        AtakAuthenticationDatabase.TAG
+                                .getBytes(FileSystemUtils.UTF8_CHARSET),
+                        Base64.NO_WRAP);
+                k2 = Base64.encodeToString(
+                        AtakAuthenticationDatabase.TAG
+                                .getBytes(FileSystemUtils.UTF8_CHARSET),
+                        Base64.NO_WRAP);
+            } catch (UnsupportedEncodingException use) {
+                Log.d(TAG, "unsupported encoding during pref save");
+            }
+
+            for (Map.Entry e : keyValuePairs.entrySet()) {
+                Object o = e.getValue();
+                String key = (String) e.getKey();
+                if (o != null) {
+                    String strClass = keyValuePairs.get(key).getClass()
+                            .toString();
+                    String value = String.valueOf(keyValuePairs.get(key));
+
+                    if (key.equals("locationCallsign") ||
+                            key.equals("bestDeviceUID") ||
+                            key.equals(k1) || key.equals(k2)) {
+                        // do nothing
+                    } else {
+                        sb.append("<entry key=\"");
+                        sb.append(key.replaceAll("&", "&amp;"));
+                        sb.append("\" class=\"");
+                        sb.append(strClass);
+                        sb.append("\">");
+                        sb.append(value);
+                        sb.append("</entry>\r\n");
+                    }
+                } else {
+                    Log.d(TAG, "null value for key: " + key);
+                }
+            }
+
+            sb.append("</preference>\r\n");
+
+        }
+        sb.append("</preferences>\r\n");
+
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter(configFile));
+            try {
+                bw.write(sb.toString());
+            } finally {
+                bw.close();
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "error: ", e);
+        }
+
+    }
+
+    /**
+     * Loads a new default set of configuration options and then removes the file containing these
+     * values. This is useful for staging a system once and then pushing configuration changes out
+     * to many system post deployment. The file is named default and it is required to be in the
+     * prefs directory. The prefs directory can either be internal or external. All other
+     * preferences are loaded from just the internal card. XXX - This is a partial fix for the
+     * staging of defaults to devices where ClockworkMod recovery is being used to stage the
+     * devices.
+     */
+    public boolean ingestDefaults() {
+        final String filename = "defaults";
+        String[] mounts = FileSystemUtils.findMountPoints();
+
+        for (String mount : mounts) {
+            File configFile = new File(mount + File.separator + DIRNAME
+                    + File.separator
+                    + filename);
+            if (configFile.exists()) {
+                Log.d(TAG,
+                        "default configuration file found, loading entries: "
+                                + configFile);
+                // do not perform a connection check
+                try {
+                    loadSettings(configFile);
+                } catch (Exception e) {
+                    Log.e(TAG,
+                            "default configuration file contained an error: "
+                                    + configFile);
+                    Log.e(TAG, "error: ", e);
+                }
+                FileSystemUtils.deleteFile(configFile);
+            } else {
+                Log.d(TAG, "no default config file found: " + configFile);
+            }
+        }
+        return true;
+    }
+
+    public void loadSettings(String path, boolean bCheckConnection) {
+        if (path.equals("<none>"))
+            return;
+
+        File configFile = new File(DIRPATH, path);
+        if (!configFile.exists()) {
+            Log.w(TAG, "File not found: " + configFile.getAbsolutePath());
+            Toast.makeText(_context, "File not found", Toast.LENGTH_SHORT)
+                    .show();
+            return;
+        }
+        if (bCheckConnection && !connected) {
+            Log.w(TAG,
+                    "System still loading.  Please try again: "
+                            + configFile.getAbsolutePath());
+            Toast.makeText(_context,
+                    R.string.preferences_text410,
+                    Toast.LENGTH_SHORT)
+                    .show();
+            return;
+        }
+
+        try {
+            loadSettings(configFile);
+        } catch (Exception e) {
+            Log.e(TAG, "default configuration file contained an error: "
+                    + configFile.getAbsolutePath(), e);
+        }
+    }
+
+    public void loadPartialSettings(Context context, String path,
+            boolean bCheckConnection, String[] categorySet) {
+        if (path.equals("<none>"))
+            return;
+
+        File configFile = new File(DIRPATH, path);
+        if (!configFile.exists()) {
+            Log.w(TAG, "File not found: " + configFile.getAbsolutePath());
+            Toast.makeText(_context, "File not found", Toast.LENGTH_SHORT)
+                    .show();
+            return;
+        }
+        if (bCheckConnection && !connected) {
+            Log.w(TAG,
+                    "System still loading.  Please try again: "
+                            + configFile.getAbsolutePath());
+            Toast.makeText(_context, R.string.preferences_text410,
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            loadPartialSettings(context, configFile, categorySet);
+        } catch (Exception e) {
+            Log.e(TAG, "default configuration file contained an error: "
+                    + configFile.getAbsolutePath(), e);
+        }
+    }
+
+    /**
+     * Loads the settings, and optionally performs a connection check to see if the
+     * CotServiceRemote is running (leaving that in as legacy)
+     * @return list of keys that were imported.
+     */
+    public List<String> loadSettings(final File configFile) {
+        // Do file opening here
+
+        List<String> retval = new ArrayList<>();
+
+        Log.d(TAG, "Loading settings: " + configFile.getAbsolutePath());
+
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        try {
+            dbf.setFeature(
+                    "http://apache.org/xml/features/disallow-doctype-decl",
+                    true);
+        } catch (Exception ignored) {
+        }
+        try {
+            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        } catch (Exception ignored) {
+        }
+
+        Document doc;
+        try {
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            doc = db.parse(configFile);
+        } catch (SAXException e) {
+            Log.e(TAG,
+                    "SAXException while parsing: "
+                            + configFile.getAbsolutePath(),
+                    e);
+            return retval;
+        } catch (IOException e) {
+            Log.e(TAG,
+                    "IOException while parsing: "
+                            + configFile.getAbsolutePath(),
+                    e);
+            return retval;
+        } catch (ParserConfigurationException e) {
+            Log.e(TAG, "ParserConfigurationException while parsing: "
+                    + configFile.getAbsolutePath(), e);
+            return retval;
+        }
+
+        ConnectionHolder[] connections = {
+                new ConnectionHolder("cot_inputs",
+                        new HashMap<String, String>()),
+                new ConnectionHolder("cot_outputs",
+                        new HashMap<String, String>()),
+                new ConnectionHolder("cot_streams",
+                        new HashMap<String, String>())
+        };
+
+        try {
+            Node root = doc.getDocumentElement();
+            NodeList preferences = root.getChildNodes();
+            for (int i = 0; i < preferences.getLength(); i++) {
+                Node preference = preferences.item(i);
+                if (preference.getNodeName().equals("preference")) {
+
+                    String name = preference.getAttributes()
+                            .getNamedItem("name").getNodeValue();
+                    Log.d(TAG, "name=" + name);
+
+                    switch (name) {
+                        case "cot_inputs":
+                            loadConnectionHolder(connections[0], preference);
+                            break;
+                        case "cot_outputs":
+                            loadConnectionHolder(connections[1], preference);
+                            break;
+                        case "cot_streams":
+                            loadConnectionHolder(connections[2], preference);
+                            break;
+                        default:
+                            if (BuildConfig.TAK_PREFERENCES_NAME.equals(name)) {
+                                //import legacy prefs using current package
+                                Log.d(TAG, "Fixing up baseline prefs: "
+                                        + DEFAULT_PREFERENCES_NAME);
+                                name = DEFAULT_PREFERENCES_NAME;
+                            }
+                            if (BuildConfig.LEGACY_PREFERENCES_NAME
+                                    .equals(name)) {
+                                //import legacy prefs using current package
+                                Log.d(TAG, "Fixing up baseline prefs: "
+                                        + DEFAULT_PREFERENCES_NAME);
+                                name = DEFAULT_PREFERENCES_NAME;
+                            }
+
+                            SharedPreferences pref = _context
+                                    .getSharedPreferences(
+                                            name,
+                                            Context.MODE_PRIVATE);
+                            Editor editor = pref.edit();
+
+                            NodeList items = preference.getChildNodes();
+                            //Log.d(TAG, "#items=" + items.getLength());
+                            for (int j = 0; j < items.getLength(); j++) {
+                                Node entry = items.item(j);
+                                if (entry.getNodeName().equals("entry")) {
+                                    String key = entry.getAttributes()
+                                            .getNamedItem("key").getNodeValue();
+                                    String value = "";
+                                    Node firstChild;
+                                    if ((firstChild = entry
+                                            .getFirstChild()) != null)
+                                        value = firstChild.getNodeValue();
+
+                                    //Log.d(TAG, "key=" + key + " val=" + value);
+
+                                    switch (entry.getAttributes()
+                                            .getNamedItem("class")
+                                            .getNodeValue()) {
+                                        case "class java.lang.String":
+                                            editor.putString(key, value);
+                                            retval.add(key);
+                                            break;
+                                        case "class java.lang.Boolean":
+                                            editor.putBoolean(key,
+                                                    Boolean.parseBoolean(
+                                                            value));
+                                            retval.add(key);
+                                            break;
+                                        case "class java.lang.Integer":
+                                            editor.putInt(key,
+                                                    Integer.parseInt(value));
+                                            retval.add(key);
+                                            break;
+                                        case "class java.lang.Float":
+                                            editor.putFloat(key,
+                                                    Float.parseFloat(value));
+                                            retval.add(key);
+                                            break;
+                                        case "class java.lang.Long":
+                                            editor.putLong(key,
+                                                    Long.parseLong(value));
+                                            retval.add(key);
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                }
+                                editor.apply();
+                            }
+                            break;
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to parse: " + configFile.getAbsolutePath(), e);
+            return new ArrayList<>();
+        }
+
+        CotMapComponent cotMapCompoent = CotMapComponent.getInstance();
+
+        for (ConnectionHolder connection : connections) {
+            Map<String, String> mapping = connection.getContents();
+            if (mapping == null || mapping.size() < 1) {
+                continue;
+            }
+
+            String countString = mapping.get("count");
+            if (FileSystemUtils.isEmpty(countString)) {
+                continue;
+            }
+            int count = Integer.parseInt(countString);
+            Log.d(TAG, "Loading " + count + " connections");
+            for (int j = 0; j < count; j++) {
+                String description = mapping.get("description" + j);
+                String connectString = mapping
+                        .get(TAKServer.CONNECT_STRING_KEY + j);
+                boolean enabled = Boolean
+                        .parseBoolean(mapping.get("enabled" + j));
+
+                String strUseAuth = mapping.get("useAuth" + j);
+                boolean useAuth = strUseAuth == null ? false
+                        : Boolean
+                                .parseBoolean(strUseAuth);
+                String strCompress = mapping.get("compress" + j);
+                boolean compress = strCompress == null ? false
+                        : Boolean
+                                .parseBoolean(strCompress);
+                String cacheCreds = mapping.get("cacheCreds" + j);
+
+                String caPassword = mapping.get("caPassword" + j);
+                String clientPassword = mapping.get("clientPassword" + j);
+                String caLocation = mapping.get("caLocation" + j);
+                String certificateLocation = mapping.get("certificateLocation"
+                        + j);
+
+                boolean enrollForCertificateWithTrust = Boolean
+                        .parseBoolean(mapping
+                                .get("enrollForCertificateWithTrust" + j));
+
+                Bundle data = new Bundle();
+                data.putString("description", description);
+                data.putBoolean("enabled", enabled);
+                data.putBoolean("useAuth", useAuth);
+                data.putBoolean("compress", compress);
+                data.putString("cacheCreds", cacheCreds);
+
+                data.putString("caPassword", caPassword);
+                data.putString("clientPassword", clientPassword);
+                data.putString("caLocation", caLocation);
+                data.putString("certificateLocation", certificateLocation);
+
+                data.putBoolean("enrollForCertificateWithTrust",
+                        enrollForCertificateWithTrust);
+
+                Log.d(TAG, "Loading " + connection.getName()
+                        + " connection " + connectString);
+                switch (connection.getName()) {
+                    case "cot_inputs":
+                        cotMapCompoent.getCotServiceRemote().addInput(
+                                connectString, data);
+                        break;
+                    case "cot_outputs":
+                        cotMapCompoent.getCotServiceRemote().addOutput(
+                                connectString, data);
+                        break;
+                    case "cot_streams":
+                        cotMapCompoent.getCotServiceRemote().addStream(
+                                connectString, data);
+                        break;
+                }
+            }
+        }
+
+        Intent prefLoaded = new Intent();
+        prefLoaded.setAction("com.atakmap.app.PREFERENCES_LOADED");
+        AtakBroadcast.getInstance().sendBroadcast(prefLoaded);
+        return retval;
+    }
+
+    // Loads the partial settings
+    public boolean loadPartialSettings(final Context context,
+            final File configFile, final String[] categorySet) {
+        // Do file opening here
+        //Log.d(TAG, "Loading settings: " + configFile.getAbsolutePath());
+
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        try {
+            dbf.setFeature(
+                    "http://apache.org/xml/features/disallow-doctype-decl",
+                    true);
+        } catch (Exception ignored) {
+        }
+        try {
+            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        } catch (Exception ignored) {
+        }
+
+        Document doc = null;
+        try {
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            doc = db.parse(configFile);
+        } catch (SAXException e) {
+            Log.e(TAG,
+                    "SAXException while parsing: "
+                            + configFile.getAbsolutePath(),
+                    e);
+            return false;
+        } catch (IOException e) {
+            Log.e(TAG,
+                    "IOException while parsing: "
+                            + configFile.getAbsolutePath(),
+                    e);
+            return false;
+        } catch (ParserConfigurationException e) {
+            Log.e(TAG, "ParserConfigurationException while parsing: "
+                    + configFile.getAbsolutePath(), e);
+            return false;
+        }
+
+        try {
+            Node root = doc.getDocumentElement();
+            NodeList preferences = root.getChildNodes();
+            for (int i = 0; i < preferences.getLength(); i++) {
+                final Node preference = preferences.item(i);
+                if (preference.getNodeName().equals("preference")) {
+                    String name = preference.getAttributes()
+                            .getNamedItem("name").getNodeValue();
+                    Log.d(TAG, "name=" + name);
+
+                    // We are only interested in loading app preferences for ATAK
+                    if (name.equals("com.atakmap.app_preferences")) {
+                        // Get the shared preferences to edit
+                        SharedPreferences pref = _context.getSharedPreferences(
+                                name, Context.MODE_PRIVATE);
+                        final Editor editor = pref.edit();
+
+                        final CharSequence[] prefsList = {
+                                "My Preferences -> Device",
+                                "My Preferences -> Alternate Contact",
+                                "My Preferences -> Reporting",
+                                "Display Preferences -> Display",
+                                "Network Preferences -> Network",
+                                "Network Preferences -> Bluetooth",
+                                "Tools Preferences -> Tools",
+                                "Control Preferences -> Media",
+                                "Control Preferences -> Stale Data",
+                                "Control Preferences -> User Touch",
+                                "Control Preferences -> Self Coordinate",
+                                "Control Preferences -> Other",
+                                "Control Preferences -> Debug"
+                        };
+                        boolean[] prefsListChoices = new boolean[prefsList.length];
+                        final ArrayList<Integer> prefsSelectedList = new ArrayList<>();
+
+                        // Build an alert dialog with a list of categories of preferences to load
+                        AlertDialog.Builder alertBuilder = new AlertDialog.Builder(
+                                context);
+                        alertBuilder
+                                .setTitle(
+                                        "Select which set of preferences to load");
+                        alertBuilder
+                                .setMultiChoiceItems(
+                                        prefsList,
+                                        prefsListChoices,
+                                        new DialogInterface.OnMultiChoiceClickListener() {
+                                            @Override
+                                            public void onClick(
+                                                    DialogInterface dialog,
+                                                    int which,
+                                                    boolean isChecked) {
+                                                // If user selected any item in the list, add it to the selected list
+                                                if (isChecked) {
+                                                    prefsSelectedList
+                                                            .add(which);
+                                                } else if (prefsSelectedList
+                                                        .contains(which)) {
+                                                    // User selected something that was checked already, this means remove
+                                                    prefsSelectedList
+                                                            .remove(Integer
+                                                                    .valueOf(
+                                                                            which));
+                                                }
+                                            }
+                                        });
+
+                        // Set a listener on the OK button
+                        alertBuilder.setPositiveButton(R.string.ok,
+                                new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog,
+                                            int which) {
+                                        for (int i = 0; i < prefsSelectedList
+                                                .size(); i++) {
+                                            // Cycle through list to see which preferences were added to load
+                                            Log.d(TAG,
+                                                    "Selected "
+                                                            + prefsList[prefsSelectedList
+                                                                    .get(i)]);
+                                        }
+                                        dialog.dismiss();
+
+                                        Log.d(TAG,
+                                                "Moving on to check preference selection list");
+
+                                        // If no selections were made, then return
+                                        if (prefsSelectedList.isEmpty()) {
+                                            Log.d(TAG,
+                                                    "No preferences were selected");
+                                            return;
+                                        }
+
+                                        // Now that we have our selected list, check against the nodelist of items for
+                                        // matches and allow matches to proceed with preference load
+                                        NodeList items = preference
+                                                .getChildNodes();
+                                        List<Node> matchedItems = new ArrayList<>();
+                                        for (int j = 0; j < items
+                                                .getLength(); j++) {
+                                            Node entry = items.item(j);
+                                            if (entry.getNodeName().equals(
+                                                    "entry")) {
+                                                String key = entry
+                                                        .getAttributes()
+                                                        .getNamedItem("key")
+                                                        .getNodeValue();
+                                                String value = "";
+                                                Node firstChild;
+                                                if ((firstChild = entry
+                                                        .getFirstChild()) != null)
+                                                    value = firstChild
+                                                            .getNodeValue();
+                                                // now check the key against the partial selection
+                                                for (int i = 0; i < prefsSelectedList
+                                                        .size(); i++) {
+                                                    if (prefsList[prefsSelectedList
+                                                            .get(i)]
+                                                                    .equals("My Preferences -> Device")) {
+                                                        // Check against device preferences
+                                                        String[] devicePreferencesList = _context
+                                                                .getResources()
+                                                                .getStringArray(
+                                                                        R.array.device_preferences);
+                                                        for (String prefs : devicePreferencesList) {
+                                                            if (key.equals(
+                                                                    prefs)) {
+                                                                // Found a match, add to matched list
+                                                                matchedItems
+                                                                        .add(items
+                                                                                .item(j));
+                                                            }
+                                                        }
+                                                    } else if (prefsList[prefsSelectedList
+                                                            .get(i)]
+                                                                    .equals("My Preferences -> Alternate Contact")) {
+                                                        // Check against alternate contact preferences
+                                                        String[] alternateContactPreferencesList = _context
+                                                                .getResources()
+                                                                .getStringArray(
+                                                                        R.array.alternate_contact_preferences);
+                                                        for (String prefs : alternateContactPreferencesList) {
+                                                            if (key.equals(
+                                                                    prefs)) {
+                                                                // Found a match, add to matched list
+                                                                matchedItems
+                                                                        .add(items
+                                                                                .item(j));
+                                                            }
+                                                        }
+                                                    } else if (prefsList[prefsSelectedList
+                                                            .get(i)]
+                                                                    .equals("My Preferences -> Reporting")) {
+                                                        // Check against reporting preferences
+                                                        String[] reportingPreferencesList = _context
+                                                                .getResources()
+                                                                .getStringArray(
+                                                                        R.array.reporting_preferences);
+                                                        for (String prefs : reportingPreferencesList) {
+                                                            if (key.equals(
+                                                                    prefs)) {
+                                                                // Found a match, add to matched list
+                                                                matchedItems
+                                                                        .add(items
+                                                                                .item(j));
+                                                            }
+                                                        }
+                                                    } else if (prefsList[prefsSelectedList
+                                                            .get(i)]
+                                                                    .equals("Display Preferences -> Display")) {
+                                                        // Check against display preferences
+                                                        String[] displayPreferencesList = _context
+                                                                .getResources()
+                                                                .getStringArray(
+                                                                        R.array.display_preferences);
+                                                        for (String prefs : displayPreferencesList) {
+                                                            if (key.equals(
+                                                                    prefs)) {
+                                                                // Found a match, add to matched list
+                                                                matchedItems
+                                                                        .add(items
+                                                                                .item(j));
+                                                            }
+                                                        }
+                                                    } else if (prefsList[prefsSelectedList
+                                                            .get(i)]
+                                                                    .equals("Network Preferences -> Network")) {
+                                                        // Check against network preferences
+                                                        String[] networkPreferencesList = _context
+                                                                .getResources()
+                                                                .getStringArray(
+                                                                        R.array.network_preferences);
+                                                        for (String prefs : networkPreferencesList) {
+                                                            if (key.equals(
+                                                                    prefs)) {
+                                                                // Found a match, add to matched list
+                                                                matchedItems
+                                                                        .add(items
+                                                                                .item(j));
+                                                            }
+                                                        }
+                                                    } else if (prefsList[prefsSelectedList
+                                                            .get(i)]
+                                                                    .equals("Network Preferences -> Bluetooth")) {
+                                                        // Check against bluetooth preferences
+                                                        String[] bluetoothPreferencesList = _context
+                                                                .getResources()
+                                                                .getStringArray(
+                                                                        R.array.bluetooth_preferences);
+                                                        for (String prefs : bluetoothPreferencesList) {
+                                                            if (key.equals(
+                                                                    prefs)) {
+                                                                // Found a match, add to matched list
+                                                                matchedItems
+                                                                        .add(items
+                                                                                .item(j));
+                                                            }
+                                                        }
+                                                    } else if (prefsList[prefsSelectedList
+                                                            .get(i)]
+                                                                    .equals("Tools Preferences -> Tools")) {
+                                                        // Check against tools preferences
+                                                        String[] toolsPreferencesList = _context
+                                                                .getResources()
+                                                                .getStringArray(
+                                                                        R.array.tools_preferences);
+                                                        for (String prefs : toolsPreferencesList) {
+                                                            if (key.equals(
+                                                                    prefs)) {
+                                                                // Found a match, add to matched list
+                                                                matchedItems
+                                                                        .add(items
+                                                                                .item(j));
+                                                            }
+                                                        }
+                                                    } else if (prefsList[prefsSelectedList
+                                                            .get(i)]
+                                                                    .equals("Control Preferences -> Media")) {
+                                                        // Check against control preferences
+                                                        String[] mediaPreferencesList = _context
+                                                                .getResources()
+                                                                .getStringArray(
+                                                                        R.array.media_preferences);
+                                                        for (String prefs : mediaPreferencesList) {
+                                                            if (key.equals(
+                                                                    prefs)) {
+                                                                // Found a match, add to matched list
+                                                                matchedItems
+                                                                        .add(items
+                                                                                .item(j));
+                                                            }
+                                                        }
+                                                    } else if (prefsList[prefsSelectedList
+                                                            .get(i)]
+                                                                    .equals("Control Preferences -> Stale Data")) {
+                                                        // Check against control preferences
+                                                        String[] stalePreferencesList = _context
+                                                                .getResources()
+                                                                .getStringArray(
+                                                                        R.array.stale_preferences);
+                                                        for (String prefs : stalePreferencesList) {
+                                                            if (key.equals(
+                                                                    prefs)) {
+                                                                // Found a match, add to matched list
+                                                                matchedItems
+                                                                        .add(items
+                                                                                .item(j));
+                                                            }
+                                                        }
+                                                    } else if (prefsList[prefsSelectedList
+                                                            .get(i)]
+                                                                    .equals("Control Preferences -> User Touch")) {
+                                                        // Check against control preferences
+                                                        String[] userPreferencesList = _context
+                                                                .getResources()
+                                                                .getStringArray(
+                                                                        R.array.user_preferences);
+                                                        for (String prefs : userPreferencesList) {
+                                                            if (key.equals(
+                                                                    prefs)) {
+                                                                // Found a match, add to matched list
+                                                                matchedItems
+                                                                        .add(items
+                                                                                .item(j));
+                                                            }
+                                                        }
+                                                    } else if (prefsList[prefsSelectedList
+                                                            .get(i)]
+                                                                    .equals("Control Preferences -> Self Coordinate")) {
+                                                        // Check against control preferences
+                                                        String[] selfPreferencesList = _context
+                                                                .getResources()
+                                                                .getStringArray(
+                                                                        R.array.self_preferences);
+                                                        for (String prefs : selfPreferencesList) {
+                                                            if (key.equals(
+                                                                    prefs)) {
+                                                                // Found a match, add to matched list
+                                                                matchedItems
+                                                                        .add(items
+                                                                                .item(j));
+                                                            }
+                                                        }
+                                                    } else if (prefsList[prefsSelectedList
+                                                            .get(i)]
+                                                                    .equals("Control Preferences -> Other")) {
+                                                        // Check against control preferences
+                                                        String[] otherPreferencesList = _context
+                                                                .getResources()
+                                                                .getStringArray(
+                                                                        R.array.other_preferences);
+                                                        for (String prefs : otherPreferencesList) {
+                                                            if (key.equals(
+                                                                    prefs)) {
+                                                                // Found a match, add to matched list
+                                                                matchedItems
+                                                                        .add(items
+                                                                                .item(j));
+                                                            }
+                                                        }
+                                                    } else if (prefsList[prefsSelectedList
+                                                            .get(i)]
+                                                                    .equals("Control Preferences -> Debug")) {
+                                                        // Check against control preferences
+                                                        String[] debugPreferencesList = _context
+                                                                .getResources()
+                                                                .getStringArray(
+                                                                        R.array.debug_preferences);
+                                                        for (String prefs : debugPreferencesList) {
+                                                            if (key.equals(
+                                                                    prefs)) {
+                                                                // Found a match, add to matched list
+                                                                matchedItems
+                                                                        .add(items
+                                                                                .item(j));
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        Log.d(TAG,
+                                                "#items="
+                                                        + matchedItems.size());
+                                        for (int j = 0; j < matchedItems
+                                                .size(); j++) {
+                                            Node entry = matchedItems.get(j);
+                                            if (entry.getNodeName().equals(
+                                                    "entry")) {
+                                                String key = entry
+                                                        .getAttributes()
+                                                        .getNamedItem("key")
+                                                        .getNodeValue();
+                                                String value = "";
+                                                Node firstChild;
+                                                if ((firstChild = entry
+                                                        .getFirstChild()) != null)
+                                                    value = firstChild
+                                                            .getNodeValue();
+                                                //Log.d(TAG, "key=" + key + " val=" + value);
+                                                switch (entry
+                                                        .getAttributes()
+                                                        .getNamedItem("class")
+                                                        .getNodeValue()) {
+                                                    case "class java.lang.String":
+                                                        editor.putString(key,
+                                                                value);
+                                                        break;
+                                                    case "class java.lang.Boolean":
+                                                        editor.putBoolean(
+                                                                key,
+                                                                Boolean.parseBoolean(
+                                                                        value));
+                                                        break;
+                                                    case "class java.lang.Integer":
+                                                        editor.putInt(key,
+                                                                Integer
+                                                                        .parseInt(
+                                                                                value));
+                                                        break;
+                                                    case "class java.lang.Float":
+                                                        editor.putFloat(key,
+                                                                Float
+                                                                        .parseFloat(
+                                                                                value));
+                                                        break;
+                                                    case "class java.lang.Long":
+                                                        editor.putLong(key, Long
+                                                                .parseLong(
+                                                                        value));
+                                                        break;
+                                                }
+                                            }
+                                            editor.apply();
+                                        }
+                                    }
+                                });
+                        alertBuilder.setNegativeButton(R.string.cancel, null);
+                        AlertDialog partialPreferenceDialog = alertBuilder
+                                .create();
+                        partialPreferenceDialog.show();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to parse: " + configFile.getAbsolutePath(), e);
+            return false;
+        }
+
+        Intent prefLoaded = new Intent();
+        prefLoaded.setAction("com.atakmap.app.PREFERENCES_LOADED");
+        AtakBroadcast.getInstance().sendBroadcast(prefLoaded);
+        return true;
+    }
+
+    private void loadConnectionHolder(ConnectionHolder holder,
+            Node preference) {
+        NodeList items = preference.getChildNodes();
+        Log.d(TAG, "connection #items=" + items.getLength());
+        for (int j = 0; j < items.getLength(); j++) {
+            Node entry = items.item(j);
+            if (entry.getNodeName().equals("entry")) {
+                String key = entry.getAttributes().getNamedItem("key")
+                        .getNodeValue();
+                String value = "";
+                Node firstChild;
+                if ((firstChild = entry.getFirstChild()) != null)
+                    value = firstChild.getNodeValue();
+
+                //Log.d(TAG, "connection key=" + key + " val=" + value);
+                holder.getContents().put(key, value);
+            }
+        }
+    }
+
+    private static class ConnectionHolder {
+        private final Map<String, String> _contents;
+        private final String _name;
+
+        ConnectionHolder(String name, Map<String, String> contents) {
+            _name = name;
+            _contents = contents;
+        }
+
+        public String getName() {
+            return _name;
+        }
+
+        public Map<String, String> getContents() {
+            return _contents;
+        }
+    }
+
+    @Override
+    public void onCotServiceConnected(Bundle fullServiceState) {
+        connected = true;
+    }
+
+    @Override
+    public void onCotServiceDisconnected() {
+        connected = false;
+
+    }
+}

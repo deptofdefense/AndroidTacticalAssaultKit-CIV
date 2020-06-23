@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- This is the old version from the JumpMaster library -->
+<!--
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:maxLines="1"
+    android:textSize="@dimen/spinnerFontSize"
+    
+    android:textColor="#000000"    
+/> 
+-->
+
+<!-- This is the version from MapLibrary -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:maxLines="1"
+    android:textSize="@dimen/fontSize"
+    
+    android:id="@+id/spinnerTarget"
+    android:textColor="#000000"   
+/> 
+

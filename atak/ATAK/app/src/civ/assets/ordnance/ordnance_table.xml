@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<munitions>
+
+    <Favorites>
+        <!-- empty category to take over -->
+    </Favorites>
+
+    <Custom_Threat_Rings>
+        <!-- empty category to take over -->
+    </Custom_Threat_Rings>
+
+    <Current_Flights>
+        <!-- inject OSR data here -->
+    </Current_Flights>
+    
+</munitions>

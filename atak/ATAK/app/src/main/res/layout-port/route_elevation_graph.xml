@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.routes.elevation.RouteElevationView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_gravity="center"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center|fill" >
+
+        <com.atakmap.android.routes.elevation.SeekerBarPanelView
+            android:id="@+id/seekerBarPanelView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical" >
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="2dp"
+                android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/MgrsText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="5dp"
+                    android:background="#3F8FD2"
+                    android:focusableInTouchMode="false"
+                    android:paddingEnd="5dp"
+                    android:paddingStart="5dp"
+                    android:text="@string/no_point_data"
+                    android:textColor="#FFFFFF" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="2dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/MslText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="#3F8FD2"
+                    android:paddingEnd="5dp"
+                    android:paddingStart="5dp"
+                    android:text="@string/ft_msl2"
+                    android:textColor="#FFFFFF" />
+                <!-- placeholder value for MSL -->
+
+                <View
+                    android:layout_width="0dp"
+                    android:layout_height="1dp"
+                    android:layout_weight="1"/>
+
+                <TextView
+                    android:id="@+id/GainText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="5dp"
+                    android:background="#3F8FD2"
+                    android:gravity="end"
+                    android:paddingEnd="5dp"
+                    android:paddingStart="5dp"
+                    android:text="@string/details_text18"
+                    android:textColor="#FFFFFF" />
+                <!-- placeholder value for Gain -->
+
+                <TextView
+                    android:id="@+id/SlopeText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="5dp"
+                    android:background="#3F8FD2"
+                    android:gravity="end"
+                    android:paddingEnd="5dp"
+                    android:paddingStart="5dp"
+                    android:text="@string/details_text19"
+                    android:textColor="#FFFFFF" />
+
+                <!-- placeholder value for Gain -->
+
+                <TextView
+                    android:id="@+id/ControlPointText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="#3F8FD2"
+                    android:paddingEnd="5dp"
+                    android:paddingStart="5dp"
+                    android:text="@string/dashdash"
+                    android:textColor="#FFFFFF" />
+            </LinearLayout>
+        </com.atakmap.android.routes.elevation.SeekerBarPanelView>
+    </LinearLayout>
+
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/darker_gray" />
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="horizontal" >
+
+        <LinearLayout
+            android:id="@+id/RouteChart"
+            android:layout_width="0dp"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:paddingTop="4dp"/>
+
+        <RelativeLayout
+            android:id="@+id/elevationProfileArrowToggle"
+            android:layout_width="30dp"
+            android:layout_height="50dp"
+            android:layout_gravity="center_vertical"
+            android:background="@drawable/toggle_background" >
+
+            <ImageView
+                android:id="@+id/elevationProfileArrowImage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:src="@drawable/arrowright" />
+        </RelativeLayout>
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="fill_parent"
+            android:background="@android:color/darker_gray" />
+
+        <com.atakmap.android.routes.elevation.AnalysisPanelView
+            android:id="@+id/analysisPanelView"
+            android:layout_width="160dp"
+            android:layout_height="wrap_content"
+            android:gravity="fill_horizontal|fill_vertical" >
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fadeScrollbars="false" >
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="5dp"
+                    android:paddingEnd="10dp"
+                    android:paddingTop="5dp"
+                    android:orientation="vertical">
+
+                    <!-- Route Elevation Graph Total Distance Section -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/details_text20"
+                            android:textColor="#FFFFFF"
+                            android:textSize="14sp"/>
+                        <TextView
+                            android:id="@+id/TotalDistText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/details_text21"
+                            android:textColor="#FFFFFF"
+                            android:textSize="14sp"/>
+                    </LinearLayout>
+
+                    <!-- Route Elevation Graph Maximum Altitude Section -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="@dimen/auto_margin"
+                            android:text="@string/details_text22"
+                            android:textColor="#FFFFFF"
+                            android:textSize="14sp"/>
+                        <TextView
+                            android:id="@+id/MaxAltText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/details_text21"
+                            android:textColor="#FFFFFF"
+                            android:textSize="14sp"/>
+                    </LinearLayout>
+
+                    <!-- Route Elevation Graph Minimum Altitude Section -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="@dimen/auto_margin"
+                            android:text="@string/details_text23"
+                            android:textColor="#FFFFFF"
+                            android:textSize="14sp"/>
+                        <TextView
+                            android:id="@+id/MinAltText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/details_text21"
+                            android:textColor="#FFFFFF"
+                            android:textSize="14sp"/>
+                    </LinearLayout>
+
+                    <!-- Route Elevation Graph Gain Section -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="@dimen/auto_margin"
+                            android:text="@string/details_text24"
+                            android:textColor="#FFFFFF"
+                            android:textSize="14sp"/>
+                        <TextView
+                            android:id="@+id/TotalGainText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/details_text21"
+                            android:textColor="#FFFFFF"/>
+                    </LinearLayout>
+
+
+                    <!-- Route Elevation Graph Loss Section -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="@dimen/auto_margin"
+                            android:text="@string/details_text25"
+                            android:textColor="#FFFFFF"/>
+                        <TextView
+                            android:id="@+id/TotalLossText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/details_text21"
+                            android:textColor="#FFFFFF"/>
+                    </LinearLayout>
+
+                    <!-- Route Elevation Graph Max Slope Section -->
+                    <!-- TODO Bug 5197 Hide Max Slope until bug fixed -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:visibility="gone">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="@dimen/auto_margin"
+                            android:text="@string/details_text26"
+                            android:textColor="#FFFFFF"/>
+                        <TextView
+                            android:id="@+id/MaxSlopeText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/dashdashpercent"
+                            android:textColor="#FFFFFF"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/viewshedLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <CheckBox
+                            android:id="@+id/showViewshed_cb"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="-5dp"
+                            android:text="@string/details_showVsd"
+                            android:textColor="#FFFFFF"/>
+
+                        <LinearLayout
+                            android:id="@+id/viewshedDetailsLayout"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_vertical"
+                            android:orientation="vertical"
+                            android:visibility="gone">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal"
+                                android:layout_marginBottom="6dp">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center"
+                                    android:lines="2"
+                                    android:text="@string/height_above_path"
+                                    android:textSize="11sp"/>
+
+                                <EditText
+                                    android:id="@+id/altitude_et"
+                                    style="@style/JumpMasterEditText"
+                                    android:layout_marginStart="5dp"
+                                    android:contentDescription="@string/height_above_path_ft"
+                                    android:inputType="number"
+                                    android:maxLength="5"
+                                    android:minEms="3"
+                                    android:paddingStart="2dp"
+                                    android:paddingEnd="2dp"
+                                    android:paddingBottom="3dp"
+                                    android:text=""
+                                    android:textSize="15sp"/>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="5dp"
+                                    android:gravity="center_vertical"
+                                    android:text="@string/feet_units"
+                                    android:textSize="12sp"/>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_vertical"
+                                    android:text="@string/radius_title"
+                                    android:textSize="12sp"/>
+
+                                <EditText
+                                    android:id="@+id/radius_et"
+                                    style="@style/JumpMasterEditText"
+                                    android:layout_marginStart="5dp"
+                                    android:contentDescription="@string/radius_m"
+                                    android:inputType="number"
+                                    android:maxLength="5"
+                                    android:minEms="3"
+                                    android:paddingStart="2dp"
+                                    android:paddingEnd="2dp"
+                                    android:text="@string/_1000"
+                                    android:textSize="15sp"/>
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="5dp"
+                                    android:layout_marginEnd="5dp"
+                                    android:gravity="center_vertical"
+                                    android:text="@string/meter_units"
+                                    android:textSize="12sp"/>
+                            </LinearLayout>
+
+                            <CheckBox
+                                android:id="@+id/circularViewshed_cb"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:checked="true"
+                                android:text="@string/show_circle2"
+                                android:textSize="14sp"
+                                android:visibility="gone"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/intensity"
+                                android:textSize="12sp"/>
+
+                            <SeekBar
+                                android:id="@+id/intensity_seek"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:max="100"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </ScrollView>
+        </com.atakmap.android.routes.elevation.AnalysisPanelView>
+    </LinearLayout>
+
+</com.atakmap.android.routes.elevation.RouteElevationView>

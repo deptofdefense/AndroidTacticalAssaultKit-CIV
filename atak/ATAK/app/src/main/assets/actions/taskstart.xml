@@ -1,0 +1,14 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.TASK</action>
+        <extras>
+            <string key='point'>@{targetPoint}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

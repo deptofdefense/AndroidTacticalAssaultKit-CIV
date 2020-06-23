@@ -1,0 +1,13 @@
+<menu buttonRadius='65' buttonSpan='180' buttonWidth='90' buttonBg='bgs/button.xml'>
+    
+    <button angle='-90'
+            icon='icons/delete.png'
+            onClick='actions/rab_action_delete.xml' />
+
+    <button icon='icons/move.png'
+            submenu='menus/mgrs_entry_submenu.xml'
+            disableSwap='true'
+            disableIconSwap='true'
+            onClick='actions/move.xml' />
+
+</menu>

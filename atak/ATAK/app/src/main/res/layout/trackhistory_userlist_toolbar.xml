@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.tools.ActionBarView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="0dp"
+    android:layout_marginBottom="0dp">
+
+
+        <ImageButton
+            android:id="@+id/buttonTrackSearch"
+            android:layout_width="@dimen/dropdown_bottom_bar_height"
+            android:layout_height="@dimen/dropdown_bottom_bar_height"
+            android:background="@drawable/btn_gray"
+            android:lines="0"
+            android:padding="6dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_track_search" />
+
+        <ImageButton
+            android:id="@+id/buttonTrackList"
+            android:layout_width="@dimen/dropdown_bottom_bar_height"
+            android:layout_height="@dimen/dropdown_bottom_bar_height"
+            android:background="@drawable/btn_gray"
+            android:lines="0"
+            android:padding="6dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_track_list_self" />
+
+</com.atakmap.android.tools.ActionBarView>

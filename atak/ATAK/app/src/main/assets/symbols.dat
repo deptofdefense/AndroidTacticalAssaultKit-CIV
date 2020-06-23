@@ -1,0 +1,1526 @@
+#REQ:ROOT
+Friendly/sfg------------.png
+Neutral/sng------------.png
+Unknown/sug------------.png
+Hostile/shg------------.png
+
+#REQ:s_g------------.png
+#PRE:ROOT
+Air track/s_ap-----------.png
+Ground track/s_gp-----------.png
+Sea surface track/s_sp-----------.png
+Space track/s_pp-----------.png
+SOF Unit/s_fp-----------.png
+Subsurface track/s_up-----------.png
+
+#REQ:s_ap-----------.png
+#PRE:s_g------------.png
+Civil/s_apc----------.png
+Military/s_apm----------.png
+Weapon/s_apw----------.png
+
+#REQ:s_gp-----------.png
+#PRE:s_g------------.png
+Equipment/s_gpe----------.png
+Installation/s_gpi-----h----.png
+Unit/s_gpu----------.png
+
+#REQ:s_sp-----------.png
+#PRE:s_g------------.png
+Combatant/s_spc----------.png
+Noncombatant/s_spn----------.png
+Non-military/s_spx----------.png
+Own track/s_spo----------.png
+
+#REQ:s_pp-----------.png
+#PRE:s_g------------.png
+Crewed space vehicle/s_ppv----------.png
+Satellite/s_pps----------.png
+Space launch vehicle/s_ppl----------.png
+Space station/s_ppt----------.png
+
+#REQ:s_fp-----------.png
+#PRE:s_g------------.png
+Aviation/s_fpa----------.png
+Ground/s_fpg----------.png
+Naval/s_fpn----------.png
+Support/s_fpb----------.png
+
+#REQ:s_up-----------.png
+#PRE:s_g------------.png
+Non-submarine/s_upn----------.png
+Submarine/s_ups----------.png
+Underwater decoy/s_upwd---------.png
+Underwater weapon/s_upw----------.png
+
+#REQ:s_apc----------.png
+#PRE:s_ap-----------.png
+Fixed wing/s_apcf---------.png
+Lighter than air/s_apcl---------.png
+Rotary wing/s_apch---------.png
+
+#REQ:s_apm----------.png
+#PRE:s_ap-----------.png
+Fixed wing/s_apmf---------.png
+Lighter than air/s_apml---------.png
+Rotary wing/s_apmh---------.png
+
+#REQ:s_apw----------.png
+#PRE:s_ap-----------.png
+Bomb/s_apwb---------.png
+Decoy/s_apwd---------.png
+Missile in flight/s_apwm---------.png
+
+#REQ:s_gpe----------.png
+#PRE:s_gp-----------.png
+Ground vehicle/s_gpev---------.png
+Sensor/s_gpes---------.png
+Special/s_gpex---------.png
+Weapon/s_gpew---------.png
+
+#REQ:s_gpi-----h----.png
+#PRE:s_gp-----------.png
+Equipment manufacture/s_gpie----h----.png
+Government leadership/s_gpig----h----.png
+Medical facility/s_gpix----h----.png
+Military base facility/s_gpib----h----.png
+Military material facility/s_gpim----h----.png
+Processing facility/s_gpip----h----.png
+Raw material production storage/s_gpir----h----.png
+Service, research, utility facility/s_gpiu----h----.png
+Transport facility/s_gpit----h----.png
+
+#REQ:s_gpu----------.png
+#PRE:s_gp-----------.png
+Combat/s_gpuc---------.png
+Combat service support/s_gpus---------.png
+Combat support/s_gpuu---------.png
+Special C2 headquarters component/s_gpuh---------.png
+
+#REQ:s_spc----------.png
+#PRE:s_sp-----------.png
+Amphibious warfare ship/s_spca---------.png
+Hovercraft/s_spch---------.png
+Line/s_spcl---------.png
+Mine warfare vessel/s_spcm---------.png
+Navy group/s_spcg---------.png
+Patrol/s_spcp---------.png
+Station/s_spcs---------.png
+Surface decoy/s_spcd---------.png
+Unmanned surface vehicle/s_spcu---------.png
+
+#REQ:s_spn----------.png
+#PRE:s_sp-----------.png
+Fleet support (tender tug)/s_spnf---------.png
+Hospital ship/s_spnm---------.png
+Hovercraft/s_spnh---------.png
+Intelligence (oceanographic, agi)/s_spni---------.png
+Service & support harbor (yardcraft, barge, harbor, tug)/s_spns---------.png
+Station/s_spnn---------.png
+Underway replenishment (oiler tanker, stores, ammunition, troop transport)/s_spnr---------.png
+
+#REQ:s_spx----------.png
+#PRE:s_sp-----------.png
+Fishing/s_spxf---------.png
+Hovercraft/s_spxh---------.png
+Law enforcement vessel/s_spxl---------.png
+Leisure craft/s_spxr---------.png
+Merchant/s_spxm---------.png
+
+#REQ:s_fpa----------.png
+#PRE:s_fp-----------.png
+Fixed wing/s_fpaf---------.png
+Rotary wing/s_fpah---------.png
+VSTOL/s_fpav---------.png
+
+#REQ:s_fpg----------.png
+#PRE:s_fp-----------.png
+Civil affairs/s_fpgc---------.png
+Psychological operations (psyop)/s_fpgp---------.png
+Ranger/s_fpgr---------.png
+Special forces/s_fpgs---------.png
+
+#REQ:s_fpn----------.png
+#PRE:s_fp-----------.png
+SEAL/s_fpns---------.png
+Special boat/s_fpnb---------.png
+Special ssnr/s_fpnn---------.png
+Underwater demolition team/s_fpnu---------.png
+
+#REQ:s_upn----------.png
+#PRE:s_up-----------.png
+Diver (hardtop diver, scuba diver)/s_upnd---------.png
+
+#REQ:s_ups----------.png
+#PRE:s_up-----------.png
+Conventional propulsion/s_upsc---------.png
+Nuclear propulsion/s_upsn---------.png
+Other submersible (rescue, research, underwater tug)/s_upso---------.png
+Station/s_upss---------.png
+Surfaced/s_upsf---------.png
+Unmanned underwater vehicle (uuv)/s_upsu---------.png
+
+#REQ:s_upwd---------.png
+#PRE:s_up-----------.png
+Sea mine decoy/s_upwdm--------.png
+
+#REQ:s_upw----------.png
+#PRE:s_up-----------.png
+Sea mine/s_upwm---------.png
+Torpedo/s_upwt---------.png
+
+#REQ:s_apmf---------.png
+#PRE:s_apm----------.png
+Airborne command post (C2)/s_apmfd--------.png
+Anti-submarine warfare (ASW) carrier based/s_apmfs--------.png
+Attack strike/s_apmfa--------.png
+Bomber/s_apmfb--------.png
+Cargo airlift (transport)/s_apmfc--------.png
+Combat search and rescue (CSAR)/s_apmfh--------.png
+Communications (C3I)/s_apmfy--------.png
+Drone (RPV UAV)/s_apmfq--------.png
+Electronic countermeasures (ECM jammer)/s_apmfj--------.png
+Fighter/s_apmff--------.png
+Medevac/s_apmfo--------.png
+Patrol/s_apmfp--------.png
+Reconnaissance/s_apmfr--------.png
+Special operations forces (SOF)/s_apmfm--------.png
+Tanker/s_apmfk--------.png
+Trainer/s_apmft--------.png
+Utility/s_apmfu--------.png
+VSTOL/s_apmfl--------.png
+
+#REQ:s_apmh---------.png
+#PRE:s_apm----------.png
+Airborne command post (C2)/s_apmhd--------.png
+Antisubmarine warfare mpa/s_apmhs--------.png
+Attack/s_apmha--------.png
+Cargo airlift (transport)/s_apmhc--------.png
+Combat search and rescue (CSAR)/s_apmhh--------.png
+Drone (RPV UAV)/s_apmhq--------.png
+Electronic countermeasures (ECM jammer)/s_apmhj--------.png
+Medevac/s_apmho--------.png
+Mine countermeasures/s_apmhi--------.png
+Reconnaissance/s_apmhr--------.png
+Special operations forces (SOF)/s_apmhm--------.png
+Tanker/s_apmhk--------.png
+Trainer/s_apmht--------.png
+Utility/s_apmhu--------.png
+
+#REQ:s_apwm---------.png
+#PRE:s_apw----------.png
+Air launched missile/s_apwma--------.png
+Ballistic missile/s_apwmb--------.png
+Cruise missile/s_apwmcm-------.png
+Subsurface to surface missile (s ssm)/s_apwmu--------.png
+Surface launched missile/s_apwms--------.png
+
+#REQ:s_gpev---------.png
+#PRE:s_gpe----------.png
+Armored/s_gpeva--------.png
+Civilian vehicle/s_gpevc--------.png
+Engineer vehicle/s_gpeve--------.png
+Missile support/s_gpevs--------.png
+Pack animal(s)/s_gpevm--------.png
+Train locomotive/s_gpevt--------.png
+Utility vehicle/s_gpevu--------.png
+
+#REQ:s_gpes---------.png
+#PRE:s_gpe----------.png
+Emplaced/s_gpese--------.png
+Radar/s_gpesr--------.png
+
+#REQ:s_gpex---------.png
+#PRE:s_gpe----------.png
+Flame thrower/s_gpexf--------.png
+Land mines/s_gpexm--------.png
+Laser/s_gpexl--------.png
+Nbc equipment/s_gpexn--------.png
+
+#REQ:s_gpew---------.png
+#PRE:s_gpe----------.png
+Air defense gun/s_gpewa--------.png
+Anti-tank gun/s_gpewg--------.png
+Antitank rocket launcher/s_gpewt--------.png
+Direct fire gun/s_gpewd--------.png
+Grenade launcher/s_gpewz--------.png
+Howitzer/s_gpewh--------.png
+Missile launcher/s_gpewm--------.png
+Mortar/s_gpewo--------.png
+Multiple rocket launcher/s_gpewx--------.png
+Rifle automatic weapon/s_gpewr--------.png
+Single rocket launcher/s_gpews--------.png
+
+#REQ:s_gpix----h----.png
+#PRE:s_gpi-----h----.png
+Hospital/s_gpixh---h----.png
+
+#REQ:s_gpib----h----.png
+#PRE:s_gpi-----h----.png
+Airport airbase/s_gpiba---h----.png
+Seaport naval base/s_gpibn---h----.png
+
+#REQ:s_gpim----h----.png
+#PRE:s_gpi-----h----.png
+Aircraft production & assembly/s_gpima---h----.png
+Ammunition and explosives production/s_gpime---h----.png
+Armament production/s_gpimg---h----.png
+Chemical & biological warfare production/s_gpimc---h----.png
+Engineering equipment production/s_gpimn---h----.png
+Military vehicle production/s_gpimv---h----.png
+Missile & space system production/s_gpimm---h----.png
+Nuclear energy/s_gpimf---h----.png
+Ship construction/s_gpims---h----.png
+
+#REQ:s_gpip----h----.png
+#PRE:s_gpi-----h----.png
+Decontamination/s_gpipd---h----.png
+
+#REQ:s_gpir----h----.png
+#PRE:s_gpi-----h----.png
+Mine/s_gpirm---h----.png
+Nbc/s_gpirn---h----.png
+Petroleum gas oil/s_gpirp---h----.png
+
+#REQ:s_gpiu----h----.png
+#PRE:s_gpi-----h----.png
+Electric power facility/s_gpiue---h----.png
+Public water services/s_gpiup---h----.png
+Technological research facility/s_gpiur---h----.png
+Telecommunications facility/s_gpiut---h----.png
+
+#REQ:s_gpuc---------.png
+#PRE:s_gpu----------.png
+Air defense/s_gpucd--------.png
+Anti armor/s_gpucaa-------.png
+Armor/s_gpuca--------.png
+Aviation/s_gpucv--------.png
+Engineer/s_gpuce--------.png
+Field artillery/s_gpucf--------.png
+Infantry/s_gpuci--------.png
+Internal security forces/s_gpucs--------.png
+Missile (SSM)/s_gpucm--------.png
+Reconnaissance/s_gpucr--------.png
+
+#REQ:s_gpus---------.png
+#PRE:s_gpu----------.png
+Administrative (admin)/s_gpusa--------.png
+Maintenance/s_gpusx--------.png
+Medical/s_gpusm--------.png
+Supply/s_gpuss--------.png
+Transportation/s_gpust--------.png
+
+#REQ:s_gpuu---------.png
+#PRE:s_gpu----------.png
+Explosive ordnance disposal/s_gpuue--------.png
+Information warfare unit/s_gpuui--------.png
+Landing support/s_gpuup--------.png
+Law enforcement unit/s_gpuul--------.png
+Military intelligence/s_gpuum--------.png
+Nbc/s_gpuua--------.png
+Signal unit/s_gpuus--------.png
+
+#REQ:s_spcal--------.png
+#PRE:s_spc----------.png
+Assault vessel/s_spcala-------.png
+Landing craft/s_spcalc-------.png
+Landing ship/s_spcals-------.png
+
+#REQ:s_spcl---------.png
+#PRE:s_spc----------.png
+Battleship/s_spclbb-------.png
+Carrier/s_spclcv-------.png
+Cruiser/s_spclcc-------.png
+Destroyer/s_spcldd-------.png
+Frigate corvette/s_spclff-------.png
+Littoral combatant/s_spclll-------.png
+
+#REQ:s_spcmm--------.png
+#PRE:s_spc----------.png
+Mcm support/s_spcmma-------.png
+Minehunter/s_spcmmh-------.png
+Minelayer/s_spcmml-------.png
+Minesweeper/s_spcmms-------.png
+
+#REQ:s_spg----------.png
+#PRE:s_sp-----------.png
+Convoy/s_spgc---------.png
+Navy task force/s_spgt---------.png
+Navy task group/s_spgg---------.png
+Navy task unit/s_spgu---------.png
+
+#REQ:s_spcps--------.png
+#PRE:s_spcp---------.png
+Antisubmarine warfare/s_spcpsb-------.png
+Antisurface warfare/s_spcpsu-------.png
+
+#REQ:s_sps----------.png
+#PRE:s_sp-----------.png
+Asw ship/s_spsa---------.png
+Picket/s_spsp---------.png
+
+#REQ:s_spcu---------.png
+#PRE:s_spc----------.png
+Antisubmarine warfare/s_spcus--------.png
+Antisurface warfare/s_spcun--------.png
+Mine countermeasures/s_spcum--------.png
+
+#REQ:s_spnn---------.png
+#PRE:s_spn----------.png
+Rescue/s_spnnr--------.png
+
+#REQ:s_spxf---------.png
+#PRE:s_spx----------.png
+Dredge/s_spxfdr-------.png
+Drifter/s_spxfdf-------.png
+Trawler/s_spxftr-------.png
+
+#REQ:s_spxm---------.png
+#PRE:s_spx----------.png
+Cargo/s_spxmc--------.png
+Ferry/s_spxmf--------.png
+Hazardous materials (hazmat)/s_spxmh--------.png
+Oiler tanker/s_spxmo--------.png
+Passenger/s_spxmp--------.png
+Roll on roll off/s_spxmr--------.png
+Towing vessel/s_spxmto-------.png
+Tug/s_spxmtu-------.png
+
+#REQ:s_fpaf---------.png
+#PRE:s_fpa----------.png
+Attack/s_fpafa--------.png
+Refuel/s_fpafk--------.png
+Utility/s_fpafu--------.png
+
+#REQ:s_fpah---------.png
+#PRE:s_fpa----------.png
+Attack/s_fpaha--------.png
+Combat search and rescue/s_fpahh--------.png
+Utility/s_fpahu--------.png
+
+#REQ:s_fpgp---------.png
+#PRE:s_fpg----------.png
+Fixed wing aviation/s_fpgpa--------.png
+
+#REQ:s_upsc---------.png
+#PRE:s_ups----------.png
+Attack (SS)/s_upsca--------.png
+Ballistic missile (SSB)/s_upscb--------.png
+Guided missile (SSG)/s_upscg--------.png
+Missile (type unknown)/s_upscm--------.png
+Surfaced/s_upscf--------.png
+
+#REQ:s_upsn---------.png
+#PRE:s_ups----------.png
+Attack (ssn)/s_upsna--------.png
+Ballistic missile (SSBN)/s_upsnb--------.png
+Guided missile (SSGN)/s_upsng--------.png
+Missile (type unknown)/s_upsnm--------.png
+Surfaced/s_upsnf--------.png
+
+#REQ:s_upso---------.png
+#PRE:s_ups----------.png
+Surfaced/s_upsof--------.png
+
+#REQ:s_upss---------.png
+#PRE:s_ups----------.png
+Asw submarine/s_upssa--------.png
+
+#REQ:s_upsu---------.png
+#PRE:s_ups----------.png
+Antisubmarine warfare/s_upsus--------.png
+Antisurface warfare/s_upsun--------.png
+Mine warfare/s_upsum--------.png
+
+#REQ:s_upwm---------.png
+#PRE:s_upw----------.png
+Dealt/s_upwmd--------.png
+Sea mine (floating)/s_upwmf--------.png
+Sea mine (ground)/s_upwmg--------.png
+Sea mine (moored)/s_upwmm--------.png
+Sea mine (other position)/s_upwmo--------.png
+
+#REQ:s_apmfc--------.png
+#PRE:s_apmf---------.png
+Heavy/s_apmfch-------.png
+Light/s_apmfcl-------.png
+Medium/s_apmfcm-------.png
+
+#REQ:s_apmfq--------.png
+#PRE:s_apmf---------.png
+Airborne command post/s_apmfqd-------.png
+Anti-submarine warfare (ASW)/s_apmfqs-------.png
+Anti-surface warfare (ASUW)/s_apmfqn-------.png
+Attack/s_apmfqa-------.png
+Bomber/s_apmfqb-------.png
+Cargo/s_apmfqc-------.png
+Communications (C3I)/s_apmfqy-------.png
+Electronic countermeasures (jammer)/s_apmfqj-------.png
+Fighter/s_apmfqf-------.png
+Medevac/s_apmfqo-------.png
+Mine countermeasures/s_apmfqi-------.png
+Patrol/s_apmfqp-------.png
+Reconnaissance/s_apmfqr-------.png
+Combat search & rescue (CSAR)/s_apmfqh-------.png
+Special operations forces (SOF)/s_apmfqm-------.png
+Tanker/s_apmfqk-------.png
+Trainer/s_apmfqt-------.png
+Utility/s_apmfqu-------.png
+VSTOL/s_apmfql-------.png
+
+#REQ:s_apmff--------.png
+#PRE:s_apmf---------.png
+Interceptor/s_apmffi-------.png
+
+#REQ:s_apmfp--------.png
+#PRE:s_apmf---------.png
+Antisurface warfare (ASUW)/s_apmfpn-------.png
+Mine countermeasures/s_apmfpm-------.png
+
+#REQ:s_apmfr--------.png
+#PRE:s_apmf---------.png
+Airborne early warning (AEW)/s_apmfrw-------.png
+Electronic surveillance measures/s_apmfrz-------.png
+Photographic/s_apmfrx-------.png
+
+#REQ:s_apmfk--------.png
+#PRE:s_apmf---------.png
+Boom-only/s_apmfkb-------.png
+Drogue-only/s_apmfkd-------.png
+
+#REQ:s_apmfu--------.png
+#PRE:s_apmf---------.png
+Heavy/s_apmfuh-------.png
+Light/s_apmful-------.png
+Medium/s_apmfum-------.png
+
+#REQ:s_apmhc--------.png
+#PRE:s_apmh---------.png
+Heavy/s_apmhch-------.png
+Light/s_apmhcl-------.png
+Medium/s_apmhcm-------.png
+
+#REQ:s_apmhu--------.png
+#PRE:s_apmh---------.png
+Heavy/s_apmhuh-------.png
+Light/s_apmhul-------.png
+Medium/s_apmhum-------.png
+
+#REQ:s_apwma--------.png
+#PRE:s_apwm---------.png
+Air to air missile (AAM)/s_apwmaa-------.png
+Air to space missile/s_apwmap-------.png
+Air to surface missile (ASM)/s_apwmas-------.png
+
+#REQ:s_apwms--------.png
+#PRE:s_apwm---------.png
+Anti-ballistic missile (ABM)/s_apwmsb-------.png
+Surface to air missile (SAM)/s_apwmsa-------.png
+Surface to subsurface missile/s_apwmsu-------.png
+Surface to surface missile (SSM)/s_apwmss-------.png
+
+#REQ:s_gpeva--------.png
+#PRE:s_gpev---------.png
+Armored infantry/s_gpevai-------.png
+Armored personnel carrier/s_gpevaa-------.png
+C2V ACV/s_gpevac-------.png
+Combat service support vehicle/s_gpevas-------.png
+Light armored vehicle/s_gpeval-------.png
+Tank/s_gpevat-------.png
+
+#REQ:s_gpevc--------.png
+#PRE:s_gpev---------.png
+Automobile/s_gpevca-------.png
+Jeep type vehicle/s_gpevcj-------.png
+Multi-passenger vehicle/s_gpevcm-------.png
+Open-bed truck/s_gpevco-------.png
+Tractor trailer truck with box trailer/s_gpevct-------.png
+Tractor trailer truck with flatbed trailer/s_gpevcf-------.png
+Utility vehicle/s_gpevcu-------.png
+
+#REQ:s_gpeve--------.png
+#PRE:s_gpev---------.png
+Armored assault/s_gpeves-------.png
+Armored engineer recon vehicle (AERV)/s_gpever-------.png
+Backhoe/s_gpeveh-------.png
+Bridge/s_gpeveb-------.png
+Construction vehicle/s_gpevec-------.png
+Dozer/s_gpeved-------.png
+Earthmover/s_gpevee-------.png
+Ferry transporter/s_gpevef-------.png
+Mine clearing vehicle/s_gpevea-------.png
+Mine laying vehicle/s_gpevem-------.png
+
+#REQ:s_gpevs--------.png
+#PRE:s_gpev---------.png
+Crane loading device/s_gpevsc-------.png
+Propellant transporter/s_gpevsp-------.png
+Transloader/s_gpevst-------.png
+Transporter/s_gpevsr-------.png
+Warhead transporter/s_gpevsw-------.png
+
+#REQ:s_gpevu--------.png
+#PRE:s_gpev---------.png
+Ambulance/s_gpevua-------.png
+Bus/s_gpevub-------.png
+Cross-country truck/s_gpevux-------.png
+Limited cross-country truck/s_gpevul-------.png
+Semi/s_gpevus-------.png
+Tow truck/s_gpevut-------.png
+Water craft/s_gpevur-------.png
+
+#REQ:s_gpexm--------.png
+#PRE:s_gpex---------.png
+Claymore/s_gpexmc-------.png
+Less than lethal/s_gpexml-------.png
+
+#REQ:s_gpewa--------.png
+#PRE:s_gpew---------.png
+Heavy/s_gpewah-------.png
+Light/s_gpewal-------.png
+Medium/s_gpewam-------.png
+
+#REQ:s_gpewg--------.png
+#PRE:s_gpew---------.png
+Heavy/s_gpewgh-------.png
+Light/s_gpewgl-------.png
+Medium/s_gpewgm-------.png
+Recoilless/s_gpewgr-------.png
+
+#REQ:s_gpewt--------.png
+#PRE:s_gpew---------.png
+Heavy/s_gpewth-------.png
+Light/s_gpewtl-------.png
+Medium/s_gpewtm-------.png
+
+#REQ:s_gpewd--------.png
+#PRE:s_gpew---------.png
+Heavy/s_gpewdh-------.png
+Light/s_gpewdl-------.png
+Medium/s_gpewdm-------.png
+
+#REQ:s_gpewz--------.png
+#PRE:s_gpew---------.png
+Heavy/s_gpewzh-------.png
+Light/s_gpewzl-------.png
+Medium/s_gpewzm-------.png
+
+#REQ:s_gpewh--------.png
+#PRE:s_gpew---------.png
+Heavy/s_gpewhh-------.png
+Light/s_gpewhl-------.png
+Medium/s_gpewhm-------.png
+
+#REQ:s_gpewm--------.png
+#PRE:s_gpew---------.png
+Air defense (AD)/s_gpewma-------.png
+Antitank (AT)/s_gpewmt-------.png
+Surf-surf (SS)/s_gpewms-------.png
+
+#REQ:s_gpewo--------.png
+#PRE:s_gpew---------.png
+Heavy/s_gpewoh-------.png
+Light/s_gpewol-------.png
+Medium/s_gpewom-------.png
+
+#REQ:s_gpewx--------.png
+#PRE:s_gpew---------.png
+Heavy/s_gpewxh-------.png
+Light/s_gpewxl-------.png
+Medium/s_gpewxm-------.png
+
+#REQ:s_gpewr--------.png
+#PRE:s_gpew---------.png
+Heavy machine gun/s_gpewrh-------.png
+Light machine gun/s_gpewrl-------.png
+Rifle/s_gpewrr-------.png
+
+#REQ:s_gpews--------.png
+#PRE:s_gpew---------.png
+Heavy/s_gpewsh-------.png
+Light/s_gpewsl-------.png
+Medium/s_gpewsm-------.png
+
+#REQ:s_gpimn---h----.png
+#PRE:s_gpim----h----.png
+Bridge/s_gpimnb--h----.png
+
+#REQ:s_gpimf---h----.png
+#PRE:s_gpim----h----.png
+Atomic energy reactor/s_gpimfa--h----.png
+Nuclear material production/s_gpimfp--h----.png
+Nuclear material storage/s_gpimfs--h----.png
+
+#REQ:s_gpirn---h----.png
+#PRE:s_gpir----h----.png
+Biological/s_gpirnb--h----.png
+Chemical/s_gpirnc--h----.png
+Nuclear/s_gpirnn--h----.png
+
+#REQ:s_gpiue---h----.png
+#PRE:s_gpiu----h----.png
+Dam/s_gpiued--h----.png
+Fossil fuel/s_gpiuef--h----.png
+Nuclear plant/s_gpiuen--h----.png
+
+#REQ:s_gpucd--------.png
+#PRE:s_gpuc---------.png
+Composite/s_gpucdc-------.png
+Gun unit/s_gpucdg-------.png
+Missile/s_gpucdm-------.png
+Short range/s_gpucds-------.png
+Targeting unit/s_gpucdt-------.png
+Theater missile defense unit/s_gpucdo-------.png
+
+#REQ:s_gpucaa-------.png
+#PRE:s_gpuc---------.png
+Air assault/s_gpucaas------.png
+Airborne/s_gpucaam------.png
+Arctic/s_gpucaac------.png
+Armored/s_gpucaaa------.png
+Dismounted/s_gpucaad------.png
+Light/s_gpucaal------.png
+Motorized/s_gpucaao------.png
+Mountain/s_gpucaau------.png
+
+#REQ:s_gpuca--------.png
+#PRE:s_gpuc---------.png
+Track/s_gpucat-------.png
+Wheeled/s_gpucaw-------.png
+
+#REQ:s_gpucv--------.png
+#PRE:s_gpuc---------.png
+Composite/s_gpucvc-------.png
+Fixed wing/s_gpucvf-------.png
+Rotary wing/s_gpucvr-------.png
+Search and rescue/s_gpucvs-------.png
+Unmanned aerial vehicle/s_gpucvu-------.png
+Vertical short takeoff and landing (VSTOL)/s_gpucvv-------.png
+
+#REQ:s_gpuce--------.png
+#PRE:s_gpuc---------.png
+Combat/s_gpucec-------.png
+Construction/s_gpucen-------.png
+
+#REQ:s_gpucf--------.png
+#PRE:s_gpuc---------.png
+Artillery survey/s_gpucfs-------.png
+Howitzer gun/s_gpucfh-------.png
+Meteorological/s_gpucfo-------.png
+Mortar/s_gpucfm-------.png
+Rocket/s_gpucfr-------.png
+Target acquisition/s_gpucft-------.png
+
+#REQ:s_gpuci--------.png
+#PRE:s_gpuc---------.png
+Air assault/s_gpucis-------.png
+Airborne/s_gpucia-------.png
+Arctic/s_gpucic-------.png
+Infantry fighting vehicle/s_gpucii-------.png
+Light/s_gpucil-------.png
+Mechanized/s_gpuciz-------.png
+Motorized/s_gpucim-------.png
+Mountain/s_gpucio-------.png
+Naval/s_gpucin-------.png
+
+#REQ:s_gpucs--------.png
+#PRE:s_gpuc---------.png
+Aviation/s_gpucsa-------.png
+Ground/s_gpucsg-------.png
+Railroad/s_gpucsr-------.png
+Riverine/s_gpucsw-------.png
+Wheeled mechanized/s_gpucsm-------.png
+
+#REQ:s_gpucm--------.png
+#PRE:s_gpuc---------.png
+Strategic/s_gpucms-------.png
+Tactical/s_gpucmt-------.png
+
+#REQ:s_gpucr--------.png
+#PRE:s_gpuc---------.png
+Air assault/s_gpucrs-------.png
+Airborne/s_gpucra-------.png
+Arctic/s_gpucrc-------.png
+Cavalry/s_gpucrv-------.png
+Horse/s_gpucrh-------.png
+Light/s_gpucrl-------.png
+Long range surveillance (LRS)/s_gpucrx-------.png
+Marine/s_gpucrr-------.png
+Mountain/s_gpucro-------.png
+
+#REQ:s_gpusa--------.png
+#PRE:s_gpus---------.png
+Corps/s_gpusac-------.png
+Finance/s_gpusaf-------.png
+Judge advocate general (JAG)/s_gpusaj-------.png
+Labor/s_gpusal-------.png
+Morale, welfare, recreation (MWR)/s_gpusaw-------.png
+Mortuary graves registry/s_gpusam-------.png
+Personnel services/s_gpusas-------.png
+Postal/s_gpusao-------.png
+Public affairs/s_gpusap-------.png
+Quartermaster (supply)/s_gpusaq-------.png
+Religious chaplain/s_gpusar-------.png
+Replacement holding unit (RHU)/s_gpusax-------.png
+Theater/s_gpusat-------.png
+
+#REQ:s_gpusx--------.png
+#PRE:s_gpus---------.png
+Corps/s_gpusxc-------.png
+Electro-optical/s_gpusxe-------.png
+Heavy/s_gpusxh-------.png
+Ordnance/s_gpusxo-------.png
+Recovery/s_gpusxr-------.png
+Theater/s_gpusxt-------.png
+
+#REQ:s_gpusm--------.png
+#PRE:s_gpus---------.png
+Corps/s_gpusmc-------.png
+Dental/s_gpusmd-------.png
+Medical treatment facility/s_gpusmm-------.png
+Psychological/s_gpusmp-------.png
+Theater/s_gpusmt-------.png
+Veterinary/s_gpusmv-------.png
+
+#REQ:s_gpuss--------.png
+#PRE:s_gpus---------.png
+Class I/s_gpuss1-------.png
+Class II/s_gpuss2-------.png
+Class III/s_gpuss3-------.png
+Class IV/s_gpuss4-------.png
+Class V/s_gpuss5-------.png
+Class VI/s_gpuss6-------.png
+Class VII/s_gpuss7-------.png
+Class VIII/s_gpuss8-------.png
+Class IX/s_gpuss9-------.png
+Class X/s_gpussx-------.png
+Corps/s_gpussc-------.png
+Laundry bath/s_gpussl-------.png
+Theater/s_gpusst-------.png
+Water/s_gpussw-------.png
+
+#REQ:s_gpust--------.png
+#PRE:s_gpus---------.png
+APOD APOE/s_gpusta-------.png
+Corps/s_gpustc-------.png
+Missile/s_gpusti-------.png
+Movement control center (MCC)/s_gpustm-------.png
+Railhead/s_gpustr-------.png
+SPOD SPOE/s_gpusts-------.png
+Theater/s_gpustt-------.png
+
+#REQ:s_gpuul--------.png
+#PRE:s_gpuu---------.png
+Central intelligence division (CID)/s_gpuuld-------.png
+Civilian law enforcement/s_gpuulc-------.png
+Military police/s_gpuulm-------.png
+Security police (air)/s_gpuulf-------.png
+Shore patrol/s_gpuuls-------.png
+
+#REQ:s_gpuum--------.png
+#PRE:s_gpuu---------.png
+Aerial exploitation/s_gpuuma-------.png
+Counter intelligence/s_gpuumc-------.png
+Interrogation/s_gpuumq-------.png
+Joint intelligence center/s_gpuumj-------.png
+Operations/s_gpuumo-------.png
+Signal intelligence (SIGINT)/s_gpuums-------.png
+Surveillance/s_gpuumr-------.png
+Tactical exploit/s_gpuumt-------.png
+
+#REQ:s_gpuua--------.png
+#PRE:s_gpuu---------.png
+Biological/s_gpuuab-------.png
+Chemical/s_gpuuac-------.png
+Decontamination/s_gpuuad-------.png
+Nuclear/s_gpuuan-------.png
+
+#REQ:s_gpuus--------.png
+#PRE:s_gpuu---------.png
+Area/s_gpuusa-------.png
+Command operations/s_gpuuso-------.png
+Communication configured package/s_gpuusc-------.png
+Electronic ranging/s_gpuusx-------.png
+Forward communications/s_gpuusf-------.png
+Multiple subscriber element/s_gpuusm-------.png
+Radio unit/s_gpuusr-------.png
+Signal support/s_gpuuss-------.png
+Telephone switch/s_gpuusw-------.png
+
+#REQ:s_spcals-------.png
+#PRE:s_spca---------.png
+Medium/s_spcalsm------.png
+Tank/s_spcalst------.png
+
+#REQ:s_spclll-------.png
+#PRE:s_spcl---------.png
+Antisubmarine warfare mission package/s_spclllas-----.png
+Mine warfare mission package/s_spclllmi-----.png
+Surface warfare (SUW) mission package/s_spclllsu-----.png
+
+#REQ:s_spcpsu-------.png
+#PRE:s_spcp---------.png
+Anti-ship missile/s_spcpsum------.png
+Gun/s_spcpsug------.png
+Torpedo/s_spcpsut------.png
+
+#REQ:s_fpafu--------.png
+#PRE:s_fpaf---------.png
+Heavy/s_fpafuh-------.png
+Light/s_fpaful-------.png
+Medium/s_fpafum-------.png
+
+#REQ:s_fpahu--------.png
+#PRE:s_fpah---------.png
+Heavy/s_fpahuh-------.png
+Light/s_fpahul-------.png
+Medium/s_fpahum-------.png
+
+#REQ:s_upwmf--------.png
+#PRE:s_upwm---------.png
+Dealt/s_upwmfd-------.png
+
+#REQ:s_upwmg--------.png
+#PRE:s_upwm---------.png
+Dealt/s_upwmgd-------.png
+
+#REQ:s_upwmm--------.png
+#PRE:s_upwm---------.png
+Dealt/s_upwmmd-------.png
+
+#REQ:s_upwmo--------.png
+#PRE:s_upwm---------.png
+Dealt/s_upwmod-------.png
+
+#REQ:s_apmfqr-------.png
+#PRE:s_apmfq--------.png
+Airborne early warning (AEW)/s_apmfqrw------.png
+Electronic surveillance measures/s_apmfqrz------.png
+Photographic/s_apmfqrx------.png
+
+#REQ:s_gpevaa-------.png
+#PRE:s_gpeva--------.png
+Recovery/s_gpevaar------.png
+
+#REQ:s_gpevat-------.png
+#PRE:s_gpeva--------.png
+Heavy/s_gpevath------.png
+Light/s_gpevatl------.png
+Medium/s_gpevatm------.png
+
+#REQ:s_gpevca-------.png
+#PRE:s_gpevc--------.png
+Compact/s_gpevcal------.png
+Midsize/s_gpevcam------.png
+Sedan/s_gpevcah------.png
+
+#REQ:s_gpevcj-------.png
+#PRE:s_gpevc--------.png
+Large heavy/s_gpevcjh------.png
+Medium/s_gpevcjm------.png
+Small light/s_gpevcjl------.png
+
+#REQ:s_gpevcm-------.png
+#PRE:s_gpevc--------.png
+Large bus/s_gpevcmh------.png
+Small bus/s_gpevcmm------.png
+Van/s_gpevcml------.png
+
+#REQ:s_gpevco-------.png
+#PRE:s_gpevc--------.png
+Large/s_gpevcoh------.png
+Pickup/s_gpevcol------.png
+Small/s_gpevcom------.png
+
+#REQ:s_gpevct-------.png
+#PRE:s_gpevc--------.png
+Large heavy box trailer/s_gpevcth------.png
+Medium box trailer/s_gpevctm------.png
+Small light box trailer/s_gpevctl------.png
+
+#REQ:s_gpevcf-------.png
+#PRE:s_gpevc--------.png
+Large heavy flatbed trailer/s_gpevcfh------.png
+Medium flatbed trailer/s_gpevcfm------.png
+Small light flatbed trailer/s_gpevcfl------.png
+
+#REQ:s_gpevcu-------.png
+#PRE:s_gpevc--------.png
+Large box truck/s_gpevcuh------.png
+Small box truck/s_gpevcum------.png
+Sport utility vehicle (SUV)/s_gpevcul------.png
+
+#REQ:s_gpeved-------.png
+#PRE:s_gpeve--------.png
+Armored/s_gpeveda------.png
+
+#REQ:s_gpevea-------.png
+#PRE:s_gpeve--------.png
+Armored vehicle mounted/s_gpeveaa------.png
+Trailer mounted/s_gpeveat------.png
+
+#REQ:s_gpevem-------.png
+#PRE:s_gpeve--------.png
+Armored carrier with volcano/s_gpevemv------.png
+Truck mounted with volcano/s_gpeveml------.png
+
+#REQ:s_gpevua-------.png
+#PRE:s_gpevu--------.png
+Armored/s_gpevuaa------.png
+
+#REQ:s_gpevus-------.png
+#PRE:s_gpevu--------.png
+Heavy/s_gpevush------.png
+Light/s_gpevusl------.png
+Medium/s_gpevusm------.png
+
+#REQ:s_gpevut-------.png
+#PRE:s_gpevu--------.png
+Heavy/s_gpevuth------.png
+Light/s_gpevutl------.png
+
+#REQ:s_gpewdh-------.png
+#PRE:s_gpewd--------.png
+Self-propelled/s_gpewdhs------.png
+
+#REQ:s_gpewdl-------.png
+#PRE:s_gpewd--------.png
+Self-propelled/s_gpewdls------.png
+
+#REQ:s_gpewdm-------.png
+#PRE:s_gpewd--------.png
+Self-propelled/s_gpewdms------.png
+
+#REQ:s_gpewhh-------.png
+#PRE:s_gpewh--------.png
+Self-propelled/s_gpewhhs------.png
+
+#REQ:s_gpewhl-------.png
+#PRE:s_gpewh--------.png
+Self-propelled/s_gpewhls------.png
+
+#REQ:s_gpewhm-------.png
+#PRE:s_gpewh--------.png
+Self-propelled/s_gpewhms------.png
+
+#REQ:s_gpewma-------.png
+#PRE:s_gpewm--------.png
+Intermediate range/s_gpewmai------.png
+Long range/s_gpewmal------.png
+Short range/s_gpewmas------.png
+Theater/s_gpewmat------.png
+
+#REQ:s_gpewmt-------.png
+#PRE:s_gpewm--------.png
+Heavy/s_gpewmth------.png
+Light/s_gpewmtl------.png
+Medium/s_gpewmtm------.png
+
+#REQ:s_gpewms-------.png
+#PRE:s_gpewm--------.png
+Intermediate range/s_gpewmsi------.png
+Long range/s_gpewmsl------.png
+Short range/s_gpewmss------.png
+
+#REQ:s_gpimfp--h----.png
+#PRE:s_gpimf---h----.png
+Weapons grade/s_gpimfpw-h----.png
+
+#REQ:s_gpucdm-------.png
+#PRE:s_gpucd--------.png
+H mad/s_gpucdh-------.png
+Heavy/s_gpucdmh------.png
+Light/s_gpucdml------.png
+Medium/s_gpucdmm------.png
+
+#REQ:s_gpucds-------.png
+#PRE:s_gpucd--------.png
+Chaparral/s_gpucdsc------.png
+Stinger/s_gpucdss------.png
+Vulcan/s_gpucdsv------.png
+
+#REQ:s_gpucaaa------.png
+#PRE:s_gpucaa-------.png
+Air assault/s_gpucaaas-----.png
+Tracked/s_gpucaaat-----.png
+Wheeled/s_gpucaaaw-----.png
+
+#REQ:s_gpucaao------.png
+#PRE:s_gpucaa-------.png
+Air assault/s_gpucaaos-----.png
+
+#REQ:s_gpucat-------.png
+#PRE:s_gpuca--------.png
+Airborne/s_gpucata------.png
+Amphibious/s_gpucatw------.png
+Heavy/s_gpucath------.png
+Light/s_gpucatl------.png
+Medium/s_gpucatm------.png
+Recovery/s_gpucatr------.png
+
+#REQ:s_gpucaw-------.png
+#PRE:s_gpuca--------.png
+Air assault/s_gpucaws------.png
+Airborne/s_gpucawa------.png
+Amphibious/s_gpucaww------.png
+Heavy/s_gpucawh------.png
+Light/s_gpucawl------.png
+Medium/s_gpucawm------.png
+Recovery/s_gpucawr------.png
+
+#REQ:s_gpucvf-------.png
+#PRE:s_gpucv--------.png
+Attack/s_gpucvfa------.png
+Recon/s_gpucvfr------.png
+Utility/s_gpucvfu------.png
+
+#REQ:s_gpucvr-------.png
+#PRE:s_gpucv--------.png
+Anti-submarine warfare/s_gpucvrw------.png
+Attack/s_gpucvra------.png
+C2/s_gpucvrc------.png
+Medevac/s_gpucvre------.png
+Mine countermeasure/s_gpucvrm------.png
+Scout/s_gpucvrs------.png
+Utility/s_gpucvru------.png
+
+#REQ:s_gpucvu-------.png
+#PRE:s_gpucv--------.png
+Fixed wing/s_gpucvuf------.png
+Rotary wing/s_gpucvur------.png
+
+#REQ:s_gpucec-------.png
+#PRE:s_gpuce--------.png
+Air assault/s_gpucecs------.png
+Airborne/s_gpuceca------.png
+Arctic/s_gpucecc------.png
+Heavy/s_gpucech------.png
+Light (sapper)/s_gpucecl------.png
+Mechanized (track)/s_gpucect------.png
+Medium/s_gpucecm------.png
+Motorized/s_gpucecw------.png
+Mountain/s_gpuceco------.png
+Recon/s_gpucecr------.png
+
+#REQ:s_gpucen------.png
+#PRE:s_gpuce--------.png
+Naval/s_gpucenn------.png
+
+#REQ:s_gpucfs-------.png
+#PRE:s_gpucf--------.png
+Air assault/s_gpucfss------.png
+Airborne/s_gpucfsa------.png
+Light/s_gpucfsl------.png
+Mountain/s_gpucfso------.png
+
+#REQ:s_gpucfh-------.png
+#PRE:s_gpucf--------.png
+Air assault/s_gpucfhs------.png
+Airborne/s_gpucfha------.png
+Amphibious/s_gpucfhx------.png
+Arctic/s_gpucfhc------.png
+Heavy/s_gpucfhh------.png
+Light/s_gpucfhl------.png
+Medium/s_gpucfhm------.png
+Mountain/s_gpucfho------.png
+Self-propelled/s_gpucfhe------.png
+
+#REQ:s_gpucfo-------.png
+#PRE:s_gpucf--------.png
+Air assault/s_gpucfos------.png
+Airborne/s_gpucfoa------.png
+Light/s_gpucfol------.png
+Mountain/s_gpucfoo------.png
+
+#REQ:s_gpucfm-------.png
+#PRE:s_gpucf--------.png
+Amphibious/s_gpucfml------.png
+Self-propelled tracked/s_gpucfms------.png
+Self-propelled wheeled/s_gpucfmw------.png
+Towed/s_gpucfmt------.png
+
+#REQ:s_gpucfr-------.png
+#PRE:s_gpucf--------.png
+Multi rocket launcher/s_gpucfrm------.png
+Single rocket launcher/s_gpucfrs------.png
+
+#REQ:s_gpucft-------.png
+#PRE:s_gpucf--------.png
+Anglico/s_gpucfta------.png
+Colt fist/s_gpucftc------.png
+Flash (optical)/s_gpucftf------.png
+Radar/s_gpucftr------.png
+Sound/s_gpucfts------.png
+
+#REQ:s_gpucsg-------.png
+#PRE:s_gpucs--------.png
+Dismounted/s_gpucsgd------.png
+Mechanized/s_gpucsga------.png
+Motorized/s_gpucsgm------.png
+
+#REQ:s_gpucrv-------.png
+#PRE:s_gpucr--------.png
+Air/s_gpucrvo------.png
+Armored/s_gpucrva------.png
+Ground/s_gpucrvg------.png
+Motorized/s_gpucrvm------.png
+
+#REQ:s_gpucrr-------.png
+#PRE:s_gpucr--------.png
+Division/s_gpucrrd------.png
+Force/s_gpucrrf------.png
+Light armored reconnaissnace (LAR)/s_gpucrrl------.png
+
+#REQ:s_gpusaf-------.png
+#PRE:s_gpusa--------.png
+Corps/s_gpusafc------.png
+Theater/s_gpusaft------.png
+
+#REQ:s_gpusaj-------.png
+#PRE:s_gpusa--------.png
+Corps/s_gpusajc------.png
+Theater/s_gpusajt------.png
+
+#REQ:s_gpusal-------.png
+#PRE:s_gpusa--------.png
+Corps/s_gpusalc------.png
+Theater/s_gpusalt------.png
+
+#REQ:s_gpusaw-------.png
+#PRE:s_gpusa--------.png
+Corps/s_gpusawc------.png
+Theater/s_gpusawt------.png
+
+#REQ:s_gpusam-------.png
+#PRE:s_gpusa--------.png
+Corps/s_gpusamc------.png
+Theater/s_gpusamt------.png
+
+#REQ:s_gpusas-------.png
+#PRE:s_gpusa--------.png
+Corps/s_gpusasc------.png
+Theater/s_gpusast------.png
+
+#REQ:s_gpusao-------.png
+#PRE:s_gpusa--------.png
+Corps/s_gpusaoc------.png
+Theater/s_gpusaot------.png
+
+#REQ:s_gpusap-------.png
+#PRE:s_gpusa--------.png
+Broadcast/s_gpusapb------.png
+Corps/s_gpusapc------.png
+Joint information bureau (JIB)/s_gpusapm------.png
+Theater/s_gpusapt------.png
+
+#REQ:s_gpusaq-------.png
+#PRE:s_gpusa--------.png
+Corps/s_gpusaqc------.png
+Theater/s_gpusaqt------.png
+
+#REQ:s_gpusar-------.png
+#PRE:s_gpusa--------.png
+Corps/s_gpusarc------.png
+Theater/s_gpusart------.png
+
+#REQ:s_gpusax-------.png
+#PRE:s_gpusa--------.png
+Corps/s_gpusaxc------.png
+Theater/s_gpusaxt------.png
+
+#REQ:s_gpusxe-------.png
+#PRE:s_gpusx--------.png
+Corps/s_gpusxec------.png
+Theater/s_gpusxet------.png
+
+#REQ:s_gpusxh-------.png
+#PRE:s_gpusx--------.png
+Corps/s_gpusxhc------.png
+Theater/s_gpusxht------.png
+
+#REQ:s_gpusxo-------.png
+#PRE:s_gpusx--------.png
+Corps/s_gpusxoc------.png
+Missile/s_gpusxom------.png
+Theater/s_gpusxot------.png
+
+#REQ:s_gpusxr-------.png
+#PRE:s_gpusx--------.png
+Corps/s_gpusxrc------.png
+Theater/s_gpusxrt------.png
+
+#REQ:s_gpusmd-------.png
+#PRE:s_gpusm--------.png
+Corps/s_gpusmdc------.png
+Theater/s_gpusmdt------.png
+
+#REQ:s_gpusmm-------.png
+#PRE:s_gpusm--------.png
+Corps/s_gpusmmc------.png
+Theater/s_gpusmmt------.png
+
+#REQ:s_gpusmp-------.png
+#PRE:s_gpusm--------.png
+Corps/s_gpusmpc------.png
+Theater/s_gpusmpt------.png
+
+#REQ:s_gpusmv-------.png
+#PRE:s_gpusm--------.png
+Corps/s_gpusmvc------.png
+Theater/s_gpusmvt------.png
+
+#REQ:s_gpuss1-------.png
+#PRE:s_gpuss--------.png
+Corps/s_gpuss1c------.png
+Theater/s_gpuss1t------.png
+
+#REQ:s_gpuss2-------.png
+#PRE:s_gpuss--------.png
+Corps/s_gpuss2c------.png
+Theater/s_gpuss2t------.png
+
+#REQ:s_gpuss3-------.png
+#PRE:s_gpuss--------.png
+Aviation/s_gpuss3a------.png
+Corps/s_gpuss3c------.png
+Theater/s_gpuss3t------.png
+
+#REQ:s_gpuss4-------.png
+#PRE:s_gpuss--------.png
+Corps/s_gpuss4c------.png
+Theater/s_gpuss4t------.png
+
+#REQ:s_gpuss9-------.png
+#PRE:s_gpuss--------.png
+Corps/s_gpuss9c------.png
+Theater/s_gpuss9t------.png
+
+#REQ:s_gpuss5-------.png
+#PRE:s_gpuss--------.png
+Corps/s_gpuss5c------.png
+Theater/s_gpuss5t------.png
+
+#REQ:s_gpuss6-------.png
+#PRE:s_gpuss--------.png
+Corps/s_gpuss6c------.png
+Theater/s_gpuss6t------.png
+
+#REQ:s_gpuss7-------.png
+#PRE:s_gpuss--------.png
+Corps/s_gpuss7c------.png
+Theater/s_gpuss7t------.png
+
+#REQ:s_gpuss8-------.png
+#PRE:s_gpuss--------.png
+Corps/s_gpuss8c------.png
+Theater/s_gpuss8t------.png
+
+#REQ:s_gpussx-------.png
+#PRE:s_gpuss--------.png
+Corps/s_gpussxc------.png
+Theater/s_gpussxt------.png
+
+#REQ:s_gpussl-------.png
+#PRE:s_gpuss--------.png
+Corps/s_gpusslc------.png
+Theater/s_gpusslt------.png
+
+#REQ:s_gpussw-------.png
+#PRE:s_gpuss--------.png
+Corps/s_gpusswc------.png
+Purification/s_gpusswp------.png
+Theater/s_gpusswt------.png
+
+#REQ:s_gpusta-------.png
+#PRE:s_gpust--------.png
+Corps/s_gpustac------.png
+Theater/s_gpustat------.png
+
+#REQ:s_gpusti-------.png
+#PRE:s_gpust--------.png
+Corps/s_gpustic------.png
+Theater/s_gpustit------.png
+
+#REQ:s_gpustm-------.png
+#PRE:s_gpust--------.png
+Corps/s_gpustmc------.png
+Theater/s_gpustmt------.png
+
+#REQ:s_gpustr-------.png
+#PRE:s_gpust--------.png
+Corps/s_gpustrc------.png
+Theater/s_gpustrt------.png
+
+#REQ:s_gpusts-------.png
+#PRE:s_gpust--------.png
+Corps/s_gpustsc------.png
+Theater/s_gpustst------.png
+
+#REQ:s_gpuums-------.png
+#PRE:s_gpuum--------.png
+Electronic warfare/s_gpuumse------.png
+
+#REQ:s_gpuumr-------.png
+#PRE:s_gpuum--------.png
+Ground station module/s_gpuumrx------.png
+Ground surveillance radar/s_gpuumrg------.png
+Meteorological/s_gpuumro------.png
+Sensor/s_gpuumrs------.png
+
+#REQ:s_gpuuab-------.png
+#PRE:s_gpuua--------.png
+Recon equipped/s_gpuuabr------.png
+
+#REQ:s_gpuuac-------.png
+#PRE:s_gpuua--------.png
+Recon/s_gpuuacr------.png
+Smoke/s_gpuuacs------.png
+Smoke decon/s_gpuuacc------.png
+
+#REQ:s_gpuusc-------.png
+#PRE:s_gpuus--------.png
+Large communication configured package (LCCP)/s_gpuuscl------.png
+
+#REQ:s_gpuusm-------.png
+#PRE:s_gpuus--------.png
+Large extension node/s_gpuusml------.png
+Node center/s_gpuusmn------.png
+Small extension node/s_gpuusms------.png
+
+#REQ:s_gpuusr-------.png
+#PRE:s_gpuus--------.png
+Relay/s_gpuusrw------.png
+Tactical satellite/s_gpuusrs------.png
+Teletype center/s_gpuusrt------.png
+
+#REQ:s_gpevath------.png
+#PRE:s_gpevat-------.png
+Recovery/s_gpevathr-----.png
+
+#REQ:s_gpevatl------.png
+#PRE:s_gpevat-------.png
+Recovery/s_gpevatlr-----.png
+
+#REQ:s_gpevatm------.png
+#PRE:s_gpevat-------.png
+Recovery/s_gpevatmr-----.png
+
+#REQ:s_gpewmai------.png
+#PRE:s_gpewma-------.png
+TELAR/s_gpewmaie-----.png
+TLAR/s_gpewmair-----.png
+
+#REQ:s_gpewmal------.png
+#PRE:s_gpewma-------.png
+TELAR/s_gpewmale-----.png
+TLAR/s_gpewmalr-----.png
+
+#REQ:s_gpewmas------.png
+#PRE:s_gpewma-------.png
+TELAR/s_gpewmase-----.png
+TLAR/s_gpewmasr-----.png
+
+#REQ:s_gpewmat------.png
+#PRE:s_gpewma-------.png
+TELAR/s_gpewmate-----.png
+TLAR/s_gpewmatr-----.png
+
+#REQ:s_gpucdh-------.png
+#PRE:s_gpucdm-------.png
+Hawk/s_gpucdhh------.png
+Patriot/s_gpucdhp------.png
+
+#REQ:s_gpucdml------.png
+#PRE:s_gpucdm-------.png
+Motorized (avenger)/s_gpucdmla-----.png
+
+#REQ:s_gpucatw------.png
+#PRE:s_gpucat-------.png
+Recovery/s_gpucatwr-----.png
+
+#REQ:s_gpucaww------.png
+#PRE:s_gpucaw-------.png
+Recovery/s_gpucawwr-----.png
+
+#REQ:s_gpucvru------.png
+#PRE:s_gpucvr-------.png
+Heavy/s_gpucvruh-----.png
+Light/s_gpucvrul-----.png
+Medium/s_gpucvrum-----.png
+
+#REQ:s_gpucfmt------.png
+#PRE:s_gpucfm-------.png
+Air assault/s_gpucfmts-----.png
+Airborne/s_gpucfmta-----.png
+Arctic/s_gpucfmtc-----.png
+Mountain/s_gpucfmto-----.png
+
+#REQ:s_gpucfrm------.png
+#PRE:s_gpucfr-------.png
+Multi rocket self-propelled/s_gpucfrms-----.png
+Multi rocket towed/s_gpucfrmt-----.png
+Multi rocket truck/s_gpucfrmr-----.png
+
+#REQ:s_gpucfrs------.png
+#PRE:s_gpucfr-------.png
+Single rocket self-propelled/s_gpucfrss-----.png
+Single rocket towed/s_gpucfrst-----.png
+Single rocket truck/s_gpucfrsr-----.png
+
+#REQ:s_gpucftc------.png
+#PRE:s_gpucft-------.png
+Dismounted/s_gpucftcd-----.png
+Tracked/s_gpucftcm-----.png
+
+#REQ:s_gpusapb------.png
+#PRE:s_gpusap-------.png
+Corps/s_gpusapbc-----.png
+Theater/s_gpusapbt-----.png
+
+#REQ:s_gpusapm------.png
+#PRE:s_gpusap-------.png
+Corps/s_gpusapmc-----.png
+Theater/s_gpusapmt-----.png
+
+#REQ:s_gpusxom-----.png
+#PRE:s_gpusxo-------.png
+Corps/s_gpusxomc-----.png
+Theater/s_gpusxomt-----.png
+
+#REQ:s_gpuss3a------.png
+#PRE:s_gpuss3-------.png
+Corps/s_gpuss3ac-----.png
+Theater/s_gpuss3at-----.png
+
+#REQ:s_gpusswp------.png
+#PRE:s_gpussw-------.png
+Corps/s_gpusswpc-----.png
+Theater/s_gpusswpt-----.png
+
+#REQ:s_gpuumse------.png
+#PRE:s_gpuums-------.png
+Armored wheeled vehicle/s_gpuumsea-----.png
+Corps/s_gpuumsec-----.png
+Direction finding/s_gpuumsed-----.png
+Intercept/s_gpuumsei-----.png
+Jamming/s_gpuumsej-----.png
+Theater/s_gpuumset-----.png
+
+#REQ:s_gpuumrs------.png
+#PRE:s_gpuumr-------.png
+SCM/s_gpuumrss-----.png
+
+#REQ:s_gpuuacr------.png
+#PRE:s_gpuuac-------.png
+Wheeled armored vehicle/s_gpuuacrw-----.png
+Wheeled armored vehicle surveillance/s_gpuuacrs-----.png
+
+#REQ:s_gpuuacs------.png
+#PRE:s_gpuuac-------.png
+Armor/s_gpuuacsa-----.png
+Motorized/s_gpuuacsm-----.png
+
+#REQ:s_gpuuacc------.png
+#PRE:s_gpuuac-------.png
+Mechanized/s_gpuuacck-----.png
+Motorized/s_gpuuaccm-----.png

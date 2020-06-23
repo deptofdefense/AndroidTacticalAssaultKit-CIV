@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:custom="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fadeScrollbars="false"
+            android:layout_alignParentTop="true"
+            android:layout_marginStart="3dp"
+            android:layout_marginEnd="3dp">
+
+
+    <RelativeLayout 
+        android:id="@+id/patienttype_rl"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        
+        android:orientation="vertical" >
+
+        <TextView 
+            android:id="@+id/med_litter_text"
+            android:padding="5dp"
+            android:layout_marginTop="7dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/litter_choice" />
+
+        <include
+            layout="@layout/atak_number_picker"
+            android:id="@+id/med_litter_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="55dp"
+            android:layout_toEndOf="@id/med_litter_text"
+            custom:minValue="0"
+            custom:startValue="0"
+            tools:ignore="MissingPrefix" />
+
+        
+        <TextView
+            android:id="@+id/med_ambulatory_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:padding="5dp"
+            android:layout_below="@id/med_litter_text"
+            android:text="@string/ambulance_choice" />
+
+        <include
+            layout="@layout/atak_number_picker"
+            android:id="@+id/med_ambulatory_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/med_ambulatory_text"
+            android:layout_alignStart="@id/med_litter_edit"
+            custom:minValue="0"
+            custom:startValue="0"
+            tools:ignore="MissingPrefix" />
+
+
+
+
+    </RelativeLayout>
+</ScrollView>

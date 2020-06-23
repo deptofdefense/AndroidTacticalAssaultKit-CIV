@@ -1,0 +1,15 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_COORDS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.ADD_PT_FROM_BEARING</action>
+        <extras>
+            <string key='routeUID'>${assocSetUID}</string>
+            <string key='uid'>${uid}</string>
+        </extras>
+    </broadcast>
+</set>

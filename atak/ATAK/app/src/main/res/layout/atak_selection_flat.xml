@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="horizontal" android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center">
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text=""
+        android:id="@+id/selector_title"
+        android:textColor="@color/heading_yellow"
+        android:maxLines="1"
+        android:layout_weight="1" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:minHeight="32dp"
+        android:gravity="center"
+        android:layout_weight="1"
+        android:paddingStart="1dp"
+        android:background="@drawable/border">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:lineSpacingExtra="3dp"
+            android:text=""
+            android:textColor="#FFFFFF"
+            android:id="@+id/selector_item"
+            android:layout_weight="1" />
+
+        <ImageView
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:id="@+id/selector_icon"
+            android:src="@drawable/blue_triangle"
+            android:layout_gravity="bottom|end"
+            android:layout_marginEnd="2dp"
+            android:layout_marginBottom="4dp" />
+    </LinearLayout>
+
+</LinearLayout>

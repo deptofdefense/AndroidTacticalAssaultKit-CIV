@@ -1,0 +1,8 @@
+<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_quickpic"  title="actionbar_quickpic">
+   <ClickData actionType="click">
+      <broadcast>
+         <action>com.atakmap.android.image.quickpic.QUICK_PIC</action>
+         <extras/>
+      </broadcast>
+   </ClickData>
+</PersistedActionMenu>

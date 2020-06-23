@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <Preference
+        android:title="@string/preferences_text72"
+        android:summary="@string/preferences_text73"
+        android:key="@string/selected_actionbar_icon_color"/>
+    <Preference
+        android:title="@string/preferences_text74"
+        android:summary="@string/preferences_text75"
+        android:key="@string/selected_actionbar_background_color"/>
+    <Preference
+        android:title="@string/preferences_text76"
+        android:summary="@string/preferences_text77"
+        android:key="@string/default_actionbar_colors"/>
+
+</PreferenceScreen>

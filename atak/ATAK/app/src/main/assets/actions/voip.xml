@@ -1,0 +1,9 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.voipAction</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+            <string key='sipAddress'>${sipAddress}</string>
+        </extras>
+    </broadcast>
+</set>

@@ -1,0 +1,13 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.maps.jumpmaster.SHOW_HIDE_FORWARD_THROW</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+            <string key='point'>${targetPoint}</string>
+            <string key='forwardThrow'>${forwardThrow}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

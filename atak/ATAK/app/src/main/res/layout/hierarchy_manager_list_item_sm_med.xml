@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/hierarchy_manager_list_layout"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:descendantFocusability="blocksDescendants">
+
+    <LinearLayout
+        android:id="@+id/hierarchy_manager_toggle_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:orientation="horizontal"
+        android:layout_gravity="center"
+        android:paddingStart="10sp"
+        android:paddingEnd="10sp" >
+        <ImageView
+            android:id="@+id/hierarchy_manager_list_item_checkbox"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center"
+            android:src="@drawable/btn_check_off"
+            android:visibility="gone"/>
+        <ImageView
+            android:id="@+id/hierarchy_manager_visibility_iv"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_gravity="center"
+            android:src="@drawable/overlay_visible" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:paddingBottom="10dip"
+        android:paddingTop="10dip"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/hierarchy_manager_list_item_icon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center"
+            android:maxHeight="32dp"
+            android:maxWidth="32dp"
+            android:minHeight="32dp"
+            android:minWidth="32dp" />
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            >
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="15dp"
+                android:orientation="vertical"
+                android:layout_toStartOf="@+id/hierarchy_manager_list_item_freespace"
+                android:layout_alignParentStart="true">
+
+                <TextView
+                    android:id="@+id/hierarchy_manager_list_item_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/title_lc"
+                    android:textColor="#ffffffff"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/hierarchy_manager_list_item_desc"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/dashdashdash"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+
+        <LinearLayout
+            android:id="@+id/hierarchy_manager_list_item_freespace"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_alignParentEnd="true"
+            android:paddingEnd="15dp">
+
+            <LinearLayout
+                android:id="@+id/hierarchy_manager_list_item_bearing_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!--
+                <ImageView
+                android:id="@+id/hierarchy_manager_list_item_dir_image"
+                android:src="@drawable/ic_hierarchy_dir_arrow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:padding="2dip"
+                android:maxWidth="16dp"
+                android:maxHeight="16dp"
+                android:minWidth="16dp"
+                android:minHeight="16dp"/>
+                -->
+
+                <TextView
+                    android:id="@+id/hierarchy_manager_list_item_dir_text_deg"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text=""
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/hierarchy_manager_list_item_dir_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:maxLines="1"
+                    android:text=""
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/hierarchy_manager_list_item_el_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="@string/unknown_agl"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/hierarchy_manager_list_item_extra_view_layout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+            </LinearLayout>
+        </LinearLayout>
+        </RelativeLayout>
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <dimen name="fontSize">14sp</dimen>
+
+    <!-- Putting res values in MapLibrary since most project libraries reference it -->
+    <dimen name="draper_large_font">15sp</dimen>
+    <dimen name="draper_title_font">13sp</dimen>
+    <dimen name="draper_font">10sp</dimen>
+    <dimen name="draper_small_font">8sp</dimen>
+    
+    <dimen name="spinnerFontSize">11sp</dimen>
+    <dimen name="labelFontSize">10sp</dimen>
+    <dimen name="jmDetailsFontSize">11sp</dimen>
+
+
+    <string name="dropdown_width">2.2</string>
+</resources>

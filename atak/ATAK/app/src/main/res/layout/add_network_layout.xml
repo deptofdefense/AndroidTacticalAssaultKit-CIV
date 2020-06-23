@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fadeScrollbars="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/auto_margin"
+        android:orientation="vertical">
+
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Name -->
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/auto_margin"
+                    android:text="@string/name"
+                    android:textSize="16sp"
+                    android:textColor="#FFF"
+                    android:textStyle="bold"/>
+                <EditText
+                    android:id="@+id/add_description"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:maxLines="1"
+                    android:singleLine="true"
+                    android:imeOptions="flagNoFullscreen|actionNext"
+                    android:inputType="textNoSuggestions" />
+            </TableRow>
+
+            <!-- Address -->
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/auto_margin"
+                    android:text="@string/address"
+                    android:textSize="16sp"
+                    android:textColor="#FFF"
+                    android:textStyle="bold"/>
+                <EditText
+                    android:id="@+id/add_host"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:maxLines="1"
+                    android:singleLine="true"
+                    android:imeOptions="flagNoFullscreen|actionDone"
+                    android:digits="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890.-" />
+            </TableRow>
+        </TableLayout>
+
+        <LinearLayout
+            android:id="@+id/useAuthCheckLayout"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/auto_margin"
+            android:orientation="vertical">
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <CheckBox
+                    android:id="@+id/useAuthCheckbox"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="18dp"
+                    android:text="@string/use_authentication" />
+                <com.atakmap.android.gui.ThemedSpinner
+                    android:id="@+id/spinnerCacheCreds"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp"
+                    android:entries="@array/takserver_cache_credentials"
+                    style="@style/darkButton"/>
+            </LinearLayout>
+
+            <TableLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="24dp"
+                android:orientation="vertical">
+
+                <!-- Username -->
+                <TableRow
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/username_block"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:id="@+id/usernameLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/auto_margin"
+                        android:text="@string/username2"
+                        android:textSize="16sp"
+                        android:textColor="#FFF"
+                        android:textStyle="bold"/>
+                    <EditText
+                        android:id="@+id/add_username"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:maxLines="1"
+                        android:singleLine="true"
+                        android:imeOptions="flagNoFullscreen|actionNext"
+                        android:inputType="textNoSuggestions" />
+                </TableRow>
+
+                <!-- Password -->
+                <TableRow
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/password_block"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+                    <TextView
+                        android:id="@+id/passwordLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/auto_margin"
+                        android:text="@string/password2"
+                        android:textSize="16sp"
+                        android:textColor="#FFF"
+                        android:textStyle="bold"/>
+                    <EditText
+                        android:id="@+id/add_password"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:inputType="textPassword"
+                        android:maxLines="1"
+                        android:singleLine="true"
+                        android:imeOptions="flagNoFullscreen|actionDone"/>
+                </TableRow>
+            </TableLayout>
+
+            <CheckBox
+                android:id="@+id/enroll_keystore_cb"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/enroll_for_client_certificate" />
+
+        </LinearLayout>
+
+        <!-- Advanced options -->
+        <CheckBox
+            android:id="@+id/advanced_options_cb"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="@string/advanced_options"/>
+
+        <LinearLayout
+            android:id="@+id/advanced_options"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <!-- Protocol selection -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <TextView
+                    android:id="@+id/title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/auto_margin"
+                    android:text="@string/protocol"
+                    android:textSize="16sp"
+                    android:textColor="#FFF"
+                    android:textStyle="bold"/>
+                <RadioGroup
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
+                    <RadioButton
+                        android:id="@+id/udp_radio"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="@string/udp"/>
+                    <RadioButton
+                        android:id="@+id/tcp_radio"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/auto_margin"
+                        android:text="@string/tcp"/>
+                    <RadioButton
+                        android:id="@+id/ssl_radio"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/auto_margin"
+                        android:text="@string/ssl"/>
+                </RadioGroup>
+            </LinearLayout>
+
+            <!-- Port number -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/auto_margin"
+                    android:text="@string/preferences_text284"
+                    android:textSize="16sp"
+                    android:textColor="#FFF"
+                    android:textStyle="bold"/>
+                <EditText
+                    android:id="@+id/add_port"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ems="5"
+                    android:inputType="number"
+                    android:maxLines="1"
+                    android:singleLine="true"
+                    android:imeOptions="flagNoFullscreen|actionDone"/>
+            </LinearLayout>
+
+            <!-- Compression (currently not supported) -->
+            <CheckBox
+                android:id="@+id/compression_checkbox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/use_compression"
+                android:visibility="gone"/>
+
+            <LinearLayout
+                android:id="@+id/cert_checkbox_layout"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/auto_margin"
+                android:orientation="vertical">
+
+                <CheckBox
+                    android:id="@+id/useDefaultCertsCheckbox"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="18dp"
+                    android:text="@string/use_default_certs" />
+            </LinearLayout>
+
+            <TableLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/auto_margin"
+                android:orientation="vertical">
+
+                <!-- Trust store -->
+                <TableRow
+                    android:id="@+id/truststore_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <Button
+                        android:id="@+id/import_truststore_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        style="@style/darkButton"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
+                        android:paddingStart="20sp"
+                        android:paddingEnd="20sp"
+                        android:text="@string/import_ssl_tls_truststore"/>
+
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/nameLabel2"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingStart="25sp"
+                                android:layout_marginEnd="@dimen/auto_margin"
+                                android:text="@string/name"
+                                android:textSize="16sp"
+                                android:textColor="#FFF"
+                                android:textStyle="bold"/>
+                            <TextView
+                                android:id="@+id/truststore_name"
+                                android:layout_width="200dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:maxLines="1"
+                                android:singleLine="true"/>
+                         </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/passwordLabel2"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingStart="25sp"
+                                android:layout_marginEnd="@dimen/auto_margin"
+                                android:text="@string/password2"
+                                android:textSize="16sp"
+                                android:textColor="#FFF"
+                                android:textStyle="bold"/>
+                            <EditText
+                                android:id="@+id/truststore_password"
+                                android:layout_width="200dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:inputType="textPassword"
+                                android:maxLines="1"
+                                android:singleLine="true"
+                                android:imeOptions="flagNoFullscreen|actionNext"/>
+                         </LinearLayout>
+                    </LinearLayout>
+                </TableRow>
+
+                <!-- Key store -->
+                <TableRow
+                    android:id="@+id/keystore_layout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <Button
+                        android:id="@+id/import_keystore_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        style="@style/darkButton"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
+                        android:paddingStart="20sp"
+                        android:paddingEnd="20sp"
+                        android:text="@string/import_ssl_tls_cert_store" />
+
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <LinearLayout
+                            android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/nameLabel1"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingStart="25sp"
+                                android:layout_marginEnd="@dimen/auto_margin"
+                                android:text="@string/name"
+                                android:textSize="16sp"
+                                android:textColor="#FFF"
+                                android:textStyle="bold"/>
+                            <TextView
+                                android:id="@+id/keystore_name"
+                                android:layout_width="200dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:maxLines="1"
+                                android:singleLine="true"/>
+                         </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="fill_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/passwordLabel3"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:paddingStart="25sp"
+                                android:layout_marginEnd="@dimen/auto_margin"
+                                android:text="@string/password2"
+                                android:textSize="16sp"
+                                android:textColor="#FFF"
+                                android:textStyle="bold"/>
+                            <EditText
+                                android:id="@+id/cert_store_password"
+                                android:layout_width="200dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:inputType="textPassword"
+                                android:maxLines="1"
+                                android:singleLine="true"
+                                android:imeOptions="flagNoFullscreen|actionDone"/>
+                         </LinearLayout>
+                     </LinearLayout>
+                </TableRow>
+            </TableLayout>
+
+            <Button
+                android:id="@+id/export_keystore_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                style="@style/darkButton"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:paddingStart="20sp"
+                android:paddingEnd="20sp"
+                android:text="@string/export_ssl_tls_cert_store"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+            <Button
+                android:id="@+id/cancel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:padding="@dimen/auto_margin"
+                style="@style/darkButton"
+                android:text="@string/cancel"/>
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+            <Button
+                android:id="@+id/add_net_button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:padding="@dimen/auto_margin"
+                style="@style/darkButton"
+                android:text="@string/ok"/>
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+        </LinearLayout>
+    </LinearLayout>
+
+</ScrollView>

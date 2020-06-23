@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory 
+    android:title="@string/elevationPreferences">
+        <CheckBoxPreference 
+            android:title="@string/show_by_default"
+            android:key="prefs_dted_visible"
+            android:summary="@string/show_by_default_elev"
+            android:defaultValue="false" />
+    </PreferenceCategory>  
+</PreferenceScreen>

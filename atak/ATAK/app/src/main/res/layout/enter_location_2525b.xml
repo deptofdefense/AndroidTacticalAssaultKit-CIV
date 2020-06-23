@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/FullDropdownStyle"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/customHolder"
+            android:orientation="vertical">
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/enterLocationTypeSelectionRadioGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="3dp"
+            android:layout_marginEnd="3dp"
+            android:orientation="horizontal"
+            android:weightSum="4" >
+
+            <ImageButton
+                android:id="@+id/enterLocationTypeUnknown"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_margin="3dp"
+                android:layout_weight="1"
+                android:background="@drawable/all_tools_grid"
+                android:button="@null"
+                android:scaleType="center"
+                android:src="@drawable/unknown" />
+
+            <ImageButton
+                android:id="@+id/enterLocationTypeNeutral"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_margin="3dp"
+                android:layout_weight="1"
+                android:background="@drawable/all_tools_grid"
+                android:button="@null"
+                android:scaleType="center"
+                android:src="@drawable/neutral" />
+
+            <ImageButton
+                android:id="@+id/enterLocationTypeHostile"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_margin="3dp"
+                android:layout_weight="1"
+                android:background="@drawable/all_tools_grid"
+                android:button="@null"
+                android:scaleType="center"
+                android:src="@drawable/hostile" />
+
+            <ImageButton
+                android:id="@+id/enterLocationTypeFriendly"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_margin="3dp"
+                android:layout_weight="1"
+                android:background="@drawable/all_tools_grid"
+                android:button="@null"
+                android:scaleType="center"
+                android:src="@drawable/friendly" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/enterLocationSubtypeLayout"
+        android:orientation="horizontal"
+        android:layout_marginStart="5dp">
+
+        <Button
+            android:id="@+id/enterLocationSubtypeButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/darkButton"
+            android:padding="10dp"
+            android:gravity="center"
+            android:text="@string/ground_caps"
+            android:textColor="#FFFF"
+            android:textSize="16sp" />
+
+    </LinearLayout>
+
+</LinearLayout>

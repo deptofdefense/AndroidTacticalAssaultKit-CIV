@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="@string/networkGpsPreferences"
+        android:key="networkGpsCategory">
+        <ListPreference 
+            android:entryValues="@array/option_values"
+            android:entries="@array/option_names" 
+            android:summary="@string/preferences_text260"
+            android:key="mockingOption" 
+            android:title="@string/preferences_text261"
+            android:defaultValue="WRGPS" />
+        <com.atakmap.android.gui.PanEditTextPreference 
+            android:key="listenPort"
+            android:title="@string/preferences_text264"
+            android:summary="@string/preferences_text265"
+            android:defaultValue="4349"
+            android:inputType = "number"
+            android:enabled="true"/>
+        <CheckBoxPreference
+            android:title="@string/preferences_text85"
+            android:key="useGPSTime"
+            android:defaultValue="true"
+            android:summary="@string/preferences_text86"/>
+    </PreferenceCategory>
+</PreferenceScreen>

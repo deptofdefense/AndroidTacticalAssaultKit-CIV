@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/FullDropdownStyle"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:id="@+id/customHolder">
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/enterLocationTypeSelectionRadioGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/customHolder"
+        android:layout_margin="2dp"
+        android:orientation="horizontal"
+        android:weightSum="5"
+        android:baselineAligned="false">
+
+        <include
+            android:id="@+id/contact_point"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:layout_weight="1"
+            layout="@layout/enter_location_group_child" />
+
+        <include
+            android:id="@+id/initial_point"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:layout_weight="1"
+            layout="@layout/enter_location_group_child" />
+
+        <include
+            android:id="@+id/habp_point"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:layout_weight="1"
+            layout="@layout/enter_location_group_child" />
+
+        <include
+            android:id="@+id/waypoint_point"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:layout_weight="1"
+            layout="@layout/enter_location_group_child" />
+
+        <include
+            android:id="@+id/sensor_point"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:layout_weight="1"
+            layout="@layout/enter_location_group_child" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/subtypeViewAlt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/enterLocationTypeSelectionRadioGroup"
+        android:layout_margin="2dp"
+        android:orientation="horizontal"
+        android:weightSum="5"
+        android:baselineAligned="false"
+        android:visibility="visible">
+
+        <include
+            android:id="@+id/op_point"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:layout_weight="1"
+            layout="@layout/enter_location_group_child" />
+
+        <include
+            android:id="@+id/slot1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:layout_weight="1"
+            android:visibility="gone"
+            layout="@layout/enter_location_group_child" />
+        <include
+            android:id="@+id/slot2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:visibility="gone"
+            android:layout_weight="1"
+            layout="@layout/enter_location_group_child" />
+        <include
+            android:id="@+id/slot3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:visibility="gone"
+            android:layout_weight="1"
+            layout="@layout/enter_location_group_child" />
+        <include
+            android:id="@+id/slot4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="1dp"
+            android:visibility="gone"
+            android:layout_weight="1"
+            layout="@layout/enter_location_group_child" />
+
+
+
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/subtypeView"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_below="@+id/enterLocationTypeSelectionRadioGroup"
+        android:visibility="gone">
+    </LinearLayout>
+
+</RelativeLayout>

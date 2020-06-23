@@ -1,0 +1,14 @@
+<menu buttonRadius='65' buttonSpan='120' buttonWidth='90' buttonBg='bgs/button.xml'>
+
+    <button angle='-90'
+            icon='icons/delete.png'
+            onClick='actions/remove.xml'
+            disabled='!{${removable}}' />
+
+    <button icon='icons/mgrs_entry.png'
+            onClick='actions/mgrs_entry.xml'/>
+
+    <button icon='icons/general_entry.png'
+            onClick='actions/general_entry.xml'/>
+
+</menu>

@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="wrap_content"
+              android:layout_height="match_parent"
+              android:orientation="vertical" >
+    <EditText
+        android:id="@+id/mist_i_detail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textNoSuggestions" />
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <LinearLayout android:id="@+id/mist_i_buttons"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="vertical" >
+            <LinearLayout android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:orientation="horizontal" >
+                <Button
+                    android:id="@+id/mist_i_amputation"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp" style="@style/darkButton"
+                    android:text="@string/mist_i_amputation_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_i_avulsion"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp" style="@style/darkButton"
+                    android:text="@string/mist_i_avulsion_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_i_bleeding"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp" style="@style/darkButton"
+                    android:text="@string/mist_i_bleeding_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_i_burn"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp" style="@style/darkButton"
+                    android:text="@string/mist_i_burn_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_i_deformity"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp" style="@style/darkButton"
+                    android:text="@string/mist_i_deformity_abbr"
+                    />
+            </LinearLayout>
+            <LinearLayout
+                          android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:orientation="horizontal" >
+
+                <Button
+                    android:id="@+id/mist_i_foreign"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp" style="@style/darkButton"
+                    android:text="@string/mist_i_foreign_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_i_gunshot"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp" style="@style/darkButton"
+                    android:text="@string/mist_i_gunshot_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_i_hematoma"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp" style="@style/darkButton"
+                    android:text="@string/mist_i_hematoma_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_i_laceration"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp" style="@style/darkButton"
+                    android:text="@string/mist_i_laceration_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_i_puncture"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp" style="@style/darkButton"
+                    android:text="@string/mist_i_puncture_abbr"
+                    />
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:orientation="horizontal" >
+                <Button
+                    android:id="@+id/mist_i_stab"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp" style="@style/darkButton"
+                    android:text="@string/mist_i_stab_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_i_tourniquet"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp" style="@style/darkButton"
+                    android:text="@string/mist_i_tourniquet_abbr"
+                    />
+
+                <Button
+                    android:id="@+id/mist_i_fracture"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="0dp"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp" style="@style/darkButton"
+                    android:text="@string/mist_i_fracture_abbr"
+                    />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

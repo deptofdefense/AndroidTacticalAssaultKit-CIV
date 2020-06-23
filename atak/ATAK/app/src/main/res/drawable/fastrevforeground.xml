@@ -1,0 +1,14 @@
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+     <item android:state_pressed="true">
+          <bitmap android:src="@drawable/fastrev_pressed" android:gravity="center"/>
+     </item>
+     <item android:state_focused="true">
+          <bitmap android:src="@drawable/fastrev_hover" android:gravity="center"/>
+     </item>
+    <item android:state_enabled="false">
+          <bitmap android:src="@drawable/fastrev_disabled" android:gravity="center"/>
+     </item>
+     <item>
+          <bitmap android:src="@drawable/fastrev" android:gravity="center"/>
+     </item>
+</selector>

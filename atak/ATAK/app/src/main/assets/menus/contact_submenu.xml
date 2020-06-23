@@ -1,0 +1,31 @@
+<menu buttonRadius='65' buttonSpan='32.73' buttonWidth='51.42' buttonBg='bgs/button.xml'>
+    <button icon='icons/phone_icon.png'
+            onClick='actions/phonecall.xml'
+            disabled='!{${phoneNumber}}' />
+    <button
+        disabled='!{${sipAddress}}'
+        icon='icons/voip_icon.png'
+        onClick='actions/voip.xml' />
+
+    <button icon='icons/chatsmall.png'
+            onClick='actions/geochat.xml'
+            disabled='!{${endpoint}}' />
+            
+    <button icon='icons/xmpp_icon.png'
+            onClick='actions/xmpp.xml'
+            disabled='!{${xmppUsername}}' />
+            
+    <button
+        disabled='!{${phoneNumber}}'
+        icon='icons/sms_icon.png'
+        onClick='actions/sms.xml' />
+
+    <button
+        disabled='!{${emailAddress}}'
+        icon='icons/email_icon.png'
+        onClick='actions/email.xml' />
+
+    <button icon='icons/missionpackage.png'
+            onClick='actions/missionpackage.xml'
+            disabled='!{${endpoint}}' />
+</menu>

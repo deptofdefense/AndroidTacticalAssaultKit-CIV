@@ -1,0 +1,108 @@
+Third Party Library License Requirements
+
+Commo uses a number of third party libraries with various licensing terms. This lists the library and gives details on the license.
+
+    libcurl (libcurl.dll) - Open use with copyright notice given. Include following text in software distribution:
+
+        COPYRIGHT AND PERMISSION NOTICE
+
+        Copyright (c) 1996 - 2015, Daniel Stenberg, <daniel@haxx.se>.
+
+        All rights reserved.
+
+        Permission to use, copy, modify, and distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
+
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+        Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in this Software without prior written authorization of the copyright holder.
+
+    OpenSSL (libeay32.dll, ssleay32.dll) - BSD style license.
+        Requires copyright notice and details (below) to be shown in documentation or other place with distribution:
+
+        /*
+         * Copyright (c) 1998-2011 The OpenSSL Project.  All rights reserved.
+         *
+         * Redistribution and use in source and binary forms, with or without
+         * modification, are permitted provided that the following conditions
+         * are met:
+         *
+         * 1. Redistributions of source code must retain the above copyright
+         *    notice, this list of conditions and the following disclaimer.
+         *
+         * 2. Redistributions in binary form must reproduce the above copyright
+         *    notice, this list of conditions and the following disclaimer in
+         *    the documentation and/or other materials provided with the
+         *    distribution.
+         *
+         * 3. All advertising materials mentioning features or use of this
+         *    software must display the following acknowledgment:
+         *    "This product includes software developed by the OpenSSL Project
+         *    for use in the OpenSSL Toolkit. (http://www.openssl.org/)"
+         *
+         * 4. The names "OpenSSL Toolkit" and "OpenSSL Project" must not be used to
+         *    endorse or promote products derived from this software without
+         *    prior written permission. For written permission, please contact
+         *    openssl-core@openssl.org.
+         *
+         * 5. Products derived from this software may not be called "OpenSSL"
+         *    nor may "OpenSSL" appear in their names without prior written
+         *    permission of the OpenSSL Project.
+         *
+         * 6. Redistributions of any form whatsoever must retain the following
+         *    acknowledgment:
+         *    "This product includes software developed by the OpenSSL Project
+         *    for use in the OpenSSL Toolkit (http://www.openssl.org/)"
+         *
+         * THIS SOFTWARE IS PROVIDED BY THE OpenSSL PROJECT ``AS IS'' AND ANY
+         * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+         * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+         * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE OpenSSL PROJECT OR
+         * ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+         * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+         * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+         * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+         * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+         * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+         * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+         * OF THE POSSIBILITY OF SUCH DAMAGE.
+         * ====================================================================
+         *
+         * This product includes cryptographic software written by Eric Young
+         * (eay@cryptsoft.com).  This product includes software written by Tim
+         * Hudson (tjh@cryptsoft.com).
+         *
+         */
+
+        Requires the following attribution in an "about" box or similar place in software:
+
+            This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/)
+
+    libmicrohttpd (libmicrohttpd-dll.dll) - LGP v2.1 or eCos, which is GPL with linking exemption. Strongly recommend eCos which permits static linking.
+        eCos license: http://ecos.sourceware.org/license-overview.html - basically comply with GPL terms which in essence are noting that this DLL is under the eCos license and either a distribution of the source code used to produce the library or a written offer to get the source code.
+        LGPL license: Precludes static linking of this with commo or executables. If this is used, the requirements are the same as eCos in essence - list the library with its license (LGPL v2.1) and provide source or offer to get the source.
+    libxml (libxml2.dll) - Attribution and copyright notice:
+
+     Copyright (C) 1998-2012 Daniel Veillard.  All Rights Reserved.
+     Portions Copyright (C) 1998,2000,2001,2012 Bjorn Reese and Daniel Veillard.
+     Portions Copyright (C) 2000 Gary Pennington and Daniel Veillard.
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is fur-
+    nished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FIT-
+    NESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE.
+
+    pthreads, Win32 only (pthreadsVC2.dll) - LGPL 2.1. See above under libmicrohttpd. Non-windows platforms still utilize pthreads, but the pthreads library in use is provided by the operating system upon which commo is running under a shared library link and thus we are not distributing said library.
+

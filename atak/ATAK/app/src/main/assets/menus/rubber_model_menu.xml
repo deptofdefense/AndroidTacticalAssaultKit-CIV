@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<menu
+    buttonBg='bgs/button.xml'
+    buttonRadius='65'
+    buttonSpan='45'
+    buttonWidth='90' >
+
+    <button
+        angle='-90'
+        icon='icons/delete.png'
+        onClick='actions/shape_delete.xml' />
+
+    <button
+        icon='icons/details.png'
+        onClick='actions/rubber_sheet_details.xml' />
+
+    <button
+        disabled='!{${editable}}'
+        icon='icons/edit2.png'
+        onClick='actions/rubber_sheet_edit.xml' />
+
+    <button
+        icon='icons/3d_free_look.png'
+        onClick='actions/compass_toggle_free_look.xml'
+        selected='${freeLook}'/>
+
+    <button
+        disabled='!{${editable}}'
+        icon='icons/transparency.png'
+        onClick='actions/rubber_sheet_transparency.xml'/>
+
+    <button
+        icon='icons/pairing_line.png'
+        onClick='actions/pairingline.xml'
+        selected='${pairingline_on}' />
+        
+    <button
+        icon='icons/label.png'
+        onClick='actions/label_toggle.xml'
+        selected='${labels_on}' />
+
+    <button
+        disabled='!{${editable}}'
+        icon='icons/move.png'
+        onClick='actions/rubber_sheet_move.xml' />
+
+</menu>

@@ -1,0 +1,8 @@
+<icon anchor='15,15' size='32,32'>
+    <state>
+        <image>icons/check.png</image>
+    </state>
+    <state flags='selected'>
+        <image>icons/incomplete.png</image>
+    </state>
+</icon>

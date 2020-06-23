@@ -1,0 +1,339 @@
+ buildscript {
+    repositories {
+        jcenter()
+        google()
+        mavenCentral()
+        maven {
+            url "https://jitpack.io"
+        }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.5.3'
+    }
+ }
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url "https://jitpack.io"
+        }
+        jcenter()
+    }
+}
+
+
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion "29.0.2"
+    ndkVersion "12.1.2977051"
+
+    defaultConfig {
+        minSdkVersion 21
+        ndk {
+            moduleName 'atakjni'
+            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86'
+        }
+    }
+
+    // Only enable externalNativeBuild on machines with NDK installed -> valid ndkDir
+    if (isNativeBuildEnabled()) {
+        externalNativeBuild.ndkBuild.path = 'src/main/cpp/Android.mk'
+    } else if(ndkVersion != null) {
+        // developer has requested NDK build, but no valid NDK is present
+        throw new GradleException("NDK builds require version " + ndkVersion)
+    }
+
+    defaultConfig {
+        minSdkVersion 21
+    }
+
+    flavorDimensions "application"
+
+    productFlavors {
+
+        civ {
+            dimension "application"
+        }
+        civSmall {
+            dimension "application"
+        }
+
+    }
+
+    buildTypes {
+        all {
+        }
+
+        release {
+        }
+
+        debug {
+            testCoverageEnabled (project.hasProperty('coverage') ? true : false)
+        }
+    }
+
+    sourceSets {
+        main {
+        }
+
+        civ.java.srcDir 'src/nonpri-common/java'
+        civSmall.java.srcDir 'src/nonpri-common/java'
+
+        // Move the tests to tests/java, tests/res, etc...
+        //instrumentTest.setRoot('tests')
+
+        // Move the build types to build-types/<type>
+        // For instance, build-types/debug/java, build-types/debug/AndroidManifest.xml, ...
+        // This moves them out of them default location under src/<type>/... which would
+        // conflict with src/ being used by the main source set.
+        // Adding new build types or product flavors should be accompanied
+        // by a similar customization.
+        debug.setRoot('build-types/debug')
+        release.setRoot('build-types/release')
+    }
+
+    // ndk-build will copy these several dependencies into the 'build'
+    // directory, and try to merge them back out into the output package. since
+    // the files exist both in 'jniLibs' and the 'build' directory, merge will
+    // fail on the duplicate files. instruct a 'pickFirst' strategy on the
+    // duplicates.
+    packagingOptions {
+        pickFirst 'lib/x86/libgdal.so'
+        pickFirst 'lib/x86/libspatialite.so'
+        pickFirst 'lib/x86/libtakengine.so'
+
+        pickFirst 'lib/armeabi-v7a/libgdal.so'
+        pickFirst 'lib/armeabi-v7a/libspatialite.so'
+        pickFirst 'lib/armeabi-v7a/libtakengine.so'
+
+        pickFirst 'lib/arm64-v8a/libgdal.so'
+        pickFirst 'lib/arm64-v8a/libspatialite.so'
+        pickFirst 'lib/arm64-v8a/libtakengine.so'
+    }
+}
+
+// Love this quote from StackOverflow
+// Ahh, looks like you have to move the dependencies block below the android block. How intuitive.
+dependencies {
+    api project(':MapCoreInterfaces:lib')
+    api project(':authdb:lib')
+    api project(':certdb:lib')
+    api fileTree(dir: 'libs', include: '*.jar')
+}
+
+clean {
+    // external unpacks
+    delete 'external/takengine/include'
+    delete 'external/ttp/ttp-include'
+
+    // JNI headers
+    doLast {
+        def javah_properties = new File(project.projectDir, 'src/main/cpp/javah.properties')
+        if (javah_properties.isFile() && javah_properties.canRead()) {
+            def prop = new Properties()
+            def reader = javah_properties.newReader()
+            try {
+                prop.load(reader)
+            } finally {
+                reader.close()
+            }
+
+            prop.each { headerFile, ignored ->
+                delete 'src/main/cpp/' + headerFile
+            }
+        } else {
+            logger.warn('javah.properties is missing')
+        }
+    }
+}
+
+def isNativeBuildEnabled() {
+    // Only enable externalNativeBuild on machines with NDK installed -> valid ndkDir
+    try {
+        def ndkDir = project.android.ndkDirectory
+        if(ndkDir == null || ndkDir.toString().isEmpty()) {
+            return false
+        }
+        def detectedNdkVersion
+        def releaseFile = new File(ndkDir, 'RELEASE.TXT')
+        def propertyFile = new File(ndkDir, 'source.properties')
+        if(releaseFile.isFile()) {
+            detectedNdkVersion = releaseFile.text.trim().split()[0].split('-')[0]
+        } else if(propertyFile.isFile()) {
+            detectedNdkVersion = getValueFromPropertiesFile(propertyFile, 'Pkg.Revision')
+        }
+        return detectedNdkVersion != null && detectedNdkVersion == android.ndkVersion
+    } catch(Exception e) {
+        return false;
+    }
+}
+
+static def getValueFromPropertiesFile(File propFile, String key) {
+    if(!propFile.isFile() || !propFile.canRead())
+        return null
+    def prop = new Properties()
+    def reader = propFile.newReader()
+    try {
+        prop.load(reader)
+    } finally {
+        reader.close()
+    }
+    return prop.get(key)
+}
+
+// JNI header generation
+android.libraryVariants.all { variant ->
+    task "generate${variant.name.capitalize()}JniHeaders"(dependsOn: ["compile${variant.name.capitalize()}JavaWithJavac"]) {
+        // param1 = header file name (including .h)
+        // param2 = class name (as string) or class names (as string list)
+        ext.javah = { param1, param2 ->
+            exec {
+                // configure classpath used by javah
+                def atakmapengine_classpath = "build/intermediates/javac/" + variant.name + "/classes"
+                def mapcoreinterfaces_classpath = (new File(project(":MapCoreInterfaces:lib").projectDir,  "build/intermediates/javac/" + variant.name + "/classes")).toString()
+                def android_classpath = android.sdkDirectory.path + "/platforms/" + android.compileSdkVersion + "/android.jar"
+                def javah_classpath =
+                        atakmapengine_classpath + File.pathSeparator +
+                        (new File(projectDir, "libs/gdal.jar")).toString() + File.pathSeparator +
+                        mapcoreinterfaces_classpath + File.pathSeparator +
+                        android_classpath
+                // the output file
+                def output_file = (new File(projectDir, "src/main/cpp/" + param1)).toString()
+
+                // create command line args
+                ArrayList<String> clargs = ['javah', '-classpath', "${javah_classpath}", '-o', output_file]
+                clargs.addAll(param2)
+
+                // execute javah
+                commandLine clargs
+            }
+        }
+
+        doLast {
+            def javah_properties = new File(project.projectDir, 'src/main/cpp/javah.properties')
+            if(!javah_properties.isFile() || !javah_properties.canRead())
+                throw new GradleException('javah.properties file is missing')
+            def prop = new Properties()
+            def reader = javah_properties.newReader()
+            try {
+                prop.load(reader)
+            } finally {
+                reader.close()
+            }
+
+            prop.each { key, val ->
+                javah(key, val.split(', '))
+            }
+        }
+    }
+}
+
+// NDK build external dependency install
+task installDepends {
+    doLast {
+        // install TAK Third Party shared objects
+        copy {
+            from('../../../takthirdparty/builds/android-arm64-v8a-release/lib/') {
+                include 'libassimp.so'
+                include 'libcharset.so'
+                include 'libgdal.so'
+                include 'libgdalconstjni.so'
+                include 'libgdaljni.so'
+                include 'libiconv.so'
+                include 'libjassimp.so'
+                include 'libltidsdk.so' // only available if DSDK present for build
+                include 'libogdi.so'
+                include 'libogrjni.so'
+                include 'libosrjni.so'
+                include 'libproj.so'
+                include 'libspatialite.so'
+            }
+            from('../../../takthirdparty/builds/android-arm64-v8a-release/lib/ogdi') {
+                include 'libogdi.so'
+            }
+
+            into projectDir.getAbsolutePath() + '/src/main/jniLibs/arm64-v8a/'
+
+            // always overwrite
+            duplicatesStrategy 'include'
+        }
+        copy {
+            from('../../../takthirdparty/builds/android-armeabi-v7a-release/lib/') {
+                include 'libassimp.so'
+                include 'libcharset.so'
+                include 'libgdal.so'
+                include 'libgdalconstjni.so'
+                include 'libgdaljni.so'
+                include 'libiconv.so'
+                include 'libjassimp.so'
+                include 'libltidsdk.so' // only available if DSDK present for build
+                include 'libogdi.so'
+                include 'libogrjni.so'
+                include 'libosrjni.so'
+                include 'libproj.so'
+                include 'libspatialite.so'
+            }
+            from('../../../takthirdparty/builds/android-armeabi-v7a-release/lib/ogdi') {
+                include 'libogdi.so'
+            }
+            into projectDir.getAbsolutePath() + '/src/main/jniLibs/armeabi-v7a/'
+
+            // always overwrite
+            duplicatesStrategy 'include'
+        }
+        copy {
+            from('../../../takthirdparty/builds/android-x86-release/lib/') {
+                include 'libassimp.so'
+                include 'libcharset.so'
+                include 'libgdal.so'
+                include 'libgdalconstjni.so'
+                include 'libgdaljni.so'
+                include 'libiconv.so'
+                include 'libjassimp.so'
+                include 'libltidsdk.so' // only available if DSDK present for build
+                include 'libogdi.so'
+                include 'libogrjni.so'
+                include 'libosrjni.so'
+                include 'libproj.so'
+                include 'libspatialite.so'
+            }
+            from('../../../takthirdparty/builds/android-x86-release/lib/ogdi') {
+                include 'libogdi.so'               
+            }
+            into projectDir.getAbsolutePath() + '/src/main/jniLibs/x86/'
+
+             // always overwrite
+            duplicatesStrategy 'include'
+        }
+
+        // install TAK Third Party JARs
+        copy {
+            from('../../../takthirdparty/builds/android-x86-release/java/') {
+                include 'gdal.jar'
+                include 'gdaldata.jar'
+                include 'jassimp.jar'
+            }
+
+            into projectDir.getAbsolutePath() + '/libs/'
+
+             // always overwrite
+            duplicatesStrategy 'include'
+        }
+    }
+}
+
+android.libraryVariants.all { variant ->
+    // install the TAK Third Party dependencies
+    tasks.getByName("compile${variant.name.capitalize()}JavaWithJavac").dependsOn("installDepends")
+    // NDK build depends on JNI header generation
+    tasks.getByName("externalNativeBuild${variant.name.capitalize()}").dependsOn("generate${variant.name.capitalize()}JniHeaders")
+
+    // make build of `libatakjni` depend on build of `libtakengine`
+    project(':libtakengine').ext.'jniLibs.outputDir' = new File(project.projectDir, 'src/main/jniLibs').getAbsolutePath()
+    tasks.getByName("externalNativeBuild${variant.name.capitalize()}").dependsOn(":libtakengine:install${variant.name.capitalize()}Outputs")
+}
+

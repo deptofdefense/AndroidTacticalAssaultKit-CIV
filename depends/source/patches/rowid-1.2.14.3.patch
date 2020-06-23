@@ -1,0 +1,39 @@
+--- Jackcess/src/java/com/healthmarketscience/jackcess/RowId.java	2008-03-31 22:02:18.000000000 -0400
++++ Jackcess/src/java/com/healthmarketscience/jackcess/RowId.java	2016-12-19 13:33:39.162804847 -0500
+@@ -105,11 +105,36 @@
+   }
+   
+   public int compareTo(RowId other) {
++
++    if (getType() == Type.ALWAYS_FIRST && other.getType() != Type.ALWAYS_FIRST)
++       return -1;
++    else if (getType() == Type.ALWAYS_LAST && other.getType() != Type.ALWAYS_LAST)
++       return +1;
++    else if (getType() == Type.NORMAL && other.getType() == Type.ALWAYS_FIRST)
++       return +1;
++    else if (getType() == Type.NORMAL && other.getType() == Type.ALWAYS_LAST)
++       return -1;
++
++    if (getPageNumber() < other.getPageNumber())
++       return -1;
++    else if (getPageNumber() > other.getPageNumber())
++       return +1;
++
++    if (getRowNumber() < other.getRowNumber())
++       return -1;
++    else if (getRowNumber() > other.getRowNumber())
++       return +1;
++
++    return 0;
++
++
++/**
+     return new CompareToBuilder()
+       .append(getType(), other.getType())
+       .append(getPageNumber(), other.getPageNumber())
+       .append(getRowNumber(), other.getRowNumber())
+       .toComparison();
++**/
+   }
+ 
+   @Override

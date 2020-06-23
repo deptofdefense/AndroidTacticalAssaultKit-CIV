@@ -1,0 +1,19 @@
+<menu buttonRadius='65' buttonSpan='32.73' buttonWidth='60' buttonBg='bgs/button.xml'>
+
+    <button icon='icons/fah_redx.png'
+            onClick='actions/redx_fah.xml'
+            dependsOnCapability='capability.fires'
+            selectable='true'
+            selected='${fahon}' />
+
+    <button icon='icons/ic_laser_selected.png'
+            onClick='actions/redx_lb.xml'
+            dependsOnCapability='capability.fires'
+            selectable='true'
+            selected='${lbon}' />
+
+    <button icon='icons/blast_rings.png'
+            dependsOnCapability='capability.weapons'
+            onClick='actions/dangerclose.xml' />
+
+</menu>

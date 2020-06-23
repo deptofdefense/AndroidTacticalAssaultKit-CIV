@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:paddingStart="3dp"
+              android:paddingEnd="3dp"
+              android:layout_height="match_parent"
+              android:orientation="vertical" >
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <CheckBox
+            android:id="@+id/showHeatmap_cb"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:text="@string/show_heatmap" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="#FF111111"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="3dp"
+            android:visibility="gone" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/dted" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/level_1" />
+        </LinearLayout>
+    </RelativeLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="2dp"
+        android:layout_marginTop="2dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingBottom="3dp"
+        android:paddingTop="3dp" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="2dp"
+            android:layout_marginTop="2dp"
+            android:ems="6"
+            android:text="@string/intensity"
+            android:textSize="@dimen/labelFontSize" />
+
+        <SeekBar
+            android:id="@+id/intensity_seek"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="40" />
+
+        <EditText
+            android:id="@+id/intensity_et"
+            style="@style/JumpMasterEditText"
+            android:layout_marginStart="5dp"
+            android:layout_weight="1"
+            android:inputType="number"
+            android:minEms="3"
+            android:paddingBottom="3dp"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:layout_marginEnd="5dp"
+            android:gravity="center_vertical"
+            android:text="@string/percent_symbol"
+            android:textSize="@dimen/labelFontSize" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="2dp"
+        android:layout_marginTop="2dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingBottom="3dp"
+        android:paddingTop="3dp" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="2dp"
+            android:layout_marginTop="2dp"
+            android:ems="6"
+            android:text="@string/saturation"
+            android:textSize="@dimen/labelFontSize" />
+
+        <SeekBar
+            android:id="@+id/sat_seek"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="40" />
+
+        <EditText
+            android:id="@+id/sat_et"
+            style="@style/JumpMasterEditText"
+            android:layout_marginStart="5dp"
+            android:layout_weight="1"
+            android:inputType="number"
+            android:minEms="3"
+            android:paddingBottom="3dp"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"
+             />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:layout_marginEnd="5dp"
+            android:gravity="center_vertical"
+            android:text="@string/percent_symbol"
+            android:textSize="@dimen/labelFontSize" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="2dp"
+        android:layout_marginTop="2dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingBottom="3dp"
+        android:paddingTop="3dp" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="2dp"
+            android:layout_marginTop="2dp"
+            android:ems="6"
+            android:text="@string/value"
+            android:textSize="@dimen/labelFontSize" />
+
+        <SeekBar
+            android:id="@+id/val_seek"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="40" />
+
+        <EditText
+            android:id="@+id/val_et"
+            style="@style/JumpMasterEditText"
+            android:layout_marginStart="5dp"
+            android:layout_weight="1"
+            android:inputType="number"
+            android:minEms="3"
+            android:paddingBottom="3dp"
+            android:paddingStart="2dp"
+            android:paddingEnd="2dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:layout_marginEnd="5dp"
+            android:gravity="center_vertical"
+            android:text="@string/percent_symbol"
+            android:textSize="@dimen/labelFontSize" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="2dp"
+        android:layout_marginTop="2dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingBottom="3dp"
+        android:paddingTop="3dp" >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="2dp"
+            android:layout_marginTop="2dp"
+            android:ems="6"
+            android:text="@string/sample_rate"
+            android:textSize="@dimen/labelFontSize" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" >
+
+            <SeekBar
+                android:id="@+id/sample_seek"
+                android:layout_width="fill_parent"
+                android:layout_height="0dp"
+                android:layout_weight="40" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" >
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentStart="true"
+                    android:text="@string/low_res"
+                    android:textSize="@dimen/labelFontSize" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:text="@string/high_res"
+                    android:textSize="@dimen/labelFontSize" />
+            </RelativeLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

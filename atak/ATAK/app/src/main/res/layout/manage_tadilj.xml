@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:gravity="center_vertical"
+    android:baselineAligned="false"
+    android:orientation="horizontal"
+    android:padding="4dp">
+
+    <LinearLayout
+        android:id="@+id/text_layout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.8"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tadilj_name"
+            android:text="@string/name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/draper_verylarge_font"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/tadilj_uid"
+            android:text="@string/uid"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/conn_layout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_weight="1.2"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/tadilj_chat_ncs"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/draper_font"
+            android:text="@string/chat_255_255_255_255_12345"/>
+
+        <TextView
+            android:id="@+id/tadilj_point_ncs"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/draper_font"
+            android:text="@string/point_255_255_255_255_12345"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginEnd="4dp">
+
+        <ImageButton
+            android:id="@+id/tadilj_edit"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/edit" />
+
+        <ImageButton
+            android:id="@+id/tadilj_delete"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_menu_delete_32" />
+
+        <CheckBox
+            android:id="@+id/tadilj_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="" />
+
+    </LinearLayout>
+
+</LinearLayout>

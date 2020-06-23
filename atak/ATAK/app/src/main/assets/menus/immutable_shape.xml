@@ -1,0 +1,21 @@
+<menu buttonRadius='65' buttonSpan='90' buttonWidth='90' buttonBg='bgs/button.xml'>
+    
+    <button angle='-90'
+            icon='icons/blast_rings.png'
+            dependsOnCapability='capability.weapons'
+            disabled='true'
+            onClick='actions/dangerclose.xml' />
+
+    <button onClick='actions/9line_spi.xml'
+            disabled='true'
+            dependsOnCapability='capability.fires'
+            icon='icons/nineline.png'/>
+
+    <button icon='icons/pairing_line.png'
+            disabled='true'
+            onClick='actions/pairingline.xml'
+            selected='${pairingline_on}'  />
+            
+    <button icon='icons/eye.png'
+            onClick='actions/toggleVisibility.xml'/>
+</menu>

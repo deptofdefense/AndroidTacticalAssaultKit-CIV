@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.track.ui.TrackSearchView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent">
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/trackhistory_search_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:padding="4dp"
+            android:layout_alignParentStart="true"
+            android:src="@drawable/ic_track_search"/>
+        <TextView
+            android:id="@+id/trackhistory_search_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:layout_toEndOf="@id/trackhistory_search_icon"
+            android:text="@string/trackHistoryTitleLocal"/>
+    </RelativeLayout>
+
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="1dip"
+        android:layout_marginTop="2dp"
+        android:background="@color/th_green"/>
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <ImageView android:id="@+id/trackhistory_search_callsignIcon"
+                   android:layout_width="24dip"
+                   android:layout_height="24dip"
+                   android:src="@drawable/ic_self"
+                   android:layout_gravity="center"
+                   android:layout_alignParentStart="true"/>
+
+        <Button
+            android:id="@+id/trackhistory_search_callsignBtn"
+            android:layout_width="120dip"
+            android:layout_height="wrap_content"
+            android:text="@string/callsign"
+            android:maxLines="1"
+            android:layout_gravity="center"
+            style="@style/darkButton"
+            android:padding="5dip"
+            android:textSize="20sp"
+            android:layout_marginTop="5dp"
+            android:layout_toEndOf="@id/trackhistory_search_callsignIcon"
+            android:layout_marginEnd="10dp"/>
+
+        <Button
+            android:id="@+id/trackhistory_search_serverBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/https_server"
+            android:layout_gravity="center"
+            style="@style/darkButton"
+            android:maxLines="1"
+            android:padding="5dip"
+            android:textSize="11sp"
+            android:visibility="gone"
+            android:layout_alignTop="@id/trackhistory_search_callsignBtn"
+            android:layout_alignParentEnd="true"/>
+    </RelativeLayout>
+
+    <LinearLayout
+        android:id="@+id/trackhistory_date_resolutionLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone" >
+
+        <LinearLayout
+            android:id="@+id/trackhistory_date_rangeSeekLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:text="@string/start" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:text="@string/end" />
+
+        </RelativeLayout>
+    </LinearLayout>
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        >
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="30dip"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/trackhistory_search_startTimeMonth"
+                android:layout_width="35dip"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:text=""
+                android:gravity="center_horizontal"
+                android:background="@drawable/trackhistory_calendar_topbackground"
+                />
+            <TextView
+                android:id="@+id/trackhistory_search_startTimeDate"
+                android:layout_width="35dip"
+                android:layout_height="wrap_content"
+                android:textSize="22sp"
+                android:text=""
+                android:textColor="@color/black_overlay"
+                android:gravity="center_horizontal"
+                android:background="@color/white"/>
+            <TextView
+                android:id="@+id/trackhistory_search_startTimeYear"
+                android:layout_width="35dip"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:text=""
+                android:gravity="center_horizontal"
+                android:background="@drawable/trackhistory_calendar_bottombackground"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="10dip"
+            android:orientation="vertical"
+            android:layout_alignParentEnd="true">
+            <TextView
+                android:id="@+id/trackhistory_search_endTimeMonth"
+                android:layout_width="35dip"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:text=""
+                android:gravity="center_horizontal"
+                android:background="@drawable/trackhistory_calendar_topbackground"
+                />
+            <TextView
+                android:id="@+id/trackhistory_search_endTimeDate"
+                android:layout_width="35dip"
+                android:layout_height="wrap_content"
+                android:textSize="22sp"
+                android:text=""
+                android:textColor="@color/black_overlay"
+                android:gravity="center_horizontal"
+                android:background="@color/white"/>
+            <TextView
+                android:id="@+id/trackhistory_search_endTimeYear"
+                android:layout_width="35dip"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:text=""
+                android:gravity="center_horizontal"
+                android:background="@drawable/trackhistory_calendar_bottombackground"/>
+        </LinearLayout>
+    </RelativeLayout>
+
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="1dip"
+        android:layout_marginTop="2dp"
+        android:background="@color/th_green"/>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center">
+
+        <CheckBox
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/trackhistory_search_onServer"
+            android:text="@string/server_search"
+            android:layout_gravity="center"
+            android:layout_marginEnd="10dip"/>
+
+        <Button
+            android:id="@+id/trackhistory_search_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            style="@style/darkButton"
+            android:layout_marginTop="5dp"
+            android:padding="6dp"
+            android:text="@string/search"/>
+    </LinearLayout>
+    </LinearLayout>
+    </ScrollView>
+</com.atakmap.android.track.ui.TrackSearchView>

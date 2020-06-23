@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<menu
+    buttonBg='bgs/button.xml'
+    buttonRadius='65'
+    buttonSpan='60'
+    buttonWidth='90' >
+
+    <button angle='-90'
+        icon='icons/delete.png'
+        onClick='actions/shape_delete.xml' />
+
+    <button
+        icon='icons/details.png'
+        onClick='actions/showdetails_shape.xml' />
+
+    <button
+        icon='icons/show_label.png'
+        onClick='actions/toggle_label.xml'
+        selected='${showLabel}' />
+    
+    <button
+        icon='icons/pairing_line.png'
+        onClick='actions/pairingline.xml'
+        selected='${pairingline_on}' />
+        
+    <button
+        icon='icons/move.png'
+        submenu='menus/mgrs_entry_submenu.xml'
+        disableSwap='true'
+        disableIconSwap='true'
+        onClick='actions/move.xml' />
+            
+    <button
+        icon='icons/rotate_ac.png'
+        onClick='actions/rotate.xml' />
+
+</menu>

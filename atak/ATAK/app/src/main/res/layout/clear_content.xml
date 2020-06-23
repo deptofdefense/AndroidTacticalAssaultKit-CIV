@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:fadeScrollbars="false">
+
+<LinearLayout 
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical" >
+
+
+    
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="22sp"
+        android:layout_marginStart="5dp"
+        android:textColor="@color/red"
+        android:text="@string/zeroize_all_data_will_be_permanently_erased" />
+    <CheckBox
+        android:id="@+id/zeroizeClearMaps"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:layout_marginStart="5dp"
+        android:text="@string/zeroize_sub_text" />
+    
+    <View
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="5dp"
+        android:layout_width="wrap_content"
+        android:layout_height="1dp"
+        android:background="@color/gray"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="5dp"
+        android:text="@string/zeroize_lock_both_switches_to_clear_content" />
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:weightSum="2"
+        android:orientation="horizontal"
+        android:layout_marginStart="5dp"
+        android:layout_marginBottom="10dp"
+        android:baselineAligned="false">
+            <LinearLayout 
+                android:layout_height="wrap_content"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:orientation="vertical">        
+
+                <Switch
+                    android:id="@+id/zeroizeSwitch1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="15dp"
+                    android:textOn="@string/locked"
+                    android:thumb="@drawable/zeroize_switch_bg" />
+
+                <Switch
+                    android:id="@+id/zeroizeSwitch2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="15dp"
+                    android:thumb="@drawable/zeroize_switch_bg"
+                    android:textOn="@string/locked" />
+           </LinearLayout>
+           <LinearLayout 
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_width="0dp"
+            android:layout_gravity="center"
+            android:gravity="center">
+
+           <Button
+               android:id="@+id/zeroizeButton"
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               android:layout_gravity="center"
+               android:background="@drawable/zeroize_button_border"
+               android:gravity="center"
+               android:text="@string/zeroize_clear_now"
+               android:textColor="@color/light_gray" />
+
+           </LinearLayout>   
+    </LinearLayout>    
+
+</LinearLayout>
+</ScrollView>

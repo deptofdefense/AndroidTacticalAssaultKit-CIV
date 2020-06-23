@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="6dp">
+    
+    <LinearLayout 
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">  
+          
+        <TextView
+            android:text="@string/type"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+        
+           <TextView
+               android:id="@+id/missionpackage_log_detail_txtType"
+               android:text="@string/type_lower"
+               android:layout_width="fill_parent"
+               android:layout_height="wrap_content"
+               android:layout_marginStart="5dp"
+               android:textSize="18sp"
+               android:textStyle="bold"/>
+    </LinearLayout>    
+    
+       <LinearLayout 
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">  
+          
+        <TextView
+            android:text="@string/name"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+        
+           <TextView
+               android:id="@+id/missionpackage_log_detail_txtName"
+               android:text="@string/name_lower"
+               android:layout_width="fill_parent"
+               android:layout_height="wrap_content"
+               android:layout_marginStart="5dp"
+               android:textSize="18sp"
+               android:textStyle="bold"/>
+    </LinearLayout>         
+    
+    <LinearLayout 
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">  
+          
+        <TextView
+            android:text="@string/size"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+        
+           <TextView
+               android:id="@+id/missionpackage_log_detail_txtSize"
+               android:text="@string/size_lower"
+               android:layout_width="fill_parent"
+               android:layout_height="wrap_content"
+               android:layout_marginStart="5dp"
+               android:textSize="18sp"
+               android:textStyle="bold"/>
+    </LinearLayout>
+    
+    <LinearLayout 
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">  
+          
+        <TextView
+            android:text="@string/date"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+        
+           <TextView
+               android:id="@+id/missionpackage_log_detail_txtDate"
+               android:text="@string/date_lower"
+               android:layout_width="fill_parent"
+               android:layout_height="wrap_content"
+               android:layout_marginStart="5dp"
+               android:textSize="18sp"
+               android:textStyle="bold"/>
+    </LinearLayout>
+    
+    <LinearLayout 
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">  
+          
+        <TextView
+            android:text="@string/detail"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+        
+           <TextView
+               android:id="@+id/missionpackage_log_detail_txtDescription"
+               android:text="@string/description_lower"
+               android:layout_width="fill_parent"
+               android:layout_height="wrap_content"
+               android:layout_marginStart="5dp"
+               android:textSize="18sp"
+               android:textStyle="bold"/>
+    </LinearLayout>
+    
+</LinearLayout>

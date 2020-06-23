@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fadeScrollbars="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:orientation="vertical"
+        android:padding="@dimen/auto_space_big">
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:text="@string/name"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/attachment_detail_txtName"
+                android:text="@string/name_lower"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textColor="#FFF"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:text="@string/type"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/attachment_detail_txtType"
+                android:text="@string/type_lower"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textColor="#FFF"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:text="@string/size"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/attachment_detail_txtSize"
+                android:text="@string/size_lower"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textColor="#FFF"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:text="@string/date"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/attachment_detail_txtModifiedDate"
+                android:text="@string/date_lower"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textColor="#FFF"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:text="@string/md5"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/attachment_detail_txtMd5"
+                android:text="@string/md5"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textColor="#FFF"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:text="@string/path"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/attachment_detail_txtDirectory"
+                android:text="@string/path_lower"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textColor="#FFF"/>
+        </LinearLayout>
+
+        <RelativeLayout
+            android:id="@+id/attachment_buttons"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:visibility="gone">
+
+            <ImageButton
+                android:id="@+id/attachment_detail_btnOpen"
+                style="@style/darkButton" android:padding="6dp"
+
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/attachment_view"
+                android:layout_margin="0dp"/>
+            <ImageButton
+                android:id="@+id/attachment_detail_btnSend"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                style="@style/darkButton" android:padding="6dp"
+                android:src="@drawable/send_square"
+                android:layout_margin="0dp"
+                android:layout_toEndOf="@id/attachment_detail_btnOpen"/>
+            <ImageButton
+                android:id="@+id/attachment_detail_btnDiscard"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                style="@style/darkButton" android:padding="6dp"
+                android:src="@drawable/ic_menu_delete"
+                android:layout_margin="0dp"
+                android:layout_toEndOf="@id/attachment_detail_btnSend"/>
+        </RelativeLayout>
+    </LinearLayout>
+</ScrollView>

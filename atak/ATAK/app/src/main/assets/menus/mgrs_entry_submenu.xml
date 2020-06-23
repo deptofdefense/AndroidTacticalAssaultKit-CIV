@@ -1,0 +1,6 @@
+<menu buttonRadius='65' buttonSpan='40' buttonWidth='60' buttonBg='bgs/button.xml'>
+    <button icon='icons/mgrs_entry.png'
+            onClick='actions/mgrs_entry.xml'/>
+    <button icon='icons/general_entry.png'
+            onClick='actions/general_entry.xml'/>
+</menu>

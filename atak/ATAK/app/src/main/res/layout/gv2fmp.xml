@@ -1,0 +1,626 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:gravity="fill_vertical|fill_horizontal" 
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    >
+
+    <android.view.SurfaceView
+        android:id="@+id/vidsurface"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" />
+
+    <android.opengl.GLSurfaceView
+        android:id="@+id/GLSurface"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_centerHorizontal="true"
+        android:layout_centerInParent="true"
+        android:longClickable="true"
+        android:scaleType="fitCenter" />
+
+    <RelativeLayout
+        android:id="@+id/ControlLayout"
+        android:layout_width="fill_parent"
+        android:layout_height="64dp"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical" >
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="32dp"
+            android:layout_alignParentBottom="true"
+            android:orientation="horizontal" >
+
+            <ImageButton
+                android:layout_width="30dp"
+                android:layout_weight="0"
+                android:layout_height="fill_parent"
+                android:background="@drawable/buttonback"
+                android:focusable="true"
+                android:scaleType="fitCenter"
+                android:src="@drawable/fastrevforeground" 
+                android:contentDescription="@string/fast_reverse"
+                android:onClick="onClickFastRev"/>
+
+            <ImageButton
+                android:layout_width="30dp"
+                android:layout_weight="0"
+                android:layout_height="fill_parent"
+                android:background="@drawable/buttonback"
+                android:scaleType="fitCenter"
+                android:src="@drawable/slowrevforeground"
+                android:contentDescription="@string/slow_reverse"
+                android:onClick="onClickSlowRev"/>
+
+            <ImageButton
+                android:id="@+id/PlayPauseBID"
+                android:layout_width="30dp"
+                android:layout_weight="0"
+                android:layout_height="fill_parent"
+                android:background="@drawable/buttonback"
+                android:scaleType="fitCenter"
+                android:src="@drawable/playforeground"
+                android:contentDescription="@string/play_pause"
+                android:onClick="onClickPausePlay"/>
+
+            <ImageButton
+                android:layout_width="30dp"
+                android:layout_weight="0"
+                android:layout_height="fill_parent"
+                android:background="@drawable/buttonback"
+                android:scaleType="fitCenter"
+                android:src="@drawable/slowfwdforeground"
+                android:contentDescription="@string/slow_forward"
+                android:onClick="onClickSlowFwd"/>
+
+            <ImageButton
+                android:layout_width="30dp"
+                android:layout_height="fill_parent"
+                android:background="@drawable/buttonback"
+                android:layout_weight="0"
+                android:minWidth="30dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/fastfwdforeground"
+                android:contentDescription="@string/fast_forward"
+                android:onClick="onClickFastFwd"/>
+
+            <!--
+              ImageButton 
+                   android:layout_height="fill_parent" 
+                   android:layout_width="30dp" 
+                   android:id="@+id/TargetBID" 
+                   android:src="@drawable/targetforeground" 
+                   android:background="@drawable/buttonback" 
+                   android:minWidth="30dp" 
+                   android:layout_toRightOf="@id/FastFwdBID"
+                   android:scaleType="fitCenter"
+                   />
+              <ImageButton 
+                   android:layout_height="fill_parent" 
+                   android:layout_width="30dp" 
+                   android:id="@+id/TackBID" 
+                   android:src="@drawable/thumbtackforeground" 
+                   android:background="@drawable/buttonback" 
+                   android:minWidth="30dp" 
+                   android:layout_toRightOf="@id/TargetBID"
+                   android:scaleType="fitCenter"
+                   /
+            -->
+
+            <TextView
+                android:id="@+id/TimeView"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:background="@drawable/buttonbackup"
+                android:gravity="center_vertical|center_horizontal"
+                android:minWidth="96dp"
+                android:layout_weight="0"
+                android:text="@string/time_zero"
+                android:textColor="#FFFFFF"
+                android:typeface="sans" />
+
+            <SeekBar
+                android:id="@+id/SeekBar01"
+                android:layout_width="fill_parent"
+                android:layout_height="32dp"
+                android:background="@drawable/seekbarback"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:progressDrawable="@drawable/progress_horizontal"
+                android:scrollbarAlwaysDrawHorizontalTrack="true"
+                android:thumb="@drawable/thumbback_small" />
+        </LinearLayout>
+    </RelativeLayout>
+
+    <SlidingDrawer
+        android:id="@+id/SlidingDrawer"
+        android:layout_width="250dp"
+        android:layout_height="fill_parent"
+        android:layout_alignParentEnd="true"
+        android:content="@+id/contentScroll"
+        android:handle="@+id/slideHandleButton"
+        android:orientation="horizontal"
+        android:padding="4sp" >
+
+        <ToggleButton
+            android:id="@+id/slideHandleButton"
+            android:layout_width="64dp"
+            android:layout_height="96dp"
+            android:background="@drawable/sliderback"
+            android:clickable="true"
+            android:textOff=""
+            android:textOn="" />
+
+        <ScrollView
+            android:id="@+id/contentScroll"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent" >
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#33C0C0C0"
+                android:gravity="center|top"
+                android:orientation="vertical"
+                android:padding="12sp" >
+
+                <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/groupbox"
+                    android:orientation="vertical" >
+
+                    <TextView
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_horizontal|start"
+                        android:text="@string/aircraft_title"
+                        android:textColor="#000000"
+                        android:typeface="sans" />
+
+                    <TableLayout
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:stretchColumns="1" >
+              
+                        <TableRow android:background="@drawable/itembox" >
+
+                            <TextView
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:padding="2dp"
+                                android:text="@string/tailnum_title"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+
+                            <TextView
+                                android:id="@+id/AircraftTailValueView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="end"
+                                android:paddingEnd="5dp"
+                                android:text="@string/no_value"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+                        </TableRow>              
+              
+              
+                        <!-- TableRow android:background="@drawable/itembox" >
+
+                            <TextView
+                                android:id="@+id/AircraftDesignationLabelView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="left"
+                                android:padding="2dp"
+                                android:text="@string/designation_title"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+
+                            <TextView
+                                android:id="@+id/AircraftDesignationValueView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="right"
+                                android:paddingRight="5dp"
+                                android:text="@string/no_value"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+                        </TableRow -->              
+              
+              
+                        <TableRow android:background="@drawable/itembox" >
+
+                            <TextView
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:padding="2dp"
+                                android:text="@string/latitude_title"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+
+                            <TextView
+                                android:id="@+id/AircraftLatitudeValueView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="end"
+                                android:paddingEnd="5dp"
+                                android:text="@string/no_value"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+                        </TableRow>
+
+                        <TableRow android:background="@drawable/itembox" >
+
+                            <TextView
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:padding="2dp"
+                                android:text="@string/longitude_title"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+
+                            <TextView
+                                android:id="@+id/AircraftLongitudeValueView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="end"
+                                android:paddingEnd="5dp"
+                                android:text="@string/no_value"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+                        </TableRow>
+              
+              
+
+                        <TableRow android:background="@drawable/itembox" >
+
+                            <TextView
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:padding="2dp"
+                                android:text="@string/altitude_title"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+
+                            <TextView
+                                android:id="@+id/AircraftAltitudeValueView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="end"
+                                android:paddingEnd="5dp"
+                                android:text="@string/no_value"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+                        </TableRow>
+
+                        <TableRow android:background="@drawable/itembox" >
+
+                            <TextView
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:padding="2dp"
+                                android:text="@string/heading_title"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+
+                            <TextView
+                                android:id="@+id/AircraftHeadingValueView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="end"
+                                android:paddingEnd="5dp"
+                                android:text="@string/no_value"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+                        </TableRow>
+
+                        <TableRow android:background="@drawable/itembox" >
+
+                            <TextView
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:padding="2dp"
+                                android:text="@string/pitch_title"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+
+                            <TextView
+                                android:id="@+id/AircraftPitchValueView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="end"
+                                android:paddingEnd="5dp"
+                                android:text="@string/no_value"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+                        </TableRow>
+
+                    </TableLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/groupbox"
+                    android:orientation="vertical" >
+
+                    <TextView
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_horizontal|start"
+                        android:minWidth="96dp"
+                        android:text="@string/target_title"
+                        android:textColor="#000000"
+                        android:typeface="sans" />
+
+                    <TableLayout
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:stretchColumns="1" >
+
+                        <TableRow android:background="@drawable/itembox" >
+
+                            <TextView
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:padding="2dp"
+                                android:text="@string/latitude_title"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+
+                            <TextView
+                                android:id="@+id/TargetLatitudeValueView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="end"
+                                android:paddingEnd="5dp"
+                                android:text="@string/no_value"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+                        </TableRow>
+
+                        <TableRow android:background="@drawable/itembox" >
+
+                            <TextView
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:padding="2dp"
+                                android:text="@string/longitude_title"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+
+                            <TextView
+                                android:id="@+id/TargetLongitudeValueView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="end"
+                                android:paddingEnd="5dp"
+                                android:text="@string/no_value"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+                        </TableRow>
+
+                        <TableRow android:background="@drawable/itembox" >
+
+                            <TextView
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:padding="2dp"
+                                android:text="@string/range_title"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+
+                            <TextView
+                                android:id="@+id/TargetRangeValueView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="end"
+                                android:paddingEnd="5dp"
+                                android:text="@string/no_value"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+                        </TableRow>
+
+                        <TableRow android:background="@drawable/itembox" >
+
+                            <TextView
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:padding="2dp"
+                                android:text="@string/coord_sys_title"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+
+                            <TextView
+                                android:id="@+id/TargetCoordSysValueView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="end"
+                                android:paddingEnd="5dp"
+                                android:text="@string/no_value"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+                        </TableRow>
+
+                        <!-- TableRow android:background="@drawable/itembox" >
+
+                            <TextView
+                                android:id="@+id/TargetMapDatumLabelView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="left"
+                                android:padding="2dp"
+                                android:text="@string/map_datum_title"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+
+                            <TextView
+                                android:id="@+id/TargetMapDatumValueView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="right"
+                                android:paddingRight="5dp"
+                                android:text="@string/no_value"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+                        </TableRow -->
+                    </TableLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/groupbox"
+                    android:orientation="vertical" >
+
+                    <TextView
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_horizontal|start"
+                        android:minWidth="96dp"
+                        android:text="@string/sensor_title"
+                        android:textColor="#000000"
+                        android:typeface="sans" />
+
+                    <TableLayout
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:stretchColumns="1" >
+
+                        <TableRow android:background="@drawable/itembox" >
+
+                            <TextView
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:padding="2dp"
+                                android:text="@string/device_title"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+
+                            <TextView
+                                android:id="@+id/SensorDeviceValueView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="end"
+                                android:paddingEnd="5dp"
+                                android:text="@string/no_value"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+                        </TableRow>
+
+                        <TableRow android:background="@drawable/itembox" >
+
+                            <TextView
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:paddingEnd="5dp"
+                                android:text="@string/hfov_title"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+
+                            <TextView
+                                android:id="@+id/SensorHFOVValueView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="end"
+                                android:paddingEnd="5dp"
+                                android:text="@string/no_value"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+                        </TableRow>
+
+                        <TableRow android:background="@drawable/itembox" >
+
+                            <TextView
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:padding="2dp"
+                                android:text="@string/vfov_title"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+
+                            <TextView
+                                android:id="@+id/SensorVFOVValueView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="end"
+                                android:paddingEnd="5dp"
+                                android:text="@string/no_value"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+                        </TableRow>
+
+                        <TableRow android:background="@drawable/itembox" >
+
+                            <TextView
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="start"
+                                android:padding="2dp"
+                                android:text="@string/roll_title"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+
+                            <TextView
+                                android:id="@+id/SensorRollValueView"
+                                android:layout_width="fill_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="end"
+                                android:paddingEnd="5dp"
+                                android:text="@string/no_value"
+                                android:textColor="#000000"
+                                android:textSize="12sp"
+                                android:typeface="sans" />
+                        </TableRow>
+                    </TableLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+    </SlidingDrawer>
+</RelativeLayout>

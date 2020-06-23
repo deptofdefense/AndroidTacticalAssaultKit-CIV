@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:paddingEnd="2dp"
+              android:paddingStart="2dp">
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:layout_width="43dp"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:textColor="@color/heading_yellow"
+                android:text="@string/name"
+                android:textSize="10sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <com.atakmap.android.gui.EditText
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/nameEditText"
+                        android:layout_weight="1"
+                        android:maxLines="1"
+                        android:textSize="@dimen/draper_title_font"
+                        android:contentDescription="@string/name"
+                    android:inputType="textNoSuggestions" />
+                <ImageButton
+                    android:layout_width="@dimen/dropdown_bottom_bar_height"
+                    android:layout_height="@dimen/dropdown_bottom_bar_height"
+                    android:id="@+id/colorButton"
+                    style="@android:style/Widget.Holo.Button"
+                    android:src="@drawable/color_rectangle"
+                    android:padding="6dp"/>
+            </LinearLayout>
+
+
+        </LinearLayout>
+
+
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="@dimen/auto_margin"
+            android:fadeScrollbars="false" >
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical" >
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" >
+                    <TextView
+                        android:layout_width="43dp"
+                        android:layout_height="fill_parent"
+                        android:textColor="@color/heading_yellow"
+                        android:text="@string/center"
+                        android:textSize="@dimen/draper_font"
+                        android:gravity="center|center_vertical" />
+
+
+                <LinearLayout
+                    android:id="@+id/centerPointButton"
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="fill_parent"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="@dimen/auto_margin"
+                    style="@style/darkButton">
+
+                    <ImageView
+                        android:id="@+id/centerPointIcon"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="@dimen/auto_margin"/>
+                    <TextView
+                        android:id="@+id/centerPointLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:clickable="false"
+                        android:focusable="false"
+                        android:textColor="#FFF"
+                        android:textSize="@dimen/draper_title_font"/>
+                </LinearLayout>
+             </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" >
+                <TextView
+                    android:layout_width="43dp"
+                    android:layout_height="fill_parent"
+                    android:textColor="@color/heading_yellow"
+                    android:text="@string/edge"
+                    android:textSize="@dimen/draper_font"
+                    android:gravity="center|center_vertical" />
+
+                <LinearLayout
+                    android:id="@+id/radiusPointButton"
+                    android:orientation="horizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="fill_parent"
+                    android:gravity="center_vertical"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="@dimen/auto_margin"
+                    style="@style/darkButton" >
+                    <ImageView
+                        android:id="@+id/radiusPointIcon"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_marginEnd="@dimen/auto_margin"/>
+                    <TextView
+                        android:id="@+id/radiusPointLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:clickable="false"
+                        android:focusable="false"
+                        android:textColor="#FFF"
+                        android:textSize="@dimen/draper_title_font"/>
+                </LinearLayout>
+             </LinearLayout>
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical">
+                    <TextView
+                        android:layout_width="43dp"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/heading_yellow"
+                        android:text="@string/radius"
+                        android:gravity="center_vertical|center"
+                        android:textSize="@dimen/draper_font" />
+                    <Button
+                        android:ems="4"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/radiusButton"
+                        android:padding="6dp" style="@style/darkButton"
+                        android:maxLines="1"
+                        android:text=""
+                        android:textColor="@color/white"
+                        android:gravity="center_vertical"
+                        android:textSize="@dimen/draper_verylarge_font"/>
+
+                    <Spinner
+                        android:id="@+id/radiusUnitsSpinner" 
+                        style="@style/darkButton"
+                        android:maxLines="1"
+                        android:layout_width="wrap_content"
+                        android:layout_height="fill_parent"
+                        android:textColor="@color/white"
+                        android:gravity="start"/>
+
+            </LinearLayout>
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="43dp"
+                        android:layout_height="wrap_content"
+                        android:paddingStart="5dp"
+                        android:textColor="@color/heading_yellow"
+                        android:text="@string/rings"
+                        android:textSize="@dimen/draper_font"
+                        android:gravity="center_vertical|center" />
+
+                    <Button
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/_minus_"
+                        android:id="@+id/ringsMinusButton"
+                        android:layout_gravity="center"
+                        android:textColor="@color/white"
+                        style="@style/darkButton"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp"
+
+                        android:textSize="22sp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/ringsText"
+                        android:maxLines="1"
+                        android:textColor="@color/white"
+                        android:text="@string/_01"
+                        android:textSize="@dimen/draper_verylarge_font"
+                        android:padding="@dimen/auto_margin" />
+                    <Button
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/_plus__"
+                        android:id="@+id/ringsPlusButton"
+                        android:textColor="@color/white"
+                        style="@style/darkButton"
+                        android:paddingStart="10dp"
+                        android:paddingEnd="10dp"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp"
+                        android:layout_gravity="center"
+                        android:textSize="22sp"/>
+            </LinearLayout>
+
+            <com.atakmap.android.hashtags.view.RemarksLayout
+                android:id="@+id/remarksLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:id="@+id/buttonLayout"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:orientation="horizontal"
+        android:baselineAligned="false">
+        <ImageButton
+            android:id="@+id/sendButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:src="@drawable/send_square"
+            android:textSize="13sp"/>
+        <Button
+            android:id="@+id/editButton"
+            android:text="@string/edit"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:textSize="@dimen/draper_title_font"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/editLayout"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:orientation="horizontal"
+        android:baselineAligned="false"
+        android:visibility="gone">
+        <Button
+            android:id="@+id/undoButton"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:text="@string/undo"
+            android:textSize="@dimen/draper_title_font"/>
+        <Button
+            android:id="@+id/endButton"
+            android:text="@string/end_editing"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:textSize="@dimen/draper_title_font"/>
+    </LinearLayout>
+
+</LinearLayout>
+

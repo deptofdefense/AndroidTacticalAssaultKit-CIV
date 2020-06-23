@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="end">
+
+    <TextView
+        android:id="@+id/missionpackage_overlay_manifestitem_size"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:text="@string/_534_kb"/>
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+        <ImageButton
+            android:id="@+id/save"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            style="@style/darkButton"
+            android:padding="4dp"
+            android:src="@drawable/ic_menu_save2"
+            android:visibility="gone"/>
+        <ImageButton
+            android:id="@+id/send"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            style="@style/darkButton"
+            android:padding="2dp"
+            android:src="@drawable/send_square"/>
+        <ImageButton
+            android:id="@+id/delete"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="@dimen/auto_space_big"
+            style="@style/darkButton"
+            android:src="@drawable/ic_menu_delete"/>
+    </LinearLayout>
+
+</LinearLayout>

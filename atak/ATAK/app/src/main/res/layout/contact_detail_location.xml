@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="fill_parent">
+
+    <TextView
+        android:id="@+id/contactInfoCoordTitle"
+        android:layout_height="wrap_content"
+        android:layout_width="fill_parent"
+        android:text="@string/coordinate"
+        android:textColor="@color/heading_yellow"
+        android:textSize="@dimen/draper_font" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:id="@+id/contactInfoCoordInfo"
+        android:layout_height="wrap_content"
+        android:layout_width="match_parent">
+
+        <Button
+            android:id="@+id/contactInfoCoordButton"
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent"
+            android:layout_weight="0.90"
+            style="@style/darkButton"
+            android:paddingEnd="5dp"
+            android:paddingStart="5dp"
+            android:text="@string/point_dropper_text2"
+            android:gravity="start|center_vertical"
+            android:textSize="@dimen/draper_title_font"
+            android:lines="2" />
+
+        <ImageButton
+            android:id="@+id/contactInfoPanButton"
+            android:layout_width="33dp"
+            android:layout_height="33dp"
+            android:layout_weight="0.10"
+            android:layout_marginEnd="4dp"
+            android:background="#0000"
+            android:layout_gravity="center_vertical"
+            android:scaleType="centerInside"
+            android:src="@drawable/panto_button" />
+        
+    </LinearLayout>
+
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:fadeScrollbars="false"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/contactInfoRangeBearingTitle"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:layout_gravity="start"
+                android:textColor="@color/heading_yellow"
+                android:text="@string/point_dropper_text3"
+                android:layout_marginEnd="10dp"
+                android:textSize="@dimen/draper_font"
+                 />
+
+            <LinearLayout
+                android:id="@+id/contactInfoRangeBearingView"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/contactInfoRangeBearingNoGps"
+                    android:layout_height="wrap_content"
+                    android:layout_width="fill_parent"
+                    android:visibility="gone"
+                    android:gravity="center"
+                    android:textColor="#FFF"
+                    android:text="@string/point_dropper_text4"
+                    android:textSize="@dimen/draper_title_font" />
+
+                <include layout="@layout/rab_layout" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/cotAddressLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_marginEnd="5dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:gravity="start"
+                    android:text="@string/address"
+                    android:textColor="@color/heading_yellow"
+                    android:textSize="@dimen/draper_font"/>
+
+                <TextView
+                    android:id="@+id/cotInfoAddress"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:gravity="start"
+                    android:layout_marginStart="5dp"
+                    android:text=""
+                    android:textColor="#FFF"
+                    android:textSize="@dimen/draper_large_font"/>
+
+                <TextView
+                    android:id="@+id/cotInfoAddressInfo"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:gravity="start"
+                    android:layout_marginStart="5dp"
+                    android:text=""
+                    android:textColor="#FFF"
+                    android:textSize="@dimen/draper_small_font"/>
+
+            </LinearLayout>
+
+
+
+            <TextView
+                android:id="@+id/auxText"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start"
+                android:text="@string/additional_information"
+                android:textColor="@color/heading_yellow"
+                android:textSize="@dimen/draper_font"/>
+
+            <LinearLayout
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent"
+                android:orientation="horizontal"
+                android:paddingStart="5dp" >
+
+                <TextView
+                    android:id="@+id/contactInfoSpeedText"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:gravity="start"
+                    android:text="@string/speed_title"
+                    android:ems="4"
+                    android:textColor="#FFF"
+                    android:textSize="@dimen/draper_large_font"
+                     />
+
+                <TextView
+                    android:id="@+id/contactInfoCourseText"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:gravity="start"
+                    android:ems="4"
+                    android:text="@string/course"
+                    android:textColor="#FFF"
+                    android:textSize="@dimen/draper_large_font"
+                     />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/contactInfoTLETitle"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start"
+                android:text="@string/location_error"
+                android:textColor="@color/heading_yellow"
+                android:textSize="@dimen/draper_font" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_marginStart="5dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/contactInfoTLE_CAT"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:gravity="center_vertical"
+                        android:text=""
+                        android:textColor="#FFF"
+                        android:textSize="@dimen/draper_large_font" />
+                    <TextView
+                        android:id="@+id/cotInfoDerivedFrom"
+                        android:layout_height="wrap_content"
+                        android:layout_width="match_parent"
+                        android:layout_marginEnd="4dp"
+                        android:gravity="start"
+                        android:textColor="#FFF"
+                        android:textSize="@dimen/draper_font"/>
+                </LinearLayout>
+
+                <!-- Extended info for plugins and tools -->
+                <LinearLayout
+                    android:id="@+id/extendedCotInfo"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="6dp"
+                    android:orientation="vertical"/>
+
+
+
+        </LinearLayout>
+
+    </ScrollView>
+</LinearLayout>

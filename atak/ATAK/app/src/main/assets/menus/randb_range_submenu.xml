@@ -1,0 +1,10 @@
+<menu buttonRadius='65' buttonSpan='32.73' buttonWidth='60' buttonBg='bgs/button.xml'>
+    <button icon='icons/ftmi.png'
+            prefValue='0'/>
+
+    <button icon='icons/kmm.png'
+            prefValue='1'/>
+
+    <button icon='icons/nm.png'
+            prefValue='2'/>
+</menu>

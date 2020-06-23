@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ImageButton
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/delete"
+    android:layout_width="40dp"
+    android:layout_height="40dp"
+    android:padding="@dimen/auto_margin"
+    android:src="@drawable/ic_menu_delete"
+    style="@style/darkButton"/>

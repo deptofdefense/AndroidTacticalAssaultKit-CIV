@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="@string/app_mgmt_settings">
+        <CheckBoxPreference
+            android:title="@string/preferences_text15"
+            android:key="atakPluginScanningOnStartup"
+            android:summary="@string/preferences_text16"
+            android:defaultValue="true" />
+        <CheckBoxPreference
+            android:title="@string/app_mgmt_auto_sync"
+            android:key="repoStartupSync"
+            android:summary="@string/app_mgmt_auto_sync_details"
+            android:defaultValue="false" />
+        <CheckBoxPreference
+            android:title="@string/app_mgmt_update_server"
+            android:key="appMgmtEnableUpdateServer"
+            android:summary="@string/app_mgmt_update_server_details"
+            android:defaultValue="false" />
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:title="@string/app_mgmt_update_server_hint"
+            android:key="atakUpdateServerUrl"
+            android:summary="@string/app_mgmt_edit_remote_repo"
+            android:defaultValue="@string/atakUpdateServerUrlDefault"
+            android:inputType="textUri"
+            android:dependency="appMgmtEnableUpdateServer"/>
+        <Preference
+            android:title="@string/app_mgmt_update_server_truststore"
+            android:key="updateServerCaLocation"
+            android:summary="@string/app_mgmt_update_server_truststore_details"
+            android:defaultValue="(built-in)"
+            android:dependency="appMgmtEnableUpdateServer"/>
+        <com.atakmap.android.gui.EncryptedPanEditTextPreference
+            android:title="@string/app_mgmt_update_server_truststore_password"
+            android:key="updateServerCaPassword"
+            android:inputType="textPassword"
+            android:dependency="appMgmtEnableUpdateServer"/>
+        <Preference
+            android:title="@string/app_mgmt_update_local_repo_title"
+            android:key="atakUpdateLocalPath"
+            android:summary="@string/app_mgmt_update_local_repo_mesage"
+            android:defaultValue="@string/atakUpdateServerUrlDefault"
+            android:inputType="textUri"/>
+    </PreferenceCategory>
+</PreferenceScreen>

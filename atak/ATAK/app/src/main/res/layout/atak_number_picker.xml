@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<com.atakmap.android.gui.PlusMinusWidget xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal" 
+    android:id="@+id/plus_minus_field"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="2dp">
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+    <Button
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        style="@style/darkButton" 
+        android:ems="10"
+        android:id="@+id/minus_button"
+        android:layout_weight="0"
+        android:maxLines="1"
+        android:text="@string/minus"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <EditText
+        android:layout_width="128dp"
+        android:inputType="number"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text=""
+        android:id="@+id/value_text_view"
+        android:layout_weight="1"
+        android:maxLines="1"
+        android:layout_gravity="center"
+        android:gravity="center" />
+
+    <Button
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        style="@style/darkButton" 
+        android:ems="10"
+        android:id="@+id/plus_button"
+        android:layout_weight="0"
+        android:maxLines="1"
+        android:text="@string/plus"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+   </LinearLayout>
+</com.atakmap.android.gui.PlusMinusWidget>

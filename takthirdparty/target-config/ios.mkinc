@@ -1,0 +1,98 @@
+ifeq ($(and $(ios_arch),$(ios_platform),$(ios_openssl_confargs)),)
+    $(error Set ios_arch and ios_platform before including this file)
+endif
+
+ios_version_min:=8.0
+ios_sdk_path:=$(shell xcrun -find -sdk $(ios_platform) --show-sdk-path)
+ios_sdk_platform_path:=$(shell xcrun -find -sdk $(ios_platform) --show-sdk-platform-path)
+ios_sdk_version=$(shell xcrun -find -sdk $(ios_platform) --show-sdk-version)
+
+# Tools
+CC:=$(shell xcrun -find -sdk $(ios_platform) gcc)
+CXX:=$(shell xcrun -find -sdk $(ios_platform) g++)
+CPP:=$(shell xcrun -find -sdk $(ios_platform) cpp)
+# Needed for KDU
+AR:=$(shell xcrun -find -sdk $(ios_platform) ar)
+RANLIB:=$(shell xcrun -find -sdk $(ios_platform) ranlib)
+
+# These are needed in the environment by the openssl configure script
+export CROSS_TOP := $(ios_sdk_platform_path)/Developer
+export CROSS_SDK := iPhoneOS$(ios_sdk_version).sdk
+
+# "host" argument to autoconf-based configure scripts
+# Leave blank for autodetect/non-cross compile
+# CONFIGURE_TARGET=--host blah-blah-blah
+CONFIGURE_TARGET=--host $(if $(findstring arm64,$(ios_arch)),arm,$(ios_arch))-apple-darwin
+CONFIGURE_debug=--enable-debug
+
+# Library naming
+LIB_PREFIX=lib
+LIB_SHAREDSUFFIX=dylib
+LIB_STATICSUFFIX=a
+
+# Object file naming
+OBJ_SUFFIX=o
+
+# Flags - common to all packages
+CFLAGS_generic:=-arch $(ios_arch) -pipe -isysroot $(ios_sdk_path) -miphoneos-version-min=$(ios_version_min)
+CFLAGS_release:=-Os
+CFLAGS_debug:=-gdwarf-2 -O0
+CXXFLAGS_generic:=$(CFLAGS_generic)
+CXXFLAGS_release:=$(CFLAGS_release)
+CXXFLAGS_debug:=$(CFLAGS_debug)
+LDFLAGS_generic:=-arch $(ios_arch) -isysroot $(ios_sdk_path) -miphoneos-version-min=$(ios_version_min)
+
+# Per-package flags
+kdu_PLATFORM=ios-gcc
+pri_PLATFORM=dummyxxxsetme
+
+openssl_CFLAGS_generic=
+openssl_CFLAGS_release=
+openssl_CFLAGS_debug=
+openssl_CXXFLAGS_generic=
+openssl_CXXFLAGS_release=
+openssl_CXXFLAGS_debug=
+# XXX - for sim use no-asm darwin64-x86_64-cc
+# https://raw.githubusercontent.com/x2on/OpenSSL-for-iPhone/master/build-libssl.sh
+openssl_CONFIG=CC="$(CC) $(CFLAGS_generic)" ./Configure $(ios_openssl_confargs) no-shared --prefix=$(OUTDIR_CYGSAFE)
+openssl_LDFLAGS=
+
+
+# Target-specific patches for libkml, space separated
+libkml_EXTRAPATCHES=
+# Target-specific patches to be applied before libkml's autoconf is run
+libkml_EXTRAPATCHES_PREAC=
+
+# Mr. SID binary bundle file path
+# binbundle has mrsid/ top level directory with include/ under that
+mrsid_BINBUNDLE=$(DISTFILESDIR)/mrsid/ios.tar.gz
+# Path within expansion of above where the Mr.Sid library can be found
+# omit mrsid/ initial directory
+mrsid_BINLIBPATH=lib
+
+gdal_CFLAGS_generic=-DKDU_MAJOR_VERSION=6
+gdal_CXXFLAGS_generic=$(gdal_CFLAGS_generic)
+gdal_NO_JAVA=true
+
+# This is needed for ios. Basically this ends up forcing the
+# dylib runtime linking headers to state to a binary which it links
+# against that "at runtime, you can find me at the same place you found
+# the executable that links to me".
+gdal_BUILD_MAKEOVERRIDES=INST_LIB=@executable_path
+
+curl_LIBS=
+proj_LIBS=
+libkml_LIBS=
+gdal_LIBS=
+libspatialite_LIBS=-lc++
+
+#commoncommo_BUILDSTATIC=yes
+commoncommo_BUILDOBJC=yes
+
+libxml2_installtargets=install
+
+# No iconv on ios.  We're using something much newer than on iOS itself.
+# When libs link this new version, the runtime link fails because 
+# iOS dyld is loading OS version before ours and it knows the version
+# to be too old. Skip ours and we use the OS version instead.
+libiconv_skip_build=yes

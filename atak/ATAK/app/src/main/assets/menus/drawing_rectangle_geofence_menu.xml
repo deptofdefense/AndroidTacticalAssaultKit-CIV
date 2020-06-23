@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<menu
+    buttonBg='bgs/button.xml'
+    buttonRadius='65'
+    buttonSpan='51.429'
+    buttonWidth='90' >
+
+    <button
+        angle='-90'
+        icon='icons/delete.png'
+        onClick='actions/shape_delete.xml' />
+
+    <button
+        icon='icons/details.png'
+        onClick='actions/showdetails_shape.xml' />
+
+    <button
+        disabled='!{${editable}}'
+        icon='icons/edit2.png'
+        onClick='actions/edit_shape.xml' />
+    
+    <button
+        icon='icons/geofence.png'
+        selected='${geofence_tracking_menustate}'
+        onClick='actions/geofence.xml' />
+        
+    <button
+        icon='icons/pairing_line.png'
+        onClick='actions/pairingline.xml'
+        selected='${pairingline_on}' />
+        
+    <button
+        icon='icons/label.png'
+        onClick='actions/label_toggle.xml'
+        selected='${labels_on}' />
+
+    <button
+        disabled='true'
+        icon='icons/move.png'
+        submenu='menus/mgrs_entry_vertex_submenu.xml'
+        disableSwap='true'
+        disableIconSwap='true'
+        onClick='actions/move_editable_polyline_vertex.xml' />
+
+</menu>

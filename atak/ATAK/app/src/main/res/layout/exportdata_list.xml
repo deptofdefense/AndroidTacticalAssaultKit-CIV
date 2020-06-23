@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+   
+    <CheckBox 
+        android:id="@+id/exportDataByGeoRegionChk"       
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/details_text33"
+        android:visibility="gone"/>
+    <ListView
+        android:id="@+id/exportDataList"
+        android:fadeScrollbars="false"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" />
+     
+</LinearLayout>

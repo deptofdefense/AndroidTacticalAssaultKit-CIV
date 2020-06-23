@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:imeOptions="flagNoExtractUi"
+    android:orientation="vertical"
+    android:padding="@dimen/auto_space_big">
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="@dimen/auto_space_big">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:text="@string/details_text10"/>
+
+        <ImageButton
+            android:id="@+id/grid_color"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="4dp"
+            style="?android:attr/buttonStyleSmall"
+            android:src="@drawable/color_rectangle"/>
+
+        <SeekBar
+            android:id="@+id/grid_alpha"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:layout_gravity="center_vertical"
+            android:max="255"
+            android:progress="255"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="@dimen/auto_space_big">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/spacing"
+            android:id="@+id/textView2"/>
+
+        <EditText
+            android:id="@+id/grid_spacing"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:gravity="end"
+            android:text="@string/_0"
+            android:inputType="numberDecimal"
+            android:maxLines="2"/>
+
+        <Button
+            android:id="@+id/grid_units"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            style="?android:attr/buttonStyleSmall"
+            android:text="@string/feet"/>
+
+    </LinearLayout>
+
+    <CheckBox
+        android:id="@+id/grid_show_labels"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/show_labels"/>
+
+</LinearLayout>

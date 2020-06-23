@@ -1,0 +1,741 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.gui.CoordDialogView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="1000dp"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="20dp"
+    android:background="#333"
+    android:minHeight="100dp"
+    android:minWidth="1000dp"
+    android:orientation="vertical">
+
+    <TabHost
+        android:id="@+id/coordDialogTabHost"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:orientation="vertical">
+
+            <TabWidget
+                android:id="@android:id/tabs"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:background="@null"
+                android:layout_marginStart="-2dp"
+                android:layout_marginEnd="-2dp"
+                android:tabStripEnabled="true"/>
+
+            <FrameLayout
+                android:id="@android:id/tabcontent"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:id="@+id/coordDialogMGRSView"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingTop="2dp"
+                    android:weightSum="15">
+
+
+                    <EditText
+                        android:id="@+id/coordDialogMGRSGridText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="3"
+                        android:ellipsize="end"
+                        android:gravity="center"
+                        android:hint="@string/zone"
+                        android:inputType="textCapCharacters|textNoSuggestions"
+                        android:imeOptions="flagForceAscii|flagNoExtractUi"
+                        android:maxLength="3"
+                        android:nextFocusDown="@+id/coordDialogMGRSSquareText"/>
+
+                    <EditText
+                        android:id="@+id/coordDialogMGRSSquareText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2.5"
+                        android:ellipsize="end"
+                        android:gravity="center"
+                        android:hint="@string/square"
+                        android:inputType="textCapCharacters|textNoSuggestions"
+                        android:imeOptions="flagForceAscii|flagNoExtractUi"
+                        android:maxLength="2"
+                        android:nextFocusDown="@+id/coordDialogMGRSEastingText"/>
+
+                    <EditText
+                        android:id="@+id/coordDialogMGRSEastingText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="4.75"
+                        android:ellipsize="end"
+                        android:gravity="center"
+                        android:hint="@string/easting"
+                        android:inputType="number"
+                        android:maxLength="5"
+                        android:nextFocusDown="@+id/coordDialogMGRSNorthingText"/>
+
+                    <EditText
+                        android:id="@+id/coordDialogMGRSNorthingText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="4.75"
+                        android:ellipsize="end"
+                        android:gravity="center"
+                        android:hint="@string/northing"
+                        android:inputType="number"
+                        android:maxLength="5"
+                        android:nextFocusDown="@+id/coordDialogElevationText"/>
+
+                    <EditText
+                        android:id="@+id/rawMGRS"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="15"
+                        android:maxLength="15"
+                        android:ellipsize="end"
+                        android:gravity="center"
+                        android:hint="@string/mgrs"
+                        android:visibility="gone"
+                        android:nextFocusDown="@+id/coordDialogElevationText"
+                        android:inputType="textNoSuggestions" />
+
+        
+
+
+                    <ImageView 
+                        android:id="@+id/swap"
+                        android:gravity="center"
+                        android:src="@drawable/swap"
+                        android:paddingTop="2dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                       
+
+                </LinearLayout>
+
+
+                <LinearLayout 
+                       android:orientation="horizontal" 
+                       android:id="@+id/coordDialogUTMView" 
+                       android:paddingTop="2.0dip" 
+                       android:layout_width="fill_parent" 
+                       android:layout_height="wrap_content" 
+                       android:weightSum="16.0">
+                    <EditText 
+                       android:ellipsize="end" 
+                       android:gravity="center" 
+                       android:id="@+id/coordDialogUTMGridText" 
+                       android:nextFocusDown="@+id/coordDialogUTMEastingText" 
+                       android:layout_width="0.0dip" 
+                       android:layout_height="wrap_content" 
+                       android:hint="@string/zone"
+                       android:maxLength="3"
+                       android:layout_weight="3.0" 
+                       android:inputType="textCapCharacters" />
+                    <EditText android:ellipsize="end" 
+                       android:gravity="center" 
+                       android:id="@+id/coordDialogUTMEastingText" 
+                       android:nextFocusDown="@+id/coordDialogUTMNorthingText" 
+                       android:layout_width="0.0dip" 
+                       android:layout_height="wrap_content" 
+                       android:hint="@string/easting"
+                       android:maxLength="6" 
+                       android:layout_weight="6.5" 
+                       android:inputType="number" />
+                    <EditText android:ellipsize="end" 
+                       android:gravity="center" 
+                       android:id="@+id/coordDialogUTMNorthingText" 
+                       android:nextFocusDown="@+id/coordDialogElevationText" 
+                       android:layout_width="0.0dip" 
+                       android:layout_height="wrap_content" 
+                       android:hint="@string/northing"
+                       android:maxLength="7" 
+                       android:layout_weight="6.5" 
+                       android:inputType="number" />
+                    <EditText android:ellipsize="end" 
+                       android:gravity="center" 
+                       android:id="@+id/rawUTM" 
+                       android:visibility="gone" 
+                       android:nextFocusDown="@+id/coordDialogElevationText" 
+                       android:layout_width="0.0dip" 
+                       android:layout_height="wrap_content" 
+                       android:hint="@string/utm"
+                       android:layout_weight="16.0"
+                        android:inputType="textNoSuggestions" />
+                    <ImageView android:gravity="center" 
+                       android:id="@+id/swapUTM" 
+                       android:paddingTop="2.0dip" 
+                       android:layout_width="wrap_content" 
+                       android:layout_height="wrap_content" 
+                       android:src="@drawable/swap" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/coordDialogDDView"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="2dp">
+
+                    <LinearLayout
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="10">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="3"
+                            android:gravity="center"
+                            android:text="@string/latitude"
+                            android:textSize="@dimen/draper_title_font"/>
+
+                        <EditText
+                            android:id="@+id/coordDialogDDLatText"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="6.5"
+                            android:inputType="numberDecimal|numberSigned"
+                            android:nextFocusDown="@+id/coordDialogDDLonText"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.5"
+                            android:text="@string/u00b0"
+                            android:textSize="@dimen/draper_title_font"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="10">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="3"
+                            android:gravity="center"
+                            android:text="@string/longitude"
+                            android:textSize="@dimen/draper_title_font"/>
+
+                        <EditText
+                            android:id="@+id/coordDialogDDLonText"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="6.5"
+                            android:inputType="numberDecimal|numberSigned"
+                            android:nextFocusDown="@+id/coordDialogElevationText"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.5"
+                            android:text="@string/u00b0"
+                            android:textSize="@dimen/draper_title_font"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/coordDialogDMView"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="2dp">
+
+                    <LinearLayout
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="10">
+
+                        <TextView
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="3"
+                            android:gravity="center"
+                            android:text="@string/latitude"
+                            android:textSize="@dimen/draper_title_font"/>
+
+                        <EditText
+                            android:id="@+id/coordDialogDMLatDegText"
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="2"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:inputType="numberSigned"
+                            android:nextFocusDown="@+id/coordDialogDMLatMinText"/>
+
+                        <TextView
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.25"
+                            android:text="@string/u00b0"
+                            android:textSize="@dimen/draper_title_font"/>
+
+                        <EditText
+                            android:id="@+id/coordDialogDMLatMinText"
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="4.5"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:inputType="numberDecimal"
+                            android:nextFocusDown="@+id/coordDialogDMLonDegText"/>
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.25"
+                            android:text="@string/apos"
+                            android:textSize="@dimen/draper_title_font"/>
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="10">
+
+                        <TextView
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="3"
+                            android:gravity="center"
+                            android:text="@string/longitude"
+                            android:textSize="@dimen/draper_title_font"/>
+
+                        <EditText
+                            android:id="@+id/coordDialogDMLonDegText"
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="2"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:inputType="numberSigned"
+                            android:nextFocusDown="@+id/coordDialogDMLonMinText"/>
+
+                        <TextView
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.25"
+                            android:text="@string/u00b0"
+                            android:textSize="@dimen/draper_title_font"/>
+
+                        <EditText
+                            android:id="@+id/coordDialogDMLonMinText"
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="4.5"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:inputType="numberDecimal"
+                            android:nextFocusDown="@+id/coordDialogElevationText"/>
+
+                        <TextView
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.25"
+                            android:text="@string/apos"
+                            android:textSize="@dimen/draper_title_font"/>
+
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/coordDialogDMSView"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="2dp">
+
+                    <LinearLayout
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="10">
+
+                        <TextView
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="3"
+                            android:gravity="center"
+                            android:text="@string/latitude"
+                            android:textSize="@dimen/draper_title_font"/>
+
+                        <EditText
+                            android:id="@+id/coordDialogDMSLatDegText"
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="2"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:inputType="numberSigned"
+                            android:nextFocusDown="@+id/coordDialogDMSLatMinText"/>
+
+                        <TextView
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.25"
+                            android:text="@string/u00b0"
+                            android:textSize="@dimen/draper_title_font"/>
+
+                        <EditText
+                            android:id="@+id/coordDialogDMSLatMinText"
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.5"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:inputType="number"
+                            android:nextFocusDown="@+id/coordDialogDMSLatSecText"/>
+
+                        <TextView
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.25"
+                            android:text="@string/apos"
+                            android:textSize="@dimen/draper_title_font"/>
+
+                        <EditText
+                            android:id="@+id/coordDialogDMSLatSecText"
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="2.5"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:inputType="numberDecimal"
+                            android:nextFocusDown="@+id/coordDialogDMSLonDegText"/>
+
+                        <TextView
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.5"
+                            android:text="@string/apos_apos"
+                            android:textSize="@dimen/draper_title_font"/>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="10">
+
+                        <TextView
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="3"
+                            android:gravity="center"
+                            android:text="@string/longitude"
+                            android:textSize="@dimen/draper_title_font"/>
+
+                        <EditText
+                            android:id="@+id/coordDialogDMSLonDegText"
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="2"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:inputType="numberSigned"
+                            android:nextFocusDown="@+id/coordDialogDMSLonMinText"/>
+
+                        <TextView
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.25"
+                            android:text="@string/u00b0"
+                            android:textSize="@dimen/draper_title_font"/>
+
+                        <EditText
+                            android:id="@+id/coordDialogDMSLonMinText"
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1.5"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:inputType="number"
+                            android:nextFocusDown="@+id/coordDialogDMSLonSecText"/>
+
+                        <TextView
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.25"
+                            android:text="@string/apos"
+                            android:textSize="@dimen/draper_title_font"/>
+
+                        <EditText
+                            android:id="@+id/coordDialogDMSLonSecText"
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="2.5"
+                            android:ellipsize="end"
+                            android:gravity="center"
+                            android:inputType="numberDecimal"
+                            android:nextFocusDown="@+id/coordDialogElevationText"/>
+
+                        <TextView
+                            android:layout_width="0dip"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="0.5"
+                            android:text="@string/apos_apos"
+                            android:textSize="@dimen/draper_title_font"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/addyToLatLongTab"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="2dp">
+
+                    <LinearLayout
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:weightSum="10">
+
+                        <EditText
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:id="@+id/addressET"
+                            android:imeOptions="flagNoExtractUi"
+                            android:minLines="3"
+                            android:lines="3"
+                            android:maxLines="3"
+                            android:layout_weight="8"
+                            android:hint="@string/type_in_the_address"
+                            android:inputType="textNoSuggestions"
+                            android:completionThreshold="1"
+                            android:nextFocusDown="@+id/focusWidget"
+                            android:nextFocusForward="@+id/focusWidget"
+
+                            />
+
+
+                        <Button
+                            android:id="@+id/button_convert_address"
+                            style="@style/darkButton"
+                            android:layout_width="0dip"
+                            android:layout_height="32dp"
+                            android:layout_weight="2"
+                            android:padding="6dp"
+                            android:layout_gravity="center_vertical"
+                            android:gravity="center"
+                            android:textSize="@dimen/draper_font"
+                            android:lines="1"
+                            android:text="@string/find"
+                            android:nextFocusDown="@+id/focusWidget"
+                            android:nextFocusForward="@+id/focusWidget"
+                            />
+                    </LinearLayout>
+                </LinearLayout>
+
+
+            </FrameLayout>
+        </LinearLayout>
+    </TabHost>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/coordDialogElevationView"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <LinearLayout android:id="@+id/focusWidget"
+                          android:focusable="true"
+                          android:focusableInTouchMode="true"
+                          android:layout_width="0px"
+                          android:layout_height="0px">
+                <requestFocus/>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/auto_margin"
+                android:layout_marginEnd="@dimen/auto_margin"
+                android:text="@string/elevation"
+                android:textSize="@dimen/draper_title_font"/>
+
+            <EditText
+                android:id="@+id/coordDialogElevationText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/auto_margin"
+                android:minEms="5"
+                android:inputType="numberSigned|numberDecimal"
+                android:textColorHint="@android:color/transparent"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="@dimen/auto_margin"
+                android:text="@string/ft_msl5"/>
+
+            <Button
+                android:id="@+id/coordDialogDtedButton"
+                style="@style/darkButton"
+                android:padding="@dimen/auto_margin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:lines="2"
+                android:layout_gravity="center_vertical"
+                android:gravity="center"
+                android:text="@string/pull_from_dted"
+                android:textSize="@dimen/draper_font"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="1">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight=".50"
+                android:orientation="vertical">
+                <RadioGroup
+                    android:id="@+id/affiliationGroup"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:visibility="invisible">
+
+                    <com.atakmap.android.gui.ImageRadioButton
+                        android:id="@+id/coordDialogDropNothing"
+                        android:padding="4dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:button="@drawable/nopoint"
+                        android:checked="true"
+                        style="@style/darkButton"/>
+
+                    <com.atakmap.android.gui.ImageRadioButton
+                        android:id="@+id/coordDialogDropGeneric"
+                        android:padding="4dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:button="@drawable/generic"
+                        style="@style/darkButton"/>
+
+                    <com.atakmap.android.gui.ImageRadioButton
+                        android:id="@+id/coordDialogDropUnknown"
+                        android:padding="4dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:button="@drawable/unknown"
+                        style="@style/darkButton"/>
+
+                    <com.atakmap.android.gui.ImageRadioButton
+                        android:id="@+id/coordDialogDropNeutral"
+                        android:padding="4dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:button="@drawable/neutral"
+                        style="@style/darkButton"/>
+
+                    <com.atakmap.android.gui.ImageRadioButton
+                        android:id="@+id/coordDialogDropHostile"
+                        android:padding="4dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:button="@drawable/hostile"
+                        style="@style/darkButton"/>
+
+                    <com.atakmap.android.gui.ImageRadioButton
+                        android:id="@+id/coordDialogDropFriendly"
+                        android:padding="4dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:button="@drawable/friendly"
+                        style="@style/darkButton"/>
+                </RadioGroup>
+                <CheckBox
+                    android:id="@+id/coordDialogAddress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:text="@string/add_address"
+                    android:visibility="gone"
+                    android:gravity="center"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight=".50"
+                android:orientation="horizontal"
+                android:weightSum="1">
+
+                <Button
+                    android:id="@+id/coordDialogMGRSGridButton"
+                    style="@style/darkButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:padding="6dp"
+                    android:layout_weight="0.5"
+                    android:layout_gravity="center_vertical"
+                    android:textSize="@dimen/draper_font"
+                    android:text="@string/auto_fill"/>
+
+                <Button
+                    android:id="@+id/clearButton"
+                    style="@style/darkButton"
+                    android:padding="6dp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:layout_weight="0.4"
+                    android:layout_gravity="center_vertical"
+                    android:gravity="center"
+                    android:textSize="@dimen/draper_font"
+                    android:lines="1"
+                    android:text="@string/clear"/>
+                <ImageButton
+                    android:id="@+id/copyButton"
+                    style="@style/darkButton"
+                    android:paddingTop="6dp"
+                    android:paddingBottom="6dp"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_weight="0.1"
+                    android:layout_gravity="center_vertical"
+                    android:gravity="center"
+                    android:textSize="@dimen/draper_font"
+                    android:lines="1"
+                    android:src="@drawable/ic_menu_copy"/>
+            </LinearLayout>
+        </LinearLayout>
+        <TextView
+            android:id="@+id/license"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/auto_space"
+            android:gravity="center"
+            android:textSize="@dimen/draper_font"
+            android:lines="1"
+            android:text="@string/c_geocoder"
+            android:visibility="gone"/>
+    </LinearLayout>
+
+</com.atakmap.android.gui.CoordDialogView>

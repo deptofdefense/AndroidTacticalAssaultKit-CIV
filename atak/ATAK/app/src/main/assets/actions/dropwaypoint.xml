@@ -1,0 +1,19 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.PLACE</action>
+        <extras>
+            <string key='point'>@{targetPoint}</string>
+            <string key='type'>b-m-p-w</string>
+            <string key='how'>h-g-i-g-o</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

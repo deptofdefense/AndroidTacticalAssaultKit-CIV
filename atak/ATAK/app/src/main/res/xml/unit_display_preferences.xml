@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory
+        android:title="@string/coordinatePreferences">
+        <ListPreference
+            android:key="coord_display_pref"
+            android:title="@string/preferences_text342"
+            android:entries="@array/coord_display_label"
+            android:entryValues="@array/coord_display_value"
+            android:defaultValue="@string/coord_display_pref_default"/>
+        <ListPreference
+            android:key="alt_display_pref"
+            android:title="@string/preferences_text343"
+            android:entries="@array/alt_display_label"
+            android:entryValues="@array/alt_display_value"
+            android:defaultValue="@string/msl"/>
+        <ListPreference
+            android:key="alt_unit_pref"
+            android:title="@string/preferences_text344"
+            android:entries="@array/elevation_units_label"
+            android:entryValues="@array/elevation_units_value"
+            android:defaultValue="0"/>
+        <CheckBoxPreference
+            android:title="@string/preferences_text345"
+            android:summary="@string/preferences_text346"
+            android:key="alt_display_agl"
+            android:defaultValue="false" />
+        <ListPreference
+            android:key="speed_unit_pref"
+            android:title="@string/preferences_text347"
+            android:entries="@array/speed_units_label"
+            android:entryValues="@array/speed_units_value"
+            android:defaultValue="0"/>
+        <ListPreference
+            android:entries="@array/rb_distance_label"
+            android:entryValues="@array/rb_distance_value"
+            android:key="rab_dist_slant_range"
+            android:title="@string/preferences_text348"
+            android:summary="@string/preferences_text349"
+            android:defaultValue="clamped"/>
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/units">
+        <ListPreference 
+            android:key="rab_brg_units_pref" 
+            android:title="@string/preferences_text350"
+            android:entries="@array/brg_units_label" 
+            android:entryValues="@array/brg_units_value"
+            android:defaultValue="0"/>
+        <ListPreference
+            android:entries="@array/rng_units_label" 
+            android:entryValues="@array/rng_units_value" 
+            android:key="rab_rng_units_pref" 
+            android:title="@string/preferences_text351"
+            android:defaultValue="1"/>
+
+        <ListPreference 
+            android:entries="@array/north_refs_label" 
+            android:entryValues="@array/north_refs_value" 
+            android:key="rab_north_ref_pref" 
+            android:title="@string/preferences_text352"
+            android:defaultValue="1"/>
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/preferences_text353">
+        <com.atakmap.android.gui.PanEditTextPreference
+                    android:dialogTitle="@string/preferences_text354"
+                    android:inputType="number"
+                    android:key="rng_feet_display_pref"
+                    android:summary="@string/preferences_text355"
+                    android:defaultValue="5280"
+                    android:title="@string/preferences_text356" />
+        <com.atakmap.android.gui.PanEditTextPreference
+                    android:dialogTitle="@string/preferences_text357"
+                    android:inputType="number"
+                    android:key="rng_meters_display_pref"
+                    android:defaultValue="2000"
+                    android:summary="@string/preferences_text358"
+                    android:title="@string/preferences_text359" />
+    </PreferenceCategory>
+    <PreferenceCategory 
+        android:title="@string/visualPreferences">
+        <ListPreference
+            android:entries="@array/colors_label"
+            android:entryValues="@array/colors_value"
+            android:key="rab_color_pref"
+            android:title="@string/preferences_rab_color"
+            android:summary="@string/preferences_rab_color_desc"
+            android:defaultValue="red"/>
+        <com.atakmap.android.gui.PanCheckBoxPreference
+            android:title="@string/preference_rab_show_eta_title"
+            android:summary="@string/preference_rab_show_eta_summary"
+            android:key="rab_preference_show_eta"
+            android:defaultValue="false"/>
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="@string/domain_preferences">
+        <ListPreference
+            android:entryValues="@array/domain_values"
+            android:entries="@array/domain_labels"
+            android:defaultValue="@string/ground"
+            android:summary="@string/domain_preferences_set_summary"
+            android:title="@string/domain_preferences_set"
+            android:key="set_domain_pref"/>
+    </PreferenceCategory>
+</PreferenceScreen>

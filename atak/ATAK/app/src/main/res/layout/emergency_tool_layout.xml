@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" 
+    android:layout_width="fill_parent" 
+    android:layout_height="fill_parent">
+
+<LinearLayout 
+   android:layout_width="match_parent"
+   android:layout_height="wrap_content"
+   android:orientation="vertical" >
+
+   <TextView
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       android:text="@string/my_emergency_beacons"
+       android:textSize="@dimen/SectionHeaderSize"
+       android:textStyle="bold"
+       android:typeface="normal" />
+   
+   <TextView
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       android:text="@string/set_both_switches_to_initiate_emergency_beacon"
+       android:typeface="normal" />
+   
+   <LinearLayout 
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       android:orientation="vertical">
+        <Switch
+            android:id="@+id/emergencySwitch1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:textOn="@string/locked" />
+
+        <Switch
+            android:id="@+id/emergencySwitch2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:textOn="@string/locked" />
+   </LinearLayout>
+    <Space
+        android:layout_width="1dp"
+        android:layout_height="15dp"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/select_the_type_of_emergency"
+            android:typeface="normal" />
+        <Spinner
+            android:id="@+id/repeaterChoicesSpinner"
+            android:padding="6dp" style="@style/darkButton"
+            android:textColor="@color/white"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:entries="@array/repeater_choices" />
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/send_sms_for_emergency"/>
+
+        <CheckBox
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/sendSMSCB"/>
+    </LinearLayout>
+<!--
+   <Space
+      android:layout_width="1dp"
+      android:layout_height="30dp"/>
+   
+   <TextView
+       android:id="@+id/otherBeaconsText"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:text="All Emergency Beacons"
+       android:textSize="@dimen/SectionHeaderSize"
+       android:textStyle="bold" />
+
+    <LinearLayout 
+   android:layout_width="match_parent"
+   android:layout_height="match_parent"
+   android:orientation="vertical"
+   android:id="@+id/otherBeaconsList" />
+    
+    <Space
+      android:layout_width="1dp"
+      android:layout_height="30dp"/>
+   -->
+    
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+                android:padding="10dp">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/zmist_background"
+        android:padding="5dp">
+
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/zmist_title"
+                android:layout_width="fill_parent"
+                android:layout_centerVertical="true"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFF"
+                android:text="@string/zmist1"/>
+
+            <ImageButton
+                android:id="@+id/zmist_remove"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:layout_alignParentEnd="true"
+                style="@style/darkButton"
+                android:scaleType="fitCenter"
+                android:padding="4dp"
+                android:src="@drawable/ic_menu_delete_32" />
+        </RelativeLayout>
+
+        <View
+            android:minHeight="1dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="2dp"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginStart="2dp"
+            android:layout_marginEnd="2dp"
+            android:background="@android:color/darker_gray" >
+        </View>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal">
+
+
+            <TextView
+                android:id="@+id/txtLineOne"
+                android:layout_width="20dp"
+                android:layout_height="wrap_content"
+                android:text="@string/z"
+                android:textColor="@color/heading_yellow"
+                android:textSize="@dimen/fontSize"
+                />
+
+            <include
+                layout="@layout/atak_selection_flat"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:layout_marginLeft="2dp"
+                android:id="@+id/zmist_Z" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="20dp"
+                android:layout_height="wrap_content"
+                android:text="@string/m_mist"
+                android:textColor="@color/heading_yellow"
+                android:textSize="@dimen/fontSize"
+                />
+
+            <include
+                layout="@layout/atak_selection_flat"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:layout_marginLeft="2dp"
+                android:id="@+id/zmist_M" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="20dp"
+                android:layout_height="wrap_content"
+                android:text="@string/i_mist"
+                android:textColor="@color/heading_yellow"
+                android:textSize="@dimen/fontSize"
+                />
+
+            <include
+                layout="@layout/atak_selection_flat"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:layout_marginLeft="2dp"
+                android:id="@+id/zmist_I" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="20dp"
+                android:layout_height="wrap_content"
+                android:text="@string/s_mist"
+                android:textColor="@color/heading_yellow"
+                android:textSize="@dimen/fontSize"
+                />
+
+            <include
+                layout="@layout/atak_selection_flat"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:layout_marginLeft="2dp"
+                android:id="@+id/zmist_S" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/txtLineFive"
+                android:layout_width="20dp"
+                android:layout_height="wrap_content"
+                android:text="@string/t_mist"
+                android:textColor="@color/heading_yellow"
+                android:textSize="@dimen/fontSize"
+                />
+
+            <include
+                layout="@layout/atak_selection_flat"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:layout_marginLeft="2dp"
+                android:id="@+id/zmist_T" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

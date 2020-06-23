@@ -1,0 +1,9 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.callAction</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+            <string key='phoneNumber'>${phoneNumber}</string>
+        </extras>
+    </broadcast>
+</set>

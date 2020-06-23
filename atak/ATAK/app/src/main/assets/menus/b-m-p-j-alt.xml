@@ -1,0 +1,22 @@
+<menu buttonRadius='65' buttonSpan='90' buttonWidth='90' buttonBg='bgs/button.xml'>
+        
+    <button angle='-90'
+        disabled='!{${removable}}'
+        icon='icons/delete.png'
+        onClick='actions/remove.xml' />
+        
+    <button
+        disabled='!{${navigating}}'
+        icon='icons/go.png'
+        onClick='actions/jumpmaster_jump_to_alt.xml' />
+        
+    <button
+        icon='icons/landing_pattern.png'
+        selected='${dipLandingPattern}'
+        onClick='actions/jumpmaster_landing_pattern.xml' />
+        
+    <button
+        icon='icons/compass_rose.png'
+        selected='${dipBearingCircle}'
+        onClick='actions/jumpmaster_dip_circle.xml' />
+</menu>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" 
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/callsign"
+            android:gravity="end"/>
+        <EditText
+            android:id="@+id/tadilj_name_entry"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:layout_weight="2"
+            android:inputType="textNoSuggestions" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/track_number"
+            android:layout_weight="1"
+            android:gravity="end"/>
+        <EditText
+            android:id="@+id/tadilj_uid_entry"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:layout_weight="2"
+            android:inputType="textNoSuggestions" />
+    </LinearLayout>
+
+    <CheckBox
+        android:id="@+id/tadilj_default_conn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textSize="@dimen/fontSize"
+        android:text="@string/default_multicast_unicast"
+        android:checked="false"/>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/chat"
+            android:layout_weight="1"
+            android:gravity="end"/>
+        <EditText
+            android:id="@+id/tadilj_chat_ip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.4"
+            android:gravity="end"
+            android:maxLines="1"
+            android:inputType="textNoSuggestions" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/colon"/>
+        <EditText
+            android:id="@+id/tadilj_chat_port"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight=".6"
+            android:inputType="numberSigned"
+            android:maxLines="1"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/point"
+            android:layout_weight="1"
+            android:gravity="end"/>
+        <EditText
+            android:id="@+id/tadilj_point_ip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.4"
+            android:gravity="end"
+            android:maxLines="1"
+            android:inputType="textNoSuggestions" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/colon"/>
+        <EditText
+            android:id="@+id/tadilj_point_port"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight=".6"
+            android:inputType="numberSigned"
+            android:maxLines="1"/>
+    </LinearLayout>
+</LinearLayout>

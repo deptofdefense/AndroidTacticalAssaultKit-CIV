@@ -1,0 +1,4 @@
+<menu buttonRadius='65' buttonSpan='40' buttonWidth='60' buttonBg='bgs/button.xml'>
+    <button icon='icons/clear_tracks.png'
+            onClick='actions/clear_self_tracks.xml'/>
+</menu>

@@ -1,0 +1,28 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="75dp"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="5dp"
+    android:orientation="vertical"
+    android:padding="5dp"
+    android:gravity="center_horizontal"
+    android:background="@drawable/all_tools_grid"
+    android:descendantFocusability="blocksDescendants">
+ 
+    <ImageView
+        android:id="@+id/allTools_childImage"
+        android:layout_width="32dp"
+        android:layout_height="32dp" />
+ 
+    <TextView
+        android:id="@+id/allTools_childLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:textColor="@color/white"
+        android:textSize="12sp"
+        android:maxLines="1" >
+    </TextView>
+ 
+</LinearLayout>

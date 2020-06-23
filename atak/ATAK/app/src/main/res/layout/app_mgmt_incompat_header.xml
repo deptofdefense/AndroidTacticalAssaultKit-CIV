@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content">
+
+    <TextView
+        android:text="@string/app_mgmt_filter_update_available"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"/>
+
+    <TextView
+        android:text="@string/plugin"
+        android:layout_height="wrap_content"
+        android:id="@+id/app_mgmt_row_incompat_title"
+        android:layout_weight="1"
+        android:layout_gravity="center_vertical"
+        android:layout_width="0dp"/>
+</LinearLayout>

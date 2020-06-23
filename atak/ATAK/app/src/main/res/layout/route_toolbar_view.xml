@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<com.atakmap.android.tools.ActionBarView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="0dp"
+    android:layout_marginBottom="0dp"
+    android:padding="4dp"
+    android:clickable="true"
+    android:focusable="true">
+        
+        <Button
+            android:id="@+id/endButton"
+            style="@style/dflt_toolbar_btn_tool"
+            android:layout_width="wrap_content"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_height="@dimen/dropdown_bottom_bar_height"
+            android:text="@string/end"
+            android:background="@drawable/btn_gray"/>
+
+        <Button
+            android:id="@+id/drawButton"
+            style="@style/dflt_toolbar_btn_tool"
+            android:layout_width="wrap_content"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_height="@dimen/dropdown_bottom_bar_height"
+            android:background="@drawable/btn_gray"
+            android:text="@string/draw"
+            android:visibility="gone"/>
+        
+        <Button
+            android:id="@+id/undoButton"
+            style="@style/dflt_toolbar_btn_tool"
+            android:layout_width="wrap_content"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_height="@dimen/dropdown_bottom_bar_height"
+            android:background="@drawable/btn_gray"
+            android:text="@string/undo"
+            android:enabled="false"/>
+        
+</com.atakmap.android.tools.ActionBarView>
+    

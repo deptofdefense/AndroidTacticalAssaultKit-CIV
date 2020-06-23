@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="wrap_content"
+    android:layout_height="wrap_content" >
+
+    <RelativeLayout
+        android:id="@+id/favRL2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <EditText
+            android:id="@+id/editTop1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxEms="3"
+            android:minEms="3"
+            android:nextFocusDown="@+id/editTop2"
+            android:inputType="numberDecimal"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/degSymbT"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/editTop1"
+            android:text="@string/degree"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:width="10dp"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/editTop2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/degSymbT"
+            android:maxEms="2"
+            android:minEms="2"
+            android:nextFocusDown="@+id/editTop3"
+            android:inputType="numberDecimal"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/minSymbT"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/editTop2"
+            android:text="@string/apos"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:width="10dp"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/editTop3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/minSymbT"
+            android:inputType="numberDecimal"
+            android:maxEms="2"
+            android:minEms="2"
+            android:nextFocusDown="@+id/editBot1"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/secSymbT"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/editTop3"
+            android:text="@string/quote"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:width="10dp"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/editBot1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/editTop1"
+            android:maxEms="3"
+            android:minEms="3"
+            android:nextFocusDown="@+id/editBot2"
+            android:inputType="numberDecimal"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/degSymbB"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/editTop1"
+            android:layout_toEndOf="@id/editBot1"
+            android:text="@string/degree"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:width="10dp"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/editBot2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/editTop1"
+            android:layout_toEndOf="@id/degSymbB"
+            android:maxEms="2"
+            android:minEms="2"
+            android:nextFocusDown="@+id/editBot3"
+            android:inputType="numberDecimal"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/minSymbB"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/editTop1"
+            android:layout_toEndOf="@id/editBot2"
+            android:text="@string/apos"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:width="10dp"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/editBot3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/editTop1"
+            android:layout_toEndOf="@id/minSymbB"
+            android:maxEms="2"
+            android:minEms="2"
+            android:inputType="numberDecimal"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/secSymbB"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/editTop1"
+            android:layout_toEndOf="@id/editBot3"
+            android:text="@string/quote"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:width="10dp"
+            android:visibility="gone" />
+
+        <RadioGroup
+            android:id="@+id/favNorthSouth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/secSymbT"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <RadioButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:ems="3"
+                android:text="@string/n" />
+
+            <RadioButton
+                android:id="@+id/radioTop2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/s" />
+        </RadioGroup>
+
+        <RadioGroup
+            android:id="@+id/favEastWest"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/favNorthSouth"
+            android:layout_toEndOf="@+id/secSymbB"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <RadioButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:ems="3"
+                android:text="@string/e" />
+
+            <RadioButton
+                android:id="@+id/radioBot2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/w" />
+        </RadioGroup>
+
+        <EditText
+            android:id="@+id/favEditDecTop"
+            android:layout_width="360dip"
+            android:layout_height="wrap_content"
+            android:hint="@string/details_text14"
+            android:inputType="numberSigned|numberDecimal"
+            android:nextFocusDown="@+id/favEditDecBot"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/favEditDecBot"
+            android:layout_width="360dip"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/favEditDecTop"
+            android:hint="@string/details_text15"
+            android:inputType="numberSigned|numberDecimal"
+            android:visibility="gone" />
+
+        <EditText
+            android:id="@+id/favMGRS1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:maxEms="3"
+            android:minEms="3"
+            android:nextFocusDown="@+id/favMGRS2"
+             />
+
+        <EditText
+            android:id="@+id/favMGRS2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:layout_toEndOf="@id/favMGRS1"
+            android:maxEms="2"
+            android:minEms="2"
+            android:nextFocusDown="@+id/favMGRS3"
+             />
+
+        <EditText
+            android:id="@+id/favMGRS3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/favMGRS2"
+            android:inputType="number"
+            android:maxEms="5"
+            android:minEms="5"
+            android:nextFocusDown="@+id/favMGRS4"
+             />
+
+        <EditText
+            android:id="@+id/favMGRS4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/favMGRS3"
+            android:inputType="number"
+            android:maxEms="5"
+            android:minEms="5"
+             />
+    </RelativeLayout>
+
+    <RadioGroup
+        android:id="@+id/favCon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/favRL2"
+        android:orientation="horizontal"
+        android:checkedButton="@+id/favMGRSBoss" >
+
+        <RadioButton
+            android:id="@+id/favDMSBoss"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/d_m_s" />
+
+        <RadioButton
+            android:id="@+id/favDDBoss"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/decimal_degrees" />
+
+        <RadioButton
+            android:id="@+id/favMGRSBoss"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/mgrs" />
+    </RadioGroup>
+
+    <LinearLayout
+        android:id="@+id/lll"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/favCon"
+        android:orientation="horizontal"
+        android:weightSum="1" >
+
+        <RadioGroup
+            android:id="@+id/favTypes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:checkedButton="@+id/radioNeutral" >
+
+            <RadioButton
+                android:id="@+id/radioFriendly"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:button="@drawable/friendly_radio"
+                android:paddingEnd="20dp" />
+
+            <RadioButton
+                android:id="@+id/radioHostile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:button="@drawable/hostile_radio"
+                android:paddingEnd="20dp" />
+
+            <RadioButton
+                android:id="@+id/radioUnknown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:button="@drawable/unknown_radio"
+                android:paddingEnd="20dp" />
+
+            <RadioButton
+                android:id="@id/radioNeutral"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:button="@drawable/neutral_radio"
+                android:paddingEnd="20dp" />
+        </RadioGroup>
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/goToButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/favCon"
+        android:layout_toEndOf="@id/lll"
+        android:text="@string/go_to"
+        android:enabled="false" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/favCon"
+        android:layout_toEndOf="@id/goToButton"
+        android:text="@string/center"
+        android:enabled="false" />
+
+</RelativeLayout>

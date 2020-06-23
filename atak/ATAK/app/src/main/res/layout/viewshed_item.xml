@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="4dp" >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:baselineAligned="false"
+        android:orientation="horizontal" >
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:paddingRight="0dp" >
+
+            <TextView
+                android:id="@+id/viewshed_label"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginLeft="6dp"
+                android:layout_marginRight="6dp"
+                android:background="@drawable/small_dark_btn"
+                android:gravity="center_vertical|center_horizontal"
+                android:maxLines="2"
+                android:minLines="2"
+                android:paddingBottom="4dp"
+                android:paddingLeft="3dp"
+                android:paddingTop="4dp"
+                android:text=""
+                android:textColor="#e4e4e4"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/detailsBtn"
+            style="@style/darkButton"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_marginLeft="-3dp"
+            android:layout_marginRight="2dp"
+            android:gravity="right|center_vertical"
+            android:padding="6dp"
+            android:scaleType="fitXY"
+            android:src="@drawable/info" />
+
+        <CheckBox
+            android:id="@+id/selectCB"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="1dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="4dp"
+        android:background="#FFFFFFFF" >
+    </RelativeLayout>
+
+</LinearLayout>

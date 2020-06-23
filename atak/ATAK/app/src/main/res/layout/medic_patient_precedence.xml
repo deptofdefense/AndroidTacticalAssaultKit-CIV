@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:custom="http://schemas.android.com/apk/res-auto"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fadeScrollbars="false"
+            android:layout_alignParentTop="true"
+            android:layout_marginStart="3dp"
+            android:layout_marginEnd="3dp">
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/med_patient_precedence_rl" >
+
+       <TextView
+            android:id="@+id/med_urgent_text"
+            android:padding="5dp"
+            android:layout_marginTop="7dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/urgent_choice" />
+
+       <include
+            layout="@layout/atak_number_picker"
+            android:id="@+id/med_urgent_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            custom:minValue="0"
+            custom:startValue="0"
+            android:layout_marginStart="55dp"
+            android:layout_toEndOf="@id/med_urgent_text"
+           tools:ignore="MissingPrefix"
+            />
+
+        <TextView
+            android:id="@+id/med_priority_text"
+            android:layout_width="wrap_content"
+            android:padding="5dp"
+            android:layout_marginTop="20dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/med_urgent_text"
+            android:layout_alignStart="@id/med_urgent_text"
+            android:text="@string/priority_choice" />
+       <include
+            layout="@layout/atak_number_picker"
+            android:id="@+id/med_priority_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            custom:minValue="0"
+            custom:startValue="0"
+            android:layout_alignBottom="@id/med_priority_text"
+            android:layout_alignStart="@id/med_urgent_edit"
+           tools:ignore="MissingPrefix"
+            />
+        
+        <TextView
+            android:id="@+id/med_routine_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/med_priority_text"
+            android:layout_marginTop="20dp"
+            android:layout_alignStart="@id/med_priority_text"
+            android:text="@string/routine_choice"
+            android:padding="5dp"/>
+       <include
+            layout="@layout/atak_number_picker"
+            android:id="@+id/med_routine_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            custom:minValue="0"
+            custom:startValue="0"
+            android:layout_alignBottom="@id/med_routine_text"
+            android:layout_alignStart="@id/med_priority_edit"
+            tools:ignore="MissingPrefix"
+
+            />
+
+    </RelativeLayout>
+</ScrollView>

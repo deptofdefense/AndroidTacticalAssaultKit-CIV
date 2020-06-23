@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory 
+        android:title="@string/notificationPreferences">
+        <CheckBoxPreference 
+            android:summary="@string/preferences_text27"
+            android:title="@string/preferences_text28"
+            android:key="enableToast" 
+            android:defaultValue="true"/>
+        <CheckBoxPreference 
+            android:summary="@string/preferences_text29"
+            android:title="Vibrate phone" 
+            android:key="vibratePhone" 
+            android:dependency="enableToast"
+            android:defaultValue="false"/>
+        <CheckBoxPreference 
+            android:summary="@string/preferences_text30"
+            android:title="@string/preferences_text31"
+            android:key="audibleNotify" 
+            android:dependency="enableToast"
+            android:defaultValue="false"/>
+    </PreferenceCategory>
+    <PreferenceCategory 
+        android:title="@string/historyPreferences">
+        <Preference
+            android:summary="@string/preferences_text32"
+            android:title="@string/preferences_text33"
+            android:key="exportHistory" />
+        <Preference 
+            android:summary="@string/preferences_text34"
+            android:title="@string/preferences_text35"
+            android:key="clearHistory" 
+           />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="@string/geochatPreferences">
+        <com.atakmap.android.gui.PanEditTextPreference 
+            android:title="@string/preferences_text38"
+            android:key="chatAddress" 
+            android:summary="@string/preferences_text39"
+            android:defaultValue="224.10.10.1" />
+        <com.atakmap.android.gui.PanEditTextPreference 
+            android:title="@string/preferences_text40"
+            android:key="chatPort" 
+            android:summary="@string/preferences_text41"
+            android:inputType="number"
+            android:defaultValue="17012" />
+    </PreferenceCategory>
+</PreferenceScreen>

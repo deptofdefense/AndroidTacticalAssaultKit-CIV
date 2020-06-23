@@ -1,0 +1,7 @@
+<PersistedActionMenu baseline="true" hideable="false" iconPath="ic_menu_quit"  title="actionbar_quit">
+  <ClickData actionType="click">
+     <broadcast>
+        <action>com.atakmap.app.QUITAPP</action>
+     </broadcast>
+  </ClickData>
+</PersistedActionMenu>

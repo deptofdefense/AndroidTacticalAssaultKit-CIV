@@ -1,0 +1,11 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.maps.jumpmaster.JUMP_TO_ALT</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

@@ -1,0 +1,17 @@
+Version numbers of open-source packages downloaded from the Internet:
+
+AChartEngine.tgz:	r554
+ACRA.tgz:		4.6.1
+CommonsNet.tgz:		3.3
+DataDroid.tgz:		(1.0)
+HttpMime.tgz:		4.2.5
+Jackcess.tgz:		1.2.14.3
+JSONsimple.tgz:		1.1
+OpenNMEA.tgz:		0.1
+SimpleXML.tgz:		2.7.1
+Spatialite.tgz:		contains these 5 packages:
+	proj:		4.9.1
+	geos:		3.4.2
+	sqlite:		3080500
+	libspatialite:	4.2.0
+	javasqlite:	20140624

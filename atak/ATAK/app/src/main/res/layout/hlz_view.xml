@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.medline.HLZView xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/hlz_field"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" >
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_marginBottom="10dp"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/hlz_brief"
+                android:gravity="start|center_vertical"
+                android:layout_centerVertical="true"
+                android:textColor="@color/heading_yellow"
+                android:textSize="16sp"
+                />
+
+            <ImageButton
+                android:id="@+id/arrowClosed"
+                android:layout_width="wrap_content"
+                android:layout_height="20dp"
+                android:src="@drawable/arrowright"
+                style="@style/darkButton"
+                android:background="#0000"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="10dp"/>
+
+            <ImageButton
+                android:id="@+id/arrowOpen"
+                android:layout_width="20dp"
+                android:layout_height="wrap_content"
+                android:src="@drawable/arrowopen"
+                style="@style/darkButton"
+                android:background="#0000"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="10dp"
+                android:visibility="gone"/>
+
+        </RelativeLayout>
+
+        <LinearLayout
+            android:id="@+id/hlz_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/zoneProt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/lz_loc"
+                    android:textColor="@color/heading_yellow"
+                    android:textSize="@dimen/fontSize"
+                    />
+
+                <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="2dp"
+                        android:id="@+id/zoneProtCoord">
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?android:attr/textAppearanceSmall"
+                        android:text=""
+                        android:id="@+id/selector_title"
+                        android:textColor="@color/heading_yellow"
+                        android:maxLines="1"
+                        android:layout_weight="1" />
+
+                    <LinearLayout
+                        android:orientation="horizontal"
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="32dp"
+                        android:gravity="center"
+                        android:paddingStart="1dp"
+                        android:background="@drawable/border">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:textAppearance="?android:attr/textAppearanceSmall"
+                            android:lineSpacingExtra="3dp"
+                            android:text=""
+                            android:textColor="#FFFFFF"
+                            android:id="@+id/selector_item"
+                            android:layout_weight="1" />
+
+                        <ImageView
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:id="@+id/selector_icon"
+                            android:src="@drawable/blue_triangle"
+                            android:layout_gravity="bottom|end"
+                            android:layout_marginEnd="2dp"
+                            android:layout_marginBottom="4dp" />
+                    </LinearLayout>
+                    </LinearLayout>
+
+                    <ImageButton
+                        android:id="@+id/btnCustomZone"
+                        android:paddingTop="5dp"
+                        android:paddingBottom="5dp"
+                        android:paddingStart="-15dp"
+                        android:paddingEnd="-15dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="@dimen/nineline_line_height"
+                        android:background="#0000"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/survey_entry_button"/>
+
+                    <ImageButton
+                        android:id="@+id/btnDeleteZone"
+                        android:layout_width="30dp"
+                        android:layout_height="@dimen/nineline_line_height"
+                        android:background="#0000"
+                        android:src="@drawable/ic_menu_delete"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:layout_marginTop="5dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5dp"
+                    android:text="@string/marked"
+                    android:textColor="@color/heading_yellow"
+                    android:textSize="@dimen/fontSize"
+                    />
+
+                <include
+                    layout="@layout/atak_selection_flat"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp"
+                    android:layout_marginLeft="2dp"
+                    android:layout_marginRight="2dp"
+                    android:id="@+id/markedByTxt" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:layout_marginTop="5dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5dp"
+                    android:text="@string/obstacles"
+                    android:textColor="@color/heading_yellow"
+                    android:textSize="@dimen/fontSize"
+                    />
+
+                <include
+                    layout="@layout/atak_selection_flat"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp"
+                    android:layout_marginLeft="2dp"
+                    android:layout_marginRight="2dp"
+                    android:id="@+id/obstaclesTxt" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:layout_marginTop="5dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5dp"
+                    android:text="@string/winds_from"
+                    android:textColor="@color/heading_yellow"
+                    android:textSize="@dimen/fontSize"
+                    />
+
+                <include
+                    layout="@layout/atak_selection_flat"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp"
+                    android:layout_marginLeft="2dp"
+                    android:layout_marginRight="2dp"
+                    android:id="@+id/windsTxt" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:layout_marginTop="5dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5dp"
+                    android:text="@string/friendlies"
+                    android:textColor="@color/heading_yellow"
+                    android:textSize="@dimen/fontSize"
+                    />
+
+                <include
+                    layout="@layout/atak_selection_flat"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp"
+                    android:layout_marginLeft="2dp"
+                    android:layout_marginRight="2dp"
+                    android:id="@+id/friendliesTxt" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:layout_marginTop="5dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5dp"
+                    android:text="@string/enemy"
+                    android:textColor="@color/heading_yellow"
+                    android:textSize="@dimen/fontSize"
+                    />
+
+                <include
+                    layout="@layout/atak_selection_flat"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp"
+                    android:layout_marginLeft="2dp"
+                    android:layout_marginRight="2dp"
+                    android:id="@+id/enemyTxt" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:layout_marginTop="5dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5dp"
+                    android:text="@string/remarksz_with_colon"
+                    android:textColor="@color/heading_yellow"
+                    android:textSize="@dimen/fontSize"
+                    />
+
+                <include
+                    layout="@layout/atak_selection_flat"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp"
+                    android:layout_marginLeft="2dp"
+                    android:layout_marginRight="2dp"
+                    android:id="@+id/hlzRemarksTxt" />
+
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+</com.atakmap.android.medline.HLZView>

@@ -1,0 +1,17 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.TOGGLE_3D</action>
+        <extras>
+            <string key='toggle'>true</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

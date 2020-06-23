@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/auto_space_big"
+        android:orientation="horizontal"
+        android:background="#000">
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="@dimen/auto_space_big"
+            android:textColor="#FFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"/>
+        <Button
+            android:id="@+id/clear"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/auto_space_big"
+            android:layout_marginEnd="@dimen/auto_space_big"
+            android:text="@string/clear"
+            style="@style/darkButton"/>
+        <Button
+            android:id="@+id/done"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/auto_space_big"
+            android:text="@string/done"
+            style="@style/darkButton"/>
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/item_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="@dimen/auto_space_big"/>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#222">
+        <ImageButton
+            android:id="@+id/end_tool"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/close"
+            android:layout_alignParentEnd="true"
+            android:scaleType="fitCenter" />
+    </RelativeLayout>
+
+</LinearLayout>

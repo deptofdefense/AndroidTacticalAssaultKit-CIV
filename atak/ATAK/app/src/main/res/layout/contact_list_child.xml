@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="32dp"
+    android:paddingEnd="5dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal" >
+
+    <CheckBox
+        android:id="@+id/contact_list_child_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:focusable="false"
+        android:focusableInTouchMode="false"/>
+
+    <ImageView
+        android:id="@+id/contact_list_presence_icon"
+        android:layout_width="32dp"
+        android:layout_height="32dp"/>
+
+    <TextView
+        android:id="@+id/contact_list_contact_callsign"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical|end"
+        android:layout_weight="1"
+        android:gravity="center_vertical|end"
+        android:padding="3dip"
+        android:text="@string/contact_list_child_default_text"
+        android:singleLine="true"
+        android:ellipsize="middle"
+        android:textSize="@dimen/listview_row_font"/>
+
+    <ImageButton
+        android:id="@+id/contact_list_profile_btn"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:padding="4dp"
+        android:focusableInTouchMode="false"
+        android:focusable="false"
+        android:src="@drawable/ic_profile_white"
+        style="@style/darkButton"/>
+
+    <ImageButton
+        android:id="@+id/contact_list_defaultComms_btn"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:padding="4dp"
+        android:focusableInTouchMode="false"
+        android:focusable="false"
+        android:visibility="gone"
+        android:src="@drawable/email_icon"
+        style="@style/darkButton"/>
+
+    <LinearLayout
+        android:id="@+id/contact_list_extras_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+    </LinearLayout>
+
+</LinearLayout>

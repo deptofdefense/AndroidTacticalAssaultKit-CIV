@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_height="wrap_content"
+        android:layout_width="fill_parent"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0"
+            android:layout_gravity="center_vertical"
+            android:textColor="@color/heading_yellow"
+            android:text="@string/name"
+            android:textSize="@dimen/draper_font"/>
+
+        <EditText
+            android:id="@+id/sheetName"
+            android:layout_height="wrap_content"
+            android:layout_width="0dip"
+            android:layout_weight="1"
+            android:gravity="start"
+            android:inputType="text|textCapWords|textNoSuggestions"
+            android:textSize="@dimen/draper_title_font"
+            android:text=""
+            android:contentDescription=""/>
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/center_location"
+        android:textColor="@color/heading_yellow"
+        android:textSize="@dimen/draper_font"/>
+
+    <Button
+        android:id="@+id/sheetCenter"
+        style="@style/darkButton" android:padding="6dp"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:gravity="start|center_vertical"
+        android:minLines="2"
+        android:textSize="@dimen/draper_title_font"
+        android:text=""
+        android:textColor="#FFF" />
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="0dip"
+        android:layout_weight="1"
+        android:fadeScrollbars="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="@dimen/auto_space_big"
+                android:alignmentMode="alignMargins"
+                android:columnCount="4">
+
+                <!-- Area -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:layout_row="1"
+                    android:layout_column="0"
+                    android:layout_columnSpan="1"
+                    android:layout_rowSpan="2"
+                    android:textColor="@color/heading_yellow"
+                    android:text="@string/area"
+                    android:textSize="@dimen/draper_font"/>
+                <TextView
+                    android:id="@+id/sheetArea"
+                    android:layout_height="wrap_content"
+                    android:layout_width="0dip"
+                    android:layout_row="1"
+                    android:layout_column="1"
+                    android:layout_columnSpan="3"
+                    android:layout_rowSpan="1"
+                    android:layout_gravity="fill_horizontal"
+                    android:gravity="center"
+                    android:textColor="@color/white"
+                    android:text=""/>
+
+                <!-- Labels -->
+                <CheckBox
+                    android:id="@+id/sheetLabels"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_column="0"
+                    android:layout_columnSpan="4"
+                    android:layout_row="4"
+                    android:layout_rowSpan="1"
+                    android:checked="true"
+                    android:text="@string/show_labels" />
+
+                <!-- Color -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:layout_row="5"
+                    android:layout_column="0"
+                    android:layout_columnSpan="1"
+                    android:layout_rowSpan="1"
+                    android:text="@string/color"
+                    android:textColor="@color/heading_yellow"
+                    android:textSize="@dimen/draper_font"/>
+                <ImageButton
+                    android:id="@+id/sheetColor"
+                    android:layout_gravity="center_vertical"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    style="@style/darkButton"
+                    android:src="@drawable/color_rectangle"
+                    android:padding="@dimen/auto_margin"
+                    android:layout_row="5"
+                    android:layout_column="1"
+                    android:layout_columnSpan="1"
+                    android:layout_rowSpan="1" />
+
+                <!-- Alpha -->
+                <RelativeLayout
+                    android:layout_height="wrap_content"
+                    android:layout_width="0dip"
+                    android:layout_gravity="fill_horizontal"
+                    android:layout_marginEnd="@dimen/auto_margin"
+                    android:layout_row="5"
+                    android:layout_column="2"
+                    android:layout_columnSpan="2"
+                    android:layout_rowSpan="1">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/auto_margin2"
+                        android:layout_alignParentTop="true"
+                        android:layout_alignParentStart="true"
+                        android:text="@string/zero_percent"
+                        android:textColor="#FFF"
+                        android:textSize="@dimen/draper_small_font"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentTop="true"
+                        android:layout_centerHorizontal="true"
+                        android:text="@string/fifty_percent"
+                        android:textColor="#FFF"
+                        android:textSize="@dimen/draper_small_font"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/auto_margin"
+                        android:layout_alignParentTop="true"
+                        android:layout_alignParentEnd="true"
+                        android:text="@string/hundred_percent"
+                        android:textColor="#FFF"
+                        android:textSize="@dimen/draper_small_font"/>
+
+                    <SeekBar
+                        android:id="@+id/sheetAlpha"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/auto_margin2"
+                        android:max="255"
+                        android:progress="255" />
+                </RelativeLayout>
+
+                <!-- Line thickness -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_column="0"
+                    android:layout_columnSpan="1"
+                    android:layout_gravity="center_vertical"
+                    android:layout_row="7"
+                    android:layout_rowSpan="1"
+                    android:text="@string/line_thickness"
+                    android:textColor="@color/heading_yellow"
+                    android:textSize="@dimen/draper_font" />
+
+                <RelativeLayout
+                    android:layout_width="0dip"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/auto_margin"
+                    android:layout_column="2"
+                    android:layout_columnSpan="2"
+                    android:layout_gravity="fill_horizontal"
+                    android:layout_row="7"
+                    android:layout_rowSpan="1" >
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/auto_margin2"
+                        android:layout_alignParentStart="true"
+                        android:layout_alignParentTop="true"
+                        android:text="@string/thin"
+                        android:textColor="#FFF"
+                        android:textSize="@dimen/draper_small_font"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/auto_margin"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentTop="true"
+                        android:text="@string/thick"
+                        android:textColor="#FFF"
+                        android:textSize="@dimen/draper_small_font"/>
+                    <SeekBar
+                        android:id="@+id/sheetThickness"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/auto_margin2"
+                        android:max="50"
+                        android:progress="25" />
+                </RelativeLayout>
+            </GridLayout>
+
+            <!-- This is where impl-specific content goes -->
+            <LinearLayout
+                android:id="@+id/sheetExtraLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"/>
+
+            <!-- Remarks -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/auto_space_big"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:textColor="@color/heading_yellow"
+                    android:text="@string/remarks"
+                    android:textSize="@dimen/draper_font"/>
+                <EditText
+                    android:id="@+id/sheetRemarks"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="fill_horizontal"
+                    android:gravity="start"
+                    android:inputType="textMultiLine|textCapSentences|textNoSuggestions"
+                    android:minLines="1"
+                    android:textSize="@dimen/draper_title_font"
+                    android:contentDescription="@string/remarks"/>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" >
+        <LinearLayout
+            android:id="@+id/sheetActionsDefault"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/sheetEdit"
+                android:text="@string/edit"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                style="@style/darkButton"
+                android:padding="6dp"
+                android:textSize="@dimen/draper_title_font"/>
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/sheetActionsEdit"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:orientation="horizontal">
+            <Button
+                android:id="@+id/sheetEditUndo"
+                android:text="@string/undo"
+                android:layout_height="40dp"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:padding="6dp"
+                style="@style/darkButton"
+                android:textSize="@dimen/draper_title_font"/>
+            <Button
+                android:id="@+id/sheetEditEnd"
+                android:text="@string/end_editing"
+                android:layout_height="40dp"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:padding="6dp"
+                style="@style/darkButton"
+                android:textSize="@dimen/draper_title_font"/>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

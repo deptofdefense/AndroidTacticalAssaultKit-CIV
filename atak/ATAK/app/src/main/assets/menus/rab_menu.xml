@@ -1,0 +1,38 @@
+<menu buttonRadius='65' buttonSpan='51.428571' buttonWidth='90' buttonBg='bgs/button.xml'>
+    
+    <button angle='-90'
+            icon='icons/delete.png'
+            disabled='${nonremovable}'
+            onClick='actions/rab_action_delete.xml' />
+    
+    <button icon='icons/details.png'
+            onClick='actions/rab_drop_down.xml' />
+
+    <button icon='icons/kmm.png'
+            submenu='menus/randb_range_submenu.xml'
+            prefKey='rab_rng_units_pref'
+            disableSwap='true'/>
+
+    <button icon='icons/degs_m.png'
+            submenu='menus/randb_bearing_submenu.xml'
+            prefKey1='rab_brg_units_pref'
+            prefKey2='rab_north_ref_pref'
+            disableSwap='true'/>
+
+    <button icon='icons/right_angle.png'
+            prefKey='rab_dist_slant_range'
+            disabled='${disable_slant}'
+            prefValue='slantrange'
+            onClick='actions/toggle_slant_range.xml'/>
+
+    <button icon='icons/bloodhound.xml'
+            selectable='true'
+            onClick='actions/bloodhound_link.xml'
+            disabled='!{${enable_hounding}}'
+            selected='${hounding}'/>
+
+    <button icon='icons/edit2.png'
+            disabled='${disable_polar}'
+            onClick='actions/polarCoords.xml'/>
+
+</menu>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<item android:id="@+id/exit_item" android:title="@string/exit" android:icon="@android:drawable/ic_menu_close_clear_cancel"/> <!-- android:icon="@drawable/close_icon"/-->
+<item android:id="@+id/load_item" android:title="@string/load" android:icon="@android:drawable/ic_menu_search"/> <!-- android:icon="@drawable/search_icon"/-->
+<item android:id="@+id/buffer_preferences" android:title="@string/preferences" android:icon="@android:drawable/ic_menu_preferences"/>
+<item android:id="@+id/about_item" android:title="@string/about" android:icon="@android:drawable/ic_menu_info_details"/>
+</menu>

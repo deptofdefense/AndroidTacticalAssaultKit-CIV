@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:atak="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="start"
+            android:text="@string/remarks"
+            android:textColor="@color/heading_yellow"
+            android:textSize="@dimen/draper_font"/>
+
+        <com.atakmap.android.hashtags.view.HashtagEditText
+            android:id="@+id/remarks"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textMultiLine|textCapSentences"
+            android:minLines="1"
+            android:textSize="@dimen/draper_title_font"
+            android:contentDescription="@string/remarks"
+            android:focusable="false"
+            android:focusableInTouchMode="false"
+            atak:mixedInput="true"
+            atak:clickableTags="true"/>
+
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/edit_remarks"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:padding="@dimen/auto_space_big"
+        android:src="@drawable/ic_edit"
+        style="@style/darkButton"/>
+
+</LinearLayout>

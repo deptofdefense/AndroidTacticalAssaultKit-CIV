@@ -1,0 +1,19 @@
+--- ./src/org/simpleframework/xml/stream/ProviderFactory.java.orig	2017-09-17 21:08:35.053734886 -0400
++++ ./src/org/simpleframework/xml/stream/ProviderFactory.java	2017-09-17 21:08:55.361815319 -0400
+@@ -44,13 +44,9 @@
+     */
+    public static Provider getInstance() {
+       try {
+-         try {
+-            return new StreamProvider();
+-         } catch(Throwable e) {
+-            return new PullProvider();
+-         }
++         return new PullProvider();
+       } catch(Throwable e) {
+          return new DocumentProvider();
+       }
+    }
+-}
+\ No newline at end of file
++}

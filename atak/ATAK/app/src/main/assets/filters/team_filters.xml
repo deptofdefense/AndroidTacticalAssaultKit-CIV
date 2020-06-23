@@ -1,0 +1,16 @@
+<filters>
+    <filter team='White'>white</filter>
+    <filter team='Yellow'>yellow</filter>
+    <filter team='Orange'>#FFFF7700</filter>
+    <filter team='Magenta'>magenta</filter>
+    <filter team='Red'>red</filter>
+    <filter team='Maroon'>#FF7F0000</filter>
+    <filter team='Purple'>#FF7F007F</filter>
+    <filter team='Dark Blue'>#FF00007F</filter>
+    <filter team='Blue'>blue</filter>
+    <filter team='Cyan'>cyan</filter>
+    <filter team='Teal'>#FF007F7F</filter>
+    <filter team='Green'>green</filter>
+    <filter team='Dark Green'>#FF007F00</filter>
+    <filter team='Brown'>#FFA0714F</filter>
+</filters>

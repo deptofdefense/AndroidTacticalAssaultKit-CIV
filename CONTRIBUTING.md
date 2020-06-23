@@ -22,18 +22,27 @@ ATAK-CIV is a andorid application and software development kit.
 ## Making Changes
 
 1. Fork and clone the project's repo.
-1. Install development dependencies as outlined above.
+1. Install development dependencies as in the BUILDING.md document.
 1. Create a feature branch for the code changes you're looking to make: `git checkout -b your-descriptive-branch-name origin/master`.
 1. _Write some code!_
-1. Run the application and verify that your changes function as intended: `npm run develop`.
-1. If your changes would benefit from testing, add the necessary tests and verify everything passes by running `npm run test`.
+1. Run the application and verify that your changes function as intended: `gradlew installCivDebug` and `gradlew installCivRelease` then launch the APK for the respective results.
+1. If your changes would benefit from testing, add the necessary tests and verify everything passes by running the Test Report Task, e.g. `gradlew -Pcoverage createCivDebugJacocoTestReport`.
 1. Commit your changes: `git commit -am 'Add some new feature or fix some issue'`. _(See [this excellent article](https://chris.beams.io/posts/git-commit) for tips on writing useful Git commit messages.)_
 1. Push the branch to your fork: `git push -u origin your-descriptive-branch-name`.
 1. Create a new [pull request][pulls] and we'll review your changes.
 
 ## Code Style
 
-This project uses the [prettier](https://prettier.io/) code style. All files can be automatically formatted using this style by running `npm run format`.
+ATAK makes use of the supplied `android-formatting.xml` file
+
+1. Go to the Plugins Section of Android Studio Settings
+1. Click on Browse Repositories.
+1. Type Eclipse Code Formatter in the search box.
+1. Install and restart Android Studio
+1. Go to the Plugins Section of Android Studio Settings
+1. Select Elipse Code Formatter
+1. Then select the Code Format XML file.
+1. Click OK
 
 ## Legalese
 

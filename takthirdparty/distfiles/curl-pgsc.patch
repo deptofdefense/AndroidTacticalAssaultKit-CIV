@@ -1,0 +1,32 @@
+--- curl.pristine/configure	2018-09-03 17:26:45.000000000 -0400
++++ curl/configure	2018-09-18 14:08:06.454048700 -0400
+@@ -7715,13 +7715,13 @@
+   # Check if gcc -print-prog-name=ld gives a path.
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+-  case $host in
+-  *-*-mingw*)
+-    # gcc leaves a trailing carriage return, which upsets mingw
+-    ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+-  *)
+-    ac_prog=`($CC -print-prog-name=ld) 2>&5` ;;
+-  esac
++#  case $host in
++#  *-*-mingw*)
++#    # gcc leaves a trailing carriage return, which upsets mingw
++    ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'`
++#  *)
++#    ac_prog=`($CC -print-prog-name=ld) 2>&5` ;;
++#  esac
+   case $ac_prog in
+     # Accept absolute paths.
+     [\\/]* | ?:[\\/]*)
+@@ -16410,7 +16410,7 @@
+     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+ $as_echo "yes" >&6; }
+     compiler_id="GNU_C"
+-    gccver=`$CC -dumpversion`
++    gccver=`$CC -dumpversion | sed 's/\r//g'`
+     gccvhi=`echo $gccver | cut -d . -f1`
+     gccvlo=`echo $gccver | cut -d . -f2`
+     compiler_num=`(expr $gccvhi "*" 100 + $gccvlo) 2>/dev/null`

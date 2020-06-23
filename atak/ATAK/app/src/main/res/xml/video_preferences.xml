@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="@string/videoPreferences">
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:key="video_dropdown_hidden_disconnect"
+            android:title="@string/preferences_text365"
+            android:summary="@string/preferences_text366"
+            android:defaultValue="180"
+            android:inputType="number"
+             />
+    </PreferenceCategory>
+
+</PreferenceScreen>

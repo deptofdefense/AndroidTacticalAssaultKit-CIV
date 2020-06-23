@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="@dimen/auto_margin"
+    android:paddingBottom="@dimen/auto_margin"
+    android:gravity="center_vertical">
+
+    <TextView
+        android:id="@+id/hashtag"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="@dimen/auto_margin"
+        android:text="@string/new_hashtag"
+        android:textColor="#FFF"
+        android:textSize="18sp"/>
+
+    <ImageButton
+        android:id="@+id/remove_tag"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:padding="@dimen/auto_space_big"
+        android:src="@drawable/ic_menu_delete"
+        style="@style/darkButton"/>
+
+</LinearLayout>

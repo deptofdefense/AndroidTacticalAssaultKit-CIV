@@ -1,0 +1,72 @@
+--- protobuf.pristine/configure	2018-05-23 15:58:34.202000000 -0400
++++ protobuf/configure	2018-05-23 15:59:29.287000000 -0400
+@@ -7916,27 +7916,28 @@
+   withval=$with_gnu_ld; test "$withval" = no || with_gnu_ld=yes
+ else
+   with_gnu_ld=no
+ fi
+ 
+ ac_prog=ld
+ if test "$GCC" = yes; then
+   # Check if gcc -print-prog-name=ld gives a path.
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+-  case $host in
+-  *-*-mingw*)
++#  case $host in
++#  *-*-mingw*)
+     # gcc leaves a trailing carriage return which upsets mingw
+-    ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+-  *)
+-    ac_prog=`($CC -print-prog-name=ld) 2>&5` ;;
+-  esac
++    ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'`
++#   ;;
++#  *)
++#    ac_prog=`($CC -print-prog-name=ld) 2>&5` ;;
++#  esac
+   case $ac_prog in
+     # Accept absolute paths.
+     [\\/]* | ?:[\\/]*)
+       re_direlt='/[^/][^/]*/\.\./'
+       # Canonicalize the pathname of ld
+       ac_prog=`$ECHO "$ac_prog"| $SED 's%\\\\%/%g'`
+       while $ECHO "$ac_prog" | $GREP "$re_direlt" > /dev/null 2>&1; do
+ 	ac_prog=`$ECHO $ac_prog| $SED "s%$re_direlt%/%"`
+       done
+       test -z "$LD" && LD="$ac_prog"
+@@ -15036,27 +15037,28 @@
+   withval=$with_gnu_ld; test "$withval" = no || with_gnu_ld=yes
+ else
+   with_gnu_ld=no
+ fi
+ 
+ ac_prog=ld
+ if test "$GCC" = yes; then
+   # Check if gcc -print-prog-name=ld gives a path.
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ld used by $CC" >&5
+ $as_echo_n "checking for ld used by $CC... " >&6; }
+-  case $host in
+-  *-*-mingw*)
++#  case $host in
++#  *-*-mingw*)
+     # gcc leaves a trailing carriage return which upsets mingw
+-    ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+-  *)
+-    ac_prog=`($CC -print-prog-name=ld) 2>&5` ;;
+-  esac
++    ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'`
++# ;;
++#  *)
++#    ac_prog=`($CC -print-prog-name=ld) 2>&5` ;;
++#  esac
+   case $ac_prog in
+     # Accept absolute paths.
+     [\\/]* | ?:[\\/]*)
+       re_direlt='/[^/][^/]*/\.\./'
+       # Canonicalize the pathname of ld
+       ac_prog=`$ECHO "$ac_prog"| $SED 's%\\\\%/%g'`
+       while $ECHO "$ac_prog" | $GREP "$re_direlt" > /dev/null 2>&1; do
+ 	ac_prog=`$ECHO $ac_prog| $SED "s%$re_direlt%/%"`
+       done
+       test -z "$LD" && LD="$ac_prog"

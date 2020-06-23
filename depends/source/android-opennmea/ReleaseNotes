@@ -1,0 +1,27 @@
+OpenNMEA v0.1 Release Notes
+---------------------------
+
+This software library is in an alpha state, and still requires rigorous testing. I understand that this project has a very limited audience, so I would appreciate any help with finding new bugs, fixing existing issues, and writing additional code.
+
+Reporting Bugs
+--------------
+
+Bugs in OpenNMEA should be reported at:
+
+http://sourceforge.net/tracker/?group_id=173137&atid=864317
+
+Make sure your problem has not already been reported before creating a new bug report.
+
+Disclaimer
+----------
+
+THIS SOFTWARE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+
+Credits
+-------
+
+All software development for OpenNMEA done by Joey Gannon, [jgannon at ticalc dot org].
+
+Thanks to Trent Jarvi
+, [tjarvi at qbang dot org] for creating RXTX, a serial port library for Java that has been invaluable in testing OpenNMEA.

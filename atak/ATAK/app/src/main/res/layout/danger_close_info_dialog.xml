@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="@color/black_overlay">
+
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:layout_gravity="center_horizontal"
+        android:orientation="vertical"
+        android:background="@color/black_overlay"
+        android:fadeScrollbars="false">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:layout_marginTop="5dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/weapon_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="20sp"
+                android:textColor="@color/white"
+                android:text="@string/lgtr_i"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/subtext_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:layout_gravity="center"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/weapon_subtext"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="15sp"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/desc_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:layout_gravity="center"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/weapon_description"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="15sp"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="10dp"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:textColor="@color/white"
+                android:layout_marginBottom="5dp"
+                android:layout_marginStart="20dp"
+                android:divider="@color/white">
+
+                <TextView
+                    android:id="@+id/standing_label"
+                    android:layout_width="150dp"
+                    android:layout_height="fill_parent"
+                    android:gravity="center_vertical"
+                    android:textSize="15sp"
+                    android:textColor="@color/white"
+                    android:text="@string/dangerclose_text6"/>
+
+                <TextView
+                    android:id="@+id/msd_label"
+                    android:layout_width="150dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:textSize="15sp"
+                    android:textColor="@color/white"
+                    android:text="@string/minimum_safe_distance"
+                    android:visibility="gone"/>
+
+                <TextView
+                    android:id="@+id/weapon_standing"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:textSize="15sp"
+                    android:textColor="@color/white"
+                    android:text="@string/_150"/>
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1px"
+                android:background="#3D3636"
+                android:layout_gravity="center"/>
+
+            <LinearLayout
+                android:id="@+id/prone_view"
+                android:layout_width="wrap_content"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="150dp"
+                    android:layout_height="fill_parent"
+                    android:gravity="center_vertical"
+                    android:textSize="15sp"
+                    android:textColor="@color/white"
+                    android:text="@string/prone"/>
+
+                <TextView
+                    android:id="@+id/weapon_prone"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="50dp"
+                    android:textSize="15sp"
+                    android:textColor="@color/white"
+                    android:text=""/>
+
+            </LinearLayout>
+
+            <View
+                android:id="@+id/proneP_line"
+                android:visibility="gone"
+                android:layout_width="match_parent"
+                android:layout_height="1px"
+                android:background="#3D3636"
+                android:layout_gravity="center"/>
+
+            <LinearLayout
+                android:id="@+id/prone_protected_view"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:layout_marginTop="5dp"
+                android:layout_marginStart="20dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="150dp"
+                    android:layout_height="fill_parent"
+                    android:gravity="center_vertical"
+                    android:textSize="15sp"
+                    android:textColor="@color/white"
+                    android:text="@string/dangerclose_text7" />
+
+                <TextView
+                    android:id="@+id/weapon_proneP"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="50dp"
+                    android:textSize="15sp"
+                    android:textColor="@color/white"
+                    android:text=""/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/ricochet_fan_view"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:layout_marginTop="5dp"
+                android:layout_marginStart="20dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="150dp"
+                    android:layout_height="fill_parent"
+                    android:gravity="center_vertical"
+                    android:textSize="15sp"
+                    android:textColor="@color/white"
+                    android:text="@string/dangerclose_text8" />
+
+                <TextView
+                    android:id="@+id/weapon_ricochet_fan"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minWidth="50dp"
+                    android:textSize="15sp"
+                    android:textColor="@color/white"
+                    android:text=""/>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+
+
+</RelativeLayout>

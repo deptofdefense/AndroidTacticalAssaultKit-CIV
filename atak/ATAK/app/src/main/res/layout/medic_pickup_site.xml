@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:id="@+id/med_pickup_site_r1"
+                android:orientation="vertical" >
+
+    <CheckBox
+        android:id="@+id/med_panels"
+        android:layout_marginTop="7dp"
+        android:layout_marginStart="5dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/panel_choice"
+        />
+
+    <CheckBox
+        android:id="@+id/med_pyro_signal"
+        android:layout_marginTop="7dp"
+        android:layout_marginStart="5dp"
+        android:layout_below="@id/med_panels"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/pyrotechnic_choice"
+        />
+
+    <CheckBox
+        android:id="@+id/med_smoke_signal"
+        android:layout_marginTop="7dp"
+        android:layout_marginStart="5dp"
+        android:layout_below="@id/med_pyro_signal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/smoke_signal_choice"
+        />
+
+    <CheckBox
+        android:id="@+id/med_other_signal"
+        android:layout_marginTop="7dp"
+        android:layout_marginStart="5dp"
+        android:layout_below="@id/med_smoke_signal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/other_choice"
+        />
+
+</RelativeLayout>

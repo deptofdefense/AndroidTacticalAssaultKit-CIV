@@ -1,0 +1,11 @@
+--- src/main/java/org/apache/http/entity/mime/HttpMultipart.java	2017-09-13 19:15:44.916531220 -0400
++++ src/main/java/org/apache/http/entity/mime/HttpMultipart.java	2017-09-13 19:17:13.010278745 -0400
+@@ -229,7 +229,7 @@
+      * individual parts plus that of extra elements required to delimit the parts
+      * from one another). If any of the @{link BodyPart}s contained in this object
+      * is of a streaming entity of unknown length the total length is also unknown.
+-     * <p/>
++     * 
+      * This method buffers only a small amount of data in order to determine the
+      * total length of the entire entity. The content of individual parts is not
+      * buffered.

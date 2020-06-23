@@ -1,0 +1,305 @@
+
+package com.atakmap.android.util;
+
+import android.app.AlertDialog;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.Build;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
+import android.graphics.drawable.Drawable;
+
+import com.atakmap.android.gui.WebViewer;
+import com.atak.plugins.impl.AtakPluginRegistry;
+import com.atakmap.android.cot.detail.TakVersionDetailHandler;
+import com.atakmap.android.metrics.MetricsApi;
+import com.atakmap.app.R;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.log.Log;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+
+import java.io.File;
+
+/**
+ *
+ */
+public class ATAKConstants {
+
+    private static final String TAG = "ATAKConstants";
+
+    private static String appName = "";
+    private static ComponentName componentName = null;
+    private static String versionNameManifest = "";
+    private static String versionName = "";
+    private static String pluginApi = "";
+    private static String pluginApiFull = "";
+    private static String versionBrand = "";
+    private static String packageName = "";
+    private static String deviceManufacturer = "";
+    private static String deviceModel = "";
+    private static String deviceOS = "";
+    private static int versionCode = 1;
+    private static int iconId = -1;
+    private static Drawable iconDrawable = null;
+
+    /**
+     * Public initialization of all of the string constants used within ATAK.
+     */
+    public synchronized static void init(final Context context) {
+        if (componentName == null) {
+            Log.d(TAG, "init: " + context.getClass().getName());
+            componentName = new ComponentName(
+                    context.getPackageName(),
+                    context.getString(R.string.atak_activity));
+        } else {
+            Log.d(TAG, "already initialized");
+            return;
+        }
+
+        if (FileSystemUtils.isEmpty(versionName)) {
+
+            iconId = R.drawable.ic_atak_launcher;
+            iconDrawable = context.getResources().getDrawable(iconId);
+
+            appName = context.getString(R.string.app_name);
+            packageName = context.getPackageName();
+            PackageInfo pInfo;
+            try {
+                pInfo = context.getPackageManager().getPackageInfo(
+                        context.getPackageName(), 0);
+                versionNameManifest = pInfo.versionName;
+                versionName = context.getString(R.string.app_name) + " v"
+                        + versionNameManifest;
+                versionCode = pInfo.versionCode;
+                versionBrand = context.getString(R.string.app_brand);
+                pluginApi = AtakPluginRegistry.getPluginApiVersion(context,
+                        context.getPackageName(), true);
+                pluginApiFull = AtakPluginRegistry.getPluginApiVersion(context,
+                        context.getPackageName(), false);
+
+                deviceManufacturer = Build.MANUFACTURER;
+                deviceModel = Build.MODEL;
+                deviceOS = String.valueOf(Build.VERSION.SDK_INT);
+
+            } catch (PackageManager.NameNotFoundException e) {
+                versionName = context.getString(R.string.app_name);
+                versionCode = 1;
+                versionBrand = context.getString(R.string.app_brand);
+                Log.w(TAG, "Failed to determine version name", e);
+            }
+        }
+    }
+
+    /**
+     * Returns the application name used in places by the launcher and as shown in 
+     * Android settings.
+     * @return the app name
+     */
+    public static String getAppName() {
+        return appName;
+    }
+
+    /**
+     * Returns the icon resource identifier that is used by the launcher and as is shown
+     * in Android settings.
+     * @return the app icon resource identifier
+     */
+    public static int getIconId() {
+        return iconId;
+    }
+
+    /**
+     * Returns the icon that is used by the launcher and corresponds with the icon 
+     * identifier obtained by the call getIconId().
+     * @return the icon 
+     */
+    public static Drawable getIcon() {
+        return iconDrawable;
+    }
+
+    /**
+     * Gets the brand for the software.
+     * @return the brand.
+     */
+    public static String getBrand() {
+        String brand = TakVersionDetailHandler.Platform.ATAK.toString();
+        String temp = ATAKConstants.getVersionBrand();
+        if (!FileSystemUtils.isEmpty(temp)
+                && !FileSystemUtils.isEquals(temp, "MIL")) {
+            brand += "-" + temp;
+        }
+
+        return brand;
+    }
+
+    /**
+     * Returns the android api target in the full form or in the stripped form 
+     * which only shows the value after the @ symbol.
+     * @param bStrip true returns the shortened API value, false returns the full value.
+     */
+    public static String getPluginApi(final boolean bStrip) {
+        return bStrip ? pluginApi : pluginApiFull;
+    }
+
+    /**
+     * Returns the package name for the software.
+     * @return the package name
+     */
+    public static String getPackageName() {
+        return packageName;
+    }
+
+    /**
+     * Returns the version name of the software which contains a human readable 
+     * representation of the version code such as 4.2.1
+     * @return the human readable string
+     */
+    public static String getVersionName() {
+        return versionName;
+    }
+
+    public static int getVersionCode() {
+        return versionCode;
+    }
+
+    public static ComponentName getComponentName() {
+        return componentName;
+    }
+
+    public static String getVersionNameManifest() {
+        return versionNameManifest;
+    }
+
+    public static String getVersionBrand() {
+        return versionBrand;
+    }
+
+    public static String getVersionBrand(Context context) {
+        return context.getString(R.string.app_brand);
+    }
+
+    public static String getDeviceOS() {
+        return deviceOS;
+    }
+
+    public static String getDeviceModel() {
+        return deviceModel;
+    }
+
+    public static String getDeviceManufacturer() {
+        return deviceManufacturer;
+    }
+
+    /**
+     * The full version name including the version name, version code and version brand.
+     * @return a string in the form: versionname.versioncode.
+     */
+    public static String getFullVersionName() {
+        String v = versionName;
+
+        if (versionCode != 1
+                && !v.contains(String.valueOf(versionCode))) {
+            v += "." + versionCode;
+        }
+
+        //v += " (" + versionBrand + ")";
+        return v;
+    }
+
+    /**
+     * Helper method for displaying the about dialog with an optional capability to display the view
+     * eula button.
+     * @param context the activity to use when displaying the dialog.
+     * @param bDisplayEULA show the eula button.
+     */
+    public static void displayAbout(final Context context,
+            final boolean bDisplayEULA) {
+        final AlertDialog.Builder build = new AlertDialog.Builder(context);
+        LayoutInflater inflater = LayoutInflater.from(context);
+
+        SharedPreferences _controlPrefs = PreferenceManager
+                .getDefaultSharedPreferences(context);
+
+        View v;
+        if (_controlPrefs.getBoolean("atakControlForcePortrait",
+                false)) {
+            v = inflater.inflate(R.layout.atak_splash_port, null);
+        } else {
+            v = inflater.inflate(R.layout.atak_splash, null);
+        }
+
+        TextView tv = v.findViewById(R.id.revision);
+        TextView pa = v.findViewById(R.id.pluginapi);
+        TextView mm = v.findViewById(R.id.makemodel);
+        pa.setVisibility(View.VISIBLE);
+        mm.setVisibility(View.VISIBLE);
+
+        final int level = Build.VERSION.SDK_INT;
+
+        mm.setText(String.format(
+                context.getString(R.string.about_screen_make_model),
+                deviceModel, level));
+
+        pa.setText(context.getString(R.string.preferences_text414)
+                + ATAKConstants.getPluginApi(true));
+
+        tv.setText(ATAKConstants.getFullVersionName());
+        File splash = FileSystemUtils
+                .getItem(FileSystemUtils.SUPPORT_DIRECTORY
+                        + File.separatorChar + "atak_splash.png");
+        if (FileSystemUtils.isFile(splash)) {
+            Bitmap bmp = BitmapFactory.decodeFile(splash.getAbsolutePath());
+            if (bmp != null) {
+                Log.d(TAG, "Loading custom splash screen");
+                ImageView atak_splash_imgView = v
+                        .findViewById(R.id.atak_splash_imgView);
+                atak_splash_imgView.setImageBitmap(bmp);
+            }
+        }
+
+        build.setView(v);
+        build.setCancelable(false);
+        build.setPositiveButton(R.string.ok, null);
+        if (bDisplayEULA) {
+            build.setNeutralButton(R.string.preferences_text415,
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                            try {
+                                File file = FileSystemUtils
+                                        .getItem(
+                                                FileSystemUtils.SUPPORT_DIRECTORY
+                                                        + File.separatorChar
+                                                        + "license"
+                                                        + File.separatorChar
+                                                        + "LICENSE.txt");
+                                WebViewer.show(file.toURI().toURL().toString(),
+                                        context, 250);
+                            } catch (Exception e) {
+                                Log.e(TAG, "error loading license.txt", e);
+                            }
+
+                        }
+                    });
+        }
+
+        final AlertDialog dialog = build.create();
+        dialog.show();
+
+        if (MetricsApi.shouldRecordMetric()) {
+            Bundle b = new Bundle();
+            b.putString("eula", String.valueOf(bDisplayEULA));
+            MetricsApi.record("about", b);
+        }
+    }
+}

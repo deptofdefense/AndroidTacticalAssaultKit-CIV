@@ -1,0 +1,17 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.ROUTE_DETAILS</action>
+        <extras>
+            <string key='routeUID'>${assocSetUID}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

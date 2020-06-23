@@ -1,0 +1,49 @@
+<chatModes>
+    <mode index="0" name="DFLT1">
+        <button index="0" label="RGR" value="Roger" />
+        <button index="1" label="\@LCC" value="at LCC" />
+        <button index="2" label="\@VDO" value="at VDO" />
+        <button index="3" label="\@Brch" value="at breach" />
+    </mode>
+    <mode index="1" name="DFTL2">
+        <button index="0" label="DZ" value="dropzone" />
+        <button index="1" label="HLZ" value="helo landing zone" />
+        <button index="2" label="nPos" value="in position" />
+        <button index="3" label="Sec" value="all secure" />
+    </mode>
+    <mode index="2" name="ASLT1">
+        <button index="0" label="ATK" value="Attack!" />
+        <button index="1" label="FWD" value="Move Forward" />
+        <button index="2" label="CLR" value="Area Clear" />
+        <button index="3" label="Amm" value="Low on Ammo" />
+    </mode>
+    <mode index="3" name="ASLT2">
+        <button index="0" label="SEC" value="Objective secure" />
+        <button index="1" label="BCK" value="Need backup!" />
+        <button index="2" label="Enem" value="Enemy sighted" />
+        <button index="3" label="Fall" value="Fall back" />
+    </mode>
+    <mode index="4" name="RECON1">
+        <button index="0" label="Obj" value="Objective sighted" />
+        <button index="1" label="Enem" value="Enemy sighted" />
+        <button index="2" label="\@IRP" value="at intial rally point" />
+        <button index="3" label="\@EERP" value="at end route rally point" />
+    </mode>
+    <mode index="5" name="RECON2">
+        <button index="0" label="\@ORP" value="at objective rally point" />
+        <button index="1" label="\@RRP" value="at reentry rally point" />
+        <button index="2" label="\@NSRP" value="at near side rally point" />
+        <button index="3" label="\@FSRP" value="at far side rally point" />
+    </mode>
+    <mode index="6" name="JM1">
+        <button index="0" label="DIP" value="Move to DIP" />
+        <button index="1" label="R Stack" value="Reverse Stack" />
+        <button index="2" label="L Brakes" value="Lead jumper in brakes" />
+        <button index="3" label="F Flight" value="Lead jumper full flight" />
+    </mode>
+    <mode index="7" name="JM2">
+        <button index="0" label="D Wind" value="Down wind" />
+        <button index="1" label="C Wind" value="Cross wind" />
+        <button index="2" label="Final" value="Final" />
+    </mode>
+</chatModes>

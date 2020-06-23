@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.layers.LayersManagerView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <ListView
+        android:id="@+id/layers_manager_list"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="1" />
+
+    <TextView 
+        android:id="@android:id/empty"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="1"
+        android:textColor="#FF444444"
+        android:gravity="center"
+        android:text="@string/no_data_found" />
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="#FF333333"
+        android:gravity="center_vertical"
+        android:orientation="horizontal" >
+
+        <ImageButton
+            android:id="@+id/layers_mgr_layer_up"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:scaleType="fitCenter"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_layer_up2" />
+
+        <ImageButton
+            android:id="@+id/layers_mgr_layer_down"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:scaleType="fitCenter"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_layer_down2" />
+
+        <ToggleButton
+            android:id="@+id/auto_map_select_btn"
+            style="@style/darkButton"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textOn="@string/auto_select_on"
+            android:textOff="@string/auto_select_off"
+            android:textStyle="bold" />
+
+        <ToggleButton
+            android:id="@+id/layer_outline_toggle"
+            style="@style/darkButton"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textOff="@string/outlines_off"
+            android:textOn="@string/outlines_on" />
+    </LinearLayout>
+
+</com.atakmap.android.layers.LayersManagerView>

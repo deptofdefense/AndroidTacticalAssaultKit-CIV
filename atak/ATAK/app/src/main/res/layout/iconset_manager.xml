@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.icons.IconManagerView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+ 
+    <TextView
+        android:text="@string/iconset_manager"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingStart="5dip"
+        android:textSize="26sp"
+        android:textStyle="bold"/>
+ 
+         <LinearLayout 
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <Button
+                style="@style/darkButton"
+                android:padding="6dp"
+                android:id="@+id/iconmgr_iconset_addBtn"
+                android:text="@string/add_iconset"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+            <Button
+                style="@style/darkButton"
+                android:padding="6dp"
+                android:id="@+id/iconmgr_iconset_defaultCoTMapping"
+                android:text="@string/default_cot_mapping"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </LinearLayout>
+        
+        <ListView
+            android:id="@+id/iconmgr_iconset_list"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"/>
+</com.atakmap.android.icons.IconManagerView>

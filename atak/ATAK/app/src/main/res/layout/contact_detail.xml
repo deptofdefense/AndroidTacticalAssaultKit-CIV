@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+         android:layout_width="fill_parent"
+         android:layout_height="fill_parent"
+         android:orientation="vertical">
+
+        <RelativeLayout
+            android:id="@+id/contactInfo_headerLayout"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="2dp">
+
+        <ImageView
+            android:id="@+id/contactInfoIcon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="3dp"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentStart="true"
+            android:src="@drawable/ic_self"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="false"/>
+
+        <TextView
+            android:id="@+id/contactInfoName"
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:gravity="start|center_vertical"
+            android:layout_alignParentTop="true"
+            android:layout_toEndOf="@id/contactInfoIcon"
+            android:text="@string/callsign"
+            android:textSize="@dimen/draper_title_font" />
+
+            <ImageButton
+                android:id="@+id/contactInfo_detailPanBtn"
+                style="@style/darkButton"
+                android:padding="6dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:scaleType="fitCenter"
+                android:layout_alignParentTop="true"
+                android:layout_alignParentEnd="true"
+                android:src="@drawable/panto_button" />
+
+            <ImageButton
+                android:id="@+id/contactInfo_detailSelfEdit"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:padding="3dp"
+                android:src="@drawable/edit"
+                android:layout_toStartOf="@id/contactInfo_detailPanBtn"
+                style="@style/darkButton"/>
+
+            <View
+                android:id="@+id/contactInfo_hrBar"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:padding="1dp"
+                android:background="@color/lighter_gray"
+                android:layout_below="@id/contactInfo_detailPanBtn"/>
+
+            <RelativeLayout
+                android:id="@+id/contactInfo_dotLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_above="@id/contactInfo_hrBar">
+
+                <View
+                    android:id="@+id/contactInfo_detailMiddleDot"
+                    style="@style/darkButton"
+                    android:layout_width="10dp"
+                    android:layout_height="7dp"
+                    android:layout_centerVertical="true"
+                    android:layout_centerInParent="true"
+                    android:background="@drawable/dot_selector"
+                    android:layout_marginStart="5dp"
+                    android:layout_marginEnd="5dp"/>
+                <View
+                    android:id="@+id/contactInfo_detailLeftDot"
+                    style="@style/darkButton"
+                    android:layout_width="10dp"
+                    android:layout_height="7dp"
+                    android:layout_toStartOf="@id/contactInfo_detailMiddleDot"
+                    android:background="@drawable/dot_selector" />
+                <View
+                    android:id="@+id/contactInfo_detailRightDot"
+                    style="@style/darkButton"
+                    android:layout_width="10dp"
+                    android:layout_height="7dp"
+                    android:layout_toEndOf="@id/contactInfo_detailMiddleDot"
+                    android:background="@drawable/dot_selector" />
+
+            </RelativeLayout>
+        </RelativeLayout>
+
+    <android.support.v4.view.ViewPager
+        android:id="@+id/contactInfo_detailPager"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:layout_marginEnd="2dp"/>
+</LinearLayout>

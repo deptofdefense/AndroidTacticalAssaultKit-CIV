@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+<LinearLayout
+    android:layout_width="match_parent"
+    android:paddingStart="3dp"
+    android:paddingEnd="3dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical" >
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:layout_height="wrap_content">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:layout_gravity="center_vertical"
+            android:ems="4"
+            android:textSize="@dimen/fontSize"
+            android:text="@string/contour_interval"/>
+        <Spinner
+            android:id="@+id/contour_interval_spinner"
+            style="@style/darkButton"
+            android:padding="5dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical|center_horizontal"
+            android:popupBackground="#383838"
+            android:layout_gravity="center_vertical"
+            android:spinnerMode="dropdown"/>
+        <RadioGroup
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:layout_gravity="center_vertical"
+            android:id="@+id/contour_radio_group"
+            android:orientation="horizontal"
+            android:checkedButton="@+id/contour_units_meters" >
+
+            <RadioButton
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:id="@+id/contour_units_meters"
+                android:text="@string/meter_units" />
+
+            <RadioButton
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:id="@+id/contour_units_feet"
+                android:text="@string/feet_units" />
+
+        </RadioGroup>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:gravity="center_vertical"
+        android:layout_gravity="center_vertical"
+        android:orientation="horizontal"
+        android:layout_height="wrap_content">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:layout_gravity="center_vertical"
+            android:textSize="@dimen/fontSize"
+            android:text="@string/contour_major_line"/>
+
+        <RelativeLayout
+            android:id="@+id/drawingShapeTransparencyView"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginStart="@dimen/auto_margin"
+            android:layout_marginEnd="@dimen/auto_margin"
+            android:layout_gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/drawingShapeStrokeText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:text="@string/thin"
+                android:textColor="#FFF"
+                android:textSize="@dimen/draper_small_font"
+                />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentTop="true"
+                android:text="@string/thick"
+                android:textColor="#FFF"
+                android:textSize="@dimen/draper_small_font"
+                />
+
+            <SeekBar
+                android:id="@+id/drawingShapeStrokeSeek"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="fill_horizontal"
+                android:max="5"
+                android:progress="1" />
+        </RelativeLayout>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:layout_gravity="center_vertical"
+            android:textSize="@dimen/fontSize"
+            android:text="@string/contour_line_color"/>
+        <ImageButton
+            android:id="@+id/line_color"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center_vertical"
+            android:layout_gravity="center_vertical"
+            android:padding="8dp"
+            style="@android:style/Widget.Holo.Button"
+            android:src="@drawable/color_rectangle"/>
+    </LinearLayout>
+    <TextView
+        android:id="@+id/contour_show_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:drawableStart="@drawable/arrow_down"
+        android:text="@string/contour_show"/>
+    <LinearLayout
+        android:id="@+id/contour_cb_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <CheckBox
+                android:id="@+id/contour_cb"
+                android:layout_width="0dp"
+                android:gravity="center_vertical"
+                android:layout_height="match_parent"
+                android:layout_weight="1.5"
+                android:text="@string/contour_show_contour"
+                />
+            <CheckBox
+                android:id="@+id/contour_label_cb"
+                android:layout_width="0dp"
+                android:gravity="center_vertical"
+                android:layout_height="match_parent"
+                android:layout_weight="1.5"
+                android:text="@string/contour_show_label"
+                />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <CheckBox
+                android:id="@+id/major_lines_cb"
+                android:layout_width="0dp"
+                android:gravity="center_vertical"
+                android:layout_height="match_parent"
+                android:layout_weight="1.5"
+                android:text="@string/contour_show_major"
+                />
+            <CheckBox
+                android:id="@+id/minor_lines_cb"
+                android:layout_width="0dp"
+                android:gravity="center_vertical"
+                android:layout_height="match_parent"
+                android:layout_weight="1.5"
+                android:text="@string/contour_show_minor"
+                />
+        </LinearLayout>
+    </LinearLayout>
+    <Button
+        android:id="@+id/generate_contour_lines"
+        android:layout_width="wrap_content"
+        android:gravity="center_vertical"
+        android:layout_gravity="center_vertical"
+        android:padding="6dp" style="@style/darkButton"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/fontSize"
+        android:text="@string/contour_gen_contour"
+        />
+  <LinearLayout
+      android:orientation="vertical"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content">
+
+      <TableRow android:id="@+id/contourGenerationTableRow" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content">
+      <ProgressBar
+          android:layout_gravity="center_vertical"
+          style="?android:attr/progressBarStyleHorizontal"
+          android:id="@+id/loading_contour_progress"
+          android:layout_width="0dp"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:indeterminate="false"
+          android:max="100" />
+      <TextView android:textColor="@android:color/white" android:layout_gravity="center_vertical|center_horizontal"
+          android:id="@+id/progressBarPercentageTextView" android:layout_width="wrap_content"
+          android:layout_height="wrap_content" />
+      <ImageButton android:id="@+id/cancelContourGenerationButton"
+          android:layout_width="wrap_content"
+          android:gravity="center_vertical"
+          android:layout_gravity="center_vertical"
+          android:padding="6dp" style="@style/darkButton"
+          android:layout_height="wrap_content"
+          android:textSize="@dimen/fontSize"
+          android:src="@android:drawable/ic_delete" />
+      </TableRow>
+  </LinearLayout>
+</LinearLayout>
+</ScrollView>

@@ -1,0 +1,23 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.REMOVE</action>
+        <extras>
+            <string key='uid'>${sub_uid}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.REMOVE</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+        <broadcast>
+        <action>com.atakmap.android.maps.HIDE_DETAILS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

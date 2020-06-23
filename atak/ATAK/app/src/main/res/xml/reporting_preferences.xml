@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="@string/preferences_text98"
+        android:key="publishCategory">
+        <CheckBoxPreference 
+            android:title="@string/preferences_text99"
+            android:key="dispatchLocationCotExternal"
+            android:defaultValue="true"
+            android:summary="@string/preferences_text100"/>
+        <CheckBoxPreference 
+            android:title="@string/hide_my_position"
+            android:key="dispatchLocationHidden"
+            android:defaultValue="false"
+            android:summary="@string/hide_my_position_summary"/>
+        <ListPreference
+            android:entryValues="@array/reporting_strategy_values"
+            android:entries="@array/reporting_strategy_names"
+            android:summary="@string/reporting_strategy_summary"
+            android:key="locationReportingStrategy"
+            android:title="@string/preferences_text101"
+            android:defaultValue="@string/preferences_text102"
+            android:dependency="dispatchLocationCotExternal"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:key="dynamicReportingRateStationaryUnreliable"
+            android:title="@string/preferences_text103"
+            android:summary="@string/preferences_text104"
+            android:defaultValue="30"
+            android:inputType = "number"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:key="dynamicReportingRateMinUnreliable"
+            android:title="@string/preferences_text105"
+            android:summary="@string/preferences_text106"
+            android:defaultValue="20"
+            android:inputType = "number"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:key="dynamicReportingRateMaxUnreliable"
+            android:title="@string/preferences_text107"
+            android:summary="@string/preferences_text108"
+            android:defaultValue="2"
+            android:inputType = "number"/>
+
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:key="dynamicReportingRateStationaryReliable"
+            android:title="@string/preferences_text109"
+            android:summary="@string/preferences_text110"
+            android:defaultValue="180"
+            android:inputType = "number"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:key="dynamicReportingRateMinReliable"
+            android:title="@string/preferences_text111"
+            android:summary="@string/preferences_text112"
+            android:defaultValue="20"
+            android:inputType = "number"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:key="dynamicReportingRateMaxReliable"
+            android:title="@string/preferences_text113"
+            android:summary="@string/preferences_text114"
+            android:defaultValue="2"
+            android:inputType = "number"/>
+
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:key="constantReportingRateUnreliable"
+            android:title="@string/preferences_text115"
+            android:summary="@string/preferences_text116"
+            android:defaultValue="3"
+            android:inputType = "number"/>
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:key="constantReportingRateReliable"
+            android:title="@string/preferences_text117"
+            android:summary="@string/preferences_text118"
+            android:defaultValue="15"
+            android:inputType = "number"/>
+        <CheckBoxPreference 
+            android:title="@string/preferences_text119"
+            android:key="dispatchLocationCotExternalAtStart"
+            android:defaultValue="true"
+            android:summary="@string/preferences_text120"
+            android:dependency="dispatchLocationCotExternal"/>
+    </PreferenceCategory>
+</PreferenceScreen>

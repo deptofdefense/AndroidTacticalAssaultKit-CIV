@@ -1,0 +1,4 @@
+<menu buttonRadius='65' buttonSpan='40' buttonWidth='60' buttonBg='bgs/button.xml'>
+    <button icon='icons/mgrs_entry.png'
+            onClick='actions/mgrs_entry_vertex.xml'/>
+</menu>

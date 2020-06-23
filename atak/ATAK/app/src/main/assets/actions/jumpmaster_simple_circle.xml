@@ -1,0 +1,13 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.maps.jumpmaster.SIMPLE_CIRCLE</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+            <string key='point'>${targetPoint}</string>
+            <string key='simple'>true</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

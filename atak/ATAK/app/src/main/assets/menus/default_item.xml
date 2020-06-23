@@ -1,0 +1,11 @@
+<menu buttonRadius='65' buttonSpan='180' buttonWidth='90' buttonBg='bgs/button.xml'>
+
+    <button angle='-90'
+            icon='icons/delete.png'
+            onClick='actions/remove.xml'
+            disabled='!{${removable}}' />
+
+    <button icon='icons/pairing_line.png'
+            onClick='actions/pairingline.xml'
+            selected='${pairingline_on}'  />
+</menu>

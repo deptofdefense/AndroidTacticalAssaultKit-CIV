@@ -1,0 +1,20 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.FOCUS</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.SHOW_MENU</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.SHOW_DETAILS</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+        </extras>
+    </broadcast>
+</set>

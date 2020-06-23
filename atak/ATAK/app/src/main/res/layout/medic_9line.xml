@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/viewNineLine"
+    style="@style/FullDropdownStyle"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ScrollView
+        android:id="@+id/med_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fadeScrollbars="false"
+        android:layout_above="@+id/bottomControls"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="3dp">
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="5dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/med_title"
+                android:layout_width="fill_parent"
+                android:layout_height="32dp"
+                android:gravity="center"
+                android:windowSoftInputMode="adjustPan"
+                android:textSize="15sp"
+                android:textColor="#FFFFFFFF"
+                android:text="@string/casevac_title"
+                android:background="@drawable/border"/>
+
+            <View
+                android:minHeight="1dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="2dp"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginStart="2dp"
+                android:layout_marginEnd="2dp"
+                android:background="@android:color/darker_gray" >
+            </View>
+
+            <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="1dp"
+                    android:orientation="horizontal">
+
+                <TextView
+                        android:id="@+id/txtLineOne"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/_1"
+                        android:textColor="@color/heading_yellow"
+                        android:textSize="@dimen/fontSize"
+                        />
+                <include
+                        layout="@layout/atak_selection_flat"
+                        android:layout_width="0dp"
+                        android:layout_weight=".95"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="4dp"
+                        android:layout_marginLeft="2dp"
+                        android:id="@+id/med_lineOne" />
+
+                <ImageButton
+                    android:id="@+id/centerOnButton"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_weight="0.05"
+                    android:background="#0000"
+                    android:layout_gravity="center_vertical"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/panto_button" />
+              </LinearLayout>
+              
+
+            <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="1dp"
+                    android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/_2"
+                    android:textColor="@color/heading_yellow"
+                    android:textSize="@dimen/fontSize"
+                    />
+
+                <include
+                    layout="@layout/atak_selection_flat"
+                    android:layout_width="0dp"
+                    android:layout_weight=".6"
+                    android:layout_height="32dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp"
+                    android:layout_marginLeft="2dp"
+                    android:id="@+id/med_lineTwo_callsign" />
+
+                <include
+                    layout="@layout/atak_selection_flat"
+                    android:layout_width="0dp"
+                    android:layout_weight=".4"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp"
+                    android:layout_marginRight="2dp"
+                    android:id="@+id/med_lineTwo_freq" />
+
+              </LinearLayout>
+      
+               <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="1dp"
+                    android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/_3"
+                        android:textColor="@color/heading_yellow"
+                        android:textSize="@dimen/fontSize"
+                        />
+                <include
+                        layout="@layout/atak_selection_flat"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="4dp"
+                        android:layout_marginRight="2dp"
+                        android:layout_marginLeft="2dp"
+                        android:id="@+id/med_lineThree" />
+              </LinearLayout>
+
+            <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="1dp"
+                    android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/_4"
+                        android:textColor="@color/heading_yellow"
+                        android:textSize="@dimen/fontSize"
+                        />
+
+                <include
+                        layout="@layout/atak_selection_flat"
+                        android:layout_height="wrap_content"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="4dp"
+                        android:layout_marginRight="2dp"
+                        android:layout_marginLeft="2dp"
+                        android:id="@+id/med_lineFour"/>
+              </LinearLayout>
+            <com.atakmap.android.gui.EditText
+                android:id="@+id/txtLineFour"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/equipment_other_description"
+                android:textSize="@dimen/fontSize"
+                android:inputType="textNoSuggestions"
+                android:visibility="gone"/>
+
+            <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="1dp"
+                    android:orientation="horizontal">
+
+                <TextView
+                        android:id="@+id/txtLineFive"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/_5"
+                        android:textColor="@color/heading_yellow"
+                        android:textSize="@dimen/fontSize"
+                        />
+                <include
+                        layout="@layout/atak_selection_flat"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="4dp"
+                        android:layout_marginRight="2dp"
+                        android:layout_marginLeft="2dp"
+                        android:id="@+id/med_lineFive" />
+              </LinearLayout>
+
+            <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="1dp"
+                    android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/_6"
+                        android:textColor="@color/heading_yellow"
+                        android:textSize="@dimen/fontSize"
+                        />
+                <include
+                        layout="@layout/atak_selection_flat"
+                        android:layout_height="wrap_content"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="4dp"
+                        android:layout_marginRight="2dp"
+                        android:layout_marginLeft="2dp"
+                        android:id="@+id/med_lineSix" />
+              </LinearLayout>
+
+            <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="1dp"
+                    android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/_7"
+                        android:textColor="@color/heading_yellow"
+                        android:textSize="@dimen/fontSize"
+                        />
+                <include
+                        layout="@layout/atak_selection_flat"
+                        android:layout_height="wrap_content"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="4dp"
+                        android:layout_marginRight="2dp"
+                        android:layout_marginLeft="2dp"
+                        android:id="@+id/med_lineSeven" />
+              </LinearLayout>
+            <com.atakmap.android.gui.EditText
+                android:id="@+id/txtLineSeven"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/hlz_marking_other_description"
+                android:textSize="@dimen/fontSize"
+                android:inputType="textNoSuggestions"
+                android:visibility="gone"/>
+
+            <LinearLayout
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="1dp"
+                    android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/_8"
+                        android:textColor="@color/heading_yellow"
+                        android:textSize="@dimen/fontSize"
+                        />
+                <include
+                        layout="@layout/atak_selection_flat"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="4dp"
+                        android:layout_marginRight="2dp"
+                        android:layout_marginLeft="2dp"
+                        android:id="@+id/med_lineEight" />
+              </LinearLayout>
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="1dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/_9"
+                    android:textColor="@color/heading_yellow"
+                    android:textSize="@dimen/fontSize"
+                    />
+
+                <include
+                    layout="@layout/atak_selection_flat"
+                    android:layout_height="wrap_content"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp"
+                    android:layout_marginRight="2dp"
+                    android:layout_marginLeft="2dp"
+                    android:id="@+id/med_lineNine"/>
+            </LinearLayout>
+            <com.atakmap.android.gui.EditText
+                android:id="@+id/txtLineNine"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/hlz_terrain_other_description"
+                android:textSize="@dimen/fontSize"
+                android:inputType="textNoSuggestions|textMultiLine"
+                android:visibility="gone"/>
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/remarks"/>
+
+                <com.atakmap.android.gui.EditText
+                    android:id="@+id/remarks_text"
+                    android:layout_width="fill_parent"
+                    android:layout_height="0dp"
+                    android:minHeight="25dp"
+                    android:layout_weight="1"
+                    android:gravity="start"
+                    android:hint="@string/remarks_hint"
+                    android:inputType="textMultiLine"
+                    android:minLines="1"
+                    android:textSize="@dimen/fontSize" />
+
+            </LinearLayout>
+
+            <View
+                android:minHeight="1dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="2dp"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginStart="2dp"
+                android:layout_marginEnd="2dp"
+                android:background="@android:color/darker_gray" >
+            </View>
+
+            <include
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                layout="@layout/zmist_view"/>
+
+            <View
+                android:minHeight="1dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="2dp"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginStart="2dp"
+                android:layout_marginEnd="2dp"
+                android:background="@android:color/darker_gray" >
+            </View>
+
+            <include
+                android:layout_marginTop="5dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                layout="@layout/hlz_view"/>
+
+        </LinearLayout>
+
+      </ScrollView>
+
+      <LinearLayout 
+            android:id="@+id/bottomControls" 
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_height="@dimen/nineline_line_height"
+            android:weightSum="1"
+            android:layout_alignParentBottom="true" >
+        
+            <ImageButton
+                android:id="@+id/med_sendBtn"
+                android:layout_width="0dip"
+                android:layout_height="match_parent"
+                style="@style/darkButton"
+                android:padding="6dp"
+                android:src="@drawable/send_square"
+                android:textSize="13sp"
+                 
+                android:layout_weight="0.3" />
+
+
+            <ImageButton
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:id="@+id/readoutButton"
+                style="@style/darkButton"
+                android:padding="6dp"
+                android:src="@drawable/read_out"
+                android:layout_weight="0.3" />
+  
+             <ImageButton
+                android:id="@+id/cotInfoAttachmentsButton"
+                android:layout_width="0dip"
+                android:layout_height="match_parent"
+                style="@style/darkButton"
+                android:padding="6dp"
+                android:src="@drawable/attachment"
+                android:layout_weight="0.3" />
+                
+    </LinearLayout>
+
+</RelativeLayout>

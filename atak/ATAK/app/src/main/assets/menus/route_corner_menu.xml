@@ -1,0 +1,23 @@
+<menu buttonRadius='65' buttonSpan='72' buttonWidth='90' buttonBg='bgs/button.xml'>
+
+    <button angle='-90'
+            icon='icons/delete.png'
+            onClick='actions/remove_editable_polyline_vertex.xml'
+            disabled='!{${removable}}' />
+ 
+    <button icon='icons/speech.png'
+            onClick='actions/edit_cues.xml' />
+
+    <button icon='icons/reference_point.png'
+            onClick='actions/insert_waypoint.xml' />
+
+    <button icon='icons/general_entry.png'
+            onClick='actions/general_entry_vertex.xml'
+            disabled='!{${movable}}' />
+
+    <button icon='icons/move.png'
+            onClick='actions/move_editable_polyline_vertex.xml'
+            disabled='!{${movable}}' />
+
+            
+</menu>

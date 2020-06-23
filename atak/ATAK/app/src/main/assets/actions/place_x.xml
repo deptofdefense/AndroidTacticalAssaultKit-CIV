@@ -1,0 +1,8 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.SELECT_POINT</action>
+        <extras>
+            <string key='point'>@{touchPoint}</string>
+        </extras>
+    </broadcast>
+</set>

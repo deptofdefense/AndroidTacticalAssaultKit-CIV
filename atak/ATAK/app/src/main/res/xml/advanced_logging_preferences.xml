@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <Preference
+        android:key="loggingDisclaimer"
+        android:selectable="false"
+        android:persistent="false"
+        android:title="@string/advanced_logging_disclaimer_title"
+        android:summary="@string/advanced_logging_disclaimer_summary"
+        android:icon="@drawable/metrics"/>
+
+    <PreferenceCategory
+        android:title="@string/debugPreferences">
+            <CheckBoxPreference
+                android:title="@string/preferences_text68"
+                android:summary="@string/preferences_text69"
+                android:defaultValue="false"
+                android:key="loggingfile"
+                android:icon="@drawable/ic_android_display_settings"/>
+        <CheckBoxPreference
+            android:title="@string/preferences_text70"
+            android:summary="@string/preferences_text71"
+            android:defaultValue="false"
+            android:key="loggingfile_error_only"
+            android:dependency="loggingfile"
+            android:disableDependentsState="true"
+            android:icon="@drawable/ic_menu_error"/>
+        <CheckBoxPreference
+                android:title="@string/preferences_text701"
+                android:summary="@string/preferences_text701s"
+                android:defaultValue="false"
+                android:key="loggingfile_upload_debug"
+                android:dependency="loggingfile"
+                android:disableDependentsState="true"
+                android:icon="@drawable/upload_logs"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/networklogging_pref">
+        <CheckBoxPreference
+            android:key="lognettraffictofile"
+            android:title="@string/preferences_text252"
+            android:summary="@string/preferences_text252_summary"
+            android:defaultValue="false"
+            android:icon="@drawable/network"/>
+        <CheckBoxPreference android:title="@string/advanced_cot_recorder"
+            android:key="generate_full_pool"
+            android:checked="false"
+            android:summary="@string/advanced_cot_recorder_summ"
+            android:icon="@drawable/network"/>
+
+        <CheckBoxPreference android:title="@string/advanced_detail_recorder"
+            android:key="generate_detail_pool"
+            android:checked="false"
+            android:summary="@string/advanced_detail_recorder_summ"
+            android:icon="@drawable/network"/>
+    </PreferenceCategory>
+</PreferenceScreen>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+
+    <TextView
+        android:text="@string/sort"
+        android:layout_width="40dp"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:paddingStart="3dp"/>
+
+    <TextView android:id="@+id/trackhistory_list_item_callsign_header"
+              android:text="@string/track_title"
+              android:layout_width="120dp"
+              android:layout_height="wrap_content"
+              android:textSize="14sp"
+              android:paddingStart="3dp"/>
+        
+     <TextView android:id="@+id/trackhistory_list_item_distance_header"
+               android:text="@string/start_time"
+               android:layout_width="120dp"
+               android:layout_height="wrap_content"
+               android:textSize="14sp"
+               android:paddingStart="3dp"/>
+
+</LinearLayout>

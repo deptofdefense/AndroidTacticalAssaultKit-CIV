@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:paddingStart="@dimen/auto_margin"
+    android:orientation="horizontal" >
+
+    <ProgressBar
+        android:id="@+id/loader"
+        android:layout_width="40dp"
+        android:layout_height="40dp"/>
+
+    <ImageView
+        android:id="@+id/failed"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/close"/>
+
+    <ImageButton
+        android:id="@+id/export"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="@dimen/auto_space_big"
+        android:padding="@dimen/auto_space_big"
+        android:src="@drawable/export_menu_default"
+        style="@style/darkButton"/>
+
+    <ImageButton
+        android:id="@+id/delete"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:padding="@dimen/auto_space_big"
+        android:src="@drawable/ic_menu_delete"
+        android:scaleType="fitCenter"
+        style="@style/darkButton"/>
+
+</LinearLayout>

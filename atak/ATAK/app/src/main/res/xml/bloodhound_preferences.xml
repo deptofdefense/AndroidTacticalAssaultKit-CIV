@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+    <PreferenceCategory android:title="@string/bloodhoundPreferences">
+        <CheckBoxPreference
+            android:key="rab_bloodhound_display_textwidget"
+            android:title="@string/bloodhound_text2"
+            android:defaultValue="true"
+            android:summary="@string/bloodhound_text3"/>
+        <CheckBoxPreference
+            android:key="rab_bloodhound_large_textwidget"
+            android:title="@string/bloodhound_text4"
+            android:defaultValue="false"
+            android:summary="@string/bloodhound_text5"
+            android:dependency="rab_bloodhound_display_textwidget"/>
+        <CheckBoxPreference
+            android:key="rab_bloodhound_flash_colors"
+            android:title="@string/bloodhound_text6"
+            android:defaultValue="true"
+            android:summary="@string/bloodhound_text7"/>
+        <CheckBoxPreference
+            android:key="rab_bloodhound_zoom"
+            android:title="@string/bloodhound_text8"
+            android:defaultValue="true"
+            android:summary="@string/bloodhound_text9"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/bloodhoundETAPreferences">
+                <com.atakmap.android.gui.PanEditTextPreference
+                    android:dialogTitle="@string/bloodhound_text12"
+                    android:inputType="number"
+                    android:key="bloodhound_flash_eta"
+                    android:summary="@string/bloodhound_text11"
+                    android:defaultValue="360"
+                    android:title="@string/bloodhound_text10" />
+
+                <com.atakmap.android.gui.PanEditTextPreference
+                    android:dialogTitle="@string/bloodhound_text13"
+                    android:inputType="number"
+                    android:key="bloodhound_outer_eta"
+                    android:summary="@string/bloodhound_text14"
+                    android:defaultValue="180"
+                    android:title="@string/bloodhound_text15" />
+
+                <com.atakmap.android.gui.PanEditTextPreference
+                    android:dialogTitle="@string/bloodhound_text16"
+                    android:inputType="number"
+                    android:key="bloodhound_inner_eta"
+                    android:summary="@string/bloodhound_text17"
+                    android:defaultValue="60"
+                    android:title="@string/bloodhound_text18" />
+
+                <ListPreference
+                    android:entries="@array/colors_label"
+                    android:entryValues="@array/colors_value"
+                    android:key="bloodhound_flash_color_pref"
+                    android:title="@string/bloodhound_text19"
+                    android:defaultValue="black"
+                    android:summary="@string/bloodhound_text23"/>
+
+                <ListPreference
+                    android:entries="@array/colors_label"
+                    android:entryValues="@array/colors_value"
+                    android:key="bloodhound_outer_color_pref"
+                    android:title="@string/bloodhound_text20"
+                    android:defaultValue="green"
+                    android:summary="@string/bloodhound_text24"/>
+
+                <ListPreference
+                    android:entries="@array/colors_label"
+                    android:entryValues="@array/colors_value"
+                    android:key="bloodhound_middle_color_pref"
+                    android:title="@string/bloodhound_text21"
+                    android:defaultValue="yellow"
+                    android:summary="@string/bloodhound_text25"/>
+
+                <ListPreference
+                    android:entries="@array/colors_label"
+                    android:entryValues="@array/colors_value"
+                    android:key="bloodhound_inner_color_pref"
+                    android:title="@string/bloodhound_text22"
+                    android:defaultValue="red"
+                    android:summary="@string/bloodhound_text26"/>
+
+    </PreferenceCategory>
+
+</PreferenceScreen>

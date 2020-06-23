@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="horizontal" >
+
+    <EditText
+         android:id="@+id/gridSquare"
+         android:layout_width="0dp"
+         android:layout_height="wrap_content"
+         android:layout_weight="5"
+         android:ems="6"
+         android:gravity="center"
+         android:hint="@string/mgrs_hint1"
+         android:inputType="textCapCharacters"
+         android:maxLength="5" />
+
+     <com.atakmap.android.gui.EditTextWithKeyPadDismissEvent
+         android:id="@+id/eastingNorthing"
+         android:layout_width="0dp"
+         android:layout_height="wrap_content"
+         android:layout_weight="10"
+         android:maxLength="10"
+         android:ems="15"
+         android:inputType="number"
+         android:ellipsize="end"
+         android:gravity="center"
+         android:imeOptions="actionDone|flagNoExtractUi"
+         android:hint="@string/mgrs_hint2" />
+
+     <CheckBox
+         android:id="@+id/dropSpi"
+         android:layout_weight="0"
+         android:layout_width="wrap_content"
+         android:layout_height="fill_parent"
+         android:gravity="start|center_vertical"
+         android:textSize="9sp"
+         android:paddingBottom="3dp"
+         android:layout_margin="0dp"
+         android:text="@string/place_local_spi" />
+
+</LinearLayout>
+
+
+
+
+

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:orientation="horizontal">
+                
+    <ImageView android:id="@+id/cot_object_icon"
+               android:src="@drawable/cot_icon_sugp"
+               android:tint="#55ff0000"
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content" />
+                
+    <RelativeLayout 
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent">
+    
+    
+            <TextView android:id="@+id/cot_object_uid"
+                      android:text="@string/uid"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:padding="3dip"
+                      android:textSize="20sp"
+                      android:textStyle="bold"/>
+            
+            
+            <TextView android:id="@+id/cot_object_callsign"
+                      android:text="@string/callsign"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:layout_below="@id/cot_object_uid"
+                      android:padding="3dip" />
+    
+    </RelativeLayout>
+</LinearLayout>

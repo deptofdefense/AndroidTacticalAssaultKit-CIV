@@ -1,0 +1,1022 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array translatable="false" name="brightness_values">
+        <item>-1</item>
+        <item>0</item>
+        <item>25</item>
+        <item>50</item>
+        <item>75</item>
+        <item>100</item>
+    </string-array>
+
+    <string-array name="brightness_names">
+        <item>None</item>
+        <item>Lowest</item>
+        <item>25 Percent</item>
+        <item>50 Percent</item>
+        <item>75 Percent</item>
+        <item>Highest</item>
+    </string-array>
+
+
+    <string-array name="tap_selfoverlay_names">
+        <item>Do Nothing</item>
+        <item>Change Coordinates</item>
+        <item>Pan to Self</item>
+    </string-array>
+
+    <string-array translatable="false" name="tap_selfoverlay_values">
+        <item>nothing</item>
+        <item>cyclecoordinate</item>
+        <item>panto</item>
+    </string-array>
+
+
+
+    <string-array name="longpress_map_names">
+        <item>Do Nothing</item>
+        <item>Hide or Show ActionBar</item>
+        <item>Drop a Point</item>
+    </string-array>
+
+    <string-array translatable="false" name="longpress_map_values">
+        <item>nothing</item>
+        <item>actionbar</item>
+        <item>dropicon</item>
+    </string-array>
+
+
+    <string-array name="airplane_names">
+        <item>Do not Force</item>
+        <item>Force General Radio Off</item>
+        <item>Force General Radio and Wireless Off</item>
+    </string-array>
+
+    <string-array translatable="false" name="airplane_values">
+        <item>none</item>
+        <item>cell</item>
+        <item>cell,wifi</item>
+    </string-array>
+
+    <string-array name="overlays_scaling_names">
+        <item>Normal</item>
+        <item>1.25x</item>
+        <item>1.5x</item>
+        <item>1.75x</item>
+        <item>2x</item>
+    </string-array>
+
+    <string-array translatable="false" name="overlays_scaling_values">
+        <item>1.00</item>
+        <item>1.25</item>
+        <item>1.50</item>
+        <item>1.75</item>
+        <item>2.00</item>
+    </string-array>
+
+    <string-array name="label_scaling_names">
+        <item>Normal</item>
+        <item>Large</item>
+        <item>X-Large</item>
+    </string-array>
+    <string-array translatable="false" name="label_scaling_values">
+        <item>14</item>
+        <item>16</item>
+        <item>18</item>
+    </string-array>
+
+    <string-array name="fade_notification_names">
+        <item>30 seconds</item>
+        <item>60 seconds</item>
+        <item>90 seconds</item>
+        <item>2 minutes</item>
+        <item>5 minutes</item>
+        <item>10 minutes</item>
+        <item>1 hour</item>
+        <item>Do Not Fade</item>
+    </string-array>
+
+    <string-array translatable="false" name="fade_notification_values">
+        <item>30</item>
+        <item>60</item>
+        <item>90</item>
+        <item>120</item>
+        <item>300</item>
+        <item>600</item>
+        <item>3600</item>
+        <item>-1</item>
+    </string-array>
+    <string-array name="imagery_tab_names">
+        <item>Imagery</item>
+        <item>Maps</item>
+    </string-array>
+    <string-array translatable="false" name="imagery_tab_values">
+        <item>Imagery</item>
+        <item>Maps</item>
+    </string-array>
+    <string-array name="crumb_size">
+        <item>Normal</item>
+        <item>Large</item>
+        <item>Extra Large</item>
+    </string-array>
+
+    <string-array translatable="false" name="crumb_size_value">
+        <item>10</item>
+        <item>15</item>
+        <item>20</item>
+    </string-array>
+
+    <string-array name="elevation_units_label">
+        <item>Feet (ft)</item>
+        <item>Meters (m)</item>
+    </string-array>
+
+    <string-array name="speed_units_label">
+        <item>Miles per Hour (mph)</item>
+        <item>KM per Hour (kmph)</item>
+        <item>KGS (kts)</item>
+        <item>Meters Per Second (mps)</item>
+    </string-array>
+
+    <string-array translatable="false" name="speed_units_display">
+        <item>MPH</item>
+        <item>Kmph</item>
+        <item>Kts</item>
+        <item>MPS</item>
+    </string-array>
+
+    <string-array name="alt_display_label">
+        <item>Height Above Ellipsoid (HAE)</item>
+        <item>Mean Sea Level (MSL)</item>
+    </string-array>
+    <string-array name="coord_display_label">
+        <item>MGRS</item>
+        <item>Decimal Degrees</item>
+        <item>Degrees, Minutes</item>
+        <item>Degrees, Minutes, Seconds</item>
+        <item>UTM</item>
+    </string-array>
+    <string-array translatable="false" name="elevation_units_value">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+    <string-array translatable="false" name="speed_units_value">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+    <string-array translatable="false" name="coord_display_value">
+        <item>MGRS</item>
+        <item>DD</item>
+        <item>DM</item>
+        <item>DMS</item>
+        <item>UTM</item>
+    </string-array>
+    <string-array translatable="false" name="alt_display_value">
+        <item>HAE</item>
+        <item>MSL</item>
+    </string-array>
+    <string-array name="brg_units_label">
+        <item>Degrees</item>
+        <item>Mils</item>
+    </string-array>
+    <string-array name="rng_units_label">
+        <item>Feet/Miles</item>
+        <item>Meters/Kilometers</item>
+        <item>Nautical Miles</item>
+    </string-array>
+    <string-array name="north_refs_label">
+        <item>True North</item>
+        <item>Magnetic North</item>
+        <item>Grid North</item>
+    </string-array>
+    <string-array name="colors_label">
+        <item>Red</item>
+        <item>Yellow</item>
+        <item>Green</item>
+        <item>Cyan</item>
+        <item>Blue</item>
+        <item>Magenta</item>
+        <item>White</item>
+        <item>Black</item>
+    </string-array>
+    <string-array name="domain_labels">
+        <item>Ground</item>
+        <item>Aviation</item>
+        <item>Maritime</item>
+    </string-array>
+    <string-array translatable="false" name="domain_values">
+        <item>Ground</item>
+        <item>Aviation</item>
+        <item>Maritime</item>
+    </string-array>
+    <string-array translatable="false" name="brg_units_value">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+    <string-array translatable="false" name="rng_units_value">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+    <string-array translatable="false" name="north_refs_value">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+    <string-array translatable="false" name="colors_value">
+        <item>red</item>
+        <!-- Red -->
+        <item>yellow</item>
+        <!-- Yellow -->
+        <item>green</item>
+        <!-- Green -->
+        <item>cyan</item>
+        <!-- Cyan -->
+        <item>blue</item>
+        <!-- Blue -->
+        <item>magenta</item>
+        <item>white</item>
+        <!-- White -->
+        <item>black</item>
+    </string-array>
+    <string-array translatable="false" name="connection_protos">
+        <item>udp</item>
+        <item>rtsp</item>
+        <item>rtmp</item>
+        <item>rtmps</item>
+        <item>tcp</item>
+        <item>rtp</item>
+        <item>http</item>
+        <item>https</item>
+        <item>raw</item>
+    </string-array>
+
+    <string-array name="security">
+        <item>@string/noenemy_choice</item>
+        <item>@string/posenemy_choice</item>
+        <item>@string/enemy_caution_choice</item>
+        <item>@string/enemy_escortreq_choice</item>
+    </string-array>
+
+    <string-array name="hlz_marking">
+        <item>@string/hlz_marking_panel_choice</item>
+        <item>@string/hlz_marking_pyro_choice</item>
+        <item>@string/hlz_marking_smoke_choice</item>
+        <item>@string/hlz_marking_none_choice</item>
+        <item>@string/hlz_marking_other_choice</item>
+    </string-array>
+
+    <string-array name="cardinal_direction">
+        <item>N</item>
+        <item>E</item>
+        <item>S</item>
+        <item>W</item>
+    </string-array>
+
+    <string-array name="mechanism_abbr">
+        <item>@string/mist_m_blast_abbr</item>
+        <item>@string/mist_m_blunt_abbr</item>
+        <item>@string/mist_m_gsw_abbr</item>
+        <item>@string/mist_m_burn_abbr</item>
+        <item>@string/mist_m_cold_abbr</item>
+        <item>@string/mist_m_heat_abbr</item>
+        <item>@string/mist_m_crush_abbr</item>
+        <item>@string/mist_m_fall_abbr</item>
+        <item>@string/mist_m_frag_single_abbr</item>
+        <item>@string/mist_m_frag_multiple_abbr</item>
+        <item>@string/mist_m_knife_abbr</item>
+        <item>@string/mist_m_radiation_abbr</item>
+        <item>@string/mist_m_nuclear_abbr</item>
+        <item>@string/mist_m_chemical_abbr</item>
+        <item>@string/mist_m_smoke_abbr</item>
+        <item>@string/mist_m_sting_abbr</item>
+    </string-array>
+
+    <string-array name="mechanism_full">
+        <item>@string/mist_m_blast</item>
+        <item>@string/mist_m_blunt</item>
+        <item>@string/mist_m_gsw</item>
+        <item>@string/mist_m_burn</item>
+        <item>@string/mist_m_cold</item>
+        <item>@string/mist_m_heat</item>
+        <item>@string/mist_m_crush</item>
+        <item>@string/mist_m_fall</item>
+        <item>@string/mist_m_frag_single</item>
+        <item>@string/mist_m_frag_multiple</item>
+        <item>@string/mist_m_knife</item>
+        <item>@string/mist_m_radiation</item>
+        <item>@string/mist_m_nuclear</item>
+        <item>@string/mist_m_chemical</item>
+        <item>@string/mist_m_smoke</item>
+        <item>@string/mist_m_sting</item>
+    </string-array>
+
+    <string-array name="injury_abbr">
+        <item>@string/mist_i_amputation_abbr</item>
+        <item>@string/mist_i_avulsion_abbr</item>
+        <item>@string/mist_i_bleeding_abbr</item>
+        <item>@string/mist_i_burn_abbr</item>
+        <item>@string/mist_i_deformity_abbr</item>
+        <item>@string/mist_i_foreign_abbr</item>
+        <item>@string/mist_i_gunshot_abbr</item>
+        <item>@string/mist_i_hematoma_abbr</item>
+        <item>@string/mist_i_laceration_abbr</item>
+        <item>@string/mist_i_puncture_abbr</item>
+        <item>@string/mist_i_stab_abbr</item>
+        <item>@string/mist_i_tourniquet_abbr</item>
+        <item>@string/mist_i_fracture_abbr</item>
+    </string-array>
+
+    <string-array name="injury_full">
+        <item>@string/mist_i_amputation</item>
+        <item>@string/mist_i_avulsion</item>
+        <item>@string/mist_i_bleeding</item>
+        <item>@string/mist_i_burn</item>
+        <item>@string/mist_i_deformity</item>
+        <item>@string/mist_i_foreign</item>
+        <item>@string/mist_i_gunshot</item>
+        <item>@string/mist_i_hematoma</item>
+        <item>@string/mist_i_laceration</item>
+        <item>@string/mist_i_puncture</item>
+        <item>@string/mist_i_stab</item>
+        <item>@string/mist_i_tourniquet</item>
+        <item>@string/mist_i_fracture</item>
+    </string-array>
+
+
+    <string-array translatable="false" name="munitionNumbers">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+    </string-array>
+
+    <string-array name="kml_exportroute_checkpointmode_strings">
+        <item>Points</item>
+        <item>Line</item>
+        <item>Both</item>
+    </string-array>
+    <string-array translatable="false" name="kml_exportroute_checkpointmode_values">
+        <item>Points</item>
+        <item>Line</item>
+        <item>Both</item>
+    </string-array>
+
+    <!-- Needs to match GeoFence.Trigger -->
+    <string-array name="geofence_triggers">
+        <item>Entry</item>
+        <item>Exit</item>
+        <item>Both</item>
+    </string-array>
+    <!-- Needs to match GeoFence.MonitoredTypes -->
+    <string-array name="geofence_tracked_types">
+        <item>TAK Users</item>
+        <item>Friendly</item>
+        <item>Hostile</item>
+        <item>Custom</item>
+        <item>All</item>
+    </string-array>
+
+    <string-array name="takserver_cache_credentials">
+        <item>@string/cache_creds_both</item>
+        <item>@string/cache_creds_username</item>
+        <item>@string/cache_creds_do_not</item>
+    </string-array>
+
+    <string-array translatable="false" name="app_mgmt_status_filter_values">
+        <item>@string/app_mgmt_filter_All</item>
+        <item>@string/app_mgmt_filter_Current</item>
+        <item>@string/app_mgmt_filter_update_available</item>
+        <item>@string/app_mgmt_filter_loaded</item>
+        <item>@string/app_mgmt_filter_NotLoaded</item>
+        <item>@string/app_mgmt_filter_Notinstalled</item>
+        <item>@string/app_mgmt_filter_NotCompatible</item>
+        <item>@string/app_mgmt_filter_installed</item>
+    </string-array>
+
+    <string-array translatable="false" name="app_mgmt_status_repo_values">
+        <item>@string/app_mgmt_filter_All</item>
+        <item>@string/app_mgmt_update_server</item>
+        <item>@string/app_mgmt_bundled</item>
+        <item>@string/app_mgmt_filesystem</item>
+        <item>@string/app_mgmt_sideloaded</item>
+    </string-array>
+
+    <string-array name="rb_distance_label">
+        <item>Slant Range</item>
+        <item>Clamped</item>
+    </string-array>
+    <string-array translatable="false" name="rb_distance_value">
+        <item>slantrange</item>
+        <item>clamped</item>
+    </string-array>
+    <string-array translatable="false"  name="voip_assignment_values">
+        <item>@string/voip_assignment_disabled</item>
+        <item>@string/voip_assignment_manual_entry</item>
+        <item>@string/voip_assignment_ip</item>
+        <item>@string/voip_assignment_ip_callsign</item>
+    </string-array>
+
+    <string-array name="delete_stale_names">
+        <item>Immediately</item>
+        <item>1 minute</item>
+        <item>5 minutes</item>
+        <item>20 minutes</item>
+        <item>1 hour</item>
+        <item>6 hours</item>
+        <item>1 day</item>
+    </string-array>
+    <string-array translatable="false" name="delete_stale_values">
+        <item>0</item>
+        <item>1</item>
+        <item>5</item>
+        <item>20</item>
+        <item>60</item>
+        <item>360</item>
+        <item>1440</item>
+    </string-array>
+    <string-array name="overlay_manager_size_names">
+        <item>50%</item>
+        <item>33%</item>
+        <item>25%</item>
+    </string-array>
+    <string-array translatable="false" name="overlay_manager_size_values">
+        <item>50</item>
+        <item>33</item>
+        <item>25</item>
+    </string-array>
+    <string-array name="nineline_menu_types">
+        <item >CAS</item>
+        <item >CFF</item>
+    </string-array>
+    <string-array translatable="false" name="nineline_menu_type_values">
+        <item >cas</item>
+        <item >cff</item>
+    </string-array>
+    <string-array name="sead_supp_types">
+        <item>Continuous</item>
+        <item>Interrupted</item>
+        <item>Non-Standard</item>
+        <item>None</item>
+    </string-array>
+    <string-array translatable="false" name="sead_threat_types">
+        <item>SA-2f</item>
+        <item>SA-2d</item>
+        <item>SA-3</item>
+        <item>SA-5</item>
+        <item>SA-6</item>
+        <item>SA-7</item>
+        <item>SA-8</item>
+        <item>SA-9</item>
+        <item>SA-10</item>
+        <item>SA-11A</item>
+        <item>SA-12A</item>
+        <item>SA-12B</item>
+        <item>SA-13</item>
+        <item>SA-14</item>
+        <item>SA-15</item>
+        <item>SA-16</item>
+        <item>SA-17</item>
+        <item>SA-18</item>
+        <item>SA-19</item>
+        <item>SA-20</item>
+        <item>SA-21</item>
+        <item>SA-22</item>
+        <item>SA-24</item>
+        <item>SA-26</item>
+        <item>Stinger Basic</item>
+        <item>Roland II</item>
+        <item>Crotale</item>
+        <item>HAWK</item>
+        <item>CSA-2</item>
+        <item>CSA-9</item>
+        <item>QW-1</item>
+        <item>M38/M46</item>
+        <item>ZPU-1/2/4</item>
+        <item>ZU-23</item>
+        <item>ZSU 23-4</item>
+        <item>ZSU 57-2</item>
+        <item>M53/M59</item>
+        <item>S-60/Type 59</item>
+        <item>M-1985</item>
+        <item>KS-12A M1939/1944</item>
+        <item>KS-19/KS-1A</item>
+        <item>2S6</item>
+        <item>Type 80</item>
+        <item>Twin 37</item>
+    </string-array>
+
+    <string-array translatable="false" name="mark_type_array">
+        <item>"NO MARK"</item>
+        <item>"LASER HAND OFF</item>
+        <item>LASER</item>
+        <item>IR SPARKLE</item>
+        <item>VDL TALK-ON</item>
+        <item>TRP/GEOREF</item>
+        <item>IDF</item>
+        <item>DIRECT FIRE</item>
+        <item>SMOKE</item>
+        <item>TALK-ON</item>
+        <item>LINK16/SADL</item>
+        <item>BEACON</item>
+        <item>MARKS OF OPPORTUNITY</item>
+    </string-array>
+
+    <string-array translatable="false" name="combined_mark_array">
+        <item>NO MARK</item>
+        <item>LASER HAND OFF</item>
+        <item>LASER</item>
+        <item>IR SPARKLE</item>
+        <item>VDL TALK-ON</item>
+        <item>TRP/GEOREF</item>
+        <item>IDF</item>
+        <item>DIRECT FIRE</item>
+        <item>SMOKE</item>
+        <item>TALK-ON</item>
+        <item>LINK16/SADL</item>
+        <item>BEACON</item>
+        <item>MARKS OF OPPORTUNITY</item>
+        <item>FIRE</item>
+        <item>WHITE PHOSPHORUS</item>
+        <item>ILLUMINATION</item>
+    </string-array>
+    <string-array translatable="false"  name="location_marker_entry_values">
+        <item>-1</item>
+        <item>48</item>
+        <item>60</item>
+        <item>72</item>
+        <item>96</item>
+    </string-array>
+    <string-array name="location_marker_enteries">
+        <item>Default</item>
+        <item>1x</item>
+        <item>2x</item>
+        <item>3x</item>
+        <item>4x</item>
+    </string-array>
+    <string-array translatable="false" name="route_direction">
+        <item>@string/infil</item>
+        <item>@string/exfil</item>
+    </string-array>
+    <string-array translatable="false" name="route_travel_type">
+        <item>@string/driving</item>
+        <item>@string/walking</item>
+        <item>@string/flying</item>
+        <item>@string/swimming</item>
+        <item>@string/watercraft</item>
+    </string-array>
+    <string-array translatable="false" name="route_prim_or_secondary">
+        <item>@string/primary</item>
+        <item>@string/secondary</item>
+    </string-array>
+    <string-array translatable="false" name="check_point_asc_or_desc">
+        <item>@string/ascending_cp</item>
+        <item>@string/descending_cp</item>
+    </string-array>
+
+    <string-array translatable="false" name="device_preferences">
+        <item>locationCallsign</item>
+        <item>locationTeam</item>
+        <item>atakRoleType</item>
+        <item>locationUnitType</item>
+        <item>useGPSTime</item>
+        <item>locationUseWRCallsign</item>
+    </string-array>
+    <string-array translatable="false" name="alternate_contact_preferences">
+        <item>saHasPhoneNumber</item>
+        <item>saSipAddressAssignment</item>
+        <item>saSipAddress</item>
+        <item>saXmppUsername</item>
+        <item>saEmailAddress</item>
+    </string-array>
+    <string-array translatable="false" name="reporting_preferences">
+        <item>dispatchLocationCotExternal</item>
+        <item>locationReportingStrategy</item>
+        <item>dynamicReportingRateStationaryUnreliable</item>
+        <item>dynamicReportingRateMinUnreliable</item>
+        <item>dynamicReportingRateMaxUnreliable</item>
+        <item>dynamicReportingRateStationaryReliable</item>
+        <item>dynamicReportingRateMinReliable</item>
+        <item>dynamicReportingRateMaxReliable</item>
+        <item>constantReportingRateUnreliable</item>
+        <item>constantReportingRateReliable</item>
+        <item>dispatchLocationCotExternalAtStart</item>
+    </string-array>
+    <string-array translatable="false" name="display_preferences">
+        <item>location_marker_scale</item>
+        <item>default_gps_icon</item>
+        <item>team_color_gps_icon</item>
+        <item>custom_color_gps_icon_pref</item>
+        <item>coord_display_pref</item>
+        <item>alt_display_pref</item>
+        <item>alt_unit_pref</item>
+        <item>alt_display_agl</item>
+        <item>speed_unit_pref</item>
+        <item>rab_dist_slant_range</item>
+        <item>rab_brg_units_pref</item>
+        <item>rab_rng_units_pref</item>
+        <item>rab_north_ref_pref</item>
+        <item>rng_feet_display_pref</item>
+        <item>rng_meters_display_pref</item>
+        <item>rab_color_pref</item>
+        <item>map_scale_visible</item>
+        <item>map_scale_rounding</item>
+        <item>map_center_designator</item>
+        <item>largeTextMode</item>
+        <item>relativeOverlaysScalingRadioList</item>
+        <item>label_text_size</item>
+        <item>dim_map_with_brightness_key</item>
+        <item>pref_grid_color</item>
+        <item>prefs_grid_default_show</item>
+        <item>prefs_layer_grg_map_interaction</item>
+        <item>pref_layer_outline_color</item>
+        <item>prefs_layer_outlines_default_show</item>
+        <item>toggle_offscreen_indicators</item>
+        <item>offscreen_indicator_dist_threshold</item>
+        <item>offscreen_indicator_timeout_threshold</item>
+        <item>pref_overlay_style_outline_color</item>
+        <item>pref_overlay_style_outline_width</item>
+        <item>overlay_manager_width_height</item>
+        <item>atakForcedBrightness</item>
+        <item>atakScreenLock</item>
+        <item>atakDisableSoftkeyIllumination</item>
+        <item>atakControlReverseOrientation</item>
+        <item>atakControlShortenLabels</item>
+        <item>atakControlShowLabels</item>
+        <item>atakControlOtherUserNotification</item>
+        <item>fade_notification</item>
+        <item>imagery_tab_name</item>
+        <item>frame_limit</item>
+    </string-array>
+    <string-array translatable="false" name="network_preferences">
+        <item>displayServerConnectionWidget</item>
+        <item>monitorServerConnections</item>
+        <item>caLocation</item>
+        <item>caPassword</item>
+        <item>certificateLocation</item>
+        <item>clientPassword</item>
+        <item>default_client_credentials</item>
+        <item>apiSecureServerPort</item>
+        <item>apiUnsecureServerPort</item>
+        <item>enableNonStreamingConnections</item>
+        <item>manageInputsLink</item>
+        <item>manageOutputsLink</item>
+        <item>lognettraffictofile</item>
+        <item>tcpConnectTimeout</item>
+        <item>rejoininterval</item>
+        <item>networkunjoinbeforejoin</item>
+        <item>multicastTTL</item>
+        <item>network_multicast_loopback</item>
+        <item>mockingOption</item>
+        <item>requestDelay</item>
+        <item>listenPort</item>
+        <item>tadiljId</item>
+        <item>tadiljSelfPositionType</item>
+        <item>tadiljTrackBlock</item>
+        <item>showTadiljIds</item>
+        <item>replaceCallsign</item>
+    </string-array>
+    <string-array translatable="false" name="bluetooth_preferences">
+        <item>atakControlBluetooth</item>
+        <item>atakBluetoothReconnectSeconds</item>
+    </string-array>
+    <string-array translatable="false" name="tools_preferences">
+        <item>enableAutoUpdateServer</item>
+        <item>atakUpdateServerUrl</item>
+        <item>atakPluginScanningOnStartup</item>
+        <item>autostart_nineline</item>
+        <item>autostart_nineline_type</item>
+        <item>prone_standing_coloring</item>
+        <item>keyhole_cas</item>
+        <item>send_cas</item>
+        <item>ip</item>
+        <item>port</item>
+        <item>local_port</item>
+        <item>fahDistance</item>
+        <item>fahOnCreation</item>
+        <item>fahReciprocalOnCreation</item>
+        <item>laserBasketDistance</item>
+        <item>laserBasketDegrees</item>
+        <item>nineline_fah_edit_always</item>
+        <item>enableGeocoder</item>
+        <item>builtInGeocoder</item>
+        <item>geocodeSupplier</item>
+        <item>geocodeTestConnection</item>
+        <item>alert_notification</item>
+        <item>alert_audible</item>
+        <item>alert_vibration</item>
+        <item>rab_bloodhound_display_textwidget</item>
+        <item>rab_bloodhound_large_textwidget</item>
+        <item>rab_bloodhound_flash_colors</item>
+        <item>rab_bloodhound_zoom</item>
+        <item>bloodhound_flash_eta</item>
+        <item>bloodhound_inner_eta</item>
+        <item>bloodhound_flash_color_pref</item>
+        <item>bloodhound_outer_color_pref</item>
+        <item>bloodhound_middle_color_pref</item>
+        <item>bloodhound_inner_color_pref</item>
+        <item>enableToast</item>
+        <item>vibratePhone</item>
+        <item>audibleNotify</item>
+        <item>persistChatGroups</item>
+        <item>chatAddress</item>
+        <item>chatPort</item>
+        <item>prefs_dted_visible</item>
+        <item>prefs_dted_color_alpha</item>
+        <item>prefs_dted_color_saturation</item>
+        <item>prefs_dted_color_value</item>
+        <item>prefs_dted_x_res</item>
+        <item>prefs_dted_y_res</item>
+        <item>spiUpdateDelay</item>
+        <item>hostileUpdateDelay</item>
+        <item>network_config</item>
+        <item>network_dhcp</item>
+        <item>network_static_ip_address</item>
+        <item>network_static_subnet_mask</item>
+        <item>network_static_gateway</item>
+        <item>network_static_dns1</item>
+        <item>network_static_dns2</item>
+        <item>jm_auto_import_winds</item>
+        <item>jm_planned_gr_option</item>
+        <item>jm_planned_basic_dip</item>
+        <item>jm_landing_pattern_movable</item>
+        <item>wmsconnecttimeout</item>
+        <item>filesharingEnabled</item>
+        <item>filesharingSizeThresholdNoGo</item>
+        <item>fileshareDownloadAttempts</item>
+        <item>filesharingWebServerPort</item>
+        <item>filesharingConnectionTimeoutSecs</item>
+        <item>filesharingTransferTimeoutSecs</item>
+        <item>waypointPrefix</item>
+        <item>default_route_travel_type</item>
+        <item>defaultRouteColor</item>
+        <item>waypointBubble.Walking</item>
+        <item>waypointBubble.Driving</item>
+        <item>waypointBubble.Flying</item>
+        <item>waypointBubble.Swimming</item>
+        <item>waypointBubble.Watercraft</item>
+        <item>elevProfileInterpolateAlt</item>
+        <item>elevProfileCenterOnSeeker</item>
+        <item>gpxImportCheckpointsForNamedRoutePoints</item>
+        <item>kmlExportGroundClamp</item>
+        <item>kmlExportCheckpointMode</item>
+        <item>toggle_log_tracks</item>
+        <item>track_prefix</item>
+        <item>toggle_rotate_track_colors</item>
+        <item>track_history_default_color</item>
+        <item>track_csv_export_headers</item>
+        <item>track_kml_export_timestamps</item>
+        <item>bread_track_timegap_threshold</item>
+        <item>track_infinite</item>
+        <item>max_num_bread_tracks</item>
+        <item>track_crumb_size</item>
+        <item>bread_dist_threshold</item>
+        <item>disconnect</item>
+    </string-array>
+    <string-array translatable="false" name="media_preferences">
+        <item>clearContentOnShutdown</item>
+        <item>secureDeleteTimeout</item>
+    </string-array>
+    <string-array translatable="false" name="stale_preferences">
+        <item>staleRemoteDisconnects</item>
+        <item>expireEverything</item>
+        <item>expireStaleItemsTime</item>
+        <item>expireUnknowns</item>
+    </string-array>
+    <string-array translatable="false" name="user_preferences">
+        <item>atakControlQuitOnBack</item>
+        <item>atakControlAskToQuit</item>
+        <item>atakLongPressMap</item>
+        <item>atakDoubleTapToZoom</item>
+        <item>volumemapswitcher</item>
+    </string-array>
+    <string-array translatable="false" name="self_preferences">
+        <item>self_coord_action</item>
+        <item>selfcoord_legacy_enlarge</item>
+    </string-array>
+    <string-array translatable="false" name="other_preferences">
+        <item>disable_mediaserver</item>
+        <item>atakDisableKeyguard</item>
+        <item>atakForceAirplaneRadioList</item>
+        <item>atakControlMaximumTextureUnits</item>
+        <item>atakControlEnableTextureCopy</item>
+    </string-array>
+    <string-array translatable="false" name="debug_preferences">
+        <item>loggingfile</item>
+        <item>loggingfile_error_only</item>
+    </string-array>
+
+    <string-array name="polar_distance_units">
+        <item>Meters</item>
+        <item>Kilometers</item>
+        <item>Feet</item>
+        <item>Miles</item>
+        <item>Nautical Miles</item>
+    </string-array>
+    <string-array name="polar_north_options">
+        <item>True</item>
+        <item>Magnetic</item>
+        <item>Grid</item>
+    </string-array>
+    <string-array name="polar_radial_units">
+        <item>Degrees</item>
+        <item>Mils</item>
+    </string-array>
+    <string-array name="polar_zoom_method">
+        <item>Slew to</item>
+        <item>Auto Zoom</item>
+    </string-array>
+    <string-array name="polar_action">
+        <item>Place Point</item>
+        <item>Create R+B line</item>
+        <item>Both</item>
+    </string-array>
+
+    <string-array name="slant_report_status">
+        <item>@string/slant_review</item>
+        <item>@string/slant_clear</item>
+        <item>@string/slant_dryhole</item>
+        <item>@string/slant_landslide</item>
+        <item>@string/slant_bosco</item>
+        <item>@string/slant_jackpot</item>
+    </string-array>
+
+    <string-array name="option_names">
+        <item>Ignore Internal GPS / Use External or Network GPS Only</item>
+        <item>Internal GPS Only</item>
+        <item>External or Network GPS / Fallback Internal GPS</item>
+    </string-array>
+
+    <string-array translatable="false" name="option_values">
+        <item>IgnoreInternalGPS</item>
+        <item>LocalGPS</item>
+        <item>WRGPS</item>
+    </string-array>
+
+    <string-array translatable="false" name="autobroadcast_update">
+        <item>0</item>
+        <item>60</item>
+        <item>90</item>
+        <item>120</item>
+    </string-array>
+
+    <string-array name="filenames">
+    </string-array>
+    <string-array name="filename_values">
+    </string-array>
+
+
+    <string-array translatable="false" name="repeater_choices">
+        <item>@string/repeater_alert</item>
+        <item>@string/repeater_ring_the_bell</item>
+        <item>@string/repeater_geofence_breached</item>
+        <item>@string/repeater_in_contact</item>
+    </string-array>
+
+
+    <string-array name="color_names">
+        <item>White</item>
+        <item>Magenta</item>
+        <item>Green</item>
+        <item>Yellow</item>
+    </string-array>
+    <string-array translatable="false" name="color_values">
+        <item>#ffffff</item>
+        <item>#ff00ff</item>
+        <item>#00ff00</item>
+        <item>#ffff00</item>
+    </string-array>
+
+
+
+    <string-array name="squad_names">
+        <item>White</item>
+        <item>Yellow</item>
+        <item>Orange</item>
+        <item>Magenta</item>
+        <item>Red</item>
+        <item>Maroon</item>
+        <item>Purple</item>
+        <item>Dark Blue</item>
+        <item>Blue</item>
+        <item>Cyan</item>
+        <item>Teal</item>
+        <item>Green</item>
+        <item>Dark Green</item>
+        <item>Brown</item>
+    </string-array>
+    <string-array translatable="false" name="squad_values">
+        <item>White</item>
+        <item>Yellow</item>
+        <item>Orange</item>
+        <item>Magenta</item>
+        <item>Red</item>
+        <item>Maroon</item>
+        <item>Purple</item>
+        <item>Dark Blue</item>
+        <item>Blue</item>
+        <item>Cyan</item>
+        <item>Teal</item>
+        <item>Green</item>
+        <item>Dark Green</item>
+        <item>Brown</item>
+    </string-array>
+    <string-array name="type_names">
+        <item>@string/ground_troop</item>
+        <item>@string/armored_vehicle</item>
+        <item>@string/civilian_vehicle</item>
+        <item>@string/generic_air_unit</item>
+        <item>@string/generic_ground_unit</item>
+        <item>@string/generic_sea_surface_unit</item>
+    </string-array>
+    <string-array translatable="false" name="type_values">
+        <item>@string/default_cot_type</item>
+        <item>a-f-G-E-V-A</item>
+        <item>a-f-G-E-V-C</item>
+        <item>a-f-A</item>
+        <item>a-f-G-U</item>
+        <item>a-f-S</item>
+    </string-array>
+    <string-array translatable="false" name="role_values">
+        <item>Team Member</item>
+        <item>Team Lead</item>
+        <item>HQ</item>
+        <item>Sniper</item>
+        <item>Medic</item>
+        <item>Forward Observer</item>
+        <item>RTO</item>
+        <item>K9</item>
+    </string-array>
+    <string-array name="reporting_strategy_names">
+        <item>Dynamic (Send more often when moving)</item>
+        <item>Constant (Send on a regular interval)</item>
+    </string-array>
+    <string-array translatable="false" name="reporting_strategy_values">
+        <item>Dynamic</item>
+        <item>Constant</item>
+    </string-array>
+
+
+    <string-array translatable="false"  name="Type">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+    <string-array translatable="false" name="MOA_array">
+        <item>BOT</item>
+        <item>BOC</item>
+    </string-array>
+
+    <string-array translatable="false" name="friendly_mark_array">
+        <item>NO MARK</item>
+        <item>IR STROBE</item>
+        <item>BEACON</item>
+        <item>AIR PANEL</item>
+        <item>CUSTOM</item>
+    </string-array>
+
+    <string-array translatable="false" name="target_description_array">
+        <item>ADA</item>
+        <item>Armor</item>
+        <item>Artillery</item>
+        <item>Light Skinned Vehicle</item>
+        <item>Mechanized Infantry</item>
+        <item>Machine Gun Position</item>
+        <item>Mortar Position</item>
+        <item>Personnel in Open</item>
+        <item>Personnel in Treeline</item>
+        <item>Sniper</item>
+        <item>Custom</item>
+    </string-array>
+
+    <string-array translatable="false" name="suppType">
+        <item>SUPPRESS</item>
+        <item>IMMEDIATE SMOKE</item>
+        <item>IMMEDIATE SUPPRESSION</item>
+    </string-array>
+    <string-array name="grid_type_names"  translatable="false">
+        <item>MGRS</item>
+        <item>Decimal Degrees</item>
+        <item>Degrees, Minutes, Seconds</item>
+    </string-array>
+    <string-array name="grid_type_values"  translatable="false">
+        <item>MGRS</item>
+        <item>Decimal Degrees</item>
+        <item>Degrees, Minutes, Seconds</item>
+    </string-array>
+
+    <string-array name="spi_number" translatable="false">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+</resources>

@@ -1,0 +1,35 @@
+.PHONY: pri
+
+ifeq ($(and $(pri_PLATFORM)),)
+    $(error Required var not set)
+endif
+
+# Windows NDK r12b removes ndk-build and only retains ndk-build.cmd. Prior NDK
+# versions of Windows contain both
+ifeq "$(PLATFORM)" "win32"
+    NDK_BUILD=ndk-build.cmd
+else
+    NDK_BUILD=ndk-build
+endif
+
+pri_libfile=$(LIB_PREFIX)pri.$(LIB_SHAREDSUFFIX)
+pri_out_lib=$(OUTDIR)/lib/$(pri_libfile)
+
+include mk/pri-common.mk
+
+pri_local_libfile=$(pri_local_srcdir)/pricpp/src/pri/libs/$(pri_PLATFORM)/$(pri_libfile)
+
+# This is phony because we always want to be invoking PRI's NDK build to be sure
+# the file is up to date;  it knows if anything needs to be done
+.PHONY: $(pri_local_libfile)
+$(pri_local_libfile): $(pri_local_srcdir)
+	cd $(pri_local_srcdir)/pricpp/src/pri && $(ANDROID_NDK)/$(NDK_BUILD) \
+	    APP_BUILD_SCRIPT=Android.mk                                   \
+	    NDK_APPLICATION_MK=./Application.mk                           \
+	    NDK_PROJECT_PATH=. APP_ABI=$(pri_PLATFORM)
+
+$(pri_out_lib): $(pri_local_libfile)
+	$(CP) $< $@
+
+pri: $(pri_out_lib) pri_install_headers
+

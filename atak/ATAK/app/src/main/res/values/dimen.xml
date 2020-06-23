@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <bool name="isTablet">false</bool>
+
+    
+    <!-- font size big enough for most things; MGRS coordinate, etc, so at least ~18 characters of MGRS in a typical dropdown width -->
+    <dimen name="fontSize">14sp</dimen>        
+
+    <dimen name="draper_verylarge_font">18sp</dimen>
+    <dimen name="draper_large_font">15sp</dimen>
+    <dimen name="draper_title_font">13sp</dimen>
+    <dimen name="draper_font">10sp</dimen>
+    <dimen name="draper_small_font">8sp</dimen>
+
+    <dimen name="spinnerFontSize">14sp</dimen>
+    <dimen name="labelFontSize">13sp</dimen>
+    <dimen name="jmDetailsFontSize">14sp</dimen>
+
+    <dimen name="nineline_line_height">32dp</dimen>
+    <dimen name="nineline_line_height_tight">22dp</dimen>
+
+
+    <dimen name="dropdown_bottom_bar_height">36dp</dimen>
+
+    <dimen name="mission_package_transfer_date">90dp</dimen>
+
+    <dimen name="auto_space">2dp</dimen>
+    <dimen name="auto_space_big">4dp</dimen>
+    <dimen name="auto_margin">6dp</dimen>
+    <dimen name="auto_margin2">12dp</dimen>
+    <dimen name="scroll_margin">10dp</dimen>
+    <dimen name="smallFont">12sp</dimen>
+    <dimen name="fontSmall">12sp</dimen>
+    <dimen name="fontTiny">10sp</dimen>
+
+    <dimen name="listview_row_font">18sp</dimen>
+    <dimen name="listview_row_font_lrg">20sp</dimen>
+
+    <dimen name="SectionHeaderSize">20sp</dimen>
+</resources>
+

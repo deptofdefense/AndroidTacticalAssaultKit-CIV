@@ -1,0 +1,211 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:fadeScrollbars="false">
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="5dp" >
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" >
+
+                <TextView
+                    android:layout_height="wrap_content"
+                    android:layout_width="80dp"
+                    android:text="@string/type2" />
+
+                <Spinner
+                    android:padding="6dp" style="@style/darkButton"
+                    android:textColor="@color/white"
+                    android:id="@+id/alias_protocol"
+                    android:layout_width="150dp"
+                    android:layout_height="wrap_content"
+                    android:entries="@array/connection_protos" />
+            </LinearLayout>
+
+            <CheckBox
+                android:id="@+id/disableklv"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="false"
+                android:text="@string/video_text63"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false">
+
+            <LinearLayout
+                android:id="@+id/preferred_network"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_width="80dp"
+                    android:layout_height="match_parent"
+                    android:text="@string/video_text64" />
+
+                <Spinner
+                    android:padding="6dp" style="@style/darkButton"
+                    android:textColor="@color/white"
+                    android:id="@+id/preferred_network_spinner"
+                    android:layout_width="150dp"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="5dp" >
+
+            <EditText
+                android:id="@+id/alias_url_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:completionHint="proto://server:port/resource/path?request-string=value&amp;request-string=value2&amp;..."
+                android:ems="8"
+                android:inputType="textUri"
+                android:nextFocusDown="@+id/alias_url_port" >
+
+                <requestFocus />
+            </EditText>
+
+            <TextView
+                android:id="@+id/alias_port_separator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/colon" />
+
+            <EditText
+                android:id="@+id/alias_url_port"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:maxLength="5"
+                android:minEms="3"
+                android:nextFocusDown="@+id/alias_text" />
+
+            <TextView
+                android:id="@+id/alias_file_separator"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/foward_slash" />
+
+            <EditText
+                android:id="@+id/alias_url_file"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:inputType="textUri"
+                android:maxEms="6"
+                android:nextFocusDown="@+id/alias_text" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/video_text66" />
+
+            <EditText
+                android:id="@+id/alias_text"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/video_text67" />
+
+            <EditText
+                android:id="@+id/network_timeout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:inputType="number"
+                android:maxLength="5"
+                android:text="" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" >
+
+            <CheckBox
+                android:id="@+id/buffering_enabled"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp"
+                android:checked="false"
+                android:gravity="center_vertical"
+                android:paddingBottom="2dp"
+                android:text="@string/video_text68"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/buffer_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:enabled="false"
+                android:gravity="end"
+                android:text="@string/video_text69" />
+
+            <EditText
+                android:id="@+id/buffer_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:enabled="false"
+                android:focusable="false"
+                android:focusableInTouchMode="false"
+                android:inputType="number"
+                android:maxLength="6"
+                android:text="@string/zed" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" >
+
+            <CheckBox
+                android:id="@+id/rtsp_reliable"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp"
+                android:checked="false"
+                android:gravity="center_vertical"
+                android:paddingBottom="2dp"
+                android:text="@string/video_text70"
+                android:textSize="12sp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

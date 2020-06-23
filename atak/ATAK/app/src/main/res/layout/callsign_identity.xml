@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:layout_height="wrap_content"
+        android:layout_width="fill_parent"
+        android:gravity="start"
+        android:text="@string/my_callsign"
+        android:textColor="@color/heading_yellow"
+        android:textSize="@dimen/draper_font"/>
+    <com.atakmap.android.gui.EditText
+        android:id="@+id/identityCallsign"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:gravity="start"
+        android:inputType="textMultiLine|textCapSentences|textNoSuggestions"
+        android:minLines="1"
+        android:textSize="@dimen/draper_title_font"/>
+
+
+
+    <TextView
+        android:layout_height="wrap_content"
+        android:layout_width="fill_parent"
+        android:gravity="start"
+        android:text="@string/preferences_text79"
+        android:textColor="@color/heading_yellow"
+        android:textSize="@dimen/draper_font"/>
+    <com.atakmap.android.gui.ThemedSpinner
+        android:textColor="@color/white"
+        android:padding="6dp" style="@style/darkButton"
+        android:id="@+id/identityTeam"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:defaultValue="Cyan"
+        android:entries="@array/squad_values"/>
+
+
+
+
+    <TextView
+        android:layout_height="wrap_content"
+        android:layout_width="fill_parent"
+        android:gravity="start"
+        android:text="@string/preferences_text81"
+        android:textColor="@color/heading_yellow"
+        android:textSize="@dimen/draper_font"/>
+    <com.atakmap.android.gui.ThemedSpinner
+        android:textColor="@color/white"
+        android:padding="6dp" style="@style/darkButton"
+        android:id="@+id/identityRole"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:defaultValue="@string/preferences_text82"
+        android:entries="@array/role_values"/>
+
+</LinearLayout>

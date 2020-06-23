@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="horizontal"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:layout_marginBottom="0dp"
+              android:gravity="end"
+              android:paddingEnd="2dip">
+
+        <ImageButton
+            android:id="@+id/geofence_overlay_fenceitem_btnDetails"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            style="@style/darkButton"
+            android:padding="2dip"
+            android:src="@drawable/details"
+            android:layout_marginBottom="0dp"/>
+        <ImageButton
+            android:id="@+id/geofence_overlay_fenceitem_btnDelete"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="@dimen/auto_space_big"
+            style="@style/darkButton"
+            android:src="@drawable/ic_menu_delete"
+            android:layout_marginBottom="0dp"/>
+</LinearLayout>

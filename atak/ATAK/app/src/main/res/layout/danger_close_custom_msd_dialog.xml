@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="300dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center" >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="10dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:layout_width="100dp"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:textSize="16sp"
+                android:layout_marginEnd="10dp"
+                android:textColor="@color/heading_yellow"
+                android:text="@string/name" />
+
+            <EditText
+                android:id="@+id/custom_name_msd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:minWidth="100dp"
+                android:maxWidth="150dp"
+                android:textSize="16sp"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:layout_width="100dp"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:textSize="16sp"
+                android:layout_marginEnd="10dp"
+                android:textColor="@color/heading_yellow"
+                android:text="@string/description" />
+
+            <EditText
+                android:id="@+id/custom_description_msd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:minWidth="100dp"
+                android:maxWidth="150dp"
+                android:textSize="16sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:layout_width="100dp"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:textSize="16sp"
+                android:layout_marginEnd="10dp"
+                android:textColor="@color/heading_yellow"
+                android:text="@string/minimum_safe_distance" />
+
+            <EditText
+                android:maxLength="9"
+                android:id="@+id/custom_distance_msd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberSigned|numberDecimal"
+                android:minWidth="50dp"
+                android:maxWidth="75dp"
+                android:textSize="16sp" />
+
+            <TextView
+                android:layout_width="20dp"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:textSize="16sp"
+                android:text="@string/meter_abbreviation" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:layout_width="100dp"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:textSize="16sp"
+                android:layout_marginEnd="10dp"
+                android:textColor="@color/heading_yellow"
+                android:text="@string/dangerclose_text8" />
+
+            <EditText
+                android:maxLength="3"
+                android:id="@+id/custom_rico_fan_degrees"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberSigned|numberDecimal"
+                android:minWidth="55dp"
+                android:maxWidth="55dp"
+                android:textSize="16sp" />
+
+            <TextView
+                android:layout_width="10dp"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:textSize="16sp"
+                android:text="@string/degree" />
+
+            <EditText
+                android:maxLength="9"
+                android:id="@+id/custom_rico_fan_meters"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberSigned|numberDecimal"
+                android:minWidth="50dp"
+                android:maxWidth="75dp"
+                android:textSize="16sp" />
+
+            <TextView
+                android:layout_width="20dp"
+                android:layout_height="fill_parent"
+                android:gravity="center_vertical"
+                android:textSize="16sp"
+                android:text="@string/meter_abbreviation" />
+
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>

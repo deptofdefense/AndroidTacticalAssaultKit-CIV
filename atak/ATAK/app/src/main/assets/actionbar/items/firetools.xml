@@ -1,0 +1,10 @@
+<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_fires"  title="actionbar_firetools">
+   <ClickData actionType="click">
+      <broadcast>
+         <action>com.atakmap.android.maps.toolbar.SET_TOOLBAR</action>
+         <extras>
+            <string key="toolbar">com.atakmap.android.toolbars.FiresToolbar</string>
+         </extras>
+      </broadcast>
+   </ClickData>
+</PersistedActionMenu>

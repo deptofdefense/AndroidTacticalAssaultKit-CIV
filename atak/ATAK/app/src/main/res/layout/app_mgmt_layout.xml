@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent">
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:id="@+id/app_mgmt_update_server_layout"
+            android:orientation="horizontal"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2.5">
+            <ImageButton
+                android:id="@+id/app_mgmt_server_status"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/done"
+                style="@style/darkButton"
+                android:padding="3dp"/>
+
+            <TextView
+                android:text="@string/app_mgmt_update_server"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="2dp"
+                android:paddingEnd="8dp"/>
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/atakUpdateServerUrlDefault"
+                android:ems="10"
+                android:id="@+id/app_mgmt_repo"
+                android:hint="@string/app_mgmt_update_server_hint"
+                android:layout_weight="1"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/app_mgmt_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_mgmt_app_plugins"
+            android:visibility="gone"
+            android:layout_weight="2.5"/>
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1">
+
+            <TextView
+                android:text="@string/dashdash"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="9sp"
+                android:id="@+id/app_mgmt_last_synced"
+                android:layout_gravity="end"
+                android:gravity="end"/>
+
+            <TextView
+                android:text="@string/dashdash"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="9sp"
+                android:id="@+id/app_mgmt_product_count"
+                android:layout_gravity="end"
+                android:gravity="end"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:padding="2dp"
+        android:background="@color/lighter_gray"/>
+
+    <LinearLayout
+        android:id="@+id/app_mgmt_auto_syncsearchForm"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#333"
+        android:orientation="horizontal"
+        android:paddingBottom="2dp">
+        <ImageView
+            android:src="@drawable/ic_action_search"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:id="@+id/imageView2"/>
+
+        <Spinner
+            android:id="@+id/app_mgmt_status_filter"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:entries="@array/app_mgmt_status_filter_values" 
+            android:textColor="@color/white"
+            android:padding="6dp" style="@style/darkButton" />
+
+        <Spinner
+            android:id="@+id/app_mgmt_repo_filter"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:entries="@array/app_mgmt_status_repo_values" 
+            android:textColor="@color/white"
+            android:padding="6dp" style="@style/darkButton" />
+
+        <EditText
+            android:id="@+id/app_mgmt_search_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:hint="@string/search_hint"
+            android:layout_weight="1"
+            android:ems="10"
+            android:imeOptions="flagNoExtractUi"
+            android:maxHeight="80dp"
+            android:inputType="textNoSuggestions" />
+
+        <ImageButton
+            android:id="@+id/app_mgmt_exit_search"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_gravity="center_vertical"
+            android:background="@android:drawable/ic_menu_close_clear_cancel"/>
+    </LinearLayout>
+
+    <CheckBox
+        android:id="@+id/app_mgmt_select_all"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="2dp"
+        android:visibility="gone"
+        android:layout_gravity="center_vertical"
+        android:text="@string/select_all_track"/>
+
+    <ListView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fadeScrollbars="false"
+        android:id="@+id/app_mgmt_listview"/>
+</LinearLayout>

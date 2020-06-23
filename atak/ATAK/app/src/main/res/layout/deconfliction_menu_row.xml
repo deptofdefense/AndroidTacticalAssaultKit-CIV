@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/activatedBackgroundIndicator"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:descendantFocusability="blocksDescendants"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/track_icon_imagebutton"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:padding="6dp"/>
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" >
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="5dp"
+                android:orientation="vertical" >
+
+               <TextView
+                   android:id="@+id/track_callsign_label"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:maxEms="15"
+                   android:maxLines="2"
+                   android:minLines="1"
+                   android:text="@string/title_lower"
+                   android:textColor="#ffffffff"
+                   android:textSize="14sp" />
+
+               <TextView
+                   android:id="@+id/tvPosition"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:text="@string/dashdashdash"
+                   android:maxLines="2"
+                   android:textSize="12sp" />
+           </LinearLayout>
+        </RelativeLayout>
+       
+        <LinearLayout
+            android:id="@+id/hierarchy_manager_list_item_freespace"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.25"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/hierarchy_manager_list_item_bearing_view"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:orientation="vertical" >
+
+
+
+                <TextView
+                    android:id="@+id/tvDegrees"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text=""
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tvDistance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:maxLines="1"
+                    android:text=""
+                    android:textSize="11sp" />
+
+                <TextView
+                    android:id="@+id/tvElevation"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text=""
+                    android:textSize="11sp" />
+            </LinearLayout>
+            <ImageButton
+                style="@style/darkButton"
+                android:id="@+id/radial_imagebutton"
+                android:src="@drawable/radial"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:padding="7dp"
+                android:layout_marginEnd="5dp"
+                android:scaleType="centerInside" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

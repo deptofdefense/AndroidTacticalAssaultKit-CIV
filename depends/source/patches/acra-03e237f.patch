@@ -1,0 +1,86 @@
+--- src/main/java/org/acra/ErrorReporter.java	2015-02-15 05:53:06.000000000 -0500
++++ src/main/java/org/acra/ErrorReporter.java	2018-11-09 19:51:39.494527892 -0500
+@@ -106,7 +106,7 @@
+      * This is used to wait for the crash toast to end it's display duration
+      * before killing the Application.
+      */
+-    private static boolean toastWaitEnded = true;
++    private boolean toastWaitEnded = true;
+ 
+     private static final ExceptionHandlerInitializer NULL_EXCEPTION_HANDLER_INITIALIZER = new ExceptionHandlerInitializer() {
+         @Override
+@@ -139,7 +139,13 @@
+         this.enabled = enabled;
+ 
+         // Store the initial Configuration state.
+-        final String initialConfiguration = ConfigurationCollector.collectConfiguration(mContext);
++        final String initialConfiguration = ConfigurationCollector.collectConfiguration(mContext);
++        // This is expensive to gather, so only do so if we plan to report it.
++        //if (ACRA.getConfig().getReportFields().contains(ReportField.INITIAL_CONFIGURATION)) {
++        //    initialConfiguration = ConfigurationCollector.collectConfiguration(mContext);
++        //} else {
++        //    initialConfiguration = null;
++        //}
+ 
+         // Sets the application start date.
+         // This will be included in the reports, will be helpful compared to
+@@ -771,11 +777,10 @@
+             createNotification(reportFileName, reportBuilder);
+         }
+ 
++        toastWaitEnded = true;
+         if (shouldDisplayToast) {
+-            // A toast is being displayed, we have to wait for its end before
+-            // doing anything else.
+-            // The toastWaitEnded flag will be checked before any other
+-            // operation.
++            // A toast is being displayed, we have to wait for its end before doing anything else.
++            // The toastWaitEnded flag will be checked before any other operation.
+             toastWaitEnded = false;
+             new Thread() {
+ 
+@@ -807,21 +812,28 @@
+ 
+             @Override
+             public void run() {
+-                // We have to wait for BOTH the toast display wait AND
+-                // the worker job to be completed.
+-                if (toastWaitEnded || (worker == null)) {
+-                    // Nothing to wait for.
+-                    Log.d(LOG_TAG, "Toast (if any) and worker completed - not waiting");
+-                } else {
+-                    Log.d(LOG_TAG, "Waiting for " + (toastWaitEnded ? "Toast " : " -- ") + (worker.isAlive() ? "and Worker" : ""));
+-                    while (!toastWaitEnded || worker.isAlive()) {
++                // We have to wait for the toast display to be completed.
++                Log.d(LOG_TAG, "Waiting for Toast");
++                while (!toastWaitEnded) {
++                    try {
++                        Thread.sleep(100);
++                    } catch (InterruptedException e1) {
++                        Log.e(LOG_TAG, "Error : ", e1);
++                    }
++                }
++                Log.d(LOG_TAG, "Finished waiting for Toast");
++
++                // We have to wait for the worker job to be completed.
++                if (worker != null) {
++                    Log.d(LOG_TAG, "Waiting for Worker");
++                    while (worker.isAlive()) {
+                         try {
+                             Thread.sleep(100);
+                         } catch (InterruptedException e1) {
+                             Log.e(LOG_TAG, "Error : ", e1);
+                         }
+                     }
+-                    Log.d(LOG_TAG, "Finished waiting for Toast + Worker");
++                    Log.d(LOG_TAG, "Finished waiting for Worker");
+                 }
+ 
+                 if (showDirectDialog) {
+@@ -1131,4 +1143,4 @@
+             report(this);
+         }
+     }
+-}
+\ No newline at end of file
++}

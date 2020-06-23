@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal" >
+
+    <ImageButton
+        android:id="@+id/importmgr_resource_btnDownloadRefresh"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:padding="6dp"
+        android:src="@drawable/ic_menu_import_file"
+        style="@style/darkButton"/>
+
+    <ImageButton
+        android:id="@+id/importmgr_resource_btnEdit"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:padding="6dp"
+        android:src="@drawable/edit"
+        style="@style/darkButton"/>
+
+    <ImageButton
+        android:id="@+id/importmgr_resource_btnShare"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:padding="6dp"
+        android:src="@drawable/send_square"
+        style="@style/darkButton"/>
+
+    <ImageButton
+        android:id="@+id/importmgr_resource_btnDelete"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:padding="@dimen/auto_margin"
+        android:src="@drawable/ic_menu_delete"
+        style="@style/darkButton"/>
+
+</LinearLayout>

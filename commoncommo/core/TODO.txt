@@ -1,0 +1,17 @@
+Short term:
+    If udp incoming cannot bind, it should maybe retry? It will retry on any
+       other rebuild, but we may want to force after timeout
+
+Long term:
+
+
+
+Known Bugs to fix:
+interface status might not be called on inbound/outbound interface if added after
+another with the same HW address -- need to fire when/just after added with
+up status if it is already up
+
+contactmanager should probably listen to interfaces going down and clean out contacts on down interfaces.... OR.... clean out really stale endpoints? (need direction on this)
+
+
+

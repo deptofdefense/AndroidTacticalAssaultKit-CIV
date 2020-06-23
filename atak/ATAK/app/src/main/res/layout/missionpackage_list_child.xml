@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="@dimen/auto_margin"
+    android:gravity="center_vertical">
+
+    <TextView
+        android:id="@+id/mission_package_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="@string/mission_package_name"
+        android:textColor="#FFF"
+        android:textSize="18sp"/>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="end">
+        <TextView
+            android:id="@+id/mission_package_size"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/size"
+            android:textColor="#FFF"
+            android:textSize="14sp"/>
+        <TextView
+            android:id="@+id/mission_package_items"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/mission_package_edit_content_text"
+            android:textColor="#FFF"
+            android:textSize="12sp"/>
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingTop="@dimen/auto_margin"
+    android:paddingBottom="@dimen/auto_margin"
+    android:weightSum="1">
+
+    <TextView
+        android:id="@+id/name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight=".8"
+        android:textColor="@color/white"
+        android:textSize="@dimen/draper_large_font"
+        tools:text="LM0" />
+
+    <TextView
+        android:id="@+id/location"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight=".1"
+        android:ems="8"
+        android:textColor="@color/white"
+        android:textSize="@dimen/draper_large_font"
+        tools:text="11S KT 93858 84265" />
+
+    <TextView
+        android:id="@+id/bearing"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight=".1"
+        android:ems="4"
+        android:textColor="@color/white"
+        android:textSize="@dimen/draper_large_font"
+        tools:text="306.5 °T" />
+
+    <ImageView
+        android:id="@+id/panto_location"
+        style="@style/darkButton"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:padding="@dimen/auto_margin"
+        android:src="@drawable/panto_button" />
+</LinearLayout>

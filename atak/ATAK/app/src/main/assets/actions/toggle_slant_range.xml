@@ -1,0 +1,11 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.toolbars.RangeAndBearing.TOGGLE_SLANT_RANGE</action>
+        <extras>
+            <string key='id'>${rabUUID}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

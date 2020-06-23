@@ -1,0 +1,13 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.MOVE_EDITABLE_POLYLINE_VERTEX</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+            <string key='point'>${last_touch}</string>
+            <boolean key='mgrs_entry'>true</boolean>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

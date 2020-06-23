@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fadeScrollbars="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="6dp">
+    
+       <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:text="@string/name"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+               <TextView
+                   android:id="@+id/missionpackage_file_detail_txtName"
+                   android:text="@string/name_lower"
+                   android:layout_width="fill_parent"
+                   android:layout_height="wrap_content"
+                   android:layout_marginStart="5dp"
+                   android:textSize="18sp"
+                   android:textStyle="bold"/>
+        </LinearLayout>
+
+         <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:text="@string/type"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+               <TextView
+                   android:id="@+id/missionpackage_file_detail_txtType"
+                   android:text="@string/type_lower"
+                   android:layout_width="fill_parent"
+                   android:layout_height="wrap_content"
+                   android:layout_marginStart="5dp"
+                   android:textSize="18sp"
+                   android:textStyle="bold"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:text="@string/size"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+               <TextView
+                   android:id="@+id/missionpackage_file_detail_txtSize"
+                   android:text="@string/size_lower"
+                   android:layout_width="fill_parent"
+                   android:layout_height="wrap_content"
+                   android:layout_marginStart="5dp"
+                   android:textSize="18sp"
+                   android:textStyle="bold"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:text="@string/date"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+               <TextView
+                   android:id="@+id/missionpackage_file_detail_txtModifiedDate"
+                   android:text="@string/date_lower"
+                   android:layout_width="fill_parent"
+                   android:layout_height="wrap_content"
+                   android:layout_marginStart="5dp"
+                   android:textSize="18sp"
+                   android:textStyle="bold"/>
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/compute_md5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="@string/compute_md5"
+            style="@style/darkButton"/>
+
+        <LinearLayout
+            android:id="@+id/missionpackage_file_detail_md5_layout"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:text="@string/md5"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+           <TextView
+               android:id="@+id/missionpackage_file_detail_txtMd5"
+               android:layout_width="fill_parent"
+               android:layout_height="wrap_content"
+               android:layout_marginStart="5dp"
+               android:textSize="18sp"
+               android:textStyle="bold"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:text="@string/path"
+                android:layout_width="60dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="5dp"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+               <TextView
+                   android:id="@+id/missionpackage_file_detail_txtDirectory"
+                   android:text="@string/path_lower"
+                   android:layout_width="fill_parent"
+                   android:layout_height="wrap_content"
+                   android:layout_marginStart="5dp"
+                   android:textSize="18sp"
+                   android:textStyle="bold"/>
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

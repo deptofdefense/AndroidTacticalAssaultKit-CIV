@@ -1,0 +1,53 @@
+<menu buttonRadius='65' buttonSpan='36' buttonWidth='90' buttonBg='bgs/button.xml'>
+
+    <button icon='icons/details.png'
+            angle='-90'
+            onClick='actions/showdetails.xml'/>
+
+    <button icon='icons/unknown.png'
+            prefKey='spi_drop_point_type'
+            submenu='menus/drop_point_submenu.xml'
+            onClick='actions/dropunknownatself.xml' />
+
+    <button icon='icons/breadcrumbs.xml'
+            selectable='true'
+            submenu='menus/self_track_submenu.xml'
+            showSubmenuPref='track_infinite'
+            disableSwap='true'
+            disableIconSwap='true'
+            onClick='actions/toggle_crumb.xml'
+            selected='${tracks_on}'/>
+
+    <button icon='icons/camlock.xml'
+            selectable='true'
+            onClick='actions/lockcam.xml'
+            selected='${camLocked}' />
+
+    <button icon='icons/blast_rings.png'
+            dependsOnCapability='capability.weapons'
+            onClick='actions/dangerclose.xml' />
+
+    <button icon='icons/pairing_line.png'
+            onClick='actions/pairingline.xml'/>
+
+    <button icon='icons/gpserror.xml'
+            selectable='true'
+            onClick='actions/togglegpserror.xml'
+            selected='${gpserrorenabled}' />
+
+    <button icon='icons/move.png'
+            submenu='menus/mgrs_entry_submenu.xml'
+            disableSwap='true'
+            disableIconSwap='true'
+            onClick='actions/move.xml'
+            disabled='!{${movable}}' />
+
+    <button icon='icons/polar_coord.png'
+            onClick='actions/polarCoords.xml'/>
+
+    <button icon='icons/compass_rose.png'
+            selected='${hostileBearingCircle}'
+            onClick='actions/hostile_compass.xml' />
+
+
+</menu>

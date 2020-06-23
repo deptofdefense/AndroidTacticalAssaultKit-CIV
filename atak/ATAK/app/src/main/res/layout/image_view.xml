@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:atak="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    
+    <ImageView 
+        android:id="@+id/image_view_image"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:scaleType="matrix"/>
+
+    <TextView
+        android:id="@+id/image_view_error"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:text="@string/failed_to_preview_image"
+        android:textColor="#FFF"
+        android:gravity="center"
+        android:visibility="gone"/>
+        
+    <TextView android:text="@string/image_text1"
+        android:id="@+id/image_order_text" 
+        android:layout_width="wrap_content" 
+        android:layout_height="wrap_content" 
+        android:background="#77000000"
+        android:layout_centerHorizontal="true"/>
+        
+    <ProgressBar 
+        android:id="@+id/image_view_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        style="@android:style/Widget.ProgressBar.Small"
+        android:layout_centerInParent="true" />
+
+    <!-- Image caption -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#77000000">
+        <!-- LinearLayout required for background (otherwise text underline is covered) -->
+        <com.atakmap.android.hashtags.view.HashtagEditText
+            android:id="@+id/image_caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textSize="14sp"
+            android:ellipsize="end"
+            android:minLines="1"
+            android:maxLines="2"
+            android:hint="@string/enter_caption"
+            android:inputType="textMultiLine|textCapSentences|textNoSuggestions"
+            atak:mixedInput="true"
+            atak:clickableTags="true"/>
+    </LinearLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true">
+
+        <ImageButton
+            android:id="@+id/nav_prev"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_alignParentStart="true"
+            android:background="#00000000"
+            android:src="@drawable/arrow_left"/>
+
+        <ImageButton
+            android:id="@+id/nav_next"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_alignParentEnd="true"
+            android:background="#00000000"
+            android:src="@drawable/arrow_right"/>
+
+    </RelativeLayout>
+
+    <!-- Image metadata -->
+    <LinearLayout
+        android:layout_alignParentBottom="true"
+        android:background="#77000000"
+        android:orientation="vertical"
+        android:layout_height="wrap_content" 
+        android:layout_width="wrap_content"
+        android:paddingBottom="10sp">
+
+        <TextView android:text="@string/triple_dash"
+          android:visibility="gone"
+          android:id="@+id/image_title_text"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"/>
+
+        <TextView android:text="@string/triple_dash"
+            android:id="@+id/image_date_text" 
+            android:layout_width="wrap_content" 
+            android:layout_height="wrap_content"/>
+
+        <TextView android:text="@string/triple_dash"
+            android:id="@+id/image_location_text" 
+            android:layout_width="wrap_content" 
+            android:layout_height="wrap_content"/>
+
+   </LinearLayout>
+
+    <!--
+     Whenever displaying a row of buttons or views, please use a LinearLayout
+     instead of toStartOf and toEndOf attributes to avoid issues with views
+     being put in the wrong location or off-screen when their dependant view is hidden
+    -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:orientation="horizontal"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true">
+        <ImageButton
+            android:id="@+id/cotInfoSendButton"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:layout_width="45dp"
+            android:layout_height="match_parent"
+            android:src="@drawable/send_square"
+            android:textSize="@dimen/draper_title_font"
+             />
+        <ImageButton
+            android:id="@+id/editImage"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:layout_width="45dp"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_pencil"
+            android:visibility="gone"/>
+        <ImageButton
+            android:id="@+id/panButton"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:layout_width="45dp"
+            android:layout_height="match_parent"
+            android:layout_gravity="center_vertical"
+            android:scaleType="centerInside"
+            android:src="@drawable/panto_button"
+            android:visibility="gone"/>
+        <ImageButton
+            android:id="@+id/zoomOutButton"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:layout_width="45dp"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_menu_minus"
+            android:visibility="gone"/>
+        <ImageButton
+            android:id="@+id/zoomInButton"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:layout_width="45dp"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_menu_plus"
+            android:visibility="gone"/>
+    </LinearLayout>
+    
+</RelativeLayout>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/route_manager_list_item"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="10sp"
+    android:descendantFocusability="blocksDescendants">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <CheckBox
+            android:id="@+id/hierarchy_manager_list_item_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:focusable="false"
+            android:visibility="gone"/>
+        <ImageView
+            android:id="@+id/hierarchy_manager_visibility_iv"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_gravity="center"
+            android:src="@drawable/overlay_visible" />
+
+        <ImageView
+            android:id="@+id/hierarchy_manager_list_item_icon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center"
+            android:layout_marginStart="8dp"
+            android:maxHeight="32dp"
+            android:maxWidth="32dp"
+            android:minHeight="32dp"
+            android:minWidth="32dp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:layout_marginStart="15dp"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/hierarchy_manager_list_item_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#ffffffff"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/hierarchy_manager_list_item_desc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/dashdashdash"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/route_actions_toggle"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="@dimen/auto_space_big"
+            android:padding="4dp"
+            android:src="@drawable/arrow_right"
+            android:background="#00000000"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/route_actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/auto_space_big"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:gravity="center">
+
+        <ImageButton
+            android:id="@+id/route_manager_details_button"
+            style="@style/darkButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="@dimen/auto_space_big"
+            android:padding="6dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/details" />
+
+        <ImageButton
+            android:id="@+id/route_manager_send_button"
+            style="@style/darkButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="@dimen/auto_space_big"
+            android:padding="4dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/send_square" />
+
+        <ImageButton
+            android:id="@+id/route_manager_nav_button"
+            style="@style/darkButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="@dimen/auto_space_big"
+            android:padding="6dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/green_flag" />
+
+        <ImageButton
+            android:id="@+id/route_manager_edit_button"
+            style="@style/darkButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="@dimen/auto_space_big"
+            android:padding="6dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/edit" />
+
+        <ImageButton
+            android:id="@+id/reverse_route"
+            style="@style/darkButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="@dimen/auto_space_big"
+            android:padding="6dp"
+            android:scaleType="fitCenter"
+            android:layout_marginStart="2dp"
+            android:src="@drawable/reverse_route" />
+
+
+        <ImageButton
+            android:id="@+id/route_manager_del_button"
+            style="@style/darkButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="@dimen/auto_margin"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_menu_delete" />
+
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/gallery_title_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_gravity="center_vertical"
+            android:padding="@dimen/auto_space_big"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/gridImagesIcon"
+                android:layout_width="24dip"
+                android:layout_height="24dip"
+                android:src="@drawable/friendly"/>
+            <TextView
+                android:id="@+id/gridImagesTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/auto_space_big"
+                android:textSize="18sp"
+                android:text="@string/title2"
+                android:maxLines="2"
+                android:textColor="#FFF"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/gallery_actions_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/time_sort_btn"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="@dimen/auto_space_big"
+                android:background="@drawable/overlay_title_background"
+                android:src="@drawable/time_sort"/>
+            <ImageButton
+                android:id="@+id/alpha_sort_btn"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="@dimen/auto_space_big"
+                android:background="@drawable/overlay_title_background"
+                android:src="@drawable/alpha_sort"/>
+        </LinearLayout>
+
+        <EditText
+            android:id="@+id/search_txt"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:imeOptions="flagNoExtractUi|actionSearch"
+            android:singleLine="true"
+            android:maxLines="1"
+            android:visibility="gone"
+            android:inputType="textNoSuggestions" />
+
+        <ImageButton
+            android:id="@+id/search_btn"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="@dimen/auto_space_big"
+            android:background="@drawable/overlay_title_background"
+            android:src="@android:drawable/ic_menu_search"/>
+
+        <Button
+            android:id="@+id/gridImagesSelectDone"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="5dip"
+            style="@style/darkButton"
+            android:text="@string/done"
+            android:visibility="gone"/>
+
+        <Button
+            android:id="@+id/gridImagesSelectCancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="5dip"
+            style="@style/darkButton"
+            android:text="@string/cancel"
+            android:visibility="gone"/>
+
+    </LinearLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <GridView
+            android:id="@+id/gridImages"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="5dp"
+            android:numColumns="3"
+            android:verticalSpacing="5dp"
+            android:horizontalSpacing="5dp"
+            android:stretchMode="columnWidth"
+            android:gravity="center" />
+
+        <ProgressBar
+            android:id="@+id/gridLoader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:visibility="gone"/>
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:background="#222"
+        android:orientation="horizontal" >
+
+        <CheckBox
+            android:id="@+id/showAll_cb"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="10dp"
+            android:textSize="16sp"
+            android:text="@string/show_all" />
+    </LinearLayout>
+</LinearLayout>

@@ -1,0 +1,6 @@
+<broadcast>
+    <action>com.atakmap.android.maps.MANAGE_LAYERS</action>
+    <extras>
+        <string key='point'>@{touchPoint}</string>
+    </extras>
+</broadcast>

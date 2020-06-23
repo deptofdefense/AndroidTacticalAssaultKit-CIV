@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_height="wrap_content"
+        android:layout_width="fill_parent"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/contactInfoConnectorItemIcon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="3dp"
+            android:src="@drawable/email_icon"
+            android:scaleType="fitCenter"
+            android:adjustViewBounds="false" />
+
+        <TextView
+            android:id="@+id/contactInfoConnectorItemText"
+            android:layout_height="wrap_content"
+            android:layout_width="0dip"
+            android:layout_weight="1"
+            android:gravity="start|center_vertical"
+            android:text="@string/default_connector" />
+
+        <ImageButton
+            android:id="@+id/contactInfoConnectorItemProfile"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="3dp"
+            android:src="@drawable/ic_profile_white"
+            android:scaleType="fitCenter"
+            style="@style/darkButton" />
+        <ImageButton
+            android:id="@+id/contactInfoConnectorItemDetails"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="3dp"
+            android:src="@drawable/details"
+            android:scaleType="fitCenter"
+            style="@style/darkButton" />
+    </LinearLayout>

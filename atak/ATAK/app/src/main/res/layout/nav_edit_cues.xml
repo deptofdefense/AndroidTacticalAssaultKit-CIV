@@ -1,0 +1,146 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="horizontal" >
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/navcue_btn_slight_left"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/navcue_btn_stayleft"
+                android:contentDescription="@string/nav_cue_stay_left"/>
+
+            <ImageButton
+                android:id="@+id/navcue_btn_straight"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/navcue_btn_straight"
+                android:contentDescription="@string/nav_cue_stay_straight"/>
+
+            <ImageButton
+                android:id="@+id/navcue_btn_slight_right"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/navcue_btn_stayright"
+                android:contentDescription="@string/nav_cue_stay_right"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/navcue_btn_left"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/navcue_btn_turnleft"
+                android:contentDescription="@string/nav_cue_turn_left"/>
+
+            <ImageButton
+                android:id="@+id/navcue_btn_danger"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/navcue_btn_caution1"
+                android:contentDescription="@string/nav_cue_danger"/>
+
+            <ImageButton
+                android:id="@+id/navcue_btn_right"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/navcue_btn_turnright"
+                android:contentDescription="@string/nav_cue_turn_right"/>
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/navcue_btn_hard_left"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/navcue_btn_hardleft"
+                android:contentDescription="@string/nav_cue_hard_left"/>
+
+            <ImageButton
+                android:id="@+id/navcue_btn_stop"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/navcue_btn_stop1"
+                android:contentDescription="@string/nav_cue_stop"/>
+
+            <ImageButton
+                android:id="@+id/navcue_btn_hard_right"
+                style="@style/darkButton"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:src="@drawable/navcue_btn_hardright"
+                android:contentDescription="@string/nav_cue_hard_right"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/navcue_btn_speedup"
+                style="@style/darkButton"
+                android:layout_width="75dp"
+                android:layout_height="50dp"
+                android:src="@drawable/navcue_btn_speedup"
+                android:contentDescription="@string/nav_cue_speed_up"/>
+
+            <ImageButton
+                android:id="@+id/navcue_btn_slowdown"
+                style="@style/darkButton"
+                android:layout_width="75dp"
+                android:layout_height="50dp"
+                android:src="@drawable/navcue_btn_slowdown"
+                android:contentDescription="@string/nav_cue_slow_down"/>
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="200dp"
+        android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/messageBox"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:inputType="textMultiLine"
+            android:gravity="center"
+            android:hint="@string/custom_cue"
+            android:maxLines="20" />
+
+    </LinearLayout>
+
+
+</LinearLayout>

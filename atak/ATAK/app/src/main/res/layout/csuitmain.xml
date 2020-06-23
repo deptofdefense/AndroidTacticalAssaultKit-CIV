@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/MainLL"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="horizontal" >
+
+    <!--<LinearLayout
+        android:id="@+id/linearLayout1"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:gravity="center_vertical"
+        android:orientation="vertical" >
+
+        <ImageButton
+            android:id="@+id/UnknownB"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/udot" >
+        </ImageButton>
+
+        <ImageButton
+            android:id="@+id/FriendB"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/fdot" >
+        </ImageButton>
+
+        <ImageButton
+            android:id="@+id/NeutralB"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ndot" >
+        </ImageButton>
+
+        <ImageButton
+            android:id="@+id/HostileB"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/hdot" >
+        </ImageButton>
+    </LinearLayout>-->
+
+    <ImageButton
+        android:id="@+id/BackB"
+        android:layout_width="55dp"
+        android:layout_height="fill_parent"
+        android:src="@drawable/back" >
+    </ImageButton>
+
+</LinearLayout>

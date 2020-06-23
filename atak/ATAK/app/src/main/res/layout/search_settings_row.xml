@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/auto_margin"
+    android:gravity="center_vertical"
+    android:descendantFocusability="blocksDescendants">
+
+    <ImageView
+        android:id="@+id/settings_icon"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:src="@drawable/ic_menu_settings"
+        android:paddingLeft="5dp"
+        android:paddingRight="8dp"/>
+
+    <TextView
+        android:id="@+id/settings_label"
+        android:layout_weight="1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:singleLine="true"
+        android:text="@string/search"/>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_weight="1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/auto_space"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/settings_match"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="13sp"
+            android:textColor="@color/heading_yellow"
+            android:singleLine="true"
+            android:text=""/>
+        <TextView
+            android:id="@+id/settings_parent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="10sp"
+            android:singleLine="true"
+            android:text=""/>
+    </LinearLayout>
+
+</LinearLayout>

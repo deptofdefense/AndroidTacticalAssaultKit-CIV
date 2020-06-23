@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <RelativeLayout
+        android:id="@+id/bearingCompass"
+        android:layout_width="250dp"
+        android:layout_height="250dp"
+        android:layout_centerInParent="true">
+        <RelativeLayout
+            android:id="@+id/bearingLine"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:rotation="-17">
+            <View
+                android:layout_width="4dp"
+                android:layout_height="100dp"
+                android:layout_marginTop="@dimen/auto_margin"
+                android:layout_centerHorizontal="true"
+                android:background="#0F0"/>
+        </RelativeLayout>
+        <ImageView
+            android:id="@+id/compassView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/compass"
+            android:rotation="13"/>
+    </RelativeLayout>
+
+    <EditText
+        android:id="@+id/bearingText"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:layout_centerInParent="true"
+        android:background="#9000"
+        android:gravity="center"
+        android:textSize="20sp"
+        android:inputType="numberDecimal"
+        android:selectAllOnFocus="true"
+        android:text="330.5"
+        android:singleLine="true"/>
+
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/auto_margin"
+        android:layout_alignParentEnd="true"
+        android:orientation="vertical">
+        <ImageButton
+            android:id="@+id/compassButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="@dimen/auto_margin"
+            android:scaleType="fitXY"
+            android:src="@drawable/ic_resection_compass"
+            style="@style/darkButton"/>
+        <ToggleButton
+            android:id="@+id/magToggle"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="@dimen/auto_margin"
+            android:padding="@dimen/auto_margin"
+            android:checked="true"
+            android:textOn="@string/mag2"
+            android:textOff="TRUE"
+            style="@style/darkButton"/>
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/subtract"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="@dimen/auto_margin"
+        android:layout_alignParentBottom="true"
+        android:padding="@dimen/auto_margin"
+        android:src="@drawable/ic_menu_minus"
+        style="@style/darkButton"/>
+
+    <ImageButton
+        android:id="@+id/add"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="@dimen/auto_margin"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:padding="@dimen/auto_margin"
+        android:src="@drawable/ic_menu_plus"
+        style="@style/darkButton"/>
+
+</RelativeLayout>

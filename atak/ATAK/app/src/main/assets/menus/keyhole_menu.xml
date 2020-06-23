@@ -1,0 +1,14 @@
+<menu buttonRadius='65' buttonSpan='90' buttonWidth='90' buttonBg='bgs/button.xml'>
+
+    <button angle='-90'
+            icon='icons/delete.png'
+            onClick='actions/remove_keyhole.xml'
+            disabled='!{${removable}}' />
+
+    <button icon='icons/details.png'
+            onClick='actions/showdetails_keyhole.xml' />
+
+    <button icon='icons/pairing_line.png'
+            onClick='actions/pairingline.xml'
+            selected='${pairingline_on}'  />
+</menu>

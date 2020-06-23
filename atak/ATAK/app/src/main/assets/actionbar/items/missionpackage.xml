@@ -1,0 +1,8 @@
+<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_missionpackage"  title="actionbar_missionpackage">
+   <ClickData actionType="click">
+      <broadcast>
+         <action>com.atakmap.android.missionpackage.MISSIONPACKAGE</action>
+         <extras/>
+      </broadcast>
+   </ClickData>
+</PersistedActionMenu>

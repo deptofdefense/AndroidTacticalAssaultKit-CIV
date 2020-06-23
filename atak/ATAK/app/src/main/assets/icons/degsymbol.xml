@@ -1,0 +1,8 @@
+<icon anchor='15,15' size='32,32'>
+    <state>
+        <image>icons/degsymbol.png</image>
+    </state>
+    <state flags='selected'>
+        <image>icons/degsymbol_s.png</image>
+    </state>
+</icon>

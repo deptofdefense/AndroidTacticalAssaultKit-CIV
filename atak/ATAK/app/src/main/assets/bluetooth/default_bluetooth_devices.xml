@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bluetooth version="v11">
+    <!-- App will connect to the device if the name begins with one of the names below. Exact name
+        matches are not required as some include IDs or Serial Numbers. readerClass must
+        extend com.atakmap.android.lrf.reader.bluetooth.BluetoothReader and have a constructor 
+        which accepts an android.bluetooth.BluetoothDevice as the lone parameter.-->
+
+    <device name="RNBT"             readerClass="com.atakmap.android.lrf.reader.LRFReader"/>
+
+    <device name="PLRF Wireless"    readerClass="com.atakmap.android.lrf.reader.LRFReader"/>
+    <device name="MOSKITO"          readerClass="com.atakmap.android.lrf.reader.LRFReader"/>
+    <device name="PLRF25C"          readerClass="com.atakmap.android.lrf.reader.LRFReader"/>
+    <device name="SLX"              readerClass="com.atakmap.android.lrf.reader.LRFReader"/>
+    <device name="RAPTAR"           readerClass="com.atakmap.android.lrf.reader.LRFReader"/>
+    <device name="Vector21"         readerClass="com.atakmap.android.lrf.reader.LRFReader"/>
+    <device name="TP200"            readerClass="com.atakmap.android.lrf.reader.TruePulseReader"/>
+    <device name="TP360"            readerClass="com.atakmap.android.lrf.reader.TruePulseReader"/>
+    <device name="Bad Elf"          readerClass="com.atakmap.android.gps.bluetooth.BluetoothGPSNMEAReader"/>
+    <device name="R8"               readerClass="com.atakmap.android.gps.bluetooth.BluetoothGPSNMEAReader"/>
+    <device name="R10"              readerClass="com.atakmap.android.gps.bluetooth.BluetoothGPSNMEAReader"/>
+    <device name="GNSS"             readerClass="com.atakmap.android.gps.bluetooth.BluetoothGPSNMEAReader"/>
+    <device name="XGPS"             readerClass="com.atakmap.android.gps.bluetooth.BluetoothGPSNMEAReader"/>
+    <device name="Garmin GLO"       readerClass="com.atakmap.android.gps.bluetooth.BluetoothGPSNMEAReader"/>
+
+</bluetooth>

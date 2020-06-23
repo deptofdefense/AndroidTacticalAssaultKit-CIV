@@ -1,0 +1,12 @@
+<PersistedActionMenu baseline="true" hideable="true" iconPath="ic_menu_casevac"  title="actionbar_casevac">
+   <ClickData actionType="click">
+      <broadcast>
+         <action>com.atakmap.android.maps.toolbar.BEGIN_TOOL</action>
+         <extras>
+            <string key="tool">enter_location</string>
+            <string key="current_type">damaged</string>
+         </extras>
+      </broadcast>
+   </ClickData>
+</PersistedActionMenu>
+

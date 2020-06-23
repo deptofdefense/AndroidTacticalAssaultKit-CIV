@@ -1,0 +1,12 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.maps.bullseye.TOGGLE_RINGS</action>
+        <extras>
+            <string key='marker_uid'>${uid}</string>
+            <string key='toggle_rings'>${true}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

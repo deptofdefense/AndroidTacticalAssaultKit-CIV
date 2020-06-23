@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:descendantFocusability="blocksDescendants">
+
+    <LinearLayout
+        android:layout_width="52dp"
+        android:layout_height="46dp"
+        android:orientation="vertical"
+        android:clickable="true">
+        <ImageView
+            android:id="@+id/importManagerBrowserIcon"
+            android:layout_width="match_parent"
+            android:layout_height="30dp"
+            android:paddingTop="2dp"
+            android:scaleType="fitCenter"/>
+        <TextView
+            android:id="@+id/importManagerBrowserFileInfo"
+            android:layout_width="match_parent"
+            android:layout_height="16dp"
+            android:layout_marginBottom="2dp"
+            android:textSize="12sp"
+            android:textColor="#FFF"
+            android:gravity="center"/>
+    </LinearLayout>
+    
+    <TextView 
+        android:id="@+id/importManagerBrowserFileName"
+        android:layout_weight="1"
+        android:layout_width="0dip"
+        android:layout_height="wrap_content"
+        android:textSize="@dimen/draper_title_font"
+        android:textColor="#FFF"
+        android:singleLine="true"
+        android:ellipsize="middle"/>
+    
+    <CheckBox
+        android:id="@+id/importManagerBrowserFileSelected"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/auto_margin"/>
+    
+</LinearLayout>

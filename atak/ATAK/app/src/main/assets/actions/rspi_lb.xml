@@ -1,0 +1,11 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.REDX_LB</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+   xmlns:android="http://schemas.android.com/apk/res/android"
+   android:layout_width="match_parent"
+   android:layout_height="wrap_content" >
+
+   <CheckBox
+       android:id="@+id/checkbox"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_alignParentStart="true"
+       android:layout_centerVertical="true"
+       android:layout_margin="10dp"
+       android:focusable="false" />
+
+   <ImageView
+       android:id="@+id/imageView"
+       android:layout_width="32dp"
+       android:layout_height="32dp"
+       android:layout_toEndOf="@+id/checkbox"
+       android:layout_margin="8dp"/>
+
+   <TextView
+       android:id="@+id/textview"
+       android:layout_width="fill_parent"
+       android:layout_height="fill_parent"
+       android:layout_alignTop="@+id/checkbox"
+       android:layout_toEndOf="@+id/imageView"
+       android:text=""
+       android:textSize="16sp"
+       android:textStyle="bold" />
+
+
+    <ImageButton
+        android:id="@+id/uninstall"
+        style="@style/darkButton" android:padding="@dimen/auto_space_big"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_alignParentEnd="true"
+        android:src="@drawable/ic_menu_delete"
+        android:layout_margin="8dp"/>
+
+</RelativeLayout>

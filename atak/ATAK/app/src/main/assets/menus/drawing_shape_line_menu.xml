@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8'?><menu buttonRadius='65' buttonSpan='180' buttonWidth='90' buttonBg='bgs/button.xml'>
+
+    <button angle='-90'
+            icon='icons/delete.png'
+            onClick='actions/remove_shape.xml'
+            disabled='true' />
+
+    <button icon='icons/move.png'
+            submenu='menus/mgrs_entry_vertex_submenu.xml'
+            disableSwap='true'
+            disableIconSwap='true'
+            onClick='actions/move_editable_polyline_vertex.xml'
+            disabled='!{${movable}}'/>
+
+</menu>

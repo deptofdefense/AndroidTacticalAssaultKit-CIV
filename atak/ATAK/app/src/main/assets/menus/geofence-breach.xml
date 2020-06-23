@@ -1,0 +1,18 @@
+<menu buttonRadius='65' buttonSpan='90' buttonWidth='90' buttonBg='bgs/button.xml'>
+
+    <button angle='-90'
+            icon='icons/delete.png'
+            onClick='actions/remove.xml'
+            disabled='!{${removable}}' />
+
+    <button icon='icons/target.png'
+            prefKey='spi_drop_point_type'
+            submenu='menus/drop_point_submenu.xml'
+            onClick='actions/dropspitarget.xml' />
+        
+    <button icon='icons/polar_coord.png'
+            onClick='actions/polarCoords.xml'/>
+            
+    <button icon='icons/pairing_line.png'
+            onClick='actions/pairingline.xml' />
+</menu>

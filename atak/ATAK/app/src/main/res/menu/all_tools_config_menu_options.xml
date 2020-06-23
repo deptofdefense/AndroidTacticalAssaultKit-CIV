@@ -1,0 +1,29 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/allToolsConfigUndo"
+        android:showAsAction="always"
+        android:title="@string/undo"/>
+    <item
+        android:id="@+id/allToolsConfigHideAll"
+        android:showAsAction="always"
+        android:title="@string/hide_all"/>
+    <item
+        android:title="@string/more"
+          android:icon="@drawable/ic_action_overflow_orig"
+          android:showAsAction="always">
+
+
+        <menu>
+            <item
+                android:id="@+id/allToolsConfigSave"
+                android:icon="@drawable/ic_menu_save2"
+                android:title="@string/save_as"/>
+            <item
+                android:id="@+id/allToolsConfigDelete"
+                android:icon="@drawable/ic_menu_delete"
+                android:title="@string/delete2"/>
+        </menu>
+    </item>
+
+</menu> 

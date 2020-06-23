@@ -1,0 +1,9 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.CHANGE_LEG_REFERENCE</action>
+        <extras>
+            <string key='route_leg'>${route_leg}</string>
+            <string key='route_uid'>${route_uid}</string>
+        </extras>
+    </broadcast>
+</set>

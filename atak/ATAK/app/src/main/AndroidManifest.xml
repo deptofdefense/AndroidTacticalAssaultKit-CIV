@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools"
+    package="com.atakmap.app" >
+    
+    <!-- this protected permission is used on NettWarrior devices and will 
+         allow for the software to be notified of a shutdown -->
+    <uses-permission android:name="android.permission.DEVICE_POWER" 
+                     tools:ignore="ProtectedPermissions" />  
+
+    <!-- Allows for accessing the camera used to set image capture settings, 
+         start/stop preview, snap pictures, and retrieve frames for encoding 
+         for video.   This is used by the several plugins to capture images 
+         without launching the camera. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Allows an application to read or write the system settings.   This 
+         is still in use for very old distributions to allow for a user to 
+         have the app put the end user devices into airplane mode when launched. -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" tools:ignore="ProtectedPermissions" />
+
+    <!-- Allows access to the vibrator. The user can set vibration when they 
+         receive a chat message.   -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- request permission for plugin sdk usage, in this case the wallpaper 
+         is the security banners  -->
+    <uses-permission android:name="android.permission.SET_WALLPAPER" />
+
+    <!-- privilege required to to access the network such as when you are 
+         pulling down map data, publishing your PPLI, connecting to a 
+         TAK Server. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Allows applications to change network connectivity state. -->
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+
+    <!-- Allows applications to access network connectivity state.  This is
+         specifically used as a fast check to see if the network is up when 
+         performing an address lookup  -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- privilege required to access the bluetooth for any bluetooth 
+         communication so that ATAK can make use of blue tooth laser 
+         range finders and gps pucks -->
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
+
+    <!-- privilege required to access the bluetooth for discovery and pairing 
+         so that ATAK can make use of blue tooth laser range finders and gps
+         pucks -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>    
+
+    <!-- privilege required for to manipulate files such as any user exports 
+         of products from the map -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <!-- Any app that declares the WRITE_EXTERNAL_STORAGE permission is implicitly 
+         granted this permission.  This permission is enforced starting in API level 
+         19. Before API level 19, this permission is not enforced and all apps still 
+         have access to read from external storage. Added in at the request of a 
+         system developer that was observing issues. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+    <!-- privilege required to obtain GPS, used within the location components 
+         in the app  -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    
+    <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS"/>
+
+
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+
+    <!-- Used to get the telephony device id for use as the UUID within the 
+         PPLI messages -->
+
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+
+    <!-- required to allow for the app to continue functioning when background as 
+         it is intended -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+    <uses-permission android:name="android.permission.GET_TASKS" />
+
+
+
+    <!-- privilege required to send SMS messages, specifically as part of an 
+         emergency alert -->
+    <uses-permission android:name="android.permission.SEND_SMS"/>
+
+    <!-- privilege required to pair with NFC devices -->
+    <uses-permission android:name="android.permission.NFC"/>
+
+
+    <!-- privilege to allow for the application to turn off power saving features
+         that would adversely affect operational usage -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+
+    <!-- allows for the app to install other apks -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+
+    <!-- allows for the app to run in the foreground -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+
+    <!--wardriving plugin permission -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
+
+    <!-- for voice commands and voice over ip plugins specifically in order to 
+         provide for voice recognition capabilites in the application -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- during driving, the application can speak to you, this allows for the 
+         volume to be adjusted during that work flow. -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+
+    <!-- for calls to _context.getContentResolver().openInputStream(uri); -->
+    <uses-permission android:name="android.permission.MANAGE_DOCUMENTS" tools:ignore="ProtectedPermissions" />
+
+
+    <!-- both declare and use the ALLOW_TEXT_SPEECH in order to facilitate a local 
+         intent to utilize the text to speech in the background -->
+    <permission android:name="com.atakmap.app.ALLOW_TEXT_SPEECH" 
+        android:label="TAK Text to Speech" 
+        android:protectionLevel="signature"/>
+    <uses-permission android:name="com.atakmap.app.ALLOW_TEXT_SPEECH"/>
+
+    <!-- used for metric collection by the app or any of the plugins, the user must also
+         enable access for this app through Settings > Security > Apps with usage access. -->
+    
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions"/>
+
+    <!-- used to interact inside an container with the new KNOX Samsung rollouts -->
+    <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS" tools:ignore="ProtectedPermissions"/>
+
+    <uses-feature android:name="android.hardware.camera" />
+    <uses-feature android:name="android.hardware.camera.autofocus" />
+    <uses-feature android:name="android.hardware.usb.host" />
+    <uses-feature android:name="android.hardware.usb.accessory" />
+
+    <!-- NOTE: The ATAKActivity needs to be run in singleTask mode because of 
+         how the GLSurface is being used and abused.  Up until this change,
+         ATAKActivity was not actually correctly exiting due to a service
+         that was continuing to run.   Please take care to make sure that 
+         the ATAKActivity ends properly when Quit is selected, otherwise 
+         you will not be able to rerun app until you force quit the process.  -->
+ 
+            
+    <!-- This application does not make use of google play so it is not subject to the 
+         Google Play Service Updated Security Provider bad practice.  We also deploy on 
+         devices that do not ship with Google Play Services -->
+    <application
+        android:hardwareAccelerated="true"
+        android:icon="@drawable/ic_atak_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/ATAKTheme"
+        android:name="com.atakmap.app.ATAKApplication"
+        android:description="@string/app_desc"
+        android:allowBackup="false"
+        android:supportsRtl="false">
+
+        <meta-data android:name="plugin-api" android:value="${atakApiVersion}"/>
+        <meta-data android:name="app_desc" android:value="@string/app_desc"/>
+         
+
+        <!-- forces ATAK to not restart when moving to and from DEX station mode -->
+        <meta-data android:name="com.samsung.android.keepalive.density" android:value="true"/>
+
+        <!-- forces ATAK into full screen only mode on the S8/LG -->
+        <meta-data android:name="android.max_aspect" android:value="2.1" />
+
+
+        <activity
+            android:name=".ATAKActivity"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|smallestScreenSize|keyboardHidden|keyboard|uiMode"
+            android:label="@string/app_name"
+            android:theme="@style/ATAKThemeActionBarOverlay"
+            android:windowSoftInputMode="adjustPan"
+            android:screenOrientation="nosensor">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+
+        <provider android:name="plugins.host.provider.PluginProvider" 
+                  android:authorities="com.atakmap.app.plugins.registry" 
+                  android:exported="false"/>
+
+        <provider
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_paths"/>
+        </provider>
+
+        <!-- Sub Activities -->
+
+
+        <!-- Correct implementation of a capability where the application can accept a
+             file using the built in Android SEND feature.   No component permission is 
+             required and it is masked appropriately based on file type. -->
+        <activity 
+           android:name="com.atakmap.android.maps.ImageAcceptActivity" >
+           <intent-filter>
+               <!-- Use Android Gallery to attach a picture to a map item -->
+              <action android:name="android.intent.action.SEND" />
+              <category android:name="android.intent.category.DEFAULT" />
+              <data android:mimeType="image/*" />
+           </intent-filter>
+        </activity>
+
+        <!-- Correct implementation of a capability where the application can accept a
+             file using the built in Android VIEW feature.   No component permission is 
+             required and it is masked appropriately based on file type. -->
+        <activity
+            android:name="com.atakmap.android.maps.ImportFileActivity" >
+            <intent-filter android:label="@string/app_name">
+                <!-- Allow ATAK to handle supported file opened/viewed by the user -->
+                <action android:name="android.intent.action.VIEW" />
+
+                <!-- Note, extensions may be added here. These are unfortunately case sensitive... -->
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.zip" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.kml" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.kmz" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.lpt" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.drw" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.shp" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.shpz" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.xml" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.txt" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.pref" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.cot" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.sqlite" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.gpx" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.jpg" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.jpeg" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.png" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.csv" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.inf" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.tif" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.ntf" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.nitf" />
+                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.sid" />
+            </intent-filter>
+            <intent-filter android:label="@string/app_name">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/octet-stream" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.atakmap.android.video.legacy.Gv2FMobilePlayer"
+            android:screenOrientation="sensorLandscape" />
+        <activity
+            android:name="com.atakmap.comms.app.CotManagerTabActivity"
+            android:screenOrientation="sensorLandscape" >
+        </activity>
+        <activity
+            android:name="com.atakmap.comms.app.CotInputsListActivity"
+            android:configChanges="orientation"  >
+        </activity>
+        <activity
+            android:name="com.atakmap.comms.app.CotObjectsListActivity"
+            android:screenOrientation="sensorLandscape" >
+        </activity>
+        <activity
+            android:name="com.atakmap.comms.app.AddNetInfoActivity"
+            android:configChanges="orientation" >
+        </activity>
+        <activity
+            android:name="com.atakmap.comms.app.CotStreamListActivity"
+            android:configChanges="orientation"  >
+        </activity>
+        <activity
+            android:name="com.atakmap.android.cot.TadilJListActivity"
+            android:configChanges="orientation"  >
+        </activity>
+        <activity
+            android:name="com.atakmap.comms.app.CotOutputsListActivity"
+            android:configChanges="orientation"  >
+        </activity>
+        <activity
+            android:name="com.atakmap.android.drawing.KmlImportListActivity"
+            android:screenOrientation="sensorLandscape" />
+        <activity
+            android:name="com.atakmap.app.SettingsActivity"
+            android:configChanges="orientation"
+            android:screenOrientation="sensorLandscape">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ATAKActivity" />
+        </activity>
+        <activity
+            android:name="com.atakmap.app.preferences.LocationSettingsActivity"
+            android:configChanges="orientation"
+            android:screenOrientation="sensorLandscape">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ATAKActivity" />
+        </activity>
+        <activity
+            android:name="com.atakmap.app.preferences.NetworkSettingsActivity"
+            android:configChanges="orientation"
+            android:screenOrientation="sensorLandscape">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ATAKActivity" />
+        </activity>
+        <activity
+            android:name="com.atakmap.app.preferences.AppMgmtSettingsActivity"
+            android:configChanges="orientation"
+            android:screenOrientation="sensorLandscape">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.atakmap.android.update.AppMgmtActivity" />
+        </activity>
+        <activity android:name="com.atakmap.android.tools.AllToolsActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ATAKActivity" />
+        </activity>
+        <activity android:name="com.atakmap.android.tools.AllToolsConfigMenuActivity">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.atakmap.android.tools.AllToolsActivity" />
+        </activity>
+
+        <activity android:name="com.atakmap.android.update.AppMgmtActivity"
+                  android:uiOptions="splitActionBarWhenNarrow">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ATAKActivity" />
+        </activity>
+
+
+        <!-- Responsible for keeping the GPS alive with the Android 8 (Oreo) as well
+             other background services such as TTS -->
+        <service android:name="com.atakmap.app.BackgroundServices" android:exported="false"/>
+
+        <service android:name="com.atakmap.android.http.rest.HTTPRequestService" android:exported="false" />
+        <service android:name="com.atakmap.android.layers.wms.DownloadAndCacheService" android:exported="false" />
+
+
+        <!-- required due to legacy coding of the ImageEditReceiver and cannot have 
+             a component permission -->
+        <receiver android:name="com.atakmap.android.image.ImageEditReceiver" android:exported="true" tools:ignore="ExportedReceiver" >
+            <intent-filter>
+                <action android:name="com.atakmap.maps.images.REFRESH"/>
+            </intent-filter>
+        </receiver>
+
+        <activity android:name="com.atak.plugins.impl.ATAKProcessKillActivity" 
+                  android:excludeFromRecents="true" android:stateNotNeeded="true"
+                  android:noHistory="true" 
+                  android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"
+                  android:configChanges="keyboardHidden|orientation|screenSize"/>
+        <activity-alias android:name="plugins.host.ProcessKillActivity" 
+                        android:targetActivity="com.atak.plugins.impl.ATAKProcessKillActivity"/>
+
+    </application>
+</manifest>

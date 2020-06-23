@@ -1,0 +1,84 @@
+ Each piece of third-party software is provided solely under its own license and/or terms and conditions.  The use, distribution, and modification of the files from third-party software is governed solely by the third-party software's respective license information, unless otherwise noted.    The packages and respective licenses are listed
+
+
+achartengine-1.2.0r569.jar -  covered by license-apache20.txt
+       the org/achartengine/chartdemo supplied code has been removed from the library
+
+acra-4.6.1.jar - covered by license-apache20.txt
+
+org.apache.commons.lang - covered by license-apache20.txt
+        -- included with the jar file is source code with revisions
+
+commons-net-3.3.jar - covered by license-apache20.txt
+
+datadroid-2.1.2.jar - covered by license-beerware.txt
+
+com/bbn/spatial/kml/KMLMatcher - covered by license-apache20.txt
+
+gdal.jar - covered by license-gdal.txt which is a rollup of several license.   
+           The current compilation makes use of a Kakadu commercial use license
+           owned by PAR Government Systems Corporation and complies with the 
+           specifics of that license.   Due to the terms of the Kakadu commerical
+           use license, this technology cannot be reused outside of ATAK unless
+           PAR specifically deploys it.
+
+json_simple-1.1.jar - covered by license-apache20.txt
+
+jcommoncommo.jar - covered by commoncommo.txt 
+         - this includes all variations of libcommoncommojni.so
+
+jassimp.jar - covered under license-assimp.txt
+    libassimp.so
+    libjassimp.so 
+
+
+jackcess-1.2.14.3.jar - covered by license-lgpl21.txt
+
+jpgscmedia.jar - covered by the license-par-gv2f.txt
+
+opennmea-0.1.jar - covered by license-lgpl21.txt
+
+simple-kml.jar - covered by license-apache20.txt
+
+simple-xml-2.7.1.jar - covered by license-apache20.txt
+
+com.arrowmaker.android.maps.layers.RangeSeekBar - covered by license-apache20.txt
+
+org.draper.android.gui.ImportFileBrowser - covered by the license-apache20.txt
+           source code derived from https://github.com/mburman/Android-File-Explore
+
+
+opencsv.CSVReader - covered by the license-apache20.txt
+
+libjsqlite.so - covered by license-mpl11.txt
+           source code: https://code.google.com/p/spatialite-android/
+           removed jsqlite.SQLDump
+           removed jsqlite.Shell
+           removed jsqlite.Benchmark
+           removed jsqlite.SQLRestore
+
+libltidsdk.so - covered by license-lizardtech.txt
+
+
+com.atakmap.android.user.geocode.GeocodeConverter  - covered by license-lgpl21.txt
+                                 GeocoderNominatim - covered by license-lgpl21.txt
+                                 GeocoderGisgraphy - covered by license-lgpl21.txt
+                                 HttpConnection    - covered by license-lgpl21.txt
+source code: https://github.com/MKergall/osmbonuspack/tree/master/OSMBonusPack/src/main/java/org/osmdroid/bonuspack/location
+https://github.com/MKergall/osmbonuspack/blob/master/OSMBonusPack/src/main/java/org/osmdroid/bonuspack/utils/HttpConnection.java
+
+author: MKergall
+            modified source code
+
+sanselan-android.jar - covered by license-apache20.txt
+            source code https://code.google.com/p/sanselanandroid/
+
+
+com.atakmap.android.gui.ImportFileBrowser - covered by license-apache20.txt
+            https://github.com/mburman/Android-File-Explore
+            modified source code 
+
+Android Robot Icon - The Android robot is reproduced or modified from work created and shared by Google 
+            and used according to terms described in the Creative Commons 3.0 Attribution License.
+
+gov.nasa.worldwind - covered under multiple licenses license-worldwind.txt and license-worldwind2.txt

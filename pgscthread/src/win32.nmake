@@ -1,0 +1,34 @@
+OBJ=.obj
+PLATFORM_IMPL_OBJ = impl/ThreadImpl_WIN32.obj
+
+default: all
+
+!INCLUDE deps.mak
+
+
+CXXFLAGS = /GS /GL /analyze- /W3 /Gy /Zc:wchar_t /I"../include/"           \
+           /Zi /Gm- /O2 /Fd"vc140.pdb" /Zc:inline /fp:precise /D "WIN32"   \
+           /D "NDEBUG" /D "_WINDOWS" /D "_USRDLL" /D "PGSCTHREAD_EXPORTS"  \
+           /D "_WINDLL" /D "_UNICODE" /D "UNICODE" /errorReport:prompt     \
+           /WX- /Zc:forScope /Gd /Oy- /Oi /MD /EHsc /nologo /FS
+.cpp.obj:
+	$(CXX) $(CXXFLAGS) /c /Fo$@ $<
+
+all: pgscthread.dll
+
+clean:
+	del *.obj impl\*.obj pgscthread.dll pgscthread.lib pgscthread.pdb
+
+pgscthread.dll: $(OBJS)
+	echo $(OBJS)
+	link /OUT:"pgscthread.dll" /LTCG:incremental /NXCOMPAT             \
+	/PDB:"pgscthread.pdb" /DYNAMICBASE "kernel32.lib" "user32.lib"     \
+	"gdi32.lib" "winspool.lib" "comdlg32.lib" "advapi32.lib"           \
+        "shell32.lib" "ole32.lib" "oleaut32.lib" "uuid.lib" "odbc32.lib"   \
+	"odbccp32.lib" /IMPLIB:"pgscthread.lib" /DEBUG /DLL /MACHINE:X86   \
+	/OPT:REF /SAFESEH /INCREMENTAL:NO /SUBSYSTEM:WINDOWS               \
+	/MANIFESTUAC:"level='asInvoker' /uiAccess='false'"                 \
+	/OPT:ICF /ERRORREPORT:PROMPT /NOLOGO /TLBID:1 $(OBJS)
+
+
+

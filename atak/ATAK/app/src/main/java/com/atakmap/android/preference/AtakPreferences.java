@@ -1,0 +1,139 @@
+
+package com.atakmap.android.preference;
+
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.preference.PreferenceManager;
+
+import com.atakmap.android.maps.MapView;
+import com.atakmap.coremap.log.Log;
+
+/**
+ * ATAK core preferences helper
+ */
+public class AtakPreferences {
+
+    private static final String TAG = "AtakPreferences";
+
+    protected final Context _context;
+    protected final SharedPreferences _prefs;
+
+    public AtakPreferences(MapView mapView) {
+        _context = mapView.getContext();
+        _prefs = PreferenceManager.getDefaultSharedPreferences(_context);
+    }
+
+    /**
+     * Get the underlying shared preferences object
+     * @return Shared preferences
+     */
+    public SharedPreferences getSharedPrefs() {
+        return _prefs;
+    }
+
+    /**
+     * Set and apply a preference
+     * @param key Preference key
+     * @param value Preference value (any type)
+     * @return True if successful, false if failed
+     */
+    public boolean set(String key, Object value) {
+        if (value == null)
+            return false;
+        try {
+            SharedPreferences.Editor editor = _prefs.edit();
+            if (value instanceof Integer)
+                editor.putInt(key, (Integer) value);
+            else if (value instanceof Long)
+                editor.putLong(key, (Long) value);
+            else if (value instanceof Double)
+                editor.putFloat(key, ((Double) value).floatValue());
+            else if (value instanceof Float)
+                editor.putFloat(key, (Float) value);
+            else if (value instanceof Boolean)
+                editor.putBoolean(key, (Boolean) value);
+            else
+                editor.putString(key, String.valueOf(value));
+            editor.apply();
+            return true;
+        } catch (Exception e) {
+            Log.e(TAG, "set(" + key + ", " + value + ") failed", e);
+        }
+        return false;
+    }
+
+    /**
+     * Get a preference value
+     * Value type is based on the default value type passed in
+     * @param key Preference key
+     * @param defVal Default value
+     * @return Preference value or default value if failed/not found
+     */
+    private Object get(String key, Object defVal) {
+        try {
+            if (defVal instanceof Integer)
+                return _prefs.getInt(key, (Integer) defVal);
+            else if (defVal instanceof Long)
+                return _prefs.getLong(key, (Long) defVal);
+            else if (defVal instanceof Double)
+                return (double) _prefs.getFloat(key,
+                        ((Double) defVal).floatValue());
+            else if (defVal instanceof Float)
+                return _prefs.getFloat(key, (Float) defVal);
+            else if (defVal instanceof Boolean)
+                return _prefs.getBoolean(key, (Boolean) defVal);
+            else {
+                if (defVal != null && !(defVal instanceof String))
+                    defVal = String.valueOf(defVal);
+                return _prefs.getString(key, (String) defVal);
+            }
+        } catch (Exception e) {
+            // Type mismatch - Attempt to get as a string and convert
+            if (!(defVal instanceof String)) {
+                String ret = get(key, String.valueOf(defVal));
+                try {
+                    if (defVal instanceof Integer)
+                        return Integer.parseInt(ret);
+                    else if (defVal instanceof Long)
+                        return Long.parseLong(ret);
+                    else if (defVal instanceof Double)
+                        return Double.parseDouble(ret);
+                    else if (defVal instanceof Float)
+                        return Float.parseFloat(ret);
+                    else if (defVal instanceof Boolean)
+                        return Boolean.parseBoolean(ret);
+                    return defVal;
+                } catch (Exception e2) {
+                    e = e2;
+                }
+            }
+            Log.e(TAG, "Failed to get preference string: " + key, e);
+        }
+        return defVal;
+    }
+
+    public String get(String key, String defVal) {
+        return (String) get(key, (Object) defVal);
+    }
+
+    public int get(String key, int defVal) {
+        return (Integer) get(key, (Integer) defVal);
+    }
+
+    public double get(String key, double defVal) {
+        return (Double) get(key, (Double) defVal);
+    }
+
+    public boolean get(String key, boolean defVal) {
+        return (Boolean) get(key, (Boolean) defVal);
+    }
+
+    public void registerListener(OnSharedPreferenceChangeListener l) {
+        _prefs.registerOnSharedPreferenceChangeListener(l);
+    }
+
+    public void unregisterListener(OnSharedPreferenceChangeListener l) {
+        _prefs.unregisterOnSharedPreferenceChangeListener(l);
+    }
+}

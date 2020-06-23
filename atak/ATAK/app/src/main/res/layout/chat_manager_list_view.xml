@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<com.atakmap.android.hierarchy.HierarchyManagerView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:background="#000000">
+
+        <ImageButton
+            android:id="@+id/chat_contact_back_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginStart="@dimen/auto_space"
+            android:background="@drawable/chat_title_background"
+            android:paddingBottom="8dp"
+            android:paddingTop="8dp"
+            android:layout_marginEnd="-6dp"
+            android:src="@drawable/chat_back"
+            android:visibility="gone"/>
+
+        <RelativeLayout
+            android:id="@+id/chat_contact_title_layout"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+            <Button
+                android:id="@+id/chat_contact_title_textview"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:background="@drawable/chat_title_background"
+                android:gravity="center|start"
+                android:maxLines="2"
+                android:paddingStart="@dimen/auto_margin"
+                android:paddingEnd="8dp"
+                android:text="@string/contact_title"
+                android:textColor="#FFF"
+                android:textStyle="bold"
+                android:textSize="12sp"/>
+            <ImageView
+                android:id="@+id/chat_contact_title_arrow"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginEnd="-6dp"
+                android:layout_marginBottom="5dp"
+                android:layout_alignEnd="@id/chat_contact_title_textview"
+                android:layout_alignBottom="@id/chat_contact_title_textview"
+                android:src="@drawable/spinner_atak_default"/>
+        </RelativeLayout>
+
+        <Spinner
+            android:id="@+id/contact_filter_spinner"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:visibility="invisible"/>
+
+        <EditText
+            android:id="@+id/chat_contact_text_entry"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:imeOptions="flagNoExtractUi|actionSearch"
+            android:singleLine="true"
+            android:hint="@string/search"
+            android:lines="1"
+            android:maxLines="1"
+            android:maxLength="128"
+            android:visibility="gone"
+            android:inputType="textNoSuggestions">
+            <requestFocus />
+        </EditText>
+
+        <LinearLayout
+            android:id="@+id/chat_contact_actions_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/chat_favorites_btn"
+                android:layout_width="32dp"
+                android:layout_height="match_parent"
+                android:padding="5dp"
+                android:background="@drawable/chat_title_background"
+                android:src="@drawable/lpt_white_star_drawable" />
+
+            <ImageButton
+                android:id="@+id/chat_contact_history_btn"
+                android:layout_width="32dp"
+                android:layout_height="match_parent"
+                android:padding="5dp"
+                android:background="@drawable/chat_title_background"
+                android:src="@drawable/clock" />
+
+            <com.atakmap.android.hierarchy.SortSpinner
+                android:id="@+id/sort_spinner"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:spinnerMode="dropdown"
+                android:background="@drawable/chat_title_background"
+                android:popupBackground="#000"/>
+
+            <ImageButton
+                android:id="@+id/chat_contact_search_btn"
+                android:layout_width="32dp"
+                android:layout_height="match_parent"
+                android:background="@drawable/chat_title_background"
+                android:src="@android:drawable/ic_menu_search" />
+
+            <Button
+                android:id="@+id/chat_contact_action_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:paddingStart="@dimen/auto_margin2"
+                android:paddingEnd="@dimen/auto_margin2"
+                android:text="@string/action"
+                android:textColor="#FFFFFFFF"
+                android:visibility="gone"
+                style="@style/darkButton"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/group_actions"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:gravity="end"
+        android:background="#000"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <ImageButton
+            android:id="@+id/chat_contact_add_users_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:padding="5dp"
+            android:background="@drawable/chat_title_background"
+            android:src="@drawable/group_user_add"/>
+
+        <ImageButton
+            android:id="@+id/chat_contact_delete_users_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:padding="5dp"
+            android:background="@drawable/chat_title_background"
+            android:src="@drawable/group_user_delete"/>
+
+        <ImageButton
+            android:id="@+id/chat_contact_new_group_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="@drawable/chat_title_background"
+            android:padding="5dp"
+            android:src="@drawable/group_icon_add"/>
+
+        <ImageButton
+            android:id="@+id/chat_contact_delete_group_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="@drawable/chat_title_background"
+            android:padding="5dp"
+            android:src="@drawable/group_icon_delete"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/selectAll_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#222"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <CheckBox
+            android:id="@+id/selectAll_cb"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/select_all_track"/>
+
+        <CheckBox
+            android:id="@+id/showAll_cb_top"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:text="@string/show_all"/>
+
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/chat_presence_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <LinearLayout
+        android:id="@+id/filters_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:background="#222">
+        <CheckBox
+            android:id="@+id/unread_cb"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:textSize="12sp"
+            android:text="@string/chat_text10"/>
+        <CheckBox
+            android:id="@+id/showAll_cb"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:layout_gravity="center_vertical"
+            android:textSize="12sp"
+            android:text="@string/show_all"/>
+        <ImageButton
+            android:id="@+id/close_hmv"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/close"
+            android:gravity="center_vertical|center_horizontal"
+            android:scaleType="fitCenter" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/contact_send_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+
+        android:orientation="horizontal"
+        android:visibility="gone">
+        <Button
+            android:id="@+id/contact_list_button_share_selected"
+            style="@style/darkButton"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:text="@string/contact_list_button_share"
+            android:textSize="@dimen/textSize"
+            android:layout_weight="1"/>
+        <Button
+            android:id="@+id/contact_list_button_send_to_all"
+            style="@style/darkButton"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp"
+            android:text="@string/contact_list_button_send_to_all"
+            android:textSize="@dimen/textSize"
+            android:layout_weight="1"/>
+    </LinearLayout>
+</com.atakmap.android.hierarchy.HierarchyManagerView>

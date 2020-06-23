@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.atakmap.android.slant.SSESlantDetailsView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+
+    <ScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_above="@+id/drawingRectSendEditView_rl"
+        android:fadeScrollbars="false">
+        
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:alignmentMode="alignMargins"
+            android:orientation="vertical"
+            android:padding="4dp" >
+
+            <include
+                android:id="@+id/slant_quick_layout"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                layout="@layout/sse_slant_quick" />
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/ekia"
+                    android:textColor="@color/heading_yellow"
+                    android:paddingRight="7dp"/>
+                <EditText
+                    android:id="@+id/quick_slant_kia"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:maxLength="9"
+                    android:inputType="number"
+                    android:imeOptions="actionNext"
+                    android:hint="@string/pound_ekia"/>
+            </LinearLayout>
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/heading_yellow"
+                    android:text="@string/ewia"
+                    android:paddingRight="7dp"/>
+                <EditText
+                    android:id="@+id/quick_slant_wia"
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:maxLength="9"
+                    android:inputType="number"
+                    android:imeOptions="actionDone"
+                    android:hint="@string/number_ewia"/>
+            </LinearLayout>
+
+    
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/location2"
+                android:textColor="@color/heading_yellow"
+                android:textSize="@dimen/draper_font"
+                 />
+
+            <Button
+                android:id="@+id/sensorCenterButton"
+                style="@style/darkButton"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start|center_vertical"
+                android:minLines="2"
+                android:padding="6dp"
+                android:text="@string/point_dropper_text2"
+                android:textColor="#FFF"
+                android:textSize="@dimen/draper_title_font" />
+            
+
+            <TextView
+                android:id="@+id/lastSeenText"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent"
+                android:gravity="start"
+                android:text="@string/last_report"
+                android:textColor="@color/heading_yellow"
+                android:textSize="@dimen/draper_font"
+                 />
+
+            <LinearLayout
+                android:id="@+id/dgAddressLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:layout_marginBottom="5dp"
+                android:layout_marginEnd="5dp"
+                android:visibility="gone"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:gravity="start"
+                    android:text="@string/address"
+                    android:textColor="@color/heading_yellow"
+                    android:textSize="@dimen/draper_font"/>
+
+                <TextView
+                    android:id="@+id/dgInfoAddress"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:gravity="start"
+                    android:text=""
+                    android:textColor="#FFF"
+                    android:textSize="@dimen/draper_large_font"/>
+
+                <TextView
+                    android:id="@+id/dgInfoAddressInfo"
+                    android:layout_height="wrap_content"
+                    android:layout_width="wrap_content"
+                    android:gravity="start"
+                    android:text=""
+                    android:textColor="#FFF"
+                    android:textSize="@dimen/draper_small_font"/>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/slantAuthor"
+                android:layout_height="wrap_content"
+                android:layout_width="fill_parent"
+                android:gravity="start"
+                android:text="@string/author"
+                android:textColor="@color/heading_yellow"
+                android:textSize="@dimen/draper_font" />
+
+
+            <TextView
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:text="@string/remarks"
+                android:textColor="@color/heading_yellow"
+                android:textSize="@dimen/draper_font" />
+
+            <EditText
+                android:id="@+id/remarksET"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="fill_horizontal"
+                android:gravity="start"
+                android:inputType="textMultiLine|textCapSentences|textNoSuggestions"
+                android:minLines="1"
+                android:textSize="@dimen/draper_title_font" />
+
+            <!-- TODO remove me after figure out why remarks (above) hidden behind button bar (below) -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="50dp"/>
+        </LinearLayout>
+
+    </ScrollView>
+
+    <LinearLayout
+        android:id="@id/cotInfoButtonsLayout"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:weightSum="3">
+
+        <ImageButton
+            android:id="@+id/sendButton"
+            android:layout_width="0dip"
+            android:layout_height="match_parent"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:src="@drawable/send_square"
+            android:layout_weight="1"
+            android:textSize="@dimen/draper_title_font" />
+
+        <ImageButton
+            android:id="@+id/attachButton"
+            android:layout_width="0dip"
+            android:layout_height="match_parent"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:src="@drawable/attachment"
+            android:layout_weight="1" />
+
+        <ImageButton
+            android:id="@+id/deleteButton"
+            android:layout_width="0dip"
+            android:layout_height="match_parent"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:src="@drawable/ic_menu_delete_32"
+            android:layout_weight="1" />
+
+
+    </LinearLayout>
+
+</com.atakmap.android.slant.SSESlantDetailsView>

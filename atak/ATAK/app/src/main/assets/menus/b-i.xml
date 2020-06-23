@@ -1,0 +1,23 @@
+<menu buttonRadius='65' buttonSpan='72' buttonWidth='90' buttonBg='bgs/button.xml'>
+
+    <button angle='-90'
+            icon='icons/delete.png'
+            onClick='actions/remove.xml'
+            disabled='!{${removable}}' />    
+
+    <button icon='icons/details.png'
+            onClick='actions/image_details.xml' />
+
+    <button icon='icons/camera.png'
+            onClick='actions/image.xml' />
+
+    <button onClick='actions/9line_spi.xml'
+            dependsOnCapability='capability.fires'
+            icon='icons/nineline.png'/>
+
+    <button icon='icons/pairing_line.png'
+            onClick='actions/pairingline.xml'
+            selected='${pairingline_on}' />
+
+
+</menu>

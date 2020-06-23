@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:id="@+id/med_hlz_terrain_rl"
+                android:orientation="vertical" >
+
+    <CheckBox
+        android:id="@+id/hlz_none"
+        android:layout_marginTop="2dp"
+        android:layout_marginStart="5dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:enabled="false"
+        android:text="@string/terrain_none_choice"
+        />
+
+    <LinearLayout
+        android:id="@+id/hlz_slope_and_dir"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@id/hlz_none"
+        android:visibility="visible">
+        <CheckBox
+            android:id="@+id/hlz_slope"
+            android:layout_marginTop="7dp"
+            android:layout_marginStart="5dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/terrain_slope_choice" />
+
+        <com.atakmap.android.gui.PluginSpinner
+            android:textColor="@color/white"
+            android:padding="6dp" style="@style/darkButton"
+            android:id="@+id/slope_direction"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent" />
+    </LinearLayout>
+
+    <CheckBox
+        android:id="@+id/hlz_rough"
+        android:layout_marginTop="7dp"
+        android:layout_marginStart="5dp"
+        android:layout_below="@id/hlz_slope_and_dir"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/terrain_rough_choice"
+        />
+
+    <CheckBox
+        android:id="@+id/hlz_loose_sand"
+        android:layout_marginTop="7dp"
+        android:layout_marginStart="5dp"
+        android:layout_below="@id/hlz_rough"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/terrain_loose_choice"
+        />
+
+    <CheckBox
+        android:id="@+id/hlz_terrain_other"
+        android:layout_marginTop="7dp"
+        android:layout_marginStart="5dp"
+        android:layout_below="@id/hlz_loose_sand"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/terrain_other_choice"
+        />
+
+</RelativeLayout>

@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+   <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
+       android:id="@+id/infoRangeBearingTable"
+       android:layout_height="wrap_content"
+       android:layout_width="fill_parent"
+       android:orientation="vertical">
+
+       <TableRow
+           android:layout_width="fill_parent"
+           android:layout_height="wrap_content"
+           android:weightSum="3">
+
+           <TextView
+               android:layout_width="0dip"
+               android:layout_height="wrap_content"
+               android:layout_weight="0.4"
+               android:ellipsize="marquee"
+               android:singleLine="true"
+               android:padding="3dp"
+               android:gravity="end"
+               android:text="@string/rb_text1"
+               android:textColor="@color/heading_yellow"
+               android:textSize="@dimen/draper_font" />
+
+           <View
+               android:layout_width="1px"
+               android:layout_height="match_parent"
+               android:background="#BFFF" />
+
+           <TextView
+               android:id="@+id/infoRangeMetricText"
+               android:layout_width="0dip"
+               android:layout_height="wrap_content"
+               android:layout_weight="0.85"
+               android:ellipsize="marquee"
+               android:singleLine="true"
+               android:gravity="center"
+               android:padding="3dp"
+               android:textColor="@android:color/white"
+               android:textAppearance="?android:attr/textAppearanceSmall" />
+
+
+           <View
+               android:layout_width="1px"
+               android:layout_height="match_parent"
+               android:background="#AFFF" />
+
+           <TextView
+               android:id="@+id/infoRangeEnglishText"
+               android:layout_width="0dip"
+               android:layout_height="wrap_content"
+               android:layout_weight="0.85"
+               android:ellipsize="marquee"
+               android:singleLine="true"
+               android:gravity="center"
+               android:padding="3dp"
+               android:textColor="@android:color/white"
+               android:textAppearance="?android:attr/textAppearanceSmall" />
+
+
+           <View
+               android:layout_width="1px"
+               android:layout_height="match_parent"
+               android:background="#AFFF" />
+
+           <TextView
+               android:id="@+id/infoRangeNauticalText"
+               android:layout_width="0dip"
+               android:layout_height="wrap_content"
+               android:layout_weight="0.9"
+               android:ellipsize="marquee"
+               android:singleLine="true"
+               android:gravity="center"
+               android:padding="3dp"
+               android:textColor="@android:color/white"
+               android:textAppearance="?android:attr/textAppearanceSmall" />
+
+       </TableRow>
+
+       <TableRow
+           android:layout_width="fill_parent"
+           android:layout_height="wrap_content"
+           android:background="#AFFF"
+           android:weightSum="3">
+
+           <View
+               android:layout_width="match_parent"
+               android:layout_height="1px"
+               android:background="#AFFF" />
+
+       </TableRow>
+
+       <TableRow
+           android:layout_width="fill_parent"
+           android:layout_height="wrap_content"
+           android:weightSum="3">
+
+           <TextView
+               android:layout_width="0dip"
+               android:layout_height="wrap_content"
+               android:layout_weight="0.4"
+               android:ellipsize="marquee"
+               android:singleLine="true"
+               android:padding="3dp"
+               android:gravity="end"
+               android:text="@string/rb_text2"
+               android:textColor="@color/heading_yellow"
+               android:textSize="@dimen/draper_font" />
+
+           <View
+               android:layout_width="1px"
+               android:layout_height="match_parent"
+               android:background="#AFFF" />
+
+           <TextView
+               android:id="@+id/infoBearingMagneticText"
+               android:layout_width="0dip"
+               android:layout_height="wrap_content"
+               android:layout_weight="1.30"
+               android:ellipsize="marquee"
+               android:singleLine="true"
+               android:gravity="center"
+               android:padding="3dp"
+               android:textColor="@android:color/white"
+               android:textAppearance="?android:attr/textAppearanceSmall" />
+
+
+           <View
+               android:layout_width="1px"
+               android:layout_height="match_parent"
+               android:background="#AFFF" />
+
+           <TextView
+               android:id="@+id/infoBearingTrueText"
+               android:layout_width="0dip"
+               android:layout_height="wrap_content"
+               android:layout_weight="1.30"
+               android:ellipsize="marquee"
+               android:singleLine="true"
+               android:gravity="center"
+               android:padding="3dp"
+               android:textStyle="bold"
+               android:textColor="@android:color/white"
+               android:textAppearance="?android:attr/textAppearanceSmall" />
+
+
+       </TableRow>
+       <TableRow
+           android:layout_width="fill_parent"
+           android:layout_height="wrap_content"
+           android:weightSum="3">
+
+           <TextView
+               android:id="@+id/infoBearingCardinalText"
+               android:layout_width="0dip"
+               android:layout_height="wrap_content"
+               android:layout_weight="0.4"
+               android:ellipsize="marquee"
+               android:singleLine="true"
+               android:padding="3dp"
+               android:gravity="end"
+               android:text=""
+               android:textColor="@android:color/white"
+               android:textAppearance="?android:attr/textAppearanceSmall" />
+
+           <View
+               android:layout_width="1px"
+               android:layout_height="match_parent"
+               android:background="#AFFF" />
+
+           <TextView
+               android:id="@+id/infoBearingMMagneticText"
+               android:layout_width="0dip"
+               android:layout_height="wrap_content"
+               android:layout_weight="1.30"
+               android:ellipsize="marquee"
+               android:singleLine="true"
+               android:gravity="center"
+               android:padding="3dp"
+               android:textColor="@android:color/white"
+               android:textAppearance="?android:attr/textAppearanceSmall" />
+
+
+           <View
+               android:layout_width="1px"
+               android:layout_height="match_parent"
+               android:background="#AFFF" />
+
+           <TextView
+               android:id="@+id/infoBearingMTrueText"
+               android:layout_width="0dip"
+               android:layout_height="wrap_content"
+               android:layout_weight="1.30"
+               android:ellipsize="marquee"
+               android:singleLine="true"
+               android:gravity="center"
+               android:padding="3dp"
+               android:textColor="@android:color/white"
+               android:textAppearance="?android:attr/textAppearanceSmall" />
+
+
+       </TableRow>       
+       
+   </TableLayout>
+

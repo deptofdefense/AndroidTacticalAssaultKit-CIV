@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/pref_parent"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:baselineAligned="false"
+    android:orientation="vertical"
+    android:weightSum="12" >
+
+    <LinearLayout 
+         android:layout_width="fill_parent"
+         android:layout_height="0dp"
+         android:baselineAligned="false"
+         android:orientation="horizontal"
+         android:layout_weight="12"
+         android:weightSum="12" >
+
+         <RelativeLayout 
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:layout_weight="12" >
+     
+              <FrameLayout
+                  android:id="@+id/visual_content"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent" /> 
+     
+         </RelativeLayout>
+
+         <include layout="@layout/atak_faux_button_landscape" />
+    </LinearLayout>
+
+    <include layout="@layout/atak_faux_button_portrait" />
+
+</LinearLayout>

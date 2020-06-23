@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:drawable="@drawable/btn_default_selected"/>
+    <item>
+        <bitmap 
+        android:src="@drawable/arrowright"
+        android:gravity="right" />
+        </item>
+    <!--
+        <item
+        android:drawable="@drawable/btn_default_normal"
+        android:id="@[+][package:]id/resource_name"
+        android:top="dimension"
+        android:right="dimension"
+        android:bottom="dimension"
+        android:left="dimension" />
+    -->
+
+</layer-list>

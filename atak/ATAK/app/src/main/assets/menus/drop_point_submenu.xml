@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+<menu buttonRadius='65' buttonSpan='32.73' buttonWidth='60' buttonBg='bgs/button.xml'>
+
+    <button icon='icons/unknown.png'
+            prefValue='0'
+            onClick='actions/dropunknown.xml' />
+
+    <button icon='icons/neutral.png'
+            prefValue='1'
+            onClick='actions/dropneutral.xml' />
+
+    <button icon='icons/target.png'
+            prefValue='2'
+            onClick='actions/drophostile.xml' />
+
+    <button icon='icons/friendly.png'
+            prefValue='3'
+            onClick='actions/dropfriendly.xml' />
+</menu>

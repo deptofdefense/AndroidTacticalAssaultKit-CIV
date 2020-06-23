@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory 
+    android:title="@string/alert_preferences">
+        <CheckBoxPreference
+            android:title="@string/notification"
+            android:key="alert_notification"
+            android:summary="@string/preferences_text1"
+            android:defaultValue="true" />
+        <CheckBoxPreference
+                android:title="@string/individual_alert_notifications"
+                android:summary="@string/individual_alert_notifications_desc"
+                android:defaultValue="false"
+                android:key="individual_alert_notification"
+                android:dependency="alert_notification"
+                android:disableDependentsState="false"/>
+        <CheckBoxPreference
+            android:title="@string/preferences_text2"
+            android:key="alert_audible"
+            android:summary="@string/preferences_text3"
+            android:defaultValue="false"
+            android:dependency="alert_notification"/>
+        <CheckBoxPreference
+            android:title="@string/preferences_text4"
+            android:key="alert_vibration"
+            android:summary="@string/preferences_text5"
+            android:defaultValue="true"
+            android:dependency="alert_notification"/>
+        <com.atakmap.android.gui.SMSNumberPreference
+            android:title="@string/preferences_text6"
+            android:key="sms_numbers"
+            android:summary="@string/emergency_sms"/>
+    </PreferenceCategory>  
+</PreferenceScreen>

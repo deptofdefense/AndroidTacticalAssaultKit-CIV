@@ -1,0 +1,22 @@
+<menu buttonRadius='65' buttonSpan='72' buttonWidth='90' buttonBg='bgs/button.xml'>
+    
+    <button angle='-90'
+            icon='icons/delete.png'
+            onClick='actions/remove_sse.xml'
+            disabled='!{${removable}}' />
+
+    <button icon='icons/details.png'
+            onClick='actions/showdetails_sse.xml' />
+
+    <button icon='icons/pairing_line.png'
+            onClick='actions/pairingline.xml'
+            selected='${pairingline_on}' />
+
+    <button icon='icons/sse_shape.png' 
+             onClick='actions/sse_shape_create.xml' />
+    
+    <button icon='icons/sse_shape_delete.png'
+            onClick='actions/sse_shape_remove.xml' 
+            disabled='!{${shape_exists}}'/>
+
+</menu>

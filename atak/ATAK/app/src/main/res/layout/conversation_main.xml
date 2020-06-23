@@ -1,0 +1,151 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+
+    <LinearLayout android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal" >
+
+        <TextView
+            android:id="@+id/conversationTitleText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textStyle="bold" />
+
+
+        <ImageButton
+            android:id="@+id/conversationPanButton"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/panto_button" />
+
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/lineList"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:dividerHeight="0dp"
+        android:paddingStart="5dp"
+        android:paddingEnd="5dp" />
+
+    <LinearLayout
+        android:id="@+id/chat_user_entry_area"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="true"
+            android:orientation="horizontal"
+            android:paddingBottom="5dp"
+            android:paddingStart="5dp"
+            android:paddingEnd="5dp" >
+
+            <EditText
+                android:id="@+id/messageBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:inputType="textNoSuggestions">
+
+                <requestFocus />
+            </EditText>
+
+            <Button
+                android:id="@+id/sendButton"
+                style="@style/darkButton"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:padding="0dp"
+                android:text="@string/send_caps"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:orientation="horizontal"
+            android:weightSum="5"
+            android:baselineAligned="false">
+
+            <!--  To add a button, just copy one of the buttons below and update the id and the text; the code
+                    will take care of the rest.  Note: the text for the button is currently what is sent out as
+                    the message. -->
+
+            <TableLayout  
+                android:id="@+id/button_table_layout" 
+                android:layout_weight="4" 
+                android:layout_width="0dp" 
+                android:layout_height="match_parent" 
+                android:weightSum="4" >
+                <TableRow
+                    android:layout_weight="4" 
+                    android:layout_width="0dp" 
+                    android:layout_height="match_parent" 
+                    android:weightSum="4" 
+                    android:baselineAligned="false">
+
+                    <Button style="@style/darkButton"
+                            android:layout_margin="0dp" 
+                            android:padding="4dp" 
+                            android:layout_weight="1" 
+                            android:layout_width="0dp" 
+                            android:layout_height="match_parent" 
+                            android:textSize="10sp" 
+                            android:tag="Roger" 
+                            android:text="@string/rgr"
+                            android:maxLines="3"/>
+                    <Button style="@style/darkButton"
+                            android:layout_margin="0dp" 
+                            android:padding="4dp" 
+                            android:layout_weight="1" 
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent" 
+                            android:textSize="10sp" 
+                            android:tag="at LCC" 
+                            android:text="@string/lcc"
+                            android:maxLines="3"/>
+                    <Button style="@style/darkButton"
+                            android:layout_margin="0dp" 
+                            android:padding="4dp" 
+                            android:layout_weight="1" 
+                            android:layout_width="0dp" 
+                            android:layout_height="match_parent" 
+                            android:textSize="10sp" 
+                            android:tag="at VDO" 
+                            android:text="@string/vdo"
+                            android:maxLines="3"/>
+                    <Button style="@style/darkButton"
+                            android:layout_margin="0dp" 
+                            android:padding="4dp" 
+                            android:layout_weight="1" 
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent" 
+                            android:textSize="10sp" 
+                            android:tag="at breach" 
+                            android:text="@string/brch"
+                            android:maxLines="3"/>
+                </TableRow>
+            </TableLayout>
+
+            <com.atakmap.android.chat.ModePicker
+                android:id="@+id/mode_picker"
+                style="@style/darkButton"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>
