@@ -167,7 +167,10 @@ public final class AtakPluginRegistry {
             //}
 
             for (final Signature sig : pi.signatures) {
-                if (sig.equals(atak.signatures[0])) {
+                if(BuildConfig.BUILD_TYPE.equals("sdk")) {
+                    Log.d(TAG, "SDK skipping signature check[" + pkgname + "]");
+                    return true;
+                } else if (sig.equals(atak.signatures[0])) {
                     Log.d(TAG, "signature verified[" + pkgname + "]");
                     return true;
                 } else {

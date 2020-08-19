@@ -22,4 +22,4 @@
 	build_assimp) &
 wait
 
-(cd ../takengine/thirdparty && git clone https://github.com/synesissoftware/STLSoft-1.9.git stlsoft)
+(cd ../takengine && git clone https://github.com/synesissoftware/STLSoft-1.9.git thirdparty/stlsoft)

@@ -21,7 +21,7 @@ import java.util.regex.Pattern
 ////////////////////////////////////////////////////////////////////////////////
 
 def ATAK_VERSION = "4.0.0"
-def ATAK_VERSION_SUBMINOR = ".6"
+def ATAK_VERSION_SUBMINOR = ".7"
 
 buildscript {
     ext.jacocoVersion = '0.8.5'
@@ -202,7 +202,7 @@ android {
             dimension "application"
             applicationIdSuffix = ".civ"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
-            buildConfigField 'boolean', 'SHOW_EULA', 'false'
+            buildConfigField 'boolean', 'SHOW_EULA', 'true'
             buildConfigField 'String', 'TAK_PREFERENCES_NAME', '"com.atakmap.civ_preferences"'
             buildConfigField 'String', 'LEGACY_PREFERENCES_NAME', '"com.atakmap.app_preferences"'
             buildConfigField 'boolean', 'HAS_FIRES', 'false'
@@ -221,7 +221,7 @@ android {
             dimension "application"
             applicationIdSuffix = ".civ.compat.eps"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
-            buildConfigField 'boolean', 'SHOW_EULA', 'false'
+            buildConfigField 'boolean', 'SHOW_EULA', 'true'
             buildConfigField 'String', 'TAK_PREFERENCES_NAME', '"com.atakmap.civ_preferences"'
             buildConfigField 'String', 'LEGACY_PREFERENCES_NAME', '"com.atakmap.app_preferences"'
             buildConfigField 'boolean', 'HAS_FIRES', 'false'
@@ -237,6 +237,21 @@ android {
     }
 
     signingConfigs {
+        sdk {
+            def kf = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyFile')
+            def kfp = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyFilePassword')
+            def ka = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyAlias')
+            def kp = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyPassword')
+
+            if (kf == null) {
+                 throw new GradleException("No signing key configured!")
+            }
+
+            storeFile file(kf)
+            if (kfp != null) storePassword kfp
+            if (ka != null) keyAlias ka
+            if (kp != null) keyPassword kp
+        }
 
         debug {
             def kf = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyFile')
@@ -292,6 +307,13 @@ android {
             signingConfig signingConfigs.debug
         }
 
+        sdk {
+            buildConfigField 'String', 'DEV_BANNER', '"DEVELOPER BUILD"'
+            debuggable true
+            minifyEnabled true
+            proguardFile 'proguard-sdk.txt'
+            signingConfig signingConfigs.sdk
+        }
     }
 
     packagingOptions {
@@ -319,6 +341,7 @@ android {
         // by a similar customization.
         debug.setRoot('build-types/debug')
         release.setRoot('build-types/release')
+        sdk.setRoot('build-types/sdk')
     }
 
     lintOptions {
@@ -328,6 +351,67 @@ android {
          abortOnError true
      }
 
+    touch('ATAKMapEngine/lib/src/main/jniLibs/arm64-v8a/libtakengine.so')
+    touch('ATAKMapEngine/lib/src/main/jniLibs/arm64-v8a/libgdal.so')
+    touch('ATAKMapEngine/lib/src/main/jniLibs/arm64-v8a/libspatialite.so')
+    touch('ATAKMapEngine/lib/src/main/jniLibs/armeabi-v7a/libtakengine.so')
+    touch('ATAKMapEngine/lib/src/main/jniLibs/armeabi-v7a/libgdal.so')
+    touch('ATAKMapEngine/lib/src/main/jniLibs/armeabi-v7a/libspatialite.so')
+    touch('ATAKMapEngine/lib/src/main/jniLibs/x86/libtakengine.so')
+    touch('ATAKMapEngine/lib/src/main/jniLibs/x86/libgdal.so')
+    touch('ATAKMapEngine/lib/src/main/jniLibs/x86/libspatialite.so')
+}
+
+// NDK build external dependency install
+task installDepends {
+    doLast {
+        // install TAK Third Party shared objects
+        copy {
+            from('../../../takthirdparty/builds/android-arm64-v8a-release/lib/') {
+                include 'libcommoncommojni.so'
+            }
+
+            into projectDir.getAbsolutePath() + '/src/main/jniLibs/arm64-v8a/'
+
+            // always overwrite
+            duplicatesStrategy 'include'
+        }
+        copy {
+            from('../../../takthirdparty/builds/android-armeabi-v7a-release/lib/') {
+                include 'libcommoncommojni.so'
+            }
+            into projectDir.getAbsolutePath() + '/src/main/jniLibs/armeabi-v7a/'
+
+            // always overwrite
+            duplicatesStrategy 'include'
+        }
+        copy {
+            from('../../../takthirdparty/builds/android-x86-release/lib/') {
+                include 'libcommoncommojni.so'
+            }
+            into projectDir.getAbsolutePath() + '/src/main/jniLibs/x86/'
+
+             // always overwrite
+            duplicatesStrategy 'include'
+        }
+
+        // install TAK Third Party JARs
+        copy {
+            from('../../../takthirdparty/builds/android-x86-release/java/') {
+                include 'jcommoncommo.jar'
+            }
+
+            into projectDir.getAbsolutePath() + '/libs/'
+
+             // always overwrite
+            duplicatesStrategy 'include'
+        }
+    }
+}
+
+android.applicationVariants.all { variant ->
+    // install the TAK Third Party dependencies
+    tasks.getByName("compile${variant.name.capitalize()}JavaWithJavac").dependsOn("installDepends")
 }
 
 // copies over the 0.jar file which contains a completely deobfuscated jar file
@@ -420,68 +504,8 @@ afterEvaluate {
         assembleSdkTask.finalizedBy(copyFilesSdk)
     }
 
-    touch('ATAKMapEngine/lib/src/main/jniLibs/arm64-v8a/libtakengine.so')
-    touch('ATAKMapEngine/lib/src/main/jniLibs/arm64-v8a/libgdal.so')
-    touch('ATAKMapEngine/lib/src/main/jniLibs/arm64-v8a/libspatialite.so')
-    touch('ATAKMapEngine/lib/src/main/jniLibs/armeabi-v7a/libtakengine.so')
-    touch('ATAKMapEngine/lib/src/main/jniLibs/armeabi-v7a/libgdal.so')
-    touch('ATAKMapEngine/lib/src/main/jniLibs/armeabi-v7a/libspatialite.so')
-    touch('ATAKMapEngine/lib/src/main/jniLibs/x86/libtakengine.so')
-    touch('ATAKMapEngine/lib/src/main/jniLibs/x86/libgdal.so')
-    touch('ATAKMapEngine/lib/src/main/jniLibs/x86/libspatialite.so')
 }
 
-// NDK build external dependency install
-task installDepends {
-    doLast {
-        // install TAK Third Party shared objects
-        copy {
-            from('../../../takthirdparty/builds/android-arm64-v8a-release/lib/') {
-                include 'libcommoncommojni.so'
-            }
-
-            into projectDir.getAbsolutePath() + '/src/main/jniLibs/arm64-v8a/'
-
-            // always overwrite
-            duplicatesStrategy 'include'
-        }
-        copy {
-            from('../../../takthirdparty/builds/android-armeabi-v7a-release/lib/') {
-                include 'libcommoncommojni.so'
-            }
-            into projectDir.getAbsolutePath() + '/src/main/jniLibs/armeabi-v7a/'
-
-            // always overwrite
-            duplicatesStrategy 'include'
-        }
-        copy {
-            from('../../../takthirdparty/builds/android-x86-release/lib/') {
-                include 'libcommoncommojni.so'
-            }
-            into projectDir.getAbsolutePath() + '/src/main/jniLibs/x86/'
-
-             // always overwrite
-            duplicatesStrategy 'include'
-        }
-
-        // install TAK Third Party JARs
-        copy {
-            from('../../../takthirdparty/builds/android-x86-release/java/') {
-                include 'jcommoncommo.jar'
-            }
-
-            into projectDir.getAbsolutePath() + '/libs/'
-
-             // always overwrite
-            duplicatesStrategy 'include'
-        }
-    }
-}
-
-android.applicationVariants.all { variant ->
-    // install the TAK Third Party dependencies
-    tasks.getByName("compile${variant.name.capitalize()}JavaWithJavac").dependsOn("installDepends")
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // Test Harness using jacoco

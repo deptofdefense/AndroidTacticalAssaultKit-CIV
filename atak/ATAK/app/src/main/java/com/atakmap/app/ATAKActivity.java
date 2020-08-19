@@ -217,6 +217,19 @@ public class ATAKActivity extends MapActivity implements
 
         setWarningShown();
 
+        acceptedPermissions = EulaHelper.showEULA(this);
+        if (!acceptedPermissions) {
+            Log.d(TAG, "eula has not been accepted...");
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+            setContentView(R.layout.atak_splash);
+            setupSplash(findViewById(android.R.id.content));
+            final ActionBar actionBar = this.getActionBar();
+            if (actionBar != null)
+                actionBar.hide();
+            super.onCreate(null);
+            return;
+        }
+
         acceptedPermissions = com.atakmap.app.Permissions
                 .checkPermissions(this);
         if (!acceptedPermissions) {
