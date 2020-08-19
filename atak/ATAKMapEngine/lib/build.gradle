@@ -74,6 +74,9 @@ android {
         debug {
             testCoverageEnabled (project.hasProperty('coverage') ? true : false)
         }
+
+        sdk {
+        }
     }
 
     sourceSets {
@@ -94,6 +97,7 @@ android {
         // by a similar customization.
         debug.setRoot('build-types/debug')
         release.setRoot('build-types/release')
+        sdk.setRoot('build-types/sdk')
     }
 
     // ndk-build will copy these several dependencies into the 'build'
