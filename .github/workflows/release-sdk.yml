@@ -1,0 +1,116 @@
+name: Release SDK
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  assemble:
+    name: Build
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+    - name: set environment
+      run: |
+        sudo apt-get install apg
+        sudo apt-get install dos2unix
+        sudo apt-get install autoconf
+        sudo apt-get install automake
+        sudo apt-get install libtool
+        sudo apt-get install patch
+        sudo apt-get install make
+        sudo apt-get install cmake
+        sudo apt-get install swig
+        sudo apt-get install tclsh
+        echo ::set-env name=ANDROID_COMPILE_SDK::"29"
+        echo ::set-env name=ANDROID_BUILD_TOOLS::"29.0.3"
+        echo ::set-env name=ANDROID_SDK_TOOLS::"4333796"
+        echo ::set-env name=NDK_VERSION::"12b"
+    - name: set up Android SDK
+      run: |
+       wget --quiet --tries=0 --output-document=android-sdk.zip https://dl.google.com/android/repository/sdk-tools-linux-${ANDROID_SDK_TOOLS}.zip;
+       unzip -qq -d android-sdk-linux android-sdk.zip;
+       mkdir -p ~/.android;
+       touch ~/.android/repositories.cfg;
+       echo y | android-sdk-linux/tools/bin/sdkmanager "platforms;android-${ANDROID_COMPILE_SDK}" >/dev/null;
+       echo y | android-sdk-linux/tools/bin/sdkmanager "platform-tools" >/dev/null;
+       echo y | android-sdk-linux/tools/bin/sdkmanager "build-tools;${ANDROID_BUILD_TOOLS}" >/dev/null;
+       echo ::set-env name=ANDROID_HOME::$PWD/android-sdk-linux
+       echo ::set-env name=PATH::$PATH:$PWD/android-sdk-linux/platform-tools/
+       set +o pipefail
+       yes | android-sdk-linux/tools/bin/sdkmanager --licenses
+       set -o pipefail
+    - name: set up Android NDK
+      run: |
+       wget --quiet --tries=0 --output-document=android-ndk.zip https://dl.google.com/android/repository/android-ndk-r${NDK_VERSION}-linux-x86_64.zip;
+       unzip -qq  android-ndk.zip;
+       echo ::set-env name=ANDROID_NDK_HOME::$PWD/android-ndk-r${NDK_VERSION}
+       echo ::set-env name=ANDROID_NDK::$PWD/android-ndk-r${NDK_VERSION}
+    - name: build dependencies
+      run: |
+        cd scripts
+        bash ./prebuild.sh
+    - name: install ATAK SDK keystore
+      env:
+          ANDROID_KEYSTORE_FILE: ${{ secrets.SDK_KEYSTORE_FILE }}
+          ANDROID_KEYSTORE_ALIAS: ${{ secrets.SDK_KEYSTORE_ALIAS }}
+          ANDROID_KEYSTORE_STORE_PASSWORD: ${{ secrets.SDK_KEYSTORE_STORE_PASSWORD }}
+          ANDROID_KEYSTORE_KEY_PASSWORD: ${{ secrets.SDK_KEYSTORE_KEY_PASSWORD }}
+      run: |
+        rm -rf $HOME/secrets
+        mkdir $HOME/secrets
+        echo "$ANDROID_KEYSTORE_FILE" > $HOME/secrets/sdk_keystore.base64
+        base64 -d $HOME/secrets/sdk_keystore.base64 > $HOME/secrets/sdk_keystore
+        cd atak
+        rm -rf local.properties
+        echo "takDebugKeyFile=$HOME/secrets/sdk_keystore" >> local.properties
+        echo "takDebugKeyFilePassword=$ANDROID_KEYSTORE_STORE_PASSWORD" >> local.properties
+        echo "takDebugKeyAlias=$ANDROID_KEYSTORE_ALIAS" >> local.properties
+        echo "takDebugKeyPassword=$ANDROID_KEYSTORE_KEY_PASSWORD" >> local.properties
+        echo "takReleaseKeyFile=$HOME/secrets/sdk_keystore" >> local.properties
+        echo "takReleaseKeyFilePassword=$ANDROID_KEYSTORE_STORE_PASSWORD" >> local.properties
+        echo "takReleaseKeyAlias=$ANDROID_KEYSTORE_ALIAS" >> local.properties
+        echo "takReleaseKeyPassword=$ANDROID_KEYSTORE_KEY_PASSWORD" >> local.properties
+    - name: assemble ATAK APK
+      run: |
+        cd atak
+        rm -rf ATAK/app/build
+        bash ./gradlew assembleCivSdk
+    - name: generate ATAK CIV SDK package
+      run: |
+        rm -rf pluginsdk/
+        unzip -qq pluginsdk.zip
+        cp ./atak/ATAK/app/build/outputs/apk/civ/sdk/*-sdk.apk ./pluginsdk/atak.apk
+        cp ./atak/ATAK/app/build/libs/main.jar ./pluginsdk
+        cp ./atak/ATAK/app/src/civ/assets/support/license/LICENSE.txt ./pluginsdk
+        echo "ATAK CIV SDK `git rev-parse --short HEAD` (`git show -s --format=%ct`)" > pluginsdk/VERSION.txt
+        rm -rf javadoc
+        mkdir -p tmp/src
+        cp -R ./atak/ATAK/app/src/civ/java/* tmp/src
+        cp -R ./atak/ATAK/app/src/main/java/* tmp/src
+        cp -R ./atak/ATAKMapEngine/lib/src/main/java/* tmp/src
+        cp -R ./atak/MapCoreInterfaces/lib/src/main/java/* tmp/src
+        pushd .
+        cd tmp/src && javadoc -linkoffline http://d.android.com/reference file://$ANDROID_HOME/docs/reference -d ../javadoc -classpath .:$ANDROID_HOME/platforms/android-${ANDROID_COMPILE_SDK}/android.jar -subpackages . &> /dev/null || echo "success by failure"
+        popd
+        pushd .
+        cd tmp/javadoc && jar cvf ../../pluginsdk/atak-javadoc.jar .
+        popd
+        mv pluginsdk atak-civ
+        zip -qq -r atak-civ-sdk-${{ github.event.release.tag_name }}.zip atak-civ
+        rm -rf atak-civ
+    - name: publish ATAK SDK release artifact
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: atak-civ-sdk-${{ github.event.release.tag_name }}.zip
+        asset_name: atak-civ-sdk-${{ github.event.release.tag_name }}.zip
+        asset_content_type: binary/octet-stream
