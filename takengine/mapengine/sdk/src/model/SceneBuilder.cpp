@@ -28,11 +28,11 @@ namespace
             rootNode(std::move(rootNode)),
             direct(direct) { }
 
-        virtual ~SceneImpl() NOTHROWS;
+        ~SceneImpl() NOTHROWS override;
     public:
-        virtual SceneNode &getRootNode() const NOTHROWS;
-        virtual const Envelope2 &getAABB() const NOTHROWS;
-        virtual unsigned int getProperties() const NOTHROWS;
+        SceneNode &getRootNode() const NOTHROWS override;
+        const Envelope2 &getAABB() const NOTHROWS override;
+        unsigned int getProperties() const NOTHROWS override;
         virtual std::size_t getNumMeshes() const NOTHROWS;
     public:
         std::vector<std::shared_ptr<const Mesh>> meshes;
@@ -60,7 +60,7 @@ namespace
             : SceneImpl(direct), graph(&rootTransform), node(nullptr), nodeDepth(0) {
             node = &graph.getRoot();
         }
-        virtual ~BuilderSceneImpl() NOTHROWS;
+        ~BuilderSceneImpl() NOTHROWS override;
         SceneGraphBuilder graph;
         const SceneNode *node;
         int nodeDepth;
@@ -107,7 +107,7 @@ SceneBuilder::SceneBuilder(const bool direct) NOTHROWS :
     impl(new BuilderSceneImpl(direct), Memory_deleter_const<Scene, BuilderSceneImpl>)
 {}
 SceneBuilder::SceneBuilder(const TAK::Engine::Math::Matrix2 &rootTransform, const bool direct) NOTHROWS
-    : impl(new BuilderSceneImpl(direct), Memory_deleter_const<Scene, BuilderSceneImpl>)
+    : impl(new BuilderSceneImpl(rootTransform, direct), Memory_deleter_const<Scene, BuilderSceneImpl>)
 {}
 SceneBuilder::~SceneBuilder() NOTHROWS
 {}
@@ -131,7 +131,7 @@ TAKErr SceneBuilder::addMesh(const std::shared_ptr<const Mesh> &mesh, const Matr
     if (!mesh)
         return TE_InvalidArg;
     BuilderSceneImpl &scene = *static_cast<BuilderSceneImpl *>(impl.get());
-    const unsigned int meshIdx = scene.meshes.size();
+    const size_t meshIdx = scene.meshes.size();
     scene.meshes.push_back(mesh);
     SceneNode *ignored;
     code = scene.graph.addNode(&ignored, *scene.node, localFrame, mesh->getAABB(), mesh);

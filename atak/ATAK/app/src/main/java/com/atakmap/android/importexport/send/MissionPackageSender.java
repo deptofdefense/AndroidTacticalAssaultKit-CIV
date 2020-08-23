@@ -32,12 +32,20 @@ public abstract class MissionPackageSender implements URIContentSender {
 
     @Override
     public boolean isSupported(String contentURI) {
+
+        if (contentURI == null)
+            return false;
+
         return contentURI.startsWith(URIScheme.MPM)
                 || contentURI.startsWith(URIScheme.FILE);
     }
 
     @Override
     public boolean sendContent(String contentURI, Callback callback) {
+
+        if (contentURI == null)
+            return false;
+
         if (contentURI.startsWith(URIScheme.MPM)) {
             MissionPackageManifest mpm = URIHelper.getManifest(contentURI);
             if (mpm == null || !mpm.isValid())

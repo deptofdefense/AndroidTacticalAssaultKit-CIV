@@ -5,6 +5,7 @@ import android.content.Intent;
 
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapItem;
+import com.atakmap.android.track.BreadcrumbReceiver;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
@@ -50,11 +51,9 @@ class TracksDetailHandler extends CotDetailHandler {
         } else if (name.equals("__bread_crumbs")) {
             boolean currentState = item.getMetaBoolean("tracks_on", false);
             if (shouldBeEnabled != currentState) {
-                Intent toggleIntent = new Intent();
-                toggleIntent
-                        .setAction("com.atakmap.android.bread.TOGGLE_BREAD");
-                toggleIntent.putExtra("uid", event.getUID());
-                AtakBroadcast.getInstance().sendBroadcast(toggleIntent);
+                AtakBroadcast.getInstance().sendBroadcast(new Intent(
+                        BreadcrumbReceiver.TOGGLE_BREAD)
+                                .putExtra("uid", event.getUID()));
             }
             return ImportResult.SUCCESS;
         }

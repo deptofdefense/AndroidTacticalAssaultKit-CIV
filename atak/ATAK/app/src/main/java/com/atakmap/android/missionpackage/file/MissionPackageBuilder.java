@@ -53,6 +53,12 @@ public class MissionPackageBuilder {
     private final MapGroup _mapGroup;
     final byte[] _buffer; // for efficiency reuse _buffer for all files
 
+    // Progress tracking
+    private boolean _wroteManifest;
+    private long _writtenBytes; // Number of bytes written
+    private long _totalBytes; // Total (estimated) bytes to write
+    private int _lastProgress;
+
     private ZipFile _existing; // Used for reading an existing MP when overwriting
 
     public MissionPackageBuilder(Progress progress,
@@ -78,9 +84,9 @@ public class MissionPackageBuilder {
         // TODO if a ZipEntry fails, the manifest _may_ be out of sync with actual contents
         File tmpCopy = null;
         try {
-            int currentProgress = 5; // 5 percent to setup zip file...
-            int progressPerContent = 95 / Math.max(_contents._contents
-                    .getContents().size(), 1);
+            _totalBytes = _contents.getTotalSize();
+            _writtenBytes = 0;
+            _wroteManifest = false;
 
             File f = new File(_contents.getPath());
             if (f.exists()) {
@@ -104,22 +110,19 @@ public class MissionPackageBuilder {
             // store manifest. Note in case of otherwise empty Mission Package, this
             // will be only file in .zip. If manifest fails, package creation fails
             AddManifest(_zos, _contents);
+            _wroteManifest = true;
 
-            if (_progress != null)
-                _progress.publish(currentProgress);
-            if (_progress != null && _progress.isCancelled())
+            if (!submitProgress(0))
                 return null;
 
             // loop and compress all contents
             for (MissionPackageContent content : _contents._contents
                     .getContents()) {
-                AddContent(content);
+                _writtenBytes += AddContent(content);
 
                 // after each content, check for cancel, and update progress
-                if (_progress != null && _progress.isCancelled())
+                if (!submitProgress(0))
                     return null;
-                if (_progress != null)
-                    _progress.publish((currentProgress += progressPerContent));
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to create zip file", e);
@@ -206,7 +209,7 @@ public class MissionPackageBuilder {
         zos.closeEntry();
     }
 
-    private void AddContent(MissionPackageContent content) {
+    private long AddContent(MissionPackageContent content) {
 
         try {
             if (content == null || !content.isValid()) {
@@ -216,10 +219,10 @@ public class MissionPackageBuilder {
             // see if this is CoT
             if (content.isCoT()) {
                 Log.d(TAG, "Adding COT Content: " + content.getManifestUid());
-                AddCoTContent(content);
+                return AddCoTContent(content);
             } else {
                 Log.d(TAG, "Adding FILE Content: " + content.getManifestUid());
-                AddFileContent(content);
+                return AddFileContent(content);
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to add Content: "
@@ -227,9 +230,10 @@ public class MissionPackageBuilder {
             _warnings.add("Skipping, Zip Error for Content: "
                     + (content == null ? "" : content.getManifestUid()));
         }
+        return 0;
     }
 
-    private void AddFileContent(MissionPackageContent content) {
+    private long AddFileContent(MissionPackageContent content) {
         try {
             NameValuePair p = content
                     .getParameter(MissionPackageContent.PARAMETER_LOCALPATH);
@@ -240,14 +244,14 @@ public class MissionPackageBuilder {
 
                 _warnings.add("Skipping, file path does not exist: "
                         + content.getManifestUid());
-                return;
+                return 0;
             }
 
             // No point of adding a Mission Package itself
             if (FileSystemUtils.isEquals(p.getValue(), _contents.getPath())) {
                 _warnings.add("Skipping, cannot add Mission Package to itself: "
                         + content.getManifestUid());
-                return;
+                return 0;
             }
 
             // Copy ZIP files to a temp directory before zipping
@@ -269,6 +273,7 @@ public class MissionPackageBuilder {
                     }
                 }
             }
+            long fileSize = f.length();
 
             // create new zip entry
             ZipEntry entry = new ZipEntry(content.getManifestUid());
@@ -278,7 +283,7 @@ public class MissionPackageBuilder {
             FileInputStream fi = new FileInputStream(f);
             BufferedInputStream origin = new BufferedInputStream(fi,
                     FileSystemUtils.BUF_SIZE);
-            FileSystemUtils.copyStream(origin, true, _zos, false, _buffer);
+            write(origin, true);
 
             // close current file & corresponding zip entry
             _zos.closeEntry();
@@ -286,11 +291,14 @@ public class MissionPackageBuilder {
             // Remove temp file if we created one
             if (tmpCopy)
                 FileSystemUtils.deleteFile(f);
+
+            return fileSize;
         } catch (IOException e) {
             Log.e(TAG, "Failed to add File: " + content.toString(), e);
             _warnings.add("Skipping, Zip Error for File: "
                     + content.getManifestUid());
         }
+        return 0;
     }
 
     /**
@@ -298,11 +306,11 @@ public class MissionPackageBuilder {
      * 
      * @param content
      */
-    private void AddCoTContent(MissionPackageContent content) {
+    private long AddCoTContent(MissionPackageContent content) {
 
         if (content == null || !content.isValid()) {
             _warnings.add("Unable to adapt invalid content UID");
-            return;
+            return 0;
         }
 
         NameValuePair pair = content
@@ -315,7 +323,7 @@ public class MissionPackageBuilder {
             else
                 _warnings.add(
                         "Skipping missing UID: " + content.getManifestUid());
-            return;
+            return 0;
         }
 
         String uid = pair.getValue();
@@ -329,7 +337,7 @@ public class MissionPackageBuilder {
                     try {
                         is = _existing.getInputStream(entry);
                         _zos.putNextEntry(entry);
-                        FileSystemUtils.copyStream(is, true, _zos, false);
+                        write(is, false);
                         _zos.closeEntry();
                     } catch (Exception e) {
                         Log.e(TAG, "Failed to copy MP entry: " + entry, e);
@@ -341,28 +349,35 @@ public class MissionPackageBuilder {
                         } catch (Exception ignore) {
                         }
                     }
-                    return;
+                    return MissionPackageManifest.MAP_ITEM_ESTIMATED_SIZE;
                 }
             }
             _warnings.add("Failed to find MapItem: " + uid);
-            return;
+            return 0;
         }
 
         Log.d(TAG, "Processing map item CoT: " + item);
         CotEvent event = CotEventFactory.createCotEvent(item);
         if (event == null || !event.isValid()) {
             _warnings.add("Failed to export item to CoT: " + item);
-            return;
+            return 0;
         }
-        AddCoTContent(content, event);
+        long written = AddCoTContent(content, event);
+
+        // Though we have the actual size, the progress is based on estimated
+        // size, so use that value instead
+        if (written > 0)
+            written = MissionPackageManifest.estimateMapItemSize(item);
+
+        return written;
     }
 
-    private void AddCoTContent(MissionPackageContent content, CotEvent event) {
+    private long AddCoTContent(MissionPackageContent content, CotEvent event) {
 
         String eventXML = event.toString();
         if (FileSystemUtils.isEmpty(eventXML)) {
             _warnings.add("Failed to serialize CoT Event: " + event.getUID());
-            return;
+            return 0;
         }
 
         // create new zip entry
@@ -373,7 +388,7 @@ public class MissionPackageBuilder {
             if (FileSystemUtils.isEmpty(eventData)) {
                 _warnings.add("Failed to serialize CoT Event Data: "
                         + event.getUID());
-                return;
+                return 0;
             }
 
             // set ZIPEXTRA action sp receiver knows how to process this ZipEntry
@@ -387,10 +402,55 @@ public class MissionPackageBuilder {
 
             // close zip entry
             _zos.closeEntry();
+
+            return eventData.length;
         } catch (IOException e) {
             Log.e(TAG, "Failed to add CoT Entry: " + event.getUID(), e);
             _warnings.add("Skipping, Zip Error for CoT Entry: "
                     + event.getUID());
         }
+        return 0;
+    }
+
+    private boolean submitProgress(long newBytes) {
+        if (_progress != null) {
+            if (_progress.isCancelled())
+                return false;
+            int progress = 0;
+
+            // Manifest is first 5%
+            if (_wroteManifest)
+                progress += 5;
+
+            // Files and map items (estimated) is next 94%
+            progress += 94
+                    * ((double) (_writtenBytes + newBytes) / _totalBytes);
+
+            // 1% left over for finalization
+
+            if (_lastProgress != progress)
+                _progress.publish(_lastProgress = progress);
+        }
+        return true;
+    }
+
+    private boolean write(InputStream in, boolean reportProgress)
+            throws IOException {
+        try {
+            int len;
+            long written = 0;
+            while ((len = in.read(_buffer)) > 0) {
+                _zos.write(_buffer, 0, len);
+                written += len;
+                if (reportProgress && !submitProgress(written))
+                    return false;
+            }
+        } finally {
+            try {
+                in.close();
+            } catch (Exception ignore) {
+            }
+        }
+        return true;
     }
 }

@@ -25,15 +25,6 @@ class GLEditablePolyline extends GLPolyline implements
         _subject = subject;
     }
 
-    /**
-     * Be able to get the actual line that corresponds to this GL Line
-     * @return the line
-     */
-    @Override
-    public EditablePolyline getSubject() {
-        return _subject;
-    }
-
     @Override
     public void startObserving() {
         final EditablePolyline polyline = (EditablePolyline) this.subject;
@@ -49,9 +40,9 @@ class GLEditablePolyline extends GLPolyline implements
     }
 
     @Override
-    public void draw(GLMapView ortho) {
+    public void draw(GLMapView ortho, int renderPass) {
 
-        super.draw(ortho);
+        super.draw(ortho, renderPass);
         int dragIndex = -1;
         if (_editable && _verts2 != null
                 && (_subject.shouldDisplayVertices(ortho.drawMapScale)
@@ -69,7 +60,7 @@ class GLEditablePolyline extends GLPolyline implements
 
             if (_vertexIconEntry == null) {
                 final GLRenderGlobals glg = GLRenderGlobals
-                        .get(renderContext);
+                        .get(context);
                 if (glg != null) {
                     GLImageCache imageCache = glg.getImageCache();
                     _vertexIconEntry = imageCache.fetchAndRetain(
@@ -124,5 +115,13 @@ class GLEditablePolyline extends GLPolyline implements
     @Override
     public void onEditableChanged(EditablePolyline polyline) {
         _editable = polyline.getEditable();
+    }
+
+    @Override
+    protected void recomputeScreenRectangles(final GLMapView ortho) {
+        super.recomputeScreenRectangles(ortho);
+
+        // Update for polyline hit test
+        _subject.updateScreenBounds(_screenRect, _partitionRects);
     }
 }

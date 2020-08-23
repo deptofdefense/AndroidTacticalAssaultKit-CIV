@@ -9,7 +9,7 @@ namespace atakmap
 
         GLTextureCache::Entry::Entry()
         {
-            commonInit(NULL, NULL, NULL, 0, NULL, 0, NULL, 0, NULL);
+            commonInit(nullptr, nullptr, nullptr, 0, nullptr, 0, nullptr, 0, nullptr);
         }
 
        GLTextureCache::Entry::Entry(disposeEntryFunc disposeFunc, GLTexture *texture,
@@ -17,7 +17,7 @@ namespace atakmap
                      float *textureCoordinates,
                      int hints, void *opaque)
        {
-           commonInit(disposeFunc, texture, vertexCoordinates, numVertices, NULL, 0, textureCoordinates, hints, opaque);
+           commonInit(disposeFunc, texture, vertexCoordinates, numVertices, nullptr, 0, textureCoordinates, hints, opaque);
        }
 
        GLTextureCache::Entry::Entry(disposeEntryFunc disposeFunc, GLTexture *texture,
@@ -29,27 +29,27 @@ namespace atakmap
            commonInit(disposeFunc, texture, vertexCoordinates, numVertices, indices, numIndices, textureCoordinates, hints, opaque);
        }
 
-       void GLTextureCache::Entry::commonInit(disposeEntryFunc disposeFunc, GLTexture *texture,
-                                              float *vertexCoordinates, int numVertices,
-                                              short *indices, int numIndices,
-                                              float *textureCoordinates,
-                                              int hints, void *opaque)
+       void GLTextureCache::Entry::commonInit(disposeEntryFunc dispose_func, GLTexture *gl_texture,
+                                              float *vertex_coordinates, int num_vertices,
+                                              short *indices_array, int num_indices,
+                                              float *texture_coordinates,
+                                              int hint_flags, void *opaque_ptr)
        {
-           this->texture = texture;
-           this->numVertices = numVertices;
-           this->textureCoordinates = textureCoordinates;
-           this->vertexCoordinates = vertexCoordinates;
-           this->numIndices = numIndices;
-           this->indices = indices;
-           this->hints = hints;
-           this->opaque = opaque;
-           disposer = disposeFunc;
+           this->texture = gl_texture;
+           this->numVertices = num_vertices;
+           this->textureCoordinates = texture_coordinates;
+           this->vertexCoordinates = vertex_coordinates;
+           this->numIndices = num_indices;
+           this->indices = indices_array;
+           this->hints = hint_flags;
+           this->opaque = opaque_ptr;
+           disposer_ = dispose_func;
        }
 
        void GLTextureCache::Entry::invokeDisposer()
        {
-           if (disposer)
-            disposer(texture, vertexCoordinates, indices, textureCoordinates, opaque);
+           if (disposer_)
+            disposer_(texture, vertexCoordinates, indices, textureCoordinates, opaque);
        }
 
        bool GLTextureCache::Entry::hasHint(int flags)
@@ -60,17 +60,17 @@ namespace atakmap
 
 
        GLTextureCache::BidirectionalNode::BidirectionalNode(BidirectionalNode *prev, std::string key, Entry value) :
-           prev(prev), next(NULL), key(key), value(value)
+           prev(prev), next(nullptr), key(key), value(value)
        {
-           if (prev != NULL)
+           if (prev != nullptr)
                prev->next = this;
        }
 
 
 
 
-       GLTextureCache::GLTextureCache(int maxSize) : nodeMap(), head(NULL), 
-           tail(NULL), maxSize(maxSize), size(0), count(0)
+       GLTextureCache::GLTextureCache(std::size_t maxSize) : node_map_(), head_(nullptr), 
+           tail_(nullptr), max_size_(maxSize), size_(0), count_(0)
        {
        }
 
@@ -81,8 +81,8 @@ namespace atakmap
 
        bool GLTextureCache::get(std::string key, GLTextureCache::Entry *val) throw (std::out_of_range)
        {
-           std::map<std::string, BidirectionalNode *>::iterator entry = nodeMap.find(key);
-           if (entry == nodeMap.end())
+           auto entry = node_map_.find(key);
+           if (entry == node_map_.end())
                return false;
 
            BidirectionalNode *node = entry->second;
@@ -100,53 +100,53 @@ namespace atakmap
 
        bool GLTextureCache::remove(std::string key, GLTextureCache::Entry *val) throw (std::out_of_range)
        {
-           std::map<std::string, BidirectionalNode *>::iterator entry = nodeMap.find(key);
-           if (entry == nodeMap.end())
+           auto entry = node_map_.find(key);
+           if (entry == node_map_.end())
                return false;
 
            BidirectionalNode *node = entry->second;
-           nodeMap.erase(entry);
+           node_map_.erase(entry);
            Entry retval = node->value;
 
-           if (node->prev != NULL) {
+           if (node->prev != nullptr) {
                node->prev->next = node->next;
-           } else if (node == head) {
-               head = node->next;
-               if (head != NULL)
-                   head->prev = NULL;
+           } else if (node == head_) {
+               head_ = node->next;
+               if (head_ != nullptr)
+                   head_->prev = nullptr;
            }
 
-           if (node->next != NULL) {
+           if (node->next != nullptr) {
                node->next->prev = node->prev;
-           } else if (node == tail) {
-               tail = node->prev;
-               if (tail != NULL)
-                   tail->next = NULL;
+           } else if (node == tail_) {
+               tail_ = node->prev;
+               if (tail_ != nullptr)
+                   tail_->next = nullptr;
            }
 
            delete node;
 
-           count--;
+           count_--;
 
-           size -= sizeOf(retval.texture);
+           size_ -= sizeOf(retval.texture);
            *val = retval;
            return true;
        }
 
        void GLTextureCache::put(std::string key, disposeEntryFunc disposeFunc, GLTexture *texture)
        {
-           put(key, disposeFunc, texture, NULL, 0, NULL, 0, NULL);
+           put(key, disposeFunc, texture, nullptr, 0, nullptr, 0, nullptr);
        }
 
        void GLTextureCache::put(std::string key, disposeEntryFunc disposeFunc, GLTexture *texture, int hints, void *opaque)
        {
-           put(key, disposeFunc, texture, NULL, 0, NULL, hints, opaque);
+           put(key, disposeFunc, texture, nullptr, 0, nullptr, hints, opaque);
        }
 
        void GLTextureCache::put(std::string key, disposeEntryFunc disposeFunc, GLTexture *texture, float *vertexCoords,
                                 int numVertices, float *texCoords)
        {
-           put(key, disposeFunc, texture, vertexCoords, numVertices, texCoords, 0, NULL);
+           put(key, disposeFunc, texture, vertexCoords, numVertices, texCoords, 0, nullptr);
        }
 
        void GLTextureCache::put(std::string key, disposeEntryFunc disposeFunc, GLTexture *texture, float *vertexCoords,
@@ -165,20 +165,20 @@ namespace atakmap
 
        void GLTextureCache::clear()
        {
-           nodeMap.clear();
-           while (head != NULL) {
-               BidirectionalNode *n = head;
+           node_map_.clear();
+           while (head_ != nullptr) {
+               BidirectionalNode *n = head_;
 
-               Entry e = head->value;
+               Entry e = head_->value;
                e.texture->release();
                e.invokeDisposer();
 
-               head = head->next;
+               head_ = head_->next;
                delete n;
-               count--;
+               count_--;
            }
-           tail = NULL;
-           size = 0;
+           tail_ = nullptr;
+           size_ = 0;
        }
        
        void GLTextureCache::putImpl(std::string key, Entry entry)
@@ -188,36 +188,36 @@ namespace atakmap
            } catch (std::out_of_range) {
                // no existing entry, just move along
            }
-           BidirectionalNode *node = new BidirectionalNode(tail, key, entry);
-           if (head == NULL)
-               head = node;
-           tail = node;
-           nodeMap.insert(std::pair<std::string, BidirectionalNode *>(key, node));
-           count++;
-           size += sizeOf(entry.texture);
+           BidirectionalNode *node = new BidirectionalNode(tail_, key, entry);
+           if (head_ == nullptr)
+               head_ = node;
+           tail_ = node;
+           node_map_.insert(std::pair<std::string, BidirectionalNode *>(key, node));
+           count_++;
+           size_ += sizeOf(entry.texture);
 
            trimToSize();
        }
 
        void GLTextureCache::trimToSize()
        {
-           int releasedSize;
-           while (size > maxSize && nodeMap.size() > 1) {
-               BidirectionalNode *n = head;
-               Entry e = head->value;
+           size_t releasedSize;
+           while (size_ > max_size_ && node_map_.size() > 1) {
+               BidirectionalNode *n = head_;
+               Entry e = head_->value;
                releasedSize = sizeOf(e.texture);
-               nodeMap.erase(head->key);
-               head = head->next;
-               head->prev = NULL;
-               count--;
+               node_map_.erase(head_->key);
+               head_ = head_->next;
+               head_->prev = nullptr;
+               count_--;
                e.texture->release();
                e.invokeDisposer();
                delete n;
-               size -= releasedSize;
+               size_ -= releasedSize;
            }
        }
 
-       int GLTextureCache::sizeOf(GLTexture *texture)
+       std::size_t GLTextureCache::sizeOf(GLTexture *texture)
        {
            int bytesPerPixel;
            switch (texture->getType()) {

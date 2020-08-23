@@ -27,6 +27,12 @@
             android:inputType="number"
             android:defaultValue="8080"/>
         <com.atakmap.android.gui.PanEditTextPreference
+            android:title="@string/preferences_text220a"
+            android:summary="@string/preferences_text221a"
+            android:key="filesharingSecureWebServerPort"
+            android:inputType="number"
+            android:defaultValue="8443"/>
+        <com.atakmap.android.gui.PanEditTextPreference
             android:title="@string/preferences_text222"
             android:summary="@string/preferences_text223"
             android:key="filesharingConnectionTimeoutSecs"

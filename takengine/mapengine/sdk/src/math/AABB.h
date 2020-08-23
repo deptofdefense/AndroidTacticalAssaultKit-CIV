@@ -14,18 +14,21 @@ namespace TAK
             class ENGINE_API AABB : public GeometryModel2
             {
             public:
-                AABB(const Point2<double> &min, const Point2<double> &max);
-
+                AABB(const Point2<double> &min, const Point2<double> &max) NOTHROWS;
+                AABB(const Point2<double> *points, const std::size_t numPoints) NOTHROWS;
+            public :
+                bool contains(const Point2<double> &point) const NOTHROWS;
+            public :
                 virtual bool intersect(Point2<double> *isectPoint, const Ray2<double> &ray) const;
                 virtual GeometryClass getGeomClass() const;
                 virtual void clone(std::unique_ptr<GeometryModel2, void(*)(const GeometryModel2 *)> &value) const;
             public :
-                const double minX;
-                const double minY;
-                const double minZ;
-                const double maxX;
-                const double maxY;
-                const double maxZ;
+                double minX;
+                double minY;
+                double minZ;
+                double maxX;
+                double maxY;
+                double maxZ;
             };
         }
     }

@@ -32,7 +32,7 @@ GeometryCollection2::GeometryCollection2(const GeometryCollection2 &other) NOTHR
     std::vector<std::shared_ptr<Geometry2>>::const_iterator it;
     for (it = other.geometries.begin(); it != other.geometries.end(); it++) {
         // note error code is ignored here; we know GeometryCollection may only contain supported geometry types
-        Geometry2Ptr child(NULL, NULL);
+        Geometry2Ptr child(nullptr, nullptr);
         Geometry_clone(child, *(*it));
 
         this->geometries.push_back(std::move(child));
@@ -42,7 +42,7 @@ GeometryCollection2::GeometryCollection2(const GeometryCollection2 &other) NOTHR
 TAKErr GeometryCollection2::addGeometry(const Geometry2 &geometry) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    Geometry2Ptr clone(NULL, NULL);
+    Geometry2Ptr clone(nullptr, nullptr);
     code = Geometry_clone(clone, geometry);
     TE_CHECKRETURN_CODE(code);
 
@@ -188,7 +188,7 @@ TAKErr GeometryCollection2::setDimensionImpl(const std::size_t dimension_) NOTHR
 
 bool GeometryCollection2::equalsImpl(const Geometry2 &o) NOTHROWS
 {
-    const GeometryCollection2 &other = static_cast<const GeometryCollection2 &>(o);
+    const auto &other = static_cast<const GeometryCollection2 &>(o);
     if(this->geometries.size() != other.geometries.size())
         return false;
 
@@ -258,7 +258,7 @@ namespace
             }
             case TEGC_Polygon:
             {
-                const Polygon2 &polygon = static_cast<const Polygon2&>(geometry);
+                const auto &polygon = static_cast<const Polygon2&>(geometry);
                 std::shared_ptr<LineString2> ring;
                 polygon.getExteriorRing(ring);
                 return !ring->getNumPoints();
@@ -286,7 +286,7 @@ namespace
             TE_CHECKBREAK_CODE(code);
 
             if (child->getClass() != TEGC_GeometryCollection) {
-                Geometry2Ptr copy(NULL, NULL);
+                Geometry2Ptr copy(nullptr, nullptr);
                 code = Geometry_clone(copy, *child);
                 TE_CHECKBREAK_CODE(code);
 

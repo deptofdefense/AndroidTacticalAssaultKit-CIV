@@ -92,9 +92,11 @@ public class CertificateManager {
         }
 
         // DoD root CA 
+        addCertNoRefresh(ctx, "certs/DODSWCA-61.crt");
         addCertNoRefresh(ctx, "certs/DODSWCA-54.crt");
         addCertNoRefresh(ctx, "certs/DODIDSWCA-38.crt");
         addCertNoRefresh(ctx, "certs/DoDRootCA3.crt");
+        addCertNoRefresh(ctx, "certs/DoDRootCA5.crt");
 
         // Verisign / DigiCert  
         addCertNoRefresh(ctx, "certs/DigiCertHighAssuranceEVRootCA.crt");

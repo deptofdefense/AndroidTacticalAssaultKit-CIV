@@ -26,11 +26,11 @@ namespace TAK {
                  */
                 Point2(const double x, const double y, const double z) NOTHROWS;
             public:
-                virtual std::size_t getDimension() const NOTHROWS;
-                virtual Util::TAKErr getEnvelope(Envelope2 *value) const NOTHROWS;
+                virtual std::size_t getDimension() const NOTHROWS override;
+                virtual Util::TAKErr getEnvelope(Envelope2 *value) const NOTHROWS override;
             private :
-                virtual Util::TAKErr setDimensionImpl(const std::size_t dimension) NOTHROWS;
-                virtual bool equalsImpl(const Geometry2 &other) NOTHROWS;
+                virtual Util::TAKErr setDimensionImpl(const std::size_t dimension) NOTHROWS override;
+                virtual bool equalsImpl(const Geometry2 &other) NOTHROWS override;
             public:
                 /** the x-coordinate */
                 double x;

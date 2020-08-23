@@ -61,6 +61,7 @@ public class GLMesh implements GLMapRenderable2, Controls {
     private boolean vboDirty;
     private Shader[] shader;
     private Shader wireframeShader;
+    private boolean disposeMesh = true;
 
     private Matrix lla2ecef;
 
@@ -121,8 +122,22 @@ public class GLMesh implements GLMapRenderable2, Controls {
         this.materialInitialized = new boolean[this.materials.length];
         Arrays.fill(this.materialInitialized, false);
     }
+
     public Mesh getSubject() {
         return subject;
+    }
+
+    /**
+     * Set whether releasing this GL instance should dispose the subject mesh
+     *
+     * Note: It's unusual for a GL instance to modify its subject like this in
+     * the first place. Ideally this class wouldn't dispose or permanently
+     * modify the mesh subject.
+     *
+     * @param disposeMesh True to dispose mesh on release
+     */
+    public void setDisposeMesh(boolean disposeMesh) {
+        this.disposeMesh = disposeMesh;
     }
 
     private static Shader getShader(GLMapView view, VertexDataLayout layout, GLMaterial material) {
@@ -260,7 +275,7 @@ public class GLMesh implements GLMapRenderable2, Controls {
             }
 
             double tz;
-            final int terrainVersion = view.terrain.getTerrainVersion();
+            final int terrainVersion = view.getTerrainVersion();
             if(this.offsetTerrainVersion != terrainVersion || true) {
                 double localElevation = view.getTerrainMeshElevation(
                         view.scratch.geo.getLatitude(),
@@ -368,6 +383,14 @@ public class GLMesh implements GLMapRenderable2, Controls {
             GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo[0]);
         }
 
+        // Depth testing for proper face draw order
+        boolean disableDepth = !GLES30.glIsEnabled(GLES30.GL_DEPTH_TEST);
+        int[] depthFunc = new int[1];
+        GLES30.glGetIntegerv(GLES30.GL_DEPTH_FUNC, depthFunc, 0);
+        GLES30.glEnable(GLES30.GL_DEPTH_TEST);
+        GLES30.glDepthFunc(GLES30.GL_LEQUAL);
+
+        // Alpha blending
         GLES30.glEnable(GLES30.GL_BLEND);
         GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA,
                 GLES30.GL_ONE_MINUS_SRC_ALPHA);
@@ -390,6 +413,10 @@ public class GLMesh implements GLMapRenderable2, Controls {
         }
 
         GLES30.glDisable(GLES30.GL_BLEND);
+
+        GLES30.glDepthFunc(depthFunc[0]);
+        if (disableDepth)
+            GLES30.glDisable(GLES30.GL_DEPTH_TEST);
 
         if (disableCullFace)
             GLES30.glDisable(GLES30.GL_CULL_FACE);
@@ -582,10 +609,9 @@ public class GLMesh implements GLMapRenderable2, Controls {
 
     @Override
     public void release() {
-        if (this.subject != null) {
+        if (this.subject != null && this.disposeMesh)
             this.subject.dispose();
-            this.subject = null;
-        }
+        this.subject = null;
 
         if (this.materials != null) {
             for(int i = 0; i < this.materials.length; i++)

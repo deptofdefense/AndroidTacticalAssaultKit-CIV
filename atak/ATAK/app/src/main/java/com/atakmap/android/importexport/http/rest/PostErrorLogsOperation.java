@@ -66,19 +66,19 @@ public final class PostErrorLogsOperation extends HTTPOperation {
             //TODO update progress/notification?
             String postUrl = client.getUrl("/ErrorLog?platform=")
                     + URLEncoder.encode(context.getString(R.string.app_name),
-                            FileSystemUtils.UTF8_CHARSET)
+                            FileSystemUtils.UTF8_CHARSET.name())
                     + "&uid="
                     + URLEncoder.encode(postRequest.getUid(),
-                            FileSystemUtils.UTF8_CHARSET)
+                            FileSystemUtils.UTF8_CHARSET.name())
                     + "&callsign="
                     + URLEncoder.encode(postRequest.getCallsign(),
-                            FileSystemUtils.UTF8_CHARSET)
+                            FileSystemUtils.UTF8_CHARSET.name())
                     + "&majorVersion="
                     + URLEncoder.encode(postRequest.getVersionName(),
-                            FileSystemUtils.UTF8_CHARSET)
+                            FileSystemUtils.UTF8_CHARSET.name())
                     + "&minorVersion="
                     + URLEncoder.encode(postRequest.getVersionCode(),
-                            FileSystemUtils.UTF8_CHARSET);
+                            FileSystemUtils.UTF8_CHARSET.name());
 
             File exportFile = new File(postRequest.getExportFile());
             byte[] fileContents = FileSystemUtils.read(exportFile);
@@ -86,7 +86,7 @@ public final class PostErrorLogsOperation extends HTTPOperation {
                     Base64.DEFAULT);
             StringEntity se = new StringEntity(encodedContents);
             se.setContentType("text/plain");
-            se.setContentEncoding(FileSystemUtils.UTF8_CHARSET);
+            se.setContentEncoding(FileSystemUtils.UTF8_CHARSET.name());
 
             HttpPost httppost = new HttpPost(postUrl);
             httppost.setEntity(se);

@@ -36,12 +36,17 @@ import com.atakmap.android.missionpackage.export.MissionPackageExportWrapper;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.map.layer.feature.Adapters;
 import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
+import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureCursor;
 import com.atakmap.map.layer.feature.FeatureDataStore;
+import com.atakmap.map.layer.feature.FeatureDataStore2;
 import com.atakmap.map.layer.feature.FeatureSet;
 import com.atakmap.map.layer.feature.FeatureDataStore.FeatureQueryParameters;
+import com.atakmap.map.layer.feature.FeatureSetCursor;
+import com.atakmap.map.layer.feature.Utils;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;
@@ -79,7 +84,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
     private final static int WINDOW_COL_COLOR = 8;
 
     private final Context context;
-    private final FeatureDataStore spatialDb;
+    private final FeatureDataStore2 spatialDb;
 
     private final String title;
     private Sort order;
@@ -100,6 +105,17 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
             Sort order, BaseAdapter listener, String contentType,
             String mimeType, String iconUri) {
 
+        this(context, Adapters.adapt(spatialDb), group,
+                getTitle(group.getName()), order,
+                listener,
+                contentType, mimeType, iconUri);
+    }
+
+    public FeatureSetHierarchyListItem(Context context,
+            FeatureDataStore2 spatialDb, FeatureSet group,
+            Sort order, BaseAdapter listener, String contentType,
+            String mimeType, String iconUri) {
+
         this(context, spatialDb, group, getTitle(group.getName()), order,
                 listener,
                 contentType, mimeType, iconUri);
@@ -107,6 +123,14 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
 
     public FeatureSetHierarchyListItem(Context context,
             FeatureDataStore spatialDb, FeatureSet group,
+            String title, Sort order, BaseAdapter listener, String contentType,
+            String mimeType, String iconUri) {
+        this(context, Adapters.adapt(spatialDb), group, title, order, listener,
+                contentType, mimeType, iconUri);
+    }
+
+    public FeatureSetHierarchyListItem(Context context,
+            FeatureDataStore2 spatialDb, FeatureSet group,
             String title, Sort order, BaseAdapter listener, String contentType,
             String mimeType, String iconUri) {
 
@@ -128,6 +152,15 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
             String title, HierarchyListFilter filter, BaseAdapter listener,
             String contentType,
             String mimeType, String iconUri) {
+        this(context, Adapters.adapt(spatialDb), group, title, filter, listener,
+                contentType, mimeType, iconUri);
+    }
+
+    public FeatureSetHierarchyListItem(Context context,
+            FeatureDataStore2 spatialDb, FeatureSet group,
+            String title, HierarchyListFilter filter, BaseAdapter listener,
+            String contentType,
+            String mimeType, String iconUri) {
 
         this(context,
                 spatialDb,
@@ -143,7 +176,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
     }
 
     public FeatureSetHierarchyListItem(Context context,
-            FeatureDataStore spatialDb,
+            FeatureDataStore2 spatialDb,
             FeatureDataStorePathUtils.PathEntry path,
             HierarchyListFilter filter, BaseAdapter listener,
             String contentType,
@@ -160,7 +193,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
     }
 
     public FeatureSetHierarchyListItem(Context context,
-            FeatureDataStore spatialDb,
+            FeatureDataStore2 spatialDb,
             FeatureDataStorePathUtils.PathEntry path,
             Sort order, BaseAdapter listener, String contentType,
             String mimeType, String iconUri) {
@@ -178,7 +211,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
     }
 
     private FeatureSetHierarchyListItem(Context context,
-            FeatureDataStore spatialDb,
+            FeatureDataStore2 spatialDb,
             FeatureDataStorePathUtils.PathEntry entry,
             String title,
             String path,
@@ -251,7 +284,12 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
             FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
             params.featureSetIds = Collections.singleton(this.entry.fsid);
 
-            this.featureChildCount = this.spatialDb.queryFeaturesCount(params);
+            try {
+                this.featureChildCount = this.spatialDb
+                        .queryFeaturesCount(Adapters.adapt(params, null));
+            } catch (DataStoreException e) {
+                return entry.children.size();
+            }
         }
         return this.entry.children.size() + this.featureChildCount;
     }
@@ -263,8 +301,12 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
             params.featureSets = Collections.singleton(this.path + "/%");
             params.featureSetIds = this.entry.childFsids;
 
-            this.descendantCount = this.spatialDb.queryFeaturesCount(params);
-
+            try {
+                this.descendantCount = this.spatialDb
+                        .queryFeaturesCount(Adapters.adapt(params, null));
+            } catch (DataStoreException dse) {
+                return this.featureChildCount;
+            }
             // initialize 'featureChildCount'
             this.getChildCount();
         }
@@ -478,12 +520,15 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
         Set<HierarchyListItem> retval = new HashSet<>();
         FeatureCursor result = null;
         try {
-            result = this.spatialDb.queryFeatures(params);
+            result = this.spatialDb.queryFeatures(Adapters.adapt(params, null));
             while (result.moveToNext()) {
                 retval.add(new FeatureHierarchyListItem(
                         this.spatialDb,
                         result.get()));
             }
+        } catch (DataStoreException dse) {
+            Log.e(TAG,
+                    "error occurred querying datastore: " + spatialDb.getUri());
         } finally {
             if (result != null)
                 result.close();
@@ -538,13 +583,17 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
     }
 
     private File getGroupFile() {
-        if (!(this.spatialDb instanceof DataSourceFeatureDataStore))
-            return null;
 
-        FeatureSet group;
+        // Get the associated feature set
+        FeatureSet group = null;
         if (this.entry.fsid != FeatureDataStore.FEATURESET_ID_NONE
                 && this.entry.childFsids.isEmpty()) {
-            group = this.spatialDb.getFeatureSet(this.entry.fsid);
+            try {
+                group = Utils.getFeatureSet(spatialDb, this.entry.fsid);
+            } catch (DataStoreException dse) {
+                Log.e(TAG, "error occurred querying datastore: "
+                        + spatialDb.getUri());
+            }
         } else {
             FeatureDataStore.FeatureSetQueryParameters params = new FeatureDataStore.FeatureSetQueryParameters();
             prepareQueryParams(params);
@@ -552,23 +601,26 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
             // XXX - delete all???
             params.limit = 1;
 
-            FeatureDataStore.FeatureSetCursor result = null;
+            FeatureSetCursor result = null;
             try {
-                result = this.spatialDb.queryFeatureSets(params);
+                result = this.spatialDb
+                        .queryFeatureSets(Adapters.adapt(params, null));
                 if (!result.moveToNext())
                     return null;
                 group = result.get();
+            } catch (DataStoreException dse) {
+                Log.e(TAG, "error occurred querying datastore: "
+                        + spatialDb.getUri());
             } finally {
                 if (result != null)
                     result.close();
             }
         }
-
         if (group == null)
             return null;
 
-        return ((DataSourceFeatureDataStore) this.spatialDb)
-                .getFile(group);
+        // Get the file for this feature set
+        return Utils.getSourceFile(this.spatialDb, group);
     }
 
     /**************************************************************************/
@@ -576,12 +628,23 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
     @Override
     public boolean setVisible(boolean visible) {
         if (this.entry.fsid != 0 && this.entry.childFsids.isEmpty()) {
-            this.spatialDb.setFeatureSetVisible(this.entry.fsid, visible);
+            try {
+                this.spatialDb.setFeatureSetVisible(this.entry.fsid, visible);
+            } catch (DataStoreException dse) {
+                Log.e(TAG, "error occurred querying datastore: "
+                        + spatialDb.getUri());
+            }
         } else {
             FeatureDataStore.FeatureSetQueryParameters params = new FeatureDataStore.FeatureSetQueryParameters();
             prepareQueryParams(params);
 
-            this.spatialDb.setFeatureSetsVisible(params, visible);
+            try {
+                this.spatialDb.setFeatureSetsVisible(
+                        Adapters.adapt(params, null), visible);
+            } catch (DataStoreException dse) {
+                Log.e(TAG, "error occurred querying datastore: "
+                        + spatialDb.getUri());
+            }
         }
         return true;
     }
@@ -589,14 +652,26 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
     @Override
     public boolean isVisible() {
         if (this.entry.fsid != 0 && this.entry.childFsids.isEmpty()) {
-            return this.spatialDb.isFeatureSetVisible(this.entry.fsid);
+            try {
+                return Utils.isFeatureSetVisible(this.spatialDb,
+                        this.entry.fsid);
+            } catch (DataStoreException dse) {
+                return false;
+            }
         } else {
             FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
             prepareQueryParams(params);
             params.visibleOnly = true;
             params.limit = 1;
 
-            return (this.spatialDb.queryFeaturesCount(params) > 0);
+            try {
+                return (this.spatialDb
+                        .queryFeaturesCount(Adapters.adapt(params, null)) > 0);
+            } catch (DataStoreException dse) {
+                Log.e(TAG, "error occurred querying datastore: "
+                        + spatialDb.getUri());
+                return false;
+            }
         }
     }
 
@@ -645,7 +720,7 @@ public class FeatureSetHierarchyListItem extends AbstractHierarchyListItem
             params.limit = num;
             params.offset = off;
 
-            result = this.spatialDb.queryFeatures(params);
+            result = this.spatialDb.queryFeatures(Adapters.adapt(params, null));
             int row = resultsWindow.getStartPosition()
                     + resultsWindow.getNumRows();
             Feature feature;

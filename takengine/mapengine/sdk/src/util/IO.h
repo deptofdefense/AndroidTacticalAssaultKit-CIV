@@ -250,11 +250,11 @@ public:
     FileInput();
     virtual ~FileInput();
     virtual void open(const char *filename) throw (IO_Error);
-    virtual void close() throw (IO_Error);
+    virtual void close() throw (IO_Error) override;
 
-    virtual size_t read(uint8_t *buf, size_t len) throw (IO_Error);
-    virtual uint8_t readByte() throw (IO_Error);
-    virtual size_t skip(size_t n) throw (IO_Error);
+    virtual size_t read(uint8_t *buf, size_t len) throw (IO_Error) override;
+    virtual uint8_t readByte() throw (IO_Error) override;
+    virtual size_t skip(size_t n) throw (IO_Error) override;
 
     void seek(int64_t offset) throw (IO_Error);
     int64_t tell() throw (IO_Error);
@@ -269,11 +269,11 @@ public:
     virtual ~MemoryInput();
     // bytes assumed valid for duration of this object; does not take ownership
     virtual void open(const uint8_t *bytes, size_t len);
-    virtual void close() throw (IO_Error);
+    virtual void close() throw (IO_Error) override;
 
-    virtual size_t read(uint8_t *buf, size_t len) throw (IO_Error);
-    virtual uint8_t readByte() throw (IO_Error);
-    virtual size_t skip(size_t n) throw (IO_Error);
+    virtual size_t read(uint8_t *buf, size_t len) throw (IO_Error) override;
+    virtual uint8_t readByte() throw (IO_Error) override;
+    virtual size_t skip(size_t n) throw (IO_Error) override;
 
 private:
     const uint8_t *bytes;
@@ -285,9 +285,9 @@ class ENGINE_API RewindDataInput : public atakmap::util::DataInput {
 public:
     RewindDataInput(atakmap::util::DataInput &input);
     virtual ~RewindDataInput();
-    virtual void close() throw (IO_Error);
-    virtual size_t read(uint8_t *buf, size_t len) throw (IO_Error);
-    virtual uint8_t readByte() throw (IO_Error);
+    virtual void close() throw (IO_Error) override;
+    virtual size_t read(uint8_t *buf, size_t len) throw (IO_Error) override;
+    virtual uint8_t readByte() throw (IO_Error) override;
     void rewind();
 
 private:
@@ -301,11 +301,11 @@ public:
     ByteBufferInput(atakmap::util::MemBufferT<uint8_t> *buffer);
     virtual ~ByteBufferInput();
     // bytes assumed valid for duration of this object; does not take ownership
-    virtual void close() throw (IO_Error);
+    virtual void close() throw (IO_Error) override;
 
-    virtual size_t read(uint8_t *buf, size_t len) throw (IO_Error);
-    virtual uint8_t readByte() throw (IO_Error);
-    virtual size_t skip(size_t n) throw (IO_Error);
+    virtual size_t read(uint8_t *buf, size_t len) throw (IO_Error) override;
+    virtual uint8_t readByte() throw (IO_Error) override;
+    virtual size_t skip(size_t n) throw (IO_Error) override;
 
 private:
     atakmap::util::MemBufferT<uint8_t> *buffer;
@@ -367,7 +367,7 @@ deletePath(const char* path);
 ENGINE_API typedef bool (*DirContentsAcceptFilter)(const std::string &file);
 ENGINE_API
 std::vector<std::string>
-getDirContents(const char *path, DirContentsAcceptFilter filter = NULL);
+getDirContents(const char *path, DirContentsAcceptFilter filter = nullptr);
 
 ENGINE_API unsigned long
 getFileCount(const char* path);

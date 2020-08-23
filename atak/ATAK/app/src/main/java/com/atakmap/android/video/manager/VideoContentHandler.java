@@ -69,13 +69,14 @@ public class VideoContentHandler extends FileContentHandler
 
     @Override
     public boolean goTo(boolean select) {
+        ConnectionEntry connectionEntry = _entry.copy();
         final VideoDropDownReceiver.AlternativeVideoPlayer avp = VideoDropDownReceiver
                 .getAlternativeVideoPlayer();
-        if (avp != null && avp.launchLongPress(_entry))
+        if (avp != null && avp.launchLongPress(connectionEntry))
             return false;
 
         Intent i = new Intent(VideoDropDownReceiver.DISPLAY);
-        i.putExtra("CONNECTION_ENTRY", _entry);
+        i.putExtra("CONNECTION_ENTRY", connectionEntry);
         AtakBroadcast.getInstance().sendBroadcast(i);
         return false;
     }
@@ -87,14 +88,15 @@ public class VideoContentHandler extends FileContentHandler
 
     @Override
     public boolean onLongClick() {
+        ConnectionEntry connectionEntry = _entry.copy();
         final VideoDropDownReceiver.AlternativeVideoPlayer avp = VideoDropDownReceiver
                 .getAlternativeVideoPlayer();
 
-        if (avp != null && avp.launchLongPress(_entry))
+        if (avp != null && avp.launchLongPress(connectionEntry))
             return true;
 
         Intent i = new Intent(_context, Gv2FMobilePlayer.class);
-        i.putExtra("CONNECTION_ENTRY", _entry);
+        i.putExtra("CONNECTION_ENTRY", connectionEntry);
         _context.startActivity(i);
         return true;
     }

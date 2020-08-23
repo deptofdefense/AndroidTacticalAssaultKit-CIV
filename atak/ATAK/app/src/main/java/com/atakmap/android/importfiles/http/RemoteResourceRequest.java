@@ -9,8 +9,6 @@ import com.atakmap.android.importfiles.resource.RemoteResource;
 
 /**
  * Extends GetFileRequest to include the RemoteResource
- * 
- * 
  */
 class RemoteResourceRequest extends GetFileRequest {
 

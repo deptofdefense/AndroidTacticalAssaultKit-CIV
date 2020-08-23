@@ -209,7 +209,7 @@ public class AttachmentBroadcastReceiver extends DropDownReceiver implements
                     + manifest.toString());
         } else if (GALLERY.equals(intent.getAction())) {
             Log.d(TAG, "Displaying Gallery");
-            AttachmentMapOverlay.displayGallery(getMapView());
+            ImageGalleryReceiver.displayGallery();
         }
     }
 

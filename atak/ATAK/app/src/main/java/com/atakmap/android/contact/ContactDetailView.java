@@ -2,7 +2,7 @@
 package com.atakmap.android.contact;
 
 import android.content.SharedPreferences;
-import android.support.v4.app.Fragment;
+import androidx.fragment.app.Fragment;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;

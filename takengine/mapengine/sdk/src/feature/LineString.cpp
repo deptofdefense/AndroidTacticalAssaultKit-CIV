@@ -157,7 +157,7 @@ LineString::getPoint (std::size_t index)
         throw std::out_of_range (MEM_FN ("getX") "Index out of range");
       }
 
-    std::vector<double>::const_iterator iter
+    auto iter
         (points.begin () + index * getDimension ());
 
     return getDimension () == _2D
@@ -225,7 +225,7 @@ LineString::setPoint (std::size_t index,
                                  "Can't set 3D point in 2D string");
       }
 
-    std::vector<double>::iterator iter
+    auto iter
         (points.begin () + index * getDimension ());
 
     *iter = point.x;
@@ -330,8 +330,8 @@ LineString::isClosed ()
 
     if (count)
       {
-        std::vector<double>::const_iterator head (points.begin ());
-        std::vector<double>::const_iterator tail (points.end () - getDimension ());
+        auto head (points.begin ());
+        auto tail (points.end () - getDimension ());
 
         closed = getDimension () == _2D
             ? *head == *tail && *++head == *++tail
@@ -356,7 +356,7 @@ LineString::getEnvelope ()
         throw std::length_error (MEM_FN ("getEnvelope") "Empty line string");
       }
 
-    std::vector<double>::const_iterator iter (points.begin ());
+    auto iter (points.begin ());
     double minX (*iter++);
     double minY (*iter++);
     double minZ (getDimension () == _3D ? *iter++ : 0);
@@ -423,7 +423,7 @@ LineString::toBlob (std::ostream& strm,
         break;
       }
 
-    util::write<uint32_t> (strm, count);
+    util::write<uint32_t> (strm, static_cast<uint32_t>(count));
     strm.write (reinterpret_cast<const char*> (&*points.begin ()),
                 points.size () * sizeof (double));
 
@@ -444,7 +444,7 @@ LineString::toWKB (std::ostream& strm,
         util::write<uint32_t> (strm.put (util::ENDIAN_BYTE),
                                getDimension () == _2D ? 2 : 1002);
       }
-    util::write<uint32_t> (strm, count);
+    util::write<uint32_t> (strm, static_cast<uint32_t>(count));
     strm.write (reinterpret_cast<const char*> (&*points.begin ()),
                 points.size () * sizeof (double));
   }
@@ -485,7 +485,7 @@ LineString::changeDimension (Dimension dim)
 
     if (dim < dimension)                // Change from 3D to 2D.
       {
-        std::vector<double>::iterator dst (points.begin () + _2D);
+        auto dst (points.begin () + _2D);
         std::vector<double>::const_iterator src (points.begin () + _3D);
         const std::vector<double>::const_iterator end (points.end ());
 
@@ -500,7 +500,7 @@ LineString::changeDimension (Dimension dim)
     else if (dim > dimension)           // Change from 2D to 3D.
       {
         std::vector<double> newPoints (count * dim);
-        std::vector<double>::iterator dst (newPoints.begin ());
+        auto dst (newPoints.begin ());
         std::vector<double>::const_iterator src (points.begin ());
         const std::vector<double>::const_iterator end (points.end ());
 
@@ -525,7 +525,7 @@ LineString::computeWKB_Size()
     const
   {
     return util::WKB_HEADER_SIZE
-        + sizeof(std::size_t)
+        + sizeof(uint32_t)
         + sizeof(double) * points.size();
   }
 

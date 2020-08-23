@@ -111,14 +111,12 @@ public class TextureHelper {
         return textureHandle[0];
     }
 
-    private static InputStream getInputStream(final String filePath)
+    private static InputStream getInputStream(String filePath)
             throws IOException {
         File f = new File(filePath);
         if (!f.exists() && filePath.contains(".zip/")) {
             ZipVirtualFile zvf = new ZipVirtualFile(filePath);
             return zvf.openStream();
-            //ZipFile zip = new ZipFile(zvf.getZipFile());
-            //return zip.getInputStream(zvf.getEntry());
         } else
             return new FileInputStream(f);
     }

@@ -1,0 +1,126 @@
+SENDING DEVICE
+1. Recipients of the file are first sorted into "local" (non-server) and
+   "streaming server" class recipients.
+  1a. If the recipient's active endpoint is a server **and** streaming
+      server transfers are not disabled, recipient is
+      "server". "active endpoint" means that the recipient's server endpoint
+      is currently preferred over any local endpoint for general CoT sending
+  1b. Else, if the recipient has any "local" endpoint, they are
+      considered "local".
+2. Local-classed recipients are reported as "gone" (error) and removed from
+   recipient list if local web server is disabled.
+3. Uploads for "streaming server" class recipients are performed:
+  3a. "streaming server" class recipients are first sorted by the server by
+      which they are considered known.  If multiple servers, the one by
+      which general CoT would be sent is used for this sorting.
+  3b. For each server in the sorted list, commence an upload of the file
+      to that streaming server.
+  3c. "BaseURL" to the server is derived as:
+      Protocol:  https if server endpoint is an SSL connection, http if not
+      Host: Streaming endpoint's (already) resolved host or IP
+      Port: Fixed at 8080 for http.  Configuration parameter for https.
+      Base path: Fixed at "/Marti"
+  3d. If BaseURL is https, the following applies to all transfers below:
+    3d-1. The remote server is expected to identify with a certificate
+          matching the trust chain known for the streaming CoT connection
+          to the server identified for the recipient.
+    3d-2. If the certificate is somehow invalid, the upload fails.
+    3d-3. No hostname-based verification is performed on the certificate
+          identity.
+  3e. File is first queried for to see if already on server:
+      "BaseURL"/sync/missionquery?hash=<filehash>
+      If present, go to 3f.
+  3f. File is uploaded via "BaseURL"/sync/missionupload with a few
+      parameters.  Server responds with URL to uploaded file.
+  3g. Once URL to file on server is known, the "tool" attribute is
+      set to "private" via "BaseURL"/api/sync/metadata/<filehash>/tool
+  3h. Proceed at #5
+4. If there are any local-classed recipients, make the file available via
+   a unique URL on the local web server.  The local URL is created as
+   follows:
+  4a. Protocol: fixed as http
+  4b. Address: IP address from first local network interface found that is "up"
+  4c. Port: configured by app
+  4d. Path: /getfile?file=<uniqueid>
+5. Formulate CoT file transfer request.  The request contains the URL from
+   #3 or #4.  The CoT file transfer request is sent to each recipient
+   via normal CoT sending rules (regardless of prior classifications).
+  5a. Commo post-20200527 only: If the recipient is classified as "local"
+      and the local https server is enabled, both the attribute "peerHosted"
+      with the value of "true" and the attribute "httpsPort" with the
+      value being the port number of the local https server are included
+      in the fileshare element of the file transfer CoT message with the
+      value of "true". Note that the original http URL is unchanged - 
+      it remains an http URL with the port of the local http server. This
+      is to allow compatibility with receivers that are pre-20200527.
+
+RECEIVING DEVICE
+1. Receiving begins when the device receives the CoT file transfer request.
+   The network source of the CoT file transfer request is noted as from
+   local/mesh network source or from streaming server. If server, the exact
+   server endpoint is noted.
+2. The details of the CoT file transfer request are provided to the application
+   and it has the ability to deny the transfer for a few reasons.  If it
+   accepts, the receive proceeds. If it denies, a "nack" is sent to the
+   sender via the same means as an ack would be sent (see 6).
+3. An attempt is made to fetch the file at the URL given in the CoT file
+   transfer request. If successful, jump to 6.  If failed, continue to 4.
+   The transfer itself has the following characteristics:
+  3a. If the URL is http, do the following:
+    3a-1. Commo post-20200527 only:
+          If the file transfer request CoT message contains the
+          "peerHosted" attribute with a "true" value and the "httpsPort"
+          attribute with a valid port number (1-65535), the URL is
+          converted to https and the port is set to the value of the
+          "httpsPort" attribute.
+          Proceed to 3b since the URL is now https.
+    3a-2. Do a standard http "GET" of the URL.
+  3b. If the URL is https, the URL is assumed to point a TAK server and
+      SSL/TLS parameters are configured such that it will be expected that
+      the https server pointed to by the URL uses a certificate issued
+      by the trust chain identified by the following rules:
+    3b-1. Commo pre-20200527:
+          The https URL is broadly assumed to point to a TAK server and
+          trust decisions are based solely on this assumption. Continue to
+          3b-2.
+          Commo post-20200527 only:
+          If the file transfer request CoT message contains the
+          "peerHosted" attribute with a "true" value, any certificate presented
+          by the remote server is considered acceptable. Otherwise,
+          assume the https URL is for a TAK server and proceed to 3b-2.
+    3b-2. If the sender of the transfer request has an active server
+          endpoint, the TLS trust chain used for that server is used. (as above,
+          "active" means this is the routing normal CoT sends would take).
+    3b-3. Otherwise, if step #1 noted that the CoT file transfer request
+          arrived via a streaming server, that endpoint is used to look up the
+          TLS trust chain.
+    3b-4. If a match is not found or results in an invalid cert, the
+          transfer fails.
+    3b-5. Universally, regardless of above trust establishment outcome,
+          no hostname-based verification is performed on the certificate
+          identity.
+4. Failures result in retrying the transfer up to some max number of retries
+   (max retries is app configurable):
+  4a. If the original URL contains "/Marti/" in it, the file is
+      considered to reside on a TAK server so no alternate transfer method
+      is tried. Increment retry count; if count is under max retries
+      wait 10s, and retry using rule #3. If out of retries, go to 5.
+  4b. The file is considered as not residing on a TAK server; if the sender
+      of the file transfer request's currently active endpoint (again,
+      "active endpoint" is the one to which general CoT would be routed)
+      is a non-server endpoint, an alternate URL is tried for the file
+      which is derived by replacing the host portion of the original URL
+      with the host portion of the active local endpoint for the user.
+      If the sender's active endpoint is server-based, increment retries
+      and retry as per #3.
+  4c. Immediately attempt to download via the alternate URL from 4b.
+      The same transfer rules used in 3a-3b are used to do the actual
+      transfer, except that the alternate URL is used.
+      If successful, jump to 6.
+      If failure, increment retry count; if count is under max retries
+      wait 10s, and retry using rule #3. If out of retries, go to 5.
+5. The max retries have been exceeded:  A nack is dispatched to the sender
+   via same rules as acks (see 6) and the receive is finished.
+6. File transferred successfully - an ack is dispatched to the sender.  This
+   is sent to the sender via the same CoT routing rules as for any other
+   CoT.

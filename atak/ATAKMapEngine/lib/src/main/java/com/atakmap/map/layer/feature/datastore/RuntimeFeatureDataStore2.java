@@ -1,11 +1,13 @@
 package com.atakmap.map.layer.feature.datastore;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -23,7 +25,9 @@ import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureCursor;
 import com.atakmap.map.layer.feature.FeatureDataStore2;
+import com.atakmap.map.layer.feature.FeatureDataStore3;
 import com.atakmap.map.layer.feature.FeatureDefinition2;
+import com.atakmap.map.layer.feature.FeatureDefinition3;
 import com.atakmap.map.layer.feature.FeatureSet;
 import com.atakmap.map.layer.feature.FeatureSetCursor;
 import com.atakmap.map.layer.feature.style.Style;
@@ -558,6 +562,14 @@ public class RuntimeFeatureDataStore2 extends AbstractFeatureDataStore3 {
     protected Pair<Long, Long> insertFeatureImpl(long fsid, long fid, String name, int geomCoding,
             Object rawGeom, int styleCoding, Object rawStyle, AttributeSet attributes,
             long timestamp, long version) throws DataStoreException {
+
+        return this.insertFeatureImpl(fsid, fid, name, geomCoding, rawGeom, styleCoding, rawStyle, attributes, Feature.AltitudeMode.ClampToGround, 0d, timestamp, version);
+    }
+
+    @Override
+    protected Pair<Long, Long> insertFeatureImpl(long fsid, long fid, String name, int geomCoding,
+            Object rawGeom, int styleCoding, Object rawStyle, AttributeSet attributes, Feature.AltitudeMode altitudeMode, double extrude,
+            long timestamp, long version) throws DataStoreException {
         
         FeatureSetRecord set = this.featureSetIdIndex.get(Long.valueOf(fsid));
         if(set == null)
@@ -603,7 +615,7 @@ public class RuntimeFeatureDataStore2 extends AbstractFeatureDataStore3 {
                 throw new IllegalArgumentException();
         }
         
-        Feature retval = new Feature(fsid, fid, name, geom, style, attributes, timestamp, version);
+        Feature retval = new Feature(fsid, fid, name, geom, style, attributes, altitudeMode, extrude, timestamp, version);
         FeatureRecord record = new FeatureRecord(set, fid, retval);
         
         this.featureIdIndex.put(Long.valueOf(record.fid), record);
@@ -666,6 +678,13 @@ public class RuntimeFeatureDataStore2 extends AbstractFeatureDataStore3 {
     protected void updateFeatureImpl(long fid, int updatePropertyMask, String name,
             Geometry geometry, Style style, AttributeSet attributes, int attrUpdateType)
             throws DataStoreException {
+        this.updateFeatureImpl(fid, updatePropertyMask, name, geometry, style, attributes, Feature.AltitudeMode.ClampToGround, 0, attrUpdateType);
+    }
+
+    @Override
+    protected void updateFeatureImpl(long fid, int updatePropertyMask, String name,
+                                     Geometry geometry, Style style, AttributeSet attributes, Feature.AltitudeMode altitudeMode, double extrude, int attrUpdateType)
+            throws DataStoreException {
 
         FeatureRecord record = this.featureIdIndex.get(Long.valueOf(fid));
         if(record == null)
@@ -677,6 +696,11 @@ public class RuntimeFeatureDataStore2 extends AbstractFeatureDataStore3 {
             geometry = record.feature.getGeometry();
         if((updatePropertyMask&PROPERTY_FEATURE_STYLE) == 0)
             style = record.feature.getStyle();
+        if ((updatePropertyMask&PROPERTY_FEATURE_ALTITUDE_MODE) == 0)
+            altitudeMode = record.feature.getAltitudeMode();
+        if ((updatePropertyMask&PROPERTY_FEATURE_EXTRUDE) == 0)
+            extrude = record.feature.getExtrude();
+
         if((updatePropertyMask&PROPERTY_FEATURE_ATTRIBUTES) == 0) {
             attributes = record.feature.getAttributes();
         } else {
@@ -718,6 +742,8 @@ public class RuntimeFeatureDataStore2 extends AbstractFeatureDataStore3 {
                                      geometry,
                                      style,
                                      attributes,
+                                     altitudeMode,
+                                     extrude,
                                      record.feature.getTimestamp(),
                                      ++record.version);
         
@@ -774,9 +800,16 @@ public class RuntimeFeatureDataStore2 extends AbstractFeatureDataStore3 {
         if(record == null)
             return false;
 
-        // unindex all member features
-        for(FeatureRecord f : record.features)
-            unindexFeature(f);
+        // collect all of the feature id's associated with the features in a feature set
+        List<Long> removalId = new ArrayList<Long>();
+        for(FeatureRecord f : record.features) {
+            removalId.add(f.fid);
+        }
+        // call the deletion implementation.  This was done for instead of unindexing the records
+        // and calling clear because if the implementation of deleteFeatureImpl changes in the
+        // future it could break something.
+        for (Long id : removalId)
+            deleteFeatureImpl(id);
         
         // remove FS from name index
         Set<FeatureSetRecord> sets = this.featureSetNameIndex.get(record.featureSet.getName());
@@ -1242,7 +1275,7 @@ public class RuntimeFeatureDataStore2 extends AbstractFeatureDataStore3 {
     /**************************************************************************/
     //
     
-    protected final static class FeatureCursorImpl extends RowIteratorWrapper implements FeatureCursor, FeatureDefinition2 {
+    protected final static class FeatureCursorImpl extends RowIteratorWrapper implements FeatureCursor, FeatureDefinition3 {
 
         private final RecordCursor<FeatureRecord> filter;
         
@@ -1307,6 +1340,17 @@ public class RuntimeFeatureDataStore2 extends AbstractFeatureDataStore3 {
         public long getTimestamp() {
             return this.filter.get().feature.getTimestamp();
         }
+
+        @Override
+        public Feature.AltitudeMode getAltitudeMode() {
+            return this.filter.get().feature.getAltitudeMode();
+        }
+
+        @Override
+        public double getExtrude() {
+            return this.filter.get().feature.getExtrude();
+        }
+
     }
     
     protected final static class FeatureSetCursorImpl extends RowIteratorWrapper implements FeatureSetCursor {

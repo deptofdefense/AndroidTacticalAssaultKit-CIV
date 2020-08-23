@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.PorterDuff.Mode;
+import android.graphics.drawable.Drawable;
 import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,6 +30,7 @@ import com.atakmap.android.cotdetails.CoTInfoBroadcastReceiver;
 import com.atakmap.android.dropdown.DropDown.OnStateListener;
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.maps.AnchoredMapItem;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapGroup;
@@ -66,6 +68,7 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
 
     public static final String START = "com.atakmap.android.user.RECENTLY_ADDED_DROP_DOWN";
 
+    private final Context _context;
     private ListView _recentlyAddedListView;
     private View _layout;
 
@@ -89,6 +92,7 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
 
     protected RecentlyAddedDropDownReceiver(MapView mapView) {
         super(mapView);
+        _context = mapView.getContext();
         _prefs = PreferenceManager.getDefaultSharedPreferences(mapView
                 .getContext());
     }
@@ -138,7 +142,7 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
     private void _removeFromList(RecentlyAdded ra, boolean removeFromGroup) {
         getMapView().getMapEventDispatcher().removeMapItemEventListener(
                 ra.item, this);
-        ra.item.removeOnPointChangedListener(this);
+        ra.anchor.removeOnPointChangedListener(this);
         _recentlyAddedList.remove(ra);
         ra.delete(removeFromGroup);
         refreshLayout();
@@ -157,24 +161,36 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
             currPoint = _myDevice.getGeoPointMetaData();
         }
 
-        if (currPoint == null
-                || !(item instanceof PointMapItem))
+        if (currPoint == null) {
+            Log.e(TAG, "Failed to find current self point");
             return;
+        }
 
-        RecentlyAdded recent = new RecentlyAdded((PointMapItem) item,
+        PointMapItem anchor = null;
+        if (item instanceof PointMapItem)
+            anchor = (PointMapItem) item;
+        else if (item instanceof AnchoredMapItem)
+            anchor = ((AnchoredMapItem) item).getAnchorItem();
+
+        if (anchor == null) {
+            Log.e(TAG, "Failed to find item anchor: " + item);
+            return;
+        }
+
+        RecentlyAdded recent = new RecentlyAdded(item, anchor,
                 currPoint.get());
         _recentlyAddedList.add(0, recent);
         refreshLayout();
 
         getMapView().getMapEventDispatcher().addMapItemEventListener(
                 recent.item, this);
-        recent.item.addOnPointChangedListener(this);
+        recent.anchor.addOnPointChangedListener(this);
     }
 
     public boolean isRecentlyAdded(MapItem item) {
         if (item != null) {
             for (RecentlyAdded recent : _recentlyAddedList) {
-                if (recent.item == item)
+                if (recent.item == item || recent.anchor == item)
                     return true;
             }
         }
@@ -242,8 +258,7 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
         public void onItemClick(AdapterView<?> parent, View v, int position,
                 long id) {
             GeoPoint center = ((RecentlyAdded) _recentlyAddedAdapter
-                    .getItem(position)).item
-                            .getPoint();
+                    .getItem(position)).getPoint();
             getMapView().getMapController().panTo(center, false);
         }
     };
@@ -275,21 +290,28 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
         public boolean open;
         public String title;
         public final String uid;
-        public String iconPath;
-        public final PointMapItem item;
+        public Drawable icon;
+        public final MapItem item;
+        public final PointMapItem anchor;
         public int color;
 
-        public RecentlyAdded(PointMapItem item, GeoPoint focusPoint) {
+        public RecentlyAdded(MapItem item, PointMapItem anchor,
+                GeoPoint focusPoint) {
             this.item = item;
+            this.anchor = anchor;
 
             double[] da = DistanceCalculations.computeDirection(focusPoint,
-                    item.getPoint());
+                    getPoint());
 
             this.distance = da[0];
             this.bearing = da[1];
             this.uid = item.getUID();
             this.open = false;
             refresh();
+        }
+
+        public GeoPoint getPoint() {
+            return anchor.getPoint();
         }
 
         public void refresh() {
@@ -302,7 +324,7 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
                 // Use shape icon and color
                 item = ATAKUtilities.findAssocShape(item);
             this.color = ATAKUtilities.getIconColor(item);
-            this.iconPath = ATAKUtilities.getIconUri(item);
+            this.icon = item.getIconDrawable();
         }
 
         public void delete() {
@@ -469,7 +491,7 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
             }
 
             double[] da = DistanceCalculations.computeDirection(currPoint.get(),
-                    ra.item.getPoint());
+                    ra.getPoint());
 
             ra.distance = da[0];
             ra.bearing = ATAKUtilities.convertFromTrueToMagnetic(
@@ -484,7 +506,8 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
             desc.setText("");
 
             // ICON
-            ATAKUtilities.SetIcon(ctx, icon, ra.iconPath, ra.color);
+            icon.setImageDrawable(ra.icon);
+            icon.setColorFilter(ra.color, Mode.MULTIPLY);
 
             dirTextDeg.setVisibility(View.VISIBLE);
             dirText.setVisibility(View.VISIBLE);
@@ -498,10 +521,9 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
                             + AngleUtilities.format(ra.bearing,
                                     Angle.DEGREE)
                             + "M");
-            elText.setText(EGM96
-                    .formatMSL(ra.item.getPoint()));
+            elText.setText(EGM96.formatMSL(ra.getPoint()));
             desc.setText(CoordinateFormatUtilities.formatToShortString(
-                    ra.item.getPoint(),
+                    ra.getPoint(),
                     _currFormat));
 
             Button del = convertView
@@ -566,38 +588,32 @@ public class RecentlyAddedDropDownReceiver extends DropDownReceiver
             rename.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    final EditText input = new EditText(parent.getContext());
+                    final EditText input = new EditText(_context);
                     input.setSingleLine(true);
                     input.setText(ra.title);
                     input.selectAll();
 
-                    AlertDialog dialog = new AlertDialog.Builder(parent
-                            .getContext())
-                                    .setMessage(R.string.rename)
-                                    .setView(input)
-                                    .setPositiveButton(R.string.ok,
-                                            new DialogInterface.OnClickListener() {
-                                                @Override
-                                                public void onClick(
-                                                        DialogInterface dialog,
-                                                        int whichButton) {
-                                                    String newName = input
-                                                            .getText()
-                                                            .toString()
-                                                            .trim();
-                                                    _updateName(ra.getMapItem(),
-                                                            newName);
-                                                    title.setText(newName);
-                                                    ra.refresh();
-                                                }
-                                            })
-                                    .setNegativeButton(R.string.cancel, null)
-                                    .create();
-                    Window w = dialog.getWindow();
+                    AlertDialog.Builder b = new AlertDialog.Builder(_context);
+                    b.setTitle(R.string.rename);
+                    b.setView(input);
+                    b.setPositiveButton(R.string.ok,
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface d, int w) {
+                                    String newName = input.getText().toString()
+                                            .trim();
+                                    _updateName(ra.getMapItem(), newName);
+                                    title.setText(newName);
+                                    ra.refresh();
+                                }
+                            });
+                    b.setNegativeButton(R.string.cancel, null);
+                    AlertDialog d = b.create();
+                    Window w = d.getWindow();
                     if (w != null)
                         w.setSoftInputMode(
                                 WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
-                    dialog.show();
+                    d.show();
                 }
             });
 

@@ -12,6 +12,7 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.export.MissionPackageExportWrapper;
+import com.atakmap.android.missionpackage.ui.MissionPackageHierarchyListItem;
 import com.atakmap.android.missionpackage.ui.MissionPackageListGroup;
 import com.atakmap.android.missionpackage.ui.MissionPackageMapOverlay;
 import com.atakmap.android.overlay.MapOverlay;
@@ -176,7 +177,7 @@ public class HierarchyListUserFileSelect extends HierarchyListUserSelect {
         //        if(item instanceof FeatureSetHierarchyListItem)
         //            return false;
 
-        if (item instanceof MissionPackageMapOverlay.MissionPackageHierarchyListItem)
+        if (item instanceof MissionPackageHierarchyListItem)
             return false;
 
         if (item instanceof FileDatabaseMapGroupHierarchyListItem) {

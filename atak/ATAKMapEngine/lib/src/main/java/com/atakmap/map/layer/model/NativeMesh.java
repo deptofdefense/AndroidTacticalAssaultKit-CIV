@@ -1,7 +1,10 @@
 package com.atakmap.map.layer.model;
 
 import com.atakmap.interop.DataType;
+import com.atakmap.interop.InteropCleaner;
+import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
+import com.atakmap.lang.ref.Cleaner;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
@@ -10,7 +13,10 @@ import com.atakmap.util.ReadWriteLock;
 import java.nio.Buffer;
 
 final class NativeMesh implements Mesh {
+    final NativePeerManager.Cleaner CLEANER = new InteropCleaner(Mesh.class);
+
     private final ReadWriteLock rwlock;
+    private final Cleaner cleaner;
     Pointer pointer;
 
     final int numVertices;
@@ -26,6 +32,7 @@ final class NativeMesh implements Mesh {
 
     NativeMesh(Pointer pointer) {
         this.rwlock = new ReadWriteLock();
+        cleaner = NativePeerManager.register(this, pointer, rwlock, null, CLEANER);
 
         this.pointer = pointer;
         this.numVertices = getNumVertices(this.pointer);
@@ -225,24 +232,28 @@ final class NativeMesh implements Mesh {
 
     @Override
     public void dispose() {
-        this.finalize();
-    }
-
-    @Override
-    public void finalize() {
-        this.rwlock.acquireWrite();
-        try {
-            if(this.pointer.value == 0L)
-                return;
-            destruct(this.pointer);
-        } finally {
-            this.rwlock.releaseWrite();
-        }
+        if(cleaner != null)
+            cleaner.clean();
     }
 
     static Mesh create(Pointer pointer, Object owner) {
         return new NativeMesh(pointer);
     }
+
+    static long getPointer(Mesh object) {
+        if(object instanceof NativeMesh)
+            return ((NativeMesh)object).pointer.raw;
+        else
+            return 0L;
+    }
+    //static Pointer wrap(T object);
+    static boolean hasPointer(Mesh object) {
+        return (object instanceof NativeMesh);
+    }
+    //static T create(Pointer pointer, Object ownerReference);
+    //static boolean hasObject(long pointer);
+    //static T getObject(long pointer);
+    //static Pointer clone(long otherRawPointer);
 
     static int getNativeAttributes(int mattr) {
         int cattr = 0;

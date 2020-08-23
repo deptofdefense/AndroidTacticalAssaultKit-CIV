@@ -15,6 +15,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sendtcpmsg", "sendtcpmsg\se
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "commotest", "commotest\commotest.vcxproj", "{1460E45C-E998-48D8-A798-40B76CB45479}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "takproto", "takproto\takproto.vcxproj", "{5742F8E6-9309-4B18-A292-9E96D098811F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{08D9B98F-3B9E-4233-8217-B7BBBFF476E8} = {08D9B98F-3B9E-4233-8217-B7BBBFF476E8}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -63,6 +68,14 @@ Global
 		{1460E45C-E998-48D8-A798-40B76CB45479}.Release|Win32.Build.0 = Release|Win32
 		{1460E45C-E998-48D8-A798-40B76CB45479}.Release|x64.ActiveCfg = Release|x64
 		{1460E45C-E998-48D8-A798-40B76CB45479}.Release|x64.Build.0 = Release|x64
+		{5742F8E6-9309-4B18-A292-9E96D098811F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5742F8E6-9309-4B18-A292-9E96D098811F}.Debug|Win32.Build.0 = Debug|Win32
+		{5742F8E6-9309-4B18-A292-9E96D098811F}.Debug|x64.ActiveCfg = Debug|x64
+		{5742F8E6-9309-4B18-A292-9E96D098811F}.Debug|x64.Build.0 = Debug|x64
+		{5742F8E6-9309-4B18-A292-9E96D098811F}.Release|Win32.ActiveCfg = Release|Win32
+		{5742F8E6-9309-4B18-A292-9E96D098811F}.Release|Win32.Build.0 = Release|Win32
+		{5742F8E6-9309-4B18-A292-9E96D098811F}.Release|x64.ActiveCfg = Release|x64
+		{5742F8E6-9309-4B18-A292-9E96D098811F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

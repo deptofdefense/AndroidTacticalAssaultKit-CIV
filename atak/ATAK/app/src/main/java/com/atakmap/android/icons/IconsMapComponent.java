@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Manages all aspects of icons and specifically iconsets within the the 
+ * Manages all aspects of icons and specifically iconsets within the
  * system.   Some internal examples include the google and osm iconsets.
  */
 public class IconsMapComponent extends AbstractMapComponent {

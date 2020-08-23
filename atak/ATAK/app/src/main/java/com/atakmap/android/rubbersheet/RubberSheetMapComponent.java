@@ -36,7 +36,7 @@ public class RubberSheetMapComponent extends DropDownMapComponent {
         _manager = new RubberSheetManager(view, _group);
 
         // Transparency tool
-        _receiver = new RubberSheetReceiver(view, _group);
+        _receiver = new RubberSheetReceiver(view);
 
         // 3D models layer
         _modelLayer = new RubberModelLayer(view, _group);

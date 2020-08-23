@@ -199,16 +199,15 @@ OGR_SchemaDefinition::getSchema (const char* filePath,
                                      "Received NULL filePath");
       }
 
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, schemaSetMutex());
+    Lock lock(schemaSetMutex());
     SchemaSet& schemaSet (getSchemaSet ());
 
-    SchemaSet::const_iterator end (schemaSet.end ());
-    SchemaSet::const_iterator iter
+    auto end (schemaSet.end ());
+    auto iter
         (std::find_if (schemaSet.begin (), end,
                        SchemaMatcher (filePath, featureDef)));
 
-    return iter != end ? *iter : NULL;
+    return iter != end ? *iter : nullptr;
   }
 
 
@@ -217,8 +216,7 @@ OGR_SchemaDefinition::registerSchema (const OGR_SchemaDefinition* schema)
   {
     if (schema)
       {
-        LockPtr lock(NULL, NULL);
-        Lock_create(lock, schemaSetMutex());
+        Lock lock(schemaSetMutex());
         SchemaSet& schemaSet(getSchemaSet());
 
         schemaSet.insert (schema);
@@ -231,8 +229,7 @@ OGR_SchemaDefinition::unregisterSchema (const OGR_SchemaDefinition* schema)
   {
     if (schema)
       {
-        LockPtr lock(NULL, NULL);
-        Lock_create(lock, schemaSetMutex());
+        Lock lock(schemaSetMutex());
         SchemaSet& schemaSet(getSchemaSet());
 
         schemaSet.erase (schema);

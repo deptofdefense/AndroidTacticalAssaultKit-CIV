@@ -25,11 +25,13 @@ namespace TAK {
                 Builder() NOTHROWS;
             public :
                 Util::TAKErr create(const char *databaseFile) NOTHROWS;
+                Util::TAKErr create(const char *databaseFile, int* dbVersion) NOTHROWS;
+                Util::TAKErr close() NOTHROWS;
             public :
                 Util::TAKErr beginBulkInsertion() NOTHROWS;
                 Util::TAKErr endBulkInsertion(const bool successful) NOTHROWS;
                 Util::TAKErr insertFeature(int64_t* fid, const int64_t fsid, FeatureDefinition2 &def) NOTHROWS;
-                Util::TAKErr insertFeature(const int64_t fsid, const char *name, const atakmap::feature::Geometry &geometry, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attribs) NOTHROWS;
+                Util::TAKErr insertFeature(const int64_t fsid, const char *name, const atakmap::feature::Geometry &geometry, const AltitudeMode altitudeMode, const double extrude, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attribs) NOTHROWS;
                 Util::TAKErr insertFeatureSet(const int64_t fsid, const char *provider, const char *type, const char *name) NOTHROWS;
                 Util::TAKErr setFeatureSetVisible(const int64_t fsid, const bool featureSetVisible) NOTHROWS;
 				Util::TAKErr setFeatureVisible(const int64_t fid, const bool visible);

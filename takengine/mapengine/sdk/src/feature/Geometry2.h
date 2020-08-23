@@ -10,7 +10,7 @@
 namespace TAK {
     namespace Engine {
         namespace Feature {
-            enum ENGINE_API GeometryClass
+            enum GeometryClass
             {
                 TEGC_Point,
                 TEGC_LineString,

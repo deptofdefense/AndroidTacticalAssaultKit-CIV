@@ -5,11 +5,13 @@
         icon='icons/tilt_lock.png'
         onClick='actions/compass_lock_tilt.xml'
         disabled='!{${enable3D}}'
+        dependsOnCapability='capability.3d'
         selected='${lockTilt}'/>
 
     <button
         icon='icons/toggle_3d.png'
         onClick='actions/compass_toggle_3d.xml'
+        dependsOnCapability='capability.3d'
         selected='${enable3D}'/>
 
     <button

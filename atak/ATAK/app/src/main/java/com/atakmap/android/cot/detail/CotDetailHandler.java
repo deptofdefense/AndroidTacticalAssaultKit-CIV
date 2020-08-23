@@ -3,8 +3,10 @@ package com.atakmap.android.cot.detail;
 
 import com.atakmap.android.maps.AnchoredMapItem;
 import com.atakmap.android.maps.MapItem;
+import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Shape;
+import com.atakmap.android.math.MathUtils;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
@@ -105,18 +107,40 @@ public abstract class CotDetailHandler {
      * @return Converted value or default value if conversion failed
      */
     protected double parseDouble(String value, double defaultVal) {
-        try {
-            return Double.parseDouble(value);
-        } catch (Exception e) {
-            return defaultVal;
-        }
+        return MathUtils.parseDouble(value, defaultVal);
     }
 
+    /**
+     * Convert a string to an int (exceptions caught with fallback)
+     * @param value String value
+     * @param defaultVal Default value if conversion fails
+     * @return Converted value or default value if conversion failed
+     */
     protected int parseInt(String value, int defaultVal) {
+        return MathUtils.parseInt(value, defaultVal);
+    }
+
+    /**
+     * Find a map item by a UID with a given class
+     *
+     * @param uid Map item UID
+     * @param <T> Class type
+     * @return Map item of type T or null if not found or not convertible
+     */
+    @SuppressWarnings("unchecked")
+    protected <T extends MapItem> T getMapItem(String uid) {
+        if (uid == null)
+            return null;
+
+        MapView mapView = MapView.getMapView();
+        if (mapView == null)
+            return null;
+
+        MapItem item = mapView.getRootGroup().deepFindUID(uid);
         try {
-            return Integer.parseInt(value);
-        } catch (Exception e) {
-            return defaultVal;
+            return (T) item;
+        } catch (Exception ignored) {
+            return null;
         }
     }
 }

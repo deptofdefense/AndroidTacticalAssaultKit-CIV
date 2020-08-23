@@ -3,7 +3,10 @@ package com.atakmap.android.missionpackage;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 
 import com.atakmap.android.config.FiltersConfig;
 import com.atakmap.android.filesharing.android.service.AndroidFileInfo;
@@ -22,8 +25,11 @@ import com.atakmap.android.missionpackage.ui.MissionPackageListGroup;
 import com.atakmap.android.user.icon.Icon2525bPallet;
 import com.atakmap.android.user.icon.SpotMapPallet;
 import com.atakmap.android.util.ATAKUtilities;
-import com.atakmap.android.vehicle.overhead.OverheadImage;
-import com.atakmap.android.vehicle.overhead.OverheadParser;
+import com.atakmap.android.vehicle.VehicleShape;
+import com.atakmap.android.vehicle.model.VehicleModel;
+import com.atakmap.android.vehicle.model.VehicleModelCache;
+import com.atakmap.android.vehicle.model.VehicleModelInfo;
+import com.atakmap.android.vehicle.model.cot.VehicleModelImporter;
 import com.atakmap.app.R;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
@@ -171,7 +177,9 @@ public class MissionPackageUtils {
                     R.drawable.ic_circle));
             _iconURIs.put("u-r-b-c-c", ATAKUtilities.getResourceUri(
                     R.drawable.ic_circle));
-            _iconURIs.put("u-d-v", ATAKUtilities.getResourceUri(
+            _iconURIs.put(VehicleShape.COT_TYPE, ATAKUtilities.getResourceUri(
+                    R.drawable.pointtype_aircraft));
+            _iconURIs.put(VehicleModel.COT_TYPE, ATAKUtilities.getResourceUri(
                     R.drawable.pointtype_aircraft));
             _iconURIs.put("u-rb-a", ATAKUtilities.getResourceUri(
                     R.drawable.pairing_line_white));
@@ -179,8 +187,6 @@ public class MissionPackageUtils {
                     R.drawable.bullseye));
             _iconURIs.put("b-m-r", ATAKUtilities.getResourceUri(
                     R.drawable.ic_route));
-            _iconURIs.put("overhead_marker", ATAKUtilities.getResourceUri(
-                    R.drawable.obj_c_17));
             _iconURIs.put("b-a-o-can", "asset://icons/alarm-trouble.png");
             _iconURIs.put("a-f-G", "asset://icons/friendly.png");
             _iconURIs.put("a-h-G", "asset://icons/target.png");
@@ -194,17 +200,9 @@ public class MissionPackageUtils {
         String key = type;
 
         String iconPath = null;
-        CotDetail detail = event.getDetail();
-        if (detail != null) {
-            CotDetail userIcon = detail.getFirstChildByName(0, "usericon");
-            if (userIcon != null)
-                iconPath = userIcon.getAttribute("iconsetpath");
-            if (iconPath == null && type.equals("overhead_marker")) {
-                CotDetail model = detail.getFirstChildByName(0, "model");
-                if (model != null)
-                    iconPath = type + "/" + model.getAttribute("name");
-            }
-        }
+        CotDetail userIcon = event.findDetail("usericon");
+        if (userIcon != null)
+            iconPath = userIcon.getAttribute("iconsetpath");
         if (!FileSystemUtils.isEmpty(iconPath))
             key += "\\" + iconPath;
         if (_iconURIs.containsKey(key))
@@ -227,12 +225,6 @@ public class MissionPackageUtils {
                 if (iconPath.endsWith("LABEL"))
                     iconUri = ATAKUtilities.getResourceUri(
                             R.drawable.enter_location_label_icon);
-            } else if (iconPath.startsWith("overhead_marker/")) {
-                // Find overhead image
-                OverheadImage img = OverheadParser.getImageByName(
-                        iconPath.split("/")[1]);
-                if (img != null)
-                    iconUri = img.imageUri;
             } else if (UserIcon.IsValidIconsetPath(iconPath, false,
                     mv.getContext())) {
                 // Database icon
@@ -269,30 +261,63 @@ public class MissionPackageUtils {
         return iconUri;
     }
 
+    public static Drawable getIconDrawable(CotEvent event) {
+        MapView mv = MapView.getMapView();
+        if (mv == null || event == null)
+            return null;
+
+        String type = event.getType();
+
+        // Vehicle model icons are only available as drawables, which are much
+        // more flexible than bitmap URIs
+        if (type.equals(VehicleModel.COT_TYPE) || type.equals("overhead_marker")) {
+            CotDetail model = event.findDetail("model");
+            if (model != null) {
+                String name = model.getAttribute("name");
+                String category = model.getAttribute("category");
+                VehicleModelInfo info;
+                if (FileSystemUtils.isEmpty(category))
+                    info = VehicleModelImporter.findModel(name);
+                else
+                    info = VehicleModelCache.getInstance().get(category, name);
+                if (info != null)
+                    return info.getIcon();
+            }
+        }
+
+        // Legacy icon URI fallback
+        String uri = getIconURI(event);
+        if (uri != null) {
+            Bitmap bmp = ATAKUtilities.getUriBitmap(uri);
+            if (bmp != null)
+                return new BitmapDrawable(mv.getResources(), bmp);
+        }
+        return null;
+    }
+
     /**
      * Get the map item color for this CoT event
      * @param event CoT event to scan
      * @return Color (default: white)
      */
     public static int getColor(CotEvent event) {
-        CotDetail detail = event.getDetail();
-        if (detail != null) {
-            Integer colorInt = parseColor(detail, "color", "argb");
+        if (event != null) {
+            Integer colorInt = parseColor(event, "color", "argb");
             if (colorInt == null)
-                colorInt = parseColor(detail, "color", "value");
+                colorInt = parseColor(event, "color", "value");
             if (colorInt == null)
-                colorInt = parseColor(detail, "strokeColor", "value");
+                colorInt = parseColor(event, "strokeColor", "value");
             if (colorInt == null)
-                colorInt = parseColor(detail, "link_attr", "color");
+                colorInt = parseColor(event, "link_attr", "color");
             if (colorInt != null)
                 return colorInt;
         }
         return Color.WHITE;
     }
 
-    private static Integer parseColor(CotDetail detail, String key,
+    private static Integer parseColor(CotEvent event, String key,
             String value) {
-        CotDetail color = detail.getFirstChildByName(0, key);
+        CotDetail color = event.findDetail(key);
         if (color != null) {
             try {
                 return Integer.parseInt(color.getAttribute(value));

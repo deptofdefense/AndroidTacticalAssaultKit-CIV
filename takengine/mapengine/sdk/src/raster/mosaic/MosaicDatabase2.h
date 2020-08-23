@@ -51,6 +51,19 @@ namespace TAK {
                         PreciseImagery = 1,
                         ImpreciseImagery = 2,
                     };
+                    enum GsdCompare
+                    {
+                        MinimumGsd,
+                        MaximumGsd,
+                    };
+                    enum Order
+                    {
+                        MinGsdAsc,
+                        MinGsdDesc,
+                        MaxGsdAsc,
+                        MaxGsdDesc,
+                    };
+
                 public :
                     QueryParameters() NOTHROWS;
                     QueryParameters(const QueryParameters &other) NOTHROWS;
@@ -64,6 +77,9 @@ namespace TAK {
                     std::unique_ptr<Port::Set<Port::String>, void(*)(const Port::Set<Port::String> *)> types;
                     int srid;
                     ImageFilter imagery;
+                    GsdCompare minGsdCompare;
+                    GsdCompare maxGsdCompare;
+                    Order order;
                 };
 
                 class ENGINE_API MosaicDatabase2::Cursor : public virtual DB::RowIterator

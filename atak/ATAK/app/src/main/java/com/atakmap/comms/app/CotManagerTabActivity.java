@@ -8,9 +8,10 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.widget.TabHost;
 
+import com.atakmap.android.metrics.activity.MetricTabActivity;
 import com.atakmap.app.R;
 
-public class CotManagerTabActivity extends TabActivity {
+public class CotManagerTabActivity extends MetricTabActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

@@ -98,6 +98,23 @@ public final class MathUtils {
         return (int)(Math.log(i) / LOG2) + 1;
     }
 
+    /**
+     * Returns the power of the input value, as an integer, using the specified rounding.
+     * @param v     A value
+     * @param round Less then zero, round down, equal to zero round nearest,
+     *              greater than zero, round up
+     * @return  The power of two for the input value, per the specified rounding
+     */
+    public static int powerOf2(int v, int round) {
+        final double p2 = (Math.log(v)/LOG2);
+        if(round < 0)
+            return (int)p2;
+        else if(round == 0)
+            return (int)(p2+0.5d);
+        else
+            return (int)Math.ceil(p2);
+    }
+
     public static double clamp(double v, double min, double max) {
         if (v < min)
             return min;

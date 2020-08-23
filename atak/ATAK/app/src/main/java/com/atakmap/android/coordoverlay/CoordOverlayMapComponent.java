@@ -35,6 +35,7 @@ public class CoordOverlayMapComponent extends AbstractWidgetMapComponent {
                 showFilter);
 
         _selfCoordUpdater = new SelfCoordOverlayUpdater(view);
+
     }
 
     @Override

@@ -2,7 +2,7 @@
 package com.atakmap.android.bloodhound;
 
 import android.graphics.Color;
-import android.support.annotation.ColorInt;
+import androidx.annotation.ColorInt;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.preference.UnitPreferences;
@@ -52,7 +52,7 @@ public class BloodHoundPreferences extends UnitPreferences {
     }
 
     /**
-     * Returns the time in seconds when the the color should change specifying the outer distance
+     * Returns the time in seconds when the color should change specifying the outer distance
      * has been reached
      * @return the time in seconds
      */
@@ -61,7 +61,7 @@ public class BloodHoundPreferences extends UnitPreferences {
     }
 
     /**
-     * Returns the time in seconds when the the color should change specifying the inner distance
+     * Returns the time in seconds when the color should change specifying the inner distance
      * has been reached
      * @return the time in seconds
      */

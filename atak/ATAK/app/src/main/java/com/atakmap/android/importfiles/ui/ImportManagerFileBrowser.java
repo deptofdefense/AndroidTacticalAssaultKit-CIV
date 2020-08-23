@@ -4,7 +4,7 @@ package com.atakmap.android.importfiles.ui;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.text.Html;
 import android.util.AttributeSet;
 import android.view.KeyEvent;

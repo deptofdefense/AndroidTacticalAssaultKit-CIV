@@ -5,8 +5,13 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.os.Bundle;
 import android.support.util.Base64;
+import android.text.Editable;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -20,6 +25,7 @@ import com.atakmap.android.http.rest.operation.NetworkOperation;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.update.http.ApkFileRequest;
 import com.atakmap.android.update.http.GetApkOperation;
+import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -278,6 +284,8 @@ public class ApkDownloader implements RequestListener {
         //that DB to cache credentials
         LayoutInflater inflater = LayoutInflater.from(context);
         View dialogView = inflater.inflate(R.layout.login_dialog, null);
+
+
         final EditText uidText = dialogView
                 .findViewById(R.id.txt_name);
         final EditText pwdText = dialogView
@@ -299,45 +307,24 @@ public class ApkDownloader implements RequestListener {
                                 String username = uidText.getText().toString();
                                 String base64 = username + ":"
                                         + pwdText.getText().toString();
-                                try {
-                                    base64 = Base64.encodeToString(
-                                            base64.getBytes(
-                                                    FileSystemUtils.UTF8_CHARSET),
-                                            Base64.NO_WRAP);
-                                    BasicUserCredentials creds = new BasicUserCredentials(
-                                            base64);
-                                    request.setCredentials(creds);
+                                base64 = Base64.encodeToString(
+                                        base64.getBytes(
+                                                FileSystemUtils.UTF8_CHARSET),
+                                        Base64.NO_WRAP);
+                                BasicUserCredentials creds = new BasicUserCredentials(
+                                        base64);
+                                request.setCredentials(creds);
 
-                                    AtakAuthenticationDatabase
-                                            .saveCredentials(
-                                                    AtakAuthenticationCredentials.TYPE_APK_DOWNLOADER,
-                                                    trimUrl(request.getUrl()),
-                                                    username, pwdText.getText()
-                                                            .toString(),
-                                                    true);
-                                    Log.d(TAG,
-                                            "Re-executing APK request with credentials");
-                                    r.run();
-                                } catch (UnsupportedEncodingException e) {
-                                    Log.w(TAG,
-                                            "Failed to encode user credentials");
-
-                                    NotificationUtil
-                                            .getInstance()
-                                            .postNotification(
-                                                    notificationId,
-                                                    R.drawable.ic_network_error_notification_icon,
-                                                    NotificationUtil.RED,
-                                                    context.getString(
-                                                            R.string.app_name)
-                                                            + " Update Failed",
-                                                    "Failed to download: "
-                                                            + request
-                                                                    .getFileName(),
-                                                    "Failed to download: "
-                                                            + request
-                                                                    .getFileName());
-                                }
+                                AtakAuthenticationDatabase
+                                        .saveCredentials(
+                                                AtakAuthenticationCredentials.TYPE_APK_DOWNLOADER,
+                                                trimUrl(request.getUrl()),
+                                                username, pwdText.getText()
+                                                        .toString(),
+                                                true);
+                                Log.d(TAG,
+                                        "Re-executing APK request with credentials");
+                                r.run();
 
                                 dialog.dismiss();
                             }
@@ -359,10 +346,43 @@ public class ApkDownloader implements RequestListener {
                 .getCredentials(
                         AtakAuthenticationCredentials.TYPE_APK_DOWNLOADER,
                         request.getUrl());
-        if (credentials != null
-                && !FileSystemUtils.isEmpty(credentials.username)) {
-            uidText.setText(credentials.username);
+
+
+        final CheckBox checkBox = dialogView.findViewById(R.id.password_checkbox);
+        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                if (isChecked) {
+                    pwdText.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                } else {
+                    pwdText.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                }
+            }
+        });
+
+        if (credentials != null) {
+            if (!FileSystemUtils.isEmpty(credentials.username))
+                uidText.setText(credentials.username);
+            if (!FileSystemUtils.isEmpty(credentials.password))
+                pwdText.setText(credentials.password);
+
+            if (!FileSystemUtils.isEmpty(credentials.password)) {
+                checkBox.setEnabled(false);
+                pwdText.addTextChangedListener(new AfterTextChangedWatcher() {
+                    @Override
+                    public void afterTextChanged(Editable s) {
+                        if (s != null && s.length() == 0) {
+                            checkBox.setEnabled(true);
+                            pwdText.removeTextChangedListener(this);
+                        }
+                    }
+                });
+            } else {
+                checkBox.setEnabled(true);
+            }
         }
+
+
 
         loginDialog.show();
     }

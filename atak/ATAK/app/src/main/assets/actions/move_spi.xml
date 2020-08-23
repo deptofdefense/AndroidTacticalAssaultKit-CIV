@@ -1,0 +1,21 @@
+<set>
+    <broadcast>
+        <action>com.atakmap.android.maps.FINE_ADJUST</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.action.SHOW_POINT_DETAILS</action>
+        <extras>
+            <string key='uid'>${uid}</string>
+            <string key='displayRnB'>@{displayRnB}</string>
+        </extras>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.UNFOCUS_FOR_FINE_ADJUST</action>
+    </broadcast>
+    <broadcast>
+        <action>com.atakmap.android.maps.HIDE_MENU</action>
+    </broadcast>
+</set>

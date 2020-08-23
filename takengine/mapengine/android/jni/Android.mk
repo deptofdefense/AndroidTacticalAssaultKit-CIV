@@ -38,34 +38,35 @@ LOCAL_SRC_FILES += $(SRCDIR)/core/AtakMapController.cpp \
                    $(SRCDIR)/core/Ellipsoid2.cpp \
                    $(SRCDIR)/core/GeoPoint.cpp \
                    $(SRCDIR)/core/GeoPoint2.cpp \
+                   $(SRCDIR)/core/Globe.cpp \
                    $(SRCDIR)/core/Layer.cpp \
                    $(SRCDIR)/core/Layer2.cpp \
                    $(SRCDIR)/core/LegacyAdapters.cpp \
                    $(SRCDIR)/core/MapCamera.cpp \
                    $(SRCDIR)/core/MapProjectionDisplayModel.cpp \
+                   $(SRCDIR)/core/MapRenderer.cpp \
                    $(SRCDIR)/core/MapSceneModel.cpp \
                    $(SRCDIR)/core/MapSceneModel2.cpp \
                    $(SRCDIR)/core/ProjectionFactory2.cpp \
                    $(SRCDIR)/core/ProjectionFactory3.cpp \
-                   $(SRCDIR)/core/ProjectionSpi3.cpp
+                   $(SRCDIR)/core/ProjectionSpi3.cpp \
+                   $(SRCDIR)/core/RenderContext.cpp \
+                   $(SRCDIR)/core/RenderSurface.cpp
 
 # Currency
 LOCAL_SRC_FILES += $(SRCDIR)/currency/Currency2.cpp \
                    $(SRCDIR)/currency/CurrencyRegistry2.cpp \
                    $(SRCDIR)/currency/CatalogDatabase2.cpp
 # DB
-LOCAL_SRC_FILES += $(SRCDIR)/db/Bindable.cpp \
-                   $(SRCDIR)/db/BindArgument.cpp \
+LOCAL_SRC_FILES += $(SRCDIR)/db/BindArgument.cpp \
                    $(SRCDIR)/db/Cursor.cpp \
                    $(SRCDIR)/db/CursorWrapper2.cpp \
                    $(SRCDIR)/db/Database.cpp \
                    $(SRCDIR)/db/Database2.cpp \
                    $(SRCDIR)/db/DatabaseWrapper.cpp \
-                   $(SRCDIR)/db/Query.cpp \
                    $(SRCDIR)/db/RowIterator.cpp \
                    $(SRCDIR)/db/SpatiaLiteDB.cpp \
                    $(SRCDIR)/db/Statement.cpp \
-                   $(SRCDIR)/db/Statement2.cpp \
                    $(SRCDIR)/db/WhereClauseBuilder2.cpp
 # Features
 LOCAL_SRC_FILES += $(SRCDIR)/feature/AbstractFeatureDataStore2.cpp \
@@ -135,6 +136,7 @@ LOCAL_SRC_FILES += $(SRCDIR)/math/AABB.cpp \
                    $(SRCDIR)/math/Plane2.cpp \
                    $(SRCDIR)/math/Sphere.cpp \
                    $(SRCDIR)/math/Sphere2.cpp \
+                   $(SRCDIR)/math/Statistics.cpp \
                    $(SRCDIR)/math/Triangle.cpp \
                    $(SRCDIR)/math/Utils.cpp
 
@@ -162,7 +164,7 @@ LOCAL_SRC_FILES += $(SRCDIR)/raster/DatasetProjection.cpp \
 LOCAL_SRC_FILES += $(SRCDIR)/renderer/AsyncBitmapLoader2.cpp \
                    $(SRCDIR)/renderer/Bitmap2.cpp \
                    $(SRCDIR)/renderer/BitmapFactory.cpp \
-                   $(SRCDIR)/renderer/BitmapFactory2_Android.cpp \
+                   $(SRCDIR)/renderer/BitmapFactory2.cpp \
                    $(SRCDIR)/renderer/GLES20FixedPipeline.cpp \
                    $(SRCDIR)/renderer/GLMatrix.cpp \
                    $(SRCDIR)/renderer/GLRenderBatch2.cpp \
@@ -173,8 +175,20 @@ LOCAL_SRC_FILES += $(SRCDIR)/renderer/AsyncBitmapLoader2.cpp \
                    $(SRCDIR)/renderer/GLTextureAtlas2.cpp \
                    $(SRCDIR)/renderer/GLTextureCache.cpp \
                    $(SRCDIR)/renderer/GLTextureCache2.cpp \
+                   $(SRCDIR)/renderer/GLWireframe.cpp \
+                   $(SRCDIR)/renderer/GLWorkers.cpp \
+                   $(SRCDIR)/renderer/Shader.cpp \
+                   $(SRCDIR)/renderer/Skirt.cpp \
+                   $(SRCDIR)/renderer/Tessellate.cpp \
+                   $(SRCDIR)/renderer/core/GLAntiMeridianHelper.cpp \
+                   $(SRCDIR)/renderer/core/GLLayer2.cpp \
+                   $(SRCDIR)/renderer/core/GLLayerFactory2.cpp \
+                   $(SRCDIR)/renderer/core/GLLayerSpi2.cpp \
                    $(SRCDIR)/renderer/core/GLMapRenderGlobals.cpp \
-                   $(SRCDIR)/renderer/Tessellate.cpp
+                   $(SRCDIR)/renderer/core/GLMapRenderable2.cpp \
+                   $(SRCDIR)/renderer/core/GLMapView2.cpp \
+                   $(SRCDIR)/renderer/elevation/ElMgrTerrainRenderService.cpp \
+                   $(SRCDIR)/renderer/elevation/TerrainRenderService.cpp
 
 # Platform
 LOCAL_SRC_FILES += $(SRCDIR)/port/Platform.cpp \
@@ -211,13 +225,14 @@ LOCAL_SRC_FILES += $(SRCDIR)/util/AtomicCounter_NDK.cpp \
                    $(SRCDIR)/util/MemBuffer2.cpp \
 				   $(SRCDIR)/util/ProcessingCallback.cpp \
 				   $(SRCDIR)/util/ProtocolHandler.cpp \
+				   $(SRCDIR)/util/Work.cpp \
 				   $(SRCDIR)/util/ZipFile.cpp
 
 ### FORMATS ###
 
 LOCAL_SRC_FILES += $(SRCDIR)/formats/drg/DRG.cpp
-LOCAL_SRC_FILES += $(SRCDIR)/formats/wmm/GeomagnetismLibrary.cpp
 LOCAL_SRC_FILES += $(SRCDIR)/formats/egm/EGM96.cpp
+LOCAL_SRC_FILES += $(SRCDIR)/formats/gdal/GdalBitmapReader.cpp
 LOCAL_SRC_FILES += $(SRCDIR)/formats/glues/dict.c                  \
                    $(SRCDIR)/formats/glues/geom.c                  \
                    $(SRCDIR)/formats/glues/memalloc.c              \
@@ -229,6 +244,8 @@ LOCAL_SRC_FILES += $(SRCDIR)/formats/glues/dict.c                  \
                    $(SRCDIR)/formats/glues/tess.c                  \
                    $(SRCDIR)/formats/glues/tessmono.c              
 LOCAL_SRC_FILES += $(SRCDIR)/formats/s3tc/S3TC.cpp
+LOCAL_SRC_FILES += $(SRCDIR)/formats/wmm/GeomagnetismLibrary.cpp
+
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../../../../pgsc-utils/src
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../../../thirdparty/stlsoft/include

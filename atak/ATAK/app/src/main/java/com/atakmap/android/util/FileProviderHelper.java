@@ -2,7 +2,7 @@
 package com.atakmap.android.util;
 
 import android.os.Build;
-import android.support.v4.content.FileProvider;
+import androidx.core.content.FileProvider;
 import com.atakmap.app.BuildConfig;
 import android.content.Context;
 import android.content.Intent;

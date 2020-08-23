@@ -19,6 +19,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -98,7 +100,7 @@ public class FileSystemUtils {
     final public static String PLATFORM_MEDIA_RW = "<group gid=\"media_rw\" />";
     private static final boolean systemRestartRequired = false;
 
-    public static final String UTF8_CHARSET = "UTF-8";
+    public static final Charset UTF8_CHARSET = StandardCharsets.UTF_8;
 
     private static final File sdcard = Environment
             .getExternalStorageDirectory();
@@ -248,8 +250,9 @@ public class FileSystemUtils {
     /**
      * Clears a cached list of mount points. (Do not call unless you know what you are doing).
      */
-    public void clearCachedMountPoints() {
+    public static void clearCachedMountPoints() {
         mountPoints = null;
+        scanned = false;
     }
 
     private static void legacyFindMountRootDirs(Set<File> roots) {
@@ -274,18 +277,27 @@ public class FileSystemUtils {
                         path = lineParts[2];
 
                     if (path != null) {
-                        root = new File(sanitizeWithSpacesAndSlashes(path));
-                        try {
-                            root = root.getCanonicalFile();
-                        } catch (IOException ignored) {
-                        }
-                        if (root.exists() && root.isDirectory()
-                                && root.canWrite())
-                            roots.add(root);
-                    } else {
-                        Log.d(TAG, "null path encountered");
-                    }
 
+                        boolean valid = false;
+
+                        for (String wlPath : ROOT_FS_WHITELIST)
+                            valid = valid || path.startsWith(wlPath);
+
+                        if (valid) {
+                            root = new File(sanitizeWithSpacesAndSlashes(path));
+                            try {
+                                root = root.getCanonicalFile();
+                            } catch (IOException ignored) {
+                            }
+                            if (root.exists() && root.isDirectory()
+                                    && root.canWrite())
+                                roots.add(root);
+                        } else {
+                            Log.d(TAG, "null path encountered");
+                        }
+                    } else {
+                        Log.d(TAG, "unusable path: " + path);
+                    }
                 }
             }
             is.close();
@@ -549,14 +561,14 @@ public class FileSystemUtils {
 
     public static String copyStreamToString(final InputStream in,
             final boolean closeIn,
-            final String charSet)
+            final Charset charSet)
             throws IOException {
         return copyStreamToString(in, closeIn, charSet, new char[BUF_SIZE]);
     }
 
     public static String copyStreamToString(final InputStream in,
             final boolean closeIn,
-            final String charSet,
+            final Charset charSet,
             char[] buffer) throws IOException {
 
         if (in == null)
@@ -1367,25 +1379,7 @@ public class FileSystemUtils {
     public static void copyFile(final File src, final File dst)
             throws IOException {
 
-        FileInputStream fis = null;
-        FileOutputStream fos = null;
-
-        try {
-            fis = new FileInputStream(src);
-            fos = new FileOutputStream(dst);
-            copyStream(fis, fos);
-        } finally {
-            try {
-                if (fis != null)
-                    fis.close();
-            } catch (IOException ignore) {
-            }
-            try {
-                if (fos != null)
-                    fos.close();
-            } catch (IOException ignore) {
-            }
-        }
+        copyFile(src, dst, new byte[BUF_SIZE]);
     }
 
     public static void copyFile(File src, File dst, byte[] buf)
@@ -2190,7 +2184,7 @@ public class FileSystemUtils {
                 }
             }
         }
-        return (result.numFiles <= limit);
+        return (result.numFiles < limit);
     }
 
     public static long getFileSize(File derivedFrom) {
@@ -2331,7 +2325,7 @@ public class FileSystemUtils {
      * @param exts list of extensions.
      */
     public static File findFile(File directory, String base, String[] exts) {
-        if (exts != null && base != null) {
+        if (exts != null && base != null && exts != null) {
             for (String ext : exts) {
                 File f = new File(directory, base + ext);
                 if (f.exists())

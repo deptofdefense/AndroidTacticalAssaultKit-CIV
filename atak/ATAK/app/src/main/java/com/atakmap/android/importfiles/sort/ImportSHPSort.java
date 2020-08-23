@@ -34,7 +34,8 @@ public class ImportSHPSort extends ImportInPlaceResolver {
     public ImportSHPSort(Context context, boolean validateExt,
             boolean copyFile, boolean importInPlace) {
         super(".shp", FileSystemUtils.OVERLAYS_DIRECTORY, validateExt,
-                copyFile, importInPlace, context.getString(R.string.shapefile));
+                copyFile, importInPlace, context.getString(R.string.shapefile),
+                context.getDrawable(R.drawable.ic_shapefile));
     }
 
     @Override

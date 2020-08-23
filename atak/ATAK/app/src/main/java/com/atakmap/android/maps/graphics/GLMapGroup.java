@@ -99,16 +99,6 @@ public final class GLMapGroup {
 
             if (item instanceof Doghouse)
                 return new GLDogHouse(surface, (Doghouse) item);
-            else if (item.getClass().equals(Polyline.class))
-                return new GLPolyline(surface, (Polyline) item);
-            else if (item instanceof SimpleRectangle)
-                return new GLRectangle(surface, (SimpleRectangle) item);
-            else if (item instanceof Ellipse)
-                return new GLEllipse(surface, (Ellipse) item);
-            else if (item instanceof MultiPolyline)
-                return new GLMultipolyline(surface, (MultiPolyline) item);
-            else if (item instanceof AxisOfAdvance)
-                return new GLAxisOfAdvance(surface, (AxisOfAdvance) item);
             else if (item instanceof SensorFOV)
                 return new GLSensorFOV(surface, (SensorFOV) item);
             else if (item instanceof AngleOverlayShape)
@@ -147,18 +137,6 @@ public final class GLMapGroup {
 
                 // Cache class, or null if it wasn't found
                 glClasses.put(itemClass, glClass);
-            }
-
-            if (glClass == null) {
-                // This is messy.. Should probably just pull in EditablePolyline to MapLibrary and
-                // hard code it's GL class above.
-                // But for now, it's losely coupled in DrawingTools and this check is needed to pick
-                // up any Polyline subclasses
-                // that don't have an un-proguardded GL class.
-                // (above Polyline check only catches unsubclassed Polylines, since
-                // GLEditablePolyline needs to be picked up by the lookup code.)
-                if (item instanceof Polyline)
-                    return new GLPolyline(surface, (Polyline) item);
             }
 
             // If there is a GL class, instantiate it

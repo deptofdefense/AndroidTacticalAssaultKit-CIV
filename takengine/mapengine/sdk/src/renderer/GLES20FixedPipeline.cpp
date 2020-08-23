@@ -6,6 +6,8 @@
 #include "renderer/GLES20FixedPipeline.h"
 #include "renderer/GL.h"
 
+#include "core/AtakMapView.h"
+
 #include "math/Matrix.h"
 #include "util/Logging.h"
 
@@ -265,14 +267,14 @@ namespace atakmap
 
         GLES20FixedPipeline *GLES20FixedPipeline ::getInstance()
         {
-            static GLES20FixedPipeline *singleton = NULL;
-            if (singleton == NULL)
+            static GLES20FixedPipeline *singleton = nullptr;
+            if (singleton == nullptr)
                 singleton = new GLES20FixedPipeline();
             return singleton;
         }
 
 
-        GLES20FixedPipeline::GLES20FixedPipeline() : current(NULL), curAttribs(),
+        GLES20FixedPipeline::GLES20FixedPipeline() : current(nullptr), curAttribs(),
             texCoordPointer(), vertexPointer(), colorPointer(),
             activeTextureUnit(GL_TEXTURE0), tex2DEnabled(false)
         {
@@ -282,9 +284,9 @@ namespace atakmap
             projection = new MatrixStack(256);
             texture = new MatrixStack(256);
 #else
-            modelView = new MatrixStack(32);
-            projection = new MatrixStack(2);
-            texture = new MatrixStack(2);
+            modelView = new MatrixStack(32u);
+            projection = new MatrixStack(8u);
+            texture = new MatrixStack(4u);
 #endif
             attribStack = new std::stack<FPGLSettings>();
 
@@ -346,7 +348,10 @@ namespace atakmap
                                            double bottom, double top,
                                            double zNear, double zFar)
         {
-            GLMatrix::orthoM(current->current, left, right, bottom, top, zNear, zFar);
+            GLMatrix::orthoM(current->current, 
+                static_cast<float>(left), static_cast<float>(right), 
+                static_cast<float>(bottom), static_cast<float>(top), 
+                static_cast<float>(zNear), static_cast<float>(zFar));
         }
 
 
@@ -457,29 +462,29 @@ namespace atakmap
         {
             using namespace atakmap::util;
 
-            ArrayPointer *p = NULL;
+            ArrayPointer *p = nullptr;
             if (state == ClientState::CS_GL_VERTEX_ARRAY)
                 p = &vertexPointer;
             else if (state == ClientState::CS_GL_TEXTURE_COORD_ARRAY)
                 p = &texCoordPointer;
             else if (state == ClientState::CS_GL_COLOR_ARRAY)
                 p = &colorPointer;
-            if (p != NULL)
+            if (p != nullptr)
                 p->enabled = true;
         }
 
         void GLES20FixedPipeline::glDisableClientState(ClientState state)
         {
-            ArrayPointer *p = NULL;
+            ArrayPointer *p = nullptr;
             if (state == ClientState::CS_GL_VERTEX_ARRAY)
                 p = &vertexPointer;
             else if (state == ClientState::CS_GL_TEXTURE_COORD_ARRAY)
                 p = &texCoordPointer;
             else if (state == ClientState::CS_GL_COLOR_ARRAY)
                 p = &colorPointer;
-            if (p != NULL) {
+            if (p != nullptr) {
                 p->enabled = false;
-                p->pointer = NULL;
+                p->pointer = nullptr;
                 p->vbo = false;
             }
         }
@@ -517,6 +522,11 @@ namespace atakmap
         void GLES20FixedPipeline::glPointSize(float size)
         {
             curAttribs.pointSize = size;
+        }
+
+        void GLES20FixedPipeline::glLineWidth(float w)
+        { 
+            ::glLineWidth(w * atakmap::core::AtakMapView::DENSITY);
         }
 
         void GLES20FixedPipeline::pushAllAttribs()
@@ -557,7 +567,7 @@ namespace atakmap
                     glGetFloatv(GL_LINE_WIDTH, &width);
 
                     if (width > 1) {
-                        GLLinesEmulation::emulateLineDrawArrays(mode, first, count, this, width, vertexPointer.enabled ? &vertexPointer : NULL, texCoordPointer.enabled ? &texCoordPointer : NULL);
+                        GLLinesEmulation::emulateLineDrawArrays(mode, first, count, this, width, vertexPointer.enabled ? &vertexPointer : nullptr, texCoordPointer.enabled ? &texCoordPointer : nullptr);
                         break;
                     }
                 }
@@ -590,7 +600,7 @@ namespace atakmap
 					glGetFloatv(GL_LINE_WIDTH, &width);
 
 					if (width > 1) {
-						GLLinesEmulation::emulateLineDrawElements(mode, count, type, indices, this, width, vertexPointer.enabled ? &vertexPointer : NULL, texCoordPointer.enabled ? &texCoordPointer : NULL);
+						GLLinesEmulation::emulateLineDrawElements(mode, count, type, indices, this, width, vertexPointer.enabled ? &vertexPointer : nullptr, texCoordPointer.enabled ? &texCoordPointer : nullptr);
 						break;
 					}
 				}
@@ -935,7 +945,7 @@ namespace atakmap
             int colorFlags = colorize ? 0x00 : 0x01;
             int programFlags = colorFlags | (size << 1);
             Program *p = vectorPrograms[programFlags];
-            if (p == NULL) {
+            if (p == nullptr) {
                 const char *vertShaderSource;
                 const char *fragShaderSource;
                 if (colorize) {
@@ -978,7 +988,7 @@ namespace atakmap
             int texturedFlag = textured ? 0x01 : 0x00;
             int programFlags = (size << 1) | texturedFlag;
             Program *p = pointPrograms[programFlags];
-            if (p == NULL) {
+            if (p == nullptr) {
                 const char *vertShaderSource;
                 const char *fragShaderSource;
                 if (textured) {
@@ -1024,8 +1034,8 @@ namespace atakmap
             int colorFlag = colorize ? 0x01 : 0x00;
             int programFlags = colorFlag | (0 << 1) | (vSize << 2) | (tcSize << 4);
             Program *p = texturePrograms[programFlags];
-            if (p == NULL) {
-                const char *vertShaderSource = NULL;
+            if (p == nullptr) {
+                const char *vertShaderSource = nullptr;
                 switch (vSize) {
                 case 2:
                     vertShaderSource = (tcSize == 4) ? TEXTURE_2D_VERT_SHADER_SRC_PROJ : TEXTURE_2D_VERT_SHADER_SRC;
@@ -1056,28 +1066,28 @@ namespace atakmap
 
 
 
-        ArrayPointer::ArrayPointer() : size(0), type(0), stride(0), pointer(NULL), enabled(false), position(0), vbo(false)
+        ArrayPointer::ArrayPointer() : size(0), type(0), stride(0), pointer(nullptr), enabled(false), position(0), vbo(false)
         {
 
         }
 
-        void ArrayPointer::setPointer(int size, int type, int stride, const void *pointer)
+        void ArrayPointer::setPointer(int size_val, int type_val, int stride_val, const void *pointer_val)
         {
-            this->size = size;
-            this->type = type;
-            this->stride = stride;
-            this->pointer = pointer;
+            this->size = size_val;
+            this->type = type_val;
+            this->stride = stride_val;
+            this->pointer = pointer_val;
             this->position = 0;
             this->vbo = false;
         }
 
-        void ArrayPointer::setPointer(int size, int type, int stride, int position)
+        void ArrayPointer::setPointer(int size_val, int type_val, int stride_val, int position_val)
         {
-            this->size = size;
-            this->type = type;
-            this->stride = stride;
-            this->pointer = NULL;
-            this->position = position;
+            this->size = size_val;
+            this->type = type_val;
+            this->stride = stride_val;
+            this->pointer = nullptr;
+            this->position = position_val;
             this->vbo = true;
         }
 
@@ -1132,7 +1142,7 @@ namespace atakmap
             CHECKERRS();
             if (n == GL_FALSE)
                 return n;
-            glShaderSource(n, 1, &src, NULL);
+            glShaderSource(n, 1, &src, nullptr);
             CHECKERRS();
             glCompileShader(n);
             CHECKERRS();
@@ -1140,12 +1150,12 @@ namespace atakmap
             glGetShaderiv(n, GL_COMPILE_STATUS, &rc);
             CHECKERRS();
             if (rc == 0) {
-                char *msg = NULL;
+                char *msg = nullptr;
                 int msgLen;
                 glGetShaderiv(n, GL_INFO_LOG_LENGTH, &msgLen);
                 if(msgLen) {
                     msg = new char[msgLen+1];
-                    glGetShaderInfoLog(n, msgLen+1, NULL, msg);
+                    glGetShaderInfoLog(n, msgLen+1, nullptr, msg);
                 }
                 Logger::log(Logger::Error, "Failed to compile shader %d, src:\n%s\nmsg: %s", n, src, msg);
                 if(msg)
@@ -1179,12 +1189,12 @@ namespace atakmap
             glGetProgramiv(n, GL_LINK_STATUS, &ok);
             CHECKERRS();
             if (ok == 0) {
-                char *msg = NULL;
+                char *msg = nullptr;
                 int msgLen;
                 glGetProgramiv(n, GL_INFO_LOG_LENGTH, &msgLen);
                 if(msgLen) {
                     msg = new char[msgLen+1];
-                    glGetProgramInfoLog(n, msgLen+1, NULL, msg);
+                    glGetProgramInfoLog(n, msgLen+1, nullptr, msg);
                 }
                 Logger::log(Logger::Error, "Failed to create program, vertShader=%d fragShader=%d\nmsg: %s", vertShader, fragShader, msg);
                 if(msg)

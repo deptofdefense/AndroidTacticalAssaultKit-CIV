@@ -16,7 +16,6 @@ import java.util.Set;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.interop.Pointer;
-import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.geometry.Point;
@@ -186,7 +185,13 @@ public final class ElevationManager {
             }
 
             String[] resultType = (geoPointMetaData != null) ? new String[1] : null;
-            final double hae = getElevation(latitude, longitude, cparams.raw, resultType);
+            
+            final double hae;
+            if (cparams != null)
+                hae = getElevation(latitude, longitude, cparams.raw, resultType);
+            else
+                hae = Double.NaN;
+ 
             if(!Double.isNaN(hae) && geoPointMetaData != null) {
                 geoPointMetaData.set(new GeoPoint(latitude, longitude, hae)).setAltitudeSource(resultType[0]);
             } else if(geoPointMetaData != null) {

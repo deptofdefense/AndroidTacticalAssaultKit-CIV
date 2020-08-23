@@ -247,7 +247,7 @@ public class AtakAuthenticationDatabase {
             String username,
             String password,
             boolean expires) {
-        Log.i(TAG, "saveCredentials = " + type);
+        //Log.i(TAG, "saveCredentials = " + type);
 
         synchronized (getAdapter().lock) {
             if (!initialized) {

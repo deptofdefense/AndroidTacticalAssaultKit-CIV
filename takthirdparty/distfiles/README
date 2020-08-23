@@ -1,7 +1,7 @@
 *** Source Bundles
 zlib - 1.2.11
 libiconv - 1.15
-openssl - 1.1.0i
+openssl - 1.1.1g
 curl - 7.61.1
 proj - 4.9.1
 expat - 2.1.0

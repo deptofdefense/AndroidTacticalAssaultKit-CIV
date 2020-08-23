@@ -3,6 +3,7 @@ package com.atakmap.android.maps;
 
 /**
  * Engine resource reference that points to an Android asset from the AssetManager.
+ *
  */
 public class AssetMapDataRef extends MapDataRef {
 

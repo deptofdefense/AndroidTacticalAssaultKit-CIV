@@ -9,12 +9,12 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 
+import com.atakmap.android.bloodhound.ui.BloodHoundHUD;
 import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
-import com.atakmap.android.bloodhound.BloodHoundButtonTool;
 import com.atakmap.android.cot.CotMapComponent;
 import com.atakmap.android.gpx.GpxTrack;
 import com.atakmap.android.gpx.GpxTrackSegment;
@@ -766,7 +766,7 @@ public class RangeAndBearingMapItem extends Arrow implements
                 double remainingEta = _pt1.getMetaDouble("bloodhoundEta",
                         Double.NaN);
                 if (!Double.isNaN(remainingEta)) {
-                    String remainingEtaString = BloodHoundButtonTool
+                    String remainingEtaString = BloodHoundHUD
                             .formatTime(remainingEta);
                     text += "  " + remainingEtaString;
                 }
@@ -774,7 +774,7 @@ public class RangeAndBearingMapItem extends Arrow implements
                 double remainingEta = _pt2.getMetaDouble("bloodhoundEta",
                         Double.NaN);
                 if (!Double.isNaN(remainingEta)) {
-                    String remainingEtaString = BloodHoundButtonTool
+                    String remainingEtaString = BloodHoundHUD
                             .formatTime(remainingEta);
                     text += "  " + remainingEtaString;
                 }
@@ -1037,7 +1037,7 @@ public class RangeAndBearingMapItem extends Arrow implements
     }
 
     private String formatEta(double eta) {
-        return BloodHoundButtonTool.formatTime(eta);
+        return BloodHoundHUD.formatTime(eta);
     }
 
     private boolean isSpeedValid(double speed) {

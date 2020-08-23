@@ -79,7 +79,7 @@ public final class GeoCalculations {
             return null;
         }
 
-        /* Is the intersection along the the segments */
+        /* Is the intersection along the segments */
         mua = numera / denom;
         mub = numerb / denom;
         if (mua < 0 || mua > 1 || mub < 0 || mub > 1) {

@@ -2,6 +2,7 @@
 package com.atakmap.android.missionpackage.event;
 
 import android.content.Context;
+import android.util.Pair;
 import android.widget.Toast;
 
 import com.atakmap.android.importfiles.sort.ImportResolver;
@@ -97,8 +98,12 @@ public class MissionPackageEventHandler implements IMissionPackageEventHandler {
         MissionPackageExtractor.UnzipFile(zipFile.getInputStream(entry),
                 toUnzip, false, buffer);
 
+        // Content type metadata
+        String contentType = content.getParameterValue(
+                MissionPackageContent.PARAMETER_CONTENT_TYPE);
+
         // attempt import using ImportManager
-        String filePath = importFile(toUnzip, sorters);
+        String filePath = importFile(toUnzip, contentType, sorters);
         if (!FileSystemUtils.isEmpty(filePath)) {
             Log.d(TAG, "Imported Supported File: " + filePath);
         } else {
@@ -121,7 +126,7 @@ public class MissionPackageEventHandler implements IMissionPackageEventHandler {
      * @return
      */
     private String importFile(final File file,
-            final List<ImportResolver> sorters) {
+            final String contentType, final List<ImportResolver> sorters) {
         if (!file.exists()) {
             Log.w(TAG, "Import file not found: " + file.getAbsolutePath());
             return null;
@@ -138,6 +143,14 @@ public class MissionPackageEventHandler implements IMissionPackageEventHandler {
         for (ImportResolver sorter : sorters) {
             // see if this sorter can handle the current file
             if (sorter.match(file)) {
+
+                // Make sure content type matches if one was specified
+                if (contentType != null) {
+                    Pair<String, String> p = sorter.getContentMIME();
+                    if (p == null || !contentType.equals(p.first))
+                        continue;
+                }
+
                 // check if we will be overwriting an existing file
                 File destPath = sorter.getDestinationPath(file);
                 if (destPath == null) {

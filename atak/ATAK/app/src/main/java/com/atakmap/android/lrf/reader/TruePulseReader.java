@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothDevice;
 
 import com.atakmap.coremap.conversions.ConversionFactors;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
 /**
@@ -56,7 +57,7 @@ public class TruePulseReader extends LRFReader {
         if (d == null)
             return;
 
-        final String buf = new String(d);
+        final String buf = new String(d, FileSystemUtils.UTF8_CHARSET);
 
         //Log.d(TAG, "read in: " + buf);
 

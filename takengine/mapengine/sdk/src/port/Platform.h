@@ -41,6 +41,15 @@ namespace TAK {
                 TEDT_Float32,
                 TEDT_Float64,
             };
+
+            ENGINE_API void DataType_convert(void *dst, const void *src, size_t count, DataType dstType, DataType srcType) NOTHROWS;
+
+            ENGINE_API size_t DataType_size(DataType dataType) NOTHROWS;
+            ENGINE_API bool DataType_isFloating(DataType dataType) NOTHROWS;
+            ENGINE_API bool DataType_isInteger(DataType dataType) NOTHROWS;
+            ENGINE_API bool DataType_isUnsignedInteger(DataType dataType) NOTHROWS;
+
+
             
             /**
              * Returns the current system time, expressed as milliseconds

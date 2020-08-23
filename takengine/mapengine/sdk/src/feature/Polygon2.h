@@ -85,18 +85,19 @@ namespace TAK {
                  */
                 std::size_t getNumInteriorRings() const NOTHROWS;
             public :;
-                virtual std::size_t getDimension() const NOTHROWS;
-                virtual Util::TAKErr getEnvelope(Envelope2 *value) const NOTHROWS;
+                virtual std::size_t getDimension() const NOTHROWS override;
+                virtual Util::TAKErr getEnvelope(Envelope2 *value) const NOTHROWS override;
             private :
-                virtual Util::TAKErr setDimensionImpl(const std::size_t dimension) NOTHROWS;
-                virtual bool equalsImpl(const Geometry2 &other) NOTHROWS;
+                virtual Util::TAKErr setDimensionImpl(const std::size_t dimension) NOTHROWS override;
+                virtual bool equalsImpl(const Geometry2 &other) NOTHROWS override;
             private :
                 std::shared_ptr<LineString2> exteriorRing;
                 std::vector<std::shared_ptr<LineString2>> interiorRings;
                 std::size_t dimension;
             };
 
-            Util::TAKErr Polygon2_fromEnvelope(Geometry2Ptr_const &value, const Envelope2 &e) NOTHROWS;
+            ENGINE_API Util::TAKErr Polygon2_fromEnvelope(Geometry2Ptr_const &value, const Envelope2 &e) NOTHROWS;
+            ENGINE_API Util::TAKErr Polygon2_fromEnvelope(Geometry2Ptr &value, const Envelope2 &e) NOTHROWS;
         }
     }
 }

@@ -81,6 +81,7 @@ public class MissionPackagePreferenceListener implements
                 }
                 break;
             }
+            case WebServer.SECURE_SERVER_PORT_KEY:
             case WebServer.SERVER_PORT_KEY: {
                 // TODO use int directly?
                 int port = getInt(sharedPreferences,

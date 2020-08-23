@@ -64,8 +64,10 @@
     <!-- privilege required to obtain GPS, used within the location components 
          in the app  -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    
     <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS"/>
+
+    <!-- required to allow for background gathering of information on Android 10+ -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
 
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
@@ -81,6 +83,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
     <uses-permission android:name="android.permission.GET_TASKS" />
+
 
 
 
@@ -132,10 +135,19 @@
     <!-- used to interact inside an container with the new KNOX Samsung rollouts -->
     <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS" tools:ignore="ProtectedPermissions"/>
 
+    <!-- used to install and uninstall packages -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES"/>
+
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
     <uses-feature android:name="android.hardware.usb.host" />
     <uses-feature android:name="android.hardware.usb.accessory" />
+
+    <!-- Tell the system this app requires OpenGL ES 3.0. -->
+    <uses-feature android:glEsVersion="0x00030000" android:required="true" />
+
+
+
 
     <!-- NOTE: The ATAKActivity needs to be run in singleTask mode because of 
          how the GLSurface is being used and abused.  Up until this change,
@@ -144,16 +156,21 @@
          the ATAKActivity ends properly when Quit is selected, otherwise 
          you will not be able to rerun app until you force quit the process.  -->
  
-            
+    <!-- Enable legacy external storage behavior as a temporary fix.   Need to consider a move 
+         to scoped storage in the future -->
+
     <!-- This application does not make use of google play so it is not subject to the 
          Google Play Service Updated Security Provider bad practice.  We also deploy on 
          devices that do not ship with Google Play Services -->
     <application
+        android:requestLegacyExternalStorage="true"
         android:hardwareAccelerated="true"
         android:icon="@drawable/ic_atak_launcher"
         android:label="@string/app_name"
         android:theme="@style/ATAKTheme"
         android:name="com.atakmap.app.ATAKApplication"
+        android:extractNativeLibs="true"
+        android:usesCleartextTraffic="true"
         android:description="@string/app_desc"
         android:allowBackup="false"
         android:supportsRtl="false">
@@ -189,7 +206,7 @@
                   android:exported="false"/>
 
         <provider
-            android:name="android.support.v4.content.FileProvider"
+            android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"
             android:exported="false"
             android:grantUriPermissions="true">
@@ -257,10 +274,10 @@
         </activity>
         <activity
             android:name="com.atakmap.android.video.legacy.Gv2FMobilePlayer"
-            android:screenOrientation="sensorLandscape" />
+            android:screenOrientation="behind" />
         <activity
             android:name="com.atakmap.comms.app.CotManagerTabActivity"
-            android:screenOrientation="sensorLandscape" >
+            android:screenOrientation="behind" >
         </activity>
         <activity
             android:name="com.atakmap.comms.app.CotInputsListActivity"
@@ -268,7 +285,7 @@
         </activity>
         <activity
             android:name="com.atakmap.comms.app.CotObjectsListActivity"
-            android:screenOrientation="sensorLandscape" >
+            android:screenOrientation="behind" >
         </activity>
         <activity
             android:name="com.atakmap.comms.app.AddNetInfoActivity"
@@ -288,11 +305,11 @@
         </activity>
         <activity
             android:name="com.atakmap.android.drawing.KmlImportListActivity"
-            android:screenOrientation="sensorLandscape" />
+            android:screenOrientation="behind" />
         <activity
             android:name="com.atakmap.app.SettingsActivity"
             android:configChanges="orientation"
-            android:screenOrientation="sensorLandscape">
+            android:screenOrientation="behind">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ATAKActivity" />
@@ -300,7 +317,7 @@
         <activity
             android:name="com.atakmap.app.preferences.LocationSettingsActivity"
             android:configChanges="orientation"
-            android:screenOrientation="sensorLandscape">
+            android:screenOrientation="behind">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ATAKActivity" />
@@ -308,7 +325,7 @@
         <activity
             android:name="com.atakmap.app.preferences.NetworkSettingsActivity"
             android:configChanges="orientation"
-            android:screenOrientation="sensorLandscape">
+            android:screenOrientation="behind">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".ATAKActivity" />
@@ -316,7 +333,7 @@
         <activity
             android:name="com.atakmap.app.preferences.AppMgmtSettingsActivity"
             android:configChanges="orientation"
-            android:screenOrientation="sensorLandscape">
+            android:screenOrientation="behind">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.atakmap.android.update.AppMgmtActivity" />
@@ -363,6 +380,10 @@
                   android:configChanges="keyboardHidden|orientation|screenSize"/>
         <activity-alias android:name="plugins.host.ProcessKillActivity" 
                         android:targetActivity="com.atak.plugins.impl.ATAKProcessKillActivity"/>
+
+        <!-- As of Android 10 the Apache libries are no longer supplied unless this attribute
+             is provided -->
+        <uses-library android:name="org.apache.http.legacy" android:required="false"/>
 
     </application>
 </manifest>

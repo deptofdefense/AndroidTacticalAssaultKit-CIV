@@ -1,7 +1,7 @@
 
 package com.atakmap.android.database;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.spi.ServiceProvider;

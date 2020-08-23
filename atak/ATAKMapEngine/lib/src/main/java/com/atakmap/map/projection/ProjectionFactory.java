@@ -1,6 +1,8 @@
 
 package com.atakmap.map.projection;
 
+import java.lang.ref.WeakReference;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
@@ -16,7 +18,7 @@ public final class ProjectionFactory {
         MapProjectionDisplayModel.registerModel(ECEFProjection.DISPLAY_MODEL);
     }
     
-
+    private final static Map<Integer, WeakReference<Projection>> cache = new HashMap<>();
 
     private ProjectionFactory() {}
 
@@ -32,7 +34,21 @@ public final class ProjectionFactory {
      */
     public static native void setPreferLibrarySpi(boolean v);
 
-    public static native Projection getProjection(int srid);
+    public static Projection getProjection(int srid) {
+        Projection retval = null;
+        synchronized(spiToWrapper) {
+            WeakReference<Projection> ref = cache.get(srid);
+            do {
+                if(ref != null)
+                    retval = ref.get();
+                if(retval != null)
+                    break;
+                retval = getProjectionImpl(srid);
+                cache.put(srid, new WeakReference<>(retval));
+            } while(false);
+        }
+        return retval;
+    }
     
     public static void registerSpi(ProjectionSpi spi) {
         registerSpi(spi, 0);
@@ -50,9 +66,9 @@ public final class ProjectionFactory {
         if(spi == null)
             throw new NullPointerException();
         synchronized(spiToWrapper) {
-
             if(spiToWrapper.containsKey(spi))
                 return;
+            cache.clear();
             Pointer wrapper = registerSpiImpl(spi, priority);
             spiToWrapper.put(spi, wrapper);
         }
@@ -62,6 +78,7 @@ public final class ProjectionFactory {
         Pointer wrapper;
         synchronized(spiToWrapper) {
             wrapper = spiToWrapper.remove(spi);
+            cache.clear();
         }
         if(wrapper == null)
             return;
@@ -90,4 +107,6 @@ public final class ProjectionFactory {
      * @param pointer
      */
     static native void unregisterSpiImpl(Pointer pointer);
+
+    static native Projection getProjectionImpl(int srid);
 }

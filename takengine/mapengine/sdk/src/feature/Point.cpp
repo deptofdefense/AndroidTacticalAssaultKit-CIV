@@ -78,12 +78,12 @@ namespace feature                       // Open feature namespace.
 {
 
 void
-Point::set (double x,
-            double y)
+Point::set (double x_val,
+            double y_val)
     throw ()
   {
-    Point::x = x;
-    Point::y = y;
+    Point::x = x_val;
+    Point::y = y_val;
     if (getDimension () == _3D)
       {
         z = 0;
@@ -92,9 +92,9 @@ Point::set (double x,
 
 
 void
-Point::set (double x,
-            double y,
-            double z)
+Point::set (double x_val,
+            double y_val,
+            double z_val)
     throw (std::out_of_range)
   {
     if (getDimension () == _2D)
@@ -102,9 +102,9 @@ Point::set (double x,
         throw std::out_of_range ("atakmap::feature::Point::set: "
                                  "No Z value in 2D point");
       }
-    Point::x = x;
-    Point::y = y;
-    Point::z = z;
+    Point::x = x_val;
+    Point::y = y_val;
+    Point::z = z_val;
   }
 
 ///

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     style="@style/FullDropdownStyle"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -10,21 +12,18 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_alignParentBottom="true"
-        android:paddingBottom="3dp"
-        android:visibility="gone">
+        android:descendantFocusability="blocksDescendants"
+        android:gravity="center_vertical"
+        android:background="@drawable/overlay_title_background"
+        android:visibility="gone"
+        tools:visibility="visible">
 
         <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
             android:id="@+id/lastPointIcon"
-            android:layout_gravity="center"
-            android:layout_marginEnd="5dp"
-            android:paddingTop="3dp"
-            android:paddingBottom="3dp"
-            android:maxWidth="24dp"
-            android:maxHeight="24dp"
-            android:minWidth="24dp"
-            android:minHeight="24dp" />
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="@dimen/auto_space_big"
+            android:src="@drawable/cot_icon_sugp"/>
 
         <LinearLayout
             android:layout_width="0dp"
@@ -35,56 +34,49 @@
                 android:id="@+id/lastPointLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="start|center_vertical"
-                android:maxLines="1"
+                android:singleLine="true"
                 android:text="@string/point_dropper_text8"
-                android:textSize="@dimen/draper_small_font"
-                android:textColor="#ffffffff"/>
+                android:textSize="@dimen/draper_font"
+                android:textColor="#FFF"/>
 
             <TextView
                 android:id="@+id/lastPointTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="start|center_vertical"
-                android:maxLines="1"
+                android:singleLine="true"
+                android:ellipsize="end"
                 android:text="@string/title_lower"
-                android:textSize="@dimen/draper_small_font"
-                android:textColor="#ffffffff" />
+                android:textSize="@dimen/draper_font"
+                android:textColor="#FFF" />
         </LinearLayout>
 
         <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:background="#EEE"
+            android:layout_height="wrap_content"
             android:orientation="horizontal">
-            <Button
+            <ImageButton
                 android:id="@+id/lastPointSend"
-                style="@style/darkButton" android:padding="4dp"
-                android:layout_gravity="center_vertical"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:textColor="#FFF"
-                android:text="@string/send"
-                android:textSize="@dimen/draper_small_font" />
+                style="@style/darkButton"
+                android:padding="@dimen/auto_margin"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/send_square"/>
 
-            <Button
+            <ImageButton
                 android:id="@+id/lastPointRename"
-                style="@style/darkButton" android:padding="4dp"
-                android:layout_gravity="center_vertical"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:textColor="#FFF"
-                android:text="@string/rename"
-                android:textSize="@dimen/draper_small_font" />
+                style="@style/darkButton"
+                android:padding="@dimen/auto_margin"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_edit"/>
 
-            <Button
+            <ImageButton
                 android:id="@+id/lastPointDelete"
-                style="@style/darkButton" android:padding="4dp"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:textColor="#FFF"
-                android:text="@string/del_title"
-                android:textSize="@dimen/draper_small_font" />
+                style="@style/darkButton"
+                android:padding="@dimen/auto_margin"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:src="@drawable/ic_menu_delete"/>
 
         </LinearLayout>
 
@@ -127,13 +119,14 @@
                 android:textColor="#FFFF"
                 android:layout_width="fill_parent"
                 android:layout_height="@dimen/dropdown_bottom_bar_height"
-                android:textSize="16sp"
+                android:textSize="@dimen/draper_large_font"
                 android:text="@string/point_dropper_text9"
-                android:gravity="start"
-                android:maxLines="1"/>
+                android:ellipsize="end"
+                android:gravity="start|center_vertical"
+                android:singleLine="true"/>
         </RelativeLayout>
 
-        <android.support.v4.view.ViewPager
+        <androidx.viewpager.widget.ViewPager
                 android:id="@+id/enterLocationIconPalletPager"
                 android:layout_width="match_parent"
                 android:layout_height="fill_parent"/>

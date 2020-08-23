@@ -469,7 +469,7 @@ public class GenericPointDetailsView extends GenericDetailsView implements
 
     @Override
     protected void _onHeightSelected() {
-        createHeightDialog(_point, R.string.enter_point_height);
+        createHeightDialog(_point, R.string.enter_point_height, null);
     }
 
     @Override

@@ -46,6 +46,9 @@ namespace TAK {
 
                 bool twoSided : 1;
             };
+
+            ENGINE_API Util::TAKErr Material_setBufferIndexTextureURI(Material *material, size_t bufferIndex) NOTHROWS;
+            ENGINE_API Util::TAKErr Material_getBufferIndexTextureURI(size_t *bufferIndex, const char *URI) NOTHROWS;
         }
     }
 }

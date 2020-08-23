@@ -34,8 +34,8 @@ OGRDriverDefinition2Spi::~OGRDriverDefinition2Spi() NOTHROWS
 TAKErr TAK::Engine::Feature::OGRDriverDefinition2_create(OGRDriverDefinition2Ptr &value, const char *path, const char *type) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, getSpisMutex());
+    Lock lock(getSpisMutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     SpiRegistry &spis = getSpis();
@@ -50,8 +50,8 @@ TAKErr TAK::Engine::Feature::OGRDriverDefinition2_create(OGRDriverDefinition2Ptr
 TAKErr TAK::Engine::Feature::OGRDriverDefinition2_registerSpi(const std::shared_ptr<OGRDriverDefinition2Spi> &spi) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, getSpisMutex());
+    Lock lock(getSpisMutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     SpiRegistry &spis = getSpis();
@@ -63,8 +63,8 @@ TAKErr TAK::Engine::Feature::OGRDriverDefinition2_registerSpi(const std::shared_
 TAKErr TAK::Engine::Feature::OGRDriverDefinition2_unregisterSpi(const OGRDriverDefinition2Spi *spi) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, getSpisMutex());
+    Lock lock(getSpisMutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     SpiRegistry &spis = getSpis();

@@ -9,7 +9,7 @@
 namespace TAK {
     namespace Engine {
         namespace Util {
-            enum ENGINE_API LogLevel
+            enum LogLevel
             {
                 TELL_All,
                 TELL_Debug,

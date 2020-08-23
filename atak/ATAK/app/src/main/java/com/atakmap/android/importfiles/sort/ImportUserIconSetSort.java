@@ -37,7 +37,8 @@ public class ImportUserIconSetSort extends ImportInPlaceResolver {
 
     public ImportUserIconSetSort(Context context, boolean validateExt) {
         super(".zip", null, validateExt, false, true, context
-                .getString(R.string.user_icon_set));
+                .getString(R.string.user_icon_set),
+                context.getDrawable(R.drawable.cot_icon_sugp));
     }
 
     @Override

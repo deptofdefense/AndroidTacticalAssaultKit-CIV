@@ -1,6 +1,8 @@
 
 package com.atakmap.android.importfiles.sort;
 
+import android.graphics.drawable.Drawable;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
@@ -19,13 +21,21 @@ public abstract class ImportInternalSDResolver extends ImportResolver {
     private static final String TAG = "ImportInternalSDResolver";
 
     private final String displayName;
+    private final Drawable icon;
+
+    public ImportInternalSDResolver(String ext, String folderName,
+            boolean validateExt, boolean copyFile,
+            String displayName, Drawable icon) {
+        super(ext, folderName, validateExt, copyFile);
+        this.displayName = displayName;
+        this.icon = icon;
+    }
 
     public ImportInternalSDResolver(String ext, String folderName,
             boolean validateExt,
             boolean copyFile,
             String displayName) {
-        super(ext, folderName, validateExt, copyFile);
-        this.displayName = displayName;
+        this(ext, folderName, validateExt, copyFile, displayName, null);
     }
 
     /**
@@ -108,5 +118,10 @@ public abstract class ImportInternalSDResolver extends ImportResolver {
     @Override
     public String getDisplayableName() {
         return this.displayName;
+    }
+
+    @Override
+    public Drawable getIcon() {
+        return this.icon != null ? this.icon : super.getIcon();
     }
 }

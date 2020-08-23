@@ -1,7 +1,7 @@
 
 package com.atakmap.android.user.icon;
 
-import android.support.v4.app.Fragment;
+import androidx.fragment.app.Fragment;
 
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;

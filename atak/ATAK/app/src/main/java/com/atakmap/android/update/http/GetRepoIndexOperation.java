@@ -222,7 +222,8 @@ public final class GetRepoIndexOperation extends HTTPOperation {
             if (android.os.Build.VERSION.SDK_INT < 26) {
                 builder = new Notification.Builder(context);
             } else {
-                builder = new Notification.Builder(context, "com.atakmap.app.def");
+                builder = new Notification.Builder(context,
+                        "com.atakmap.app.def");
             }
 
             builder.setContentTitle(

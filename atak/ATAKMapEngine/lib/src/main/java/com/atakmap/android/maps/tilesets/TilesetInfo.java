@@ -29,6 +29,7 @@ import android.database.sqlite.SQLiteDatabase;
 
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.xml.XMLUtils;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.raster.mobileimagery.MobileImageryRasterLayer2;
 import com.atakmap.map.layer.raster.osm.OSMDroidZipLayerInfoSpi;
@@ -404,15 +405,7 @@ public class TilesetInfo {
     private static DatasetDescriptor _parseXml(InputStream in, String uri)
             throws ParserConfigurationException, SAXException, IOException {
         try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            try { 
-                dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            } catch (Exception ignored) {
-            }
-            try {  
-                dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            } catch (Exception ignored) {
-            }
+            DocumentBuilderFactory dbf = XMLUtils.getDocumenBuilderFactory();
 
  
             DocumentBuilder db = dbf.newDocumentBuilder();

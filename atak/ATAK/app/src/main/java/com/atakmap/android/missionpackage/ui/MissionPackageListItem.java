@@ -7,6 +7,8 @@ import com.atakmap.android.missionpackage.file.NameValuePair;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.assets.Icon;
 
+import java.util.Collection;
+
 /**
  * UI convenience wrapper around MissionPackageContent
  * 
@@ -83,6 +85,9 @@ public abstract class MissionPackageListItem {
 
     public MissionPackageContent getContent() {
         return this._content;
+    }
+
+    public void addHashtags(Collection<String> tags) {
     }
 
     @Override

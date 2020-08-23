@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Developed by BBN, extended by byoung Tables: (all same schema) transferFileinfo: Files available
+ * Tables: (all same schema) transferFileinfo: Files available
  * for download savedFileinfo: Files saved by user, not yet available for download
  */
 public class FileInfoPersistanceHelper extends SQLiteOpenHelper {

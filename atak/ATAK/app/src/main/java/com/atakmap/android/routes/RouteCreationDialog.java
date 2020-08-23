@@ -17,6 +17,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
@@ -31,6 +34,9 @@ import com.atakmap.android.maps.MapActivity;
 import com.atakmap.android.maps.MapComponent;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
+import com.atakmap.android.routes.routearound.RouteAroundRegionManager;
+import com.atakmap.android.routes.routearound.RouteAroundRegionManagerView;
+import com.atakmap.android.routes.routearound.RouteAroundRegionViewModel;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.user.geocode.GeocodingTask;
 import com.atakmap.android.user.geocode.ReverseGeocodingTask;
@@ -83,6 +89,10 @@ public class RouteCreationDialog extends BroadcastReceiver implements
     private TextView _startCoord, _destCoord;
     private LinearLayout _routePlanOptions;
 
+    private static RouteAroundRegionManager _routeAroundManager;
+    private static RouteAroundRegionViewModel _routeAroundVM;
+    private static LinearLayout _routeAroundOptions;
+
     private String _resolvedStartAddr, _resolvedDestAddr;
     private GeoPointMetaData _resolvedStartPoint, _resolvedDestPoint;
     private boolean _finishingLookup = false;
@@ -91,6 +101,7 @@ public class RouteCreationDialog extends BroadcastReceiver implements
     private RoutePlannerInterface _autoPlan;
     private File recentlyUsed = FileSystemUtils
             .getItem("tools/route/recentlyused.txt");
+    private LayoutInflater _inflater;
 
     public RouteCreationDialog(MapView mapView) {
         _mapView = mapView;
@@ -99,9 +110,83 @@ public class RouteCreationDialog extends BroadcastReceiver implements
         _receiver = RouteMapReceiver.getInstance();
         _route = _receiver.getNewRoute(UUID.randomUUID().toString());
         _unkAddr = _context.getString(R.string.unknown_address);
+        _inflater = LayoutInflater.from(_context);
         _coordFormat = CoordinateFormat.find(_prefs.getString(
                 "coord_display_pref", _context.getString(
                         R.string.coord_display_pref_default)));
+
+        _routeAroundManager = RouteAroundRegionManager.getInstance();
+        _routeAroundVM = new RouteAroundRegionViewModel(_routeAroundManager);
+        _routeAroundOptions = (LinearLayout) _inflater
+                .inflate(R.layout.route_around_layout, null);
+
+        CheckBox avoidRouteAroundRegions = _routeAroundOptions
+                .findViewById(R.id.chk_route_regions);
+        CheckBox avoidGeofences = _routeAroundOptions
+                .findViewById(R.id.chk_route_around_geo_fences);
+        Button openRouteAroundManager = _routeAroundOptions
+                .findViewById(R.id.btn_open_route_around);
+
+        avoidRouteAroundRegions.setChecked(_prefs.getBoolean(
+                RouteAroundRegionManagerView.OPT_AVOID_ROUTE_AROUND_REGIONS,
+                false));
+        avoidGeofences.setChecked(_prefs.getBoolean(
+                RouteAroundRegionManagerView.OPT_AVOID_GEOFENCES, false));
+
+        avoidRouteAroundRegions.setOnCheckedChangeListener(
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton x,
+                            boolean checked) {
+                        _prefs.edit().putBoolean(
+                                RouteAroundRegionManagerView.OPT_AVOID_ROUTE_AROUND_REGIONS,
+                                checked).apply();
+                    }
+                });
+
+        avoidGeofences.setOnCheckedChangeListener(
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton x,
+                            boolean checked) {
+                        _prefs.edit().putBoolean(
+                                RouteAroundRegionManagerView.OPT_AVOID_GEOFENCES,
+                                checked).apply();
+                    }
+                });
+
+        openRouteAroundManager.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                RouteAroundRegionManagerView regionManagerView = new RouteAroundRegionManagerView(
+                        new RouteAroundRegionViewModel(_routeAroundManager));
+                AlertDialog dialog = new AlertDialog.Builder(_context)
+                        .setTitle(R.string.manage_route_around_regions)
+                        .setOnDismissListener(
+                                new DialogInterface.OnDismissListener() {
+                                    @Override
+                                    public void onDismiss(
+                                            DialogInterface dialog) {
+                                        new RouteAroundRegionViewModel(
+                                                _routeAroundManager)
+                                                        .saveState();
+                                    }
+                                })
+                        .setPositiveButton(R.string.done,
+                                new AlertDialog.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog,
+                                            int which) {
+                                        dialog.dismiss();
+                                    }
+                                })
+                        .setView(regionManagerView.createView(_context, null))
+                        .create();
+                regionManagerView.setParentDialog(dialog);
+                regionManagerView.setParentParentDialog(_addrDialog);
+                dialog.show();
+            }
+        });
 
         loadRecentlyUsed();
 
@@ -138,7 +223,8 @@ public class RouteCreationDialog extends BroadcastReceiver implements
                         e);
             } finally {
                 try {
-                    reader.close();
+                    if (reader != null)
+                        reader.close();
                 } catch (Exception e) {
                     // Ignored
                 }
@@ -165,11 +251,20 @@ public class RouteCreationDialog extends BroadcastReceiver implements
                     e);
         } finally {
             try {
-                bufferedWriter.close();
+                if (bufferedWriter != null)
+                    bufferedWriter.close();
             } catch (Exception e) {
                 // Ignored
             }
         }
+    }
+
+    /** DEPRECIATED: This is the old API. Use the version with 5 arguments (which is actually static) */
+    static void setupPlanSpinner(final Spinner spinner,
+                                 final List<Entry<String, RoutePlannerInterface>> _planners,
+                                 final LinearLayout routePlanOptions,
+                                 final AlertDialog addrDialog) {
+        setupPlanSpinner(spinner, _planners, routePlanOptions, addrDialog, _routeAroundOptions);
     }
 
     /** 
@@ -177,8 +272,9 @@ public class RouteCreationDialog extends BroadcastReceiver implements
      */
     static void setupPlanSpinner(final Spinner spinner,
             final List<Entry<String, RoutePlannerInterface>> _planners,
-            final LinearLayout _routePlanOptions,
-            final AlertDialog addrDialog) {
+            final LinearLayout routePlanOptions,
+            final AlertDialog addrDialog,
+            final LinearLayout routeAroundOptions) {
         spinner.setOnItemSelectedListener(new SimpleItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parentView,
@@ -192,13 +288,15 @@ public class RouteCreationDialog extends BroadcastReceiver implements
 
                 String plannerName = (String) spinner
                         .getItemAtPosition(position);
-                _routePlanOptions.removeAllViews();
+                routePlanOptions.removeAllViews();
                 for (Entry<String, RoutePlannerInterface> k : _planners) {
-                    if (plannerName.equals(k.getValue().getDescriptiveName())) {
-
-                        _routePlanOptions.addView(
+                    if (plannerName != null && plannerName
+                            .equals(k.getValue().getDescriptiveName())) {
+                        routePlanOptions.addView(
                                 k.getValue().getOptionsView(addrDialog),
                                 lpView);
+                        if (k.getValue().canRouteAroundRegions())
+                            routePlanOptions.addView(routeAroundOptions);
                     }
                 }
             }
@@ -206,11 +304,14 @@ public class RouteCreationDialog extends BroadcastReceiver implements
         });
 
         String plannerName = (String) spinner.getSelectedItem();
-        _routePlanOptions.removeAllViews();
+        routePlanOptions.removeAllViews();
         for (Entry<String, RoutePlannerInterface> k : _planners) {
-            if (plannerName.equals(k.getValue().getDescriptiveName())) {
-                _routePlanOptions
+            if (plannerName != null
+                    && plannerName.equals(k.getValue().getDescriptiveName())) {
+                routePlanOptions
                         .addView(k.getValue().getOptionsView(addrDialog));
+                if (k.getValue().canRouteAroundRegions())
+                    routePlanOptions.addView(routeAroundOptions);
             }
         }
 
@@ -259,6 +360,7 @@ public class RouteCreationDialog extends BroadcastReceiver implements
     private void onFinish(RoutePlannerInterface rpi) {
         // Finalize route and show details
         _route.setMetaString("entry", "user");
+        _route.setMetaBoolean("creating", true);
         _receiver.getRouteGroup().addItem(_route);
         _route.setVisible(true);
         _route.setColor(_prefs.getInt("route_last_selected_color",
@@ -274,6 +376,7 @@ public class RouteCreationDialog extends BroadcastReceiver implements
         }
     }
 
+    // Show the dialog for creating a route with a route planner.
     private boolean showAddressDialog() {
         // Load route planner interfaces into spinner
         MapComponent mc = ((MapActivity) _context).getMapComponent(
@@ -303,29 +406,35 @@ public class RouteCreationDialog extends BroadcastReceiver implements
 
         Collections.sort(plannerNames, RoutePlannerView.ALPHA_SORT);
 
-        View v = LayoutInflater.from(_context).inflate(
-                R.layout.route_address_dialog, _mapView, false);
-        _startAddr = v.findViewById(R.id.route_start_address);
-        _destAddr = v.findViewById(R.id.route_dest_address);
-        _startCoord = v.findViewById(R.id.route_start_coord);
-        _destCoord = v.findViewById(R.id.route_dest_coord);
-        _routePlanOptions = v
+        View addressEntryView = LayoutInflater.from(_context).inflate(
+                R.layout.route_address_entry, _mapView, false);
+        View routePlanView = LayoutInflater.from(_context).inflate(
+                R.layout.route_planner_options_layout, _mapView, false);
+
+        LinearLayout topLevelLayout = addressEntryView.findViewById(R.id.top_level_layout);
+        topLevelLayout.addView(routePlanView);
+
+        _startAddr = addressEntryView.findViewById(R.id.route_start_address);
+        _destAddr = addressEntryView.findViewById(R.id.route_dest_address);
+        _startCoord = addressEntryView.findViewById(R.id.route_start_coord);
+        _destCoord = addressEntryView.findViewById(R.id.route_dest_coord);
+        _routePlanOptions = routePlanView
                 .findViewById(R.id.route_plan_options);
 
-        final Spinner planSpinner = v.findViewById(
+        final Spinner planSpinner = routePlanView.findViewById(
                 R.id.route_plan_method);
 
         if (!RouteMapReceiver.isNetworkAvailable()) {
             _startAddr.setVisibility(View.GONE);
             _destAddr.setVisibility(View.GONE);
         }
-        v.findViewById(R.id.route_start_address_clear).setOnClickListener(this);
-        v.findViewById(R.id.route_dest_address_clear).setOnClickListener(this);
-        v.findViewById(R.id.route_start_map_select).setOnClickListener(this);
-        v.findViewById(R.id.route_dest_map_select).setOnClickListener(this);
-        v.findViewById(R.id.route_start_address_history)
+        addressEntryView.findViewById(R.id.route_start_address_clear).setOnClickListener(this);
+        addressEntryView.findViewById(R.id.route_dest_address_clear).setOnClickListener(this);
+        addressEntryView.findViewById(R.id.route_start_map_select).setOnClickListener(this);
+        addressEntryView.findViewById(R.id.route_dest_map_select).setOnClickListener(this);
+        addressEntryView.findViewById(R.id.route_start_address_history)
                 .setOnClickListener(this);
-        v.findViewById(R.id.route_dest_address_history)
+        addressEntryView.findViewById(R.id.route_dest_address_history)
                 .setOnClickListener(this);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(_context,
@@ -368,7 +477,7 @@ public class RouteCreationDialog extends BroadcastReceiver implements
 
         AlertDialog.Builder b = new AlertDialog.Builder(_context);
         b.setTitle(R.string.routes_text9);
-        b.setView(v);
+        b.setView(addressEntryView);
         b.setPositiveButton(R.string.create, null);
         b.setNeutralButton(R.string.route_plan_manual_entry,
                 new DialogInterface.OnClickListener() {
@@ -382,7 +491,7 @@ public class RouteCreationDialog extends BroadcastReceiver implements
         _addrDialog = b.create();
 
         setupPlanSpinner(planSpinner, _planners, _routePlanOptions,
-                _addrDialog);
+                _addrDialog, _routeAroundOptions);
 
         _addrDialog.setCancelable(false);
         _addrDialog.show();
@@ -603,9 +712,12 @@ public class RouteCreationDialog extends BroadcastReceiver implements
                         DropDownManager.getInstance().hidePane();
                     }
                 } else {
-                    updateAddress(et, GeoPointMetaData.wrap(gt.getPoint()),
-                            gt.getHumanAddress());
-                    onAddressResolved();
+                    final GeoPoint gp = gt.getPoint();
+                    if (gp != null) {
+                        updateAddress(et, GeoPointMetaData.wrap(gt.getPoint()),
+                                gt.getHumanAddress());
+                        onAddressResolved();
+                    }
                 }
             }
         });

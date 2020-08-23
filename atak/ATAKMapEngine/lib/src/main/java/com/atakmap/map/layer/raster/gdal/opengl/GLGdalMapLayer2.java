@@ -23,6 +23,7 @@ import com.atakmap.map.layer.raster.opengl.GLMapLayerSpi3;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReaderFactory;
 import com.atakmap.map.layer.raster.tilereader.opengl.GLQuadTileNode2;
+import com.atakmap.map.layer.raster.tilereader.opengl.GLQuadTileNode3;
 import com.atakmap.map.layer.raster.tilereader.opengl.GLTiledMapLayer2;
 import com.atakmap.map.layer.raster.tilereader.opengl.PrefetchedInitializer;
 import com.atakmap.map.opengl.GLRenderGlobals;
@@ -32,6 +33,10 @@ import com.atakmap.util.ConfigOptions;
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.gdal;
 
+/**
+ * @deprecated  use {@link GLTiledMapLayer2}
+ */
+@Deprecated
 public class GLGdalMapLayer2 extends GLTiledMapLayer2 implements GLResolvableMapRenderable {
 
     private final static Set<String> SUPPORTED_TYPES = new HashSet<String>();

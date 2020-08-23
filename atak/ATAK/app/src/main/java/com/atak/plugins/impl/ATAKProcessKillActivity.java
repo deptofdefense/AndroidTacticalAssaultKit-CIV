@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Process;
 
+import com.atakmap.android.metrics.activity.MetricActivity;
 import com.atakmap.app.R;
 
 /**
@@ -17,7 +18,7 @@ import com.atakmap.app.R;
  *
  * 
  */
-public class ATAKProcessKillActivity extends Activity
+public class ATAKProcessKillActivity extends MetricActivity
         implements DialogInterface.OnClickListener,
         DialogInterface.OnDismissListener {
 

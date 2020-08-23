@@ -1,38 +1,39 @@
-<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
         android:id="@+id/app_mgmt_search"
-        android:showAsAction="always"
         android:title="@string/search"
-        android:icon="@drawable/ic_action_search"/>
+        android:icon="@drawable/ic_action_search"
+        android:showAsAction="ifRoom" />
     <item
         android:id="@+id/app_mgmt_multiselect"
-        android:showAsAction="always"
         android:title="@string/multiselect"
-        android:icon="@drawable/multiselect"/>
+        android:icon="@drawable/multiselect"
+        android:showAsAction="ifRoom" />
     <item
         android:id="@+id/app_mgmt_syncnow"
-        android:showAsAction="always"
         android:title="@string/sync_now"
-        android:icon="@drawable/sync_original"/>
+        android:icon="@drawable/sync_original"
+        android:showAsAction="ifRoom" />
     <item
         android:id="@+id/app_mgmt_edit"
-        android:showAsAction="always"
         android:title="@string/edit"
-        android:icon="@drawable/ic_menu_settings"/>
+        android:icon="@drawable/ic_menu_settings"
+        android:showAsAction="ifRoom" />
     <item
         android:id="@+id/app_mgmt_about"
-        android:showAsAction="always"
         android:title="@string/about"
-        android:icon="@drawable/ic_dialog_hint"/>
+        android:icon="@drawable/ic_dialog_hint"
+        android:showAsAction="ifRoom" />
     <item
         android:id="@+id/app_mgmt_multi_done"
-        android:showAsAction="always"
         android:visible="false"
-        android:title="@string/done"/>
+        android:title="@string/done"
+        android:showAsAction="ifRoom" />
     <item
         android:id="@+id/app_mgmt_multi_cancel"
-        android:showAsAction="always"
         android:visible="false"
-        android:title="@string/cancel"/>
+        android:title="@string/cancel"
+        android:showAsAction="ifRoom" />
 </menu> 

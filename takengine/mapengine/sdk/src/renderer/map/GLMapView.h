@@ -1,7 +1,7 @@
 #ifndef ATAKMAP_RENDERER_GLMAPVIEW_H_INCLUDED
 #define ATAKMAP_RENDERER_GLMAPVIEW_H_INCLUDED
 
-#include "renderer/GLRenderContext.h"
+#include "core/RenderContext.h"
 #include "renderer/map/GLMapRenderable.h"
 #include "renderer/map/layer/GLLayer.h"
 #include "core/AtakMapView.h"
@@ -106,13 +106,13 @@ namespace atakmap
                     
                 double &pixelDensity;
             public :
-                GLMapView(GLRenderContext *ctx, core::AtakMapView *aview, int left, int bottom, int right, int top);
+                GLMapView(TAK::Engine::Core::RenderContext *ctx, core::AtakMapView *aview, int left, int bottom, int right, int top);
                 GLMapView(std::unique_ptr<TAK::Engine::Renderer::Core::GLMapView2, void(*)(const TAK::Engine::Renderer::Core::GLMapView2 *)> &&opaque) NOTHROWS;
                 ~GLMapView();
 
                 void dispose();
 
-                GLRenderContext *getRenderContext() const;
+                TAK::Engine::Core::RenderContext *getRenderContext() const;
                 core::AtakMapView *getView() const;
 
                 // Offload to GL thread
@@ -153,18 +153,16 @@ namespace atakmap
                 int getTop() const;
                 int getBottom() const;
 
-                void mapMoved(core::AtakMapView *view,
-                    const bool animate);
+                void mapMoved(core::AtakMapView *map_view, const bool animate) override;
 
-                void mapProjectionChanged(core::AtakMapView *view);
+                void mapProjectionChanged(core::AtakMapView *map_view) override;
 
-                void mapLayerAdded(core::AtakMapView *mapView, atakmap::core::Layer *layer);
+                void mapLayerAdded(core::AtakMapView *mapView, atakmap::core::Layer *layer) override;
 
-                void mapLayerRemoved(core::AtakMapView *mapView, atakmap::core::Layer *layer);
-                void mapLayerPositionChanged(core::AtakMapView *mapView, atakmap::core::Layer *layer, const int oldPosition,
-                    const int newPosition);
+                void mapLayerRemoved(core::AtakMapView *mapView, atakmap::core::Layer *layer) override;
+                void mapLayerPositionChanged(core::AtakMapView *mapView, atakmap::core::Layer *layer, const int oldPosition, const int newPosition) override;
 
-                void mapControllerFocusPointChanged(core::AtakMapController *controller, const atakmap::math::Point<float> * const focus);
+                void mapControllerFocusPointChanged(core::AtakMapController *controller, const atakmap::math::Point<float> * const focus) override;
             protected :
                 /** prepares the scene for rendering */
                 void prepareScene();

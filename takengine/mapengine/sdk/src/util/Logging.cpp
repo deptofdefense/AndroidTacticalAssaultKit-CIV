@@ -15,7 +15,7 @@ namespace
         LoggerAdapter(Logger *impl) NOTHROWS;
     public :
         /** returns 0 on success, non-zero on error */
-        virtual int print(const LogLevel lvl, const char *fmt, va_list arg) NOTHROWS;
+        int print(const LogLevel lvl, const char *fmt, va_list arg) NOTHROWS override;
     private :
         Logger *impl;
     };
@@ -30,7 +30,7 @@ Logger::~Logger()
 void Logger::setLogger(Logger *l)
 {
     if (!l)
-        Logger_setLogger(std::move(LoggerPtr(NULL, NULL)));
+        Logger_setLogger(std::move(LoggerPtr(nullptr, nullptr)));
     else
         Logger_setLogger(std::move(LoggerPtr(new LoggerAdapter(l), Memory_deleter_const<Logger2, LoggerAdapter>)));
 }

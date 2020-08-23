@@ -174,7 +174,6 @@ public class NotificationUtil {
                 channel.enableVibration(true);
                 nm.createNotificationChannel(channel);
 
-
                 channel = new NotificationChannel(
                         "com.atakmap.app.vib_sound",
                         "TAK Notifications",

@@ -102,12 +102,11 @@ Service*
 ServiceManagerImpl::getService (const char* serviceType)
     const
   {
-    Service* result = NULL;
+    Service* result = nullptr;
 
     if (serviceType)
       {
-        LockPtr lock(NULL, NULL);
-        Lock_create(lock, mutex);
+        Lock lock(mutex);
         auto iter
             (services.find (serviceType));
 
@@ -126,9 +125,8 @@ ServiceManagerImpl::registerService (Service* service)
   {
     if (service && service->getType ())
       {
-        LockPtr lock(NULL, NULL);
-        Lock_create(lock, mutex);
-
+        Lock lock(mutex);
+    
         services[service->getType ()] = service;
       }
   }
@@ -139,8 +137,8 @@ ServiceManagerImpl::unregisterService (Service* service)
   {
     if (service && service->getType ())
       {
-        LockPtr lock(NULL, NULL);
-        Lock_create(lock, mutex);
+        Lock lock(mutex);
+
 
         services.erase (service->getType ());
       }

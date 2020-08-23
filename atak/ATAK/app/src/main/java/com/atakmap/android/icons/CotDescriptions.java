@@ -34,7 +34,7 @@ public class CotDescriptions {
             fileis = assets.open("symbols.dat");
             dis = new DataInputStream(fileis);
             br = new BufferedReader(new InputStreamReader(dis,
-                    Charset.forName(FileSystemUtils.UTF8_CHARSET)));
+                    FileSystemUtils.UTF8_CHARSET));
 
             String line;
 

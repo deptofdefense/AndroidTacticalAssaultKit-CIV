@@ -74,10 +74,10 @@ namespace
     {
     public:
         StoragePathAdapterCatalogCursor(TAK::Engine::DB::QueryPtr &&cursor) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr moveToNext() NOTHROWS;
-        virtual ~StoragePathAdapterCatalogCursor() NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getString(const char **value, const std::size_t columnIndex) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getColumnIndex(std::size_t *value, const char *columnName) NOTHROWS;
+        TAK::Engine::Util::TAKErr moveToNext() NOTHROWS override;
+        ~StoragePathAdapterCatalogCursor() NOTHROWS override;
+        TAK::Engine::Util::TAKErr getString(const char **value, const std::size_t columnIndex) NOTHROWS override;
+        TAK::Engine::Util::TAKErr getColumnIndex(std::size_t *value, const char *columnName) NOTHROWS override;
     private:
         TAK::Engine::Port::String currentRuntimePath;
         std::size_t currentPathColumnIndex;
@@ -101,9 +101,9 @@ static const char * const COLUMN_CATALOG_METADATA_KEY = "key";
 static const char * const COLUMN_CATALOG_METADATA_VALUE = "value";
 
 CatalogDatabase2::CatalogDatabase2(CatalogCurrencyRegistry2 &currencyRegistry_) NOTHROWS :
-    database(NULL, NULL),
+    database(nullptr, nullptr),
     currencyRegistry(currencyRegistry_),
-    updateCatalogEntrySyncStmt(NULL, NULL),
+    updateCatalogEntrySyncStmt(nullptr, nullptr),
     mutex(TEMT_Recursive)
 {}
 
@@ -113,11 +113,11 @@ CatalogDatabase2::~CatalogDatabase2() NOTHROWS
 TAKErr CatalogDatabase2::open(const char *databasePath) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    DatabasePtr db(NULL, NULL);
+    DatabasePtr db(nullptr, nullptr);
     code = Databases_openDatabase(db, databasePath, false);
     TE_CHECKRETURN_CODE(code);
 
@@ -181,9 +181,9 @@ TAKErr CatalogDatabase2::setDatabaseVersion() NOTHROWS
 TAKErr CatalogDatabase2::dropTables() NOTHROWS
 {
     TAKErr code;
-    code = this->database->execute("DROP TABLE IF EXISTS " TBL_CATALOG, NULL, 0);
+    code = this->database->execute("DROP TABLE IF EXISTS " TBL_CATALOG, nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute("DROP TABLE IF EXISTS " TBL_CATALOG_METADATA, NULL, 0);
+    code = this->database->execute("DROP TABLE IF EXISTS " TBL_CATALOG_METADATA, nullptr, 0);
     return code;
 }
 
@@ -201,12 +201,12 @@ TAKErr CatalogDatabase2::createCatalogTable() NOTHROWS
         COL_CATALOG_SYNC " INTEGER, "
         COL_CATALOG_APP_VERSION " INTEGER, "
         COL_CATALOG_APP_DATA " BLOB, "
-        COL_CATALOG_APP_NAME " TEXT)", NULL, 0);
+        COL_CATALOG_APP_NAME " TEXT)", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
     code = this->database->execute("CREATE TABLE " TBL_CATALOG_METADATA " ("
         COL_CATALOG_METADATA_KEY " TEXT, "
-        COL_CATALOG_METADATA_VALUE " TEXT)", NULL, 0);
+        COL_CATALOG_METADATA_VALUE " TEXT)", nullptr, 0);
     return code;
 }
 
@@ -228,8 +228,8 @@ TAKErr CatalogDatabase2::onCatalogEntryAdded(int64_t catalogId) NOTHROWS
 TAKErr CatalogDatabase2::addCatalogEntry(int64_t *rowId, const char *derivedFrom, CatalogCurrency2 &currency) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     return this->addCatalogEntryNoSync(rowId, derivedFrom, currency);
@@ -240,7 +240,7 @@ TAKErr CatalogDatabase2::addCatalogEntryNoSync(int64_t *rowId, const char *deriv
     TAKErr code;
 
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
     code = this->database->compileStatement(stmt, "INSERT INTO " TBL_CATALOG
         " (" COL_CATALOG_PATH ", "
@@ -260,7 +260,7 @@ TAKErr CatalogDatabase2::addCatalogEntryNoSync(int64_t *rowId, const char *deriv
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindInt(4, currency.getAppVersion());
     TE_CHECKRETURN_CODE(code);
-    CatalogCurrency2::AppDataPtr appData(NULL, NULL);
+    CatalogCurrency2::AppDataPtr appData(nullptr, nullptr);
     code = currency.getAppData(appData, derivedFrom);
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindBlob(5, appData->value, appData->length);
@@ -278,8 +278,8 @@ TAKErr CatalogDatabase2::addCatalogEntryNoSync(int64_t *rowId, const char *deriv
 
 TAKErr CatalogDatabase2::updateCatalogEntry(const int64_t rowId, const char *derivedFrom, CatalogCurrency2 &currency) NOTHROWS {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     return this->updateCatalogEntryNoSync(rowId, derivedFrom, currency);
@@ -288,7 +288,7 @@ TAKErr CatalogDatabase2::updateCatalogEntry(const int64_t rowId, const char *der
 TAKErr CatalogDatabase2::updateCatalogEntryNoSync(const int64_t rowId, const char *derivedFrom, CatalogCurrency2 &currency) NOTHROWS {
     TAKErr code;
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
     code = this->database->compileStatement(stmt, "UPDATE " TBL_CATALOG " SET " COL_CATALOG_PATH " = ?, " COL_CATALOG_SYNC " = ?, " COL_CATALOG_APP_NAME
                                                   " = ?, " COL_CATALOG_APP_VERSION " = ?, " COL_CATALOG_APP_DATA
@@ -304,7 +304,7 @@ TAKErr CatalogDatabase2::updateCatalogEntryNoSync(const int64_t rowId, const cha
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindInt(4, currency.getAppVersion());
     TE_CHECKRETURN_CODE(code);
-    CatalogCurrency2::AppDataPtr appData(NULL, NULL);
+    CatalogCurrency2::AppDataPtr appData(nullptr, nullptr);
     code = currency.getAppData(appData, derivedFrom);
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindBlob(5, appData->value, appData->length);
@@ -323,11 +323,11 @@ TAKErr CatalogDatabase2::updateCatalogEntryNoSync(const int64_t rowId, const cha
 TAKErr CatalogDatabase2::validateCatalog() NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    CatalogCursorPtr result(NULL, NULL);
+    CatalogCursorPtr result(nullptr, nullptr);
     code = this->queryCatalog(result);
     TE_CHECKRETURN_CODE(code);
     return this->validateCatalogNoSync(*result);
@@ -336,11 +336,11 @@ TAKErr CatalogDatabase2::validateCatalog() NOTHROWS
 TAKErr CatalogDatabase2::validateCatalogApp(const char *appName) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    CatalogCursorPtr result(NULL, NULL);
+    CatalogCursorPtr result(nullptr, nullptr);
     code = this->queryCatalogApp(result, appName);
     TE_CHECKRETURN_CODE(code);
     return this->validateCatalogNoSync(*result);
@@ -349,11 +349,11 @@ TAKErr CatalogDatabase2::validateCatalogApp(const char *appName) NOTHROWS
 TAKErr CatalogDatabase2::validateCatalogPath(const char *file) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    CatalogCursorPtr result(NULL, NULL);
+    CatalogCursorPtr result(nullptr, nullptr);
     code = this->queryCatalogPath(result, file);
     TE_CHECKRETURN_CODE(code);
     return this->validateCatalogNoSync(*result);
@@ -368,7 +368,7 @@ TAKErr CatalogDatabase2::validateCatalogNoSync(CatalogCursor &result) NOTHROWS
 
     const bool createTransaction = !inTrans;
 
-    std::auto_ptr<Database2::Transaction> transaction(NULL);
+    std::unique_ptr<Database2::Transaction> transaction(nullptr);
 
     if (createTransaction) {
         transaction.reset(new Database2::Transaction(*this->database.get()));
@@ -415,8 +415,7 @@ TAKErr CatalogDatabase2::validateCatalogNoSync(CatalogCursor &result) NOTHROWS
 
 TAKErr CatalogDatabase2::validateCatalogRowNoSync(bool *value, CatalogCursor &row) NOTHROWS
 {
-    CatalogCurrency2 *currency = NULL;
-    const char *file;
+    CatalogCurrency2 *currency = nullptr;
     TAKErr code;
 
     const char *appName;
@@ -424,7 +423,7 @@ TAKErr CatalogDatabase2::validateCatalogRowNoSync(bool *value, CatalogCursor &ro
     if (code == TE_Ok)
         currency = this->currencyRegistry.getCurrency(appName);
     else
-        currency = NULL;
+        currency = nullptr;
 
     code = isValidApp(value, row, currency);
     TE_CHECKRETURN_CODE(code);
@@ -435,8 +434,8 @@ TAKErr CatalogDatabase2::validateCatalogRowNoSync(bool *value, CatalogCursor &ro
 TAKErr CatalogDatabase2::markCatalogEntryValid(const char *file) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     if (!this->updateCatalogEntrySyncStmt.get()) {
@@ -466,7 +465,7 @@ TAKErr CatalogDatabase2::markCatalogEntryValid(const char *file) NOTHROWS
 TAKErr CatalogDatabase2::queryCatalog(CatalogCursorPtr &cursor) NOTHROWS
 {
     TAKErr code;
-    QueryPtr impl(NULL, NULL);
+    QueryPtr impl(nullptr, nullptr);
     code = this->database->query(impl, "SELECT * FROM " TBL_CATALOG);
     TE_CHECKRETURN_CODE(code);
 
@@ -497,7 +496,7 @@ TAKErr CatalogDatabase2::queryRawCatalog(CatalogCursorPtr &cursor, const char *r
     args[0] = arg;
     
     TAKErr code;
-    QueryPtr impl(NULL, NULL);
+    QueryPtr impl(nullptr, nullptr);
     code = this->database->compileQuery(impl, rawQuery);
     TE_CHECKRETURN_CODE(code);
 
@@ -520,12 +519,12 @@ TAKErr CatalogDatabase2::query(QueryPtr &cursor, const char *table, const char *
 
     std::ostringstream sql;
     sql << "SELECT ";
-    if (columns == NULL) {
+    if (columns == nullptr) {
         sql << "* ";
     }
     else if (numCols > 0) {
         sql << columns[0];
-        for (int i = 1; i < numCols; i++) {
+        for (std::size_t i = 1u; i < numCols; i++) {
             sql << ", ";
             sql << columns[i];
         }
@@ -533,15 +532,15 @@ TAKErr CatalogDatabase2::query(QueryPtr &cursor, const char *table, const char *
     }
 
     sql << "FROM " << table;
-    if (selection != NULL)
+    if (selection != nullptr)
         sql << " WHERE " << selection;
-    if (groupBy != NULL)
+    if (groupBy != nullptr)
         sql << " GROUP BY " << groupBy;
-    if (having != NULL)
+    if (having != nullptr)
         sql << " HAVING " << having;
-    if (orderBy != NULL)
+    if (orderBy != nullptr)
         sql << " ORDER BY " << orderBy;
-    if (limit != NULL)
+    if (limit != nullptr)
         sql << " LIMIT " << limit;
 
     //Logger::log(Logger::Debug, "EXECUTE SQL: %s", sql.str().c_str());
@@ -574,7 +573,7 @@ TAKErr CatalogDatabase2::deleteCatalogPath(const char *path, bool automated) NOT
 {
     TAKErr code;
 
-    QueryPtr result(NULL, NULL);
+    QueryPtr result(nullptr, nullptr);
     int64_t catalogId;
 
     code = this->database->compileQuery(result, "SELECT " COL_CATALOG_ID " FROM " TBL_CATALOG
@@ -591,7 +590,7 @@ TAKErr CatalogDatabase2::deleteCatalogPath(const char *path, bool automated) NOT
     TE_CHECKRETURN_CODE(code);
     result.reset();
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
     code = this->database->compileStatement(stmt, "DELETE FROM " TBL_CATALOG " WHERE "
             COL_CATALOG_PATH " = ?");
     TE_CHECKRETURN_CODE(code);
@@ -610,7 +609,7 @@ TAKErr CatalogDatabase2::deleteCatalogPath(const char *path, bool automated) NOT
 TAKErr CatalogDatabase2::deleteCatalogApp(const char *appName) NOTHROWS
 {
     TAKErr code;
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
     code = this->database->compileStatement(stmt, "DELETE FROM " TBL_CATALOG " WHERE "
         COL_CATALOG_APP_NAME " = ?");
@@ -642,7 +641,7 @@ TAKErr CatalogDatabase2::deleteAll() NOTHROWS
 TAKErr CatalogDatabase2::queryFiles(TAK::Engine::Port::Collection<TAK::Engine::Port::String> &filepaths) NOTHROWS
 {
     TAKErr code;
-    CatalogCursorPtr result(NULL, NULL);
+    CatalogCursorPtr result(nullptr, nullptr);
     code = this->queryCatalog(result);
     TE_CHECKRETURN_CODE(code);
 

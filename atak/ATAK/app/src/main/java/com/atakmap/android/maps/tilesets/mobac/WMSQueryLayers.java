@@ -146,7 +146,8 @@ public class WMSQueryLayers extends QueryLayers {
             AtakAuthenticationHandlerHTTP.Connection connection;
             connection = AtakAuthenticationHandlerHTTP
                     .makeAuthenticatedConnection(
-                            (HttpURLConnection) conn, 3);
+                            (HttpURLConnection) conn, 3, true,
+                            AtakAuthenticationHandlerHTTP.UNAUTHORIZED_ONLY);
             conn = connection.conn;
             input = connection.stream;
         } else {
@@ -709,7 +710,7 @@ public class WMSQueryLayers extends QueryLayers {
                     + "</name>");
             out.println("    <version>" + version + "</version>");
             out.println("    <minZoom>" + minZoom + "</minZoom>");
-            out.println("    <maxZoom>" + Math.max(minZoom, 22) + "</maxZoom>");
+            out.println("    <maxZoom>" + Math.max(minZoom, 23) + "</maxZoom>");
             out.println("    <tileType>" + format + "</tileType>");
             out.println("    <url>" + queryLayer.getGetMapURL() + "</url>");
             out.println("    <coordinatesystem>EPSG:" + srid

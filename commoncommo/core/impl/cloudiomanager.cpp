@@ -747,6 +747,28 @@ CommoResult FTPCloudClient::moveResourceInit(int *cloudIOid,
     return COMMO_SUCCESS;
 }
 
+CommoResult FTPCloudClient::deleteResourceInit(int *cloudIOid,
+                                               const char *remotePath)
+{
+    std::string rpath = basePath;
+    rpath += remotePath;
+    removeExtraSlashes(&rpath);
+
+    FTPCloudURLRequest *r = new FTPCloudURLRequest(CLOUDIO_OP_DELETE,
+                                 URLRequest::BUFFER_DOWNLOAD,
+                                 baseUrl,
+                                 "/",
+                                 "",
+                                 useLogin,
+                                 user,
+                                 pass,
+                                 isSSL,
+                                 caCerts);
+    r->setDestPath(rpath);
+    owner->urlManager->initRequest(cloudIOid, this, r);
+    return COMMO_SUCCESS;
+}
+
 CommoResult FTPCloudClient::createCollectionInit(int *cloudIOid,
                                                       const char *path)
 {
@@ -827,6 +849,14 @@ void FTPCloudURLRequest::curlExtraConfig(CURL *curlCtx)
             dhdr += destPath;
             customHeaders = curl_slist_append(customHeaders, shdr.c_str());
             customHeaders = curl_slist_append(customHeaders, dhdr.c_str());
+            CURL_CHECK(curl_easy_setopt(curlCtx, CURLOPT_QUOTE, customHeaders));
+            break;
+        }
+    case CLOUDIO_OP_DELETE:
+        {
+            std::string shdr = "DELE ";
+            shdr += destPath;
+            customHeaders = curl_slist_append(customHeaders, shdr.c_str());
             CURL_CHECK(curl_easy_setopt(curlCtx, CURLOPT_QUOTE, customHeaders));
             break;
         }
@@ -1204,6 +1234,28 @@ CommoResult OwncloudClient::moveResourceInit(int *cloudIOid,
     return COMMO_SUCCESS;
 }
 
+CommoResult OwncloudClient::deleteResourceInit(int *cloudIOid,
+                                               const char *remotePath)
+{
+    std::string rpath = "/";
+    rpath += remotePath;
+    removeExtraSlashes(&rpath);
+
+    OwncloudURLRequest *r = new OwncloudURLRequest(CLOUDIO_OP_DELETE,
+                                 URLRequest::BUFFER_DOWNLOAD,
+                                 baseUrl,
+                                 basePath,
+                                 rpath,
+                                 "",
+                                 useLogin,
+                                 user,
+                                 pass,
+                                 isSSL,
+                                 caCerts);
+    owner->urlManager->initRequest(cloudIOid, this, r);
+    return COMMO_SUCCESS;
+}
+
 CommoResult OwncloudClient::createCollectionInit(int *cloudIOid,
                                                       const char *path)
 {
@@ -1313,6 +1365,10 @@ void OwncloudURLRequest::curlExtraConfig(CURL *curlCtx)
             CURL_CHECK(curl_easy_setopt(curlCtx, CURLOPT_HTTPHEADER, customHeaders));
             break;
         }
+    case CLOUDIO_OP_DELETE:
+        CURL_CHECK(curl_easy_setopt(curlCtx, CURLOPT_CUSTOMREQUEST,
+                                    "DELETE"));
+        break;
     case CLOUDIO_OP_MAKE_COLLECTION:
         CURL_CHECK(curl_easy_setopt(curlCtx, CURLOPT_CUSTOMREQUEST,
                                     "MKCOL"));

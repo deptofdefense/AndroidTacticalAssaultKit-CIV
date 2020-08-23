@@ -219,7 +219,8 @@ public class CotEvent implements Parcelable {
             try {
                 File lf = new File(directory, "cot_" + getLogDateString()
                         + ".log");
-                fileWriter = new PrintWriter(lf, FileSystemUtils.UTF8_CHARSET);
+                fileWriter = new PrintWriter(lf,
+                        FileSystemUtils.UTF8_CHARSET.name());
             } catch (UnsupportedEncodingException uee) {
                 Log.e(TAG, "error: ", uee);
             } catch (FileNotFoundException fnfe) {

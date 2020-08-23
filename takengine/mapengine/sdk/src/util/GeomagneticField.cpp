@@ -154,8 +154,8 @@ namespace
         std::shared_ptr<MAGtype_MagneticModel> tmm;
 
         {
-            LockPtr lock(NULL, NULL);
-            code = Lock_create(lock, state.mutex);
+            Lock lock(state.mutex);
+            code = lock.status;
             TE_CHECKRETURN_CODE(code);
 
             if(!state.loaded) {
@@ -166,7 +166,7 @@ namespace
                 return TE_InvalidArg;
 
             // initialize the 'timely' model as needed
-            uint32_t requestedTime = (year<<8u) | (dayOfYear);
+            auto requestedTime = static_cast <uint32_t>((year << 8u) | (dayOfYear));
             if(requestedTime != state.timeVersion) {
                 int nMax = 0;
                 if (nMax < state.model->nMax)
@@ -177,9 +177,9 @@ namespace
 
                 MAGtype_Date UserDate;
                 UserDate.DecimalYear = year + ((dayOfYear-1u) / days);
-                UserDate.Year = year;
-                UserDate.Month = month;
-                UserDate.Day = day;
+                UserDate.Year = static_cast<int>(year);
+                UserDate.Month = static_cast<int>(month);
+                UserDate.Day = static_cast<int>(day);
 
                 success = MAG_TimelyModifyMagneticModel(UserDate, state.model.get(), tmmPtr.get()); /* Time adjust the coefficients, Equation 19, WMM Technical report */
                 if(!success)

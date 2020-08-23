@@ -3,6 +3,7 @@ package com.atakmap.android.maps;
 
 /**
  * Engine resource reference that points to an entry inside a ZIP archive
+ *
  */
 public class ArchiveEntryMapDataRef extends MapDataRef {
 

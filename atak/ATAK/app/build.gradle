@@ -20,8 +20,8 @@ import java.util.regex.Pattern
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-def ATAK_VERSION = "4.0.0"
-def ATAK_VERSION_SUBMINOR = ".7"
+def ATAK_VERSION = "4.1.0"
+def ATAK_VERSION_SUBMINOR = ".0"
 
 buildscript {
     ext.jacocoVersion = '0.8.5'
@@ -32,7 +32,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.5.3'
+        classpath 'com.android.tools.build:gradle:3.6.3'
         classpath "org.jacoco:org.jacoco.core:$jacocoVersion"
     }
 }
@@ -55,15 +55,19 @@ dependencies {
      implementation project(':ATAKMapEngine:lib')
      implementation fileTree(include: '*.jar', dir: 'libs')
 
-     // move the android support up to the official google offering
-     implementation 'com.android.support:support-v4:26.1.0'
-     implementation 'com.android.support:exifinterface:26.1.0'
+     // Move to the minimal required official google offering for androidx
+     //
+     // As with previous versions, care must be taken not to duplicate the 
+     // inclusion of these libraries in a plugin or utilize libraries with 
+     // different versions.     The attempt is still to keep core as 
+     // lightweight as possible when utilizing any support library to allow 
+     // for greater flexibility for plugin developers.    This is the same 
+     // paradigm that google has moved towards with breaking up the original 
+     // android support libraries.  
 
-
-
-     // for testing purposes 
-     testImplementation 'junit:junit:4.12'
-     testImplementation 'androidx.test:core:1.2.0'
+     implementation 'androidx.fragment:fragment:1.2.4'
+     implementation 'androidx.exifinterface:exifinterface:1.2.0'
+     implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
 
 
      androidTestImplementation 'androidx.test:runner:1.2.0'
@@ -72,7 +76,21 @@ dependencies {
      androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
      androidTestImplementation 'androidx.test.espresso:espresso-intents:3.2.0'
      androidTestImplementation 'androidx.test.ext:junit:1.1.1'
-     androidTestImplementation 'org.mockito:mockito-core:3.1.0'
+
+     androidTestImplementation "org.mockito:mockito-core:3.3.0"
+     androidTestImplementation 'org.powermock:powermock-module-junit4:2.0.2'
+     androidTestImplementation 'org.powermock:powermock-api-mockito2:2.0.2'
+     androidTestImplementation 'org.powermock:powermock-core:2.0.2'
+     androidTestImplementation 'org.powermock:powermock-module-junit4-rule:2.0.2'
+
+
+    // This is an easy way to give androidTest and test access to the ATAK main.jar without needing
+    // to copy and paste the standard block that checks each possible location a bunch more times.
+    // This could backfire if there are other things plugins include as compileOnly that shouldn't
+    // be included this way? If so we should switch to a modified block from ATAKVersions.gradle.
+    configurations {
+        testImplementation.extendsFrom androidTestImplementation
+    }
 
 }
 
@@ -154,11 +172,11 @@ def getCommandFlavor() {
 
     Pattern pattern
     if( tskReqStr.contains( "assemble" ) )
-        pattern = Pattern.compile("assemble(\\w+)(Release|Debug|Sdk)")
+        pattern = Pattern.compile("assemble(\\w+)(Release|Debug|Sdk|Odk)")
     else if( tskReqStr.contains( "install" ) )
-        pattern = Pattern.compile("install(\\w+)(Release|Debug|Sdk)")
+        pattern = Pattern.compile("install(\\w+)(Release|Debug|Sdk|Odk)")
     else
-        pattern = Pattern.compile("generate(\\w+)(Release|Debug|Sdk)")
+        pattern = Pattern.compile("generate(\\w+)(Release|Debug|Sdk|Odk)")
 
     Matcher matcher = pattern.matcher(tskReqStr)
 
@@ -174,19 +192,19 @@ def getCurrentFlavor() {
 }
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion "29.0.2"
+    compileSdkVersion 29
+    buildToolsVersion "29.0.3"
     //ndkVersion "12.1.2977051"
     useLibrary 'org.apache.http.legacy'
 
     defaultConfig {
 
-        // note that even though the targetSdk is 26, we are still setting the
+        // note that even though the targetSdk is 29, we are still setting the
         // minSdk to 21.    Ensure methods that are chosen exist in 21 or 
         // appropriate checks are in place to allow for correct behavior 
         // on versions 21 and up.
 
-        targetSdkVersion 26   
+        targetSdkVersion 29   
         minSdkVersion 21
         multiDexEnabled true
         applicationId = "com.atakmap.app"
@@ -207,8 +225,7 @@ android {
             buildConfigField 'String', 'LEGACY_PREFERENCES_NAME', '"com.atakmap.app_preferences"'
             buildConfigField 'boolean', 'HAS_FIRES', 'false'
             buildConfigField 'boolean', 'MIL_CAPABILITIES', 'false'
-            buildConfigField 'String', 'REDEPLOY_VERSION', '"400b"'
-            buildConfigField 'boolean', 'PLUGIN_CAPABLE', 'true'
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"410c"'
             ndk { abiFilters "armeabi-v7a", "arm64-v8a", "x86" }
         }
 
@@ -226,10 +243,27 @@ android {
             buildConfigField 'String', 'LEGACY_PREFERENCES_NAME', '"com.atakmap.app_preferences"'
             buildConfigField 'boolean', 'HAS_FIRES', 'false'
             buildConfigField 'boolean', 'MIL_CAPABILITIES', 'false'
-            buildConfigField 'String', 'REDEPLOY_VERSION', '"400b"'
-            buildConfigField 'boolean', 'PLUGIN_CAPABLE', 'true'
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"410b"'
             ndk { abiFilters "arm64-v8a" }
         }
+        ////////////////////////////////////////////////////////////////////////////////////////
+        // Due to how this project is configured to do debug and release builds when the release 
+        // build is performed, splits are not currently a viable solution.  During the debug 
+        // build the split fails to pattern match.  Splits also do not achieve the other desired
+        // result of omiting other aspects of the full apk.   Please see the solution selected
+        // as the flavor civSmall
+        ////////////////////////////////////////////////////////////////////////////////////////
+        //splits {
+        // abi {
+        //   enable true
+        //   reset()
+        //   include "armeabi-v7a", "arm64-v8a", "x86"
+        //    universalApk true
+        //  }
+        //}
+
+
+
     }
 
     dexOptions {
@@ -252,6 +286,23 @@ android {
             if (ka != null) keyAlias ka
             if (kp != null) keyPassword kp
         }
+
+        odk {
+            def kf = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyFile')
+            def kfp = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyFilePassword')
+            def ka = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyAlias')
+            def kp = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyPassword')
+
+            if (kf == null) {
+                 throw new GradleException("No signing key configured!")
+            }
+
+            storeFile file(kf)
+            if (kfp != null) storePassword kfp
+            if (ka != null) keyAlias ka
+            if (kp != null) keyPassword kp
+        }
+
 
         debug {
             def kf = getValueFromPropertiesFile(project.rootProject.file('local.properties'), 'takDebugKeyFile')
@@ -305,6 +356,8 @@ android {
             testProguardFiles 'proguard-debug.txt'
             testCoverageEnabled (project.hasProperty('coverage'))
             signingConfig signingConfigs.debug
+            if (project.hasProperty('coverage')) 
+                 android.defaultConfig.minSdkVersion 26
         }
 
         sdk {
@@ -312,6 +365,14 @@ android {
             debuggable true
             minifyEnabled true
             proguardFile 'proguard-sdk.txt'
+            signingConfig signingConfigs.sdk
+        }
+
+        odk {
+            buildConfigField 'String', 'DEV_BANNER', '"DEVELOPER BUILD"'
+            debuggable true
+            minifyEnabled true
+            proguardFile 'proguard-odk.txt'
             signingConfig signingConfigs.sdk
         }
     }
@@ -328,7 +389,7 @@ android {
 
         }
 
-        // for dhsSmall
+        // for civSmall
         civSmall.java.srcDir 'src/civ/java'
         civSmall.assets.srcDir 'src/civ/assets'
         civSmall.res.srcDir 'src/civ/res'
@@ -342,6 +403,7 @@ android {
         debug.setRoot('build-types/debug')
         release.setRoot('build-types/release')
         sdk.setRoot('build-types/sdk')
+        odk.setRoot('build-types/odk')
     }
 
     lintOptions {
@@ -349,8 +411,8 @@ android {
          // Or, if you prefer, you can continue to check for errors in release builds,
          // but continue the build even when errors are found:
          abortOnError true
+         disable "AppCompatCustomView", "AppCompatResource" 
      }
-
     touch('ATAKMapEngine/lib/src/main/jniLibs/arm64-v8a/libtakengine.so')
     touch('ATAKMapEngine/lib/src/main/jniLibs/arm64-v8a/libgdal.so')
     touch('ATAKMapEngine/lib/src/main/jniLibs/arm64-v8a/libspatialite.so')
@@ -420,15 +482,15 @@ android.applicationVariants.all { variant ->
 task copyFilesDebug {
     doLast { 
         copy {
-          from "build/intermediates/transforms/proguard/" + getCurrentFlavor() + "/debug/0.jar"
+          from "./build/intermediates/shrunk_jar/" + getCurrentFlavor() + "Debug/minified.jar"
           into "./build/libs"
-          rename("0.jar", "main.jar")
+          rename("minified.jar", "main.jar")
         }
-        mkdir ("./build/outputs/libs/" + ATAK_VERSION + "." + getCurrentFlavor().toUpperCase())
+        mkdir ("./build/libs/" + ATAK_VERSION + "." + getCurrentFlavor().toUpperCase())
         copy {
-          from "build/intermediates/transforms/proguard/" + getCurrentFlavor() + "/debug/0.jar"
+          from "build/intermediates/shrunk_jar/" + getCurrentFlavor() + "Debug/minified.jar"
           into "./build/libs/" + ATAK_VERSION + "." + getCurrentFlavor().toUpperCase()
-          rename("0.jar", "main.jar")
+          rename("minified.jar", "main.jar")
           println "deployed main.jar to: " + "./build/libs/" + ATAK_VERSION + "." + getCurrentFlavor().toUpperCase()
         }
     }
@@ -439,16 +501,16 @@ task copyFilesRelease {
         // temporary location
         mkdir ("./build/outputs/mapping/release/")
         copy {
-          from "build/outputs/mapping/" + getCurrentFlavor() + "/release/mapping.txt"
+          from "build/outputs/mapping/" + getCurrentFlavor() + "Release/mapping.txt"
           into "./build/outputs/mapping/release"
         }
         copy {
-          from "build/outputs/mapping/" + getCurrentFlavor() + "/release/mapping.txt"
+          from "build/outputs/mapping/" + getCurrentFlavor() + "Release/mapping.txt"
           into "./build/libs/"
           rename("mapping.txt", "mapping-" + getCurrentFlavor() + "-" + getVersionName() + "-" + getVersionCode()  + ".txt")
         }
         copy {
-          from "build/outputs/mapping/" + getCurrentFlavor() + "/release/mapping.txt"
+          from "build/outputs/mapping/" + getCurrentFlavor() + "Release/mapping.txt"
           into "./build/libs/"
         }
         mkdir ("./build/outputs/libs/" + ATAK_VERSION + "." + getCurrentFlavor().toUpperCase())
@@ -463,9 +525,9 @@ task copyFilesSdk {
     doLast {
         copy {
           println "constructed plugin debug jar file for: " +  getCurrentFlavor()
-          from "build/intermediates/transforms/proguard/" + getCurrentFlavor() + "/sdk/0.jar"
+          from "./build/intermediates/shrunk_jar/" + getCurrentFlavor() + "Sdk/minified.jar"
           into "./build/libs"
-          rename("0.jar", "main.jar")
+          rename("minified.jar", "main.jar")
         }
     }
 }
@@ -479,6 +541,7 @@ afterEvaluate {
     Task installDebugTask =  project.tasks.findByName("install" + getCommandFlavor() + "Debug")
     Task assembleDebugTask =  project.tasks.findByName("assemble" + getCommandFlavor() + "Debug")
     Task assembleSdkTask =  project.tasks.findByName("assemble" + getCommandFlavor() + "Sdk")
+    Task assembleOdkTask =  project.tasks.findByName("assemble" + getCommandFlavor() + "Odk")
 
     if (installDebugTask != null) {
         //println("found " + installDebugTask + " marking dependsOn " + assembleDebugTask);
@@ -502,6 +565,10 @@ afterEvaluate {
 
     if (assembleSdkTask != null) {
         assembleSdkTask.finalizedBy(copyFilesSdk)
+    }
+
+    if (assembleOdkTask != null) {
+        assembleOdkTask.finalizedBy(copyFilesSdk)
     }
 
 }
@@ -541,6 +608,7 @@ android.applicationVariants.all { variant ->
             xml.enabled = true
             html.enabled = true
         }
+
 
         def fileFilter = ['**/R.class', '**/R$*.class', '**/BuildConfig.*', '**/Manifest*.*', '**/*Test*.*', 'android/**/*.*']
         def debugTree = fileTree(dir: "$project.buildDir/intermediates/javac/${variant.name}", excludes: fileFilter)

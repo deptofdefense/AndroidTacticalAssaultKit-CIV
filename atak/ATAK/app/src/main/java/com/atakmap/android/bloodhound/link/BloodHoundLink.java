@@ -3,9 +3,9 @@ package com.atakmap.android.bloodhound.link;
 
 import android.graphics.Color;
 
-import com.atakmap.android.bloodhound.BloodHoundButtonTool;
 import com.atakmap.android.bloodhound.BloodHoundPreferences;
 import com.atakmap.android.bloodhound.SimpleSpeedBearingComputer;
+import com.atakmap.android.bloodhound.ui.BloodHoundHUD;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
@@ -17,9 +17,10 @@ import com.atakmap.coremap.conversions.Angle;
 
 /**
  * Represents a link between 2 markers using a R&B line
- * This class is similar to "_Link" in {@link BloodHoundButtonTool}
- * but it's not hardwired into the tool and a lot of the functionality is
- * encapsulated within this class
+ * This class is similar to {@Link BloodhoundToolLink}
+ * but is used specifically for the management of bloodhound lines
+ * created with the radial menu option on a R&B line, not the link
+ * managed by the BloodHound tool itself.
  */
 public class BloodHoundLink implements PointMapItem.OnPointChangedListener,
         MapItem.OnGroupChangedListener {
@@ -144,7 +145,7 @@ public class BloodHoundLink implements PointMapItem.OnPointChangedListener,
         sb.append("ETA: ");
         if (!Double.isNaN(eta)) {
             _p1.setMetaDouble("bloodhoundEta", eta);
-            sb.append(BloodHoundButtonTool.formatTime(eta));
+            sb.append(BloodHoundHUD.formatTime(eta));
         } else
             sb.append("---");
 

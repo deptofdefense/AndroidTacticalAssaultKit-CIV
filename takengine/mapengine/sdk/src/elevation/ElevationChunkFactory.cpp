@@ -31,27 +31,27 @@ namespace
     public :
         AbstractElevationChunk(const char *type, const char *uri, const unsigned int flags, const double resolution, const Polygon2 &bounds, const double ce, const double le, const bool authoritative) NOTHROWS;
     public :
-        virtual TAKErr createData(ElevationChunkDataPtr &value) NOTHROWS = 0;
-        virtual TAKErr sample(double *value, const double latitude, const double longitude) NOTHROWS = 0;
+        TAKErr createData(ElevationChunkDataPtr &value) NOTHROWS override = 0;
+        TAKErr sample(double *value, const double latitude, const double longitude) NOTHROWS override = 0;
     public :
-        const char *getUri() const NOTHROWS;
-        const char *getType() const NOTHROWS;
-        double getResolution() const NOTHROWS;
-        const Polygon2 *getBounds() const NOTHROWS;
-        TAKErr sample(double *value, const std::size_t count, const double *srcLat, const double *srcLng, const std::size_t srcLatStride, const std::size_t srcLngStride, const std::size_t dstStride) NOTHROWS;
-        double getCE() const NOTHROWS;
-        double getLE() const NOTHROWS;
-        bool isAuthoritative() const NOTHROWS;
-        unsigned int getFlags() const NOTHROWS;
+        const char *getUri() const NOTHROWS override;
+        const char *getType() const NOTHROWS override;
+        double getResolution() const NOTHROWS override;
+        const Polygon2 *getBounds() const NOTHROWS override;
+        TAKErr sample(double *value, const std::size_t count, const double *srcLat, const double *srcLng, const std::size_t srcLatStride, const std::size_t srcLngStride, const std::size_t dstStride) NOTHROWS override;
+        double getCE() const NOTHROWS override;
+        double getLE() const NOTHROWS override;
+        bool isAuthoritative() const NOTHROWS override;
+        unsigned int getFlags() const NOTHROWS override;
     private :
-        TAK::Engine::Port::String type;
-        TAK::Engine::Port::String uri;
-        unsigned int flags;
-        double resolution;
-        Polygon2 bounds;
-        double ce;
-        double le;
-        bool authoritative;
+        TAK::Engine::Port::String type_;
+        TAK::Engine::Port::String uri_;
+        unsigned int flags_;
+        double resolution_;
+        Polygon2 bounds_;
+        double ce_;
+        double le_;
+        bool authoritative_;
     };
 
     class DataElevationChunk : public AbstractElevationChunk
@@ -59,14 +59,14 @@ namespace
     public :
         DataElevationChunk(const char *type, const char *uri, const unsigned int flags, const double resolution, const Polygon2 &bounds, const double ce, const double le, const bool authoritative, DataLoaderPtr &&dataLoader) NOTHROWS;
     public :
-        TAKErr createData(ElevationChunkDataPtr &value) NOTHROWS;
-        TAKErr sample(double *value, const double latitude, const double longitude) NOTHROWS;
+        TAKErr createData(ElevationChunkDataPtr &value) NOTHROWS override;
+        TAKErr sample(double *value, const double latitude, const double longitude) NOTHROWS override;
     private :
-        DataLoaderPtr dataLoader;
-        ElevationChunkDataPtr data;
-        GeometryModel2Ptr geomModel;
-        Projection2Ptr proj;
-        Mutex mutex;
+        DataLoaderPtr data_loader_;
+        ElevationChunkDataPtr data_;
+        GeometryModel2Ptr geom_model_;
+        Projection2Ptr proj_;
+        Mutex mutex_;
     };
 
     class SampledElevationChunk : public AbstractElevationChunk
@@ -74,13 +74,13 @@ namespace
     public:
         SampledElevationChunk(const char *type, const char *uri, const unsigned int flags, const double resolution, const Polygon2 &bounds, const double ce, const double le, const bool authoritative, SamplerPtr &&sampler) NOTHROWS;
     public:
-        TAKErr createData(ElevationChunkDataPtr &value) NOTHROWS;
-        TAKErr sample(double *value, const double latitude, const double longitude) NOTHROWS;
-        TAKErr sample(double *value, const std::size_t count, const double *srcLat, const double *srcLng, const std::size_t srcLatStride, const std::size_t srcLngStride, const std::size_t dstStride) NOTHROWS;
+        TAKErr createData(ElevationChunkDataPtr &value) NOTHROWS override;
+        TAKErr sample(double *value, const double latitude, const double longitude) NOTHROWS override;
+        TAKErr sample(double *value, const std::size_t count, const double *srcLat, const double *srcLng, const std::size_t srcLatStride, const std::size_t srcLngStride, const std::size_t dstStride) NOTHROWS override;
     private:
-        SamplerPtr sampler;
-        ElevationChunkDataPtr data;
-        Mutex mutex;
+        SamplerPtr sampler_;
+        ElevationChunkDataPtr data_;
+        Mutex mutex_;
     };
 
     TAKErr validateBounds(const Polygon2 &bounds) NOTHROWS;
@@ -137,31 +137,31 @@ TAKErr ElevationChunkFactory_create(ElevationChunkPtr &value, const char *type, 
 namespace
 {
     AbstractElevationChunk::AbstractElevationChunk(const char *type_, const char *uri_, const unsigned int flags_, const double resolution_, const Polygon2 &bounds_, const double ce_, const double le_, const bool authoritative_) NOTHROWS :
-        type(type_),
-        uri(uri_),
-        flags(flags_),
-        resolution(resolution_),
-        bounds(bounds_),
-        ce(ce_),
-        le(le_),
-        authoritative(authoritative_)
+        type_(type_),
+        uri_(uri_),
+        flags_(flags_),
+        resolution_(resolution_),
+        bounds_(bounds_),
+        ce_(ce_),
+        le_(le_),
+        authoritative_(authoritative_)
     {}
 
     const char *AbstractElevationChunk::getUri() const NOTHROWS
     {
-        return uri;
+        return uri_;
     }
     const char *AbstractElevationChunk::getType() const NOTHROWS
     {
-        return type;
+        return type_;
     }
     double AbstractElevationChunk::getResolution() const NOTHROWS
     {
-        return resolution;
+        return resolution_;
     }
     const Polygon2 *AbstractElevationChunk::getBounds() const NOTHROWS
     {
-        return &bounds;
+        return &bounds_;
     }
     TAKErr AbstractElevationChunk::sample(double *value, const std::size_t count, const double *srcLat, const double *srcLng, const std::size_t srcLatStride, const std::size_t srcLngStride, const std::size_t dstStride) NOTHROWS
     {
@@ -169,65 +169,66 @@ namespace
     }
     double AbstractElevationChunk::getCE() const NOTHROWS
     {
-        return ce;
+        return ce_;
     }
     double AbstractElevationChunk::getLE() const NOTHROWS
     {
-        return le;
+        return le_;
     }
     bool AbstractElevationChunk::isAuthoritative() const NOTHROWS
     {
-        return authoritative;
+        return authoritative_;
     }
     unsigned int AbstractElevationChunk::getFlags() const NOTHROWS
     {
-        return flags;
+        return flags_;
     }
 
     DataElevationChunk::DataElevationChunk(const char *type, const char *uri, const unsigned int flags, const double resolution, const Polygon2 &bounds, const double ce, const double le, const bool authoritative, DataLoaderPtr &&dataLoader) NOTHROWS :
         AbstractElevationChunk(type, uri, flags, resolution, bounds, ce, le, authoritative),
-        dataLoader(std::move(dataLoader)),
-        data(NULL, NULL),
-        geomModel(NULL, NULL),
-        proj(NULL, NULL)
+        data_loader_(std::move(dataLoader)),
+        data_(nullptr, nullptr),
+        geom_model_(nullptr, nullptr),
+        proj_(nullptr, nullptr)
     {}
     TAKErr DataElevationChunk::createData(ElevationChunkDataPtr &value) NOTHROWS
     {
-        return dataLoader->createData(value);
+        return data_loader_->createData(value);
     }
     TAKErr DataElevationChunk::sample(double *value, const double latitude, const double longitude) NOTHROWS
     {
         TAKErr code(TE_Ok);
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
-        TE_CHECKRETURN_CODE(code);
+        {
+            Lock lock(mutex_);
+            code = lock.status;
+            TE_CHECKRETURN_CODE(code);
 
-        if (!this->geomModel.get()) {
-            // initialize data if necessary
-            if (!this->data.get()) {
-                code = this->createData(this->data);
-                TE_CHECKRETURN_CODE(code);
+            if (!this->geom_model_.get()) {
+                // initialize data if necessary
+                if (!this->data_.get()) {
+                    code = this->createData(this->data_);
+                    TE_CHECKRETURN_CODE(code);
+                }
+                if (!data_.get() || !data_->value.get())
+                    return TE_Err;
+                // initialize projection if necessary
+                if (data_->srid != 4326 && ProjectionFactory3_create(this->proj_, data_->srid) != TE_Ok)
+                    return TE_Err;
+
+                //this->geomModel = Models.createGeometryModel(data.value, data.localFrame);
+                this->geom_model_ = GeometryModel2Ptr(new TAK::Engine::Math::Mesh(data_->value, &data_->localFrame), Memory_deleter_const<GeometryModel2, TAK::Engine::Math::Mesh>);
+                if (!this->geom_model_.get())
+                    return TE_Err;
             }
-            if (!data.get() || !data->value.get())
-                return TE_Err;
-            // initialize projection if necessary
-            if (data->srid != 4326 && ProjectionFactory3_create(this->proj, data->srid) != TE_Ok)
-                return TE_Err;
 
-            //this->geomModel = Models.createGeometryModel(data.value, data.localFrame);
-            this->geomModel = GeometryModel2Ptr(new TAK::Engine::Math::Mesh(data->value, &data->localFrame), Memory_deleter_const<GeometryModel2, TAK::Engine::Math::Mesh>);
-            if (!this->geomModel.get())
-                return TE_Err;
         }
-
-        lock.reset();
 
         TAK::Engine::Math::Point2<double> rayOrg;
         TAK::Engine::Math::Point2<double> rayTgt;
-        if (this->proj.get()) {
-            code = proj->forward(&rayOrg, GeoPoint2(latitude, longitude, 30000.0, AltitudeReference::HAE));
+        if (this->proj_.get()) {
+            code = proj_->forward(&rayOrg, GeoPoint2(latitude, longitude, 30000.0, AltitudeReference::HAE));
             TE_CHECKRETURN_CODE(code);
-            code = proj->forward(&rayTgt, GeoPoint2(latitude, longitude, 0.0, AltitudeReference::HAE));
+            code = proj_->forward(&rayTgt, GeoPoint2(latitude, longitude, 0.0, AltitudeReference::HAE));
             TE_CHECKRETURN_CODE(code);
         } else {
             rayOrg = TAK::Engine::Math::Point2<double>(longitude, latitude, 30000.0);
@@ -235,15 +236,15 @@ namespace
         }
 
         TAK::Engine::Math::Point2<double> isect;
-        if (!this->geomModel->intersect(&isect, Ray2<double>(rayOrg, Vector4<double>(rayTgt.x - rayOrg.x, rayTgt.y - rayOrg.y, rayTgt.z - rayOrg.z)))) {
+        if (!this->geom_model_->intersect(&isect, Ray2<double>(rayOrg, Vector4<double>(rayTgt.x - rayOrg.x, rayTgt.y - rayOrg.y, rayTgt.z - rayOrg.z)))) {
             *value = NAN;
             return TE_InvalidArg;
         }
 
         double el;
-        if (this->proj.get()) {
+        if (this->proj_.get()) {
             GeoPoint2 result;
-            code = proj->inverse(&result, isect);
+            code = proj_->inverse(&result, isect);
             TE_CHECKRETURN_CODE(code);
             el = result.altitude;
         } else {
@@ -256,134 +257,135 @@ namespace
 
     SampledElevationChunk::SampledElevationChunk(const char *type_, const char *uri_, const unsigned int flags_, const double resolution_, const Polygon2 &bounds_, const double ce_, const double le_, const bool authoritative_, SamplerPtr &&sampler_) NOTHROWS :
         AbstractElevationChunk(type_, uri_, flags_, resolution_, bounds_, ce_, le_, authoritative_),
-        sampler(std::move(sampler_)),
-        data(NULL, NULL)
+        sampler_(std::move(sampler_)),
+        data_(nullptr, nullptr)
     {}
 
     TAKErr SampledElevationChunk::createData(ElevationChunkDataPtr &value) NOTHROWS
     {
         TAKErr code(TE_Ok);
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
-        TE_CHECKRETURN_CODE(code);
-
-        if (!this->data.get()) {
-            Envelope2 aabb;
-            code = this->getBounds()->getEnvelope(&aabb);
+        {
+            Lock lock(mutex_);
+            code = lock.status;
             TE_CHECKRETURN_CODE(code);
 
-            const double centroidX = (aabb.minX + aabb.maxX) / 2.0;
-            const double centroidY = (aabb.minY + aabb.maxY) / 2.0;
+            if (!this->data_.get()) {
+                Envelope2 aabb;
+                code = this->getBounds()->getEnvelope(&aabb);
+                TE_CHECKRETURN_CODE(code);
 
-            std::shared_ptr<LineString2> bounds;
-            code = static_cast<const Polygon2 &>(*this->getBounds()).getExteriorRing(bounds);
-            TE_CHECKRETURN_CODE(code);
+                const double centroidX = (aabb.minX + aabb.maxX) / 2.0;
+                const double centroidY = (aabb.minY + aabb.maxY) / 2.0;
 
-            // approximate number of posts based on resolution
-            std::size_t samplesX;
-            std::size_t samplesY;
-            if ((aabb.maxX - aabb.minX) <= 180.0) {
-                const double dx1 = distance(*bounds, 0u, 1u);
-                const double dx2 = distance(*bounds, 2u, 3u);
-                const double dy1 = distance(*bounds, 1u, 2u);
-                const double dy2 = distance(*bounds, 3u, 0u);
+                std::shared_ptr<LineString2> bounds;
+                code = static_cast<const Polygon2 &>(*this->getBounds()).getExteriorRing(bounds);
+                TE_CHECKRETURN_CODE(code);
 
-                samplesX = std::max((unsigned int)ceil(std::max(dx1, dx2) / getResolution()), 2u);
-                samplesY = std::max((unsigned int)ceil(std::max(dy1, dy2) / getResolution()), 2u);
-            }
-            else {
-                // approximate meters-per-degree
-                const double rlat = centroidY / 180.0 * M_PI;
-                const double metersDegLat = 111132.92 - 559.82 * cos(2 * rlat) + 1.175 * cos(4 * rlat);
-                const double metersDegLng = 111412.84 * cos(rlat) - 93.5 * cos(3 * rlat);
+                // approximate number of posts based on resolution
+                std::size_t samplesX;
+                std::size_t samplesY;
+                if ((aabb.maxX - aabb.minX) <= 180.0) {
+                    const double dx1 = distance(*bounds, 0u, 1u);
+                    const double dx2 = distance(*bounds, 2u, 3u);
+                    const double dy1 = distance(*bounds, 1u, 2u);
+                    const double dy2 = distance(*bounds, 3u, 0u);
 
-                const double dx1 = estimateDistance(
-                    metersDegLat, metersDegLng,
-                    *bounds, 0u, 1u);
-                const double dx2 = estimateDistance(
-                    metersDegLat, metersDegLng,
-                    *bounds, 2u, 3u);
-                const double dy1 = estimateDistance(
-                    metersDegLat, metersDegLng,
-                    *bounds, 1u, 2u);
-                const double dy2 = estimateDistance(
-                    metersDegLat, metersDegLng,
-                    *bounds, 3u, 0u);
+                    samplesX = std::max((unsigned int)ceil(std::max(dx1, dx2) / getResolution()), 2u);
+                    samplesY = std::max((unsigned int)ceil(std::max(dy1, dy2) / getResolution()), 2u);
+                }
+                else {
+                    // approximate meters-per-degree
+                    const double rlat = centroidY / 180.0 * M_PI;
+                    const double metersDegLat = 111132.92 - 559.82 * cos(2 * rlat) + 1.175 * cos(4 * rlat);
+                    const double metersDegLng = 111412.84 * cos(rlat) - 93.5 * cos(3 * rlat);
 
-                samplesX = std::max((unsigned int)ceil(std::max(dx1, dx2) / getResolution()), 2u);
-                samplesY = std::max((unsigned int)ceil(std::max(dy1, dy2) / getResolution()), 2u);
-            }
+                    const double dx1 = estimateDistance(
+                        metersDegLat, metersDegLng,
+                        *bounds, 0u, 1u);
+                    const double dx2 = estimateDistance(
+                        metersDegLat, metersDegLng,
+                        *bounds, 2u, 3u);
+                    const double dy1 = estimateDistance(
+                        metersDegLat, metersDegLng,
+                        *bounds, 1u, 2u);
+                    const double dy2 = estimateDistance(
+                        metersDegLat, metersDegLng,
+                        *bounds, 3u, 0u);
 
-            // construct function to convert between post and lat/lon
+                    samplesX = std::max((unsigned int)ceil(std::max(dx1, dx2) / getResolution()), 2u);
+                    samplesY = std::max((unsigned int)ceil(std::max(dy1, dy2) / getResolution()), 2u);
+                }
 
-            atakmap::raster::DefaultDatasetProjection proj(
-                4326,
-                samplesX, samplesY,
-                getPoint(*bounds, 0u),
-                getPoint(*bounds, 1u),
-                getPoint(*bounds, 2u),
-                getPoint(*bounds, 3u));
+                // construct function to convert between post and lat/lon
+
+                atakmap::raster::DefaultDatasetProjection proj(
+                    4326,
+                    static_cast<int>(samplesX), static_cast<int>(samplesY),
+                    getPoint(*bounds, 0u),
+                    getPoint(*bounds, 1u),
+                    getPoint(*bounds, 2u),
+                    getPoint(*bounds, 3u));
 
 
-            // construct the model by sampling the coverage
-            MeshBuilder builder(TEDM_TriangleStrip, TEVA_Position, TEDT_UInt16);
-            code = builder.setWindingOrder(TEWO_CounterClockwise);
-            TE_CHECKRETURN_CODE(code);
+                // construct the model by sampling the coverage
+                MeshBuilder builder(TEDM_TriangleStrip, TEVA_Position, TEDT_UInt16);
+                code = builder.setWindingOrder(TEWO_CounterClockwise);
+                TE_CHECKRETURN_CODE(code);
 
-            for (std::size_t y = 0; y < samplesY; y++) {
-                for (std::size_t x = 0; x < samplesX; x++) {
-                    atakmap::core::GeoPoint geo;
-                    proj.imageToGround(atakmap::math::Point<double>(x, y), &geo);
+                for (std::size_t y = 0; y < samplesY; y++) {
+                    for (std::size_t x = 0; x < samplesX; x++) {
+                        atakmap::core::GeoPoint geo;
+                        proj.imageToGround(atakmap::math::Point<double>(static_cast<double>(x), static_cast<double>(y)), &geo);
 
-                    double ela;
-                    if (this->sampler->sample(&ela, geo.latitude, geo.longitude) != TE_Ok)
-                        ela = NAN;
-                    code = builder.addVertex(geo.longitude - centroidX, geo.latitude - centroidY, ela,
-                        0.0, 0.0,
-                        0.0, 0.0, 1.0,
-                        1.0, 1.0, 1.0, 1.0);
+                        double ela;
+                        if (this->sampler_->sample(&ela, geo.latitude, geo.longitude) != TE_Ok)
+                            ela = NAN;
+                        code = builder.addVertex(geo.longitude - centroidX, geo.latitude - centroidY, ela,
+                            0.0, 0.0,
+                            0.0, 0.0, 1.0,
+                            1.0, 1.0, 1.0, 1.0);
+                        TE_CHECKBREAK_CODE(code);
+                    }
                     TE_CHECKBREAK_CODE(code);
                 }
-                TE_CHECKBREAK_CODE(code);
+                TE_CHECKRETURN_CODE(code);
+
+                const std::size_t numIndices = TAK::Engine::Renderer::GLTexture2_getNumQuadMeshIndices(samplesX - 1, samplesY - 1);
+                array_ptr<uint16_t> indices(new uint16_t[numIndices]);
+                TAK::Engine::Renderer::GLTexture2_createQuadMeshIndexBuffer(indices.get(), samplesX - 1, samplesY - 1);
+                code = builder.addIndices(indices.get(), numIndices);
+                TE_CHECKRETURN_CODE(code);
+
+                this->data_ = ElevationChunkDataPtr(new ElevationChunk::Data(), Memory_deleter_const<ElevationChunk::Data>);
+                MeshPtr mesh(nullptr, nullptr);
+                code = builder.build(mesh);
+                TE_CHECKRETURN_CODE(code);
+                this->data_->value = std::move(mesh);
+                this->data_->srid = 4326;
+                this->data_->interpolated = true;
+                this->data_->localFrame.setToTranslate(centroidX, centroidY, 0.0);
             }
-            TE_CHECKRETURN_CODE(code);
-
-            const std::size_t numIndices = TAK::Engine::Renderer::GLTexture2_getNumQuadMeshIndices(samplesX - 1, samplesY - 1);
-            array_ptr<uint16_t> indices(new uint16_t[numIndices]);
-            TAK::Engine::Renderer::GLTexture2_createQuadMeshIndexBuffer(indices.get(), samplesX - 1, samplesY - 1);
-            code = builder.addIndices(indices.get(), numIndices);
-            TE_CHECKRETURN_CODE(code);
-
-            this->data = ElevationChunkDataPtr(new ElevationChunk::Data(), Memory_deleter_const<ElevationChunk::Data>);
-            MeshPtr mesh(NULL, NULL);
-            code = builder.build(mesh);
-            TE_CHECKRETURN_CODE(code);
-            this->data->value = std::move(mesh);
-            this->data->srid = 4326;
-            this->data->interpolated = true;
-            this->data->localFrame.setToTranslate(centroidX, centroidY, 0.0);
         }
-        lock.reset();
 
         value = ElevationChunkDataPtr(new ElevationChunk::Data(), Memory_deleter_const<ElevationChunk::Data>);
-        MeshPtr copy(NULL, NULL);
-        code = Mesh_transform(copy, *data->value, data->value->getVertexDataLayout());
+        MeshPtr copy(nullptr, nullptr);
+        code = Mesh_transform(copy, *data_->value, data_->value->getVertexDataLayout());
         TE_CHECKRETURN_CODE(code);
 
         value->value = std::move(copy);
-        value->srid = data->srid;
+        value->srid = data_->srid;
         value->interpolated = true;
-        value->localFrame.set(data->localFrame);
+        value->localFrame.set(data_->localFrame);
         
         return code;
     }
     TAKErr SampledElevationChunk::sample(double *value, const double latitude, const double longitude) NOTHROWS
     {
-        return sampler->sample(value, latitude, longitude);
+        return sampler_->sample(value, latitude, longitude);
     }
     TAKErr SampledElevationChunk::sample(double *value, const std::size_t count, const double *srcLat, const double *srcLng, const std::size_t srcLatStride, const std::size_t srcLngStride, const std::size_t dstStride) NOTHROWS
     {
-        return sampler->sample(value, count, srcLat, srcLng, srcLatStride, srcLngStride, dstStride);
+        return sampler_->sample(value, count, srcLat, srcLng, srcLatStride, srcLngStride, dstStride);
     }
 
     template<class T>

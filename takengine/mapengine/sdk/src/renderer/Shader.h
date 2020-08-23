@@ -1,0 +1,70 @@
+#ifndef TAK_ENGINE_RENDERER_SHADER_H_INCLUDED
+#define TAK_ENGINE_RENDERER_SHADER_H_INCLUDED
+
+#include <string>
+
+#include "renderer/GL.h"
+
+#include "core/RenderContext.h"
+#include "port/Platform.h"
+#include "renderer/RenderAttributes.h"
+#include "util/Error.h"
+
+namespace TAK {
+    namespace Engine {
+        namespace Renderer {
+            struct ENGINE_API Shader2
+            {
+                GLuint handle;
+                GLuint uMVP;
+                GLuint uTexture;
+                GLuint uSunPosition;
+                GLuint uColor;
+                GLuint uInvModelView;
+                GLuint aTexCoords;
+                GLuint aVertexCoords;
+                GLuint aNormals;
+            };
+
+            class ENGINE_API Shader
+            {
+            private :
+                Shader(const unsigned flags) NOTHROWS;
+            public :
+                GLuint handle;
+
+                GLint uProjection;
+                GLint uModelView;
+                GLint uTextureMx;
+                GLint uTexture;
+                GLint uAlphaDiscard;
+                GLint uColor;
+                GLint aVertexCoords;
+                GLint aTextureCoords;
+                GLint aColorPointer;
+                GLint aNormals;
+
+                bool textured;
+                bool alphaDiscard;
+                bool colorPointer;
+                bool lighting;
+                std::size_t numAttribs;
+            private :
+                std::string vsh_;
+                std::string fsh_;
+
+                friend ENGINE_API void Shader_get(std::shared_ptr<const Shader> &, const TAK::Engine::Core::RenderContext &, const RenderAttributes &attrs) NOTHROWS;
+            };
+
+            /**
+                * <P>MUST be invoked on render thread
+                *
+                * @param ctx
+                * @param flags
+                * @return
+                */
+            ENGINE_API void Shader_get(std::shared_ptr<const Shader> &value, const TAK::Engine::Core::RenderContext &ctx, const RenderAttributes &attrs) NOTHROWS;
+        }
+    }
+}
+#endif

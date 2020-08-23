@@ -44,7 +44,7 @@ public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
 
     protected final double validateLocalElevation(GLMapView ortho) {
         if (ortho.drawTilt > 0d) {
-            final int renderTerrainVersion = ortho.terrain.getTerrainVersion();
+            final int renderTerrainVersion = ortho.getTerrainVersion();
             if (this.terrainVersion != renderTerrainVersion) {
                 this.localTerrainValue = ortho
                         .getTerrainMeshElevation(this.latitude, this.longitude);
@@ -87,6 +87,7 @@ public abstract class GLPointMapItem2 extends AbstractGLMapItem2 implements
                     altitude = Double.NaN;
                     altHae = GeoPoint.UNKNOWN;
                 }
+                // invalidate cached terrain value
                 terrainVersion = ~terrainVersion;
                 synchronized (bounds) {
                     final double N = point.getLatitude() + .0001; // about 10m

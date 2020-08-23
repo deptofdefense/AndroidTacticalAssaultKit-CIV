@@ -4,6 +4,7 @@
 #include <jni.h>
 
 #include <port/Platform.h>
+#include <port/String.h>
 #include <util/Logging2.h>
 #include <util/Error.h>
 
@@ -18,6 +19,7 @@
 #define ATAKMAP_GL_PKG "com/atakmap/opengl"
 #define INTPTR_TO_JLONG(a)           ((jlong)(intptr_t)(a))
 #define JLONG_TO_INTPTR(type, var)   ((type *)(intptr_t)(var))
+#define JLONG_TO_FNPTR(type, var)   ((type)(intptr_t)(var))
 
 /******************************************************************************/
 // EXTERNS
@@ -125,5 +127,8 @@ bool ATAKMapEngineJNI_equals(JNIEnv *env, jobject a, jobject b) NOTHROWS;
 
 TAK::Engine::Util::TAKErr ProgressCallback_dispatchProgress(jobject jcallback, jint value) NOTHROWS;
 TAK::Engine::Util::TAKErr ProgressCallback_dispatchError(jobject jcallback, const char *value) NOTHROWS;
+
+void Thread_dumpStack() NOTHROWS;
+TAK::Engine::Port::String Object_toString(jobject obj) NOTHROWS;
 
 #endif

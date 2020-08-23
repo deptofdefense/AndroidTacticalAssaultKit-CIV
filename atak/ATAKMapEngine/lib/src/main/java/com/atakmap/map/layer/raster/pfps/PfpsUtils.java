@@ -9,6 +9,7 @@ package com.atakmap.map.layer.raster.pfps;
 import android.database.*;
 import android.util.SparseArray;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.map.layer.raster.gdal.GdalDatasetProjection2;
 import com.atakmap.map.layer.raster.mosaic.MosaicDatabaseBuilder2;
 import com.atakmap.map.layer.raster.mosaic.MosaicUtils;
@@ -578,7 +579,7 @@ public class PfpsUtils {
     private static String getString(ByteBuffer buffer, int len) {
         if (buffer.remaining() < len)
             throw new BufferUnderflowException();
-        String retval = new String(buffer.array(), buffer.position(), len);
+        String retval = new String(buffer.array(), buffer.position(), len, FileSystemUtils.UTF8_CHARSET);
         buffer.position(buffer.position() + len);
         return retval;
     }

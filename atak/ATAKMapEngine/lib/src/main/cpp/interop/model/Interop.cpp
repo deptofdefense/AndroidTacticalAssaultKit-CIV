@@ -33,36 +33,15 @@ TAKErr TAKEngineJNI::Interop::Model::Interop_access(std::shared_ptr<TAK::Engine:
     JNILocalRef jpointer(*env, env->GetObjectField(jmesh, NativeMesh_class.pointer));
     if(!jpointer)
         return TE_IllegalState;
-    int pointerType = env->GetIntField(jpointer, Pointer_class.type);
-    if(pointerType == com_atakmap_interop_Pointer_RAW)
-        return TE_InvalidArg;
+
+    if(!Pointer_makeShared<TAK::Engine::Model::Mesh>(env, jpointer))
+        return TE_IllegalState;
 
     jlong pointer = env->GetLongField(jpointer, Pointer_class.value);
-    if(pointerType == com_atakmap_interop_Pointer_UNIQUE) {
-        // obtain the unique_ptr
-        MeshPtr *cpointer = JLONG_TO_INTPTR(MeshPtr, pointer);
+    std::shared_ptr<Mesh> *cpointer = JLONG_TO_INTPTR(std::shared_ptr<Mesh>, pointer);
 
-        std::shared_ptr<Mesh> cpointer_shared(std::move(*cpointer));
-        // delete the unique_ptr pointer memory
-        delete cpointer;
-
-        // reset local 'pointer' to a new shared_ptr instance promoted from unique_ptr
-        pointer = INTPTR_TO_JLONG(new std::shared_ptr<Mesh>(cpointer_shared));
-        // update the Java object
-        env->SetLongField(jpointer, Pointer_class.value, pointer);
-        env->SetIntField(jpointer, Pointer_class.type, com_atakmap_interop_Pointer_SHARED);
-
-        value = cpointer_shared;
-        return TE_Ok;
-    } else if(pointerType == com_atakmap_interop_Pointer_SHARED) {
-        // obtain the shared_ptr
-        std::shared_ptr<Mesh> *cpointer = JLONG_TO_INTPTR(std::shared_ptr<Mesh>, pointer);
-
-        value = *cpointer;
-        return TE_Ok;
-    } else {
-        return TE_IllegalState;
-    }
+    value = *cpointer;
+    return TE_Ok;
 }
 
 // template specializations

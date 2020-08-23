@@ -222,14 +222,14 @@ FeatureDataSource::parse (const char* filePath,
         throw std::invalid_argument (MEM_FN ("parse") "Received NULL filePath");
       }
 
-    Content* result (NULL);
+    Content* result (nullptr);
 #if 0
     PGSC::Guard<ProviderMap>& providerMap (getProviderMap ());
     PGSC::Lock lock (providerMap);
     ProviderMap::iterator end (providerMap (lock).end ());
 #else
     ProviderMap& providerMap(getProviderMap());
-    ProviderMap::iterator end(providerMap.end());
+    auto end(providerMap.end());
 #endif
 
     if (providerHint)
@@ -237,7 +237,7 @@ FeatureDataSource::parse (const char* filePath,
 #if 0
         ProviderMap::iterator iter (providerMap (lock).find (providerHint));
 #else
-        ProviderMap::iterator iter(providerMap.find(providerHint));
+        auto iter(providerMap.find(providerHint));
 #endif
 
         if (iter != end)
@@ -250,7 +250,7 @@ FeatureDataSource::parse (const char* filePath,
 #if 0
         for (ProviderMap::iterator iter (providerMap (lock).begin ());
 #else
-        for (ProviderMap::iterator iter(providerMap.begin());
+        for (auto iter(providerMap.begin());
 #endif
              !result && iter != end;
              ++iter)
@@ -328,6 +328,16 @@ throw ()
     freeStyle();
 }
 
+void
+FeatureDataSource::FeatureDefinition::setExtrude(double value) {
+    extrude = value;
+}
+
+void
+FeatureDataSource::FeatureDefinition::setAltitudeMode(int value)
+{
+    altitudeMode = value;
+}
 
 void
 FeatureDataSource::FeatureDefinition::setStyle(const char* styleString)
@@ -356,9 +366,9 @@ FeatureDataSource::FeatureDefinition::FeatureDefinition
   : name (name),
     encoding (GEOMETRY),
     styling (STYLE),
-    rawGeometry (NULL),
-    rawStyle (NULL),
-    bufferTail (NULL),
+    rawGeometry (nullptr),
+    rawStyle (nullptr),
+    bufferTail (nullptr),
     attributes (attributes)
   {
     if (!name)
@@ -373,7 +383,7 @@ FeatureDataSource::FeatureDefinition::FeatureDefinition
 Feature*
 FeatureDataSource::FeatureDefinition::getFeature ()
   {
-    std::auto_ptr<Geometry> geo;
+    std::unique_ptr<Geometry> geo;
 
     switch (encoding)
       {
@@ -401,11 +411,11 @@ FeatureDataSource::FeatureDefinition::getFeature ()
       case GEOMETRY:
 
         geo.reset (static_cast<Geometry*> (const_cast<void*> (rawGeometry)));
-        rawGeometry = NULL;             // Adopted by Feature.
+        rawGeometry = nullptr;             // Adopted by Feature.
         break;
       }
 
-    std::auto_ptr<Style> style;
+    std::unique_ptr<Style> style;
 
     switch (styling)
       {
@@ -417,7 +427,7 @@ FeatureDataSource::FeatureDefinition::getFeature ()
       case STYLE:
 
         style.reset (static_cast<Style*> (const_cast<void*> (rawStyle)));
-        rawStyle = NULL;                // Adopted by Feature.
+        rawStyle = nullptr;                // Adopted by Feature.
         break;
       }
 
@@ -516,7 +526,7 @@ FeatureDataSource::FeatureDefinition::freeGeometry ()
         delete[] static_cast<const char*> (rawGeometry);
         encoding = GEOMETRY;
       }
-    rawGeometry = bufferTail = NULL;
+    rawGeometry = bufferTail = nullptr;
   }
 
 
@@ -532,7 +542,7 @@ FeatureDataSource::FeatureDefinition::freeStyle ()
         delete[] static_cast<const char*> (rawStyle);
         styling = STYLE;
       }
-    rawStyle = NULL;
+    rawStyle = nullptr;
   }
 
 

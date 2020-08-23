@@ -9,7 +9,9 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.graphics.GLCrumb;
 import com.atakmap.android.maps.graphics.GLMapItem;
+import com.atakmap.android.maps.graphics.GLMapItem2;
 import com.atakmap.android.maps.graphics.GLMapItemSpi2;
+import com.atakmap.android.maps.graphics.GLMapItemSpi3;
 import com.atakmap.android.maps.graphics.GLPolyline;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
@@ -30,14 +32,14 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
 
     public static final String TAG = "GLTrackPolyline";
 
-    public static final GLMapItemSpi2 SPI = new GLMapItemSpi2() {
+    public static final GLMapItemSpi3 SPI = new GLMapItemSpi3() {
         @Override
         public int getPriority() {
             return 0;
         }
 
         @Override
-        public GLMapItem create(Pair<MapRenderer, MapItem> arg) {
+        public GLMapItem2 create(Pair<MapRenderer, MapItem> arg) {
             if (!(arg.second instanceof TrackPolyline))
                 return null;
             return new GLTrackPolyline(arg.first, (TrackPolyline) arg.second);
@@ -56,9 +58,9 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
     }
 
     @Override
-    public void draw(GLMapView ortho) {
+    public void draw(GLMapView ortho, int renderPass) {
         if (basicLineStyle != TrackPolyline.BASIC_LINE_STYLE_ARROWS) {
-            super.draw(ortho);
+            super.draw(ortho, renderPass);
             return;
         }
 
@@ -113,8 +115,7 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
 
         // XXX - ortho.drawTilt is always 0 at this point
         // Need to read from the map subject
-        final double tiltSkew = Math.sin(Math.toRadians(ortho.getSurface()
-                .getMapView().getMapTilt()));
+        final double tiltSkew = Math.sin(Math.toRadians(ortho.drawTilt));
         final double scaleAdj = 1d + (tiltSkew * 2d);
 
         float radius = (float) ((_subject.getCrumbSize() * MapView.DENSITY)
@@ -237,7 +238,7 @@ public class GLTrackPolyline extends GLPolyline implements GLMapBatchable {
         if (!isBatchable(view)) {
             batch.end();
             try {
-                this.draw(view);
+                this.draw(view, renderPass);
                 return;
             } finally {
                 batch.begin();

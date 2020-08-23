@@ -7,6 +7,7 @@
 #include "openssl/crypto.h"
 #include "curl/curl.h"
 #include <string.h>
+#include <string>
 
 #ifndef WIN32
 #include <unistd.h>

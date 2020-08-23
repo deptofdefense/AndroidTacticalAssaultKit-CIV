@@ -1,16 +1,24 @@
 package com.atakmap.math;
 
+import com.atakmap.interop.InteropCleaner;
+import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
+import com.atakmap.lang.ref.Cleaner;
+import com.atakmap.util.Disposable;
 import com.atakmap.util.ReadWriteLock;
 
-public class NativeGeometryModel implements GeometryModel {
-    private final ReadWriteLock rwlock;
+public class NativeGeometryModel implements GeometryModel, Disposable {
+    final static NativePeerManager.Cleaner CLEANER = new InteropCleaner(GeometryModel.class);
+
+    private final ReadWriteLock rwlock = new ReadWriteLock();
+    private final Cleaner cleaner;
     private Pointer pointer;
     private Object owner;
 
     NativeGeometryModel(Pointer pointer, Object owner) {
+        cleaner = NativePeerManager.register(this, pointer, rwlock, null, CLEANER);
+
         this.pointer = pointer;
-        this.rwlock = new ReadWriteLock();
         this.owner = owner;
     }
     @Override
@@ -32,15 +40,9 @@ public class NativeGeometryModel implements GeometryModel {
     }
 
     @Override
-    public final void finalize() {
-        this.rwlock.acquireWrite();
-        try {
-            if(this.pointer.raw == 0L)
-                return;
-            destruct(this.pointer);
-        } finally {
-            this.rwlock.releaseWrite();
-        }
+    public final void dispose() {
+        if(this.cleaner != null)
+            this.cleaner.clean();
     }
 
     static native void destruct(Pointer pointer);

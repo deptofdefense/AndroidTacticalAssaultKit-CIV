@@ -265,7 +265,6 @@ public class GeoFenceReceiver extends BroadcastReceiver implements
 
     private void displayGeofence(final Context context, final MapItem item) {
         //see if this is a new GeoFence, or an edit
-        boolean bEdit = false;
         GeoFence fence = _database.getGeoFence(item.getUID(), false);
         GeoFenceMonitor monitor = _component.getManager().getMonitor(
                 item.getUID());
@@ -278,6 +277,7 @@ public class GeoFenceReceiver extends BroadcastReceiver implements
             monitor = null;
         }
 
+        final boolean bEdit;
         if (fence == null || !fence.isValid()) {
             Log.d(TAG, "displayGeofence new: " + item.getUID());
             bEdit = false;
@@ -487,12 +487,12 @@ public class GeoFenceReceiver extends BroadcastReceiver implements
                 });
 
         b.setView(view);
-        final AlertDialog editDialog = b.show();
+        final AlertDialog d = b.show();
 
         buttonView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                editDialog.dismiss();
+                d.dismiss();
 
                 //Have Overlay Manager auto nav down into GeoFences
                 ArrayList<String> overlayPaths = new ArrayList<>();
@@ -510,7 +510,7 @@ public class GeoFenceReceiver extends BroadcastReceiver implements
         buttonDismiss.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                editDialog.dismiss();
+                d.dismiss();
 
                 final GeoFenceMonitor monitor = _component.getManager()
                         .getMonitor(item.getUID());
@@ -562,6 +562,15 @@ public class GeoFenceReceiver extends BroadcastReceiver implements
                         });
                 b.setNegativeButton(R.string.cancel, null);
                 b.show();
+            }
+        });
+
+        d.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                // Delete temp fence
+                if (!bEdit)
+                    _component.getManager().deleteMonitor(item.getUID());
             }
         });
     }

@@ -131,9 +131,15 @@ public class Srtm1ElevationModel {
             ZipEntry entry = zip.getEntry(fileName);
             try {
                 if (entry != null) {
-                    InputStream in = zip.getInputStream(entry);
-                    result = _getHeightFromInputStream(in, latitude, longitude);
-                    in.close();
+                    InputStream in = null;
+                    try {
+                        in = zip.getInputStream(entry);
+                        result = _getHeightFromInputStream(in, latitude,
+                                longitude);
+                    } finally {
+                        if (in != null)
+                            in.close();
+                    }
                 }
             } catch (NullPointerException e) {
                 Log.e(TAG, "error: ", e);

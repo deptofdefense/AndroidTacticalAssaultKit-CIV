@@ -377,13 +377,15 @@ public class IconsMapAdapter extends BroadcastReceiver {
                             .getCurrent()));
 
                     //read in image
-                    InputStream is = zip.getInputStream(ze);
+                    InputStream is = null;
                     byte[] bytes;
                     try {
+                        is = zip.getInputStream(ze);
                         bytes = FileSystemUtils.read(is,
                                 (int) ze.getSize(), false);
                     } finally {
-                        is.close();
+                        if (is != null)
+                            is.close();
                     }
                     if (FileSystemUtils.isEmpty(bytes)) {
                         Log.w(TAG, "Failed to load icon: " + ze.getName());

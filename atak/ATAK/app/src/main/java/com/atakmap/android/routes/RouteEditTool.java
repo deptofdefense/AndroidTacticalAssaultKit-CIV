@@ -405,10 +405,8 @@ public class RouteEditTool extends EditablePolylineEditTool implements
     protected void showMainPrompt() {
         String prompt = MAIN_PROMPT;
         if (_creatingRoute) {
-            if (_firstTime)
-                prompt = _context.getString(R.string.routes_prompt);
-            else
-                prompt = "route creation";
+            prompt = _context.getString(_firstTime ? R.string.routes_prompt
+                    : R.string.routes_prompt_2);
         }
         if (!_vertsVisible && (!_creatingRoute
                 || _firstTime && _route.getNumPoints() > 0))

@@ -12,6 +12,10 @@
 
 namespace TAK {
     namespace Engine {
+        namespace Util {
+            class MemBuffer2;
+        }
+
         namespace Model {
             enum WindingOrder
             {
@@ -173,6 +177,9 @@ namespace TAK {
                 virtual const VertexDataLayout &getVertexDataLayout() const NOTHROWS = 0;
                 virtual std::size_t getNumMaterials() const NOTHROWS = 0;
                 virtual Util::TAKErr getMaterial(Material *value, const std::size_t index) const NOTHROWS = 0;
+
+                virtual Util::TAKErr getBuffer(const Util::MemBuffer2 **buffer, size_t index) const NOTHROWS = 0;
+                virtual size_t getNumBuffers() const NOTHROWS = 0;
             };
 
             typedef std::unique_ptr<Mesh, void(*)(const Mesh *)> MeshPtr;

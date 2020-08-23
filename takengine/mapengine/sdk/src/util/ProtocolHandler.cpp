@@ -22,7 +22,7 @@ ProtocolHandler::~ProtocolHandler() NOTHROWS
 TAKErr FileProtocolHandler::handleURI(DataInput2Ptr &ctx, const char * uri) NOTHROWS
 {
     const std::string target(uri);
-    static const std::regex rx("([[:alpha:]]+):\/\/(.+)");
+    static const std::regex rx("([[:alpha:]]+):\\/\\/(.+)");
     std::smatch matches;
 
     enum { match_full, match_scheme, match_path, match_quantity = match_path };
@@ -52,7 +52,7 @@ TAKErr ZipProtocolHandler::handleURI(DataInput2Ptr &ctx, const char * uri) NOTHR
         return TE_InvalidArg;
 
     const std::string target(uri);
-    static const std::regex rx("([[:alpha:]]+):\/\/([^!]+)!?([^!]+)?");
+    static const std::regex rx("([[:alpha:]]+):\\/\\/([^!]+)!?([^!]+)?");
     std::smatch matches;
 
     enum { match_full, match_scheme, match_archive, match_entry, match_quantity = match_entry };

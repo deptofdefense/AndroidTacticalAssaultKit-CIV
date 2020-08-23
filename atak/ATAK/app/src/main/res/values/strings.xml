@@ -137,6 +137,11 @@
     <string name="bloodhoundPreferences">Bloodhound Preferences</string>
     <string name="bloodhoundSubPreferences">Adjust Bloodhound settings</string>
     <string name="bloodhoundETAPreferences">Bloodhound ETA Preferences</string>
+    <string name="bloodhoundRerouteTimer">Reroute timer frequency</string>
+    <string name="bloodhound_no_planners">No route planners available.</string>
+    <string name="bloodhoundRerouteDistance">Reroute distance</string>
+    <string name="bloodhoundRerouteTimerDescription">Specify how frequently bloodhound will check to see if a reroute needs to be calculated.</string>
+    <string name="bloodhoundRerouteDistanceDescription">Specify the distance away from the route a point has to move before calculating a reroute.</string>
     <string name="locationPreferences">Location Preferences</string>
     <string name="breadcrumbPreferences">Bread Crumb Preferences</string>
     <string name="notificationPreferences">Notification Preferences</string>
@@ -567,6 +572,8 @@
     <string name="preferences_text210">Amount of seconds to wait for deletions to finish before forcing shutdown</string>
     <string name="preferences_text211">Forces a clean and rescan of layer data</string>
     <string name="preferences_text212">Force Reset Layer Cache</string>
+    <string name="prefs_use_klv_elevation">Prefer KLV Frame Center Elevation</string>
+    <string name="prefs_use_klv_elevation_sum">Use Frame Center elevation data provided in KLV instead of local elevation data.</string>
 
     <!--Data Package-->
     <string name="preferences_text213">Enable File Sharing</string>
@@ -578,6 +585,8 @@
     <string name="preferences_text219">Number of times to attempt to download a file from the remote Server</string>
     <string name="preferences_text220">Server port</string>
     <string name="preferences_text221">Port of the file sharing Server</string>
+    <string name="preferences_text220a">Secure Server port</string>
+    <string name="preferences_text221a">Secure Port of the file sharing Server</string>
     <string name="preferences_text222">File Transfer Connection Timeout</string>
     <string name="preferences_text223">Re-Attempt the transfer if no connection is detected within this period (sec)</string>
     <string name="preferences_text224">File Transfer Failure Timeout</string>
@@ -738,8 +747,8 @@
     <string name="preferences_text317">Enter bubble in meters</string>
 
     <string name="preferences_route_off_route_bubble">When outside of this distance, you will be considered off the route while navigating</string>
-
-
+    <string name="open_route_around">Open Route Around Region Manager</string>
+    <string name="manage_route_around_regions">Manage route around regions</string>
     <string name="preferences_text318">Elevation Profile Interpolate Altitudes</string>
     <string name="preferences_text319">Enable to interpolate elevation profile graph altitudes from nearby route points. Disable to use DTED altitudes for interpolated points.</string>
     <string name="preferences_text320">Elevation Profile Center on Seeker</string>
@@ -1038,6 +1047,7 @@
 
     <!--Routes-->
     <string name="routes_prompt">Tap a location to make it a part of the route.\nLong press to create a Check Point.</string>
+    <string name="routes_prompt_2">Route creation</string>
     <string name="routes_edit_prompt">Long press on a part of the route to move it.
         Long press outside of the route to extend it.</string>
     <string name="route_zoom_in_prompt">Zoom in to edit vertices.</string>
@@ -1432,6 +1442,7 @@
     <string name="routes_text32">Route Updated</string>
     <string name="routes_text33">Vehicle</string>
     <string name="routes_text34">On Foot</string>
+    <string name="configure_route_planner">Configure route planner</string>
     <string name="pull_from_dted">Pull from DTED</string>
     <string name="location">Location\u0020</string>
     <string name="route_start">Start:</string>
@@ -1766,6 +1777,7 @@
     <string name="video_text68">Buffering (adds latency)</string>
     <string name="video_text69">Time (sec)</string>
     <string name="video_text70">Reliable P2P Connection (consumes more resources)</string>
+    <string name="video_text71">Passphrase</string>
     <string name="sending_to">"Sending to "</string>
     <string name="video_alias">Video Alias</string>
     <string name="send_video_alias">Send Video Alias</string>
@@ -2030,6 +2042,10 @@
     <string name="generic">"Generic "</string>
     <string name="ellipses">…</string>
     <string name="type_fiveline">"Type "</string>
+    <string translatable="false" name="moc_fiveline">"MOC "</string>
+    <string name="fssystem_fiveline">"FS System "</string>
+    <string translatable="false" name="when_ready">When Ready</string>
+    <string translatable="false" name="rocket_missile">Rocket/Missile"</string>
     <string name="duration">"Duration "</string>
     <string name="target_location">"Target Location "</string>
     <string name="grid">Grid</string>
@@ -3025,6 +3041,7 @@
     <string name="file_share_transfer_failed">File Share Transfer Failed</string>
     <string name="mission_package_cot_nack_received">%1$s says (%2$s) %3$s</string>
     <string name="mission_package_add_to_self">Cannot add Data Package to itself: %s</string>
+    <string name="mission_package_remarks_hint">Enter description and #hashtags here</string>
 
     <!--Emergency-->
     <string name="my_emergency_beacons">My Emergency Beacons</string>
@@ -4127,7 +4144,7 @@
     <string name="attempt_disable_media_scanner">Attempt to Disable Media Scanner</string>
 
     <string name="network_data_restriction">Warning: Network Data Restriction Enabled</string> 
-    <string name="network_data_restriction_summary">Tap and enable \'Allow background data usage\' to allow the the app to access the network without restriction.</string>
+    <string name="network_data_restriction_summary">Tap and enable \'Allow background data usage\' to allow the app to access the network without restriction.</string>
 
 
     <string name="ps_restriction">Warning: Power Saving Restriction Enabled</string>
@@ -4201,10 +4218,48 @@
     <string name="background_scanning">Scanning in background...</string>
     <string name="copied_to_clipboard_generic">Copied to clipboard...</string>
 
-    <string name="background_permission_warning">With Android 10, this application requires the the location permission to be set to \'Allow all of the time\'</string>
+    <string name="background_permission_warning">With Android 10, this application requires the location permission to be set to \'Allow all of the time\'</string>
     <string name="no_exporters_registered">No exporters registered</string>
 
 
     <string name="scanning_apps">Scanning available apps and plugins</string>
     <string name="scanning">Scanning...</string>
+    <string name="pointDroppingBehavior">Point Dropping Behavior</string>
+    <string name="lockBehavior">Lock Behavior</string>
+    <string name="forceCenterMoving">Force Center while Moving</string>
+    <string name="forceCenterMovingSummary">Enabling this preference will result in the self marker remaining centered while moving in track up mode, This overrides the default behavior of floating the self icon to the bottom of the screen when moving to give the user a more 360 degree view.</string>
+    <string name="install_date">Install Date</string>
+    <string name="update_date">Update Date</string>
+    <string name="certificate">Certificate</string>
+    <string name="start_with">Start With:</string>
+    <string name="prefix_numeric">Prefix (Numeric)</string>
+    <string name="append">Append:</string>
+    <string name="suffix_alphabet_only">Suffix (Alphabet Only)</string>
+    <string name="hashtag">#Hashtag</string>
+    <string name="_10" translatable="false">(10)</string>
+    <string name="_330_5" translatable="false">330.5</string>
+    <string name="true_name" translatable="false">TRUE</string>
+    <string name="intersection">Intersection:</string>
+    <string name="re_routing_options">Re-routing Options:</string>
+    <string name="pitch_button_text">P</string>
+    <string name="rollbuttontext">R</string>
+    <string name="no_available_options">No available options</string>
+    <string name="existing">Existing</string>
+    <string name="route_import">Route Import</string>
+    <string name="route_import_msg">Choose the method for importing a route into the system:</string>
+    <string name="vehicle_models">Vehicle Models</string>
+    <string name="vehicle_outlines">Vehicle Outlines</string>
+    <string name="show_outline">Show Outline</string>
+    <string name="outline_only">Outline Only</string>
+    <string name="breadcrumb_color">Breadcrumb Color</string>
+
+    <string name="preferences_text172">Render Speed</string>
+    <string name="preferences_text173">Render at full speed or limit to save battery</string>
+
+    <string name="login_to">Login to %s</string>
+    <string name="show_password">Show Password</string>
+
+    <string name="http_401_message">The server has refused the connection because the username or password is not correct.</string>
+    <string name="http_403_message">The server has refused the connection because the user may not have the appropriate permissions.</string>
+
 </resources>

@@ -79,7 +79,7 @@ TAKErr TAK::Engine::Feature::Geometry_clone(Geometry2Ptr_const &value, const Geo
 {
     TAKErr code(TE_Ok);
 
-    Geometry2Ptr clone(NULL, NULL);
+    Geometry2Ptr clone(nullptr, nullptr);
     code = Geometry_clone(clone, geometry);
     TE_CHECKRETURN_CODE(code);
 

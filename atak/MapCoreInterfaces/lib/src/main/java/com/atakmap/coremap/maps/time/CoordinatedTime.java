@@ -317,10 +317,6 @@ public class CoordinatedTime implements Parcelable {
                             FileSystemUtils.UTF8_CHARSET));
                     w.append(msg).append("\r\n");
                     e.printStackTrace(w);
-                } catch (UnsupportedEncodingException e2) {
-                    Log.e(TAG,
-                            "Encoding issue with  bad_time.txt", e2);
-
                 } catch (FileNotFoundException e1) {
                     Log.e(TAG,
                             "File not found while attempting to write bad_time.txt",

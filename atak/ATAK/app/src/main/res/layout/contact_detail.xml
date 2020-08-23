@@ -93,7 +93,7 @@
             </RelativeLayout>
         </RelativeLayout>
 
-    <android.support.v4.view.ViewPager
+    <androidx.viewpager.widget.ViewPager
         android:id="@+id/contactInfo_detailPager"
         android:layout_width="match_parent"
         android:layout_height="fill_parent"

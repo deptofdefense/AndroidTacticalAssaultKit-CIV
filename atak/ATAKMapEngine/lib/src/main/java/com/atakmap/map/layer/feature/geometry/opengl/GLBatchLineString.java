@@ -85,6 +85,7 @@ public class GLBatchLineString extends GLBatchGeometry {
     int vertexType;
     int projectedVerticesSrid;
     int verticesDrawVersion;
+    int terrainVersion;
 
     /**
      * The points to be rendered, tessellated if necessary. 'z' values will be
@@ -105,7 +106,8 @@ public class GLBatchLineString extends GLBatchGeometry {
     private boolean tessellationEnabled;
     private Tessellate.Mode tessellationMode;
 
-    Feature.AltitudeMode altitudeMode;
+    protected Feature.AltitudeMode altitudeMode;
+    protected double extrude = 0d;
     
     public GLBatchLineString(GLMapSurface surface) {
         this(surface.getGLMapView());
@@ -139,8 +141,14 @@ public class GLBatchLineString extends GLBatchGeometry {
         this.tessellationMode = Tessellate.Mode.WGS84;
     }
 
+    @Override
     public void setAltitudeMode(Feature.AltitudeMode altitudeMode) {
         this.altitudeMode = altitudeMode;
+    }
+
+    @Override
+    public void setExtrude(double value) {
+        this.extrude = value;
     }
 
     public void setTessellationEnabled(boolean e) {
@@ -463,18 +471,18 @@ public class GLBatchLineString extends GLBatchGeometry {
 
         // project the vertices
         final double unwrap = view.idlHelper.getUnwrap(this.mbb);
-        final boolean clampToGround = (this.altitudeMode == Feature.AltitudeMode.ClampToGround);
+
         switch(vertices) {
             case GLGeometry.VERTICES_PIXEL :
                 if(this.verticesDrawVersion != view.drawVersion
                         || this.vertexType != vertices
-                        || Double.compare(unwrap, this.unwrap) != 0) {
+                        || Double.compare(unwrap, this.unwrap) != 0 || !isTerrainValid(view)) {
 
                     projectVerticesImpl(view,
                             this.renderPoints,
                             this.numRenderPoints,
                             vertices,
-                            clampToGround,
+                            altitudeMode,
                             unwrap,
                             this.vertices);
 
@@ -487,13 +495,13 @@ public class GLBatchLineString extends GLBatchGeometry {
             case GLGeometry.VERTICES_PROJECTED :
                 if(view.drawSrid != this.projectedVerticesSrid
                         || this.vertexType != vertices
-                        || Double.compare(unwrap, this.unwrap) != 0) {
+                        || Double.compare(unwrap, this.unwrap) != 0 || !isTerrainValid(view)) {
 
                     projectVerticesImpl(view,
                                         this.renderPoints,
                                         this.numRenderPoints,
                                         vertices,
-                                        clampToGround,
+                                        altitudeMode,
                                         unwrap,
                                         this.vertices);
 
@@ -510,14 +518,33 @@ public class GLBatchLineString extends GLBatchGeometry {
         return retval;
     }
 
-    final static void projectVerticesImpl(GLMapView view, DoubleBuffer points, int numPoints, int type, boolean clampToGround, double unwrap, FloatBuffer vertices) {
+
+    private boolean isTerrainValid(GLMapView ortho) {
+        if(ortho.drawTilt > 0d) {
+            final int renderTerrainVersion = ortho.terrain.getTerrainVersion();
+            if(this.terrainVersion != renderTerrainVersion) {
+                this.terrainVersion = renderTerrainVersion;
+                return false;
+            }
+        }
+        return true;
+    }
+
+    final static void projectVerticesImpl(GLMapView view, DoubleBuffer points, int numPoints, int type, Feature.AltitudeMode altitudeMode, double unwrap, FloatBuffer vertices) {
         switch(type) {
             case GLGeometry.VERTICES_PIXEL :
                 vertices.clear();
                 for(int i = 0; i < numPoints; i++) {
                     final double lat = points.get(i*3+1);
                     final double lng = points.get(i*3) + unwrap;
-                    final double alt = clampToGround ? 0d : points.get(i*3+2);
+                    double alt = 0d;
+                    switch (altitudeMode) {
+                        case Absolute:
+                            alt = points.get(i*3+2);
+                            break;
+                        case Relative:
+                            alt = points.get(i*3+2) + view.getTerrainMeshElevation(lat, lng);
+                    }
 
                     view.scratch.geo.set(lat, lng, alt);
                     view.forward(view.scratch.geo, view.scratch.pointD);
@@ -534,7 +561,14 @@ public class GLBatchLineString extends GLBatchGeometry {
                 for(int i = 0; i < numPoints; i++) {
                     final double lat = points.get(i*3+1);
                     final double lng = points.get(i*3) + unwrap;
-                    final double alt = clampToGround ? 0d : points.get(i*3+2);
+                    double alt = 0d;
+                    switch (altitudeMode) {
+                        case Absolute:
+                            alt = points.get(i*3+2);
+                            break;
+                        case Relative:
+                            alt = points.get(i*3+2) + view.getTerrainMeshElevation(lat, lng);
+                    }
 
                     view.scratch.geo.set(lat, lng, alt);
                     view.scene.mapProjection.forward(view.scratch.geo, view.scratch.pointD);

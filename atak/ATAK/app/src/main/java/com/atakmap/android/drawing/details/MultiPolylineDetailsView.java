@@ -438,7 +438,7 @@ public class MultiPolylineDetailsView extends GenericDetailsView implements
                 //Remove the item that the user pressed
                 multiPolyline.removeItem(event.getPoint());
                 if (multiPolyline.get_lines().size() == 0) {
-                    //The the user deleted the last line, remove the entire group
+                    //The user deleted the last line, remove the entire group
                     MapGroup mg = multiPolyline.getMapGroup();
                     mg.removeItem(multiPolyline);
                     _onDoneDeleting();
@@ -564,7 +564,9 @@ public class MultiPolylineDetailsView extends GenericDetailsView implements
         _onDoneAdding();
 
         //Let the user enter the height
-        createHeightDialog(_shape, R.string.enter_shape_height);
+        createHeightDialog(_shape, R.string.enter_shape_height, new Span[] {
+                Span.METER, Span.YARD, Span.FOOT
+        });
     }
 
     /**

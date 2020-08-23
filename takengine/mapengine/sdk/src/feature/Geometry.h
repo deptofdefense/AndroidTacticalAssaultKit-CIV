@@ -154,7 +154,7 @@ class ENGINE_API Geometry
     getDimension ()
         const
         throw ()
-      { return dimension; }
+      { return dimension_; }
 
     //
     // Throws std::length_error if empty.
@@ -169,7 +169,7 @@ class ENGINE_API Geometry
     getType()
         const
         throw ()
-    { return type; }
+    { return type_; }
 
     void
     setDimension (Dimension dim);
@@ -209,13 +209,10 @@ class ENGINE_API Geometry
     //==================================
 
 
-    enum
-      {
-        BLOB_START_BYTE = 0x0,
-        ENTITY_START_BYTE = 0x69,
-        MBR_END_BYTE = 0x7C,
-        BLOB_END_BYTE = 0xFE
-      };
+    static const char BLOB_START_BYTE = 0x00;
+    static const char ENTITY_START_BYTE = 0x69;
+    static const char MBR_END_BYTE = 0x7C;
+    static const char BLOB_END_BYTE = static_cast<char>(0xFEu);
 
 
     //==================================
@@ -225,8 +222,8 @@ class ENGINE_API Geometry
 
     Geometry (Type t,
               Dimension dim)
-      : type (t),
-        dimension (dim)
+      : type_ (t),
+        dimension_ (dim)
       { }
 
     static
@@ -248,8 +245,8 @@ class ENGINE_API Geometry
     // Private representation.
     //
 
-    Type type;
-    Dimension dimension;
+    Type type_;
+    Dimension dimension_;
   };
 
 }                                       // Close feature namespace.

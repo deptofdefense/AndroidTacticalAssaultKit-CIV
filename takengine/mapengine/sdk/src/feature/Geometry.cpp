@@ -12,10 +12,10 @@ Geometry::~Geometry ()
 void
 Geometry::setDimension (Dimension dim)
   {
-    if (dim != dimension)
+    if (dim != dimension_)
       {
         changeDimension (dim);
-        dimension = dim;
+        dimension_ = dim;
       }
   }
 

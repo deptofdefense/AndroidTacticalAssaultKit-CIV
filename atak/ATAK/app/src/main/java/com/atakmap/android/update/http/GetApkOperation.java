@@ -220,7 +220,8 @@ public final class GetApkOperation extends HTTPOperation {
             if (android.os.Build.VERSION.SDK_INT < 26) {
                 builder = new Notification.Builder(context);
             } else {
-                builder = new Notification.Builder(context, "com.atakmap.app.def");
+                builder = new Notification.Builder(context,
+                        "com.atakmap.app.def");
             }
             builder.setContentTitle(
                     "Downloading " + context.getString(R.string.app_name)

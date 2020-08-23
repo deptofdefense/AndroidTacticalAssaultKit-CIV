@@ -4,8 +4,10 @@ package com.atakmap.android.user;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.PointF;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
 import android.widget.Toast;
 
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -30,7 +32,8 @@ import com.atakmap.map.AtakMapController;
 public class CamLockerReceiver extends BroadcastReceiver implements
         MapEventDispatcher.MapEventDispatchListener,
         OnTrackChangedListener, OnMetadataChangedListener,
-        OnPointChangedListener, AtakMapController.OnPanRequestedListener {
+        OnPointChangedListener, AtakMapController.OnPanRequestedListener,
+        SharedPreferences.OnSharedPreferenceChangeListener {
 
     public static final String TAG = "CamLockerReceiver";
 
@@ -55,7 +58,10 @@ public class CamLockerReceiver extends BroadcastReceiver implements
     private Thread lock_monitor;
     private final RelockWidget _relockWidget;
     private String _lastUid;
+    private float lastHeading = 0f;
     private boolean disposed = false;
+    private SharedPreferences prefs;
+    private boolean disableFloatToBottom;
 
     public CamLockerReceiver(final MapView mapView) {
         _mapView = mapView;
@@ -93,6 +99,19 @@ public class CamLockerReceiver extends BroadcastReceiver implements
         lock_monitor.start();
 
         _relockWidget = new RelockWidget(mapView);
+
+        prefs = PreferenceManager
+                .getDefaultSharedPreferences(mapView.getContext());
+        onSharedPreferenceChanged(prefs, "disableFloatToBottom");
+        prefs.registerOnSharedPreferenceChangeListener(this);
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+            String key) {
+        if (key.equals("disableFloatToBottom")) {
+            disableFloatToBottom = sharedPreferences.getBoolean(key, false);
+        }
     }
 
     @Override
@@ -241,8 +260,6 @@ public class CamLockerReceiver extends BroadcastReceiver implements
         return _lockedItem;
     }
 
-    private float lastHeading = 0f;
-
     @Override
     public void onTrackChanged(Marker marker) {
         if (marker != _lockedItem) {
@@ -281,7 +298,7 @@ public class CamLockerReceiver extends BroadcastReceiver implements
                 && SystemClock.elapsedRealtime() > _snapbackCooldown) {
 
             GeoPoint restingPoint;
-            if (trackupMode
+            if (!disableFloatToBottom && trackupMode
                     && _mapView.getSelfMarker().getUID()
                             .compareTo(
                                     item.getUID()) == 0
@@ -339,6 +356,7 @@ public class CamLockerReceiver extends BroadcastReceiver implements
     }
 
     public void dispose() {
+        prefs.unregisterOnSharedPreferenceChangeListener(this);
         disposed = true;
     }
 }

@@ -21,9 +21,11 @@ import com.atakmap.android.contact.PluginConnector;
 import com.atakmap.android.contact.TadilJContact;
 import com.atakmap.android.contact.TadilJContactDatabase;
 import com.atakmap.android.cot.CotMapComponent;
+import com.atakmap.android.dropdown.DropDown;
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.hierarchy.HierarchyListFilter;
 import com.atakmap.android.hierarchy.HierarchyListItem;
+import com.atakmap.android.hierarchy.filters.EmptyListFilter;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.maps.AbstractMapComponent;
@@ -892,6 +894,17 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
             boolean editable,
             MessageDestination destination) {
 
+        // Make sure if we're opening a group chat that we refresh the current
+        // list of contacts, but only if the contacts drop-down is closed
+        // since we want to maintain active filters (see ATAK-13011)
+        ContactPresenceDropdown contacts = CotMapComponent.getInstance()
+                    .getContactPresenceReceiver();
+        if (contacts.isClosed()) {
+            Contact c = Contacts.getInstance().getContactByUuid(targetUID);
+            if (c instanceof GroupContact)
+                c.syncRefresh(null, new EmptyListFilter());
+        }
+
         ConversationFragment toDisplay = getOrCreateFragment(conversationId,
                 conversationName,
                 destination);
@@ -976,7 +989,7 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
         }
     }
 
-    void openConversation(String uid, boolean editable) {
+    public void openConversation(String uid, boolean editable) {
         // opening from the radial menu and only have the uid
         if (!FileSystemUtils.isEmpty(uid)) {
 
@@ -1221,19 +1234,41 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
         Contacts.getInstance().updateTotalUnreadCount();
     }
 
+    public static String CHAT_ROOM_DROPDOWN_CLOSED = "com.atakmap.chat.chatroom_closed";
+
     public class ChatDropDownReceiver extends DropDownReceiver {
+
+        private ConversationFragment _conversationFragment;
+
         public ChatDropDownReceiver() {
             super(_mapView);
         }
 
         public void show(ConversationFragment cf) {
+            _conversationFragment = cf;
             showDropDown(cf, HALF_WIDTH, FULL_HEIGHT, FULL_WIDTH,
-                    TWO_THIRDS_HEIGHT, false, true);
-
+                    TWO_THIRDS_HEIGHT, true, true);
         }
 
         @Override
         public void disposeImpl() {
+        }
+
+        @Override
+        protected boolean onBackButtonPressed() {
+            //notify and tool in the application that the chatroom has been closed and
+            //provide the chatroom uid as a model for determining if the tool catching this
+            //event is the one they are interested in. Developers who listen for this should
+            // unregister their receiver when they receive and process the return intent
+            if (_conversationFragment.getArguments() != null
+                    && _conversationFragment.getArguments().containsKey("id")) {
+                Intent intent = new Intent(CHAT_ROOM_DROPDOWN_CLOSED);
+                intent.putExtra("conversationId",
+                        _conversationFragment.getArguments().getString("id"));
+                AtakBroadcast.getInstance().sendBroadcast(intent);
+            }
+            closeDropDown();
+            return true;
         }
 
         @Override

@@ -134,7 +134,7 @@ public class NMEAMessageHelper {
                 "' le='0'/>" +
                 "<detail>" + fixQualityToCotEntry(fixQuality) +
                 "<track course='" + rmc.getTrackAngle() +
-                "' speed='" + (rmc.getGroundSpeed() / 1.85200) +
+                "' speed='" + (rmc.getGroundSpeed() * 0.5144444) +
                 "'/><remarks>[" + src + "] "
                 + fixQualityToString(fixQuality)
                 + "</remarks>" +

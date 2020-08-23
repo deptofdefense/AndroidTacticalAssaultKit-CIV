@@ -123,7 +123,7 @@ public class GdalTileReader extends TileReader {
      * @param dataset
      * @param tileWidth
      * @param tileHeight
-     * @param cache
+     * @param cacheUri
      * @param asynchronousIO If <code>null</code> a new instance will be created for exclusive use
      *            with this tile reader
      */
@@ -228,7 +228,7 @@ public class GdalTileReader extends TileReader {
             };
         }
 
-        this.interleave = getInterleave(this.dataset, this.format, (this.colorTable != null));
+        this.interleave = Interleave.BIP;
 
         if (this.internalPixelSize == 0)
             this.internalPixelSize = this.getPixelSize();
@@ -439,25 +439,6 @@ public class GdalTileReader extends TileReader {
         return retval;
     }
 
-    private static Interleave getInterleave(Dataset dataset, Format format, boolean hasColorTable) {
-        if (hasColorTable) {
-            return Interleave.BIP;
-        } else if (dataset.GetRasterCount() > 1) {
-            String interleave = dataset.GetMetadataItem("INTERLEAVE", "IMAGE_STRUCTURE");
-            if (interleave != null) {
-                if (interleave.equals("PIXEL")) {
-                    return Interleave.BIP;
-                } else if (interleave.equals("BAND")) {
-                    return Interleave.BSQ;
-                } else if (interleave.equals("LINE")) {
-                    return Interleave.BIL;
-                }
-            }
-        }
-
-        return Interleave.BSQ;
-    }
-
     /**************************************************************************/
     // Interleaved Reading
 
@@ -465,111 +446,30 @@ public class GdalTileReader extends TileReader {
         public int read(int srcX, int srcY, int srcW, int srcH, int dstW, int dstH, byte[] data);
     }
 
-    private static interface InterleaveParams {
-        public int getPixelSpacing(int dstW, int dstH, int numDataElements, int dataElementSizeBytes);
-
-        public int getLineSpacing(int dstW, int dstH, int numDataElements, int dataElementSizeBytes);
-
-        public int getBandSpacing(int dstW, int dstH, int numDataElements, int dataElementSizeBytes);
+    static int getPixelSpacing(int dstW, int dstH, int numDataElements,
+                                         int dataElementSizeBytes) {
+        return (dataElementSizeBytes * numDataElements);
     }
 
-    private final static class BSQInterleaveParams implements InterleaveParams {
-        public final static InterleaveParams INSTANCE = new BSQInterleaveParams();
-
-        private BSQInterleaveParams() {
-        }
-
-        @Override
-        public final int getPixelSpacing(int dstW, int dstH, int numDataElements,
-                                         int dataElementSizeBytes) {
-            return 0;
-        }
-
-        @Override
-        public final int getLineSpacing(int dstW, int dstH, int numDataElements,
-                                        int dataElementSizeBytes) {
-            return 0;
-        }
-
-        @Override
-        public final int getBandSpacing(int dstW, int dstH, int numDataElements,
-                                        int dataElementSizeBytes) {
-            return 0;
-        }
+    static int getLineSpacing(int dstW, int dstH, int numDataElements,
+                                    int dataElementSizeBytes) {
+        return (dstW * numDataElements * dataElementSizeBytes);
     }
 
-    private final static class BIPInterleaveParams implements InterleaveParams {
-        public final static InterleaveParams INSTANCE = new BIPInterleaveParams();
-
-        private BIPInterleaveParams() {
-        }
-
-        @Override
-        public final int getPixelSpacing(int dstW, int dstH, int numDataElements,
-                                         int dataElementSizeBytes) {
-            return (dataElementSizeBytes * numDataElements);
-        }
-
-        @Override
-        public final int getLineSpacing(int dstW, int dstH, int numDataElements,
-                                        int dataElementSizeBytes) {
-            return (dstW * numDataElements * dataElementSizeBytes);
-        }
-
-        @Override
-        public final int getBandSpacing(int dstW, int dstH, int numDataElements,
+    static int getBandSpacing(int dstW, int dstH, int numDataElements,
                                         int dataElementSizeBytes) {
             return dataElementSizeBytes;
-        }
     }
 
-    private final static class BILInterleaveParams implements InterleaveParams {
-        public final static InterleaveParams INSTANCE = new BILInterleaveParams();
+    abstract class AbstractReaderImpl implements ReaderImpl {
+        final int nbpp;
+        final int abpp;
 
-        private BILInterleaveParams() {
-        }
+        final double scaleMaxValue;
+        final int elemSize;
 
-        @Override
-        public final int getPixelSpacing(int dstW, int dstH, int numDataElements,
-                                         int dataElementSizeBytes) {
-            return dataElementSizeBytes;
-        }
-
-        @Override
-        public final int getLineSpacing(int dstW, int dstH, int numDataElements,
-                                        int dataElementSizeBytes) {
-            return (dstW * dataElementSizeBytes * numDataElements);
-        }
-
-        @Override
-        public final int getBandSpacing(int dstW, int dstH, int numDataElements,
-                                        int dataElementSizeBytes) {
-            return (dstW * dataElementSizeBytes);
-        }
-    }
-
-    private abstract class AbstractReaderImpl implements ReaderImpl {
-        protected final int nbpp;
-        protected final int abpp;
-
-        protected final double scaleMaxValue;
-
-        protected final InterleaveParams interleaveParams;
-
-        protected AbstractReaderImpl() {
-            switch (GdalTileReader.this.interleave) {
-                case BIP:
-                    this.interleaveParams = BIPInterleaveParams.INSTANCE;
-                    break;
-                case BIL:
-                    this.interleaveParams = BILInterleaveParams.INSTANCE;
-                    break;
-                case BSQ:
-                    this.interleaveParams = BSQInterleaveParams.INSTANCE;
-                    break;
-                default:
-                    throw new IllegalStateException();
-            }
+        protected AbstractReaderImpl(int elemSize) {
+            this.elemSize = elemSize;
 
             this.nbpp = gdal.GetDataTypeSize(GdalTileReader.this.dataset.GetRasterBand(1)
                     .getDataType());
@@ -586,17 +486,18 @@ public class GdalTileReader extends TileReader {
         }
     }
 
-    private final class ByteReaderImpl extends AbstractReaderImpl {
+    final class ByteReaderImpl extends AbstractReaderImpl {
+        ByteReaderImpl() {
+            super(1);
+        }
+
         @Override
         public final int read(int srcX, int srcY, int srcW, int srcH, int dstW, int dstH,
                               byte[] data) {
             final int numDataElements = GdalTileReader.this.internalPixelSize;
-            final int nPixelSpace = this.interleaveParams.getPixelSpacing(dstW, dstH,
-                    numDataElements, 1);
-            final int nLineSpace = this.interleaveParams.getLineSpacing(dstW, dstH,
-                    numDataElements, 1);
-            final int nBandSpace = this.interleaveParams.getBandSpacing(dstW, dstH,
-                    numDataElements, 1);
+            final int nPixelSpace = getPixelSpacing(dstW, dstH, numDataElements, elemSize);
+            final int nLineSpace = getLineSpacing(dstW, dstH, numDataElements, elemSize);
+            final int nBandSpace = getBandSpacing(dstW, dstH, numDataElements, elemSize);
 
             final int success = GdalTileReader.this.dataset.ReadRaster(srcX, srcY, srcW, srcH,
                     dstW, dstH, gdalconst.GDT_Byte, data, GdalTileReader.this.bandRequest,
@@ -608,17 +509,18 @@ public class GdalTileReader extends TileReader {
         }
     }
 
-    private final class ShortReaderImpl extends AbstractReaderImpl {
+    final class ShortReaderImpl extends AbstractReaderImpl {
+        ShortReaderImpl() {
+            super(2);
+        }
+
         @Override
         public final int read(int srcX, int srcY, int srcW, int srcH, int dstW, int dstH,
                               byte[] data) {
             final int numDataElements = GdalTileReader.this.internalPixelSize;
-            final int nPixelSpace = this.interleaveParams.getPixelSpacing(dstW, dstH,
-                    numDataElements, 2);
-            final int nLineSpace = this.interleaveParams.getLineSpacing(dstW, dstH,
-                    numDataElements, 2);
-            final int nBandSpace = this.interleaveParams.getBandSpacing(dstW, dstH,
-                    numDataElements, 2);
+            final int nPixelSpace = getPixelSpacing(dstW, dstH, numDataElements, elemSize);
+            final int nLineSpace = getLineSpacing(dstW, dstH, numDataElements, elemSize);
+            final int nBandSpace = getBandSpacing(dstW, dstH, numDataElements, elemSize);
 
             final int numSamples = (dstW * dstH * numDataElements);
 
@@ -637,17 +539,18 @@ public class GdalTileReader extends TileReader {
         }
     }
 
-    private final class IntReaderImpl extends AbstractReaderImpl {
+    final class IntReaderImpl extends AbstractReaderImpl {
+        IntReaderImpl() {
+            super(4);
+        }
+
         @Override
         public final int read(int srcX, int srcY, int srcW, int srcH, int dstW, int dstH,
                               byte[] data) {
             final int numDataElements = GdalTileReader.this.internalPixelSize;
-            final int nPixelSpace = this.interleaveParams.getPixelSpacing(dstW, dstH,
-                    numDataElements, 4);
-            final int nLineSpace = this.interleaveParams.getLineSpacing(dstW, dstH,
-                    numDataElements, 4);
-            final int nBandSpace = this.interleaveParams.getBandSpacing(dstW, dstH,
-                    numDataElements, 4);
+            final int nPixelSpace = getPixelSpacing(dstW, dstH, numDataElements, elemSize);
+            final int nLineSpace = getLineSpacing(dstW, dstH, numDataElements, elemSize);
+            final int nBandSpace = getBandSpacing(dstW, dstH, numDataElements, elemSize);
 
             final int numSamples = (dstW * dstH * numDataElements);
 
@@ -666,17 +569,18 @@ public class GdalTileReader extends TileReader {
         }
     }
 
-    private final class FloatReaderImpl extends AbstractReaderImpl {
+    final class FloatReaderImpl extends AbstractReaderImpl {
+        FloatReaderImpl() {
+            super(4);
+        }
+
         @Override
         public final int read(int srcX, int srcY, int srcW, int srcH, int dstW, int dstH,
                               byte[] data) {
             final int numDataElements = GdalTileReader.this.internalPixelSize;
-            final int nPixelSpace = this.interleaveParams.getPixelSpacing(dstW, dstH,
-                    numDataElements, 4);
-            final int nLineSpace = this.interleaveParams.getLineSpacing(dstW, dstH,
-                    numDataElements, 4);
-            final int nBandSpace = this.interleaveParams.getBandSpacing(dstW, dstH,
-                    numDataElements, 4);
+            final int nPixelSpace = getPixelSpacing(dstW, dstH, numDataElements, elemSize);
+            final int nLineSpace = getLineSpacing(dstW, dstH, numDataElements, elemSize);
+            final int nBandSpace = getBandSpacing(dstW, dstH, numDataElements, elemSize);
 
             final int numSamples = (dstW * dstH * numDataElements);
 
@@ -691,17 +595,17 @@ public class GdalTileReader extends TileReader {
         }
     }
 
-    private final class DoubleReaderImpl extends AbstractReaderImpl {
+    final class DoubleReaderImpl extends AbstractReaderImpl {
+        DoubleReaderImpl() {
+            super(8);
+        }
         @Override
         public final int read(int srcX, int srcY, int srcW, int srcH, int dstW, int dstH,
                               byte[] data) {
             final int numDataElements = GdalTileReader.this.internalPixelSize;
-            final int nPixelSpace = this.interleaveParams.getPixelSpacing(dstW, dstH,
-                    numDataElements, 8);
-            final int nLineSpace = this.interleaveParams.getLineSpacing(dstW, dstH,
-                    numDataElements, 8);
-            final int nBandSpace = this.interleaveParams.getBandSpacing(dstW, dstH,
-                    numDataElements, 8);
+            final int nPixelSpace = getPixelSpacing(dstW, dstH, numDataElements, elemSize);
+            final int nLineSpace = getLineSpacing(dstW, dstH, numDataElements, elemSize);
+            final int nBandSpace = getBandSpacing(dstW, dstH, numDataElements, elemSize);
 
             final int numSamples = (dstW * dstH * numDataElements);
 

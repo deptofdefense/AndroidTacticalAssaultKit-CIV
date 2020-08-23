@@ -85,8 +85,11 @@ public:
                            size_t nCa, const char *pkeyPem,
                            const char *password, 
                            const char *friendlyName);
-
     static void freeCryptoString(char *cryptoString);
+
+    size_t generateSelfSignedCert(uint8_t **cert, const char *password);
+    void freeSelfSignedCert(uint8_t *cert);
+
     static bool fromBase64(const char *b64, 
                            char **poutbuf, size_t *poutlen);
     static char *toBase64(char *str, int length);

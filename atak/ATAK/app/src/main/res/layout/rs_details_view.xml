@@ -243,22 +243,19 @@
                 android:layout_height="wrap_content"
                 android:padding="@dimen/auto_space_big"
                 android:orientation="vertical">
-                <TextView
-                    android:layout_height="wrap_content"
-                    android:layout_width="wrap_content"
-                    android:textColor="@color/heading_yellow"
-                    android:text="@string/remarks"
-                    android:textSize="@dimen/draper_font"/>
-                <EditText
-                    android:id="@+id/sheetRemarks"
+
+                <com.atakmap.android.hashtags.view.RemarksLayout
+                    android:id="@+id/remarksLayout"
                     android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <!-- This is where extra views go from tools or plugins -->
+                <com.atakmap.android.cotdetails.extras.ExtraDetailsLayout
+                    android:id="@+id/extrasLayout"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="fill_horizontal"
-                    android:gravity="start"
-                    android:inputType="textMultiLine|textCapSentences|textNoSuggestions"
-                    android:minLines="1"
-                    android:textSize="@dimen/draper_title_font"
-                    android:contentDescription="@string/remarks"/>
+                    android:orientation="vertical"/>
+
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

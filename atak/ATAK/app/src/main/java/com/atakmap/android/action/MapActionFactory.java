@@ -53,6 +53,12 @@ public class MapActionFactory {
         return _loader.loadFromConfigUri(configUri, config);
     }
 
+    public static MapAction loadFromConfigResource(final String resource,
+            final ConfigEnvironment config)
+            throws ParserConfigurationException, SAXException, IOException {
+        return _loader.loadFromConfigResource(resource, config);
+    }
+
     public static MapAction createFromElem(final Node elemNode,
             final ConfigEnvironment config) {
         return _loader.loadFromElem(elemNode, config);

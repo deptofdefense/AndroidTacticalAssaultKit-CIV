@@ -4,8 +4,11 @@ package com.atakmap.android.routes;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.os.Bundle;
 import android.widget.Toast;
 
+import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.util.Undoable;
@@ -18,10 +21,11 @@ import java.net.UnknownHostException;
  * Handler for Route Generation events emitted by implementations of {@link RouteGenerationTask}. This
  * handler expects to be run on a UI thread.
  */
-class RouteGenerationHandler
+public class RouteGenerationHandler
         implements RouteGenerationTask.RouteGenerationEventListener {
 
     private static final String TAG = "RouteGenerationHandler";
+    public static final String ROUTE_GENERATED = "com.atakmap.android.routes.ROUTE_GENERATED";
     private ProgressDialog dlg;
     private final PointMapItem origin;
     private final PointMapItem dest;
@@ -29,7 +33,7 @@ class RouteGenerationHandler
     private final MapView _mapView;
     private final Route _route;
 
-    RouteGenerationHandler(MapView mapView, PointMapItem origin,
+    public RouteGenerationHandler(MapView mapView, PointMapItem origin,
             PointMapItem dest, Route route) {
         this.origin = origin;
         this.dest = dest;
@@ -39,28 +43,31 @@ class RouteGenerationHandler
     }
 
     @Override
-    public void onBeforeRouteGenerated(final RouteGenerationTask task) {
-        dlg = new ProgressDialog(_context);
-        dlg.setTitle(R.string.route_plan_calculating);
-        dlg.setMessage(
-                _context.getString(R.string.route_plan_calculating_msg));
-        dlg.setIndeterminate(true);
-        dlg.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-        dlg.setCanceledOnTouchOutside(false);
-        dlg.setButton(DialogInterface.BUTTON_NEGATIVE, "Cancel",
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        task.cancel(true);
-                        Toast.makeText(_context,
-                                R.string.route_plan_cancelling,
-                                Toast.LENGTH_LONG).show();
+    public void onBeforeRouteGenerated(final RouteGenerationTask task,
+            boolean displayDialog) {
+        if (displayDialog) {
+            dlg = new ProgressDialog(_context);
+            dlg.setTitle(R.string.route_plan_calculating);
+            dlg.setMessage(
+                    _context.getString(R.string.route_plan_calculating_msg));
+            dlg.setIndeterminate(true);
+            dlg.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            dlg.setCanceledOnTouchOutside(false);
+            dlg.setButton(DialogInterface.BUTTON_NEGATIVE, "Cancel",
+                    new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            task.cancel(true);
+                            Toast.makeText(_context,
+                                    R.string.route_plan_cancelling,
+                                    Toast.LENGTH_LONG).show();
 
-                        dlg.dismiss();
-                    }
-                });
+                            dlg.dismiss();
+                        }
+                    });
 
-        dlg.show();
+            dlg.show();
+        }
     }
 
     @Override
@@ -108,7 +115,7 @@ class RouteGenerationHandler
     public void onRouteGenerated(RoutePointPackage routePointPackage) {
         //NOTE:: This does not run on the UI thread.
 
-        if (routePointPackage == null) {
+        if (routePointPackage == null || routePointPackage.getError() != null) {
 
             Log.d(TAG, "no routes found");
 
@@ -127,18 +134,36 @@ class RouteGenerationHandler
             undo.run(act);
         else
             act.run();
+
+        // Make sure to persist the finished route
+        _route.removeMetaData("creating");
+        _route.persist(_mapView.getMapEventDispatcher(), null, getClass());
+
+        Intent routeGeneratedIntent = new Intent();
+        routeGeneratedIntent.setAction(ROUTE_GENERATED);
+        routeGeneratedIntent.putExtra("route_uid", _route.getUID());
+        AtakBroadcast.getInstance().sendSystemBroadcast(routeGeneratedIntent);
+
         updateProgress(1);
     }
 
     @Override
     public void onAfterRouteGenerated(RoutePointPackage routePointPackage) {
-        if (routePointPackage == null) {
+        if (routePointPackage != null) {
+            String errorMsg = routePointPackage.getError();
+            if (errorMsg != null) {
+                Toast.makeText(_context,
+                        errorMsg,
+                        Toast.LENGTH_LONG).show();
+            }
+        } else {
             Toast.makeText(_context,
                     R.string.route_plan_unable_to_find_route,
                     Toast.LENGTH_LONG).show();
         }
 
-        dlg.dismiss();
+        if (dlg != null)
+            dlg.dismiss();
     }
 
     @Override

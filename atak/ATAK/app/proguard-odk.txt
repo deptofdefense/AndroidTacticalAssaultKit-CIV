@@ -1,0 +1,307 @@
+###########################################################
+#
+# Used to produce the faux obfuscated release build for 
+# ATAK.   This is derived directly from the normal release
+# build proguard rules with the addition of the block at the 
+# top of the file. 
+#
+# For more details, see
+#   http://developer.android.com/guide/developing/tools/proguard.html
+###########################################################
+
+
+###########################################################
+# Specific for the faux progaurd rules
+###########################################################
+
+-obfuscationdictionary proguard-random.dict
+-packageobfuscationdictionary proguard-random.dict
+-classobfuscationdictionary proguard-random.dict
+
+###########################################################
+
+
+
+#### Basic stuff from SDK
+-dontskipnonpubliclibraryclasses
+-verbose
+
+# In order to print unused methods, you need to comment out dont shrink in this file
+-printusage unused.txt
+
+-repackageclasses atak.core
+
+
+-keepattributes Exceptions
+-keepattributes *Annotation*
+-keepattributes InnerClasses
+-keepattributes EnclosingMethod
+-keepattributes Signature
+
+# For native methods, see http://proguard.sourceforge.net/manual/examples.html#native
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+# keep setters in Views so that animations can still work.
+# see http://proguard.sourceforge.net/manual/examples.html#beans
+-keepclassmembers public class * extends android.view.View {
+   void set*(***);
+   *** get*();
+}
+
+# We want to keep methods in Activity that could be used in the XML attribute onClick
+-keepclassmembers class * extends android.app.Activity {
+   public void *(android.view.View);
+}
+
+# For enumeration classes, see http://proguard.sourceforge.net/manual/examples.html#enumerations
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+
+-keep class * implements android.os.Parcelable {
+  public static final android.os.Parcelable$Creator *;
+}
+
+-keepclassmembers class **.R$* {
+    public static <fields>;
+}
+
+# The support library contains references to newer platform versions.
+# Don't warn about those in case this app is linking against an older
+# platform version.  We know about them, and they are safe.
+-dontwarn org.acra.util.**
+-dontwarn com.squareup.okhttp.OkHttpClient
+-dontwarn libcore.icu.ICU
+-dontwarn org.acra.ErrorReporter
+
+# Do not obfuscate any android x libraries
+# keep all AndroidX libraries
+-keep class androidx.** {*;}
+
+
+# Add any project specific keep options here:
+
+-optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
+-optimizationpasses 4
+
+# Specifies that the access modifiers of classes and class members may be broadened 
+# during processing.   This should not be turned on in cases where we are processing 
+# code that is to be used as a libary.  Leaving this in because it was in the rules
+# for a long time and now has become an issue.
+#-allowaccessmodification
+
+
+-dontpreverify
+
+-dontoptimize
+-dontshrink
+
+# see https://issuetracker.google.com/issues/36986289
+-keepattributes LocalVariableTable
+
+-dontwarn org.apache.**
+-dontwarn org.acra.collector.**
+-dontwarn com.ekito.**
+-dontwarn com.healthmarketscience.**
+-dontwarn com.iai.**
+-dontwarn org.simpleframework.**
+
+-keep class android.database.** {*;}
+-keep class android.support.** {*;}
+-keep class com.healthmarketscience.** {*;}
+-keep class jsqlite.** {*;}
+-keep class org.apache.** {*;}
+-keep public class com.partech.pgscmedia.** {*;}
+-keep class org.simpleframework.** {*;}
+-keep class org.gdal.** {*;}
+-keep class com.ekito.** {*;}
+-keep class org.achartengine.** {*;}
+
+# classes inflated by xml configurations
+-keep class com.atakmap.android.bluetooth.BluetoothDevicesConfig
+-keep class com.atakmap.android.lrf.reader.LRFReader
+-keep class com.atakmap.android.lrf.reader.TruePulseReader
+
+########### Solve wierd problems 
+-keep class com.atakmap.android.editableShapes.** {*;}
+-keep class com.atakmap.android.gps.bluetooth.BluetoothGPSNMEAReader
+-keep class com.atakmap.android.importfiles.resource.** {*;}
+-keep class com.atakmap.android.missionpackage.file.** {*;}
+-keep class com.atakmap.android.missionpackage.http.rest.** {*;}
+-keep class com.atakmap.android.tools.menu.** {*;}
+-keep class com.atakmap.android.update.http.GetApkOperation
+-keep class com.atakmap.android.attachment.** {*;}
+-keep class com.atakmap.android.gpx.** {*;}
+-keep class com.atakmap.android.http.rest.operation.** {*;}
+-keep class com.atakmap.android.ftp.operation.FtpStoreFileOperation
+-keep class com.atakmap.android.favorites {*;}
+-keep class com.atakmap.android.grg.** {*;}
+-keep class com.atakmap.android.maps.graphics.** {*;}
+-keep class com.atakmap.android.hierarchy.HierarchyListUserDelete
+-keep class com.atakmap.android.icons.UserIcon
+-keep class com.atakmap.android.icons.UserIconSet
+-keep class com.atakmap.android.user.filter.** {*;}
+-keep class com.atakmap.android.maps.tilesets.** {*;}
+-keep class com.atakmap.android.gdal.** {*;}
+-keep class com.lizardtech.android.mrsid.** {*;}
+-keep class com.iai.** {*;}
+-keep class com.atak.plugins.impl.** {*;}
+-keep class com.atak.plugins.impl.AtakPluginRegistry.PluginDescriptor {*;}
+-keep class com.atak.plugins.impl.AtakPluginRegistry.Extension {*;}
+-keep class com.atakmap.android.toolbar.IToolbarExtension {*;}
+
+# For newer Android distributions
+-keep class com.atakmap.android.gui.PluginSpinner$ContextSensitiveContext {*;}
+
+########## Chris L will need to review.
+-keep class com.atakmap.opengl.** {*;}
+-keepattributes *Annotation*
+-keepattributes Signature
+
+########### SQL Cipher
+-keep class com.atakmap.net.AtakAuthenticationCredentials
+-keep class com.atakmap.net.AtakAuthenticationCredentials$Type
+-keepclassmembers public class com.atakmap.net.AtakAuthenticationCredentials {
+    *;
+}
+
+########### Main activities
+-keep public class * extends android.app.Activity
+-keep public class * extends android.app.Application
+-keep public class * extends android.app.Service
+-keep public class * extends android.content.BroadcastReceiver
+
+
+-keep class com.atakmap.android.cot.CotServiceInterface {*;}
+-keep class com.atakmap.android.cot.CotServiceInterface$* {*;}
+-keep class com.atakmap.android.maps.assets.Icon {*;}
+-keep class com.atakmap.android.maps.util.MetaDataSet {*;}
+-keep class com.atakmap.android.maps.coords.DistanceCalculations {*;}
+-keep class com.atakmap.android.maps.coords.Vector2D {*;}
+
+
+########### for plugin interface
+-keep class com.atakmap.coremap.** {*;}
+-keep class transapps.** {*;}
+-keep class com.atakmap.coremap.** {*;}
+-keep class transapps.** {*;}
+-keep class plugins.core.model.** {*;}
+
+
+########### for common commo
+#-keep class com.atakmap.comms.** {*;}
+-keep class com.atakmap.commoncommo.** { *; }
+
+-keepclassmembers class * {
+    @org.simpleframework.xml.* *;
+}
+
+###### random stuff probably related to native calls:
+-keep class com.atakmap.android.maps.tilesets.TilesetInfo
+-keep class com.atakmap.spatial.SpatialPreparedStatement
+
+###### map components need to be kept
+-keep public class * implements com.atakmap.android.maps.MapComponent
+
+
+##### things that need to be inflated...
+-keep public class * extends android.view.View {
+    public <init>(android.content.Context);
+    public <init>(android.content.Context, android.util.AttributeSet);
+    public <init>(android.content.Context, android.util.AttributeSet, int);
+    public void set*(...);
+}
+
+
+-keepclasseswithmembers class * {
+    public <init>(android.content.Context, android.util.AttributeSet);
+}
+
+-keepclasseswithmembers class * {
+    public <init>(android.content.Context, android.util.AttributeSet, int);
+}
+
+
+############### ACRA specifics
+# we need line numbers in our stack traces otherwise they are pretty useless
+-renamesourcefileattribute SourceFile
+-keepattributes SourceFile,LineNumberTable
+
+# ACRA needs "annotations" so add this... 
+-keepattributes *Annotation*
+
+# Keep all the ACRA classes
+-keep class org.acra.** { *; }
+
+# Word around for plugin desugaring issue
+-keep class com.atakmap.android.drawing.mapItems.DrawingCircle {*;}
+-keep class com.atakmap.android.drawing.tools.CircleCreationTool {*;}
+
+# UsbSerial 
+-keep class com.hoho.android.usbserial.** {*;}
+
+# Native code
+-keep class com.atakmap.database.RowIterator {*;}
+-keep class com.atakmap.interop.NotifyCallback {*;}
+-keep class com.atakmap.interop.Pointer {*;}
+-keep class com.atakmap.interop.ProgressCallback {*;}
+-keep class com.atakmap.map.AtakMapView {*;}
+-keep class com.atakmap.map.AtakMapView$* {*;}
+-keep class com.atakmap.map.AtakMapController {*;}
+-keep class com.atakmap.map.AtakMapController$* {*;}
+-keep class com.atakmap.map.Globe {*;}
+-keep class com.atakmap.map.Globe$* {*;}
+-keep class com.atakmap.map.EngineLibrary {*;}
+-keep class com.atakmap.map.MapSceneModel {*;}
+-keep class com.atakmap.map.RenderContext {*;}
+-keep class com.atakmap.map.RenderSurface {*;}
+-keep class com.atakmap.map.RenderContextInterop {*;}
+-keep class com.atakmap.map.elevation.ElevationChunk {*;}
+-keep class com.atakmap.map.elevation.ElevationChunk$* {*;}
+-keep class com.atakmap.map.elevation.ElevationSource {*;}
+-keep class com.atakmap.map.elevation.ElevationSource$* {*;}
+-keep class com.atakmap.map.elevation.ElevationSourceManager {*;}
+-keep class com.atakmap.map.elevation.ElevationSourceManager$* {*;}
+-keep class com.atakmap.map.elevation.NativeElevationSource {*;}
+-keep class com.atakmap.map.elevation.NativeElevationSource$* {*;}
+-keep class com.atakmap.map.layer.Layer {*;}
+-keep class com.atakmap.map.layer.Layer$* {*;}
+-keep class com.atakmap.map.layer.NativeLayer {*;}
+-keep class com.atakmap.map.layer.NativeLayer$* {*;}
+-keep class com.atakmap.map.layer.feature.AttributeSet {*;}
+-keep class com.atakmap.map.layer.feature.FeatureDataSource {*;}
+-keep class com.atakmap.map.layer.feature.FeatureDataSource$* {*;}
+-keep class com.atakmap.map.layer.feature.Interop {*;}
+-keep class com.atakmap.map.layer.feature.geometry.Envelope {*;}
+-keep class com.atakmap.map.layer.feature.geometry.Geometry {*;}
+-keep class com.atakmap.map.layer.feature.geometry.Polygon {*;}
+-keep class com.atakmap.map.layer.feature.style.Style {*;}
+-keep class com.atakmap.map.layer.model.Model {*;}
+-keep class com.atakmap.map.layer.model.Mesh {*;}
+-keep class com.atakmap.map.layer.model.NativeMesh {*;}
+-keep class com.atakmap.map.layer.opengl.GLLayer2 {*;}
+-keep class com.atakmap.map.layer.opengl.GLLayer3 {*;}
+-keep class com.atakmap.map.layer.opengl.GLLayerSpi2 {*;}
+-keep class com.atakmap.map.layer.opengl.NativeGLLayer3 {*;}
+-keep class com.atakmap.map.layer.opengl.NativeGLLayerSpi2 {*;}
+-keep class com.atakmap.map.opengl.GLAntiMeridianHelper {*;}
+-keep class com.atakmap.map.opengl.GLMapRenderable2 {*;}
+-keep class com.atakmap.map.opengl.GLMapView {*;}
+-keep class com.atakmap.map.opengl.NativeGLMapRenderable2 {*;}
+-keep class com.atakmap.map.projection.NativeProjection {*;}
+-keep class com.atakmap.map.projection.MapProjectionDisplayModel {*;}
+-keep class com.atakmap.map.projection.Projection {*;}
+-keep class com.atakmap.map.projection.ProjectionFactory {*;}
+-keep class com.atakmap.map.projection.ProjectionSpi {*;}
+-keep class com.atakmap.math.GeometryModel {*;}
+-keep class com.atakmap.math.Matrix {*;}
+-keep class com.atakmap.math.NativeGeometryModel {*;}
+-keep class com.atakmap.math.PointD {*;}
+-keep class com.atakmap.math.Ray {*;}
+-keep class com.atakmap.math.Vector3D {*;}
+
+# make sure jassimp is happy
+-keep class jassimp.** {*;}

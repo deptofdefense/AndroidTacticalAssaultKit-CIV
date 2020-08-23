@@ -46,6 +46,13 @@ public class AtakAuthenticationCredentials {
      */
     public static final String TYPE_clientPassword = "clientPassword";
 
+    /**
+     * Video alias password
+     * Fortify has flagged this as Password Management: Hardcoded Password
+     * this is only a key.
+     */
+    public static final String TYPE_videoPassword = "videoPassword";
+
     public String type = TYPE_UNKNOWN;
     public String site = "";
     public String username = "";

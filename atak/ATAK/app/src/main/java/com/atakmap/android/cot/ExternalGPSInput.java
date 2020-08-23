@@ -72,7 +72,8 @@ public class ExternalGPSInput implements Runnable {
 
         _listening = true;
         try {
-            socket = SocketFactory.getSocketFactory().createDatagramSocket(_port);
+            socket = SocketFactory.getSocketFactory()
+                    .createDatagramSocket(_port);
             byte[] buffer = new byte[BUFFERSIZE];
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
             socket.setSoTimeout(10000);

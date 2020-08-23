@@ -18,6 +18,8 @@ import javax.xml.XMLConstants;
 import java.io.IOException;
 import java.io.InputStream;
 import com.atakmap.coremap.locale.LocaleUtil;
+import com.atakmap.coremap.xml.XMLUtils;
+
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -148,18 +150,7 @@ public class WidgetIcon implements Cloneable {
             throws SAXException, IOException {
         WidgetIcon icon = null;
         try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            try {
-                dbf.setFeature(
-                        "http://apache.org/xml/features/disallow-doctype-decl",
-                        true);
-            } catch (Exception ignored) {
-            }
-            try {
-                dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            } catch (Exception ignored) {
-            }
-
+            DocumentBuilderFactory dbf = XMLUtils.getDocumenBuilderFactory();
             DocumentBuilder db = dbf.newDocumentBuilder();
             Document doc = db.parse(stream);
 

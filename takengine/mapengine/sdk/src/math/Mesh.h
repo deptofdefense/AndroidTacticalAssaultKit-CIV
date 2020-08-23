@@ -29,7 +29,8 @@ namespace TAK
                 virtual void clone(std::unique_ptr<GeometryModel2, void(*)(const GeometryModel2 *)> &value) const NOTHROWS;
             private:
                 std::shared_ptr<const Model::Mesh> data;
-                std::unique_ptr<const Matrix2> localFrame;
+                Matrix2 localFrame;
+                bool hasLocalFrame;
             };
         }
     }

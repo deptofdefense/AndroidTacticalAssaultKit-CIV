@@ -23,6 +23,23 @@ using namespace atakmap::util;
 
 using namespace TAKEngineJNI::Interop;
 
+#define CHECK_NON_NULL_KEY(env, arg, rv) \
+    if(!arg) { \
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg); \
+        return rv; \
+    }
+
+#define CHECK_ATTR_PRESENT(env, attrs, arg, expectedType, rv) \
+    if(!attrs->containsAttribute(arg)) {\
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg); \
+        return rv; \
+    } \
+    if(attrs->getAttributeType(arg) != expectedType) {\
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg); \
+        return rv; \
+    }
+
+
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_create__
   (JNIEnv *env, jclass clazz)
 {
@@ -57,9 +74,12 @@ JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_getIntAtt
         return 0;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, 0);
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
+
+        CHECK_ATTR_PRESENT(env, attr, ckey, AttributeSet::INT, 0);
         return attr->getInt(ckey);
     } catch(...) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
@@ -75,9 +95,11 @@ JNIEXPORT jlong JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_getLongA
         return 0LL;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, 0LL);
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
+        CHECK_ATTR_PRESENT(env, attr, ckey, AttributeSet::LONG, 0LL);
         return attr->getLong(ckey);
     } catch(...) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
@@ -93,9 +115,11 @@ JNIEXPORT jdouble JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_getDou
         return 0.0;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, 0.0);
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
+        CHECK_ATTR_PRESENT(env, attr, ckey, AttributeSet::DOUBLE, 0.0);
         return attr->getDouble(ckey);
     } catch(...) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
@@ -111,9 +135,11 @@ JNIEXPORT jstring JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_getStr
         return NULL;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, NULL);
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
+        CHECK_ATTR_PRESENT(env, attr, ckey, AttributeSet::STRING, NULL);
         return env->NewStringUTF(attr->getString(ckey));
     } catch(...) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
@@ -129,9 +155,11 @@ JNIEXPORT jbyteArray JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_get
         return NULL;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, NULL);
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
+        CHECK_ATTR_PRESENT(env, attr, ckey, AttributeSet::BLOB, NULL);
         AttributeSet::Blob blob = attr->getBlob(ckey);
         if(!blob.first)
             return NULL;
@@ -150,10 +178,12 @@ JNIEXPORT jintArray JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_getI
         return NULL;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, NULL);
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
-         AttributeSet::IntArray blob = attr->getIntArray(ckey);
+        CHECK_ATTR_PRESENT(env, attr, ckey, AttributeSet::INT_ARRAY, NULL);
+        AttributeSet::IntArray blob = attr->getIntArray(ckey);
         if(!blob.first)
             return NULL;
         return JNIIntArray_newIntArray(env, reinterpret_cast<const jint*>(blob.first), blob.second-blob.first);
@@ -171,10 +201,12 @@ JNIEXPORT jlongArray JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_get
         return NULL;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, NULL);
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
-         AttributeSet::LongArray blob = attr->getLongArray(ckey);
+        CHECK_ATTR_PRESENT(env, attr, ckey, AttributeSet::LONG_ARRAY, NULL);
+        AttributeSet::LongArray blob = attr->getLongArray(ckey);
         if(!blob.first)
             return NULL;
         return JNILongArray_newLongArray(env, reinterpret_cast<const jlong*>(blob.first), blob.second-blob.first);
@@ -192,10 +224,12 @@ JNIEXPORT jdoubleArray JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_g
         return NULL;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, NULL);
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
-         AttributeSet::DoubleArray blob = attr->getDoubleArray(ckey);
+        CHECK_ATTR_PRESENT(env, attr, ckey, AttributeSet::DOUBLE_ARRAY, 0);
+        AttributeSet::DoubleArray blob = attr->getDoubleArray(ckey);
         if(!blob.first)
             return NULL;
         return JNIDoubleArray_newDoubleArray(env, reinterpret_cast<const jdouble*>(blob.first), blob.second-blob.first);
@@ -213,10 +247,11 @@ JNIEXPORT jobjectArray JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_g
         return NULL;
     }
 
-
+    CHECK_NON_NULL_KEY(env, jkey, NULL);
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
+        CHECK_ATTR_PRESENT(env, attr, ckey, AttributeSet::STRING_ARRAY, NULL);
         AttributeSet::StringArray blob = attr->getStringArray(ckey);
         if(!blob.first)
             return NULL;
@@ -241,9 +276,11 @@ JNIEXPORT jobjectArray JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_g
         return NULL;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, NULL);
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
+        CHECK_ATTR_PRESENT(env, attr, ckey, AttributeSet::BLOB_ARRAY, NULL);
         AttributeSet::BlobArray blobArray = attr->getBlobArray(ckey);
         if(!blobArray.first)
             return NULL;
@@ -271,9 +308,11 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_getAtt
         return NULL;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, NULL);
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
+        CHECK_ATTR_PRESENT(env, attr, ckey, AttributeSet::ATTRIBUTE_SET, NULL);
         std::shared_ptr<AttributeSet> value;
         attr->getAttributeSet(value, ckey);
         return NewPointer(env, value);
@@ -291,6 +330,7 @@ JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_getAttrib
         return 0;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, 0);
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
@@ -309,6 +349,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_setAttrib
         return;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, );
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
@@ -326,6 +367,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_setAttrib
         return;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, );
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
@@ -343,6 +385,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_setAttrib
         return;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, );
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
@@ -360,6 +403,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_setAttrib
         return;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, );
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
@@ -379,6 +423,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_setAttrib
         return;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, );
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
@@ -403,6 +448,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_setAttrib
         return;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, );
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
@@ -427,6 +473,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_setAttrib
         return;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, );
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
@@ -451,6 +498,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_setAttrib
         return;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, );
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
@@ -475,6 +523,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_setAttrib
         return;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, );
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
@@ -514,6 +563,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_setAttrib
         return;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, );
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
@@ -556,6 +606,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_setAttrib
         return;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, );
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
@@ -580,6 +631,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_removeAtt
         return;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, );
     try {
         JNIStringUTF key(*env, jkey);
         const char *ckey = key;
@@ -618,6 +670,7 @@ JNIEXPORT jboolean JNICALL Java_com_atakmap_map_layer_feature_AttributeSet_conta
         return false;
     }
 
+    CHECK_NON_NULL_KEY(env, jkey, false);
     JNIStringUTF key(*env, jkey);
     const char *ckey = key;
     return attr->containsAttribute(ckey);

@@ -28,6 +28,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.map.RenderContext;
 import com.atakmap.net.AsynchronousInetAddressResolver;
 import com.atakmap.util.ReferenceCount;
 import com.atakmap.map.opengl.GLMapSurface;
@@ -122,9 +123,9 @@ public class GLBitmapLoader {
        }
    }
 
-    public GLBitmapLoader(GLMapSurface surface, int threadCount,
-            final int threadPriority) {
-        _surface = surface;
+    public GLBitmapLoader(RenderContext surface, int threadCount,
+                          final int threadPriority) {
+        _renderContext = surface;
 
         for (QueueType type : QueueType.values()) { 
            final String name = "GLBitmapLoader-"+type;
@@ -138,15 +139,26 @@ public class GLBitmapLoader {
                     }
                 }));
          }
-        
+
+        // XXX -
+        Context ctx = null;
+        if(_renderContext instanceof GLMapSurface)
+            ctx = ((GLMapSurface) _renderContext).getContext();
+        else
+            Log.w(TAG, "Failed to obtain Context; asset and resource decoding not enabled");
+
         this.loaders = new HashMap<String, LoaderSpec>();
         this.registerLoader("file", FileBitmapLoaderSpi.INSTANCE, QueueType.LOCAL);
         this.registerLoader("sqlite", SqliteBitmapLoaderSpi.INSTANCE, QueueType.LOCAL);
-        this.registerLoader("asset", AssetBitmapLoaderSpi.getInstance(_surface.getContext()), QueueType.ICON);
-        this.registerLoader("root", AssetBitmapLoaderSpi.getInstance(_surface.getContext()), QueueType.ICON);
+        if(ctx != null)
+            this.registerLoader("asset", AssetBitmapLoaderSpi.getInstance(ctx), QueueType.ICON);
+        if(ctx != null)
+            this.registerLoader("root", AssetBitmapLoaderSpi.getInstance(ctx), QueueType.ICON);
         this.registerLoader("base64", Base64BitmapLoaderSpi.INSTANCE, QueueType.ICON);
-        this.registerLoader("resource", ResourceBitmapLoaderSpi.getInstance(_surface.getContext()), QueueType.ICON);
-        this.registerLoader("android.resource", ResourceBitmapLoaderSpi.getInstance(_surface.getContext()), QueueType.ICON);
+        if(ctx != null)
+            this.registerLoader("resource", ResourceBitmapLoaderSpi.getInstance(ctx), QueueType.ICON);
+        if(ctx != null)
+            this.registerLoader("android.resource", ResourceBitmapLoaderSpi.getInstance(ctx), QueueType.ICON);
         this.registerLoader("arc", ZipBitmapLoaderSpi.INSTANCE, QueueType.LOCAL_COMPRESSED);
         this.registerLoader("zip", ZipBitmapLoaderSpi.INSTANCE, QueueType.LOCAL_COMPRESSED);
         this.registerLoader("http", new UrlBitmapLoaderSpi(), QueueType.REMOTE);
@@ -185,14 +197,14 @@ public class GLBitmapLoader {
 
     public void loadAsync(final FutureTask<?> r, final QueueType type) {
         Runnable event = r;
-        if(!_surface.getGLMapView().isContinuousRenderEnabled())
+        if(!_renderContext.isContinuousRenderEnabled())
             event = new Runnable() {
                 @Override
                 public void run() {
                     try {
                         r.run();
                     } finally {
-                        _surface.requestRender();
+                        _renderContext.requestRefresh();
                     }
                 }
             };
@@ -296,7 +308,7 @@ public class GLBitmapLoader {
     /**
      * Mount a zip archive for use, it is unmounted. If it is already mounted, the mount reference
      * count will be increased by one. The mounted zip file is made available by a call to
-     * getMountedArchive and guaranteed to remain open until the the reference count goes to zero.
+     * getMountedArchive and guaranteed to remain open until the reference count goes to zero.
      * 
      * @param arcPath the archive to mount in zip format.
      */
@@ -361,7 +373,7 @@ public class GLBitmapLoader {
     /**
      * Mount a database in readonly mode for use, it is unmounted. If it is already mounted, the
      * mount reference count will be increased by one. The mounted database is made available by a
-     * call to getMountedDatabase and guaranteed to remain open until the the reference count goes
+     * call to getMountedDatabase and guaranteed to remain open until the reference count goes
      * to zero.
      * 
      * @param arcPath the archive to mount in zip format.
@@ -678,7 +690,7 @@ public class GLBitmapLoader {
                 if (queryString == null)
                      throw new IllegalStateException("null query string");
 
-                query = URLDecoder.decode(queryString, FileSystemUtils.UTF8_CHARSET);
+                query = URLDecoder.decode(queryString, FileSystemUtils.UTF8_CHARSET.name());
             } catch (UnsupportedEncodingException e) {
                 throw new IllegalStateException(e);
             }
@@ -912,7 +924,7 @@ public class GLBitmapLoader {
     private final Map<QueueType, ExecutorService> _executor = new EnumMap<>(QueueType.class);
     private Map<String, LoaderSpec> loaders;
 
-    private GLMapSurface _surface;
+    private RenderContext _renderContext;
     private SQLiteDatabase urlIconCacheDatabase;
 
     private SQLiteStatement insertUrlIconStatement;

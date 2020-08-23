@@ -292,16 +292,9 @@ final class QueryImpl implements QueryIface {
     }
 
     @Override
-    protected void finalize() throws Throwable {
-        this.rwlock.acquireRead();
-        try {
-            if(this.pointer.raw != 0L)
-                Log.w("QueryImpl", "Cursor leaked");
-        } finally {
-            this.rwlock.releaseRead();
-        }
-
-        super.finalize();
+    protected final void finalize() {
+        if(this.pointer.raw != 0L)
+            Log.w("QueryImpl", "Cursor leaked");
     }
 
     static native void destruct(Pointer pointer);

@@ -14,4 +14,14 @@ up status if it is already up
 contactmanager should probably listen to interfaces going down and clean out contacts on down interfaces.... OR.... clean out really stale endpoints? (need direction on this)
 
 
+Testing FTPS:
+Implicit (SSL connection with plain FTP inside - used by customer, commo):
+curl -k --user testuser ftps://sunset/
+(password is most obvious shared pw)
+curl -k --user par_ad_user_here ftps://arca.parcorp.local/
+(use par ad password)
+
+Explicit (Normal FTP session that negotiates swap to SSL,
+          not presently used by TAK/Commo):
+curl -k --ssl --user testuser ftp://sunset/
 

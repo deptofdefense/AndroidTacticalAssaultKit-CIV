@@ -164,8 +164,7 @@ public class GLBatchPolygon extends GLBatchLineString {
         }
 
         final double unwrap = view.idlHelper.getUnwrap(this.mbb);
-        final boolean clampToGround = (this.altitudeMode == Feature.AltitudeMode.ClampToGround);
-        projectVerticesImpl(view, this.polyTriangles, this.polyTriangles.limit()/3, vertices, clampToGround, unwrap, this.polyVertices);
+        projectVerticesImpl(view, this.polyTriangles, this.polyTriangles.limit()/3, vertices, altitudeMode, unwrap, this.polyVertices);
 
         return true;
     }

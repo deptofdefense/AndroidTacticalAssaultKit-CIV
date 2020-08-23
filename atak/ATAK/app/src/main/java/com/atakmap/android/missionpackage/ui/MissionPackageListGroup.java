@@ -15,6 +15,7 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.android.missionpackage.file.NameValuePair;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -35,7 +36,7 @@ public class MissionPackageListGroup {
     /**
      * Current (possibly user edited) state of Mission Package
      */
-    private MissionPackageManifest _manifest;
+    private final MissionPackageManifest _manifest;
 
     /**
      * UI element list, one for each item in _contents
@@ -68,7 +69,7 @@ public class MissionPackageListGroup {
      * @return
      */
     public boolean isValid() {
-        return _manifest != null && _manifest.isValid();
+        return _manifest.isValid();
     }
 
     public MissionPackageManifest getManifest() {
@@ -87,8 +88,10 @@ public class MissionPackageListGroup {
         return _userName;
     }
 
+    @Deprecated
     public void setManifest(MissionPackageManifest manifest) {
-        this._manifest = manifest;
+        // XXX - We shouldn't allow swapping out the entire manifest like this
+        // Create a new group item instead...
     }
 
     public void setItems(List<MissionPackageListItem> items) {
@@ -148,6 +151,10 @@ public class MissionPackageListGroup {
             return true;
         }
 
+        // Add hashtags
+        Collection<String> tags = _manifest.getHashtags();
+        adapt.addHashtags(tags);
+
         boolean success = _manifest.addContent(adapt.getContent());
         if (!adapt.getContent().isIgnore()) {
             // only display non-ignored files in MPT UI
@@ -163,6 +170,8 @@ public class MissionPackageListGroup {
     }
 
     public void addMapItems(MapGroup mapGroup, String... uids) {
+
+        Collection<String> tags = _manifest.getHashtags();
 
         boolean success = true, invalidate = false;
         for (String uid : uids) {
@@ -198,6 +207,9 @@ public class MissionPackageListGroup {
                 // only display non-ignored files in MPT UI
                 success &= _items.add(item);
             }
+
+            // Apply hashtags
+            item.addHashtags(tags);
 
             success &= _manifest.addContent(item.getContent());
         }

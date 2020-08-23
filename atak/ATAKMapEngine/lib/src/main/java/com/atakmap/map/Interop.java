@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class Interop<T> {
+    final static String TAG = "Interop";
+
     final static Map<Class<?>, Interop<?>> registry = new HashMap<>();
 
     /**
@@ -82,6 +84,8 @@ public abstract class Interop<T> {
     public abstract boolean supportsClone();
     public abstract boolean supportsCreate();
 
+    public abstract Class<?> getInteropClass();
+
     /**
      * <P>The {@link Class} specified should be the base class or interface for the object hierarchy.
      * @param clazz
@@ -104,6 +108,12 @@ public abstract class Interop<T> {
         if(retval == null) {
             // XXX - nested class names
 
+            // loop up classname"Interop"
+            try {
+                Class<?> interopClazz = clazz.getClassLoader().loadClass(clazz.getName() + "Interop");
+                retval = new ReflectInterop<T>(clazz, interopClazz);
+            } catch(Throwable ignored) {}
+
             // look up "Native"classname
             try {
                 Class<?> nativeClazz = clazz.getClassLoader().loadClass(clazz.getName().replace(clazz.getSimpleName(), "Native" + clazz.getSimpleName()));
@@ -115,6 +125,8 @@ public abstract class Interop<T> {
 
         if(retval != null)
             registry.put(clazz, retval);
+        else
+            Log.w(TAG, "Failed to find interop for " + clazz);
 
         return (Interop<T>)retval;
     }
@@ -127,7 +139,8 @@ public abstract class Interop<T> {
     final static class ReflectInterop<T> extends Interop<T> {
         final static String TAG = "ReflectInterop";
 
-        Class<? extends T> service;
+        Class<?> target;
+        Class<?> service;
         Method getPointer;
         Method create;
         Method clone;
@@ -137,7 +150,8 @@ public abstract class Interop<T> {
         Method hasObject;
         Method getObject;
 
-        ReflectInterop(Class<T> target, Class<? extends T> service) {
+        ReflectInterop(Class<T> target, Class<?> service) {
+            this.target = target;
             this.service = service;
             try {
                 getPointer = service.getDeclaredMethod("getPointer", target);
@@ -309,6 +323,11 @@ public abstract class Interop<T> {
         @Override
         public boolean supportsCreate() {
             return (this.create != null);
+        }
+
+        @Override
+        public Class<?> getInteropClass() {
+            return target;
         }
     }
 }

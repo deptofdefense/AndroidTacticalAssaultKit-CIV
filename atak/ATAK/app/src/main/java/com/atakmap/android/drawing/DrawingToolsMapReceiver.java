@@ -34,6 +34,7 @@ import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.vehicle.VehicleShape;
+import com.atakmap.android.vehicle.model.VehicleModel;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -320,7 +321,12 @@ public class DrawingToolsMapReceiver extends DropDownReceiver implements
             return;
 
         if (action.equals(IMPORT_KML_ACTION)) {
-            importKML(intent.getStringExtra("file"));
+            final String file = intent.getStringExtra("file");
+            if (file != null)
+                importKML(file);
+            else
+                Log.d(TAG, "call to import without a file");
+
             return;
         }
 
@@ -446,7 +452,11 @@ public class DrawingToolsMapReceiver extends DropDownReceiver implements
         }
 
         int layoutID;
-        if (item instanceof MultiPolyline)
+        if (item instanceof VehicleShape)
+            layoutID = R.layout.vehicle_shape_details;
+        else if (item instanceof VehicleModel)
+            layoutID = R.layout.vehicle_model_details;
+        else if (item instanceof MultiPolyline)
             layoutID = R.layout.multipolyline_details_view;
         else if (item instanceof DrawingShape)
             layoutID = R.layout.shape_details_view;
@@ -456,8 +466,6 @@ public class DrawingToolsMapReceiver extends DropDownReceiver implements
             layoutID = R.layout.circle_details_view;
         else if (item instanceof Rectangle)
             layoutID = R.layout.rectangle_details_view;
-        else if (item instanceof VehicleShape)
-            layoutID = R.layout.vehicle_shape_details;
         else {
             Log.d(TAG, "item not supported: " + item);
             return;

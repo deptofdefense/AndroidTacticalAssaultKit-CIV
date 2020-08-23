@@ -67,9 +67,9 @@ namespace TAK {
             {
                 Util::TAKErr code(Util::TE_Ok);
                 T xyz[3u];
-                xyz[0] = p.x;
-                xyz[1] = p.y;
-                xyz[2] = p.z;
+                xyz[0] = static_cast<T>(p.x);
+                xyz[1] = static_cast<T>(p.y);
+                xyz[2] = static_cast<T>(p.z);
                 code = membuf.put<T>(xyz, layout.size);
                 TE_CHECKRETURN_CODE(code);
                 code = membuf.position(membuf.position() + (layout.stride - (layout.size - sizeof(T))));
@@ -83,9 +83,9 @@ namespace TAK {
             {
                 Util::TAKErr code(Util::TE_Ok);
                 T xyz[3u];
-                xyz[0] = p.x;
-                xyz[1] = p.y;
-                xyz[2] = p.z;
+                xyz[0] = static_cast<T>(p.x);
+                xyz[1] = static_cast<T>(p.y);
+                xyz[2] = static_cast<T>(p.z);
                 code = membuf.put<T>(xyz, layout.size);
                 TE_CHECKRETURN_CODE(code);
 
@@ -95,11 +95,15 @@ namespace TAK {
             typedef double(*DistanceFn)(const Math::Point2<double> &a, const Math::Point2<double> &b);
             typedef Math::Point2<double> (*DirectionFn)(const Math::Point2<double> &a, const Math::Point2<double> &b);
             typedef Math::Point2<double> (*InterpolateFn)(const Math::Point2<double> &origin, const Math::Point2<double> &dir, const double distance);
+			typedef Util::TAKErr (*IntersectFn) (Math::Point2<double> &intersect,
+				const Math::Point2<double> &origin1, const Math::Point2<double> &dir1,
+				const Math::Point2<double> &origin2, const Math::Point2<double> &dir2);
 
             struct ENGINE_API Algorithm {
                 DistanceFn distance;
                 DirectionFn direction;
                 InterpolateFn interpolate;
+				IntersectFn intersect;
             };
 
             ENGINE_API Algorithm &Tessellate_CartesianAlgorithm() NOTHROWS;
@@ -178,9 +182,9 @@ namespace TAK {
                                 p = algorithm.interpolate(a, dir, (j+1u)*(distance/(numPts+1u)));
 
                                 /* emit interpolated point */
-                                T *dstt = reinterpret_cast<T *>(dst);
-                                dstt[0] = p.x;
-                                dstt[1] = p.y;
+                                dstt = reinterpret_cast<T *>(dst);
+                                dstt[0] = static_cast<T>(p.x);
+                                dstt[1] = static_cast<T>(p.y);
                                 /* advance 'dst' */
                                 dst += value->stride;
                             }
@@ -216,10 +220,10 @@ namespace TAK {
                                 p = algorithm.interpolate(a, dir, (j+1u)*(distance/(numPts+1u)));
 
                                 /* emit interpolated point */
-                                T *dstt = reinterpret_cast<T *>(dst);
-                                dstt[0u] = p.x;
-                                dstt[1u] = p.y;
-                                dstt[2u] = p.z;
+                                dstt = reinterpret_cast<T *>(dst);
+                                dstt[0u] = static_cast<T>(p.x);
+                                dstt[1u] = static_cast<T>(p.y);
+                                dstt[2u] = static_cast<T>(p.z);
                                 /* advance 'dst' */
                                 dst += value->stride;
                             }

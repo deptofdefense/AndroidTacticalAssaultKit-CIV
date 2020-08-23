@@ -5,7 +5,6 @@ package com.atakmap.map.elevation.quadtree;
  * This object represents a quad tree implementation that allows the storage of elevation data
  * in grid aligned nodes where lower nodes can provide more detailed grid representations.
  *
- * @author CSRA
  */
 public class ElevationQuadTree
 {

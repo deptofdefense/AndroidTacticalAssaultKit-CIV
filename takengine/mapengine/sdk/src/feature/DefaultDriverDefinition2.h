@@ -29,14 +29,14 @@ namespace TAK {
                                          float strokeWidth = 2.0,
                                          unsigned int strokeColor = 0xFFFFFFFF) NOTHROWS;    // ARGB
             public:
-                virtual const char* getDriverName() const NOTHROWS;
-                virtual atakmap::feature::FeatureDataSource::FeatureDefinition::Encoding getFeatureEncoding() const NOTHROWS;
-                virtual Util::TAKErr getStyle(Port::String &value, const OGRFeature&, const OGRGeometry&) NOTHROWS;
-                virtual const char* getType() const NOTHROWS;
-                virtual unsigned int parseVersion() const NOTHROWS;
-                virtual Util::TAKErr skipFeature(bool *value, const OGRFeature&) NOTHROWS;
-                virtual Util::TAKErr skipLayer(bool *value, const OGRLayer&) NOTHROWS;
-                virtual bool layerNameIsPath() const NOTHROWS;
+                virtual const char* getDriverName() const NOTHROWS override;
+                virtual atakmap::feature::FeatureDataSource::FeatureDefinition::Encoding getFeatureEncoding() const NOTHROWS override;
+                virtual Util::TAKErr getStyle(Port::String &value, const OGRFeature&, const OGRGeometry&) NOTHROWS override;
+                virtual const char* getType() const NOTHROWS override;
+                virtual unsigned int parseVersion() const NOTHROWS override;
+                virtual Util::TAKErr skipFeature(bool *value, const OGRFeature&) NOTHROWS override;
+                virtual Util::TAKErr skipLayer(bool *value, const OGRLayer&) NOTHROWS override;
+                virtual bool layerNameIsPath() const NOTHROWS override;
             protected :
                 const char* getDefaultLineStringStyle() const NOTHROWS;
                 const char* getDefaultPointStyle() const NOTHROWS;

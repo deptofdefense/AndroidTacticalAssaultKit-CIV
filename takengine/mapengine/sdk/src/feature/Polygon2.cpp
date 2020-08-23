@@ -157,6 +157,16 @@ TAKErr Polygon2::setDimensionImpl(const std::size_t dimension_) NOTHROWS
 
 TAKErr TAK::Engine::Feature::Polygon2_fromEnvelope(Geometry2Ptr_const &value, const Envelope2 &e) NOTHROWS
 {
+    Geometry2Ptr mutableValue(nullptr, nullptr);
+
+    TAKErr ret = Polygon2_fromEnvelope(mutableValue, e);
+    if (ret == TE_Ok) {
+        value = std::move(mutableValue);
+    }
+    return ret;
+}
+
+TAKErr TAK::Engine::Feature::Polygon2_fromEnvelope(Geometry2Ptr &value, const Envelope2 &e) NOTHROWS {
     LineString2 mbr;
     mbr.addPoint(e.minX, e.minY);
     mbr.addPoint(e.minX, e.maxY);
@@ -164,7 +174,7 @@ TAKErr TAK::Engine::Feature::Polygon2_fromEnvelope(Geometry2Ptr_const &value, co
     mbr.addPoint(e.maxX, e.minY);
     mbr.addPoint(e.minX, e.minY);
 
-    value = Geometry2Ptr_const(new(std::nothrow) Polygon2(mbr), Memory_deleter_const<Geometry2, Polygon2>);
+    value = Geometry2Ptr(new(std::nothrow) Polygon2(mbr), Memory_deleter_const<Geometry2, Polygon2>);
     if(!value.get())
         return TE_OutOfMemory;
 
@@ -173,7 +183,7 @@ TAKErr TAK::Engine::Feature::Polygon2_fromEnvelope(Geometry2Ptr_const &value, co
 
 bool Polygon2::equalsImpl(const Geometry2 &o) NOTHROWS
 {
-    const Polygon2 &other = static_cast<const Polygon2 &>(o);
+    const auto &other = static_cast<const Polygon2 &>(o);
 
     if(interiorRings.size() != other.interiorRings.size())
         return false;

@@ -6,13 +6,19 @@
 
 package com.atakmap.map.layer.raster.tilereader;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import android.app.DownloadManager;
 import android.os.SystemClock;
 
 import com.atakmap.coremap.log.Log;
@@ -73,7 +79,7 @@ public abstract class TileReader implements Controls {
     
     /**
      * Flag indicating whether or not this instance is valid. Remains
-     * <code>true</code> until {@link dispose()} is invoked. Reads should not be
+     * <code>true</code> until {@link #dispose()} is invoked. Reads should not be
      * permitted if <code>false</code>.
      */
     protected boolean valid;
@@ -105,6 +111,8 @@ public abstract class TileReader implements Controls {
             this.minCacheLevel = Integer.MAX_VALUE;
         
         this.controls = Collections.newSetFromMap(new IdentityHashMap<Object, Boolean>());
+
+        this.registerControl(this.asynchronousIO);
     }
 
     /**
@@ -198,7 +206,7 @@ public abstract class TileReader implements Controls {
     /**
      * Reads the specified tile at the specified level and stores the data in
      * the specified array. The returned data will have dimensions consistent
-     * with {@link #getTileWidth(int, int)} and {@link #getTileHeight(int, int)}
+     * with {@link #getTileWidth(int, long)} and {@link #getTileHeight(int, long)}
      * for the specified level, tile column and tile row.
      * 
      * @param level         The resolution level
@@ -289,7 +297,7 @@ public abstract class TileReader implements Controls {
 
     private void asyncRead(ReadRequest retval) {
         retval.callback.requestCreated(retval);
-        this.asynchronousIO.queueRequest(this, retval);
+        this.asynchronousIO.runLater(this, new ReadRequestTask(this, retval));
     }
 
     /**
@@ -641,7 +649,7 @@ public abstract class TileReader implements Controls {
      * subsampled.
      * 
      * <P>Use of a  
-     * {@link com.atakmap.android.maps.tilesets.cache.TileCache TileCache}
+     * {@link com.atakmap.map.layer.raster.tilereader.TileCache TileCache}
      * does not make a <code>TileReader</code> multi-resolution.
      * 
      * @return  <code>true</code> if the source contains tiles at multiple
@@ -790,7 +798,7 @@ public abstract class TileReader implements Controls {
      * @return  The current tiles version. The default implementation always
      *          returns <code>0</code>
      */
-    public long getTileVersion(int level, long tileColum, long tileRow) {
+    public long getTileVersion(int level, long tileColumn, long tileRow) {
         return 0L;
     }
 
@@ -1016,52 +1024,57 @@ public abstract class TileReader implements Controls {
                     + ",srcH=" + srcH + ",dstW=" + dstW + ",dstH=" + dstH + ",canceled=" + canceled
                     + "}";
         }
+    }
 
-        private Runnable asRunnable() {
-            return new Cancelable() {
-                @Override
-                public void cancel() {
-                    ReadRequest.this.cancel();
-                    ReadRequest.this.callback.requestCanceled(ReadRequest.this.id);
+    final static class ReadRequestTask implements Cancelable {
+        final TileReader reader;
+        final ReadRequest request;
+
+        ReadRequestTask(TileReader reader, ReadRequest request) {
+            this.reader = reader;
+            this.request = request;
+        }
+        @Override
+        public void cancel() {
+            request.cancel();
+            request.callback.requestCanceled(request.id);
+        }
+
+        @Override
+        public void run() {
+            ReadResult result = null;
+            Throwable err = null;
+            try {
+                request.servicing = true;
+                request.callback.requestStarted(request.id);
+                // long s = SystemClock.elapsedRealtime();
+                result = reader.fill(request);
+                // long e = SystemClock.elapsedRealtime();
+                // if(request.tileColumn != -1)
+                // Log.d(TAG, "read request (" + level + "," + tileColumn + "," +
+                // tileRow + ") in " + (e-s) + "ms");
+            } catch (Throwable t) {
+                result = ReadResult.ERROR;
+                err = t;
+            } finally {
+                if(result == null)
+                    throw new IllegalStateException();
+
+                switch(result) {
+                    case SUCCESS :
+                        request.callback.requestCompleted(request.id);
+                        break;
+                    case ERROR :
+                        request.callback.requestError(request.id, err);
+                        break;
+                    case CANCELED :
+                        request.callback.requestCanceled(request.id);
+                        break;
+                    default :
+                        throw new IllegalStateException();
                 }
-
-                @Override
-                public void run() {
-                    ReadResult result = null;
-                    Throwable err = null;
-                    try {
-                        ReadRequest.this.servicing = true;
-                        ReadRequest.this.callback.requestStarted(ReadRequest.this.id);
-                        // long s = SystemClock.elapsedRealtime();
-                        result = TileReader.this.fill(ReadRequest.this);
-                        // long e = SystemClock.elapsedRealtime();
-                        // if(ReadRequest.this.tileColumn != -1)
-                        // Log.d(TAG, "read request (" + level + "," + tileColumn + "," +
-                        // tileRow + ") in " + (e-s) + "ms");
-                    } catch (Throwable t) {
-                        result = ReadResult.ERROR;
-                        err = t;
-                    } finally {
-                        if(result == null)
-                            throw new IllegalStateException();
-
-                        switch(result) {
-                            case SUCCESS :
-                                ReadRequest.this.callback.requestCompleted(ReadRequest.this.id);
-                                break;
-                            case ERROR :
-                                ReadRequest.this.callback.requestError(ReadRequest.this.id, err);
-                                break;
-                            case CANCELED :
-                                ReadRequest.this.callback.requestCanceled(ReadRequest.this.id);
-                                break;
-                            default :
-                                throw new IllegalStateException();
-                        }
-                        ReadRequest.this.servicing = false;
-                    }
-                }
-            };
+                request.servicing = false;
+            }
         }
     }
 
@@ -1146,7 +1159,7 @@ public abstract class TileReader implements Controls {
      * @author Developer
      */
     public final static class AsynchronousIO {
-        private LinkedList<Task> tasks;
+        private Map<TileReader, RequestQueue> tasks;
         private Task executing;
         private final Object syncOn;
         private boolean dead;
@@ -1171,7 +1184,7 @@ public abstract class TileReader implements Controls {
             if (syncOn == null)
                 syncOn = this;
             this.syncOn = syncOn;
-            this.tasks = new LinkedList<Task>();
+            this.tasks = new HashMap<>();
             this.dead = true;
             this.started = false;
             this.maxIdle = maxIdle;
@@ -1211,26 +1224,45 @@ public abstract class TileReader implements Controls {
                         ((Cancelable) this.executing.action).cancel();
                 }
 
-                Iterator<Task> iter = this.tasks.iterator();
-                Task t;
-                while (iter.hasNext()) {
-                    t = iter.next();
-                    if (reader == null || t.reader == reader) {
-                        iter.remove();
+                if(reader != null) {
+                    final RequestQueue queue = this.tasks.remove(reader);
+                    while (queue != null) {
+                        Task t = queue.get();
+                        if (t == null)
+                            break;
                         if (t.action instanceof Cancelable)
                             ((Cancelable) t.action).cancel();
                     }
+                } else {
+                    for(Map.Entry<TileReader, RequestQueue> entry : tasks.entrySet()) {
+                        while (true) {
+                            Task t = entry.getValue().get();
+                            if (t == null)
+                                break;
+                            if (t.action instanceof Cancelable)
+                                ((Cancelable) t.action).cancel();
+                        }
+                    }
+                    tasks.clear();
                 }
             }
         }
 
-        private void queueRequest(TileReader reader, ReadRequest request) {
-            this.runLater(reader, request.asRunnable());
+        public void setReadRequestPrioritizer(TileReader reader, Comparator<ReadRequest> prioritizer) {
+            synchronized(this.syncOn) {
+                RequestQueue queue = this.tasks.get(reader);
+                if(queue == null)
+                    this.tasks.put(reader, queue=new RequestQueue());
+                queue.requestPrioritizer = prioritizer;
+            }
         }
 
         private void runLater(TileReader reader, Runnable r) {
             synchronized (this.syncOn) {
-                this.tasks.addLast(new Task(reader, r));
+                RequestQueue queue = this.tasks.get(reader);
+                if(queue == null)
+                    this.tasks.put(reader, queue=new RequestQueue());
+                queue.enqueue(new Task(reader, r));
                 this.syncOn.notify();
 
                 this.dead = false;
@@ -1260,7 +1292,21 @@ public abstract class TileReader implements Controls {
                         break;
                     }
 
-                    if (this.tasks.size() < 1) {
+                    // iterate all request queues and select the oldest task.
+                    // oldest task is used here to prevent starvation
+                    RequestQueue rq = null;
+                    int candidateId = Integer.MAX_VALUE;
+                    for(RequestQueue queue : tasks.values()) {
+                        final Task t = queue.peek();
+                        if(t == null)
+                            continue;
+                        if(t.id < candidateId) {
+                            rq = queue;
+                            candidateId = t.id;
+                        }
+                    }
+
+                    if (rq == null) {
                         final long startIdle = SystemClock.elapsedRealtime();
                         this.readBuffer = null;
                         try {
@@ -1269,13 +1315,13 @@ public abstract class TileReader implements Controls {
                         }
                         final long stopIdle = SystemClock.elapsedRealtime();
                         // check if the thread has idle'd out
-                        if(this.maxIdle > 0L && (stopIdle-startIdle) > this.maxIdle)
+                        if(this.maxIdle > 0L && (stopIdle-startIdle) >= this.maxIdle)
                             this.dead = true;
                         // wake up and re-run the sync block
                         continue;
                     }
 
-                    task = this.tasks.removeFirst();
+                    task = rq.get();
                     this.executing = task;
                 }
 
@@ -1287,14 +1333,89 @@ public abstract class TileReader implements Controls {
             }
         }
 
-        private static class Task {
+        final static class Task {
+            final static AtomicInteger idGenerator = new AtomicInteger(0);
             public final TileReader reader;
             public final Runnable action;
+            public final int id;
 
             public Task(TileReader reader, Runnable action) {
                 this.reader = reader;
                 this.action = action;
+                this.id = idGenerator.getAndIncrement();
             }
         }
     } // AsynchronousIO
+
+
+    final static class RequestQueue implements Comparator<AsynchronousIO.Task> {
+        // sort order for tasks is LO => HI priority
+        ArrayList<AsynchronousIO.Task> tasks = new ArrayList<>(64);
+        Comparator<ReadRequest> requestPrioritizer;
+
+        AsynchronousIO.Task peek() {
+            if(tasks.isEmpty())
+                return null;
+            return tasks.get(tasks.size()-1);
+        }
+
+        AsynchronousIO.Task get() {
+            if(tasks.isEmpty())
+                return null;
+            return tasks.remove(tasks.size()-1);
+        }
+
+        void enqueue(AsynchronousIO.Task task) {
+            tasks.add(task);
+            Collections.sort(tasks, this);
+            while(!tasks.isEmpty()) {
+                final int idx = tasks.size()-1;
+                final AsynchronousIO.Task t = tasks.get(idx);
+                if(t.action instanceof ReadRequestTask && ((ReadRequestTask)t.action).request.canceled)
+                    tasks.remove(idx);
+                else
+                    break;
+            }
+        }
+
+                @Override
+        public int compare(AsynchronousIO.Task a, AsynchronousIO.Task b) {
+            if(a == null && b == null)
+                return 0;
+            else if(a == null)
+                return -1;
+            else if(b == null)
+                return 1;
+            final boolean aIsRead = (a.action instanceof ReadRequestTask);
+            final boolean bIsRead = (b.action instanceof ReadRequestTask);
+            if(!aIsRead && !bIsRead)
+                return b.id-a.id; // FIFO on non read requests
+            else if(!aIsRead)
+                return 1;
+            else if(!bIsRead)
+                return -1;
+
+            final ReadRequest aRequest = ((ReadRequestTask)a.action).request;
+            final ReadRequest bRequest = ((ReadRequestTask)b.action).request;
+            if(aRequest.canceled && bRequest.canceled)
+                return b.id-a.id;
+            else if(aRequest.canceled)
+                return 1;
+            else if(bRequest.canceled)
+                return -1;
+            if(this.requestPrioritizer != null) {
+                final int c = this.requestPrioritizer.compare(aRequest, bRequest);
+                if(c != 0)
+                    return c;
+            }
+
+            // prioritize high resolution tiles over low resolution tiles
+            if(aRequest.level < bRequest.level)
+                return 1;
+            else if(aRequest.level > bRequest.level)
+                return -1;
+            else
+                return a.id-b.id; // LIFO on read requests
+        }
+    }
 } // TileReader

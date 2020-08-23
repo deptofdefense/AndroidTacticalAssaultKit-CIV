@@ -20,7 +20,7 @@ namespace
 }
 
 String::String() NOTHROWS :
-    data(NULL)
+    data(nullptr)
 { }
 
 String::String(const char* s) NOTHROWS :
@@ -120,7 +120,7 @@ TAKErr TAK::Engine::Port::String_parseDouble(double *value, const char *str) NOT
     *value = result;
     return TE_Ok;
 }
-TAKErr TAK::Engine::Port::String_parseInteger(int *value, const char *str, const std::size_t base) NOTHROWS
+TAKErr TAK::Engine::Port::String_parseInteger(int *value, const char *str, const int base) NOTHROWS
 {
     char *end;
     const int result = std::strtol(str, &end, base);
@@ -205,7 +205,7 @@ bool TAK::Engine::Port::String_endsWith(const char *str, const char *suffix) NOT
     if (srclen < suffixlen)
         return false;
     for (std::size_t i = suffixlen; i > 0; i--) {
-        if (str[i-1u] != suffix[i-1u])
+        if (str[(srclen-suffixlen)+i-1u] != suffix[i-1u])
             return false;
     }
     return true;
@@ -231,7 +231,7 @@ namespace
     char *dupString(const char *str)
     {
         if (!str)
-            return NULL;
+            return nullptr;
         std::size_t len = strlen(str);
         array_ptr<char> retval(new char[len + 1]);
         if (len > 0)

@@ -15,10 +15,13 @@ import android.util.Pair;
 
 
 import com.atakmap.android.maps.MapTextFormat;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.lang.Objects;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.AtakMapView;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.RenderContext;
+import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.geometry.Point;
@@ -43,7 +46,7 @@ public class GLBatchPoint extends GLBatchGeometry {
             (int) Math.ceil(AtakMapView.DENSITY * 32));
     static float iconAtlasDensity = AtakMapView.DENSITY;
 
-    final static double defaultLabelRenderScale = (1.0d / 250000.0d);
+    final static double defaultMinLabelRenderResolution = 13d;
 
     private final static String defaultIconUri = "asset:/icons/reference_point.png";
 
@@ -54,14 +57,23 @@ public class GLBatchPoint extends GLBatchGeometry {
     private static ByteBuffer tiltLineBuffer = null;
     private static long tiltLineBufferPtr = 0L;
 
+
+    // https://www.gaia-gis.it/gaia-sins/BLOB-Geometry.html
+    private static final int TYPE_XY = 1;
+    private static final int TYPE_XYZ = 1001;
+    private static final int TYPE_XYZM = 3001;
+
+
     /**************************************************************************/
 
     public double latitude;
     public double longitude;
     public double altitude = 0d;
-    public boolean altitudeRelative = true;
-    
+    public Feature.AltitudeMode altitudeMode = Feature.AltitudeMode.ClampToGround;
+    public double extrude = 0d;
+
     public PointD posProjected;
+    public float screenX, screenY;
     int posProjectedSrid;
     double posProjectedEl;
     double posProjectedLng;
@@ -88,6 +100,8 @@ public class GLBatchPoint extends GLBatchGeometry {
     int terrainVersion;
     double localTerrainValue;
 
+
+
     ByteBuffer texCoords;
     ByteBuffer verts;
 
@@ -100,6 +114,8 @@ public class GLBatchPoint extends GLBatchGeometry {
 
     private float labelRotation = 0;
     private boolean labelRotationAbsolute = false;
+
+    private double labelMinRenderResolution = defaultMinLabelRenderResolution;
 
 
     public GLBatchPoint(GLMapSurface surface) {
@@ -137,14 +153,37 @@ public class GLBatchPoint extends GLBatchGeometry {
         this.iconDirty = true;
     }
 
-    void checkIcon(final GLMapSurface surface) {
+    void checkIcon(RenderContext surface) {
         if (this.textureKey == 0L || this.iconDirty)
             getOrFetchIcon(surface, this);
     }
 
-    double validateLocalElevation(GLMapView ortho) {
+
+    /**
+     * Helper method that computes the altitude based on the set value of the localTerrainValue and
+     * the altitude as set in the batch point.
+     * @return the combination of the two values as directed by the Altitude Mode.
+     */
+    double computeAltitude(GLMapView ortho) {
+        validateLocalElevation(ortho);
+        switch (altitudeMode) {
+            case Absolute:
+                return altitude;
+            case Relative:
+                return altitude + localTerrainValue;
+            default:
+                return localTerrainValue;
+        }
+    }
+
+    /**
+     * Strictly checks the local terrain value.
+     * @param ortho
+     * @return
+     */
+    private double validateLocalElevation(GLMapView ortho) {
         if(ortho.drawTilt > 0d) {
-            final int renderTerrainVersion = ortho.terrain.getTerrainVersion();
+            final int renderTerrainVersion = ortho.getTerrainVersion();
             if(this.terrainVersion != renderTerrainVersion) {
                 this.localTerrainValue = ortho.getTerrainMeshElevation(this.latitude, this.longitude);
                 this.terrainVersion = renderTerrainVersion;
@@ -156,7 +195,7 @@ public class GLBatchPoint extends GLBatchGeometry {
     @Override
     public void draw(GLMapView ortho) {
         if (this.iconUri != null)
-            this.checkIcon(ortho.getSurface());
+            this.checkIcon(ortho.getRenderContext());
 
         final double wrappedLng = ortho.idlHelper.wrapLongitude(this.longitude);
         ortho.scratch.geo.set(this.latitude, wrappedLng);
@@ -165,18 +204,14 @@ public class GLBatchPoint extends GLBatchGeometry {
         boolean belowTerrain = false;
         double posEl = 0d;
         if(ortho.drawTilt > 0d) {
-            // XXX - altitude (for now will always make sure alt == terrain based on the if check.)
-            double alt = Double.NaN;
-            final double terrain = validateLocalElevation(ortho);
-            if(Double.isNaN(alt)) {
-                alt = terrain;
-            } else if (!Double.isNaN(terrain) && (alt < terrain)) {
+            double alt = computeAltitude(ortho);
+            if (!Double.isNaN(localTerrainValue) && (alt < localTerrainValue)) {
                 // if the explicitly specified altitude is below the terrain,
                 // float above and annotate appropriately
                 belowTerrain = true;
-                alt = terrain;
+                alt = localTerrainValue;
             }
-    
+
             // note: always NaN if source alt is NaN
             double adjustedAlt = (alt+ortho.elevationOffset)*ortho.elevationScaleFactor;
             
@@ -204,6 +239,9 @@ public class GLBatchPoint extends GLBatchGeometry {
         float xpos = (float)ortho.scratch.pointD.x;
         float ypos = (float)ortho.scratch.pointD.y;
         float zpos = (float)ortho.scratch.pointD.z;
+
+        this.screenX = xpos;
+        this.screenY = ypos;
         
         //zpos = 0f;
 
@@ -316,11 +354,12 @@ public class GLBatchPoint extends GLBatchGeometry {
             GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_BLEND);
         }
 
+
         // if the displayLables preference is checked display the text if
         // the marker requested to always have the text show or if the scale is zoomed in enough
-        if (this.iconUri == null ||
+        if (name != null &&
             (GLMapSurface.SETTING_displayLabels &&
-             ortho.drawMapScale >= defaultLabelRenderScale)) {
+             ortho.drawMapResolution < labelMinRenderResolution)) {
 
             final String text = this.name;
             if (text != null && text.length() > 0) {
@@ -425,11 +464,16 @@ public class GLBatchPoint extends GLBatchGeometry {
         }
     }
 
+
     @Override
     protected void setGeometryImpl(ByteBuffer blob, int type) {
         this.longitude = blob.getDouble();
         this.latitude = blob.getDouble();
-        
+        if (type == TYPE_XYZ || type == TYPE_XYZM)
+            this.altitude = blob.getDouble();
+
+
+
         this.posProjectedSrid = -1;
         this.surfaceProjectedSrid = -1;
         this.terrainVersion = 0;
@@ -447,6 +491,7 @@ public class GLBatchPoint extends GLBatchGeometry {
         float lblRotation = 0;
         boolean lblRotationAbsolute = false;
         int lblTextSize = AtakMapView.getDefaultTextFormat().getFontSize();
+        double lblMinRenderResolution = defaultMinLabelRenderResolution;
 
         IconPointStyle istyle = (style instanceof IconPointStyle) ? (IconPointStyle)style : null;
         BasicPointStyle bstyle = (style instanceof BasicPointStyle) ? (BasicPointStyle) style : null;
@@ -480,6 +525,7 @@ public class GLBatchPoint extends GLBatchGeometry {
             lblRotationAbsolute = lstyle.isRotationAbsolute();
             lblRotation = (float)Math.toDegrees(lstyle.getLabelRotation());
             lblTextSize = Math.round(lstyle.getTextSize());
+            lblMinRenderResolution = lstyle.getLabelMinRenderResolution();
         }
 
         if ((iconUri == null || iconUri.trim().isEmpty()) && this.name == null)
@@ -491,6 +537,7 @@ public class GLBatchPoint extends GLBatchGeometry {
         this.labelAlignX = lblAlignX;
         this.labelRotationAbsolute = lblRotationAbsolute;
         this.labelRotation = lblRotation;
+        this.labelMinRenderResolution = lblMinRenderResolution;
 
         if (lblTextSize > 0f)
             this.labelTextSize = lblTextSize;
@@ -517,9 +564,20 @@ public class GLBatchPoint extends GLBatchGeometry {
         final Point point = (Point)geometry;
         this.latitude = point.getY();
         this.longitude = point.getX();
+        this.altitude = point.getZ();
         
         this.posProjectedSrid = -1;
         this.surfaceProjectedSrid = -1;
+    }
+
+    @Override
+    public void setAltitudeMode(Feature.AltitudeMode altitudeMode) {
+        this.altitudeMode = altitudeMode;
+    }
+
+    @Override
+    public void setExtrude(double value) {
+        this.extrude = value;
     }
 
     /**************************************************************************/
@@ -538,15 +596,12 @@ public class GLBatchPoint extends GLBatchGeometry {
         if(view.drawTilt > 0d) {
             // XXX - altitude (for now will always make sure alt == terrain based on the if check.)
             // in the future will need to make sure that alt and terrain are both !NaN.
-            double alt = Double.NaN;
-            final double terrain = this.validateLocalElevation(view);
-            if(Double.isNaN(alt)) {
-                alt = terrain;
-            } else if(alt < terrain) {
+            double alt = computeAltitude(view);
+            if (!Double.isNaN(localTerrainValue) && (alt < localTerrainValue)) {
                 // if the explicitly specified altitude is below the terrain,
                 // float above and annotate appropriately
                 belowTerrain = true;
-                alt = terrain;
+                alt = localTerrainValue;
             }
     
             // note: always NaN if source alt is NaN
@@ -574,6 +629,9 @@ public class GLBatchPoint extends GLBatchGeometry {
         float xpos = (float)view.scratch.pointD.x;
         float ypos = (float)view.scratch.pointD.y;
         float zpos = (float)view.scratch.pointD.z;
+
+        this.screenX = xpos;
+        this.screenY = ypos;
         
         //zpos = 0f;
 
@@ -604,7 +662,7 @@ public class GLBatchPoint extends GLBatchGeometry {
         }
 
         if (this.iconUri != null)
-            this.checkIcon(view.getSurface());
+            this.checkIcon(view.getRenderContext());
 
         if (this.textureKey != 0L) {
             final float iconX = ICON_ATLAS.getImageTextureOffsetX(this.textureIndex);
@@ -646,10 +704,9 @@ public class GLBatchPoint extends GLBatchGeometry {
                             this.colorR, this.colorG, this.colorB, this.colorA);                
             }
         }
-
         // if the displayLables preference is checked display the text if
         // the marker requested to always have the text show or if the scale is zoomed in enough
-        if ((name != null && iconUri == null) || GLMapSurface.SETTING_displayLabels && view.drawMapScale >= defaultLabelRenderScale) {
+        if (name != null && GLMapSurface.SETTING_displayLabels && view.drawMapResolution < labelMinRenderResolution) {
             final String text = this.name;
             if (text != null && text.length() > 0) {
                 if (glText == null) {
@@ -753,7 +810,7 @@ public class GLBatchPoint extends GLBatchGeometry {
 
     /**************************************************************************/
 
-    synchronized static void getOrFetchIcon(GLMapSurface surface, GLBatchPoint point) {
+    synchronized static void getOrFetchIcon(RenderContext surface, GLBatchPoint point) {
         do {
             if (point.iconUri == null)
                 return;
@@ -797,7 +854,7 @@ public class GLBatchPoint extends GLBatchGeometry {
                         if (point.iconUri.equals(defaultIconUri))
                             throw new IllegalStateException("Failed to load default icon");
 
-                        // the icon failed to load, switch the the default icon
+                        // the icon failed to load, switch the default icon
                         point.iconLoader = null;
                         dereferenceIconLoaderNoSync(point.iconUri);
                         point.iconUri = defaultIconUri;

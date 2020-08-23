@@ -134,7 +134,7 @@ public class HttpConnection {
         try {
             if (entity != null) {
                 return EntityUtils.toString(entity,
-                        FileSystemUtils.UTF8_CHARSET);
+                        FileSystemUtils.UTF8_CHARSET.name());
                 //setting the charset is important if none found in the entity. 
             } else
                 return null;

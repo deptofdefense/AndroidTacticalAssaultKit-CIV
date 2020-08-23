@@ -6,7 +6,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.drawable.Drawable;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -193,7 +193,7 @@ public class ProductInformationWizard {
 
         final ProductInformation product = products[index];
 
-        String message = _wizardText + product.getSimpleName();
+        String message = _wizardText + " " +  product.getSimpleName();
         if (index > 0) {
             message = "Wait for previous step to complete. " + message;
         }

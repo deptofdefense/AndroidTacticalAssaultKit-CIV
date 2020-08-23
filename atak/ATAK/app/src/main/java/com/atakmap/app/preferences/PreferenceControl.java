@@ -22,6 +22,7 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CotServiceRemote;
 import com.atakmap.comms.CotServiceRemote.ConnectionListener;
+import com.atakmap.coremap.xml.XMLUtils;
 import com.atakmap.net.AtakAuthenticationDatabase;
 
 import org.w3c.dom.Document;
@@ -172,18 +173,14 @@ public class PreferenceControl implements ConnectionListener {
             String k1 = "-1";
             String k2 = "-1";
 
-            try {
-                k1 = Base64.encodeToString(
-                        AtakAuthenticationDatabase.TAG
-                                .getBytes(FileSystemUtils.UTF8_CHARSET),
-                        Base64.NO_WRAP);
-                k2 = Base64.encodeToString(
-                        AtakAuthenticationDatabase.TAG
-                                .getBytes(FileSystemUtils.UTF8_CHARSET),
-                        Base64.NO_WRAP);
-            } catch (UnsupportedEncodingException use) {
-                Log.d(TAG, "unsupported encoding during pref save");
-            }
+            k1 = Base64.encodeToString(
+                    AtakAuthenticationDatabase.TAG
+                            .getBytes(FileSystemUtils.UTF8_CHARSET),
+                    Base64.NO_WRAP);
+            k2 = Base64.encodeToString(
+                    AtakAuthenticationDatabase.TAG
+                            .getBytes(FileSystemUtils.UTF8_CHARSET),
+                    Base64.NO_WRAP);
 
             for (Map.Entry e : keyValuePairs.entrySet()) {
                 Object o = e.getValue();
@@ -338,17 +335,7 @@ public class PreferenceControl implements ConnectionListener {
 
         Log.d(TAG, "Loading settings: " + configFile.getAbsolutePath());
 
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        try {
-            dbf.setFeature(
-                    "http://apache.org/xml/features/disallow-doctype-decl",
-                    true);
-        } catch (Exception ignored) {
-        }
-        try {
-            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        } catch (Exception ignored) {
-        }
+        DocumentBuilderFactory dbf = XMLUtils.getDocumenBuilderFactory();
 
         Document doc;
         try {
@@ -569,17 +556,7 @@ public class PreferenceControl implements ConnectionListener {
         // Do file opening here
         //Log.d(TAG, "Loading settings: " + configFile.getAbsolutePath());
 
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        try {
-            dbf.setFeature(
-                    "http://apache.org/xml/features/disallow-doctype-decl",
-                    true);
-        } catch (Exception ignored) {
-        }
-        try {
-            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        } catch (Exception ignored) {
-        }
+        DocumentBuilderFactory dbf = XMLUtils.getDocumenBuilderFactory();
 
         Document doc = null;
         try {

@@ -1,6 +1,7 @@
 package com.atakmap.map.layer.raster;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.lang.Objects;
 
 public class ImageInfo {
     public final String path;
@@ -38,5 +39,17 @@ public class ImageInfo {
         this.width = width;
         this.height = height;
         this.srid = srid;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.path.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(!(o instanceof ImageInfo))
+            return false;
+        return Objects.equals(this.path, ((ImageInfo)o).path);
     }
 }

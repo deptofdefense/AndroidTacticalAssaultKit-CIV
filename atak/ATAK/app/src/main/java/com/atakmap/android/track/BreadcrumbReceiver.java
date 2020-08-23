@@ -11,6 +11,7 @@ import android.content.SharedPreferences.Editor;
 import android.graphics.Color;
 import android.preference.PreferenceManager;
 
+import com.atakmap.android.gui.ColorPalette;
 import com.atakmap.android.track.maps.TrackPolyline;
 import com.atakmap.android.track.task.CreateTracksTask;
 import com.atakmap.android.track.task.DeleteTracksTask;
@@ -54,6 +55,9 @@ public class BreadcrumbReceiver extends BroadcastReceiver implements
 
     private static final String TAG = "BreadcrumbReceiver";
     public static final String TRACK_HISTORY_MAPGROUP = "Track History";
+
+    public static final String TOGGLE_BREAD = "com.atakmap.android.bread.TOGGLE_BREAD";
+    public static final String COLOR_CRUMB = "com.atakmap.android.bread.COLOR_CRUMB";
 
     public static final int DEFAULT_LINE_COLOR = -16776961;
     public static final String DEFAULT_LINE_STYLE = "Arrows";
@@ -407,17 +411,46 @@ public class BreadcrumbReceiver extends BroadcastReceiver implements
         }
     }
 
+    private void promptCrumbColor(final PointMapItem item) {
+        AlertDialog.Builder b = new AlertDialog.Builder(_context);
+        b.setTitle(R.string.breadcrumb_color);
+        ColorPalette palette = new ColorPalette(_context,
+                item.getMetaInteger("crumbColor", Color.BLACK));
+        b.setView(palette);
+        final AlertDialog d = b.create();
+        ColorPalette.OnColorSelectedListener l = new ColorPalette.OnColorSelectedListener() {
+            @Override
+            public void onColorSelected(int color, String label) {
+                d.dismiss();
+                item.setMetaInteger("crumbColor", color);
+                CrumbTrail trail = item.getCrumbTrail();
+                if (trail != null)
+                    trail.setColor(color);
+            }
+        };
+        palette.setOnColorSelectedListener(l);
+        d.show();
+    }
+
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
         if (action == null)
             return;
 
-        if (action.equals("com.atakmap.android.bread.TOGGLE_BREAD")) {
+        if (action.equals(TOGGLE_BREAD)) {
             String uid = intent.getStringExtra("uid");
-            if (uid != null) {
+            if (uid != null)
                 toggleBreadcrumbs(uid);
-            }
+        } else if (action.equals(COLOR_CRUMB)) {
+            String uid = intent.getStringExtra("uid");
+            if (FileSystemUtils.isEmpty(uid))
+                return;
+            MapItem item = view.getMapItem(uid);
+            if (!(item instanceof PointMapItem))
+                return;
+            PointMapItem pointItem = (PointMapItem) item;
+            promptCrumbColor(pointItem);
         } else if (action
                 .equals("com.atakmap.android.location.LOCATION_INIT")) {
             logSelfCrumbs(logCrumbs);

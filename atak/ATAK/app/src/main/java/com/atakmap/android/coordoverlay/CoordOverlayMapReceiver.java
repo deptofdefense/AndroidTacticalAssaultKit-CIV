@@ -5,12 +5,18 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.PointF;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.view.MotionEvent;
 import android.graphics.Typeface;
 
+import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.maps.MapMode;
 import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MetaMapPoint;
+import com.atakmap.android.menu.MapMenuReceiver;
+import com.atakmap.android.menu.MenuLayoutWidget;
 import com.atakmap.android.util.SpeedFormatter;
 
 import com.atakmap.android.maps.MapGroup;
@@ -51,10 +57,15 @@ import com.atakmap.map.elevation.ElevationManager;
 
 import java.util.Arrays;
 
+/**
+ * TODO: Outline all expected behavior and rewrite this entire class
+ */
 public class CoordOverlayMapReceiver extends BroadcastReceiver implements
         OnPointChangedListener, MapGroup.OnItemListChangedListener,
         SharedPreferences.OnSharedPreferenceChangeListener,
         Marker.OnTrackChangedListener, MapWidget.OnClickListener {
+
+    MenuLayoutWidget mw = MapMenuReceiver.getMenuWidget();
 
     private final static int MAX_LINE_COUNT = 11;
 
@@ -71,6 +82,8 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
     public static final String TAG = "CoordOverlayMapReceiver";
 
     public static final String SHOW_DETAILS = "com.atakmap.android.maps.SHOW_DETAILS";
+    public static final String COORD_COPY = "com.atakmap.android.maps.COORD_COPY";
+    public static final String COORD_ENLARGE = "com.atakmap.android.maps.COORD_ENLARGE";
 
     //TODO why does this class have _pointItem and _activeMarker?
     private PointMapItem _pointItem;
@@ -92,7 +105,10 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
     private SpeedFormatter speedFormatter;
     private String[] speedUnits;
 
-    public CoordOverlayMapReceiver(MapView mapView) {
+    private String coordString;
+    private Marker radialFocus;
+
+    public CoordOverlayMapReceiver(final MapView mapView) {
         _mapView = mapView;
         _marker = false;
 
@@ -121,30 +137,58 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
         if (self != null)
             self.addOnPointChangedListener(this);
 
+        AtakBroadcast.DocumentedIntentFilter intentFilter = new AtakBroadcast.DocumentedIntentFilter();
+        intentFilter.addAction(COORD_ENLARGE);
+        intentFilter.addAction(COORD_COPY);
+        for (MapMode mode : MapMode.values())
+            intentFilter.addAction(mode.getIntent());
+        AtakBroadcast.getInstance().registerReceiver(coordReceiver,
+                intentFilter);
+
         initUnits();
 
-        // allow for long press enlargement of the detail 
+        // allow for long press enlargement of the detail
         boolean b = _prefs.getBoolean("detail.enlarged", false);
         MapTextFormat _format = MapView.getTextFormat(Typeface.DEFAULT,
                 b ? 2 : 7);
         _positionText.setTextFormat(_format);
 
         OnLongPressListener _textLongPressListener = new OnLongPressListener() {
-
             @Override
             public void onMapWidgetLongPress(MapWidget widget) {
-                boolean b = _prefs.getBoolean("detail.enlarged", false);
+                // pop out the radial menu
 
-                // toggle the variable
-                _prefs.edit().putBoolean("detail.enlarged", !b).apply();
-                b = !b;
+                if (mw == null)
+                    return;
+                if (radialFocus == null) {
+                    radialFocus = new Marker("CoordWidgetFocus");
+                    radialFocus.setMetaBoolean("addToObjList", false);
+                    radialFocus.setMetaBoolean("nevercot", true);
+                    radialFocus.setVisible(false);
+                }
 
-                MapTextFormat _format = MapView.getTextFormat(Typeface.DEFAULT,
-                        b ? 2 : 7);
-                _positionText.setTextFormat(_format);
+                PointF p = widget.getAbsolutePosition();
+                int height = mapView.getActionBarHeight();
+                if (height == 0)
+                    height = (int) (25 * MapView.DENSITY);
+                p.x += widget.getPointX() + (25 * MapView.DENSITY);
+                p.y += widget.getPointY() + height;
+
+                radialFocus.setMetaString("menu",
+                        "menus/coord_widget_menu.xml");
+
+                if (mw.getMapItem() != radialFocus) {
+                    mw.openMenuOnItem(radialFocus);
+                    mapView.getMapController()
+                            .removeOnFocusPointChangedListener(mw);
+                    mw.onFocusPointChanged(p.x, p.y);
+                } else
+                    mw.clearMenu();
+
             }
         };
         _positionText.addOnLongPressListener(_textLongPressListener);
+
     }
 
     private void initUnits() {
@@ -495,17 +539,8 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
             int[] lineColors) {
 
         GeoPoint point = pointWithMetadata.get();
-        // Check to see if the point item has an override for the desired
-        // coordinate display format; if it does use it, if not use the current
-        // display preference setting
-        String coordFmt = _prefs.getString(
-                "coord_display_pref", _mapView.getContext().getString(
-                        R.string.coord_display_pref_default));
-        if (_pointItem != null) {
-            coordFmt = _pointItem.getMetaString("coordFormat", coordFmt);
-        }
-        String coordString = CoordinateFormatUtilities.formatToString(
-                point, CoordinateFormat.find(coordFmt));
+
+        coordString = getCoords(point);
 
         int lineNum = 0;
 
@@ -651,7 +686,7 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
             retval.append(ErrorCategory.getCategory(point.getCE()));
         }
 
-        // XXX: if the distance is 0, you are on top of the item.  
+        // XXX: if the distance is 0, you are on top of the item.
         // no real reason to provide a a range and bearing.
         if (displayRB && distance > 0) {
 
@@ -887,4 +922,50 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
             doNotDisplayAgl = false;
         }
     }
+
+    private String getCoords(GeoPoint point) {
+        // Check to see if the point item has an override for the desired
+        // coordinate display format; if it does use it, if not use the current
+        // display preference setting
+        String coordFmt = _prefs.getString(
+                "coord_display_pref", _mapView.getContext().getString(
+                        R.string.coord_display_pref_default));
+        if (_pointItem != null) {
+            coordFmt = _pointItem.getMetaString("coordFormat", coordFmt);
+        }
+        String curCoordString = CoordinateFormatUtilities.formatToString(
+                point, CoordinateFormat.find(coordFmt));
+
+        return curCoordString;
+    }
+
+    private final BroadcastReceiver coordReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            switch (action) {
+                case COORD_COPY:
+                    ATAKUtilities.copyClipboard("coordinates", coordString,
+                            true);
+                    _mapView.getRootGroup().removeItem(radialFocus);
+                    mw.clearMenu();
+                    break;
+                case COORD_ENLARGE:
+                    boolean b = _prefs.getBoolean("detail.enlarged", false);
+                    // toggle the variable
+                    _prefs.edit().putBoolean("detail.enlarged", !b).apply();
+                    b = !b;
+                    MapTextFormat _format = MapView.getTextFormat(
+                            Typeface.DEFAULT,
+                            b ? 2 : 7);
+                    _positionText.setTextFormat(_format);
+                    mw.clearMenu();
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    };
+
 }

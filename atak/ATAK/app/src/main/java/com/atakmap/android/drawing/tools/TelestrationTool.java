@@ -256,6 +256,7 @@ public class TelestrationTool extends Tool {
                 _multiPolyline.setColor(_color);
                 _multiPolyline.setEditable(false);
                 _multiPolyline.setMetaString("entry", "user");
+                _multiPolyline.setMetaBoolean("creating", true);
                 _mapGroup.addItem(_multiPolyline);
 
             }
@@ -401,6 +402,7 @@ public class TelestrationTool extends Tool {
             _mapGroup.removeItem(_multiPolyline);
         } else {
             //If they drew something with lines make it persist
+            _multiPolyline.removeMetaData("creating");
             _multiPolyline.persist(_mapView.getMapEventDispatcher(), null,
                     this.getClass());
         }
@@ -666,6 +668,9 @@ public class TelestrationTool extends Tool {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
+            if (action == null)
+                return;
+
             if (action.equals(MapMenuReceiver.SHOW_MENU))
                 _menuShowing = true;
             else if (action.equals(MapMenuReceiver.HIDE_MENU))

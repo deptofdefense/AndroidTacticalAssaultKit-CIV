@@ -38,6 +38,12 @@ namespace TAK {
                      * serialized representation with little to no parsing
                      */
                     DirectMesh = 0x04,
+
+                    /**
+                     * If set, the Scene Graph is spatially
+                     * patitioned for effiencient occlusion
+                     */
+                    SpatiallyPartitioned = 0x08,
                 };
             public :
                 virtual ~Scene() NOTHROWS;

@@ -114,6 +114,18 @@
         <item>Imagery</item>
         <item>Maps</item>
     </string-array>
+
+
+    <string-array name="frame_limit_names">
+        <item>Full speed</item>
+        <item>Battery Saver</item>
+    </string-array>
+    <string-array translatable="false" name="frame_limit_values">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+
+
     <string-array name="crumb_size">
         <item>Normal</item>
         <item>Large</item>
@@ -251,6 +263,7 @@
         <item>http</item>
         <item>https</item>
         <item>raw</item>
+        <item>srt</item>
     </string-array>
 
     <string-array name="security">
@@ -1002,7 +1015,26 @@
         <item>SUPPRESS</item>
         <item>IMMEDIATE SMOKE</item>
         <item>IMMEDIATE SUPPRESSION</item>
+        <item>FIRE FOR EFFECT</item>
+        <item>ADJUST FIRE</item>
     </string-array>
+
+    <string-array translatable="false" name="suppFSSystem">
+        <item>Air</item>
+        <item>Aviation</item>
+        <item>FA Cannon</item>
+        <item>Mortar</item>
+        <item>@string/rocket_missile</item>
+    </string-array>
+
+    <string-array translatable="false" name="suppMOC">
+        <item>@string/when_ready</item>
+        <item>Do Not Load</item>
+        <item>Repeat</item>
+        <item>Check Firing</item>
+    </string-array>
+
+   
     <string-array name="grid_type_names"  translatable="false">
         <item>MGRS</item>
         <item>Decimal Degrees</item>

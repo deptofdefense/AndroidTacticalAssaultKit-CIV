@@ -128,7 +128,8 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
     private final Rect _textBounds = new Rect(0, 0, 0, 0);
     private boolean touchable = true;
     private int _textColor = Color.WHITE;
-    private int _labelTextSize = MapView.getDefaultTextFormat().getFontSize();
+    private int _labelTextSize = (MapView.getDefaultTextFormat() == null) ? 14
+            : MapView.getDefaultTextFormat().getFontSize();
     private Typeface _labelTypeface = Typeface.DEFAULT;
 
     // Icon visibility states - similar to View visibility
@@ -702,7 +703,8 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
     }
 
     public void addOnTrackChangedListener(OnTrackChangedListener listener) {
-        _onTrackChanged.add(listener);
+        if (listener != null)
+            _onTrackChanged.add(listener);
     }
 
     public void removeOnTrackChangedListener(OnTrackChangedListener listener) {

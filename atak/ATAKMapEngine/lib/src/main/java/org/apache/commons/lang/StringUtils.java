@@ -205,7 +205,7 @@ public class StringUtils {
      *
      * @param string  the String to check, may be null
      * @param searchStrings the Strings to find, may be null or empty
-     * @return <code>true</code> if the String ends with any of the the prefixes, case insensitive, or
+     * @return <code>true</code> if the String ends with any of the prefixes, case insensitive, or
      *  both <code>null</code>
      * @since 2.6
      */

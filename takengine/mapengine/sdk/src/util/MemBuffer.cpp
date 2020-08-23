@@ -21,14 +21,14 @@ MemBufferImpl::~MemBufferImpl()
 {
     if (buffer) {
         delete [] static_cast<uint8_t *>(buffer);
-        buffer = NULL;
+        buffer = nullptr;
     }
 }
 
 void MemBufferImpl::resize(size_t size)
 {
     if (capacity != size) {
-        array_ptr<unsigned char> nbuf(size > 0 ? new uint8_t[size] : NULL);
+        array_ptr<unsigned char> nbuf(size > 0 ? new uint8_t[size] : nullptr);
         if (buffer) {
             memcpy(nbuf.get(), buffer, std::min(size, capacity));
             delete [] static_cast<uint8_t *>(buffer);

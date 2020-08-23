@@ -35,7 +35,6 @@ class EulaHelper {
         final AlertDialog.Builder alertBuilder = new AlertDialog.Builder(
                 activity);
         alertBuilder
-                .setIcon(com.atakmap.android.util.ATAKConstants.getIconId())
                 .setTitle(activity.getString(R.string.preferences_text422a))
                 .setMessage(
                         activity.getString(R.string.preferences_text423)

@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,6 +21,7 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
+import com.atakmap.database.Databases;
 import com.atakmap.database.android.AndroidDatabaseAdapter;
 import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.raster.gdal.GdalGraphicUtils;
@@ -25,6 +29,7 @@ import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReaderSpi;
 import com.atakmap.map.layer.raster.tilereader.TileReaderFactory.Options;
 import com.atakmap.util.ReferenceCount;
+import com.atakmap.util.ResourcePool;
 
 public class SQLiteSingleTileReader extends TileReader {
 
@@ -36,6 +41,8 @@ public class SQLiteSingleTileReader extends TileReader {
     static {
         DECODE_OPTS.inPreferredConfig = Bitmap.Config.ARGB_8888;
     }
+
+    static Format format;
 
     protected SharedDb db;
     protected final String query;
@@ -52,6 +59,25 @@ public class SQLiteSingleTileReader extends TileReader {
         this.tileHeight = tileHeight;
         
         this.readLock = this.db;
+
+        if(format == null) {
+            Bitmap px = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
+            px.setPremultiplied(false);
+            px.setPixel(0, 0, 0xF1F2F3F4);
+
+            ByteBuffer buf = ByteBuffer.allocate(4);
+            buf.order(ByteOrder.BIG_ENDIAN);
+            px.copyPixelsToBuffer(buf);
+
+            final int val = buf.getInt(0);
+            if(val == 0xF2F3F4F1) {
+                // packed RGBA
+                format = Format.RGBA;
+            } else {
+                // default to ARGB
+                format = Format.ARGB;
+            }
+        }
     }
 
     @Override
@@ -96,7 +122,29 @@ public class SQLiteSingleTileReader extends TileReader {
      */
     protected Bitmap decodeTileBitmap(CursorIface result) {
         final byte[] blob = result.getBlob(0);
-        return BitmapFactory.decodeByteArray(blob, 0, blob.length, DECODE_OPTS);
+        BitmapFactory.Options opts = new BitmapFactory.Options();
+        opts.inBitmap = db.tileData.get();
+        opts.inMutable = true;
+        opts.inPreferredConfig = DECODE_OPTS.inPreferredConfig;
+        Bitmap retval;
+        try {
+            retval = BitmapFactory.decodeByteArray(blob, 0, blob.length, opts);
+        } catch(IllegalArgumentException e) {
+            // an IllegalArgumentException may be raised if the input bitmap is
+            // for some reason incompatible. If that ends up occurring clear
+            // the input
+            opts.inBitmap = null;
+            retval = BitmapFactory.decodeByteArray(blob, 0, blob.length, opts);
+        }
+        // if the pooled bitmap wasn't used, re-pool or recycle a
+        // appropriate
+        if(opts.inBitmap != null && retval != opts.inBitmap) {
+            if(retval != null)
+                opts.inBitmap.recycle();
+            else
+                db.tileData.put(opts.inBitmap);
+        }
+        return retval;
     }
 
     @Override
@@ -136,27 +184,56 @@ public class SQLiteSingleTileReader extends TileReader {
                                     new Rect((int)srcX, (int)srcY, (int)(srcX+srcW), (int)(srcY+srcH)),
                                     new Rect(0, 0, dstW, dstH),
                                     null);
-                retval.recycle();
+                synchronized(readLock) {
+                    // clean up the decode tile -- if it is of nominal size,
+                    // try to put it back into the resource pool
+                    if ((retval.getWidth() != this.tileWidth ||
+                         retval.getHeight() != this.tileHeight) ||
+                        !this.db.tileData.put(retval)) {
+
+                        retval.recycle();
+                    }
+                }
                 retval = scratch;
             }
             
-            GdalGraphicUtils.getBitmapData(retval,
-                                           buf,
-                                           retval.getWidth(),
-                                           retval.getHeight(),
-                                           Interleave.BIP,
-                                           Format.ARGB);
+            if(format == Format.RGBA) {
+                ByteBuffer dataBuffer = ByteBuffer.wrap(buf);
+                dataBuffer.order(ByteOrder.nativeOrder());
+                retval.copyPixelsToBuffer(dataBuffer);
+                dataBuffer = null;
+            } else {
+                int[] tileArgb = db.tileArgb.get();
+                if (tileArgb == null)
+                    tileArgb = new int[this.tileWidth * this.tileHeight];
+                else
+                    Arrays.fill(tileArgb, 0);
+                retval.getPixels(tileArgb, 0, this.tileWidth, 0, 0, this.tileWidth, this.tileHeight);
+
+                final int numPixels = (retval.getWidth() * retval.getHeight());
+                ByteBuffer dataBuffer = ByteBuffer.wrap(buf);
+                dataBuffer.order(ByteOrder.BIG_ENDIAN);
+                dataBuffer.asIntBuffer().put(tileArgb, 0, numPixels);
+                dataBuffer = null;
+                db.tileArgb.put(tileArgb);
+            }
+
             return ReadResult.SUCCESS;
         } finally {
-            if(retval != null)
-                retval.recycle();
+            synchronized(this.readLock) {
+                // clean up the decode tile -- if it is of nominal size, try to
+                // put it back into the resource pool
+                if (retval != null && ((retval.getWidth() != this.tileWidth || retval.getHeight() != this.tileHeight) || !this.db.tileData.put(retval))) {
+                    retval.recycle();
+                }
+            }
         }
         
     }
 
     @Override
     public Format getFormat() {
-        return Format.ARGB;
+        return format;
     }
 
     @Override
@@ -174,8 +251,8 @@ public class SQLiteSingleTileReader extends TileReader {
      * @param sql           The SQL select statement to retrieve the tile from
      *                      the database; the tile blob MUST be in column
      *                      <code>0</code>.
-     * @param width         The width of the tile, in pixels
-     * @param height        The height of the tile, in pixels
+     * @param tileWidth     The width of the tile, in pixels
+     * @param tileHeight    The height of the tile, in pixels
      * 
      * @return  A URI that can be handled by a <code>SQLiteTileReader</code>.
      */
@@ -203,7 +280,7 @@ public class SQLiteSingleTileReader extends TileReader {
         uri.append(db.getAbsolutePath());
         uri.append("?query=");
         try {
-            uri.append(URLEncoder.encode(sql, FileSystemUtils.UTF8_CHARSET));
+            uri.append(URLEncoder.encode(sql, FileSystemUtils.UTF8_CHARSET.name()));
         } catch(UnsupportedEncodingException e) {
             return null;
         }
@@ -219,6 +296,9 @@ public class SQLiteSingleTileReader extends TileReader {
 
     protected static class SharedDb extends ReferenceCount<DatabaseIface> {
         private final String dbPath;
+
+        public final ResourcePool<Bitmap> tileData = new ResourcePool<>(1);
+        public final ResourcePool<int[]> tileArgb = new ResourcePool<>(1);
 
         public SharedDb(String dbPath, DatabaseIface value, boolean reference) {
             super(value, reference);
@@ -236,6 +316,13 @@ public class SQLiteSingleTileReader extends TileReader {
                 try {
                     this.value.close();
                 } catch(Exception ignored) {}
+
+                while(true) {
+                    final Bitmap bitmap = tileData.get();
+                    if(bitmap == null)
+                        break;
+                    bitmap.recycle();
+                }
             } finally {
                 super.onDereferenced();
             }
@@ -283,7 +370,7 @@ public class SQLiteSingleTileReader extends TileReader {
             final String dbPath = uri.getPath();
             final String query;
             try {
-                query = URLDecoder.decode(uri.getQueryParameter("query"), FileSystemUtils.UTF8_CHARSET);
+                query = URLDecoder.decode(uri.getQueryParameter("query"), FileSystemUtils.UTF8_CHARSET.name());
             } catch (UnsupportedEncodingException e) {
                 return null;
             }
@@ -315,7 +402,7 @@ public class SQLiteSingleTileReader extends TileReader {
                     // immediately.
                     db = sharedDbs.get(dbPath);
                     if(db == null) {
-                        sharedDbs.put(dbPath, db=new SharedDb(dbPath, AndroidDatabaseAdapter.openDatabase(dbPath, SQLiteDatabase.OPEN_READONLY), true));
+                        sharedDbs.put(dbPath, db=new SharedDb(dbPath, Databases.openDatabase(dbPath, true), true));
                         Log.d("SQLiteTileReader", "Creating shared DB ref " + dbPath);
                     } else {
                         db.reference();

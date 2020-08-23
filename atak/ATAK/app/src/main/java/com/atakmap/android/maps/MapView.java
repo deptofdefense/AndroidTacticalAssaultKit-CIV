@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.ActivityInfo;
+import android.graphics.PointF;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -15,7 +16,6 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 
-import com.atakmap.app.BuildConfig;
 import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.items.GLMapItemsDatabaseRenderer;
 import com.atakmap.android.location.LocationMapComponent;
@@ -30,17 +30,18 @@ import com.atakmap.android.widgets.AttributionWidget;
 import com.atakmap.android.widgets.LayoutWidget;
 import com.atakmap.android.widgets.TextWidget;
 import com.atakmap.android.widgets.WidgetsLayer;
+import com.atakmap.app.BuildConfig;
 import com.atakmap.app.DeveloperOptions;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-
 import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.AtakMapView;
 import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapTouchHandler;
 import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.layer.Layer;
@@ -57,12 +58,12 @@ import com.atakmap.map.layer.raster.RasterDataAccess2;
 import com.atakmap.map.layer.raster.RasterLayer2;
 import com.atakmap.map.layer.raster.service.RasterDataAccessControl;
 import com.atakmap.map.opengl.GLAntiMeridianHelper;
-import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.projection.ECEFProjection;
 import com.atakmap.map.projection.EquirectangularMapProjection;
 import com.atakmap.map.projection.Projection;
 import com.atakmap.map.projection.ProjectionFactory;
 import com.atakmap.math.MathUtils;
+import com.atakmap.math.PointD;
 import com.atakmap.util.ConfigOptions;
 import com.atakmap.util.Visitor;
 
@@ -85,8 +86,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * <li></li>
  * </ul>
  * </p>
- * 
- * 
+ *
+ *
  */
 public class MapView extends AtakMapView {
 
@@ -130,7 +131,7 @@ public class MapView extends AtakMapView {
 
     /**
      * Create the view in a given context and attributes
-     * 
+     *
      * @param context the context
      * @param attrs the attributes
      */
@@ -152,11 +153,10 @@ public class MapView extends AtakMapView {
         this.overlayManager = new MapOverlayManager(this);
 
         _rootGroup = new RootMapGroup();
+        _touchController = new MapTouchController(this);
+
         _rootGroup.addOnGroupListChangedListener(groupListChangedListener);
         _rootGroup.addOnItemListChangedListener(itemListChangedListener);
-
-        _eventDispatcher = new MapEventDispatcher();
-        _touchController = new MapTouchController(this);
 
         this.renderStack = new LayerBinLayer("Map Layers");
         this.renderStack.addLayerBin(RenderStack.BASEMAP.name());
@@ -254,8 +254,8 @@ public class MapView extends AtakMapView {
     }
 
     /**
-     * Obtain the MapView.   The obtained reference to the mapView is only 
-     * guaranteed to be non-null after MapView construction and prior to a 
+     * Obtain the MapView.   The obtained reference to the mapView is only
+     * guaranteed to be non-null after MapView construction and prior to a
      * call to dispose()
      */
     public static MapView getMapView() {
@@ -365,14 +365,24 @@ public class MapView extends AtakMapView {
                         getRenderer().setContinuousRenderEnabled(
                                 sp.getBoolean(key, false));
                         break;
+                    case "frame_limit":
+                        final boolean limitFrameRate = (Short
+                                .parseShort(sp.getString(key, "0")) != 0);
+
+                        getGLSurface().getRenderer()
+                                .setFrameRate(limitFrameRate ? 30.0f : 0.0f);
+                        break;
                 }
             }
         };
         preferenceManager
                 .registerOnSharedPreferenceChangeListener(prefListener);
 
-        getRenderer().setContinuousRenderEnabled(
-                preferenceManager.getBoolean("atakContinuousRender", false));
+        prefListener.onSharedPreferenceChanged(preferenceManager,
+                "atakContinuousRender");
+
+        prefListener.onSharedPreferenceChanged(preferenceManager,
+                "frame_limit");
 
     }
 
@@ -393,14 +403,14 @@ public class MapView extends AtakMapView {
     @Override
     public void setRelativeScaling(float s) {
         super.setRelativeScaling(s);
-        // XXX - 
+        // XXX -
         MapTextFormat.invalidate();
         invalidateWidgets();
     }
 
     /**
      * Get the object that controls the map based on touch gestures
-     * 
+     *
      * @return the MapTouchController for the map view.
      */
     public MapTouchController getMapTouchController() {
@@ -409,7 +419,7 @@ public class MapView extends AtakMapView {
 
     /**
      * Adds the specified {@link View.OnTouchListener}.
-     * 
+     *
      * @param l The {@link View.OnTouchListener} to add
      */
     public void addOnTouchListener(View.OnTouchListener l) {
@@ -420,7 +430,7 @@ public class MapView extends AtakMapView {
      * Adds the specified {@link View.OnTouchListener} at the specified index.
      * The specified listener may intercept touch events prior to all other
      * registered listeners by specifying an index of <code>0</code>.
-     * 
+     *
      * @param index The index
      * @param l     The {@link View.OnTouchListener} to add
      */
@@ -443,14 +453,14 @@ public class MapView extends AtakMapView {
 
     /**
      * Removes the specified {@link View.OnTouchListener}.
-     * 
+     *
      * @param l The {@link View.OnTouchListener} to add
      */
     public boolean removeOnTouchListener(View.OnTouchListener l) {
         return _onTouchListener.remove(l);
     }
 
-    /** 
+    /**
      * Adds the specified {@link View.OnKeyListener}
      * @param l The {@link View.OnKeyListener} to add
      */
@@ -458,7 +468,7 @@ public class MapView extends AtakMapView {
         _onKeyListener.add(l);
     }
 
-    /** 
+    /**
      * Removes the specified {@link View.OnKeyListener}
      * @param l The {@link View.OnKeyListener} to remove
      */
@@ -466,7 +476,7 @@ public class MapView extends AtakMapView {
         _onKeyListener.remove(l);
     }
 
-    /** 
+    /**
      * Adds the specified {@link View.OnGenericMotionListener}
      * @param l The {@link View.OnGenericMotionListener} to add
      */
@@ -474,7 +484,7 @@ public class MapView extends AtakMapView {
         _onGenericMotionListener.add(l);
     }
 
-    /** 
+    /**
      * Removes the specified {@link View.OnGenericMotionListener}
      * @param l The {@link View.OnGenericMotionListener} to remove
      */
@@ -508,13 +518,11 @@ public class MapView extends AtakMapView {
     @Override
     final public boolean onGenericMotionEvent(MotionEvent event) {
 
-        boolean noSuperDispatch = false;
-
         if (event != null) {
             for (View.OnGenericMotionListener l : _onGenericMotionListener) {
                 try {
-                    if (noSuperDispatch = l.onGenericMotion(this, event)) {
-                        break;
+                    if (l.onGenericMotion(this, event)) {
+                        return true;
                     }
                 } catch (Exception e) {
                     Log.e(TAG, "protect against bad listener", e);
@@ -542,7 +550,7 @@ public class MapView extends AtakMapView {
 
     /**
      * Get the root MapGroup
-     * 
+     *
      * @return return the root map group
      */
     public RootMapGroup getRootGroup() {
@@ -551,7 +559,7 @@ public class MapView extends AtakMapView {
 
     /**
      * Return the MapItem if contained on the MapView provided a UID.
-     * 
+     *
      * Although this is not marked deprecated, please use
      *  getRootGroup().deepFindItemWithDataString("uid", uid) or
      *  getRootGroup().deepFindUID(uid)
@@ -598,7 +606,7 @@ public class MapView extends AtakMapView {
     /**
      * Returns a precise point, derived from the underlying imagery, based on the specified point as
      * projected into the current view.
-     * 
+     *
      * @param geoPoint A coordinate
      * @return A precise coordinate, possibly containing CE/LE and elevation information that is
      *         derived from the underlying imagery.
@@ -710,13 +718,13 @@ public class MapView extends AtakMapView {
      * Retreives the device callsign.    This may be different than the callsign stored
      * in shared preferences if the device is making use of the wave relay callsign that
      * is being passed to it via callsign mocking.
-     * Callsign mocking is considered to be temporary and when the callsign is no longer 
+     * Callsign mocking is considered to be temporary and when the callsign is no longer
      * being mocked, the device will revert back to the callsign set in shared preferences.
      * If you would like to know the shared preference version of the callsign, please use
      * the key "locationCallsign" to query the saved preference value.
      *
-     * @return the current callsign based on a combination of the shared preference and the 
-     * validitity of the mocking state.  
+     * @return the current callsign based on a combination of the shared preference and the
+     * validitity of the mocking state.
      */
     public String getDeviceCallsign() {
         String callsign;
@@ -744,7 +752,7 @@ public class MapView extends AtakMapView {
     }
 
     /**
-     * Used to set the transient value of the device callsign and does not effect the 
+     * Used to set the transient value of the device callsign and does not effect the
      * default user callsign between system restarts.   To change the device callsign
      * please make use of the shared preference key "locationCallsign".
      * @param callsign  the transient state of the device callsign which does not persist.
@@ -764,7 +772,7 @@ public class MapView extends AtakMapView {
      * Set arbitrary data from a {@link com.atakmap.android.maps.MapComponent}. This makes the
      * data available to other {@code MapComponent}s. This is useful for loosely coupling
      * {@code MapComponents}.
-     * 
+     *
      * @param name a unique name for the extra data Object
      * @param extra the extra data Object
      */
@@ -785,7 +793,7 @@ public class MapView extends AtakMapView {
     }
 
     /**
-     * Obtain data associated with the map that is not defined by 
+     * Obtain data associated with the map that is not defined by
      * any other MapView getters and setters.
      * @return MapData a bundle like structure of name value pairs.
      */
@@ -815,7 +823,9 @@ public class MapView extends AtakMapView {
     private boolean autoSelectProjection;
 
     private final MapTouchController _touchController;
-    private final MapEventDispatcher _eventDispatcher;
+    private final MapEventDispatcher _eventDispatcher = new MapEventDispatcher();
+    private final MapGroupItemsChangedEventForwarder _mapGroupItemsChangedEventForwarder = new MapGroupItemsChangedEventForwarder(
+            _eventDispatcher);
     private ConcurrentLinkedQueue<OnTouchListener> _onTouchListener = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnKeyListener> _onKeyListener = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnGenericMotionListener> _onGenericMotionListener = new ConcurrentLinkedQueue<>();
@@ -824,67 +834,9 @@ public class MapView extends AtakMapView {
 
     // XXX - IMapGroup bridge
 
-    private final MapGroup.OnItemListChangedListener itemListChangedListener = new MapGroup.OnItemListChangedListener() {
-        @Override
-        public void onItemAdded(MapItem item, MapGroup group) {
-            // XXX - if we are transferring between groups, post a refresh
-            //       rather than an add
-            final String type;
-            if (item.getMetaBoolean("__groupTransfer", false))
-                type = MapEvent.ITEM_GROUP_CHANGED;
-            else
-                type = MapEvent.ITEM_ADDED;
-            MapEventDispatcher d = MapView.this.getMapEventDispatcher();
-            MapEvent.Builder b = new MapEvent.Builder(type);
-            b.setGroup(group)
-                    .setItem(item);
-            d.dispatch(b.build());
-        }
+    private final MapGroup.OnItemListChangedListener itemListChangedListener = _mapGroupItemsChangedEventForwarder;
 
-        @Override
-        public void onItemRemoved(MapItem item, MapGroup group) {
-            // XXX - if we are transferring between groups, don't post remove
-            if (item.getMetaBoolean("__groupTransfer", false))
-                return;
-
-            MapEventDispatcher d = MapView.this.getMapEventDispatcher();
-            MapEvent.Builder b = new MapEvent.Builder(MapEvent.ITEM_REMOVED);
-            b.setGroup(group)
-                    .setItem(item);
-            d.dispatch(b.build());
-        }
-    };
-
-    private final MapGroup.OnGroupListChangedListener groupListChangedListener = new MapGroup.OnGroupListChangedListener() {
-        @Override
-        public void onGroupAdded(MapGroup group, MapGroup parent) {
-            group.addOnItemListChangedListener(
-                    MapView.this.itemListChangedListener);
-            final Collection<MapItem> items = group.getItems();
-            for (MapItem item : items)
-                MapView.this.itemListChangedListener.onItemAdded(item, group);
-            group.addOnGroupListChangedListener(this);
-            final Collection<MapGroup> children = group.getChildGroups();
-            for (MapGroup child : children)
-                this.onGroupAdded(child, group);
-
-            MapEvent.Builder b = new MapEvent.Builder(MapEvent.GROUP_ADDED);
-            getMapEventDispatcher().dispatch(b.setGroup(group)
-                    .build());
-        }
-
-        @Override
-        public void onGroupRemoved(MapGroup group, MapGroup parent) {
-            group.removeOnItemListChangedListener(
-                    MapView.this.itemListChangedListener);
-            group.removeOnGroupListChangedListener(this);
-
-            MapEvent.Builder b = new MapEvent.Builder(MapEvent.GROUP_REMOVED);
-            getMapEventDispatcher().dispatch(b.setGroup(group)
-                    .build());
-        }
-
-    };
+    private final MapGroup.OnGroupListChangedListener groupListChangedListener = _mapGroupItemsChangedEventForwarder;
 
     /***
      * Computes the corresponding geodetic coordinate for the specified screen coordinate with the 
@@ -896,42 +848,39 @@ public class MapView extends AtakMapView {
      * @deprecated
      */
     public GeoPointMetaData inverseWithElevation(final float x, final float y) {
+        GeoPointMetaData p = new GeoPointMetaData();
+        if (getGLSurface().getGLMapView() == null)
+            return p;
 
-        GeoPointMetaData p = inverse(x, y, InverseMode.RayCast);
+        int hints = 0;
+        GeoPoint lla = GeoPoint.createMutable();
+        final MapRenderer2.InverseResult result = getGLSurface().getGLMapView()
+                .inverse(
+                        new PointD(x, y, 0d),
+                        lla,
+                        MapRenderer2.InverseMode.RayCast,
+                        0, // don't ignore anything
+                        MapRenderer2.DisplayOrigin.UpperLeft);
 
-        if (p == null)
-            return null;
+        if (result == MapRenderer2.InverseResult.None)
+            return p;
 
-        // XXX: Abstract this capability out so that it does not polute the 
-        // MapView and potentially could allow for other registration.
-        ArrayList<Layer> modelLayer = new ArrayList<>(1);
-        Layers.findLayers(_mapView.getLayers(), new LayerFilter() {
-            @Override
-            public boolean accept(Layer l) {
-                return l.getName().equals("3D Models");
-            }
-        }, modelLayer, 1);
-        if (!modelLayer.isEmpty()) {
-            final GeoPoint[] modelHitGeoPoint = new GeoPoint[1];
-            _mapView.getGLSurface().getGLMapView().visitControl(
-                    (Layer2) modelLayer.get(0),
-                    new Visitor<ModelHitTestControl>() {
-                        @Override
-                        public void visit(ModelHitTestControl object) {
-                            GeoPoint result = GeoPoint.createMutable();
-                            if (object.hitTest(x, y, result))
-                                modelHitGeoPoint[0] = result;
-                        }
-                    }, ModelHitTestControl.class);
-            if (modelHitGeoPoint[0] != null)
-                return GeoPointMetaData.wrap(modelHitGeoPoint[0]);
+        // wrap result longitude
+        lla.set(lla.getLatitude(),
+                GeoCalculations.wrapLongitude(lla.getLongitude()),
+                lla.getAltitude(), lla.getAltitudeReference(), lla.getCE(),
+                lla.getLE());
+        if (result == MapRenderer2.InverseResult.SurfaceMesh) {
+            p.set(lla); // interssected with model
+            // designate the source from the 3-D model
+            p.setAltitudeSource("3DModel");
+            return p;
         }
 
-        GeoPointMetaData gmd = new GeoPointMetaData();
-        ElevationManager.getElevation(p.get().getLatitude(),
-                p.get().getLongitude(), null, gmd);
-        return gmd;
-
+        // terrain or model, query for local elevation
+        ElevationManager.getElevation(lla.getLatitude(),
+                lla.getLongitude(), null, p);
+        return p;
     }
 
     /**
@@ -957,29 +906,6 @@ public class MapView extends AtakMapView {
 
     public GLAntiMeridianHelper getIDLHelper() {
         return getGLSurface().getGLMapView().idlHelper;
-    }
-
-    /**
-     * @deprecated place holder pending better API
-     */
-    public GeoPoint getRenderElevationAdjustedPoint(final GeoPoint point) {
-        if (point == null || this.getMapTilt() == 0d)
-            return point;
-
-        final GLMapView glview = this.getGLSurface().getGLMapView();
-
-        // XXX - not really ideal to reach down into the renderer, but the hit
-        //       test should be totally deferred to the renderer
-        double alt = point.getAltitude();
-        if (!point.isAltitudeValid())
-            alt = glview
-                    .getElevation(point.getLatitude(), point.getLongitude());
-        final double el = GeoPoint.isAltitudeValid(alt) ? alt : 0d;
-        return new GeoPoint(
-                point.getLatitude(),
-                point.getLongitude(),
-                (el + GLMapView.elevationOffset)
-                        * this.getElevationExaggerationFactor());
     }
 
     /***
@@ -1054,7 +980,7 @@ public class MapView extends AtakMapView {
 
     /**************************************************************************/
 
-    /** 
+    /**
      * At any given zoom level, there may be a point in which there is a minimal tilt 
      * level.   Currently will just return 0.
      * @return the minimum tilt level.
@@ -1063,7 +989,7 @@ public class MapView extends AtakMapView {
         return 0d;
     }
 
-    /** 
+    /**
      * At any given zoom level, there may be a point in which there is a minimal tilt 
      * level.   Currently will just return 0.
      * @param  mapScale for which to return the value for the mininum map tilt level.
@@ -1136,16 +1062,18 @@ public class MapView extends AtakMapView {
     }
 
     @Override
-    public synchronized void setProjection(Projection proj) {
+    public synchronized boolean setProjection(Projection proj) {
         if ((this.preferredProjection == null)
                 || (proj.getSpatialReferenceID() != this.preferredProjection
                         .getSpatialReferenceID())) {
             this.preferredProjection = proj;
-            this.setProjectionImpl(proj);
+            return this.setProjectionImpl(proj);
+        } else {
+            return false;
         }
     }
 
-    private void setProjectionImpl(Projection proj) {
-        super.setProjection(proj);
+    private boolean setProjectionImpl(Projection proj) {
+        return super.setProjection(proj);
     }
 }

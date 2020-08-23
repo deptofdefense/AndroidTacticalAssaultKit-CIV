@@ -163,7 +163,10 @@ public class TrackPolyline extends Polyline implements
     }
 
     public void addPoint(GeoPointMetaData point, boolean fireListener) {
-        _points.add(point);
+        synchronized (this) {
+            _points.add(point);
+        }
+
         if (fireListener)
             refreshPoints();
     }

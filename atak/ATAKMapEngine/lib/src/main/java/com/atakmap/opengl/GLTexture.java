@@ -3,6 +3,7 @@ package com.atakmap.opengl;
 
 import android.graphics.Bitmap;
 import android.graphics.PointF;
+import android.opengl.GLES30;
 import android.opengl.GLUtils;
 
 import com.atakmap.math.Matrix;
@@ -14,6 +15,7 @@ import java.nio.ShortBuffer;
 
 /**
  * An OpenGL texture or sub-texture.
+ *
  */
 public final class GLTexture {
 
@@ -121,10 +123,27 @@ public final class GLTexture {
     }
 
     public void load(Bitmap bitmap, int x, int y) {
-        this.init();
-        GLES20FixedPipeline.glBindTexture(GLES20FixedPipeline.GL_TEXTURE_2D, _id);
-        GLUtils.texSubImage2D(GLES20FixedPipeline.GL_TEXTURE_2D, 0, x, y, bitmap);
-        GLES20FixedPipeline.glBindTexture(GLES20FixedPipeline.GL_TEXTURE_2D, 0);
+        if(_id == 0 && x == 0 && y == 0 && bitmap.getWidth() == _width && bitmap.getHeight() == _height) {
+            idBuffer[0] = 0;
+            GLES20FixedPipeline.glGenTextures(1, idBuffer, 0);
+            _id = idBuffer[0];
+            GLES20FixedPipeline.glBindTexture(GLES20FixedPipeline.GL_TEXTURE_2D, _id);
+            GLES20FixedPipeline.glTexParameterf(GLES20FixedPipeline.GL_TEXTURE_2D,
+                    GLES20FixedPipeline.GL_TEXTURE_MAG_FILTER, _magFilter);
+            GLES20FixedPipeline.glTexParameterf(GLES20FixedPipeline.GL_TEXTURE_2D,
+                    GLES20FixedPipeline.GL_TEXTURE_MIN_FILTER, _minFilter);
+            GLES20FixedPipeline.glTexParameterf(GLES20FixedPipeline.GL_TEXTURE_2D,
+                    GLES20FixedPipeline.GL_TEXTURE_WRAP_S, _wrapS);
+            GLES20FixedPipeline.glTexParameterf(GLES20FixedPipeline.GL_TEXTURE_2D,
+                    GLES20FixedPipeline.GL_TEXTURE_WRAP_T, _wrapT);
+            GLUtils.texImage2D(GLES30.GL_TEXTURE_2D, 0, _format, bitmap, _type, 0);
+            GLES20FixedPipeline.glBindTexture(GLES20FixedPipeline.GL_TEXTURE_2D, 0);
+        } else {
+            init();
+            GLES20FixedPipeline.glBindTexture(GLES20FixedPipeline.GL_TEXTURE_2D, _id);
+            GLUtils.texSubImage2D(GLES20FixedPipeline.GL_TEXTURE_2D, 0, x, y, bitmap);
+            GLES20FixedPipeline.glBindTexture(GLES20FixedPipeline.GL_TEXTURE_2D, 0);
+        }
     }
 
     public void load(Bitmap bitmap) {
@@ -132,11 +151,30 @@ public final class GLTexture {
     }
 
     public void load(Buffer data, int x, int y, int w, int h) {
-        this.init();
-        GLES20FixedPipeline.glBindTexture(GLES20FixedPipeline.GL_TEXTURE_2D, _id);
-        GLES20FixedPipeline.glTexSubImage2D(GLES20FixedPipeline.GL_TEXTURE_2D, 0, x, y, w, h,
-                _format, _type, data);
-        GLES20FixedPipeline.glBindTexture(GLES20FixedPipeline.GL_TEXTURE_2D, 0);
+        if(_id == 0 && x == 0 && y == 0 && w == _width && h == _height) {
+            idBuffer[0] = 0;
+            GLES20FixedPipeline.glGenTextures(1, idBuffer, 0);
+            _id = idBuffer[0];
+            GLES20FixedPipeline.glBindTexture(GLES20FixedPipeline.GL_TEXTURE_2D, _id);
+            GLES20FixedPipeline.glTexParameterf(GLES20FixedPipeline.GL_TEXTURE_2D,
+                    GLES20FixedPipeline.GL_TEXTURE_MAG_FILTER, _magFilter);
+            GLES20FixedPipeline.glTexParameterf(GLES20FixedPipeline.GL_TEXTURE_2D,
+                    GLES20FixedPipeline.GL_TEXTURE_MIN_FILTER, _minFilter);
+            GLES20FixedPipeline.glTexParameterf(GLES20FixedPipeline.GL_TEXTURE_2D,
+                    GLES20FixedPipeline.GL_TEXTURE_WRAP_S, _wrapS);
+            GLES20FixedPipeline.glTexParameterf(GLES20FixedPipeline.GL_TEXTURE_2D,
+                    GLES20FixedPipeline.GL_TEXTURE_WRAP_T, _wrapT);
+            GLES20FixedPipeline.glTexImage2D(GLES20FixedPipeline.GL_TEXTURE_2D, 0, _format,
+                    _width, _height, 0,
+                    _format, _type, data);
+            GLES20FixedPipeline.glBindTexture(GLES20FixedPipeline.GL_TEXTURE_2D, 0);
+        } else {
+            this.init();
+            GLES20FixedPipeline.glBindTexture(GLES20FixedPipeline.GL_TEXTURE_2D, _id);
+            GLES20FixedPipeline.glTexSubImage2D(GLES20FixedPipeline.GL_TEXTURE_2D, 0, x, y, w, h,
+                    _format, _type, data);
+            GLES20FixedPipeline.glBindTexture(GLES20FixedPipeline.GL_TEXTURE_2D, 0);
+        }
     }
 
     public void setMinFilter(int minFilter) {

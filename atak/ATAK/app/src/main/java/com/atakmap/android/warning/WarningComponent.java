@@ -312,6 +312,12 @@ public class WarningComponent extends AbstractWidgetMapComponent implements
             return;
         }
 
+        if (alertWidget == null) {
+            Log.d(TAG, "alerting still being initialized");
+            return;
+        }
+
+
         boolean bAlert = false;
         synchronized (alerts) {
             if (!_active) {

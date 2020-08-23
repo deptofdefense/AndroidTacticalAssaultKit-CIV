@@ -283,12 +283,15 @@ final class RouteNavigatorEngine {
                 //       A more robust alternative may be to compute the segment
                 //       length using ST_Length, against a precompiled query
                 //       with a SpatiaLite blob.
-                totalDistance += MathUtils.distance(lastGeo.getLongitude(),
-                        lastGeo.getLatitude(), currentGeo.getLongitude(),
-                        currentGeo.getLatitude());
-                totalGeodeticDistance += estimateDistance(lastGeo, currentGeo);
-                distances[i] = totalDistance;
-                geodeticDistances[i] = totalGeodeticDistance;
+                if (lastGeo != null) {
+                    totalDistance += MathUtils.distance(lastGeo.getLongitude(),
+                            lastGeo.getLatitude(), currentGeo.getLongitude(),
+                            currentGeo.getLatitude());
+                    totalGeodeticDistance += estimateDistance(lastGeo,
+                            currentGeo);
+                    distances[i] = totalDistance;
+                    geodeticDistances[i] = totalGeodeticDistance;
+                }
             }
             lastGeo = currentGeo;
         }

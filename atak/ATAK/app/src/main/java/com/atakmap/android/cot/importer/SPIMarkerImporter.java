@@ -18,9 +18,11 @@ public class SPIMarkerImporter extends MarkerImporter {
 
     @Override
     protected void addToGroup(MapItem item) {
+       
         if (item.getGroup() == null) {
+            item.setMetaBoolean("archive", false);
+            item.setMetaBoolean("removable", true);
             item.setMetaBoolean("movable", false);
-            item.setMetaBoolean("removable", false);
             item.setMetaBoolean("editable", false);
         } else {
             MapItem center = findItem(item.getUID() + ".rangeRing");

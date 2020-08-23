@@ -18,7 +18,7 @@ using namespace atakmap::util;
 using namespace TAKEngineJNI::Interop;
 
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_Feature_create
-  (JNIEnv *env, jclass clazz, jlong fsid, jlong fid, jstring jname, jlong jgeomPtr, jlong jstylePtr, jlong jattrPtr, jlong timestamp, jlong version)
+  (JNIEnv *env, jclass clazz, jlong fsid, jlong fid, jstring jname, jlong jgeomPtr, jint altitudemode, jdouble extrude, jlong jstylePtr, jlong jattrPtr, jlong timestamp, jlong version)
 {
     TAKErr code(TE_Ok);
     JNIStringUTF name(*env, jname);
@@ -30,6 +30,22 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_Feature_create
         if(ATAKMapEngineJNI_checkOrThrow(env, code))
             return NULL;
     }
+    
+    AltitudeMode altMode;
+    switch(altitudemode) {
+        case 0:
+            altMode = AltitudeMode::TEAM_ClampToGround;
+            break;
+        case 1:
+            altMode = AltitudeMode::TEAM_Relative;
+            break;
+        case 2:
+            altMode = AltitudeMode::TEAM_Absolute;
+            break;
+        default :
+            altMode = AltitudeMode::TEAM_ClampToGround;
+    }
+
     StylePtr_const cstyle(NULL, NULL);
     if(jstylePtr) {
         const Style *cstylePtr = JLONG_TO_INTPTR(Style, jstylePtr);
@@ -41,7 +57,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_Feature_create
         cattrs = AttributeSetPtr_const(new AttributeSet(*cattrPtr), Memory_deleter_const<AttributeSet>);
     }
 
-    FeaturePtr retval(new Feature2(fid, fsid, name, std::move(cgeom), std::move(cstyle), std::move(cattrs), timestamp, version), Memory_deleter_const<Feature2>);
+    FeaturePtr retval(new Feature2(fid, fsid, name, std::move(cgeom), altMode, extrude, std::move(cstyle), std::move(cattrs), timestamp, version), Memory_deleter_const<Feature2>);
     return NewPointer(env, std::move(retval));
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_Feature_destruct
@@ -155,3 +171,36 @@ JNIEXPORT jlong JNICALL Java_com_atakmap_map_layer_feature_Feature_getTimestamp
 
     return feature->getTimestamp();
 }
+
+JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_Feature_getAltitudeMode
+  (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    Feature2 *feature = JLONG_TO_INTPTR(Feature2, ptr);
+    if(!feature) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return 0LL;
+    }
+
+    AltitudeMode altMode =  feature->getAltitudeMode();
+    switch(altMode) {
+        case AltitudeMode::TEAM_Relative:
+            return 1;
+        case AltitudeMode::TEAM_Absolute:
+            return 2;
+        default:
+            return 0;
+    }
+}
+
+JNIEXPORT jdouble JNICALL Java_com_atakmap_map_layer_feature_Feature_getExtrude
+  (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    Feature2 *feature = JLONG_TO_INTPTR(Feature2, ptr);
+    if(!feature) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return 0LL;
+    }
+
+    return feature->getExtrude();
+}
+

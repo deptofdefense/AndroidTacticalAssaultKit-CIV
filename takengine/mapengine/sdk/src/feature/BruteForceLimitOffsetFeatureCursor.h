@@ -14,19 +14,21 @@ namespace TAK {
             public:
                 BruteForceLimitOffsetFeatureCursor(FeatureCursorPtr &&filter, std::size_t limit, std::size_t offset) NOTHROWS;
             public: // FeatureCursor2
-                virtual Util::TAKErr getId(int64_t *value) NOTHROWS;
-                virtual Util::TAKErr getFeatureSetId(int64_t *value) NOTHROWS;
-                virtual Util::TAKErr getVersion(int64_t *value) NOTHROWS;
+                virtual Util::TAKErr getId(int64_t *value) NOTHROWS override;
+                virtual Util::TAKErr getFeatureSetId(int64_t *value) NOTHROWS override;
+                virtual Util::TAKErr getVersion(int64_t *value) NOTHROWS override;
             public: // FeatureDefinition2
-                virtual Util::TAKErr getRawGeometry(FeatureDefinition2::RawData *value) NOTHROWS;
-                virtual FeatureDefinition2::GeometryEncoding getGeomCoding() NOTHROWS;
-                virtual Util::TAKErr getName(const char **value) NOTHROWS;
-                virtual FeatureDefinition2::StyleEncoding getStyleCoding() NOTHROWS;
-                virtual Util::TAKErr getRawStyle(FeatureDefinition2::RawData *value) NOTHROWS;
-                virtual Util::TAKErr getAttributes(const atakmap::util::AttributeSet **value) NOTHROWS;
-                virtual Util::TAKErr get(const Feature2 **feature) NOTHROWS;
+                virtual Util::TAKErr getRawGeometry(FeatureDefinition2::RawData *value) NOTHROWS override;
+                virtual FeatureDefinition2::GeometryEncoding getGeomCoding() NOTHROWS override;
+                virtual AltitudeMode getAltitudeMode() NOTHROWS override;
+                virtual double getExtrude() NOTHROWS override;
+                virtual Util::TAKErr getName(const char **value) NOTHROWS override;
+                virtual FeatureDefinition2::StyleEncoding getStyleCoding() NOTHROWS override;
+                virtual Util::TAKErr getRawStyle(FeatureDefinition2::RawData *value) NOTHROWS override;
+                virtual Util::TAKErr getAttributes(const atakmap::util::AttributeSet **value) NOTHROWS override;
+                virtual Util::TAKErr get(const Feature2 **feature) NOTHROWS override;
             public: // RowIterator
-                virtual Util::TAKErr moveToNext() NOTHROWS;
+                virtual Util::TAKErr moveToNext() NOTHROWS override;
             private:
                 FeatureCursorPtr filter;
                 std::size_t limit;

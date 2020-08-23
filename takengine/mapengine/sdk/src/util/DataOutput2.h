@@ -112,11 +112,11 @@ namespace TAK {
                 FileOutput2() NOTHROWS;
                 virtual ~FileOutput2() NOTHROWS;
                 virtual TAKErr open(const char *filename) NOTHROWS;
-                virtual TAKErr close() NOTHROWS;
+                virtual TAKErr close() NOTHROWS override;
 
-                virtual TAKErr write(const uint8_t *buf, const std::size_t len) NOTHROWS;
-                virtual TAKErr writeByte(const uint8_t value) NOTHROWS;
-                virtual TAKErr skip(const std::size_t n) NOTHROWS;
+                virtual TAKErr write(const uint8_t *buf, const std::size_t len) NOTHROWS override;
+                virtual TAKErr writeByte(const uint8_t value) NOTHROWS override;
+                virtual TAKErr skip(const std::size_t n) NOTHROWS override;
 
                 TAKErr seek(int64_t offset) NOTHROWS;
                 TAKErr tell(int64_t *value) NOTHROWS;
@@ -132,10 +132,10 @@ namespace TAK {
                 virtual ~MemoryOutput2() NOTHROWS;
 
                 virtual TAKErr open(uint8_t *bytes, const std::size_t len) NOTHROWS;
-                virtual TAKErr close() NOTHROWS;
-                virtual TAKErr write(const uint8_t *buf, const std::size_t len) NOTHROWS;
-                virtual TAKErr writeByte(const uint8_t value) NOTHROWS;
-                virtual TAKErr skip(const std::size_t n) NOTHROWS;
+                virtual TAKErr close() NOTHROWS override;
+                virtual TAKErr write(const uint8_t *buf, const std::size_t len) NOTHROWS override;
+                virtual TAKErr writeByte(const uint8_t value) NOTHROWS override;
+                virtual TAKErr skip(const std::size_t n) NOTHROWS override;
 
                 virtual TAKErr remaining(std::size_t *value) NOTHROWS;
             private:
@@ -151,11 +151,11 @@ namespace TAK {
                 virtual ~ByteBufferOutput2() NOTHROWS;
 
                 virtual TAKErr open(atakmap::util::MemBufferT<uint8_t> *buffer) NOTHROWS;
-                virtual TAKErr close() NOTHROWS;
+                virtual TAKErr close() NOTHROWS override;
 
-                virtual TAKErr write(const uint8_t *buf, const std::size_t len) NOTHROWS;
-                virtual TAKErr writeByte(const uint8_t value) NOTHROWS;
-                virtual TAKErr skip(const std::size_t n) NOTHROWS;
+                virtual TAKErr write(const uint8_t *buf, const std::size_t len) NOTHROWS override;
+                virtual TAKErr writeByte(const uint8_t value) NOTHROWS override;
+                virtual TAKErr skip(const std::size_t n) NOTHROWS override;
 
             private:
                 atakmap::util::MemBufferT<uint8_t> *buffer;
@@ -168,11 +168,11 @@ namespace TAK {
                 virtual ~DynamicOutput() NOTHROWS;
 
                 virtual TAKErr open(const std::size_t capacity) NOTHROWS;
-                virtual TAKErr close() NOTHROWS;
+                virtual TAKErr close() NOTHROWS override;
 
-                virtual TAKErr write(const uint8_t *buf, const std::size_t len) NOTHROWS;
-                virtual TAKErr writeByte(const uint8_t value) NOTHROWS;
-                virtual TAKErr skip(const std::size_t n) NOTHROWS;
+                virtual TAKErr write(const uint8_t *buf, const std::size_t len) NOTHROWS override;
+                virtual TAKErr writeByte(const uint8_t value) NOTHROWS override;
+                virtual TAKErr skip(const std::size_t n) NOTHROWS override;
 
                 TAKErr get(const uint8_t **buf, std::size_t *len) NOTHROWS;
                 TAKErr reset() NOTHROWS;

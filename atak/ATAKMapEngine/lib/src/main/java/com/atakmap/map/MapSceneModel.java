@@ -1,32 +1,24 @@
 package com.atakmap.map;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import android.graphics.PointF;
 
-import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 
+import com.atakmap.interop.InteropCleaner;
+import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
-import com.atakmap.map.layer.feature.geometry.Envelope;
-import com.atakmap.map.projection.ECEFProjection;
 import com.atakmap.map.projection.MapProjectionDisplayModel;
 import com.atakmap.map.projection.Projection;
-import com.atakmap.math.Ellipsoid;
+import com.atakmap.map.projection.ProjectionFactory;
 import com.atakmap.math.GeometryModel;
-import com.atakmap.math.NativeGeometryModel;
-import com.atakmap.math.NoninvertibleTransformException;
-import com.atakmap.math.Plane;
 import com.atakmap.math.PointD;
 import com.atakmap.math.Matrix;
-import com.atakmap.math.Ray;
-import com.atakmap.math.Sphere;
-import com.atakmap.math.Vector3D;
+import com.atakmap.lang.ref.Cleaner;
+import com.atakmap.util.Disposable;
 import com.atakmap.util.ReadWriteLock;
 
-public final class MapSceneModel {
+public final class MapSceneModel implements Disposable {
 
     private final static String TAG = "MapSceneModel";
 
@@ -34,6 +26,8 @@ public final class MapSceneModel {
     final static Interop<Projection> Projection_interop = Interop.findInterop(Projection.class);
     final static Interop<MapProjectionDisplayModel> MapProjectionDisplayModel_interop = Interop.findInterop(MapProjectionDisplayModel.class);
     final static Interop<GeometryModel> GeometryModel_interop = Interop.findInterop(GeometryModel.class);
+
+    final static NativePeerManager.Cleaner CLEANER = new InteropCleaner(MapSceneModel.class);
 
     public GeometryModel earth;
     public MapCamera camera;
@@ -58,6 +52,7 @@ public final class MapSceneModel {
     final ReadWriteLock rwlock = new ReadWriteLock();
     Pointer pointer;
     Object owner;
+    Cleaner cleaner;
 
     public MapSceneModel(AtakMapView view) {
         this(view, view.getProjection(), view.getPoint().get(),
@@ -98,14 +93,16 @@ public final class MapSceneModel {
     }
 
     MapSceneModel(Pointer pointer, Object owner) {
+        cleaner = NativePeerManager.register(this, pointer, this.rwlock, null, CLEANER);
+
         this.pointer = pointer;
         this.owner = owner;
 
-        this.displayModel = MapProjectionDisplayModel_interop.create(getDisplayModel(this.pointer.raw), this);
+        this.displayModel = MapProjectionDisplayModel.getModel(getProjection(this.pointer.raw));
         this.width = getWidth(this.pointer.raw);
         this.height = getHeight(this.pointer.raw);
-        this.mapProjection = Projection_interop.create(getProjection(this.pointer.raw), this);
-        this.earth = GeometryModel_interop.create(getEarth(this.pointer.raw), this);
+        this.mapProjection = ProjectionFactory.getProjection(getProjection(this.pointer.raw));
+        this.earth = (this.displayModel != null) ? this.displayModel.earth : null;
         this.forward = Matrix_interop.create(getForward(this.pointer.raw), this);
         this.inverse = Matrix_interop.create(getInverse(this.pointer.raw), this);
         this.gsd = getGsd(this.pointer.raw);
@@ -141,6 +138,9 @@ public final class MapSceneModel {
             focusGeo = GeoPoint.ZERO_POINT;
 
         this.hemisphere = GeoCalculations.getHemisphere(focusGeo);
+
+        // XXX - 
+        this.continuousScroll = true;
 
         // Calculate east and west bounds for correct forward corrections
         // when crossing the IDL in continuous scroll mode
@@ -284,6 +284,12 @@ public final class MapSceneModel {
         } finally {
             this.rwlock.releaseRead();
         }
+    }
+
+    @Override
+    public void dispose() {
+        if(this.cleaner != null)
+            this.cleaner.clean();
     }
 
     // XXX - note to self
@@ -452,7 +458,6 @@ public final class MapSceneModel {
         }
 
         return com.atakmap.math.Rectangle.intersects(0, 0, scene.width, scene.height, minX, 0, maxX, scene.height);
-
     }
 
     // Interop<MapSceneModel> interface
@@ -488,7 +493,7 @@ public final class MapSceneModel {
                                  double resolution);
 
     static native Pointer getEarth(long pointer);
-    static native Pointer getProjection(long pointer);
+    static native int getProjection(long pointer);
     static native Pointer getForward(long pointer);
     static native Pointer getInverse(long pointer);
     static native int getWidth(long pointer);

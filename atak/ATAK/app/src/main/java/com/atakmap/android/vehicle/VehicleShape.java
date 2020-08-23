@@ -35,7 +35,7 @@ import java.util.UUID;
 /**
  * Vehicle polyline marker
  */
-public class VehicleShape extends EditablePolyline {
+public class VehicleShape extends EditablePolyline implements VehicleMapItem {
 
     private static final String TAG = "VehicleShape";
     private static final int DEFAULT_WEIGHT = 2;
@@ -131,6 +131,22 @@ public class VehicleShape extends EditablePolyline {
         updateVisibility();
     }
 
+    @Override
+    public double getWidth() {
+        return getMetaDouble("width", 0);
+    }
+
+    @Override
+    public double getLength() {
+        return getMetaDouble("length", 0);
+    }
+
+    @Override
+    public double getHeight() {
+        return getMetaDouble("height", 0);
+    }
+
+    @Override
     public void setAzimuth(double deg, NorthReference ref) {
         double trueDeg = deg;
         if (ref.equals(NorthReference.MAGNETIC))
@@ -147,6 +163,7 @@ public class VehicleShape extends EditablePolyline {
         }
     }
 
+    @Override
     public double getAzimuth(NorthReference ref) {
         double azi = getMetaDouble("azimuth", 0.0);
         if (ref.equals(NorthReference.MAGNETIC))

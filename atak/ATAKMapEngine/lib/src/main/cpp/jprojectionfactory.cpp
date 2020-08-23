@@ -44,7 +44,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_projection_ProjectionFactory_setPref
     code = ProjectionFactory3_setPreferSdkProjections(prefer);
     ATAKMapEngineJNI_checkOrThrow(env, code);
 }
-JNIEXPORT jobject JNICALL Java_com_atakmap_map_projection_ProjectionFactory_getProjection
+JNIEXPORT jobject JNICALL Java_com_atakmap_map_projection_ProjectionFactory_getProjectionImpl
   (JNIEnv *env, jclass clazz, jint srid)
 {
     TAKErr code(TE_Ok);

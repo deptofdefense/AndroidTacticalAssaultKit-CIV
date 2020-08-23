@@ -5,12 +5,20 @@
                 android:summary="@string/preferences_text43"
                 android:icon="@drawable/media_prefs_camera"/>
         <PreferenceCategory
-            android:title="Point Dropping Behavior">
+            android:title="@string/pointDroppingBehavior">
             <CheckBoxPreference
                 android:title="@string/legacy_point_drop_naming"
                 android:summary="@string/legacy_point_drop_naming_summary"
                 android:defaultValue="false"
                 android:key="legacyPointDropNaming" />
+        </PreferenceCategory>
+        <PreferenceCategory
+            android:title="@string/lockBehavior">
+            <CheckBoxPreference
+                android:title="@string/forceCenterMoving"
+                android:summary="@string/forceCenterMovingSummary"
+                android:defaultValue="false"
+                android:key="disableFloatToBottom" />
         </PreferenceCategory>
         <PreferenceCategory
             android:title="@string/staledataPreferences">

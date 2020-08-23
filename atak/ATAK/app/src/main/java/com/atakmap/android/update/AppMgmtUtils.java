@@ -1,7 +1,9 @@
 
 package com.atakmap.android.update;
 
+import android.app.Activity;
 import android.app.ActivityManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -208,6 +210,7 @@ public class AppMgmtUtils {
 
     }
 
+    @SuppressWarnings("NewApi")
     public boolean isRunning(Context ctx) {
         ActivityManager activityManager = (ActivityManager) ctx
                 .getSystemService(Context.ACTIVITY_SERVICE);
@@ -218,9 +221,13 @@ public class AppMgmtUtils {
             return false;
 
         for (ActivityManager.RunningTaskInfo task : tasks) {
-            if (ctx.getPackageName().equalsIgnoreCase(
-                    task.baseActivity.getPackageName()))
-                return true;
+            // the task.baseActivity field has been available since at least Android 21.
+            final ComponentName cn = task.baseActivity;
+            if (cn != null) {
+                if (ctx.getPackageName().equalsIgnoreCase(
+                        cn.getPackageName()))
+                    return true;
+            }
         }
 
         return false;
@@ -331,6 +338,7 @@ public class AppMgmtUtils {
         return false;
     }
 
+    @SuppressWarnings("NewApi")
     public static Boolean isActivityRunning(Class activityClass,
             Context context) {
         ActivityManager activityManager = (ActivityManager) context
@@ -352,9 +360,13 @@ public class AppMgmtUtils {
             if (FileSystemUtils.isEmpty(canonicalName))
                 continue;
 
-            if (canonicalName.equalsIgnoreCase(
-                    task.baseActivity.getClassName()))
-                return true;
+            // the task.baseActivity field has been available since at least Android 21.
+            final ComponentName cn = task.baseActivity;
+            if (cn != null) {
+                if (canonicalName.equalsIgnoreCase(
+                        cn.getClassName()))
+                    return true;
+            }
         }
 
         return false;

@@ -1,6 +1,7 @@
 
 package com.atakmap.android.lrf.reader;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 
 import com.atakmap.android.bluetooth.BluetoothConnection;
@@ -10,6 +11,7 @@ import com.atakmap.android.bluetooth.BluetoothReader;
 
 import com.atakmap.android.lrf.LRFCotManager;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
 import java.util.Arrays;
@@ -62,7 +64,8 @@ public class LRFReader extends BluetoothReader {
 
         debugData(buffer, curr);
 
-        final String line = new String(buffer, 0, curr);
+        final String line = new String(buffer, 0, curr,
+                FileSystemUtils.UTF8_CHARSET);
 
         // simple for now will likely only check the checksum in
         // the future....
@@ -223,6 +226,7 @@ public class LRFReader extends BluetoothReader {
                 BluetoothConnection.MY_UUID_INSECURE);
     }
 
+    @SuppressLint("MissingPermission")
     @Override
     public BluetoothCotManager getCotManager(MapView mapView) {
         BluetoothDevice device = connection.getDevice();

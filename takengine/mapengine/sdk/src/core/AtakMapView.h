@@ -13,185 +13,217 @@
 #include "core/ProjectionFactory2.h"
 
 namespace atakmap {
-namespace core {
+    namespace core {
 
-class ENGINE_API AtakMapController;
-class ENGINE_API Layer;
-class ENGINE_API MapSceneModel;
+        class AtakMapController;
+        class Layer;
+        class MapSceneModel;
 //class Projection;
 //class ProjectionSpi;
 
 
-class ENGINE_API AtakMapView
-{
-public : // nested types
-    struct ENGINE_API MapLayersChangedListener;
-    struct ENGINE_API MapMovedListener;
-    struct ENGINE_API MapProjectionChangedListener;
-    struct ENGINE_API MapResizedListener;
-    struct ENGINE_API MapElevationExaggerationFactorListener;
-public : // constructor/destructor
-    AtakMapView(float width, float height, double displayDPI);
-    ~AtakMapView();
-public : // member functions
-    AtakMapController *getController() const;
+        class ENGINE_API AtakMapView
+        {
+        public : // nested types
+            struct ENGINE_API MapLayersChangedListener;
+            struct ENGINE_API MapMovedListener;
+            struct ENGINE_API MapProjectionChangedListener;
+            struct ENGINE_API MapResizedListener;
+            struct ENGINE_API MapElevationExaggerationFactorListener;
+            struct ENGINE_API MapContinuousScrollListener;
+        public : // constructor/destructor
+            AtakMapView(float width, float height, double displayDPI);
+            ~AtakMapView();
+        public : // member functions
+            AtakMapController *getController() const;
 
-    void addLayer(Layer *layer);
-    void addLayer(int idx, Layer *layer);
-    void removeLayer(Layer *layer);
-    void removeAllLayers();
-    void setLayerPosition(Layer *layer, const int position);
-    std::size_t getNumLayers();
-    Layer *getLayer(std::size_t position);
-    std::list<Layer *> getLayers();
-    void getLayers(std::list<Layer *> &retval);
+            void addLayer(Layer *layer);
+            void addLayer(int idx, Layer *layer);
+            void removeLayer(Layer *layer);
+            void removeAllLayers();
+            void setLayerPosition(Layer *layer, const int position);
+            std::size_t getNumLayers();
+            Layer *getLayer(std::size_t position);
+            std::list<Layer *> getLayers();
+            void getLayers(std::list<Layer *> &retval);
 
-    void addLayersChangedListener(MapLayersChangedListener *listener);
-    void removeLayersChangedListener(MapLayersChangedListener *listener);
+            void addLayersChangedListener(MapLayersChangedListener *listener);
+            void removeLayersChangedListener(MapLayersChangedListener *listener);
 
-    void getPoint(GeoPoint *center) const;
-    void getPoint(GeoPoint *center, const bool atFocusAltitude) const;
-    double getFocusAltitude() const;
-    void getBounds(GeoPoint *upperLeft, GeoPoint *lowerRight);
-    double getMapScale() const;
-    double getMapRotation() const;
-    double getMapResolution() const;
-    double getMapTilt() const;
-    double getMinMapTilt(double resolution) const;
-    double getMaxMapTilt(double resolution) const;
-    void setMaxMapTilt(const double value);
-    double getMapResolution(const double mapScale) const;
-    double getFullEquitorialExtentPixels() const;
-    int getProjection() const;
+            void getPoint(GeoPoint *center) const;
+            void getPoint(GeoPoint *center, const bool atFocusAltitude) const;
+            double getFocusAltitude() const;
+            void getBounds(GeoPoint *upperLeft, GeoPoint *lowerRight);
+            double getMapScale() const;
+            double getMapRotation() const;
+            double getMapResolution() const;
+            double getMapTilt() const;
+            double getMinMapTilt(double resolution) const;
+            double getMaxMapTilt(double resolution) const;
+            void setMaxMapTilt(const double value);
+            double getMapResolution(const double mapScale) const;
+            double getFullEquitorialExtentPixels() const;
+            int getProjection() const;
 
-    bool setProjection(int srid);
+            bool setProjection(int srid);
 
-    void addMapProjectionChangedListener(MapProjectionChangedListener *l);
-    void removeMapProjectionChangedListener(MapProjectionChangedListener *l);
+            void addMapProjectionChangedListener(MapProjectionChangedListener *l);
+            void removeMapProjectionChangedListener(MapProjectionChangedListener *l);
 
-    double mapResolutionAsMapScale(const double resolution) const;
+            double mapResolutionAsMapScale(const double resolution) const;
 
-    MapSceneModel *createSceneModel();
+            MapSceneModel *createSceneModel();
 
-    void forward(const GeoPoint *geo, atakmap::math::Point<float> *p);
-    void inverse(const atakmap::math::Point<float> *p, GeoPoint *geo);
+            void forward(const GeoPoint *geo, atakmap::math::Point<float> *p);
+            void inverse(const atakmap::math::Point<float> *p, GeoPoint *geo);
 
-    double getMinLatitude() const;
-    double getMaxLatitude() const;
-    double getMinLongitude() const;
-    double getMaxLongitude() const;
+            double getMinLatitude() const;
+            double getMaxLatitude() const;
+            double getMinLongitude() const;
+            double getMaxLongitude() const;
 
-    double getMinMapScale() const;
-    double getMaxMapScale() const;
+            double getMinMapScale() const;
+            double getMaxMapScale() const;
 
-    void setMinMapScale(const double minMapScale);
-    void setMaxMapScale(const double maxMapScale);
+            void setMinMapScale(const double minMapScale);
+            void setMaxMapScale(const double maxMapScale);
 
-    void setSize(const float width, const float height);
-    float getWidth() const;
-    float getHeight() const;
-    double getDisplayDpi() const;
+            void setSize(const float width, const float height);
+            float getWidth() const;
+            float getHeight() const;
+            void setDisplayDpi(double dpi);
+            double getDisplayDpi() const;
 
-    double getElevationExaggerationFactor() const;
-    void setElevationExaggerationFactor(double factor);
+            void setFocusPointOffset(float x, float y) NOTHROWS;
 
-    void addMapResizedListener(MapResizedListener *l);
-    void removeMapResizedListener(MapResizedListener *l);
+            bool isAnimating() const NOTHROWS;
+            bool isContinuousScrollEnabled() const NOTHROWS;
+            void setContinuousScrollEnabled(const bool v) NOTHROWS;
 
-    void addMapMovedListener(MapMovedListener *l);
-    void removeMapMovedListener(MapMovedListener *l);
+            double getElevationExaggerationFactor() const;
+            void setElevationExaggerationFactor(double factor);
 
-    void addMapElevationExaggerationFactorListener(MapElevationExaggerationFactorListener *l);
-    void removeMapElevationExaggerationFactorListener(MapElevationExaggerationFactorListener *l);
-protected : // member functions
-    //Deprecated now, use the version that includes the tilt
-    void updateView(const GeoPoint *center, const double scale, const double rotation, const bool animate);
+            void addMapResizedListener(MapResizedListener *l);
+            void removeMapResizedListener(MapResizedListener *l);
 
-    void updateView(const GeoPoint &c, const double mapScale, const double rot, const double ptilt, const double focusAlt, const double focusAltTerminalSlant, const bool anim);
+            void addMapMovedListener(MapMovedListener *l);
+            void removeMapMovedListener(MapMovedListener *l);
 
-    void dispatchMapResized();
+            void addMapElevationExaggerationFactorListener(MapElevationExaggerationFactorListener *l);
+            void removeMapElevationExaggerationFactorListener(MapElevationExaggerationFactorListener *l);
 
-    void dispatchMapMoved();
+            void addMapContinuousScrollListener(MapContinuousScrollListener *l);
+            void removeMapContinuousScrollListener(MapContinuousScrollListener *l);
+        protected : // member functions
+            //Deprecated now, use the version that includes the tilt
+            void updateView(const GeoPoint *center, const double scale, const double rotation, const bool animate);
+#ifdef __ANDROID__
+        public :
+#endif
+            void updateView(const GeoPoint &c, const double mapScale, const double rot, const double ptilt, const double focusAlt, const double focusAltTerminalSlant, const bool anim);
+#ifdef __ANDROID__
+        protected :
+#endif
 
-    void dispatchMapProjectionChanged();
-    void dispatchElevationExaggerationFactorChanged();
+            void dispatchMapResized();
 
-    void dispatchLayerAdded(Layer *layer);
-    void dispatchLayersRemoved(std::list<Layer *> layers);
-    void dispatchLayerPositionChanged(Layer *layer, const int oldPos, const int newPos);
+            void dispatchMapMoved();
 
-friend class ENGINE_API AtakMapController;
+            void dispatchMapProjectionChanged();
+            void dispatchElevationExaggerationFactorChanged();
 
-private : // member fields
-    float width;
-    float height;
-    double displayResolution;
-    double fullEquitorialExtentPixels;
-    GeoPoint center;
-    double focusAltitude;
-    double focusAltTerminalSlant;
-    double scale;
-    double minMapScale;
-    double maxMapScale;
-    double rotation;
-    bool animate;
-    double tilt;
-    double maxTilt;
-    double elevationExaggerationFactor;
-    double displayDpi;
-    TAK::Engine::Core::ProjectionPtr2 projection;
-    bool computeFocusPoint;
+            void dispatchLayerAdded(Layer *layer);
+            void dispatchLayersRemoved(std::list<Layer *> layers);
+            void dispatchLayerPositionChanged(Layer *layer, const int oldPos, const int newPos);
 
-    AtakMapController *controller;
+            void dispatchContinuousScrollEnabledChanged();
 
-    std::list<Layer *> layers;
+            friend class ENGINE_API AtakMapController;
 
-    // callbacks
-    std::set<MapLayersChangedListener *> layersChangedListeners;
-    std::set<MapResizedListener *> resizedListeners;
-    std::set<MapMovedListener *> movedListeners;
-    std::set<MapProjectionChangedListener *> projectionChangedListeners;
-    std::set<MapElevationExaggerationFactorListener *> elExaggerationFactorChangedListeners;
+        private : // member fields
+            float width_;
+            float height_;
+            double full_equitorial_extent_pixels_;
+            GeoPoint center_;
+            double focus_altitude_;
+            double focus_alt_terminal_slant_;
+            double scale_;
+            double min_map_scale_;
+            double max_map_scale_;
+            double rotation_;
+            bool animate_;
+            double tilt_;
+            double max_tilt_;
+            double elevation_exaggeration_factor_;
+            double display_dpi_;
+            TAK::Engine::Core::ProjectionPtr2 projection_;
+            bool compute_focus_point_;
+            bool continue_scroll_enabled_;
 
-    mutable TAK::Engine::Thread::Mutex mapMutex;
-public :
-    static float DENSITY;
-}; // end class AtakMapView
+            float focus_off_x_;
+            float focus_off_y_;
 
-struct ENGINE_API AtakMapView::MapLayersChangedListener
-{
-    virtual ~MapLayersChangedListener () throw () = 0;
-    virtual void mapLayerAdded(AtakMapView *view, Layer *layer) = 0;
-    virtual void mapLayerRemoved(AtakMapView *view, Layer *layer) = 0;
-    virtual void mapLayerPositionChanged(AtakMapView *view, Layer *layer, const int oldPos, const int newPos) = 0;
-}; // end class MapLayersChangedListener
+            AtakMapController *controller_;
 
-struct ENGINE_API AtakMapView::MapMovedListener
-{
-    virtual ~MapMovedListener () throw () = 0;
-    virtual void mapMoved(AtakMapView *view, const bool animate) = 0;
-}; // end class MapMovedListener
+            std::list<Layer *> layers_;
 
-struct ENGINE_API AtakMapView::MapProjectionChangedListener
-{
-    virtual ~MapProjectionChangedListener () throw () = 0;
-    virtual void mapProjectionChanged(AtakMapView *view) = 0;
-};
+            // callbacks
+            std::set<MapLayersChangedListener *> layers_changed_listeners_;
+            std::set<MapResizedListener *> resized_listeners_;
+            std::set<MapMovedListener *> moved_listeners_;
+            std::set<MapProjectionChangedListener *> projection_changed_listeners_;
+            std::set<MapElevationExaggerationFactorListener *> el_exaggeration_factor_changed_listeners_;
+            std::set<MapContinuousScrollListener*> continuous_scroll_listeners_;
 
-struct ENGINE_API AtakMapView::MapResizedListener
-{
-    virtual ~MapResizedListener () throw () = 0;
-    virtual void mapResized(AtakMapView *view) = 0;
-}; // end class MapResizedListener
+            mutable TAK::Engine::Thread::Mutex map_mutex_;
+        public :
+            static float DENSITY;
+        }; // end class AtakMapView
 
-struct ENGINE_API AtakMapView::MapElevationExaggerationFactorListener
-{
-    virtual ~MapElevationExaggerationFactorListener() throw () = 0;
-    virtual void mapElevationExaggerationFactorChanged(AtakMapView *view, const double factor) = 0;
-}; // end class MapResizedListener
+        double AtakMapView_getFullEquitorialExtentPixels(const double dpi) NOTHROWS;
+        double AtakMapView_getMapResolution(const double dpi, const double scale) NOTHROWS;
+        double AtakMapView_getMapScale(const double dpi, const double resolution) NOTHROWS;
+
+        struct ENGINE_API AtakMapView::MapLayersChangedListener
+        {
+            virtual ~MapLayersChangedListener () throw () = 0;
+            virtual void mapLayerAdded(AtakMapView *view, Layer *layer) = 0;
+            virtual void mapLayerRemoved(AtakMapView *view, Layer *layer) = 0;
+            virtual void mapLayerPositionChanged(AtakMapView *view, Layer *layer, const int oldPos, const int newPos) = 0;
+        }; // end class MapLayersChangedListener
+
+        struct ENGINE_API AtakMapView::MapMovedListener
+        {
+            virtual ~MapMovedListener () throw () = 0;
+            virtual void mapMoved(AtakMapView *view, const bool animate) = 0;
+        }; // end class MapMovedListener
+
+        struct ENGINE_API AtakMapView::MapProjectionChangedListener
+        {
+            virtual ~MapProjectionChangedListener () throw () = 0;
+            virtual void mapProjectionChanged(AtakMapView *view) = 0;
+        };
+
+        struct ENGINE_API AtakMapView::MapResizedListener
+        {
+            virtual ~MapResizedListener () throw () = 0;
+            virtual void mapResized(AtakMapView *view) = 0;
+        }; // end class MapResizedListener
+
+        struct ENGINE_API AtakMapView::MapElevationExaggerationFactorListener
+        {
+            virtual ~MapElevationExaggerationFactorListener() throw () = 0;
+            virtual void mapElevationExaggerationFactorChanged(AtakMapView *view, const double factor) = 0;
+        }; // end class MapResizedListener
+
+        struct ENGINE_API AtakMapView::MapContinuousScrollListener
+        {
+            virtual ~MapContinuousScrollListener() throw () = 0;
+            virtual void mapContinuousScrollEnabledChanged(AtakMapView *view, const bool enabled) = 0;
+        }; // end class MapResizedListener
 
 
-} // end namespace atakmap::core
+    } // end namespace atakmap::core
 } // end namespace atak
 
 #endif // ATAKMAP_CORE_ATAK_MAP_VIEW_H_INCLUDED

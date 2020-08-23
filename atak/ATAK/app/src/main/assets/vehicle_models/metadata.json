@@ -1,0 +1,20 @@
+{
+  "categories": [
+    {
+      "name": "Aircraft",
+      "directory": "aircraft"
+    },
+    {
+      "name": "Automobiles",
+      "directory": "automobiles"
+    },
+    {
+      "name": "Maritime",
+      "directory": "maritime"
+    },
+    {
+      "name": "Other",
+      "directory": "other"
+    }
+  ]
+}

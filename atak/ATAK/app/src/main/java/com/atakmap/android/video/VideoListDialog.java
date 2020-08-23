@@ -161,7 +161,7 @@ public class VideoListDialog {
                 return LayoutInflater.from(_context).inflate(R.layout.empty,
                         parent, false);
             h.alias.setText(ce.getAlias());
-            h.url.setText(ConnectionEntry.getURL(ce));
+            h.url.setText(ConnectionEntry.getURL(ce, true));
             if (_multiSelect) {
                 h.selected.setVisibility(View.VISIBLE);
                 h.selected.setChecked(_selected.contains(ce));

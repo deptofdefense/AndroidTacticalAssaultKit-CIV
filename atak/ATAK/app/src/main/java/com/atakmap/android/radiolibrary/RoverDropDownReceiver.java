@@ -33,6 +33,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -1156,51 +1157,21 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
                                 ping.setText("in progress");
                             }
                         });
-                        Socket s;
-                        BufferedReader inFromClient = null;
+                        NetworkInterface ni = getEthInterface();
+                        InetAddress inetAddress = null;
                         try {
-                            NetworkInterface ni = getEthInterface();
-                            s = new Socket();
-                            Log.d(TAG,
-                                    "done constructing the socket, setting the timeout");
-                            s.setSoTimeout(3000);
-                            if (ni != null) {
-                                Log.d(TAG,
-                                        "constructing the socket with the interface");
-                                final String ethip = NetworkDeviceManager
-                                        .getAddress(ni);
-                                if (ethip != null) {
-                                    s.bind(new InetSocketAddress(ethip, 0));
-                                } else {
-                                    Log.d(TAG,
-                                            "constructing the socket without the interface");
-                                }
-                            } else {
-                                Log.d(TAG,
-                                        "constructing the socket without the interface");
-                            }
-
-                            s.connect(
-                                    new InetSocketAddress(toInetAddress(
-                                            urlView, roverIP), 80),
-                                    3000);
-
-                            Log.d(TAG, "causing the read");
-                            Log.d(TAG, "success: contacted the web interface");
+                            inetAddress = toInetAddress(
+                                    urlView, roverIP);
+                        } catch (Exception e) {
+                        }
+                        if (radio.testConnection(ni, inetAddress, roverIP)) {
                             toast(urlView,
                                     "Success: able to contact the Rover");
-                        } catch (IOException ioe) {
-                            Log.d(TAG,
-                                    "failed: unable to contact the web interface");
+                        } else {
                             toast(urlView,
                                     "Error: unable to contact the Rover");
-                        } finally {
-                            if (inFromClient != null)
-                                try {
-                                    inFromClient.close();
-                                } catch (IOException ignored) {
-                                }
                         }
+                        radio.testConnection(ni, inetAddress, roverIP);
                         urlView.post(new Runnable() {
                             @Override
                             public void run() {

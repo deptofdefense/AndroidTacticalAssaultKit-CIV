@@ -14,6 +14,7 @@ import android.graphics.Typeface;
 
 /**
  * Immutable text style and metrics details for map object.
+ *
  */
 public final class MapTextFormat {
 
@@ -34,10 +35,14 @@ public final class MapTextFormat {
     }
 
     public MapTextFormat(Typeface typeface, boolean outlined, int textSize) {
-        Impl i;
+        Impl i = null;
+        long key = -1;
         synchronized (MapTextFormat.class) {
-            final long key = ((long) typeface.hashCode() << 32L) | (long) ((textSize & 0x7FFFFFFF) << 1) | (outlined ? 0x1L : 0x0L);
-            i = SHARED_IMPL.get(Long.valueOf(key));
+            if (typeface != null) {
+                key = ((long) typeface.hashCode() << 32L) | (long) ((textSize & 0x7FFFFFFF) << 1) | (outlined ? 0x1L : 0x0L);
+                i = SHARED_IMPL.get(Long.valueOf(key));
+
+            }
             if (i == null) {
                 SHARED_IMPL.put(Long.valueOf(key), i = new Impl(typeface, textSize, outlined));
             }
@@ -72,8 +77,8 @@ public final class MapTextFormat {
     /**
      * Measure the width in pixels required to frame a block of text.
      * 
-     * @param text
-     * @return
+     * @param text the text string to be passed in
+     * @return the measurment in pixels of the text string
      */
     public int measureTextWidth(final String text) {
         double maxWidth = 0.0;

@@ -17,6 +17,7 @@ import android.content.Intent;
 
 import com.atakmap.android.bluetooth.BtLowEnergyManager;
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
 import java.nio.ByteBuffer;
@@ -157,7 +158,8 @@ public class PLRFBluetoothLEHandler
             index = 0;
 
             for (BluetoothGattService gattService : gattServices) {
-                if (gattService.getUuid().toString().toUpperCase()
+                if (gattService.getUuid().toString()
+                        .toUpperCase(LocaleUtil.getCurrent())
                         .endsWith(IDENTIFIER)) {
                     Log.d(TAG,
                             "service: " + gattService.getUuid().toString() + " "
@@ -288,7 +290,7 @@ public class PLRFBluetoothLEHandler
     }
 
     private void set(String uuid, byte[] data) {
-        uuid = uuid.toUpperCase();
+        uuid = uuid.toUpperCase(LocaleUtil.getCurrent());
         if (uuid.startsWith("C564806C")) { // measurement identification value
             recordId = ByteBuffer.wrap(data, 0, 4)
                     .order(ByteOrder.LITTLE_ENDIAN).getInt();

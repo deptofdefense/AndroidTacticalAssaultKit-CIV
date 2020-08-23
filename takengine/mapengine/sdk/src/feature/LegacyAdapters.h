@@ -6,6 +6,7 @@
 #include "feature/FeatureDataSource2.h"
 #include "feature/FeatureDefinition2.h"
 #include "feature/Geometry2.h"
+#include "feature/Style.h"
 #include "port/Platform.h"
 #include "util/Error.h"
 

@@ -364,6 +364,15 @@ const VertexDataLayout &ManagedModel::getVertexDataLayout() const NOTHROWS
 {
     return layout;
 }
+std::size_t ManagedModel::getNumBuffers() const NOTHROWS
+{
+    return 0u;
+}
+TAKErr ManagedModel::getBuffer(const MemBuffer2 **value, const std::size_t idx) const NOTHROWS
+{
+    return TE_InvalidArg;
+}
+
 
 namespace
 {

@@ -19,17 +19,32 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import com.atakmap.coremap.log.Log;
 
+import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.TrustManager;
 
 public class AtakAuthenticationHandlerHTTP {
     public static interface OnAuthenticateCallback {
-        public String[] getBasicAuth(URL url);
+
+        /**
+         * Obtain the basic authentication information.   Also include the status code from the 
+         * previous attempt.
+         * @param url the url that is requiring basic authentication.
+         * @param previousStatus  -1 (no previous status was found), 
+                    401 (username and password bad), and 403 (access forbidden)
+         */
+        public String[] getBasicAuth(URL url, int previousStatus);
     }
 
     private static String TAG = "AtakAuthenticationHandlerHTTP";
     private static OnAuthenticateCallback authCallback = null;
     private static final ReadWriteLock lock = new ReentrantReadWriteLock();
     private static final Map<String, Domain> domains = new HashMap<String, Domain>();
+
+
+    public static int[] UNAUTHORIZED_AND_FORBIDDEN = new int[] {HttpsURLConnection.HTTP_UNAUTHORIZED, HttpsURLConnection.HTTP_FORBIDDEN};
+    public static int[] UNAUTHORIZED_ONLY = new int[] { HttpsURLConnection.HTTP_UNAUTHORIZED };
+    public static int[] FORBIDDEN_ONLY =  new int[] { HttpsURLConnection.HTTP_FORBIDDEN };
+
 
     public static void setCallback(OnAuthenticateCallback callback) {
         Lock wlock = lock.writeLock();
@@ -41,25 +56,39 @@ public class AtakAuthenticationHandlerHTTP {
         }
     }
 
-    public static String encodeCredentials(String username, String password) {
+    private static String encodeCredentials(String username, String password) {
         String uidpwd;
-        try {
-            String s = username + ":" + password;
-            uidpwd = Base64.encodeToString(s.getBytes(FileSystemUtils.UTF8_CHARSET), Base64.DEFAULT);
-        } catch (UnsupportedEncodingException e) {
-            uidpwd = null;
-        }
+        String s = username + ":" + password;
+        uidpwd = Base64.encodeToString(s.getBytes(FileSystemUtils.UTF8_CHARSET), Base64.NO_WRAP);
         return uidpwd;
     }
 
     public static Connection makeAuthenticatedConnection(HttpURLConnection conn,
             int loginAttempts) throws IOException {
 
-        return makeAuthenticatedConnection(conn, loginAttempts, true);
+        return makeAuthenticatedConnection(conn, loginAttempts, true, UNAUTHORIZED_AND_FORBIDDEN);
     }
 
     public static Connection makeAuthenticatedConnection(HttpURLConnection conn,
             int loginAttempts, boolean ignorePreviousFail) throws IOException {
+
+        return makeAuthenticatedConnection(conn, loginAttempts, ignorePreviousFail, UNAUTHORIZED_AND_FORBIDDEN);
+        
+    }
+
+    /**
+     * Allows for a authenticated connection to be made if the access code returned matches one of
+     * the provided access codes in the list.
+     * @param conn the connection to use to try to make an authenticated connection with.
+     * @param loginAttempts number of times before giving up.
+     * @param ignorePreviousFail ignore any previous failure attempts
+     * @param badAccessCodes the list of codes that is considered bad access (usually 401 and 403)
+     *                       but can be client supplied
+     * @return the working connection
+     * @throws IOException if the connection failed to authenticate
+     */
+    public static Connection makeAuthenticatedConnection(HttpURLConnection conn,
+            int loginAttempts, boolean ignorePreviousFail, int[] badAccessCodes) throws IOException {
         
         final String site = conn.getURL().getHost();
         
@@ -98,15 +127,14 @@ public class AtakAuthenticationHandlerHTTP {
                 retval.conn.disconnect();
                 final int status = getResponseCode(retval.conn);
                 // mark the domain as requiring authentication
-                domain.requiresAuthorization = (status == HttpURLConnection.HTTP_UNAUTHORIZED);
+                domain.requiresAuthorization = isBadAccess(status, badAccessCodes);
                 raised = e;
-                if(status != HttpURLConnection.HTTP_UNAUTHORIZED)
+                if(!isBadAccess(status, badAccessCodes))
                     throw e;
                 retval.conn = duplicate(conn);
             }
         }
 
-        // if response code 401, try to obtain credentials
         if (domain.requiresAuthorization) {
             Lock rlock = lock.readLock();
             rlock.lock();
@@ -130,6 +158,7 @@ public class AtakAuthenticationHandlerHTTP {
                                 cached = encodeCredentials(credentials.username, credentials.password);
                             }
 
+                            int status = -1;
                             // try to open with the cached credentials
                             if(cached != null) {
                                 try {
@@ -137,10 +166,8 @@ public class AtakAuthenticationHandlerHTTP {
                                     return retval;
                                 } catch (IOException e) {
                                     retval.conn.disconnect();
-                                    final int status = getResponseCode(retval.conn);
-                                    if (status == HttpURLConnection.HTTP_UNAUTHORIZED) {
-                                        AtakAuthenticationDatabase.delete(
-                                                AtakAuthenticationCredentials.TYPE_HTTP_BASIC_AUTH, site);
+                                    status = getResponseCode(retval.conn);
+                                    if (isBadAccess(status, badAccessCodes)) {
                                         raised = e;
                                         retval.conn = duplicate(conn);
                                     } else {
@@ -148,7 +175,7 @@ public class AtakAuthenticationHandlerHTTP {
                                         // other than status UNAUTHORIZED,
                                         // clear the authorization requirement
                                         // on the domain
-                                        domain.requiresAuthorization &= (status == HttpURLConnection.HTTP_UNAUTHORIZED);
+                                        domain.requiresAuthorization &= isBadAccess(status, badAccessCodes);
                                         throw e;
                                     }
                                 }
@@ -158,7 +185,7 @@ public class AtakAuthenticationHandlerHTTP {
                             String[] uidpwd;
                             String uidpwdBase64 = null;
                             for (int i = 0; i < loginAttempts; i++) {
-                                uidpwd = authCallback.getBasicAuth(conn.getURL());
+                                uidpwd = authCallback.getBasicAuth(conn.getURL(), status);
                                 if(uidpwd != null) {
                                     uidpwdBase64 = encodeCredentials(uidpwd[0], uidpwd[1]);
                                     AtakAuthenticationDatabase.saveCredentials(
@@ -170,19 +197,22 @@ public class AtakAuthenticationHandlerHTTP {
                                     return retval;
                                 } catch (IOException e) {
                                     retval.conn.disconnect();
-                                    final int status = getResponseCode(retval.conn);
-                                    if (uidpwdBase64 != null && status == HttpURLConnection.HTTP_UNAUTHORIZED
+                                    status = getResponseCode(retval.conn);
+                                    if (uidpwdBase64 != null 
+                                            && isBadAccess(status, badAccessCodes)
                                             && i < (loginAttempts - 1)) {
+
                                         retval.conn = duplicate(conn);
                                         continue;
                                     }
+                                    
                                     // authentication attempts failed
                                     domain.authorizationFailed = true;
 
                                     // if connection failed for a reason other
                                     // than status UNAUTHORIZED, clear the
                                     // authorization requirement on the domain
-                                    domain.requiresAuthorization &= (status == HttpURLConnection.HTTP_UNAUTHORIZED);
+                                    domain.requiresAuthorization &= isBadAccess(status, badAccessCodes);
                                     throw e;
                                 }
                             }
@@ -202,6 +232,14 @@ public class AtakAuthenticationHandlerHTTP {
         retval.conn = duplicate(conn);
 
         throw new IOException("Authorization failed");
+    }
+
+
+    private static boolean isBadAccess(int status, int[] badAccessCodes) {
+        for (int accessCode : badAccessCodes)
+            if (status == accessCode)
+                return true;
+        return false;
     }
 
     private static int getResponseCode(HttpURLConnection conn) {

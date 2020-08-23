@@ -8,13 +8,13 @@ namespace TAK {
     namespace Engine {
         namespace Formats {
             namespace DRG {
-                ENGINE_API enum DRGClass
+                enum DRGClass
                 {
                     TEDC_Topographic,
                     TEDC_Orthopohoto,
                     TEDC_Planimetric,
                 };
-                ENGINE_API enum DRGSeries
+                enum DRGSeries
                 {
                     TEDS_7_5min,
                     TEDS_7_5minx15min,
@@ -22,13 +22,13 @@ namespace TAK {
                     TEDS_30min_60min,
                     TEDS_1degx2deg
                 };
-                ENGINE_API struct DRGCategory
+                struct ENGINE_API DRGCategory
                 {
                     DRGSeries series;
                     std::size_t scale_denom;
                     DRGClass drg_class;
                 };
-                ENGINE_API struct DRGInfo
+                struct ENGINE_API DRGInfo
                 {
                     DRGCategory category;
                     double secondaryCellLatitude;

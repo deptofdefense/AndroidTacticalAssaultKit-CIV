@@ -30,7 +30,7 @@ namespace atakmap
                 int hints;
                 void *opaque;
             private :
-                disposeEntryFunc disposer;
+                disposeEntryFunc disposer_;
             public :
                 Entry();
             private :
@@ -45,11 +45,11 @@ namespace atakmap
                       float *textureCoordinates,
                       int hints, void *opaque);
 
-                void commonInit(disposeEntryFunc disposeFunc, GLTexture *texture,
-                                float *vertexCoordinates, int numVertices,
-                                short *indices, int numIndices,
-                                float *textureCoordinates,
-                                int hints, void *opaque);
+                void commonInit(disposeEntryFunc dispose_func, GLTexture *gl_texture,
+                                float *vertex_coordinates, int num_vertices,
+                                short *indices_array, int num_indices,
+                                float *texture_coordinates,
+                                int hint_flags, void *opaque_ptr);
 
                 void invokeDisposer();
 
@@ -59,7 +59,7 @@ namespace atakmap
 
 
         public:
-            GLTextureCache(int maxSize);
+            GLTextureCache(std::size_t maxSize);
             ~GLTextureCache();
 
             bool get(std::string key, Entry *val) throw (std::out_of_range);
@@ -86,7 +86,7 @@ namespace atakmap
                      int hints, void *opaque);
             void clear();
             void deleteEntry(std::string key) throw (std::out_of_range);
-            static int sizeOf(GLTexture *texture);
+            static std::size_t sizeOf(GLTexture *texture);
 
         private:
             class BidirectionalNode {
@@ -104,12 +104,12 @@ namespace atakmap
             void trimToSize();
             
 
-            std::map<std::string, BidirectionalNode *> nodeMap;
-            BidirectionalNode *head;
-            BidirectionalNode *tail;
-            int maxSize;
-            int size;
-            int count;
+            std::map<std::string, BidirectionalNode *> node_map_;
+            BidirectionalNode *head_;
+            BidirectionalNode *tail_;
+            std::size_t max_size_;
+            std::size_t size_;
+            int count_;
             
             
         };

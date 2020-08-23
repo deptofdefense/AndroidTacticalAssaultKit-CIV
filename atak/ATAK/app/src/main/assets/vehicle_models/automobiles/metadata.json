@@ -1,0 +1,61 @@
+{
+  "category": "Automobiles",
+  "vehicles": [
+    {
+      "name": "15 PAX Van",
+      "file": "15_Pax_Van.zip"
+    },
+    {
+      "name": "Ambulance",
+      "file": "ambulance.zip"
+    },
+    {
+      "name": "Coach Bus",
+      "file": "coach_bus.zip"
+    },
+    {
+      "name": "DAGOR",
+      "file": "dagor.zip"
+    },
+    {
+      "name": "Fire Truck",
+      "file": "firetruck.zip"
+    },
+    {
+      "name": "HMMWV",
+      "file": "hmmwv.zip"
+    },
+    {
+      "name": "NTV",
+      "file": "ntv.zip"
+    },
+    {
+      "name": "R-11",
+      "file": "r-11.zip"
+    },
+    {
+      "name": "RZR",
+      "file": "razr.zip"
+    },
+    {
+      "name": "School Bus",
+      "file": "schoolbus.zip"
+    },
+    {
+      "name": "Squad Car",
+      "file": "squadcar.zip"
+    },
+    {
+      "name": "Suburban",
+      "file": "suburban.zip"
+    },
+    {
+      "name": "Truck",
+      "file": "truck.zip"
+    },
+    {
+      "name": "Limousine",
+      "file": "limousine.zip"
+    }
+  ]
+}

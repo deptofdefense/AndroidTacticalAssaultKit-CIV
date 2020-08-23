@@ -19,7 +19,8 @@ namespace TAKEngineJNI {
             public :
                 ~JNILocalRef() NOTHROWS;
             public :
-                jobject &get() NOTHROWS;
+                jobject get() NOTHROWS;
+                jobject release() NOTHROWS;
             public :
                 operator bool () const NOTHROWS;
                 operator jobject () const NOTHROWS;

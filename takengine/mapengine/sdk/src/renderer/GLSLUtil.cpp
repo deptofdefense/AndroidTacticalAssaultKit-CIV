@@ -27,7 +27,7 @@ TAKErr TAK::Engine::Renderer::GLSLUtil_loadShader(int *value, const char *src, c
     CHECKERRS();
     if (n == GL_FALSE)
         return TE_Err;
-    glShaderSource(n, 1, &src, NULL);
+    glShaderSource(n, 1, &src, nullptr);
     CHECKERRS();
     glCompileShader(n);
     CHECKERRS();
@@ -35,14 +35,15 @@ TAKErr TAK::Engine::Renderer::GLSLUtil_loadShader(int *value, const char *src, c
     glGetShaderiv(n, GL_COMPILE_STATUS, &rc);
     CHECKERRS();
     if (rc == 0) {
-        array_ptr<char> msg(NULL);
+        array_ptr<char> msg(nullptr);
         int msgLen;
         glGetShaderiv(n, GL_INFO_LOG_LENGTH, &msgLen);
         if(msgLen) {
             msg.reset(new char[msgLen+1]);
-            glGetShaderInfoLog(n, msgLen+1, NULL, msg.get());
+            glGetShaderInfoLog(n, msgLen+1, nullptr, msg.get());
         }
-        Logger_log(LogLevel::TELL_Error, "Failed to compile shader %d, src:\n%s\nmsg: %s", n, src, msg.get());
+        Logger_log(LogLevel::TELL_Error, "Failed to compile shader %d, msg: %s", n, msg.get());
+        Logger_log(LogLevel::TELL_Error, "Failed to compile shader %d, src:\n%s", n, src);
         msg.reset();
         glDeleteShader(n);
         return TE_Err;
@@ -87,12 +88,12 @@ TAKErr TAK::Engine::Renderer::GLSLUtil_createProgram(ShaderProgram *program, con
     glGetProgramiv(n, GL_LINK_STATUS, &ok);
     CHECKERRS();
     if (ok == 0) {
-        array_ptr<char> msg(NULL);
+        array_ptr<char> msg(nullptr);
         int msgLen;
         glGetProgramiv(n, GL_INFO_LOG_LENGTH, &msgLen);
         if(msgLen) {
             msg.reset(new char[msgLen+1]);
-            glGetProgramInfoLog(n, msgLen+1, NULL, msg.get());
+            glGetProgramInfoLog(n, msgLen+1, nullptr, msg.get());
         }
         Logger_log(TELL_Error, "Failed to create program, vertShader=%d fragShader=%d\nmsg: %s", vertShader, fragShader, msg.get());
         msg.reset();

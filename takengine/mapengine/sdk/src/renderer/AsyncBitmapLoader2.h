@@ -44,7 +44,15 @@ namespace TAK
                     std::string queueHint;
                 };
             public :
-                AsyncBitmapLoader2(const std::size_t threadCount) NOTHROWS;
+                // Normally deleting the loader will wait on queue threads to exit, but
+                // specifically on Windows, if the thread has exited during process shutdown
+                // (when our DLL unloads) and this bitmaploader is being deleted after the those
+                // threads are dead then trying to notify those threads to exit (Condvar broadcast)
+                // will cause a crash or deadlock. So setting notifyThreadsOnDestruct to false will
+                // avoid this (and thus is assuming that this bitmaploader is only being destroyed at process
+                // termination or dll unloading). Use for any static/globally held objects!
+                // See https://stackoverflow.com/questions/49309366/access-violation-on-wakeallconditionvariable-in-dll-shutdown
+                AsyncBitmapLoader2(const std::size_t threadCount, bool notifyThreadsOnDestruct = true) NOTHROWS;
             public :
                 ~AsyncBitmapLoader2() NOTHROWS;
             public :
@@ -60,7 +68,7 @@ namespace TAK
                 Util::TAKErr loadBitmapTask(const Task &task, const char *queue) NOTHROWS;
             public :
                 // Replaces any existing.  **does not clean up handler in any circumstance!**
-                static Util::TAKErr registerProtocolHandler(const char *scheme, Util::ProtocolHandler *, const char *queueHint = NULL) NOTHROWS;
+                static Util::TAKErr registerProtocolHandler(const char *scheme, Util::ProtocolHandler *, const char *queueHint = nullptr) NOTHROWS;
                 static Util::TAKErr unregisterProtocolHandler(const char *scheme) NOTHROWS;
                 static Util::TAKErr unregisterProtocolHandler(const Util::ProtocolHandler &) NOTHROWS;
             private:
@@ -70,6 +78,7 @@ namespace TAK
                 static std::map<std::string, ProtocolHandlerEntry> protoHandlers;
             private :
                 const std::size_t threadCount;
+                const bool notifyThreadsOnDestruct;
 
                 Thread::Mutex queuesMutex;
                 bool shouldTerminate;

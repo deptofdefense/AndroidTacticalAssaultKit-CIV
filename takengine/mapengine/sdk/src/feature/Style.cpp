@@ -11,6 +11,7 @@
 #include "feature/DrawingTool.h"
 #include "math/Utils.h"
 #include "util/Memory.h"
+#include "util/MathUtils.h"
 
 using namespace atakmap;
 
@@ -83,7 +84,7 @@ namespace
         // Both functions should get the value from elsewhere.
         const double PPI (240);             // Need to get this from somewhere!!!
 
-        return pixels * 72 / PPI;           // 72 points per inch.
+        return static_cast<float>(pixels * 72 / PPI);           // 72 points per inch.
     }
 }
 
@@ -116,11 +117,11 @@ Style* Style::parseStyle (const char* styleOGR)
     std::vector<std::unique_ptr<Style>> styles;
 
     while (styleOGR!= styleEnd) {
-        std::auto_ptr<DrawingTool> tool (DrawingTool::parseOGR_Tool (styleOGR, styleOGR));
-        Brush* tmpBrush = (tool.get() && tool->getType() == DrawingTool::BRUSH) ? static_cast<Brush *>(tool.get()) : NULL;
-        Label* tmpLabel = (tool.get() && tool->getType() == DrawingTool::LABEL) ? static_cast<Label *>(tool.get()) : NULL;
-        Pen* tmpPen = (tool.get() && tool->getType() == DrawingTool::PEN) ? static_cast<Pen *>(tool.get()) : NULL;
-        Symbol* tmpSymbol = (tool.get() && tool->getType() == DrawingTool::SYMBOL) ? static_cast<Symbol *>(tool.get()) : NULL;
+        std::unique_ptr<DrawingTool> tool (DrawingTool::parseOGR_Tool (styleOGR, styleOGR));
+        Brush* tmpBrush = (tool.get() && tool->getType() == DrawingTool::BRUSH) ? static_cast<Brush *>(tool.get()) : nullptr;
+        Label* tmpLabel = (tool.get() && tool->getType() == DrawingTool::LABEL) ? static_cast<Label *>(tool.get()) : nullptr;
+        Pen* tmpPen = (tool.get() && tool->getType() == DrawingTool::PEN) ? static_cast<Pen *>(tool.get()) : nullptr;
+        Symbol* tmpSymbol = (tool.get() && tool->getType() == DrawingTool::SYMBOL) ? static_cast<Symbol *>(tool.get()) : nullptr;
 
         if (tmpBrush) {
             styles.emplace_back (std::unique_ptr<Style>(new BasicFillStyle (tmpBrush->foreColor)));
@@ -239,7 +240,7 @@ Style* Style::parseStyle (const char* styleOGR)
         }
     }
 
-    Style* result (NULL);
+    Style* result (nullptr);
 
     if (styles.size () == 1) {
         result = styles[0].release();
@@ -318,8 +319,7 @@ Style *BasicStrokeStyle::clone() const
 
 
 CompositeStyle::CompositeStyle (const std::vector<Style*>& styles) :
-    Style(TESC_CompositeStyle),
-    styles (styles.begin (), styles.end ())
+    Style(TESC_CompositeStyle)
 {
     if (styles.empty ()) {
         throw std::invalid_argument
@@ -327,28 +327,31 @@ CompositeStyle::CompositeStyle (const std::vector<Style*>& styles) :
                    "Received empty Style vector");
     }
 
-    if (std::find_if (styles.begin (), styles.end (), std::ptr_fun (isNULL))
-        != styles.end ()) {
-        throw std::invalid_argument
+    this->styles_.reserve(styles.size());
+    for(std::size_t i = 0u; i < styles.size(); i++) {
+        if(styles[i])
+            this->styles_.push_back(std::shared_ptr<Style>(styles[i]));
+        else
+            throw std::invalid_argument
                   ("atakmap::feature::CompositeStyle::CompositeStyle: "
                    "Received NULL Style");
     }
 }
 const Style& CompositeStyle::getStyle (std::size_t index) const throw (std::range_error)
 {
-    if (index >= styles.size ()) {
+    if (index >= styles_.size ()) {
         throw std::range_error
                   ("atakmap::feature::CompositeStyle::getStyle: "
                    "Received out-of-range index");
     }
-    return *styles[index];
+    return *styles_[index];
 }
 TAKErr CompositeStyle::toOGR(Port::String &value) const NOTHROWS
 {
     TAKErr code(TE_Ok);
     std::ostringstream strm;
-    StyleVector::const_iterator iter (styles.begin ());
-    StyleVector::const_iterator end (styles.end ());
+    auto iter (styles_.begin ());
+    auto end (styles_.end ());
 
     TAK::Engine::Port::String substyle;
 
@@ -387,7 +390,7 @@ IconPointStyle::IconPointStyle (unsigned int color,
     iconURI (iconURI),
     hAlign (hAlign),
     vAlign (vAlign),
-    scaling (scaling == 0 ? 1.0 : scaling),
+    scaling (scaling == 0 ? 1.0f : scaling),
     width (0),
     height (0),
     rotation (rotation),
@@ -418,7 +421,7 @@ IconPointStyle::IconPointStyle (unsigned int color,
     iconURI (iconURI),
     hAlign (hAlign),
     vAlign (vAlign),
-    scaling (!width && !height ? 1.0 : 0.0),
+    scaling (!width && !height ? 1.0f : 0.0f),
     width (width),
     height (height),
     rotation (rotation),
@@ -493,7 +496,8 @@ LabelPointStyle::LabelPointStyle (const char* text,
                                   float rotation,
                                   bool absoluteRotation,
                                   float paddingX,
-                                  float paddingY) :
+                                  float paddingY,
+                                  double labelMinRenderResolution) :
     Style(TESC_LabelPointStyle),
     text (text),
     foreColor (textColor),
@@ -505,7 +509,8 @@ LabelPointStyle::LabelPointStyle (const char* text,
     rotation (rotation),
     paddingX(paddingX),
     paddingY(paddingY),
-    absoluteRotation (absoluteRotation)
+    absoluteRotation (absoluteRotation),
+    labelMinRenderResolution (labelMinRenderResolution)
   {
     if (!text) {
         throw std::invalid_argument
@@ -524,7 +529,7 @@ TAKErr LabelPointStyle::toOGR(Port::String &value) const NOTHROWS
 
     strm << "LABEL(t:\"";
     if (text) {
-        for (int i = 0u; i < strlen(text); i++) {
+        for (int i = 0u; i < static_cast<int>(strlen(text)); i++) {
             const char c = text[i];
             if (c == '"')
                 strm << '\\';
@@ -592,7 +597,7 @@ PatternStrokeStyle::PatternStrokeStyle (const uint64_t pattern_,
     color(color_),
     width(strokeWidth_)
 {
-    if(patternLen < 2u || patternLen > 64u || !atakmap::math::isPowerOf2(patternLen))
+    if(patternLen < 2u || patternLen > 64u || !TAK::Engine::Util::MathUtils_isPowerOf2(patternLen))
         throw std::invalid_argument("bad pattern length");
     if(width < 0.0)
         throw std::invalid_argument("invalid stroke width");
@@ -650,6 +655,146 @@ TAKErr PatternStrokeStyle::toOGR(TAK::Engine::Port::String &value) const NOTHROW
 Style *PatternStrokeStyle::clone() const
 {
     return new PatternStrokeStyle(*this);
+}
+
+TAKErr BasicFillStyle_create(StylePtr &value, const unsigned int color) NOTHROWS
+{
+    try {
+        value = StylePtr(new BasicFillStyle(color), Memory_deleter_const<Style, BasicFillStyle>);
+        return TE_Ok;
+    } catch(const std::invalid_argument &) {
+        return TE_InvalidArg;
+    } catch(const std::bad_alloc &) {
+        return TE_OutOfMemory;
+    } catch(...) {
+        return TE_Err;
+    }
+}
+TAKErr BasicPointStyle_create(StylePtr &value, const unsigned int color, const float size) NOTHROWS
+{
+    try {
+        value = StylePtr(new BasicPointStyle(color, size), Memory_deleter_const<Style, BasicPointStyle>);
+        return TE_Ok;
+    } catch(const std::invalid_argument &) {
+        return TE_InvalidArg;
+    } catch(const std::bad_alloc &) {
+        return TE_OutOfMemory;
+    } catch(...) {
+        return TE_Err;
+    }
+}
+TAKErr BasicStrokeStyle_create(StylePtr &value, const unsigned int color, const float width) NOTHROWS
+{
+    try {
+        value = StylePtr(new BasicStrokeStyle(color, width), Memory_deleter_const<Style, BasicStrokeStyle>);
+        return TE_Ok;
+    } catch(const std::invalid_argument &) {
+        return TE_InvalidArg;
+    } catch(const std::bad_alloc &) {
+        return TE_OutOfMemory;
+    } catch(...) {
+        return TE_Err;
+    }
+}
+TAKErr CompositeStyle_create(StylePtr &value, const Style **styles, const std::size_t count) NOTHROWS
+{
+    try {
+        std::vector<Style *> styles_v;
+        styles_v.reserve(count);
+        for(std::size_t i = 0u; i < count; i++) {
+            if(!styles[i])
+                return TE_InvalidArg;
+            styles_v.push_back(styles[i]->clone());
+        }
+        value = StylePtr(new CompositeStyle(styles_v), Memory_deleter_const<Style, CompositeStyle>);
+        return TE_Ok;
+    } catch(const std::invalid_argument &) {
+        return TE_InvalidArg;
+    } catch(const std::bad_alloc &) {
+        return TE_OutOfMemory;
+    } catch(...) {
+        return TE_Err;
+    }
+}
+TAKErr IconPointStyle_create(StylePtr &value, unsigned int color,
+                                                                const char* iconURI,
+                                                                float scaleFactor,
+                                                                IconPointStyle::HorizontalAlignment hAlign,
+                                                                IconPointStyle::VerticalAlignment vAlign,
+                                                                float rotation,
+                                                                bool absoluteRotation) NOTHROWS
+{
+    try {
+        value = StylePtr(new IconPointStyle(color, iconURI, scaleFactor, hAlign, vAlign, rotation, absoluteRotation), Memory_deleter_const<Style, IconPointStyle>);
+        return TE_Ok;
+    } catch(const std::invalid_argument &) {
+        return TE_InvalidArg;
+    } catch(const std::bad_alloc &) {
+        return TE_OutOfMemory;
+    } catch(...) {
+        return TE_Err;
+    }
+}
+TAKErr IconPointStyle_create(StylePtr &value, unsigned int color,
+                                                                            const char* iconURI,
+                                                                            float width,
+                                                                            float height,
+                                                                            IconPointStyle::HorizontalAlignment hAlign,
+                                                                            IconPointStyle::VerticalAlignment vAlign,
+                                                                            float rotation,
+                                                                            bool absoluteRotation) NOTHROWS
+{
+    try {
+        value = StylePtr(new IconPointStyle(color, iconURI, width, height, hAlign, vAlign, rotation, absoluteRotation), Memory_deleter_const<Style, IconPointStyle>);
+        return TE_Ok;
+    } catch(const std::invalid_argument &) {
+        return TE_InvalidArg;
+    } catch(const std::bad_alloc &) {
+        return TE_OutOfMemory;
+    } catch(...) {
+        return TE_Err;
+    }
+}
+TAKErr LabelPointStyle_create(StylePtr &value, const char* text,
+                                                                 unsigned int textColor,    // 0xAARRGGBB
+                                                                 unsigned int backColor,    // 0xAARRGGBB
+                                                                 LabelPointStyle::ScrollMode mode,
+                                                                 float textSize,      // Use system default size.
+                                                                 LabelPointStyle::HorizontalAlignment hAlign,
+                                                                 LabelPointStyle::VerticalAlignment vAlign,
+                                                                 float rotation,      // 0 degrees of rotation.
+                                                                 bool absoluteRotation, // Relative to screen.
+                                                                 float paddingX, // offset from alignment position
+                                                                 float paddingY, 
+                                                                 double labelMinRenderResolution) NOTHROWS
+{
+    try {
+
+        value = StylePtr(new LabelPointStyle(text, textColor, backColor, mode, textSize, hAlign, vAlign, rotation, absoluteRotation, paddingX, paddingY, labelMinRenderResolution), Memory_deleter_const<Style, LabelPointStyle>);
+        return TE_Ok;
+    } catch(const std::invalid_argument &) {
+        return TE_InvalidArg;
+    } catch(const std::bad_alloc &) {
+        return TE_OutOfMemory;
+    } catch(...) {
+        return TE_Err;
+    }
+}
+TAKErr PatternStrokeStyle_create(StylePtr &value, const uint64_t pattern,
+                                                                    const std::size_t patternLen,
+                                                                    const unsigned int color,
+                                                                    const float strokeWidth) NOTHROWS
+{
+    try {
+        value = StylePtr(new PatternStrokeStyle(pattern, patternLen, color, strokeWidth), Memory_deleter_const<Style, PatternStrokeStyle>);
+        return TE_Ok;
+    } catch(const std::invalid_argument &) {
+        return TE_InvalidArg;
+    } catch(const std::bad_alloc &) {
+        return TE_OutOfMemory;
+    } catch(...) {
+        return TE_Err;
+    }
 }
 
     }

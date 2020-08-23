@@ -43,6 +43,10 @@ public class TAKContactSender extends MissionPackageSender {
 
     @Override
     public boolean isSupported(String uri) {
+
+        if (uri == null)
+            return false;
+
         return uri.startsWith(URIScheme.MAP_ITEM)
                 || uri.startsWith(URIScheme.VIDEO)
                 || super.isSupported(uri);
@@ -50,6 +54,9 @@ public class TAKContactSender extends MissionPackageSender {
 
     @Override
     public boolean sendContent(String uri, Callback callback) {
+
+        if (uri == null)
+            return false;
 
         // Send Mission Package or file
         if (uri.startsWith(URIScheme.MPM) || uri.startsWith(URIScheme.FILE)) {

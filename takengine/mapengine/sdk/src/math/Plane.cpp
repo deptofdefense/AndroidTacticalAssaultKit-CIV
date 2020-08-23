@@ -19,14 +19,14 @@ Plane::Plane(std::unique_ptr<TAK::Engine::Math::Plane2, void(*)(const TAK::Engin
 
 Plane::Plane() :
     normal(0, 0, 0),
-    impl(std::unique_ptr<TAK::Engine::Math::Plane2, void(*)(const TAK::Engine::Math::Plane2 *)>(new Plane2(Vector4<double>(0,0,0), Point2<double>(0, 0, 0)), NULL)),
+    impl(std::unique_ptr<TAK::Engine::Math::Plane2, void(*)(const TAK::Engine::Math::Plane2 *)>(new Plane2(Vector4<double>(0,0,0), Point2<double>(0, 0, 0)), nullptr)),
     dist(0)
 {
 }
 
 Plane::Plane(const Vector3<double> *n, const Vector3<double> *point) :
     normal(0, 0, 0),
-    impl(std::unique_ptr<TAK::Engine::Math::Plane2, void(*)(const TAK::Engine::Math::Plane2 *)>(new Plane2(Vector4<double>(n->x, n->y, n->z), Point2<double>(point->x, point->y, point->z)), NULL))
+    impl(std::unique_ptr<TAK::Engine::Math::Plane2, void(*)(const TAK::Engine::Math::Plane2 *)>(new Plane2(Vector4<double>(n->x, n->y, n->z), Point2<double>(point->x, point->y, point->z)), nullptr))
 {
     n->normalize(&normal);
     dist = normal.dot(point);

@@ -1,140 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:orientation="vertical"
-              android:padding="6dp">
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:atak="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="6dp">
 
-    <ScrollView
-           android:layout_width="fill_parent"
-           android:layout_height="fill_parent">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-        <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" >
-
-            <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-                <ImageView
-                    android:id="@+id/iconMissionPackage"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:padding="3dp"
-                    android:background="@drawable/missionpackage_icon" />
-
-                <TextView
-                    android:text="@string/mission_package_name"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="5dp"
-                    android:textSize="24sp"
-                    android:textStyle="bold"/>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TableRow
                 android:gravity="center_vertical">
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/auto_space"
                     android:textSize="16sp"
-                    android:maxLines="1"
+                    android:singleLine="true"
                     android:text="@string/name"/>
                 <EditText
-                    android:id="@+id/mission_package_edit_name"
+                    android:id="@+id/name"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:maxLines="1"
                     android:inputType="textNoSuggestions" />
-            </LinearLayout>
-            <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
+            </TableRow>
+            <TableRow
                 android:gravity="center_vertical">
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/auto_space"
                     android:textSize="16sp"
                     android:maxLines="1"
                     android:text="@string/remarks"/>
-                <EditText
-                    android:id="@+id/mission_package_edit_remarks"
+                <com.atakmap.android.hashtags.view.HashtagEditText
+                    android:id="@+id/remarks"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:inputType="textMultiLine|textCapSentences|textNoSuggestions"
-                    android:minLines="3" android:maxLines="3"
-                    android:textSize="@dimen/draper_title_font" />
-            </LinearLayout>
+                    android:textSize="@dimen/draper_title_font"
+                    android:hint="@string/mission_package_remarks_hint"
+                    atak:mixedInput="true"
+                    atak:clickableTags="false"/>
+            </TableRow>
+        </TableLayout>
 
-            <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:paddingTop="10dip"
-                android:paddingBottom="10dip">
-                <TextView
-                    android:text="@string/add_content"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="16sp"/>
-                <TextView
-                    android:text=""
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/mission_package_edit_content"
-                    android:paddingStart="3dip"
-                    android:textSize="18sp"/>
-            </LinearLayout>
+        <TextView
+            android:id="@+id/content_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/auto_margin"
+            android:text="@string/mission_package_edit_content_text"/>
 
-             <RelativeLayout
-                 android:layout_width="match_parent"
-                 android:layout_height="wrap_content">
-
-                <Button
-                    android:id="@+id/btnMissionPackageSelectMapItem"
-                    style="@style/darkButton"
-                    android:padding="6dp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/add_map_item" />
-
-                <CheckBox
-                    android:id="@+id/missionpackage_select_chkMapItemMapView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="2dip"
-                    android:text="@string/select_via_nmap_view"
-                    android:textSize="14sp"
-                    android:layout_toEndOf="@id/btnMissionPackageSelectMapItem"/>
-
-                <CheckBox
-                    android:id="@+id/missionpackage_select_chkMapItemAttachments"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/include_nattachments"
-                    android:textSize="14sp"
-                    android:layout_toEndOf="@id/missionpackage_select_chkMapItemMapView"/>
-
-            </RelativeLayout>
-
-             <Button
-                 android:id="@+id/btnMissionPackageSelectExternalFile"
-                 style="@style/darkButton"
-                 android:layout_width="wrap_content"
-                 android:layout_height="wrap_content"
-                 android:padding="6dp"
-                 android:text="@string/add_files" />
-
-        </LinearLayout>
-    </ScrollView>
+    </LinearLayout>
     
-</LinearLayout>
+</ScrollView>

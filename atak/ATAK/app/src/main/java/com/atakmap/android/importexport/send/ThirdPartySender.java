@@ -45,6 +45,10 @@ public class ThirdPartySender extends MissionPackageSender {
 
     @Override
     public boolean sendContent(String uri, Callback callback) {
+
+        if (uri == null)
+            return false;
+
         if (uri.startsWith(URIScheme.MPM)) {
             return super.sendContent(uri, callback);
         } else if (uri.startsWith(URIScheme.FILE))

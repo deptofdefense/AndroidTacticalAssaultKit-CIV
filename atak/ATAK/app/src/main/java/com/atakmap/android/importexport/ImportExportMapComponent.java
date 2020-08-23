@@ -222,7 +222,8 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
                         importTask.addFlag(ImportFileTask.FlagImportInPlace);
                     if (bFlagPromptOnMultipleMatch)
                         importTask
-                                .addFlag(ImportFileTask.FlagPromptOnMultipleMatch);
+                                .addFlag(
+                                        ImportFileTask.FlagPromptOnMultipleMatch);
                     if (zoomToFile)
                         importTask.addFlag(ImportFileTask.FlagZoomToFile);
                     importTask.execute(filepath);
@@ -232,7 +233,8 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
                     if (FileSystemUtils.isEmpty(path))
                         return;
                     URIContentHandler h = URIContentManager.getInstance()
-                            .getHandler(new File(path));
+                            .getHandler(new File(FileSystemUtils
+                                    .sanitizeWithSpacesAndSlashes(path)));
                     if (h != null && h.isActionSupported(GoTo.class))
                         ((GoTo) h).goTo(false);
                     break;

@@ -17,7 +17,7 @@ namespace
     public :
         FilterImpl(MosaicDatabase2::CursorPtr &&impl_, FiltersPtr &&filters_) NOTHROWS;
     public :
-        virtual TAKErr moveToNext() NOTHROWS;
+        TAKErr moveToNext() NOTHROWS override;
     private :
         FiltersPtr filters;
     };
@@ -143,7 +143,7 @@ namespace
 
             bool accepted = true;
             if (!filters->empty()) {
-                Collection<std::shared_ptr<Filter<MosaicDatabase2::Cursor &>>>::IteratorPtr iter(NULL, NULL);
+                Collection<std::shared_ptr<Filter<MosaicDatabase2::Cursor &>>>::IteratorPtr iter(nullptr, nullptr);
                 code = filters->iterator(iter);
                 TE_CHECKBREAK_CODE(code);
 

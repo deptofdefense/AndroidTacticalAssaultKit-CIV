@@ -32,10 +32,13 @@ public class LocalToGpsJsonGeoreferencer implements Georeferencer {
 
         File file;
         try {
-            if (uri.toLowerCase().contains(".zip"))
-                file = new ZipVirtualFile(uri);
+            String path = uri;
+            if (uri.startsWith("zip://"))
+                path = uri.substring(6);
+            if (path.toLowerCase().contains(".zip"))
+                file = new ZipVirtualFile(path);
             else
-                file = new File(uri);
+                file = new File(path);
         } catch (Exception e) {
             Log.e(TAG, "Failed to create file from URI: " + uri, e);
             return false;

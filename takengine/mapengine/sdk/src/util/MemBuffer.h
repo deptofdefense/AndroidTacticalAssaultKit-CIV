@@ -55,7 +55,9 @@ namespace atakmap {
             ~MemBufferT();
         public :
             T &operator[](const int idx);
+            T &operator[](const std::size_t idx);
             const T &operator[](const int idx) const;
+            const T &operator[](const std::size_t idx) const;
         public :
             size_t position() const;
             void position(size_t pos);
@@ -110,7 +112,7 @@ namespace atakmap {
         template<class T>
         inline T &MemBufferT<T>::operator[](const int idx)
         {
-            if (idx < 0 || idx >= capacity())
+            if (idx < 0 || static_cast<std::size_t>(idx) >= capacity())
                 throw std::out_of_range("idx out of range");
             return reinterpret_cast<T *>(impl.get())[idx];
         }
@@ -119,6 +121,22 @@ namespace atakmap {
         inline const T &MemBufferT<T>::operator[](const int idx) const
         {
             if (idx < 0 || idx >= capacity())
+                throw std::out_of_range("idx out of range");
+            return reinterpret_cast<T *>(impl.get())[idx];
+        }
+
+        template<class T>
+        inline T &MemBufferT<T>::operator[](const std::size_t idx)
+        {
+            if (idx >= capacity())
+                throw std::out_of_range("idx out of range");
+            return reinterpret_cast<T *>(impl.get())[idx];
+        }
+
+        template<class T>
+        inline const T &MemBufferT<T>::operator[](const std::size_t idx) const
+        {
+            if (idx >= capacity())
                 throw std::out_of_range("idx out of range");
             return reinterpret_cast<T *>(impl.get())[idx];
         }

@@ -23,7 +23,7 @@ $(foreach pf,$(PROTOFILES),$(eval $(call protorule,$(pf))))
 
 OBJS := cloudiomanager.o commo.o commotime.o contactmanager.o cotmessage.o   \
         cryptoutil.o                                                         \
-        datagramsocketmanagement.o hwifscanner.o                             \
+        datagramsocketmanagement.o httpsproxy.o hwifscanner.o                \
         internalutils.o missionpackagemanager.o netsocket.o platform.o       \
         resolverqueue.o simplefileiomanager.o                                \
         streamingsocketmanagement.o takmessage.o                             \
@@ -117,6 +117,7 @@ deps-commo_cpp                     = $(deps-commo_h)                         \
                                      $(deps-contactmanager_h)                \
                                      $(deps-threadedhandler_h)               \
                                      $(deps-missionpackagemanager_h)         \
+                                     $(deps-httpsproxy_h)                    \
                                      $(deps-simplefileiomanager_h)           \
                                      $(deps-cloudiomanager_h)                \
                                      commo.cpp
@@ -149,6 +150,7 @@ deps-cotmessage_cpp                = $(deps-cotmessage_h)                    \
                                      $(deps-commotime_h)                     \
                                      $(deps-internalutils_h)                 \
                                      $(deps-cryptoutil_h)                    \
+                                     $(deps-missionpackage_h)                \
                                      $(deps-protobuf_h)                      \
                                      cotmessage.cpp
 
@@ -174,6 +176,18 @@ deps-datagramsocketmanagement_cpp  = $(deps-datagramsocketmanagement_h)      \
                                      $(deps-commologger_h)                   \
                                      datagramsocketmanagement.cpp
                               
+deps-httpsproxy_h                  = $(deps-internalutils_h)                 \
+                                     $(deps-commoutils_h)                    \
+                                     $(deps-commologger_h)                   \
+                                     $(deps-commoresult_h)                   \
+                                     $(deps-netsocket_h)                     \
+                                     $(deps-threadedhandler_h)               \
+                                     httpsproxy.h
+deps-httpsproxy_cpp                = $(deps-httpsproxy_h)                    \
+                                     $(deps-missionpackage_h)                \
+                                     $(deps-commotime_h)                     \
+                                     httpsproxy.cpp
+
 deps-hwifscanner_h                 = $(deps-netinterface_h)                  \
                                      $(deps-netsocket_h)                     \
                                      $(deps-threadedhandler_h)               \
@@ -313,6 +327,7 @@ contactmanager.o:                    $(deps-contactmanager_cpp)
 cotmessage.o:                        $(deps-cotmessage_cpp)
 cryptoutil.o:                        $(deps-cryptoutil_cpp)
 datagramsocketmanagement.o:          $(deps-datagramsocketmanagement_cpp)
+httpsproxy.o:                        $(deps-httpsproxy_cpp)
 hwifscanner.o:                       $(deps-hwifscanner_cpp)
 internalutils.o:                     $(deps-internalutils_cpp)
 missionpackagemanager.o:             $(deps-missionpackagemanager_cpp)

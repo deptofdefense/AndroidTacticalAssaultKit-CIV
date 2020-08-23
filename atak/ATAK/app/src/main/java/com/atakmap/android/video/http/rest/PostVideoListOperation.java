@@ -62,7 +62,7 @@ public final class PostVideoListOperation extends HTTPOperation {
 
             StringEntity se = new StringEntity(postRequest.getVideoXml());
             se.setContentType(HttpUtil.MIME_XML);
-            se.setContentEncoding(FileSystemUtils.UTF8_CHARSET);
+            se.setContentEncoding(FileSystemUtils.UTF8_CHARSET.name());
             httppost.setEntity(se);
 
             // post file

@@ -163,6 +163,8 @@ TAKErr Matrix2::set(const size_t row, const size_t col, const double v) NOTHROWS
 
 TAKErr Matrix2::get(double *matrix, const MatrixOrder order) const NOTHROWS
 {
+    if (!matrix)
+        return TE_InvalidArg;
     switch (order) {
     case ROW_MAJOR:
         matrix[0] = m00;
@@ -201,7 +203,7 @@ TAKErr Matrix2::get(double *matrix, const MatrixOrder order) const NOTHROWS
         matrix[15] = m33;
         break;
     default:
-       return TAKErr::TE_Err;
+       return TAKErr::TE_InvalidArg;
     }
     return TAKErr::TE_Ok;
 }

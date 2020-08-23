@@ -7,8 +7,7 @@ import android.net.Uri;
 
 /**
  * Engine resource reference that points to a file
- * 
- * @author Joe Bergeron
+ *
  */
 public class FileMapDataRef extends MapDataRef {
 

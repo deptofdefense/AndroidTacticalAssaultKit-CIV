@@ -10,6 +10,7 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.rubbersheet.data.AbstractSheetData;
+import com.atakmap.android.rubbersheet.data.RubberSheetUtils;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
@@ -74,6 +75,38 @@ public abstract class AbstractSheet extends DrawingRectangle {
         if (start == null || end == null)
             return 0;
         return start.bearingTo(end);
+    }
+
+    /**
+     * Set the heading of the sheet by modifying the rectangle back and
+     * forward association point
+     * @param heading Heading in true degrees
+     */
+    public void setHeading(double heading) {
+        GeoPoint start = getPoint(6);
+        GeoPoint end = getPoint(4);
+        GeoPoint left = getPoint(5);
+        GeoPoint right = getPoint(7);
+        if (start == null || end == null || left == null || right == null)
+            return;
+        double curHeading = start.bearingTo(end);
+        if (Double.compare(heading, curHeading) == 0)
+            return;
+
+        setPoints(getCenter(), getWidth(), getLength(), heading);
+    }
+
+    public void setPoints(GeoPointMetaData center, double width, double length,
+            double heading) {
+        GeoPoint[] corners = RubberSheetUtils.computeCorners(
+                center.get(), length, width, heading);
+        setPoints(GeoPointMetaData.wrap(corners[0]),
+                GeoPointMetaData.wrap(corners[1]),
+                GeoPointMetaData.wrap(corners[2]),
+                GeoPointMetaData.wrap(corners[3]));
+        PointMapItem anchor = getCenterMarker();
+        if (anchor != null)
+            anchor.setPoint(center);
     }
 
     @Override

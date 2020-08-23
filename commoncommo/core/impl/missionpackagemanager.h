@@ -98,6 +98,7 @@ public:
     
     void setMPTransferSettings(const MPTransferSettings &settings);
     void setLocalPort(int localPort) COMMO_THROW (std::invalid_argument);
+    void setLocalHttpsPort(int localPort);
 
 
 protected:
@@ -211,7 +212,6 @@ private:
         
         // Settings when transfer was initiated
         MPTransferSettings settings;
-        int localWebPort;
 
         // Absolute path
         const std::string fileToSend;
@@ -264,6 +264,12 @@ private:
 
         // buffer for CURL to store errors
         char curlErrBuf[CURL_ERROR_SIZE];
+        
+        // The original sender's URL, possibly modified from http
+        // to https if our tranfer is a peer-hosted one and
+        // https compatibility is present.  Otherwise just a copy
+        // of the sender's URL as-is.
+        std::string adjustedSenderUrl;
 
         // true if current request  (curlCtx != NULL) or next (curlCtx == NULL)
         // is (to be) using sender's original URL.  false if using our
@@ -352,6 +358,7 @@ private:
 
     struct MHD_Daemon *webserver;
     int webPort;
+    int httpsProxyPort;
 
     // Events to be fired by event thread in order
     std::deque<MPStatusEvent *> eventQueue;
@@ -373,6 +380,8 @@ private:
                                           curl_off_t dlNow,
                                           curl_off_t ulTotal,
                                           curl_off_t ulNow);
+
+    void abortLocalTransfers();
 
     void receiveThreadProcess();
     void receiveSendAck(CoTFileTransferRequest *req, bool success,
@@ -411,7 +420,8 @@ private:
     CommoResult sendCoTRequest(const std::string &downloadUrl,
                         const std::string &ackUid,
                         const TxTransferContext *ctx,
-                        const ContactUID *contact);
+                        const ContactUID *contact,
+                        const int localHttpsPort);
 
     std::string getLocalUrl(int transferId);
 

@@ -22,6 +22,7 @@
     <button
         icon='icons/3d_free_look.png'
         onClick='actions/compass_toggle_free_look.xml'
+        dependsOnCapability='capability.3d'
         selected='${freeLook}'/>
 
     <button

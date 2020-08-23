@@ -38,7 +38,7 @@ public class MapEventDispatcher {
     private final LinkedList<HashMap<String, _Listeners>> _listenerStack;
     private final Map<Long, ConcurrentLinkedQueue<OnMapEventListener>> itemListeners;
 
-    MapEventDispatcher() {
+    public MapEventDispatcher() {
         _listenerStack = new LinkedList<>();
         _listenerStack.add(new HashMap<String, _Listeners>());
         this.itemListeners = new HashMap<>();

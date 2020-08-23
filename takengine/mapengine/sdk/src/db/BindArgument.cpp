@@ -262,7 +262,7 @@ TAKErr BindArgument::bind(Bindable &cursor, TAK::Engine::Port::Collection<BindAr
     if (args.empty())
         return TE_Ok;
 
-    Collection<BindArgument>::IteratorPtr iter(NULL, NULL);
+    Collection<BindArgument>::IteratorPtr iter(nullptr, nullptr);
     code = args.iterator(iter);
     TE_CHECKRETURN_CODE(code);
 

@@ -141,21 +141,21 @@ struct FeaturesSchemaMgr
     bool
     checkSchemaObjects (db::Database&)
         const
-        throw ();
+        throw () override;
 
     void
     createSchemaObjects (db::Database&)
-        const;
+        const override;
 
     void
     dropSchemaObjects (db::Database&)
         const
-        throw ();
+        throw () override;
 
     unsigned long
     getSchemaVersion ()
         const
-        throw ()
+        throw () override
       { return FEATURE_SCHEMA_VERSION; }
   };
 
@@ -187,7 +187,7 @@ class FeatureDatabase::Factory
 
 
     ~Factory ()
-        throw ()
+        throw () override
       { }
 
     //
@@ -204,7 +204,7 @@ class FeatureDatabase::Factory
         try {
             if (filePath)
             {
-                std::auto_ptr<db::Cursor> cursor(db->query("PRAGMA journal_mode"));
+                std::unique_ptr<db::Cursor> cursor(db->query("PRAGMA journal_mode"));
 
                 if (!cursor->moveToNext())
                 {
@@ -225,8 +225,8 @@ class FeatureDatabase::Factory
             }
 
             // next two: silently ignore database/cursor errors here
-        } catch (db::DB_Error &ignored) {
-        } catch (db::Cursor::CursorError &ignored) {
+        } catch (db::DB_Error &) {
+        } catch (db::Cursor::CursorError &) {
         }
 
         return dynamic_cast<FeatureDatabase*>(getDatabaseWrapper(db));
@@ -255,7 +255,7 @@ class FeatureDatabase::Factory
     DatabaseWrapper*
     createDatabaseWrapper (db::Database* db)
         const
-        throw ()
+        throw () override
       { return new FeatureDatabase (db); }
   };
 
@@ -399,7 +399,7 @@ void
 deleteGroup (db::Database& db,
              int64_t groupID)
   {
-    std::auto_ptr<db::Statement> stmt
+    std::unique_ptr<db::Statement> stmt
         (db.compileStatement ("DELETE FROM " TBL_GRP
                               " WHERE " COL_GRP_ID " = ?"));
 
@@ -424,7 +424,7 @@ FeaturesSchemaMgr::checkSchemaObjects (db::Database& db)
 try
   {
     const std::vector<TAK::Engine::Port::String> tableNames (db::getTableNames (db));
-    std::vector<TAK::Engine::Port::String>::const_iterator end (tableNames. end ());
+    auto end (tableNames. end ());
 
     return end != std::find_if (tableNames.begin (), end,
                                 TAK::Engine::Port::StringEqual (TBL_GEO))
@@ -490,7 +490,7 @@ FeaturesSchemaMgr::createSchemaObjects (db::Database& db)
     // Set up spatial column and index.
     //
     std::pair<int, int> spatialiteVersion(atakmap::feature::getSpatialiteVersion(db));
-    std::auto_ptr<db::Cursor> cursor
+    std::unique_ptr<db::Cursor> cursor
         (db.query (spatialiteVersion.first > 4
                    || (spatialiteVersion.first == 4
                        && spatialiteVersion.second > 0)
@@ -525,13 +525,13 @@ FeaturesSchemaMgr::dropSchemaObjects (db::Database& db)
         db.execute ("DROP INDEX IF EXISTS " IDX_GRP_NAME);
 
         const std::vector<TAK::Engine::Port::String> tableNames (db::getTableNames (db));
-        std::vector<TAK::Engine::Port::String>::const_iterator end (tableNames. end ());
+        auto end (tableNames. end ());
 
         if (end != std::find_if (tableNames.begin (), end,
                                  TAK::Engine::Port::StringEqual
                                      ("idx_" TBL_GEO "_" COL_GEO_SPL_GEOM)))
           {
-            std::auto_ptr<db::Cursor> cursor
+            std::unique_ptr<db::Cursor> cursor
                 (db.query ("SELECT DisableSpatialIndex(\'" TBL_GEO
                            "\', \'" COL_GEO_SPL_GEOM "\')"));
 
@@ -546,7 +546,7 @@ FeaturesSchemaMgr::dropSchemaObjects (db::Database& db)
         if (end != std::find_if (columnNames.begin (), end,
                                  TAK::Engine::Port::StringEqual (COL_GEO_SPL_GEOM)))
           {
-            std::auto_ptr<db::Cursor> cursor
+            std::unique_ptr<db::Cursor> cursor
                 (db.query ("SELECT DiscardGeometryColumn(\'" TBL_GEO
                            "\', \'" COL_GEO_SPL_GEOM "\')"));
 
@@ -593,8 +593,7 @@ namespace feature                       // Open feature namespace.
 void
 FeatureDatabase::beginTransaction ()
   {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, getMutex());
+    Lock lock(getMutex());
     ThreadID thisThread (Thread_currentThreadID());
 
     if (transCount && (transThread != thisThread))
@@ -630,7 +629,7 @@ FeatureDatabase::createDatabase (const char* filePath)
 void
 FeatureDatabase::deleteFeature (int64_t featureID)
   {
-    std::auto_ptr<db::Statement> stmt
+    std::unique_ptr<db::Statement> stmt
         (getDatabase ().compileStatement ("DELETE FROM " TBL_GEO
                                           " WHERE " COL_GEO_ID " = ?"));
 
@@ -642,8 +641,7 @@ FeatureDatabase::deleteFeature (int64_t featureID)
 void
 FeatureDatabase::deleteGroup (int64_t groupID)
   {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, getMutex());
+    Lock lock(getMutex());
     Transaction trans (*this);
 
     ::deleteGroup (getDatabase (), groupID);
@@ -662,9 +660,8 @@ FeatureDatabase::deleteGroup (int64_t catalogID,
     args[1] = strm.c_str();
 
     db::Database& db (getDatabase ());
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, getMutex());
-    std::auto_ptr<db::Cursor> cursor
+    Lock lock(getMutex());
+    std::unique_ptr<db::Cursor> cursor
         (db.query ("SELECT " COL_GRP_ID " FROM " TBL_GRP
                    " WHERE " COL_GRP_NAME " = ?"
                    " AND " COL_GRP_FILE_ID " = ?",
@@ -682,8 +679,7 @@ FeatureDatabase::deleteGroup (int64_t catalogID,
 void
 FeatureDatabase::endTransaction ()
   {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, getMutex());
+    Lock lock(getMutex());
 
     if (!transCount)
       {
@@ -719,8 +715,7 @@ FeatureDatabase::endTransaction ()
 void
 FeatureDatabase::setTransactionSuccessful ()
   {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, getMutex());
+    Lock lock(getMutex());
 
     if (!transCount)
       {
@@ -754,7 +749,7 @@ try
   {
     typedef FeatureDataSource::FeatureDefinition FeatureDef;
 
-    std::auto_ptr<FeatureDef> result
+    std::unique_ptr<FeatureDef> result
         (new FeatureDef (getString (colName), util::AttributeSet ()));
 
     switch (encoding)
@@ -818,7 +813,7 @@ FeatureDatabase::queryFeatures
   {
     static std::vector<const char*> noArgs;
 
-    return queryFeaturesInternal (encoding, NULL, noArgs);
+    return queryFeaturesInternal (encoding, nullptr, noArgs);
   }
 
 }                                       // Close feature namespace.
@@ -977,7 +972,7 @@ FeatureDatabase::addFeature (int64_t catalogID,
             static_cast<const Geometry*> (def.getRawGeometry ())->toBlob (strm);
 
             std::string blobString (strm.str ());
-            const unsigned char* blob
+            const auto* blob
                 (reinterpret_cast<const unsigned char*> (blobString.data ()));
 
             result = addFeatureBlob (catalogID, groupID, def.getName (),
@@ -1026,7 +1021,7 @@ FeatureDatabase::addGroup (int64_t catalogID,
                                      "Received negative maxResolution");
       }
 
-    std::auto_ptr<db::Statement> stmt
+    std::unique_ptr<db::Statement> stmt
         (getDatabase ().compileStatement ("INSERT INTO " TBL_GRP "("
                                           COL_GRP_FILE_ID ", "
                                           COL_GRP_NAME ", "
@@ -1051,8 +1046,7 @@ FeatureDatabase::addGroup (int64_t catalogID,
         stmt->bind (7, 1);              // Non-catalog groups are versioned.
       }
 
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, getMutex());
+    Lock lock(getMutex());
 
     stmt->execute ();
     return db::lastInsertRowID (getDatabase ());
@@ -1069,8 +1063,7 @@ FeatureDatabase::addStyle (int64_t catalogID,
                                      "Received NULL styleRep");
       }
 
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, getMutex());
+    Lock lock(getMutex());
     int64_t result (db::getNextAutoincrementID (getDatabase (), TBL_STY));
 
     if (!insertStyleStmt.get ())
@@ -1092,7 +1085,7 @@ FeatureDatabase::queryFeaturesInternal
      const char* where,
      const std::vector<const char*>& whereArgs)
   {
-    const char* selectSQL (NULL);
+    const char* selectSQL (nullptr);
 
     switch (encoding)
       {
@@ -1137,7 +1130,7 @@ getSpatialiteVersion(db::Database& db)
   {
     int majorVersion(-1);
     int minorVersion(-1);
-    std::auto_ptr<db::Cursor> cursor
+    std::unique_ptr<db::Cursor> cursor
         (db.query("SELECT spatialite_version()"));
 
     if (cursor->moveToNext())
@@ -1164,7 +1157,7 @@ getSpatialiteVersion(TAK::Engine::DB::Database2& db)
     int minorVersion(-1);
 
     TAK::Engine::Util::TAKErr code;
-    QueryPtr cursor(NULL, NULL);
+    QueryPtr cursor(nullptr, nullptr);
     code = db.query(cursor, "SELECT spatialite_version()");
 
     code = cursor->moveToNext();
@@ -1231,8 +1224,7 @@ FeatureDatabase::addFeatureBlob (int64_t catalogID,
       }
 
     db::Database& db (getDatabase ());
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, getMutex());
+    Lock lock(getMutex());
 
     if (!insertBlobStmt.get ())
       {
@@ -1283,8 +1275,7 @@ FeatureDatabase::addFeatureWKB (int64_t catalogID,
       }
 
     db::Database& db (getDatabase ());
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, getMutex());
+    Lock lock(getMutex());
 
     if (!insertWKB_Stmt.get ())
       {
@@ -1335,8 +1326,7 @@ FeatureDatabase::addFeatureWKT (int64_t catalogID,
       }
 
     db::Database& db (getDatabase ());
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, getMutex());
+    Lock lock(getMutex());
 
     if (!insertWKT_Stmt.get ())
       {

@@ -1,0 +1,165 @@
+{
+  "category": "Aircraft",
+  "vehicles": [
+    {
+      "name": "A-10",
+      "file": "a10.zip"
+    },
+    {
+      "name": "AH-1",
+      "file": "ah1.zip"
+    },
+    {
+      "name": "AH-6",
+      "file": "ah-6.zip"
+    },
+    {
+      "name": "AH-64",
+      "file": "ah-64.zip"
+    },
+    {
+      "name": "AS-350",
+      "file": "as-350.zip"
+    },
+    {
+      "name": "ATR-42",
+      "file": "atr-42.zip"
+    },
+    {
+      "name": "AV-8B",
+      "file": "av-8b.zip"
+    },
+    {
+      "name": "B-52",
+      "file": "b52.zip"
+    },
+    {
+      "name": "B-707",
+      "file": "b-707.zip"
+    },
+    {
+      "name": "B-747",
+      "file": "b-747.zip"
+    },
+    {
+      "name": "C-17",
+      "file": "c-17.zip"
+    },
+    {
+      "name": "C-20",
+      "file": "c-20.zip"
+    },
+    {
+      "name": "C-32",
+      "file": "c-32.zip"
+    },
+    {
+      "name": "C-40",
+      "file": "c-40.zip"
+    },
+    {
+      "name": "C-130",
+      "file": "c-130.zip"
+    },
+    {
+      "name": "C-145",
+      "file": "c-145.zip"
+    },
+    {
+      "name": "CASA-212",
+      "file": "casa_212.zip"
+    },
+    {
+      "name": "CASA-235",
+      "file": "casa_235.zip"
+    },
+    {
+      "name": "CH-46E",
+      "file": "ch-46e.zip"
+    },
+    {
+      "name": "CH-47",
+      "file": "ch-47.zip"
+    },
+    {
+      "name": "CV-22",
+      "file": "cv-22.zip"
+    },
+    {
+      "name": "F-15",
+      "file": "f-15.zip"
+    },
+    {
+      "name": "F-16",
+      "file": "f-16.zip"
+    },
+    {
+      "name": "F-18",
+      "file": "f-18.zip"
+    },
+    {
+      "name": "F-22",
+      "file": "f-22.zip"
+    },
+    {
+      "name": "F-35",
+      "file": "f-35.zip"
+    },
+    {
+      "name": "HH-53",
+      "file": "hh-53.zip"
+    },
+    {
+      "name": "KC-135",
+      "file": "kc-135.zip"
+    },
+    {
+      "name": "MH-6",
+      "file": "mh-6.zip"
+    },
+    {
+      "name": "MQ-1",
+      "file": "mq-1.zip"
+    },
+    {
+      "name": "MQ-9",
+      "file": "mq-9.zip"
+    },
+    {
+      "name": "P-3",
+      "file": "p-3.zip"
+    },
+    {
+      "name": "PC-12",
+      "file": "pc-12.zip"
+    },
+    {
+      "name": "SH-3D",
+      "file": "sh-3d.zip"
+    },
+    {
+      "name": "UH-1",
+      "file": "uh-1.zip"
+    },
+    {
+      "name": "UH-60",
+      "file": "uh-60.zip"
+    },
+    {
+      "name": "VC-25",
+      "file": "vc-25.zip"
+    },
+    {
+      "name": "VC-32",
+      "file": "vc-32.zip"
+    },
+    {
+      "name": "VH-3D",
+      "file": "vh-3d.zip"
+    },
+    {
+      "name": "VH-60N",
+      "file": "vh-60n.zip"
+    }
+  ]
+}

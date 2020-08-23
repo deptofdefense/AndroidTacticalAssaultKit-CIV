@@ -40,7 +40,7 @@
         android:textSize="20sp"
         android:inputType="numberDecimal"
         android:selectAllOnFocus="true"
-        android:text="330.5"
+        android:text="@string/_330_5"
         android:singleLine="true"/>
 
 
@@ -66,7 +66,7 @@
             android:padding="@dimen/auto_margin"
             android:checked="true"
             android:textOn="@string/mag2"
-            android:textOff="TRUE"
+            android:textOff="@string/true_name"
             style="@style/darkButton"/>
     </LinearLayout>
 

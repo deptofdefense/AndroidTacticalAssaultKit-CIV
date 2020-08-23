@@ -1703,7 +1703,9 @@ public class ProductInformationAdapter extends BaseAdapter {
         dialog.setNegativeButton(R.string.cancel, null);
         dialog.setCancelable(false);
 
-        dialog.show();
+        try { 
+            dialog.show();
+        } catch (Exception ignored) { }
     }
 
     private void uninstall(final ProductInformation app) {
@@ -1749,7 +1751,10 @@ public class ProductInformationAdapter extends BaseAdapter {
 
         dialog.setNegativeButton(R.string.cancel, null);
         dialog.setCancelable(false);
-        dialog.show();
+
+        try { 
+            dialog.show();
+        } catch (Exception ignored) { }
     }
 
     public void refresh(List<ProductInformation> products) {

@@ -28,7 +28,7 @@ FeatureDataStore2::FeatureQueryParameters::FeatureQueryParameters() NOTHROWS :
     featureSetIds(new STLSetAdapter<int64_t>()), // Port::Collection<int64_t> * const 
     featureNames(new STLSetAdapter<String, StringLess>()), //Port::Collection<Port::String> * const
     featureIds(new STLSetAdapter<int64_t>()), // Port::Collection<int64_t> * const 
-    spatialFilter(NULL, NULL), // atakmap::feature::UniqueGeometryPtr 
+    spatialFilter(nullptr, nullptr), // atakmap::feature::UniqueGeometryPtr 
     minResolution(NAN), // double 
     maxResolution(NAN), // double 
     visibleOnly(false), // bool 
@@ -48,7 +48,7 @@ FeatureDataStore2::FeatureQueryParameters::FeatureQueryParameters(const FeatureD
     featureSetIds(new STLSetAdapter<int64_t>()), // Port::Collection<int64_t> * const 
     featureNames(new STLSetAdapter<String, StringLess>()), //Port::Collection<Port::String> * const
     featureIds(new STLSetAdapter<int64_t>()), // Port::Collection<int64_t> * const 
-    spatialFilter(other.spatialFilter.get() ? other.spatialFilter->clone() : NULL, atakmap::feature::destructGeometry), // atakmap::feature::UniqueGeometryPtr 
+    spatialFilter(other.spatialFilter.get() ? other.spatialFilter->clone() : nullptr, atakmap::feature::destructGeometry), // atakmap::feature::UniqueGeometryPtr 
     minResolution(other.minResolution), // double 
     maxResolution(other.maxResolution), // double 
     visibleOnly(other.visibleOnly), // bool 
@@ -161,7 +161,7 @@ namespace
     {
         TAKErr code(TE_Ok);
         if (!src.empty()) {
-            typename Collection<T>::IteratorPtr iter(NULL, NULL);
+            typename Collection<T>::IteratorPtr iter(nullptr, nullptr);
             T val;
 
             code = src.iterator(iter);

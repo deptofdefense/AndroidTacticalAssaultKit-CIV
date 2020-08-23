@@ -36,7 +36,12 @@ import java.util.Stack;
 import java.util.UUID;
 
 /**
- * Tool for selection a map region using a rectangle or free-form shape
+ * Tool for the creation of a rectangular map region.
+ *
+ * Once the user has finished creating a shape with the tool, returns the uid
+ * of the newly created Shape in an intent specified by the user by setting
+ * the "callback" parcelable when starting the tool.   This is an 
+ * intent to fire when the tool is completed.
  */
 public class RegionShapeTool extends Tool implements Undoable,
         MapEventDispatcher.MapEventDispatchListener,

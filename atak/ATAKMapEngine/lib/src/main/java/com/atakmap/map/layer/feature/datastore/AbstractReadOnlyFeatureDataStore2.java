@@ -5,6 +5,7 @@ import android.util.Pair;
 import com.atakmap.map.layer.feature.AbstractFeatureDataStore3;
 import com.atakmap.map.layer.feature.AttributeSet;
 import com.atakmap.map.layer.feature.DataStoreException;
+import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureSet;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Geometry;
@@ -40,6 +41,15 @@ public abstract class AbstractReadOnlyFeatureDataStore2 extends AbstractFeatureD
     protected Pair<Long, Long> insertFeatureImpl(long fsid, long fid, String name, int geomCoding,
             Object rawGeom, int styleCoding, Object rawStyle, AttributeSet attributes,
             long timestamp, long version) throws DataStoreException {
+
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected Pair<Long, Long> insertFeatureImpl(long fsid, long fid, String name, int geomCoding,
+                                                 Object rawGeom, int styleCoding, Object rawStyle, AttributeSet attributes,
+                                                 Feature.AltitudeMode altitudeMode, double extrude,
+                                                 long timestamp, long version) throws DataStoreException {
 
         throw new UnsupportedOperationException();
     }

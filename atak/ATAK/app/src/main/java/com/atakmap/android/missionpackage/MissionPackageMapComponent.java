@@ -440,23 +440,34 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
     }
 
     private boolean enableCommsFileSharing() {
-        int port;
+        int unsecurePort;
+        int securePort;
         try {
-            port = Integer
+            unsecurePort = Integer
                     .parseInt(_prefs.getString(WebServer.SERVER_PORT_KEY,
                             String.valueOf(WebServer.DEFAULT_SERVER_PORT)));
-            if (port < 1)
-                port = WebServer.DEFAULT_SERVER_PORT;
+            if (unsecurePort < 1)
+                unsecurePort = WebServer.DEFAULT_SERVER_PORT;
         } catch (Exception e) {
-            port = WebServer.DEFAULT_SERVER_PORT;
+            unsecurePort = WebServer.DEFAULT_SERVER_PORT;
+        }
+        try {
+            securePort = Integer
+                    .parseInt(_prefs.getString(WebServer.SECURE_SERVER_PORT_KEY,
+                            String.valueOf(
+                                    WebServer.DEFAULT_SECURE_SERVER_PORT)));
+            if (securePort < 1)
+                securePort = WebServer.DEFAULT_SECURE_SERVER_PORT;
+        } catch (Exception e) {
+            securePort = WebServer.DEFAULT_SECURE_SERVER_PORT;
         }
 
         return CommsMapComponent.getInstance().setMissionPackageEnabled(true,
-                port);
+                unsecurePort, securePort);
     }
 
     private void disableCommsFileSharing() {
-        CommsMapComponent.getInstance().setMissionPackageEnabled(false, 0);
+        CommsMapComponent.getInstance().setMissionPackageEnabled(false, 0, 0);
     }
 
     @Override

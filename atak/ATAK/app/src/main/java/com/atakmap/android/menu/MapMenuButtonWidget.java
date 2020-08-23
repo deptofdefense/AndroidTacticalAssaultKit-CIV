@@ -1,13 +1,14 @@
 
 package com.atakmap.android.menu;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import com.atakmap.android.action.MapAction;
 import com.atakmap.android.config.ConfigEnvironment;
 import com.atakmap.android.config.DataParser;
 import com.atakmap.android.config.PhraseParser;
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.android.widgets.RadialButtonWidget;
 import com.atakmap.coremap.log.Log;
@@ -21,13 +22,15 @@ import java.util.List;
 public class MapMenuButtonWidget extends RadialButtonWidget {
 
     public final static String TAG = "MapMenuButtonWidget";
-    private String _submenu;
+    private final Context _context;
+    private MapMenuWidget _submenuWidget;
     private String _showSubmenuPref;
-    private String _onClick;
+    private MapAction _onClickAction;
     private boolean _disableActionSwap = false;
     private boolean _disableIconSwap = false;
     private List<String> _prefKeys = new ArrayList<>();
     private List<String> _prefValues = new ArrayList<>();
+    private float _layoutWeight = 1f;
 
     // allow for up to 5 selection criteria so that is can do a better job at showing the user 
     // that there might be a submenu active (icon swapping is nice)
@@ -35,38 +38,178 @@ public class MapMenuButtonWidget extends RadialButtonWidget {
             "selected", "selected1", "selected2", "selected3", "selected4"
     };
 
-    public static class Factory extends RadialButtonWidget.Factory {
+    /**
+     * Button widget children of radial menu widgets.
+     * @param context application <a href=#{@link}>{@link Context}</a>
+     */
+    public MapMenuButtonWidget(Context context) {
+        this._context = context;
+    }
+
+    /**
+     * Get preference keys associated with the button widget
+     * @return list of String preference keys
+     */
+    public List<String> getPrefKeys() {
+        return _prefKeys;
+    }
+
+    /**
+     * Set preference keys associated with the button widget
+     * @param keys listing string preferences
+     */
+    public void setPrefKeys(List<String> keys) {
+        _prefKeys = keys;
+    }
+
+    /**
+     * Get preference values associated with the button widget
+     * @return list of String preference values
+     */
+    public List<String> getPrefValues() {
+        return _prefValues;
+    }
+
+    /**
+     * Set preference values associated with the button widget
+     * @param values listing string preferences
+     */
+    public void setPrefValues(List<String> values) {
+        _prefValues = values;
+    }
+
+    /**
+     * Disable or enable the state of the button
+     * @param disabled if the button should be inactive
+     */
+    public void setDisabled(boolean disabled) {
+        if (disabled)
+            setState(getState() | STATE_DISABLED);
+        else
+            setState(getState() & ~STATE_DISABLED);
+    }
+
+    /**
+     * Get whether the state of the button includes a disabled flag
+     * @return true if the button is disabled
+     */
+    public boolean isDisabled() {
+        return (getState() & STATE_DISABLED) == STATE_DISABLED;
+    }
+
+    void copyAction(MapMenuButtonWidget other) {
+        if (other != null) {
+            if (!_disableIconSwap)
+                setIcon(other.getIcon());
+            if (!_disableActionSwap)
+                setOnClickAction(other.getOnClickAction());
+        }
+    }
+
+    /**
+     * Sets an onClick handler to a MapAction instance
+     * @param mapAction action to execute upon click
+     */
+    public void setOnClickAction(MapAction mapAction) {
+        _onClickAction = mapAction;
+    }
+
+    /**
+     * Gets the button's onClick handler object instance
+     * @return handler that implements MapAction
+     */
+    public MapAction getOnClickAction() {
+        return _onClickAction;
+    }
+
+    /**
+     * Set submenu widget to provided fully formed MapMenuWidget instance.
+     * @param submenuWidget to be associated with the button
+     */
+    public void setSubmenuWidget(MapMenuWidget submenuWidget) {
+        _submenuWidget = submenuWidget;
+    }
+
+    /**
+     * Gets the current submenu widget for the button.
+     * @return current submenu widget or null if unassigned
+     * or submenu preference is false
+     */
+    public MapMenuWidget getSubmenuWidget() {
+        if (_showSubmenuPref != null) {
+            SharedPreferences prefs = PreferenceManager
+                    .getDefaultSharedPreferences(_context);
+            try {
+                if (!prefs.getBoolean(_showSubmenuPref, false))
+                    return null;
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to convert preference "
+                        + _showSubmenuPref + " to boolean", e);
+            }
+        }
+        return _submenuWidget;
+    }
+
+    /**
+     * Gets the layout weight for the button. Buttons are scaled
+     * along their arc dimension in accordance with their weights.
+     * @return the dimensionless weight for the button
+     */
+    public float getLayoutWeight() {
+        return _layoutWeight;
+    }
+
+    /**
+     * Set the layout weight for the button to determine is span
+     * dimension upon layout. Weights are positive dimensionless values
+     * that modify relative layout size in their parent radial menu.
+     * @param weight to be associated with the button instance.
+     */
+    public void setLayoutWeight(float weight) {
+        _layoutWeight = weight;
+    }
+
+    static class Factory extends RadialButtonWidget.Factory {
+        private final Context _context;
+        private final XmlResourceResolver _resolver;
+
+        Factory(Context context, XmlResourceResolver resolver) {
+            this._context = context;
+            this._resolver = resolver;
+        }
+
         @Override
         public MapWidget createFromElem(ConfigEnvironment config,
                 Node elemNode) {
-            MapMenuButtonWidget button = new MapMenuButtonWidget();
+            MapMenuButtonWidget button = new MapMenuButtonWidget(_context);
             configAttributes(button, config, elemNode.getAttributes());
             return button;
         }
 
-        protected void configAttributes(MapMenuButtonWidget widget,
+        void configAttributes(MapMenuButtonWidget widget,
                 ConfigEnvironment config,
                 NamedNodeMap attrs) {
             super.configAttributes(widget, config, attrs);
 
             // submenu
-            widget._submenu = DataParser.parseStringText(
+            String submenu = DataParser.parseStringText(
                     attrs.getNamedItem("submenu"), null);
 
-            if (widget._submenu != null) {
-                if (config.getPhraseParserParameters() != null) {
-                    widget._submenu = PhraseParser.expandPhrase(widget._submenu,
+            if (null != submenu) {
+                if (null != config.getPhraseParserParameters()) {
+                    submenu = PhraseParser.expandPhrase(submenu,
                             config.getPhraseParserParameters());
                 }
 
-                widget._disableActionSwap = Boolean.valueOf(DataParser
+                widget._submenuWidget = _resolver.resolveMenu(submenu, config);
+
+                widget._disableActionSwap = Boolean.parseBoolean(DataParser
                         .parseStringText(
                                 attrs.getNamedItem("disableSwap"), "false"));
-                widget._disableIconSwap = Boolean
-                        .valueOf(DataParser
-                                .parseStringText(
-                                        attrs.getNamedItem("disableIconSwap"),
-                                        "false"));
+                widget._disableIconSwap = Boolean.parseBoolean(DataParser
+                        .parseStringText(
+                                attrs.getNamedItem("disableIconSwap"),
+                                "false"));
                 widget._showSubmenuPref = DataParser.parseStringText(
                         attrs.getNamedItem("showSubmenuPref"), null);
             }
@@ -80,8 +223,7 @@ public class MapMenuButtonWidget extends RadialButtonWidget {
             // Set selected based on matching preference key and value
             if (prefKey != null && prefValue != null) {
                 SharedPreferences prefs = PreferenceManager
-                        .getDefaultSharedPreferences(
-                                MapView.getMapView().getContext());
+                        .getDefaultSharedPreferences(_context);
                 String actualValue = prefs.getString(prefKey, null);
                 if (prefValue.equals(actualValue))
                     widget.setState(widget.getState() | STATE_SELECTED);
@@ -167,70 +309,16 @@ public class MapMenuButtonWidget extends RadialButtonWidget {
             }
 
             // onClick
-            widget._onClick = DataParser.parseStringText(
+            String onClick = DataParser.parseStringText(
                     attrs.getNamedItem("onClick"), null);
-            if (widget._onClick != null
+            if (null != onClick
                     && config.getPhraseParserParameters() != null) {
-                widget._onClick = PhraseParser.expandPhrase(widget._onClick,
+                onClick = PhraseParser.expandPhrase(onClick,
                         config.getPhraseParserParameters());
             }
-        }
-    }
-
-    /**
-     * Obtain the submenu for a menu button widget.
-     * @return the submenu in string format.
-     */
-    public String getSubmenu() {
-        if (_showSubmenuPref != null) {
-            SharedPreferences prefs = PreferenceManager
-                    .getDefaultSharedPreferences(
-                            MapView.getMapView().getContext());
-            try {
-                if (!prefs.getBoolean(_showSubmenuPref, false))
-                    return null;
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to convert preference "
-                        + _showSubmenuPref + " to boolean", e);
+            if (null != onClick) {
+                widget._onClickAction = _resolver.resolveAction(onClick);
             }
         }
-        return _submenu;
     }
-
-    public String getOnClick() {
-        return _onClick;
-    }
-
-    public void setOnClick(String oc) {
-        _onClick = oc;
-    }
-
-    public List<String> getPrefKeys() {
-        return _prefKeys;
-    }
-
-    public List<String> getPrefValues() {
-        return _prefValues;
-    }
-
-    public void setDisabled(boolean disabled) {
-        if (disabled)
-            setState(getState() | STATE_DISABLED);
-        else
-            setState(getState() & ~STATE_DISABLED);
-    }
-
-    public boolean isDisabled() {
-        return (getState() & STATE_DISABLED) == STATE_DISABLED;
-    }
-
-    public void copyAction(MapMenuButtonWidget other) {
-        if (other != null) {
-            if (!_disableIconSwap)
-                setIcon(other.getIcon());
-            if (!_disableActionSwap)
-                setOnClick(other.getOnClick());
-        }
-    }
-
 }

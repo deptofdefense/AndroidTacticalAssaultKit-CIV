@@ -393,7 +393,7 @@ public class LayersMapComponent extends AbstractMapComponent
                     Uri.parse("content://com.atakmap.android.layers"),
                     false, _contentObserver);
         } catch (Exception ignored) {
-            // added in by Joe Bergeron in 986.  Since then alot has changed
+            // added in by developer in 986.  Since then alot has changed
             // with the arch.  Do not revive if no bugs or breaks are filed.
         }
 
@@ -548,7 +548,7 @@ public class LayersMapComponent extends AbstractMapComponent
                 // XXX - not sure what the implications are of this continuing
                 //       to spin after the activity is destroyed -- need to make
                 //       use of InteractiveServiceProvider API to issue cancel
-                //       the the SPIs for orderly cancellation handling
+                //       the SPIs for orderly cancellation handling
 
                 // spin off shutdown into a background thread to prevent the
                 // app from getting hung on destroy

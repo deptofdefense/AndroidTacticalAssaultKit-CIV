@@ -1,12 +1,13 @@
 
 package com.atakmap.android.menu;
 
+import android.content.Context;
+
 import com.atakmap.android.config.ConfigEnvironment;
 import com.atakmap.android.config.DataParser;
 import com.atakmap.android.config.FlagsParser;
 import com.atakmap.android.config.ParseUtil;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.widgets.AbstractButtonWidget;
 import com.atakmap.android.widgets.LayoutWidget;
 import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.android.widgets.WidgetBackground;
@@ -15,9 +16,6 @@ import com.atakmap.coremap.log.Log;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 public class MapMenuWidget extends LayoutWidget {
 
     public static final String TAG = "MapMenuWidget";
@@ -25,60 +23,135 @@ public class MapMenuWidget extends LayoutWidget {
     float _buttonSpan = 45f;
     float _buttonRadius = 70f;
     float _buttonWidth = 100f;
+
     boolean _dragDismiss = false;
-    // private String _buttonBg = null;
-    WidgetBackground _buttonBackground;
+    private WidgetBackground _buttonBackground;
 
-    private float _upperBound;
-    private float _lowerBound;
-    private float _leftBound;
-    private float _rightBound;
+    float _coveredAngle = 360f;
+    float _startAngle = -90f;
 
-    public float getLeftBound() {
-        return _leftBound;
-    }
+    private boolean _clockwiseWinding = false;
 
-    public float getRightBound() {
-        return _rightBound;
-    }
-
-    public float getUpperBound() {
-        return _upperBound;
-    }
-
-    public float getLowerBound() {
-        return _lowerBound;
-    }
-
+    /**
+     * Radial menu container containing buttons and controlling layout.
+     */
     public MapMenuWidget() {
-        _setButtonParams(_buttonRadius, _buttonWidth, _buttonSpan, null);
     }
 
-    void _setButtonParams(float radius, float width, float span,
-            WidgetBackground bg) {
-        _setButtonParams(_buttonRadius, _buttonWidth, _buttonSpan, bg, false);
-    }
-
-    void _setButtonParams(float radius, float width, float span,
+    private void _setButtonParams(float radius, float width, float span,
             WidgetBackground bg, boolean dragDismiss) {
         _buttonRadius = radius;
         _buttonWidth = width;
         _buttonSpan = span;
-        // _buttonBg = bg;
         _buttonBackground = bg;
         _dragDismiss = dragDismiss;
+    }
 
-        _upperBound = -(_buttonRadius + _buttonWidth);
-        _lowerBound = (_buttonRadius + _buttonWidth);
-        _leftBound = -(_buttonRadius + _buttonWidth);
-        _rightBound = (_buttonRadius + _buttonWidth);
+    /**
+     * Get the total angle that the radiol menu spans in degrees.
+     * @return current total angle the radial menu will cover.
+     */
+    public float getCoveredAngle() {
+        return _coveredAngle;
+    }
+
+    /**
+     * Set the total angle that the radiol menu spans in degrees.
+     * Covered angle must be positive and less than 360 degrees in total.
+     * @param angle
+     */
+    public void setCoveredAngle(float angle) {
+        _coveredAngle = Math.min(Math.max(0f, angle), 360f);
+    }
+
+    /**
+     * Get the angle in degrees that locates the middle of the first child button.
+     * @return positional angle for the first child button.
+     */
+    public float getStartAngle() {
+        return _startAngle;
+    }
+
+    /**
+     * Set the angle in degrees that locates the middle of the first child button.
+     * Angle to be set should be between -180 and 180 degrees. A value of -90 degrees
+     * is straight down, 0 is to the screen right, 90 is straight up, and 180 is to
+     * the screen left.
+     */
+    public void setStartAngle(float angle) {
+        _startAngle = Math.min(Math.max(-180f, angle), 180f);
+    }
+
+    /**
+     * Gets the default inside radius of the radial menu in display adjusted pixel units.
+     * @return current inside radius
+     */
+    public float getInnerRadius() {
+        return _buttonRadius;
+    }
+
+    /**
+     * Sets the default inside radius of the radial menu in display adjusted pixel units.
+     * Inner radius value is used as a default to locate child buttons, but this
+     * value does not change button positioning after layout operations.
+     * @param radius
+     */
+    public void setInnerRadius(float radius) {
+        _buttonRadius = Math.max(0f, radius);
+    }
+
+    /**
+     * Gets the default radial width of child buttons in display adjusted pixel units.
+     * @return default width of child buttons
+     */
+    public float getButtonWidth() {
+        return _buttonWidth;
+    }
+
+    /**
+     * Sets the default radial width of child buttons in display adjusted pixel units.
+     * @param width to be used to size buttons by default
+     */
+    public void setButtonWidth(float width) {
+        _buttonWidth = Math.max(0f, width);
+    }
+
+    /**
+     * Gets the sequencing convention for the menu's child buttons.
+     * Clockwise winding is along an axis into the screen
+     * using a right handed convention. The default winding is counter
+     * clockwise, or a default return value of false.
+     * @return whether winding of child buttons is clockwise
+     */
+    public boolean isClockwiseWinding() {
+        return _clockwiseWinding;
+    }
+
+    /**
+     * Sets the sequencing convention for the menu's child buttons.
+     * Clockwise winding is along an axis into the screen
+     * using a right handed convention.
+     *
+     * @param winding desired for the layout sequencing of buttons
+     */
+    public void setClockwiseWinding(boolean winding) {
+        _clockwiseWinding = winding;
+    }
+
+    protected boolean onWidgetCanBeAdded(int index, MapWidget widget) {
+        return (widget instanceof MapMenuButtonWidget);
     }
 
     static class Factory extends LayoutWidget.Factory {
-        final float maxRadius;
+        final Context _context;
+        final XmlResourceResolver _resolver;
+        final float _maxRadius;
 
-        Factory(final float maxRadius) {
-            this.maxRadius = maxRadius;
+        Factory(final Context context, final XmlResourceResolver resolver,
+                float maxRadius) {
+            this._context = context;
+            this._resolver = resolver;
+            this._maxRadius = maxRadius;
         }
 
         @Override
@@ -114,21 +187,19 @@ public class MapMenuWidget extends LayoutWidget {
             return bg;
         }
 
-        protected void configAttributes(MapMenuWidget widget,
+        void configAttributes(MapMenuWidget widget,
                 ConfigEnvironment config,
                 NamedNodeMap attrs) {
             super.configAttributes(widget, config, attrs);
             float radius = DataParser.parseFloatText(
                     attrs.getNamedItem("buttonRadius"), 45f)
-                    * MapView.DENSITY;// cfgRes.expandFloatAttr(attrs, "buttonRadius", 45f);
+                    * MapView.DENSITY;
             float width = DataParser.parseFloatText(
                     attrs.getNamedItem("buttonWidth"), 100f)
-                    * MapView.DENSITY;// cfgRes.expandFloatAttr(attrs, "buttonWidth", 100f);
+                    * MapView.DENSITY;
             float span = DataParser.parseFloatText(
-                    attrs.getNamedItem("buttonSpan"), 45f);// cfgRes.expandFloatAttr(attrs,
-                                                                                                  // "buttonSpan",
+                    attrs.getNamedItem("buttonSpan"), 45f);
 
-            // 45f);
             boolean dragDismiss = false;
             try {
                 dragDismiss = DataParser.parseBooleanText(
@@ -136,9 +207,9 @@ public class MapMenuWidget extends LayoutWidget {
             } catch (Exception ignored) {
             }
 
-            if (width + radius > maxRadius) {
-                radius = maxRadius * 0.3475f;
-                width = maxRadius * 0.6525f;
+            if (width + radius > _maxRadius) {
+                radius = _maxRadius * 0.3475f;
+                width = _maxRadius * 0.6525f;
             }
 
             WidgetBackground bg = _loadBg(config,
@@ -150,14 +221,16 @@ public class MapMenuWidget extends LayoutWidget {
         private void _parseChildren(MapMenuWidget menu,
                 ConfigEnvironment config, Node childNode) {
 
-            float lastAngle = 0f;
-            float lastSpan = 0f;
+            menu._coveredAngle = 0f; // reset and accumulate spans
 
-            childNode = ParseUtil.seekNodeNamed(childNode, Node.ELEMENT_NODE,
-                    "button");
-            MapMenuButtonWidget.Factory buttonFactory = new MapMenuButtonWidget.Factory();
+            MapMenuButtonWidget.Factory buttonFactory = new MapMenuButtonWidget.Factory(
+                    _context, _resolver);
 
-            while (childNode != null) {
+            for (childNode = ParseUtil.seekNodeNamed(childNode,
+                    Node.ELEMENT_NODE,
+                    "button"); null != childNode; childNode = ParseUtil
+                            .seekNodeNamed(childNode.getNextSibling(),
+                                    Node.ELEMENT_NODE, "button")) {
 
                 MapWidget buttonWidget = buttonFactory.createFromElem(config,
                         childNode);
@@ -185,100 +258,27 @@ public class MapMenuWidget extends LayoutWidget {
                                 menu._buttonWidth);
                     }
 
-                    if (null == attrs.getNamedItem("angle")) {
-                        button.setOrientation(lastAngle + lastSpan,
-                                button.getOrientationRadius());
+                    // By prior convention, the "angle" attribute has not been specified
+                    // for each button. Rather, "spans" are used from one button with
+                    // an "angle" in the prior layout strategy. Now, use the first
+                    // "angle" to indicate the "_startAngle" for the menu.
+                    if (null != attrs.getNamedItem("angle")) {
+                        menu._startAngle = DataParser.parseFloatText(
+                                attrs.getNamedItem("angle"), -90f);
                     }
-                    lastAngle = button.getOrientationAngle();
-                    lastSpan = button.getButtonSpan();
 
+                    // use button span to indicate layout weight
+                    button.setLayoutWeight(button.getButtonSpan());
+                    // accumulate spans for total coverage
+                    menu._coveredAngle += button.getButtonSpan();
+
+                    // parent / child relationships
+                    MapMenuWidget submenu = button.getSubmenuWidget();
+                    if (null != submenu)
+                        submenu.setParent(menu);
                     menu.addWidget(button);
-
-                }
-
-                childNode = ParseUtil.seekNodeNamed(childNode.getNextSibling(),
-                        Node.ELEMENT_NODE,
-                        "button");
-            }
-        }
-    }
-
-    @Override
-    protected boolean onWidgetCanBeAdded(int index, MapWidget widget) {
-        return (widget instanceof MapMenuButtonWidget);
-    }
-
-    public int cullDisabledWidgets() {
-        Collection<MapWidget> childWidgets = getChildWidgets();
-        ArrayList<MapWidget> toDelete = new ArrayList<>();
-        for (MapWidget widget : childWidgets) {
-            if (widget instanceof AbstractButtonWidget) {
-                AbstractButtonWidget abwid = (AbstractButtonWidget) widget;
-
-                if (abwid.getState() == AbstractButtonWidget.STATE_DISABLED) {
-                    toDelete.add(widget);
                 }
             }
         }
-
-        for (MapWidget widget : toDelete) {
-            childWidgets.remove(widget); // this is a copy of the widgets
-            removeWidget(widget); // this removes the widgets from the layout
-        }
-
-        if (toDelete.size() > 0) {//recalculate menu
-            float lastAngleRe = 0f;
-            float lastSpanRe = 0f;
-
-            for (MapWidget w : childWidgets) {
-                MapMenuButtonWidget button = (MapMenuButtonWidget) w;
-                if (button.getOnClick() != null
-                        && button.getOnClick().equals("actions/cancel.xml")) {//assume cancel always at -90
-                    lastAngleRe = button.getOrientationAngle();
-                }
-
-                button.setOrientation(lastAngleRe + lastSpanRe,
-                        button.getOrientationRadius());
-
-                lastAngleRe = button.getOrientationAngle();
-                lastSpanRe = button.getButtonSpan();
-            }
-        }
-
-        return toDelete.size();
     }
-
-    public void reorient(float angle) {
-        Collection<MapWidget> childWidgets = getChildWidgets();
-        int numWid = childWidgets.size();
-        if (numWid > 0) {
-
-            float totalSpan = 0f;
-            float fstBtnHlfSpn = 0f;
-            for (MapWidget widget : childWidgets) {
-                MapMenuButtonWidget button = (MapMenuButtonWidget) widget;
-                if (totalSpan == 0) {
-                    //save half the first button span to make future math easier
-                    fstBtnHlfSpn = button.getButtonSpan() / 2;
-                }
-                totalSpan += button.getButtonSpan();
-
-            }
-
-            if (numWid > 1) {
-                angle -= ((totalSpan) / 2 - fstBtnHlfSpn);
-            }
-
-            for (MapWidget widget : childWidgets) {
-                MapMenuButtonWidget button = (MapMenuButtonWidget) widget;
-
-                float orient = button.getOrientationAngle();
-
-                button.setOrientation(orient + angle,
-                        button.getOrientationRadius());
-            }
-        }
-
-    }
-
 }

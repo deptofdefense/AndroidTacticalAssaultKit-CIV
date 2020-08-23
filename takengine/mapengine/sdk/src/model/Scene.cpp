@@ -65,18 +65,22 @@ namespace {
     public :
         StreamingSceneNode() NOTHROWS;
     public :
-        bool isRoot() const NOTHROWS;
-        TAKErr getParent(const SceneNode **value) const NOTHROWS;
-        const Matrix2 *getLocalFrame() const NOTHROWS;
-        TAKErr getChildren(Collection<std::shared_ptr<SceneNode>>::IteratorPtr &value) const NOTHROWS;
-        bool hasChildren() const NOTHROWS;
-        bool hasMesh() const NOTHROWS;
-        const TAK::Engine::Feature::Envelope2 &getAABB() const NOTHROWS;
-        std::size_t getNumLODs() const NOTHROWS;
-        TAKErr loadMesh(std::shared_ptr<const Mesh> &value, const std::size_t lod, ProcessingCallback *callback) NOTHROWS;
-        TAKErr getLevelOfDetail(std::size_t *value, const std::size_t lodIdx) const NOTHROWS;
-        TAKErr getLODIndex(std::size_t *value, const double clod, const int round) const NOTHROWS;
-        TAKErr getInstanceID(std::size_t *value, const std::size_t lodIdx) const NOTHROWS;
+        bool isRoot() const NOTHROWS override;
+        TAKErr getParent(const SceneNode **value) const NOTHROWS override;
+        const Matrix2 *getLocalFrame() const NOTHROWS override;
+        TAKErr getChildren(Collection<std::shared_ptr<SceneNode>>::IteratorPtr &value) const NOTHROWS override;
+        bool hasChildren() const NOTHROWS override;
+        bool hasMesh() const NOTHROWS override;
+        const TAK::Engine::Feature::Envelope2 &getAABB() const NOTHROWS override;
+        std::size_t getNumLODs() const NOTHROWS override;
+        TAKErr loadMesh(std::shared_ptr<const Mesh> &value, const std::size_t lod, ProcessingCallback *callback) NOTHROWS override;
+        TAKErr getLevelOfDetail(std::size_t *value, const std::size_t lodIdx) const NOTHROWS override;
+        TAKErr getLODIndex(std::size_t *value, const double clod, const int round) const NOTHROWS override;
+        TAKErr getInstanceID(std::size_t *value, const std::size_t lodIdx) const NOTHROWS override;
+        bool hasSubscene() const NOTHROWS override;
+        TAKErr getSubsceneInfo(const SceneInfo** result) NOTHROWS override;
+        bool hasLODNode() const NOTHROWS override;
+        TAKErr getLODNode(std::shared_ptr<SceneNode>& value, const std::size_t lodIdx) NOTHROWS override;
     public :
         const SceneNode *parent;
         std::vector<LevelOfDetail> lods;
@@ -172,7 +176,7 @@ TAKErr TAK::Engine::Model::SceneFactory_encode(const char *path, const Scene &sc
     std::unique_ptr<StreamingSceneNode> stream;
     int64_t dataOff = 0LL;
     std::map<std::size_t, int64_t> instanceOffsets;
-    code = prepareEncode(stream, dataOff, scene.getRootNode(), instanceOffsets, NULL);
+    code = prepareEncode(stream, dataOff, scene.getRootNode(), instanceOffsets, nullptr);
 
     // write header
     FileOutput2 sink;
@@ -392,6 +396,20 @@ namespace {
         *value = lods[lod].instanceId;
         return TE_Ok;
     }
+    bool StreamingSceneNode::hasSubscene() const NOTHROWS 
+    {
+        return false;
+    }
+    TAKErr StreamingSceneNode::getSubsceneInfo(const SceneInfo** result) NOTHROWS
+    {
+        return TE_IllegalState;
+    }
+    bool StreamingSceneNode::hasLODNode() const NOTHROWS {
+        return false;
+    }
+    TAKErr StreamingSceneNode::getLODNode(std::shared_ptr<SceneNode>& value, const std::size_t lodIdx) NOTHROWS {
+        return TE_Unsupported;
+    }
 
     TAKErr prepareEncode(std::unique_ptr<StreamingSceneNode> &value, int64_t &dataOff, SceneNode &src, std::map<std::size_t, int64_t> &instanceOffsets, const StreamingSceneNode *parent) NOTHROWS
     {
@@ -414,7 +432,7 @@ namespace {
             value->headerRecordLength += 9u; // LOD + instanceID + hasMesh bit
             if (src.hasMesh()) {
                 std::shared_ptr<const Mesh> mesh;
-                code = src.loadMesh(mesh, i, NULL);
+                code = src.loadMesh(mesh, i, nullptr);
                 TE_CHECKRETURN_CODE(code);
 
                 code = computeMeshEncodeLength(&lod.meshDataLength, *mesh);
@@ -443,7 +461,7 @@ namespace {
         value->aabb = src.getAABB();
 
         if (src.hasChildren()) {
-            Collection<std::shared_ptr<SceneNode>>::IteratorPtr iter(NULL, NULL);
+            Collection<std::shared_ptr<SceneNode>>::IteratorPtr iter(nullptr, nullptr);
             code = src.getChildren(iter);
             TE_CHECKRETURN_CODE(code);
 
@@ -562,11 +580,11 @@ namespace {
         code = dst.writeInt(dstLayout.attributes);
         TE_CHECKRETURN_CODE(code);
 #define TE_WRITE_VERTEXARRAY(arr) \
-    code = dst.writeInt((int)arr.type); \
+    code = dst.writeInt(static_cast<int32_t>(arr.type)); \
     TE_CHECKRETURN_CODE(code); \
-    code = dst.writeInt(arr.offset); \
+    code = dst.writeInt(static_cast<int32_t>(arr.offset)); \
     TE_CHECKRETURN_CODE(code); \
-    code = dst.writeInt(arr.stride); \
+    code = dst.writeInt(static_cast<int32_t>(arr.stride)); \
     TE_CHECKRETURN_CODE(code);
 
         TE_WRITE_VERTEXARRAY(dstLayout.position);
@@ -604,7 +622,7 @@ namespace {
         TE_CHECKRETURN_CODE(code);
 
         // materials
-        code = dst.writeInt(mesh.getNumMaterials());
+        code = dst.writeInt(static_cast<int32_t>(mesh.getNumMaterials()));
         TE_CHECKRETURN_CODE(code);
         for (std::size_t i = 0u; i < mesh.getNumMaterials(); i++) {
             Material mat;
@@ -619,7 +637,7 @@ namespace {
             TE_CHECKBREAK_CODE(code);
             code = dst.writeInt(mat.textureCoordIndex);
             TE_CHECKBREAK_CODE(code);
-            code = dst.writeInt(mat.textureUri ? strlen(mat.textureUri) : 0u);
+            code = dst.writeInt(mat.textureUri ? static_cast<int32_t>(strlen(mat.textureUri)) : 0);
             TE_CHECKBREAK_CODE(code);
             if (mat.textureUri) {
                 code = dst.writeString(mat.textureUri);
@@ -629,7 +647,7 @@ namespace {
         TE_CHECKRETURN_CODE(code);
 
         // write vertex data
-        code = dst.writeInt(mesh.getNumVertices());
+        code = dst.writeInt(static_cast<int32_t>(mesh.getNumVertices()));
         TE_CHECKRETURN_CODE(code);
         if (dstLayout.interleaved) {
             std::size_t dataLen;
@@ -698,7 +716,7 @@ namespace {
             TE_CHECKRETURN_CODE(code);
             code = dst.writeInt(indexType);
             TE_CHECKRETURN_CODE(code);
-            code = dst.writeInt(mesh.getNumIndices());
+            code = dst.writeInt(static_cast<int32_t>(mesh.getNumIndices()));
             TE_CHECKRETURN_CODE(code);
             code = dst.write((const uint8_t *)indices + mesh.getIndexOffset(), mesh.getNumIndices()*getDataTypeSize(indexType));
             TE_CHECKRETURN_CODE(code);
@@ -911,21 +929,19 @@ namespace {
         std::size_t numMaterials;
         std::vector<Material> materials;
         std::size_t numVertices;
-        VoidPtr_const position(NULL, NULL);
-        VoidPtr_const normal(NULL, NULL);
-        VoidPtr_const color(NULL, NULL);
-        VoidPtr_const texCoord0(NULL, NULL);
-        VoidPtr_const texCoord1(NULL, NULL);
-        VoidPtr_const texCoord2(NULL, NULL);
-        VoidPtr_const texCoord3(NULL, NULL);
-        VoidPtr_const texCoord4(NULL, NULL);
-        VoidPtr_const texCoord5(NULL, NULL);
-        VoidPtr_const texCoord6(NULL, NULL);
-        VoidPtr_const texCoord7(NULL, NULL);
-        std::size_t numIndices;
-        DataType indexType;
+        VoidPtr_const position(nullptr, nullptr);
+        VoidPtr_const normal(nullptr, nullptr);
+        VoidPtr_const color(nullptr, nullptr);
+        VoidPtr_const texCoord0(nullptr, nullptr);
+        VoidPtr_const texCoord1(nullptr, nullptr);
+        VoidPtr_const texCoord2(nullptr, nullptr);
+        VoidPtr_const texCoord3(nullptr, nullptr);
+        VoidPtr_const texCoord4(nullptr, nullptr);
+        VoidPtr_const texCoord5(nullptr, nullptr);
+        VoidPtr_const texCoord6(nullptr, nullptr);
+        VoidPtr_const texCoord7(nullptr, nullptr);
 
-        MeshPtr retval(NULL, NULL);
+        MeshPtr retval(nullptr, nullptr);
 
         // read layout
         code = src.readInt(&intval);
@@ -998,11 +1014,11 @@ namespace {
             if (intval < 0)
                 return TE_IllegalState;
             if (intval) {
-                std::size_t numRead;
+                std::size_t tex_num_read;
                 array_ptr<char> textureUri(new char[intval+1]);
-                code = src.readString(textureUri.get(), &numRead, intval);
+                code = src.readString(textureUri.get(), &tex_num_read, intval);
                 TE_CHECKBREAK_CODE(code);
-                if (numRead < intval)
+                if (tex_num_read < static_cast<std::size_t>(intval))
                     return TE_EOF;
                 mat.textureUri = textureUri.get();
             }
@@ -1022,7 +1038,7 @@ namespace {
             TE_CHECKRETURN_CODE(code);
             if (longval > 0xFFFFFFFFLL)
                 return TE_IllegalState;
-            const std::size_t dataLen = longval;
+            const auto dataLen = static_cast<std::size_t>(longval);
 
             VoidPtr data(te_alloc_v(dataLen), te_free_v);
             if (!data.get())
@@ -1062,7 +1078,7 @@ namespace {
                 TE_CHECKRETURN_CODE(code);
                 if (longval > 0xFFFFFFFFLL)
                     return TE_IllegalState;
-                const std::size_t dataLen = longval;
+                const auto dataLen = static_cast<std::size_t>(longval);
 
 
                 VoidPtr data(te_alloc_v(dataLen), te_free_v);
@@ -1206,17 +1222,17 @@ namespace {
         TE_CHECKRETURN_CODE(code);
         // LODs
         const std::size_t numLods = node.lods.size();
-        code = dst.writeInt(numLods);
+        code = dst.writeInt(static_cast<int32_t>(numLods));
         TE_CHECKRETURN_CODE(code);
         for (std::size_t i = 0u; i < numLods; i++) {
             // LOD info
-            code = dst.writeInt(node.lods[i].levelOfDetail);
+            code = dst.writeInt(static_cast<int32_t>(node.lods[i].levelOfDetail));
             TE_CHECKBREAK_CODE(code);
 
-            code = dst.writeInt(node.lods[i].instanceId);
+            code = dst.writeInt(static_cast<int32_t>(node.lods[i].instanceId));
             TE_CHECKBREAK_CODE(code);
 
-            const bool hasMesh = node.lods[i].meshDataLength;
+            const bool hasMesh = node.lods[i].meshDataLength != 0;
             code = dst.writeByte(hasMesh ? 0x1u : 0x0u);
             TE_CHECKBREAK_CODE(code);
 
@@ -1226,7 +1242,7 @@ namespace {
             // LOD mesh
             code = dst.writeLong(node.lods[i].meshDataOffset);
             TE_CHECKRETURN_CODE(code);
-            code = dst.writeInt(node.lods[i].meshDataLength);
+            code = dst.writeInt(static_cast<int32_t>(node.lods[i].meshDataLength));
             TE_CHECKRETURN_CODE(code);
 
             if (node.lods[i].instanceId == SceneNode::InstanceID_None || (meshInstanceEncoded.find(node.lods[i].instanceId) == meshInstanceEncoded.end())) {
@@ -1246,7 +1262,7 @@ namespace {
 
         // children
         const std::size_t numChildren = node.children.size();
-        code = dst.writeInt(numChildren);
+        code = dst.writeInt(static_cast<int32_t>(numChildren));
         TE_CHECKRETURN_CODE(code);
 
         for (std::size_t i = 0u; i < numChildren; i++) {
@@ -1268,7 +1284,7 @@ namespace {
         // local frame
         code = src.readByte(&bit);
         TE_CHECKRETURN_CODE(code);
-        node->hasLocalFrame = bit;
+        node->hasLocalFrame = bit != 0;
         if (node->hasLocalFrame) {
             double mx[16];
             code = src.read(reinterpret_cast<uint8_t *>(mx), &numRead, 16u * sizeof(double));
@@ -1295,7 +1311,7 @@ namespace {
             return TE_IllegalState;
 
         node->lods.reserve(numLods);
-        for (std::size_t i = 0u; i < numLods; i++) {
+        for (std::size_t i = 0u; i < static_cast<std::size_t>(numLods); i++) {
             // LOD info
             node->lods.push_back(StreamingSceneNode::LevelOfDetail());
             node->lods[i].instanceId = SceneNode::InstanceID_None;
@@ -1334,7 +1350,7 @@ namespace {
                 // seek to the offset
                 code = src.seek(node->lods[i].meshDataOffset);
                 TE_CHECKBREAK_CODE(code);
-                MeshPtr_const mesh(NULL, NULL);
+                MeshPtr_const mesh(nullptr, nullptr);
                 code = decodeMesh(mesh, src);
                 TE_CHECKBREAK_CODE(code);
 
@@ -1359,7 +1375,7 @@ namespace {
             return TE_IllegalState;
 
         node->children.reserve(numChildren);
-        for (std::size_t i = 0u; i < numChildren; i++) {
+        for (std::size_t i = 0u; i < static_cast<std::size_t>(numChildren); i++) {
             std::unique_ptr<StreamingSceneNode> child;
             code = decodeSceneNode(child, src, instanceMeshes, version);
             TE_CHECKBREAK_CODE(code);

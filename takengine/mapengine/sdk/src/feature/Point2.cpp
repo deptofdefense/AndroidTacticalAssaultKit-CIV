@@ -50,7 +50,7 @@ TAKErr Point2::setDimensionImpl(const std::size_t dimension_) NOTHROWS
 
 bool Point2::equalsImpl(const Geometry2 &o) NOTHROWS
 {
-    const Point2 &other = static_cast<const Point2 &>(o);
+    const auto &other = static_cast<const Point2 &>(o);
 
     return (this->x == other.x) &&
            (this->y == other.y) &&

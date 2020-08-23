@@ -2,6 +2,8 @@
 package com.atakmap.android.importfiles.sort;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
+import android.util.Pair;
 
 import com.atakmap.android.image.ExifHelper;
 import com.atakmap.android.image.quickpic.QuickPicReceiver;
@@ -153,6 +155,16 @@ public class ImportJPEGSort extends ImportResolver {
     @Override
     public String getDisplayableName() {
         return _context.getString(R.string.jpeg_image);
+    }
+
+    @Override
+    public Drawable getIcon() {
+        return _context.getDrawable(R.drawable.camera);
+    }
+
+    @Override
+    public Pair<String, String> getContentMIME() {
+        return new Pair<>("JPEG Image", "image/jpeg");
     }
 
     @Override

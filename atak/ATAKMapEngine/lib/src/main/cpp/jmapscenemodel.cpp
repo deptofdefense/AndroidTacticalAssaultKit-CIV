@@ -59,20 +59,18 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_MapSceneModel_getEarth
         return NULL;
     }
 
-    GeometryModel2Ptr retval(model->earth.get(), Memory_leaker_const<GeometryModel2>);
-    return NewPointer(env, std::move(retval));
+    return NewPointer(env, model->earth.get(), true);
 }
-JNIEXPORT jobject JNICALL Java_com_atakmap_map_MapSceneModel_getProjection
+JNIEXPORT jint JNICALL Java_com_atakmap_map_MapSceneModel_getProjection
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
     MapSceneModel2 *model = JLONG_TO_INTPTR(MapSceneModel2, ptr);
     if(!model) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
-        return NULL;
+        return -1;
     }
 
-    Projection2Ptr retval(model->projection.get(), Memory_leaker_const<Projection2>);
-    return NewPointer(env, std::move(retval));
+    return model->projection.get() ? model->projection->getSpatialReferenceID() : -1;
 }
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_MapSceneModel_getForward
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -83,8 +81,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_MapSceneModel_getForward
         return NULL;
     }
 
-    Matrix2Ptr retval(&model->forwardTransform, Memory_leaker_const<Matrix2>);
-    return NewPointer(env, std::move(retval));
+    return NewPointer(env, &model->forwardTransform, true);
 }
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_MapSceneModel_getInverse
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -95,8 +92,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_MapSceneModel_getInverse
         return NULL;
     }
 
-    Matrix2Ptr retval(&model->inverseTransform, Memory_leaker_const<Matrix2>);
-    return NewPointer(env, std::move(retval));
+    return NewPointer(env, &model->inverseTransform, true);
 }
 JNIEXPORT jint JNICALL Java_com_atakmap_map_MapSceneModel_getWidth
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -162,8 +158,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_MapSceneModel_getDisplayModel
         return NULL;
     }
 
-    MapProjectionDisplayModelPtr retval(model->displayModel.get(), Memory_leaker_const<MapProjectionDisplayModel>);
-    return NewPointer(env, std::move(retval));
+    return NewPointer(env, model->displayModel.get(), true);
 }
 
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_MapSceneModel_getCameraProjection
@@ -175,8 +170,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_MapSceneModel_getCameraProjection
         return NULL;
     }
 
-    Matrix2Ptr retval(&model->camera.projection, Memory_leaker_const<Matrix2>);
-    return NewPointer(env, std::move(retval));
+    return NewPointer(env, &model->camera.projection, true);
 }
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_MapSceneModel_getCameraModelView
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -187,8 +181,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_MapSceneModel_getCameraModelView
         return NULL;
     }
 
-    Matrix2Ptr retval(&model->camera.modelView, Memory_leaker_const<Matrix2>);
-    return NewPointer(env, std::move(retval));
+    return NewPointer(env, &model->camera.modelView, true);
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_MapSceneModel_getCameraLocation
   (JNIEnv *env, jclass clazz, jlong ptr, jobject mlocation)

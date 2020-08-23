@@ -467,7 +467,7 @@ public class ImageCapture extends AbstractLayer {
                 + "</kml>";
         try {
             PrintWriter out = new PrintWriter(new File(dir, "doc.kml"),
-                    FileSystemUtils.UTF8_CHARSET);
+                    FileSystemUtils.UTF8_CHARSET.name());
             out.println(docSkel);
             out.close();
         } catch (IOException ioe) {

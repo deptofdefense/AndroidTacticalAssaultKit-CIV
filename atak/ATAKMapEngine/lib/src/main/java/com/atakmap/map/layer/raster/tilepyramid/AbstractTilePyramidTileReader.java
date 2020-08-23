@@ -22,6 +22,8 @@ public abstract class AbstractTilePyramidTileReader extends TileReader {
     static {
         DECODE_OPTS.inPreferredConfig = Bitmap.Config.ARGB_8888;
     }
+
+    protected static TileReader.Format format = null;
     
     protected final int tileWidth;
     protected final int tileHeight;
@@ -30,6 +32,7 @@ public abstract class AbstractTilePyramidTileReader extends TileReader {
     protected final long height;
     
     private ResourcePool<int[]> tileArgb;
+    private ResourcePool<Bitmap> tileData;
     
     protected boolean debugTile;
 
@@ -54,7 +57,44 @@ public abstract class AbstractTilePyramidTileReader extends TileReader {
         
         this.debugTile = false;
         
-        this.tileArgb = new ResourcePool<int[]>(1);
+        this.tileArgb = new ResourcePool<>(1);
+        this.tileData = new ResourcePool<>(2);
+
+        // test the pack of Bitmap ARGB_8888 data to see if conversion is
+        // required
+        synchronized(AbstractTilePyramidTileReader.class) {
+            if(format == null) {
+                Bitmap px = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
+                px.setPremultiplied(false);
+                px.setPixel(0, 0, 0xF1F2F3F4);
+
+                ByteBuffer buf = ByteBuffer.allocate(4);
+                buf.order(ByteOrder.BIG_ENDIAN);
+                px.copyPixelsToBuffer(buf);
+
+                final int val = buf.getInt(0);
+                if(val == 0xF2F3F4F1) {
+                    // packed RGBA
+                    format = Format.RGBA;
+                } else {
+                    // default to ARGB
+                    format = Format.ARGB;
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void disposeImpl() {
+        super.disposeImpl();
+
+        // clear the bitmap pool
+        do {
+            Bitmap pooled = tileData.get();
+            if(pooled == null)
+                break;
+            pooled.recycle();
+        } while(true);
     }
 
     @Override
@@ -84,6 +124,10 @@ public abstract class AbstractTilePyramidTileReader extends TileReader {
 
     protected abstract Bitmap getTileImpl(int level, long tileColumn, long tileRow, ReadResult[] code);
 
+    protected Bitmap getTileImpl(int level, long tileColumn, long tileRow, BitmapFactory.Options opts, ReadResult[] code) {
+        return getTileImpl(level, tileColumn, tileRow, code);
+    }
+
     @Override
     public final ReadResult read(int level, long tileColumn, long tileRow, byte[] data) {
         if (level < 0)
@@ -94,7 +138,18 @@ public abstract class AbstractTilePyramidTileReader extends TileReader {
         ReadResult[] code = new ReadResult[1];
         try {
             synchronized(this.readLock) {
-                retval = this.getTileImpl(level, tileColumn, tileRow, code);
+                BitmapFactory.Options opts = new BitmapFactory.Options();
+                opts.inBitmap = tileData.get();
+                opts.inMutable = true;
+                retval = this.getTileImpl(level, tileColumn, tileRow, opts, code);
+                // if the pooled bitmap wasn't used, re-pool or recycle a
+                // appropriate
+                if(opts.inBitmap != null && retval != opts.inBitmap) {
+                    if(retval != null)
+                        opts.inBitmap.recycle();
+                    else
+                        tileData.put(opts.inBitmap);
+                }
             }
             if(retval != null) {
                 if(retval.getWidth() != this.tileWidth || retval.getHeight() != this.tileHeight) {
@@ -112,25 +167,31 @@ public abstract class AbstractTilePyramidTileReader extends TileReader {
                     debugTile(new Canvas(retval), 0xFF0000FF, retval.getWidth(), retval.getHeight(), level, (int)tileColumn, (int)tileRow);
                 }
 
-                tileArgb = this.tileArgb.get();
-                if(tileArgb == null)
-                    tileArgb = new int[this.tileWidth*this.tileHeight];
-                else
-                    Arrays.fill(tileArgb, 0);
-                retval.getPixels(tileArgb, 0, this.tileWidth, 0, 0, this.tileWidth, this.tileHeight);
-                
-                final int numPixels = (retval.getWidth()*retval.getHeight());
-                ByteBuffer dataBuffer = ByteBuffer.wrap(data);
-                dataBuffer.order(ByteOrder.BIG_ENDIAN);
-                dataBuffer.asIntBuffer().put(tileArgb, 0, numPixels);
-                dataBuffer = null;
+                if(format == Format.RGBA) {
+                    ByteBuffer dataBuffer = ByteBuffer.wrap(data);
+                    dataBuffer.order(ByteOrder.nativeOrder());
+                    retval.copyPixelsToBuffer(dataBuffer);
+                    dataBuffer = null;
+                } else {
+                    tileArgb = this.tileArgb.get();
+                    if (tileArgb == null)
+                        tileArgb = new int[this.tileWidth * this.tileHeight];
+                    else
+                        Arrays.fill(tileArgb, 0);
+                    retval.getPixels(tileArgb, 0, this.tileWidth, 0, 0, this.tileWidth, this.tileHeight);
+
+                    final int numPixels = (retval.getWidth() * retval.getHeight());
+                    ByteBuffer dataBuffer = ByteBuffer.wrap(data);
+                    dataBuffer.order(ByteOrder.BIG_ENDIAN);
+                    dataBuffer.asIntBuffer().put(tileArgb, 0, numPixels);
+                    dataBuffer = null;
+                }
             }
 
             return code[0];
         } finally {
-            if(retval != null)
+            if(retval != null && !tileData.put(retval))
                 retval.recycle();
-            
             if(tileArgb != null)
                 this.tileArgb.put(tileArgb);
         }
@@ -214,7 +275,20 @@ outer:      for(long ty = sty; ty <= fty; ty++) {
                 retval.recycle();
         }
 
-        if(result == ReadResult.SUCCESS) {
+        if(result != ReadResult.SUCCESS)
+            return result;
+
+        if(format == Format.RGBA) {
+            int argb;
+            int idx = 0;
+            for(int i = 0; i < tileArgb.length; i++) {
+                argb = tileArgb[i];
+                data[idx++] = (byte)((argb>>16)&0xFF);
+                data[idx++] = (byte)((argb>>8)&0xFF);
+                data[idx++] = (byte)(argb&0xFF);
+                data[idx++] = (byte)((argb>>24)&0xFF);
+            }
+        } else {
             int argb;
             int idx = 0;
             for(int i = 0; i < tileArgb.length; i++) {
@@ -250,7 +324,7 @@ outer:      for(long ty = sty; ty <= fty; ty++) {
 
     @Override
     public final Format getFormat() {
-        return Format.ARGB;
+        return format;
     }
 
     @Override

@@ -6,9 +6,9 @@ using namespace TAK::Engine::Util;
 
 BruteForceLimitOffsetFeatureCursor::BruteForceLimitOffsetFeatureCursor(FeatureCursorPtr &&filter_, std::size_t limit_, std::size_t offset_) NOTHROWS :
     filter(std::move(filter_)),
-    pos(0),
+    limit((limit_ > 0) ? limit_ : std::numeric_limits<std::size_t>::max()),
     offset(offset_),
-    limit((limit_ > 0) ? limit_ : std::numeric_limits<std::size_t>::max())
+    pos(0)
 {}
 
 TAKErr BruteForceLimitOffsetFeatureCursor::getId(int64_t *value) NOTHROWS
@@ -34,6 +34,16 @@ TAKErr BruteForceLimitOffsetFeatureCursor::getRawGeometry(FeatureDefinition2::Ra
 FeatureDefinition2::GeometryEncoding BruteForceLimitOffsetFeatureCursor::getGeomCoding() NOTHROWS
 {
     return filter->getGeomCoding();
+}
+
+AltitudeMode BruteForceLimitOffsetFeatureCursor::getAltitudeMode() NOTHROWS 
+{
+    return filter->getAltitudeMode();
+}
+
+double BruteForceLimitOffsetFeatureCursor::getExtrude() NOTHROWS 
+{
+    return filter->getExtrude();
 }
 
 TAKErr BruteForceLimitOffsetFeatureCursor::getName(const char **value) NOTHROWS

@@ -38,6 +38,13 @@
     <PreferenceCategory
         android:title="@string/networklogging_pref">
         <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="collect_metrics"
+            android:summary="@string/metricreport"
+            android:title="@string/metric_report_title"
+            android:icon="@drawable/metrics"/>
+
+        <CheckBoxPreference
             android:key="lognettraffictofile"
             android:title="@string/preferences_text252"
             android:summary="@string/preferences_text252_summary"
@@ -46,12 +53,14 @@
         <CheckBoxPreference android:title="@string/advanced_cot_recorder"
             android:key="generate_full_pool"
             android:checked="false"
+            android:dependency="collect_metrics"
             android:summary="@string/advanced_cot_recorder_summ"
             android:icon="@drawable/network"/>
 
         <CheckBoxPreference android:title="@string/advanced_detail_recorder"
             android:key="generate_detail_pool"
             android:checked="false"
+            android:dependency="collect_metrics"
             android:summary="@string/advanced_detail_recorder_summ"
             android:icon="@drawable/network"/>
     </PreferenceCategory>

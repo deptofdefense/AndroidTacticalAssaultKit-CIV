@@ -31,7 +31,7 @@ namespace atakmap
          * of the data. In either case, its 'releaseData' function will do the
          * appropriate thing and must always be invoked.
          */
-        Bitmap Bitmap_adapt(const TAK::Engine::Renderer::Bitmap2 &other) NOTHROWS;
+        Bitmap ENGINE_API Bitmap_adapt(const TAK::Engine::Renderer::Bitmap2 &other) NOTHROWS;
 
         /**
          * Returns a new legacy Bitmap instance by taking ownership of the
@@ -39,7 +39,7 @@ namespace atakmap
          * made a copy of the data. In either case, its 'releaseData' function
          * will do the appropriate thing and must always be invoked.
          */
-        Bitmap Bitmap_adapt(TAK::Engine::Renderer::BitmapPtr &&other) NOTHROWS;
+        Bitmap ENGINE_API Bitmap_adapt(TAK::Engine::Renderer::BitmapPtr &&other) NOTHROWS;
 
         /**
          * Returns a new legacy Bitmap instance by taking ownership of the

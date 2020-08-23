@@ -27,7 +27,9 @@ import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 
+import com.atakmap.android.cotdetails.extras.ExtraDetailsLayout;
 import com.atakmap.android.drawing.details.GenericDetailsView;
+import com.atakmap.android.hashtags.view.RemarksLayout;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.preference.UnitPreferences;
 import com.atakmap.android.util.SimpleItemSelectedListener;
@@ -93,7 +95,6 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
     private final UnitPreferences _rPrefs;
     private final UnitPreferences _bPrefs;
     private Marker centerMarker;
-    private double widthFraction = 0;
     private MapGroup subGroup;
     private RangeCircle rabCircle = null;
 
@@ -110,6 +111,8 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
     private UnitsArrayAdapter unitsAdapter;
     private TextView centerPointLabel;
     private Intent reopenIntent;
+    private RemarksLayout remarksLayout;
+    private ExtraDetailsLayout extrasLayout;
 
     private AutoSizeAngleOverlayShape.OnPropertyChangedListener propertyChangedListener = new AutoSizeAngleOverlayShape.OnPropertyChangedListener() {
         @Override
@@ -129,13 +132,6 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
         _context = mapView.getContext();
         _rPrefs = new UnitPreferences(mapView);
         _bPrefs = new UnitPreferences(_mapView);
-        boolean isTablet = _context.getResources().getBoolean(R.bool.isTablet);
-        if (isTablet)
-            widthFraction = 1.5d / Double.valueOf(_context.getResources()
-                    .getString(R.string.dropdown_width));
-        else {
-            widthFraction = 3d / 8d;
-        }
     }
 
     @Override
@@ -203,8 +199,8 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
             getMapView().getMapController().panTo(centerMarker
                     .getPoint(), true);
 
-        showDropDown(bullseyeLayout, widthFraction, FULL_HEIGHT, FULL_WIDTH,
-                HALF_HEIGHT, this);
+        showDropDown(bullseyeLayout, THREE_EIGHTHS_WIDTH, FULL_HEIGHT,
+                FULL_WIDTH, HALF_HEIGHT, this);
         setRetain(true);
     }
 
@@ -429,14 +425,18 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
             public void onItemSelected(AdapterView<?> parent, View view,
                     int position, long id) {
                 final Span selectedUnits = unitsAdapter.getItem(position);
-                if (selectedUnits != null) {
-                    _bPrefs.setRangeSystem(selectedUnits.getType());
+                if (selectedUnits == null)
+                    return;
+
+                _bPrefs.setRangeSystem(selectedUnits.getType());
+
+                Span rUnits = aos.getRadiusUnits();
+                if (rUnits != selectedUnits) {
                     double radius = SpanUtilities.convert(aos.getRadius(),
                             Span.METER, selectedUnits);
                     aos.setRadius(radius, selectedUnits);
                     refresh();
                 }
-
             }
         });
         bRadiusButton.setOnClickListener(this);
@@ -617,6 +617,12 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
                 return true;
             }
         });
+
+        remarksLayout = bullseyeLayout.findViewById(R.id.remarksLayout);
+        remarksLayout.setText(centerMarker.getRemarks());
+
+        extrasLayout = bullseyeLayout.findViewById(R.id.extrasLayout);
+
         bullseyeLayout.findViewById(R.id.sendLayout).setOnClickListener(this);
     }
 
@@ -687,6 +693,8 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
 
             numRingsTV.setText(String.valueOf(rabCircle.getNumRings()));
         }
+
+        extrasLayout.setItem(aos);
     }
 
     @Override
@@ -798,9 +806,11 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
             onReceive(getMapView().getContext(), reopenIntent);
             reopenIntent = null;
         }
-        if (centerMarker != null)
+        if (centerMarker != null) {
+            centerMarker.setRemarks(remarksLayout.getText());
             centerMarker.persist(_mapView.getMapEventDispatcher(),
                     null, this.getClass());
+        }
     }
 
     @Override

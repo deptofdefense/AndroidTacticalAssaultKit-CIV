@@ -23,6 +23,7 @@ import com.atakmap.android.hierarchy.HierarchyListReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.math.MathUtils;
 
 import java.util.ArrayList;
@@ -168,7 +169,7 @@ public class HashtagEditText extends MultiAutoCompleteTextView {
     private void showTag(String tag) {
         ArrayList<String> paths = new ArrayList<>();
         paths.add(getContext().getString(R.string.hashtags));
-        paths.add(tag.toLowerCase());
+        paths.add(tag.toLowerCase(LocaleUtil.getCurrent()));
         AtakBroadcast.getInstance().sendBroadcast(new Intent(
                 HierarchyListReceiver.MANAGE_HIERARCHY)
                         .putStringArrayListExtra("list_item_paths", paths)

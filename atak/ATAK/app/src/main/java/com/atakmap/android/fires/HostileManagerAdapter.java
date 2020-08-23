@@ -26,6 +26,8 @@ import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
+import com.atakmap.android.util.ATAKUtilities;
+
 import java.util.List;
 
 class HostileManagerAdapter extends BaseAdapter {
@@ -122,8 +124,12 @@ class HostileManagerAdapter extends BaseAdapter {
             if (dist < 100000) {
                 final double bearing = point.get()
                         .bearingTo(mv.getSelfMarker().getPoint());
-                ccaTV.setText("CCF:  " + AngleUtilities.format(bearing) + " "
-                        + Math.round(dist) + "m");
+                ccaTV.setText("CCF:  " +
+                        AngleUtilities
+                                .format(ATAKUtilities.convertFromTrueToMagnetic(
+                                        point.get(), bearing))
+                        +
+                        " " + Math.round(dist) + "m");
             }
         }
         convertView.setOnClickListener(new View.OnClickListener() {

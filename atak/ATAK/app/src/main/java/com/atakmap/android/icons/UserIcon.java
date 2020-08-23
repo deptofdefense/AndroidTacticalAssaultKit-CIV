@@ -519,7 +519,7 @@ public class UserIcon {
             final String q = u.getQueryParameter("query");
             if (q != null) {
                 query = URLDecoder.decode(q,
-                        FileSystemUtils.UTF8_CHARSET);
+                        FileSystemUtils.UTF8_CHARSET.name());
             }
         } catch (UnsupportedEncodingException e) {
             Log.e(TAG, "Failed to parse query: " + queryUri, e);

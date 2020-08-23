@@ -31,6 +31,7 @@ import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.Vector2D;
 import com.atakmap.lang.Unsafe;
+import com.atakmap.map.LegacyAdapters;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
@@ -98,7 +99,8 @@ public class GLFahArrowWidget extends GLShapeWidget implements
                         // duplicate GLWidgetsLayer translation
                         GLES20FixedPipeline.glPushMatrix();
                         GLES20FixedPipeline.glTranslatef(0,
-                                ((GLMapView) this.context).getSurface()
+                                LegacyAdapters.getRenderContext(this.context)
+                                        .getRenderSurface()
                                         .getHeight() - 1,
                                 0f);
                         this.impl.drawWidgetImpl();

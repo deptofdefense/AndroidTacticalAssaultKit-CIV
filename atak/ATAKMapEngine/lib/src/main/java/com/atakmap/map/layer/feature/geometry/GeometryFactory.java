@@ -3,13 +3,7 @@ package com.atakmap.map.layer.feature.geometry;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.GeoPoint;
-
-import com.atakmap.map.projection.Projection;
-import com.atakmap.map.projection.ProjectionFactory;
-import com.atakmap.math.PointD;
-import com.atakmap.nio.Buffers;
+import com.atakmap.lang.Unsafe;
 
 public final class GeometryFactory {
 
@@ -35,141 +29,88 @@ public final class GeometryFactory {
         return new Polygon(ls);
     }
     public static Geometry parseWkb(byte[] arr) {
-        return parseWkb(ByteBuffer.wrap(arr));
+        if(arr == null)
+            return null;
+        return parseWkb(arr, 0, arr.length, new int[1]);
     }
 
-    public static Geometry parseWkb(ByteBuffer wkb) {
-        return parseWkbImpl(wkb, 0);
+    public static Geometry parseWkb(ByteBuffer buffer) {
+        if(buffer == null)
+            return null;
+        final boolean be = (buffer.order() == ByteOrder.BIG_ENDIAN);
+        int[] numRead = new int[1];
+        final Geometry retval;
+        if(buffer.hasArray()) {
+            retval = parseWkb(buffer.array(), buffer.position(), buffer.remaining(), numRead);
+        } else if(buffer.isDirect()) {
+            retval = parseWkb(Unsafe.getBufferPointer(buffer) + buffer.position(), buffer.remaining(), numRead);
+        } else {
+            byte[] arr = new byte[buffer.remaining()];
+            buffer.duplicate().get(arr);
+            retval = parseWkb(arr, 0, arr.length, numRead);
+        }
+        buffer.position(buffer.position()+numRead[0]);
+        return retval;
     }
 
     public static Geometry parseWkbImpl(ByteBuffer wkb, int typeOverride) {
-        final int byteOrder = wkb.get()&0xFF;
+        if(wkb == null)
+            return null;
+        if(typeOverride == 0)
+            return parseWkb(wkb);
+
+        // XXX -
+        ByteBuffer wkb2 = wkb.duplicate();
+        wkb2.mark();
+        final int byteOrder = wkb2.get()&0xFF;
         switch(byteOrder) {
             case 0x00 :
-                wkb.order(ByteOrder.BIG_ENDIAN);
+                wkb2.order(ByteOrder.BIG_ENDIAN);
                 break;
             case 0x01 :
-                wkb.order(ByteOrder.LITTLE_ENDIAN);
+                wkb2.order(ByteOrder.LITTLE_ENDIAN);
                 break;
             default :
                 throw new IllegalArgumentException("Invalid byte order");
         }
-        final int codedType = wkb.getInt();
-        final int type = (typeOverride != 0) ? typeOverride : codedType;
-        final int dimension = 2 + ((type/1000)%2);
-        final boolean hasMeasure = (type/2000)>0;
-        
-        if(typeOverride != 0 && codedType != typeOverride)
-            Log.w("GeometryFactory", "WKB expected type does not match coded type. WKB may be malformed. coded=" + codedType + " expected=" + typeOverride);
+        final int codedType = wkb2.getInt();
+        if(codedType == typeOverride)
+            return parseWkb(wkb);
 
-        switch(type%1000) {
-            case 1 : // wkbPoint
-            {
-                return parseWkbPoint(wkb, hasMeasure, dimension);
-            }
-            case 2 : // wkbLineString
-            {
-                return parseWkbLineString(wkb, hasMeasure, dimension);
-            }
-            case 17 : // wkbTriangle
-            case 3 : // wkbPolygon
-            {
-                Polygon retval = new Polygon(dimension);
-                final int numRings = wkb.getInt();
-                for(int i = 0; i < numRings; i++) {
-                    retval.addRing(parseWkbLineString(wkb, hasMeasure, dimension));
-                }
-                return retval;
-            }
-            case 4 : // wkbMultiPoint
-            {
-                GeometryCollection retval = new GeometryCollection(dimension);
-                final int numPoints = wkb.getInt();
-                for(int i = 0; i < numPoints; i++)
-                    retval.addGeometry(parseWkbImpl(wkb, ((type/1000)*1000) + 1));
-                return retval;
-            }
-            case 5 : // wkbMultiLineString
-            {
-                GeometryCollection retval = new GeometryCollection(dimension);
-                final int numLines = wkb.getInt();
-                for(int i = 0; i < numLines; i++)
-                    retval.addGeometry(parseWkbImpl(wkb, ((type/1000)*1000) + 2));
-                return retval;
-            }
-            case 15 : // wkbPolyhedralSurface
-            case 16 : // wkbTIN
-            case 6 : // wkbMultiPolygon
-            {
-                GeometryCollection retval = new GeometryCollection(dimension);
-                final int numPolygons = wkb.getInt();
-                for(int i = 0; i < numPolygons; i++)
-                    retval.addGeometry(parseWkbImpl(wkb, ((type/1000)*1000) + 3));
-                return retval;
-            }
-            case 7 : // wkbGeometryCollection
-            {
-                GeometryCollection retval = new GeometryCollection(dimension);
-                final int numGeometries = wkb.getInt();
-                for(int i = 0; i < numGeometries; i++)
-                    retval.addGeometry(parseWkbImpl(wkb, 0));
-                return retval;
-            }
+        byte[] arr = new byte[wkb.remaining()];
+        wkb2.reset();
+        wkb2.get(arr);
+        wkb2 = ByteBuffer.wrap(arr);
+        switch(byteOrder) {
+            case 0x00 :
+                wkb2.order(ByteOrder.BIG_ENDIAN);
+                break;
+            case 0x01 :
+                wkb2.order(ByteOrder.LITTLE_ENDIAN);
+                break;
             default :
-                throw new IllegalArgumentException("Invalid geometry type: " + type);
+                throw new IllegalArgumentException("Invalid byte order");
         }
-    }
-    
-    private static Point parseWkbPoint(ByteBuffer wkb, boolean hasMeasure, int dimension) {
-        Point retval = new Point(wkb.getDouble(), wkb.getDouble());
-        if(dimension == 3) {
-            retval.setDimension(3);
-            retval.set(retval.getX(), retval.getY(), wkb.getDouble());
-        }
-        if(hasMeasure) {
-            wkb.position(wkb.position()+8);
-        }
-        return retval;
+        wkb2.putInt(1, typeOverride);
+        return parseWkb(wkb2);
     }
 
-    private static LineString parseWkbLineString(ByteBuffer wkb, boolean hasMeasure, int dimension) {
-        LineString retval = new LineString(dimension);
-        final int numPoints = wkb.getInt();
-        if(!hasMeasure) {
-            if(dimension == 2) {
-                for (int i = 0; i < numPoints; i++) {
-                    retval.addPoint(wkb.getDouble(), wkb.getDouble());
-                }
-            } else if(dimension == 3) {
-                for (int i = 0; i < numPoints; i++) {
-                    retval.addPoint(wkb.getDouble(), wkb.getDouble(), wkb.getDouble());
-                }
-            }
+    public static void toWkb(Geometry geom, ByteBuffer buffer) {
+        if(geom == null)
+            throw new NullPointerException();
+        final boolean be = (buffer.order() == ByteOrder.BIG_ENDIAN);
+        if(buffer.hasArray()) {
+            final int written = toWkb(geom.pointer.raw, buffer.array(), buffer.position(), buffer.remaining(), be);
+            buffer.position(buffer.position()+written);
+        } else if(buffer.isDirect()) {
+            final int written = toWkb(geom.pointer.raw, Unsafe.getBufferPointer(buffer) + buffer.position(), buffer.remaining(), be);
+            buffer.position(buffer.position()+written);
         } else {
-            if(dimension == 2) {
-                for (int i = 0; i < numPoints; i++) {
-                    retval.addPoint(wkb.getDouble(), wkb.getDouble());
-
-                    wkb.position(wkb.position()+8);
-                }
-            } else if(dimension == 3) {
-                for (int i = 0; i < numPoints; i++) {
-                    retval.addPoint(wkb.getDouble(), wkb.getDouble(), wkb.getDouble());
-
-                    wkb.position(wkb.position()+8);
-                }
-            }
+            byte[] arr = new byte[buffer.remaining()];
+            buffer.duplicate().get(arr);
+            final int written = toWkb(geom.pointer.raw, arr, 0, arr.length, be);
+            buffer.put(arr, 0, written);
         }
-        return retval;
-    }
-
-    private static Polygon parseWkbPolygon(ByteBuffer wkb, boolean hasMeasure, int dimension) {
-        Polygon retval = new Polygon(dimension);
-        final int numRings = wkb.getInt();
-        for(int i = 0; i < numRings; i++) {
-            retval.addRing(parseWkbLineString(wkb, hasMeasure, dimension));
-        }
-        return retval;
     }
 
     public static Geometry parseSpatiaLiteBlob(byte[] arr) {
@@ -178,191 +119,132 @@ public final class GeometryFactory {
         return parseSpatiaLiteBlob(ByteBuffer.wrap(arr));
     }
 
-    public static Geometry parseSpatiaLiteBlob(ByteBuffer blob) {
-        if(blob.get() != 0x00)
-            throw new IllegalArgumentException("Bad START byte");
-        switch(blob.get()&0xFF) {
-            case 0x00 :
-                blob.order(ByteOrder.BIG_ENDIAN);
-                break;
-            case 0x01 :
-                blob.order(ByteOrder.LITTLE_ENDIAN);
-                break;
-            default :
-                throw new IllegalArgumentException("Invalid ENDIAN");
-        }
-//        Buffers.skip(blob, 36); // SRID + MBR
-        final int srid = blob.getInt ();
-        Buffers.skip(blob, 32); // MBR
-        if((blob.get()&0xFF) != 0x7C)
-            throw new IllegalArgumentException("Bad MBR_END byte");
-        
-        final Projection projection = srid != 4326
-                                    ? ProjectionFactory.getProjection (srid)
-                                    : null;
-
-        final int classType = blob.getInt();
-        final boolean hasZ = ((classType/1000)%2) == 1;
-        final boolean hasM = (((classType/1000)%1000)>>1) == 1;
-        final boolean isCompressed = ((classType/1000000) == 1);
-        
-        int dimension = 2;
-        if(hasZ)
-            dimension++;
-
-        Geometry retval;
-        switch(classType%1000) {
-            case 1 : // point
-                retval = parseSpatiaLitePointClass(blob, projection, dimension, hasM, isCompressed);
-                break;
-            case 2 : // linestring
-                retval = parseSpatiaLiteLineStringClass(blob, projection, dimension, hasM, isCompressed);
-                break;
-            case 3 : // polygon
-                retval = parseSpatiaLitePolygonClass(blob, projection, dimension, hasM, isCompressed);
-                break;
-            case 4 : // multipoint
-                retval = parseSpatiaLiteGeometryCollection(blob, projection, dimension, hasM, isCompressed, Point.class);
-                break;
-            case 5 : // multilinestring
-                retval = parseSpatiaLiteGeometryCollection(blob, projection, dimension, hasM, isCompressed, LineString.class);
-                break;
-            case 6 : // multipolygon
-                retval = parseSpatiaLiteGeometryCollection(blob, projection, dimension, hasM, isCompressed, Polygon.class);
-                break;
-            case 7 : // geometry collection
-                retval = parseSpatiaLiteGeometryCollection(blob, projection, dimension, hasM, isCompressed, Geometry.class);
-                break;
-            default :
-                throw new IllegalArgumentException("Bad CLASS TYPE");
-        }
-        
-        if((blob.get()&0xFF) != 0xFE)
-            throw new IllegalArgumentException("Bad END byte");
-
-        return retval;
-    }
-    
-    private static Point parseSpatiaLitePointClass(ByteBuffer blob, Projection projection, int dimension, boolean hasM, boolean compressed) {
-        Point retval = new Point(blob.getDouble(), blob.getDouble());
-        if (projection != null)
-          {
-            GeoPoint geoPt = projection.inverse (new PointD (retval.getX(), retval.getY()),
-                                                 null);
-
-            retval.set (geoPt.getLongitude (),
-                        geoPt.getLatitude ());
-          }
-        if(dimension == 3)
-            retval.set(retval.getX(), retval.getY(), blob.getDouble());
-        if(hasM)
-            Buffers.skip(blob, 8);
-        return retval;
-    }
-    
-    private static LineString parseSpatiaLiteLineStringClass(ByteBuffer blob, Projection projection, int dimension, boolean hasM, boolean compressed) {
-        LineString retval;
-        if(!compressed) {
-            // coding for uncompressed blob is same as WKB
-            retval = parseWkbLineString(blob, hasM, dimension);
-        } else if(dimension == 2) {
-            final int numPoints = blob.getInt();
-
-            final double firstX = blob.getDouble();
-            final double firstY = blob.getDouble();
-            if(hasM)
-                Buffers.skip(blob, 8);
-
-            retval = new LineString(dimension);
-            retval.addPoint(firstX, firstY);
-
-            for(int i = 1; i < numPoints; i++) {
-                final float x = blob.getFloat();
-                final float y = blob.getFloat();
-                if(hasM)
-                    Buffers.skip(blob, 4);
-                retval.addPoint(firstX+x, firstY+y);
-            }
-        } else if(dimension == 3) {
-            final int numPoints = blob.getInt();
-
-            final double firstX = blob.getDouble();
-            final double firstY = blob.getDouble();
-            final double firstZ = blob.getDouble();
-            if(hasM)
-                Buffers.skip(blob, 8);
-
-            retval = new LineString(dimension);
-            retval.addPoint(firstX, firstY, firstZ);
-
-            for(int i = 1; i < numPoints; i++) {
-                final float x = blob.getFloat();
-                final float y = blob.getFloat();
-                final float z = blob.getFloat();
-                if(hasM)
-                    Buffers.skip(blob, 4);
-                retval.addPoint(firstX+x, firstY+y, firstZ+z);
-            }
+    public static Geometry parseSpatiaLiteBlob(ByteBuffer buffer) {
+        if(buffer == null)
+            return null;
+        final boolean be = (buffer.order() == ByteOrder.BIG_ENDIAN);
+        int[] numRead = new int[1];
+        int[] srid = new int[1];
+        final Geometry retval;
+        if(buffer.hasArray()) {
+            retval = parseSpatiaLiteBlob(buffer.array(), buffer.position(), buffer.remaining(), srid, numRead);
+        } else if(buffer.isDirect()) {
+            retval = parseSpatiaLiteBlob(Unsafe.getBufferPointer(buffer) + buffer.position(), buffer.remaining(), srid, numRead);
         } else {
-            throw new IllegalArgumentException();
+            byte[] arr = new byte[buffer.remaining()];
+            buffer.duplicate().get(arr);
+            retval = parseSpatiaLiteBlob(arr, 0, arr.length, srid, numRead);
         }
-        if (projection != null)
-          {
-            GeoPoint geoPt = GeoPoint.createMutable();
-            PointD pt = new PointD(0d, 0d, 0d);
-            final int numPoints = retval.getNumPoints();
-            for (int i = 0; i < numPoints; ++i)
-              {
-                pt.x = retval.getX(i);
-                pt.y = retval.getY(i);
-                projection.inverse (pt,
-                                    geoPt);
-                retval.setX(i, geoPt.getLongitude());
-                retval.setY(i, geoPt.getLatitude());
-              }
-          }
-        return retval;
-    }
-    
-    private static Polygon parseSpatiaLitePolygonClass(ByteBuffer blob, Projection projection, int dimension, boolean hasM, boolean compressed) {
-        Polygon retval = new Polygon(dimension);
-        final int numRings = blob.getInt();
-        for(int i = 0; i < numRings; i++) {
-            retval.addRing(parseSpatiaLiteLineStringClass(blob, projection, dimension, hasM, compressed));
-        }
-        return retval;
-    }
-    
-    private static Geometry parseSpatiaLiteCollectionEntity(ByteBuffer blob, Projection projection, int dimension, boolean hasM, boolean compressed) {
-        if((blob.get()&0xFF) != 0x69)
-            throw new IllegalArgumentException("Bad ENTITY byte");
-        int classType = blob.getInt();
-        switch(classType%1000) {
-            case 1 : // point
-                return parseSpatiaLitePointClass(blob, projection, dimension, hasM, compressed);
-            case 2 : // linestring
-                return parseSpatiaLiteLineStringClass(blob, projection, dimension, hasM, compressed);
-            case 3 : // polygon
-                return parseSpatiaLitePolygonClass(blob, projection, dimension, hasM, compressed);
-            default :
-                throw new IllegalArgumentException("Invalid collection entity CLASS TYPE");
-        }
-    }
-    
-    private static Geometry parseSpatiaLiteGeometryCollection(ByteBuffer blob, Projection projection, int dimension, boolean hasM, boolean compressed, Class<? extends Geometry> classRestriction) {
-        GeometryCollection retval = new GeometryCollection(dimension);
-        final int numGeometries = blob.getInt();
-        Geometry child;
-        for(int i = 0; i < numGeometries; i++) {
-            child = parseSpatiaLiteCollectionEntity(blob, projection, dimension, hasM, compressed);
-            if(!classRestriction.isAssignableFrom(child.getClass()))
-                throw new IllegalArgumentException();
-            retval.addGeometry(child);
-        }
+        buffer.position(buffer.position()+numRead[0]);
         return retval;
     }
 
-    public static Geometry parseWkt(CharSequence wkt) {
+    public static void toSpatiaLiteBlob(Geometry geom, int srid, ByteBuffer buffer) {
+        if(geom == null)
+            throw new NullPointerException();
+        final boolean be = (buffer.order() == ByteOrder.BIG_ENDIAN);
+        if(buffer.hasArray()) {
+            final int written = toSpatiaLiteBlob(geom.pointer.raw, srid, buffer.array(), buffer.position(), buffer.remaining(), be);
+            buffer.position(buffer.position()+written);
+        } else if(buffer.isDirect()) {
+            final int written = toSpatiaLiteBlob(geom.pointer.raw, srid, Unsafe.getBufferPointer(buffer) + buffer.position(), buffer.remaining(), be);
+            buffer.position(buffer.position()+written);
+        } else {
+            byte[] arr = new byte[buffer.remaining()];
+            buffer.duplicate().get(arr);
+            final int written = toSpatiaLiteBlob(geom.pointer.raw, srid, arr, 0, arr.length, be);
+            buffer.put(arr, 0, written);
+        }
+    }
+
+    public static int computeSpatiaLiteBlobSize(Geometry geom) {
+        if(geom == null)
+            throw new NullPointerException();
+        return computeSpatiaLiteBlobSize(geom.pointer.raw);
+    }
+    public static Geometry createRectangle(Geometry corner1, Geometry corner2, int algorithm) {
+        if(corner1 == null || corner2 == null)
+            throw new NullPointerException();
+        return createRectangle(corner1.pointer.raw, corner2.pointer.raw, algorithm);
+    }
+    public static Geometry createRectangle(Geometry point1, Geometry point2, Geometry point3, int algorithm) {
+        if(point1 == null || point2 == null || point3 == null)
+            throw new NullPointerException();
+        return createRectangle(point1.pointer.raw, point2.pointer.raw, point3.pointer.raw, algorithm);
+    }
+    public static Geometry createRectangle(Geometry location, double orientation, double length, double width, int algorithm) {
+        if(location == null)
+            throw new NullPointerException();
+        return createRectangle(location.pointer.raw, orientation, length, width, algorithm);
+    }
+
+    public enum Algorithm {
+        cartesian, wgs84
+    }
+
+
+    public static Geometry parseWkt(String wkt) {
         throw new UnsupportedOperationException();
     }
+
+    public static Geometry createEllipse(Geometry location, double orientation, double major, double minor, int algorithm) {
+        if(location == null)
+            throw new NullPointerException();
+        return createEllipse(location.pointer.raw, orientation, major, minor, algorithm);
+    }
+
+    public static Geometry createEllipse2(Envelope env, int algorithm) {
+        if(env == null)
+            throw new NullPointerException();
+        return createEllipse(env.minX, env.minY, env.maxX, env.maxY, algorithm);
+    }
+
+
+    public static Geometry extrude(Geometry geom, double extrude, ExtrusionHints extrusionHints) {
+        if(geom == null)
+            throw new NullPointerException();
+        return extrude(geom.pointer.raw, extrude, extrusionHints.getId());
+    }
+
+    public enum ExtrusionHints {
+        TEEH_None(0),
+        TEEH_IncludeBottomFace(1),
+        TEEH_OmitTopFace(2),
+        TEEH_GeneratePolygons(4);
+
+        private int id; // Could be other data type besides int
+        private ExtrusionHints(int id) {
+            this.id = id;
+        }
+
+        public static ExtrusionHints fromId(int id) {
+            for (ExtrusionHints type : values()) {
+                if (type.getId() == id) {
+                    return type;
+                }
+            }
+            return null;
+        }
+
+        private int getId() {
+            return id;
+        }
+    }
+    static native int computeSpatiaLiteBlobSize(long pointer);
+    static native int toSpatiaLiteBlob(long pointer, int srid, byte[] buf, int off, int len, boolean be);
+    static native int toSpatiaLiteBlob(long pointer, int srid, long ptr, int len, boolean be);
+    static native Geometry parseSpatiaLiteBlob(byte[] buf, int off, int len, int[] srid, int[] numRead);
+    static native Geometry parseSpatiaLiteBlob(long ptr, int len, int[] srid, int[] numRead);
+
+    static native int computeWkbSize(long pointer);
+    static native int toWkb(long pointer, byte[] buf, int off, int len, boolean be);
+    static native int toWkb(long pointer, long ptr, int len, boolean be);
+    static native Geometry parseWkb(byte[] buf, int off, int len, int[] numRead);
+    static native Geometry parseWkb(long ptr, int len, int[] numRead);
+    static native Geometry createEllipse(long locationPtr, double orientation, double major, double minor, int algoPtr);
+    static native Geometry createEllipse(double minX, double minY, double maxX, double maxY, int algoPtr);
+    static native Geometry extrude(long pointer, double extrude, int hint);
+    static native Geometry createRectangle(long corner1Ptr, long corner2Ptr, int algoPtr);
+    static native Geometry createRectangle(long point1Ptr, long point2Ptr, long point3Ptr, int algoPtr);
+    static native Geometry createRectangle(long locationPtr, double orientation, double length, double width, int algoPtr);
 }

@@ -1,0 +1,9 @@
+{
+  "category": "Other",
+  "vehicles": [
+    {
+      "name": "MFB",
+      "file": "mfb.zip"
+    }
+  ]
+}

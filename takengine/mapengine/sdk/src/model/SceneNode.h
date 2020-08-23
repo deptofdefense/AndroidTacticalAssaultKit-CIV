@@ -14,6 +14,9 @@
 namespace TAK {
     namespace Engine {
         namespace Model {
+            class Scene;
+            struct SceneInfo;
+
             class ENGINE_API SceneNode
             {
             public :
@@ -42,10 +45,20 @@ namespace TAK {
                 virtual std::size_t getNumLODs() const NOTHROWS = 0;
 
                 /**
+                 * 
+                 */
+                virtual bool hasLODNode() const NOTHROWS = 0;
+                
+                /**
+                 *
+                 */
+                virtual Util::TAKErr getLODNode(std::shared_ptr<SceneNode> &value, const std::size_t lodIdx) NOTHROWS = 0;
+
+                /**
                  * @param value         Returns the mesh data
                  * @param lodIdx        The LOD _index_
                  */
-                virtual Util::TAKErr loadMesh(std::shared_ptr<const Mesh> &value, const std::size_t lodIdx = 0u, Util::ProcessingCallback *callback = NULL) NOTHROWS = 0;
+                virtual Util::TAKErr loadMesh(std::shared_ptr<const Mesh> &value, const std::size_t lodIdx = 0u, Util::ProcessingCallback *callback = nullptr) NOTHROWS = 0;
 
                 /**
                  * Returns the Level of Detail given the LOD index for this
@@ -71,6 +84,15 @@ namespace TAK {
                  * nodes that share the same Instance ID.
                  */
                 virtual Util::TAKErr getInstanceID(std::size_t *instanceId, const std::size_t lodIdx) const NOTHROWS = 0;
+
+                // Subscenes
+
+                /**
+                 * Returns true if this SceneNode has a subscene.
+                 */
+                virtual bool hasSubscene() const NOTHROWS = 0;
+
+                virtual Util::TAKErr getSubsceneInfo(const SceneInfo **result) NOTHROWS = 0;
             };
 
             typedef std::unique_ptr<SceneNode, void(*)(const SceneNode *)> SceneNodePtr;

@@ -411,14 +411,14 @@ public class PolarCoordinateReceiver extends BroadcastReceiver implements
     @Override
     public void onItemSelected(AdapterView<?> parent, View view,
             int position, long id) {
-        String key = null;
+        String preferenceKey = null;
         if (parent == _polarAction) {
             setPolarAction(position);
         }
 
         // Convert range to new units
         else if (parent == _rangeUnits) {
-            key = "coord.polar.range.units";
+            preferenceKey = "coord.polar.range.units";
             try {
                 double rangeM = getRange(getTextValue(_rangeText),
                         _rangeUnitsVal);
@@ -435,7 +435,7 @@ public class PolarCoordinateReceiver extends BroadcastReceiver implements
 
         // Convert bearing to new units
         else if (parent == _bearingUnits) {
-            key = "coord.polar.bearing.units";
+            preferenceKey = "coord.polar.bearing.units";
             try {
                 double bearingDeg = getTextValue(_bearingText);
                 if (_bearingUnitsVal == BEARING_UNITS_MILS)
@@ -451,7 +451,7 @@ public class PolarCoordinateReceiver extends BroadcastReceiver implements
 
         // Convert bearing to new reference
         else if (parent == _bearingAlignment) {
-            key = "coord.polar.bearingAlignment.units";
+            preferenceKey = "coord.polar.bearingAlignment.units";
             try {
                 double bearingDeg = getTextValue(_bearingText);
                 if (_bearingUnitsVal == BEARING_UNITS_MILS)
@@ -492,8 +492,8 @@ public class PolarCoordinateReceiver extends BroadcastReceiver implements
             }
             _bearingAlignVal = position;
         }
-        if (key != null)
-            _prefs.edit().putInt(key, position).apply();
+        if (preferenceKey != null)
+            _prefs.edit().putInt(preferenceKey, position).apply();
     }
 
     @Override

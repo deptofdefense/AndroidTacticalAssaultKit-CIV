@@ -1,17 +1,23 @@
 
 package com.atakmap.math;
 
+import com.atakmap.interop.InteropCleaner;
+import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
+import com.atakmap.lang.ref.Cleaner;
 import com.atakmap.map.MapSceneModel;
+import com.atakmap.util.Disposable;
 import com.atakmap.util.ReadWriteLock;
-
 /**
  * Holds a 4x4 matrix for transforming points. The internal representation of
  * the matrix is <I>row major</I>.
  * 
  * @author Developer
  */
-public final class Matrix {
+public final class Matrix implements Disposable {
+
+    final static NativePeerManager.Cleaner CLEANER = new InteropCleaner(Matrix.class);
+    private final Cleaner cleaner;
 
     public enum MatrixOrder {
         ROW_MAJOR,
@@ -24,6 +30,8 @@ public final class Matrix {
     Object owner;
 
     Matrix(Pointer pointer, Object owner) {
+        cleaner = NativePeerManager.register(this, pointer, rwlock, null, CLEANER);
+
         this.pointer = pointer;
         this.owner = owner;
     }
@@ -471,14 +479,9 @@ public final class Matrix {
     }
 
     @Override
-    public void finalize() {
-        this.rwlock.acquireWrite();
-        try {
-            if(this.pointer.raw != 0L)
-                destruct(this.pointer);
-        } finally {
-            this.rwlock.releaseWrite();
-        }
+    public void dispose() {
+        if(this.cleaner != null)
+            this.cleaner.clean();
     }
     /**************************************************************************/
 

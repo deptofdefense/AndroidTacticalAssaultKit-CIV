@@ -73,6 +73,7 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
         //if (!_controlPrefs.getBoolean("PerformedDeviceSetupWizard", false) || force) {
 
         if (_controlPrefs.getString("screenViewLat", null) == null || force) {
+            wizardPage = 0;
             init_settings();
             SharedPreferences.Editor editor = _controlPrefs.edit();
             editor.putBoolean("PerformedDeviceSetupWizard", true);

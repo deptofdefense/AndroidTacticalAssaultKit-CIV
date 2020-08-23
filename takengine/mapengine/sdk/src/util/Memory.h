@@ -26,17 +26,17 @@ namespace TAK {
                 T *get() NOTHROWS;
                 const T *get() const NOTHROWS;
                 T *release() NOTHROWS;
-                void reset(T *other = NULL) NOTHROWS;
+                void reset(T *other = nullptr) NOTHROWS;
             public :
-                T &operator[](const int i) NOTHROWS;
-                T operator[](const int i) const NOTHROWS;
+                T &operator[](const std::size_t i) NOTHROWS;
+                T operator[](const std::size_t i) const NOTHROWS;
             private:
                 T *value;
             };
 
             template<class T>
             array_ptr<T>::array_ptr() NOTHROWS :
-            value(NULL)
+            value(nullptr)
             {}
 
             template<class T>
@@ -81,13 +81,13 @@ namespace TAK {
             }
 
             template<class T>
-            T &array_ptr<T>::operator[](const int index) NOTHROWS
+            T &array_ptr<T>::operator[](const std::size_t index) NOTHROWS
             {
                 return value[index];
             }
 
             template<class T>
-            T array_ptr<T>::operator[](const int index) const NOTHROWS
+            T array_ptr<T>::operator[](const std::size_t index) const NOTHROWS
             {
                 return value[index];
             }

@@ -8,14 +8,14 @@ namespace
 {
     void membuffer_deleter(const void *opaque)
     {
-        const uint8_t *arr = (const uint8_t *)opaque;
+        const auto *arr = (const uint8_t *)opaque;
         delete [] arr;
     }
 }
 
 MemBuffer2::MemBuffer2(const uint8_t *mem_, const std::size_t limit_) NOTHROWS :
     buffer(mem_, Memory_leaker_const<void>),
-    base(NULL),
+    base(nullptr),
     base_const(reinterpret_cast<const uint8_t *>(buffer.get())),
     sz(limit_),
     pos(0u),
@@ -23,7 +23,7 @@ MemBuffer2::MemBuffer2(const uint8_t *mem_, const std::size_t limit_) NOTHROWS :
 {}
 MemBuffer2::MemBuffer2(const uint16_t *mem_, const std::size_t limit_) NOTHROWS :
     buffer(mem_, Memory_leaker_const<void>),
-    base(NULL),
+    base(nullptr),
     base_const(reinterpret_cast<const uint8_t *>(buffer.get())),
     sz(limit_ * sizeof(uint16_t)),
     pos(0u),
@@ -31,7 +31,7 @@ MemBuffer2::MemBuffer2(const uint16_t *mem_, const std::size_t limit_) NOTHROWS 
 {}
 MemBuffer2::MemBuffer2(const float *mem_, const std::size_t limit_) NOTHROWS :
     buffer(mem_, Memory_leaker_const<void>),
-    base(NULL),
+    base(nullptr),
     base_const(reinterpret_cast<const uint8_t *>(buffer.get())),
     sz(limit_ * sizeof(float)),
     pos(0u),
@@ -71,7 +71,7 @@ MemBuffer2::MemBuffer2(const std::size_t limit_) NOTHROWS :
 {}
 MemBuffer2::MemBuffer2(std::unique_ptr<const void, void(*)(const void *)> &&buf_, const std::size_t limit_) NOTHROWS :
     buffer(buf_.release(), buf_.get_deleter()),
-    base(NULL),
+    base(nullptr),
     base_const(reinterpret_cast<const uint8_t *>(buffer.get())),
     sz(limit_),
     pos(0u),

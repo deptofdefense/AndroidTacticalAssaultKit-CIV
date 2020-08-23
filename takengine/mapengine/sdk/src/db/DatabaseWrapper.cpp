@@ -101,9 +101,9 @@ checkSchema (db::Database& db,
              const ManagerVector& schemaMgrs)
   {
     bool validSchema (true);
-    ManagerVector::const_iterator end (schemaMgrs.end ());
+    auto end (schemaMgrs.end ());
 
-    for (ManagerVector::const_iterator iter (schemaMgrs.begin ());
+    for (auto iter (schemaMgrs.begin ());
          validSchema && iter != end;
          ++iter)
       {
@@ -125,9 +125,9 @@ getDatabaseVersion (const ManagerVector& schemaMgrs)
     unsigned long version (0);
     std::size_t schemaBits (32 / schemaMgrs.size ());
     uint64_t versionMax ((1ULL << schemaBits) - 1);
-    ManagerVector::const_iterator end (schemaMgrs.end ());
+    auto end (schemaMgrs.end ());
 
-    for (ManagerVector::const_iterator iter (schemaMgrs.begin ());
+    for (auto iter (schemaMgrs.begin ());
          iter != end;
          ++iter)
       {
@@ -259,8 +259,8 @@ DatabaseWrapper::query (const char* table,
       }
     else
       {
-        std::vector<const char*>::const_iterator iter (columns.begin ());
-        std::vector<const char*>::const_iterator end (columns.end ());
+        auto iter (columns.begin ());
+        auto end (columns.end ());
 
         strm << *iter;
         while (++iter != end)
@@ -306,13 +306,13 @@ DatabaseWrapper::Factory::getDatabaseWrapper (Database* db)
     const
     throw ()
   {
-    DatabaseWrapper* result (NULL);
+    DatabaseWrapper* result (nullptr);
 
     if (db)
       {
         try
           {
-            std::auto_ptr<DatabaseWrapper> tmp (createDatabaseWrapper (db));
+            std::unique_ptr<DatabaseWrapper> tmp (createDatabaseWrapper (db));
 
             if (tmp.get ())
               {

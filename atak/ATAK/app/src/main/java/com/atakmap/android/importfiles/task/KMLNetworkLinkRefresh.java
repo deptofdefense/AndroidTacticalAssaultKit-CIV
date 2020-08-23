@@ -226,7 +226,13 @@ public class KMLNetworkLinkRefresh {
                 _activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        _downloader.download(resource); //, _notificationId);
+                        if (!_downloader.isDownloading(resource.getUrl())) {
+                            _downloader.download(resource); //, _notificationId);
+                        } else {
+                            Log.d(TAG,
+                                    "network link download still in progress (skipping): "
+                                            + resource.getUrl());
+                        }
                     }
                 });
             } catch (ClassCastException e) {

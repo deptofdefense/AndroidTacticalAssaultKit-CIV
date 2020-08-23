@@ -69,7 +69,7 @@ TAKErr KMLDriverDefinition2::getStyle(Port::String &value) NOTHROWS
         // GDAL failed to parse the styles, we will need to parse ourselves
         if (!styleParsed)
         {
-            xmlTextReaderPtr xmlReader(NULL);
+            xmlTextReaderPtr xmlReader(nullptr);
 
             array_ptr<char> xmlBytes;
             if (strstr(filePath, ".kmz")) {
@@ -88,7 +88,7 @@ TAKErr KMLDriverDefinition2::getStyle(Port::String &value) NOTHROWS
                 } catch (...) {}
 #else
                 do {
-                    std::unique_ptr<const uint8_t, void(*)(const uint8_t *)> doc(NULL, NULL);
+                    std::unique_ptr<const uint8_t, void(*)(const uint8_t *)> doc(nullptr, nullptr);
                     std::size_t docLen;
                     TAKErr code(TE_Ok);
 
@@ -102,11 +102,11 @@ TAKErr KMLDriverDefinition2::getStyle(Port::String &value) NOTHROWS
                     memcpy(xmlBytes.get(), doc.get(), docLen);
 
                     // create reader from KML content
-                    xmlReader = xmlReaderForMemory(xmlBytes.get(), docLen, NULL, NULL, 0);
+                    xmlReader = xmlReaderForMemory(xmlBytes.get(), static_cast<int>(docLen), nullptr, nullptr, 0);
                 } while(false);
 #endif
             } else {
-                xmlReader = xmlReaderForFile(filePath, NULL, 0);
+                xmlReader = xmlReaderForFile(filePath, nullptr, 0);
             }
 
             if (xmlReader) {
@@ -173,7 +173,7 @@ TAKErr KMLDriverDefinition2::getStyle(Port::String &value) NOTHROWS
                     {
                         uriEnd = std::strchr(uriStart + 1, '"');
                     }
-                    else if (!(uriEnd = std::strchr(uriStart, ')')))
+                    else if (uriEnd = std::strchr(uriStart, ')'), uriEnd != nullptr)
                     {
                         uriEnd = uriStart + std::strlen(uriStart);
                     }
@@ -301,7 +301,7 @@ namespace
         StyleDefinitions::iterator def;
         for (def = styleDefs.begin(); def != styleDefs.end(); def++)
         {
-            std::set<std::string>::iterator style = def->second.begin();
+            auto style = def->second.begin();
             if (def->second.size() == 1) {
                 value[def->first] = *style;
             } else {
@@ -540,7 +540,7 @@ namespace
                 if (inIcon && TAK::Engine::Port::String_strcasecmp(inTag.c_str(), "href") == 0) {
                     href = (const char *)xmlTextReaderValue(parser);
                 } else if (TAK::Engine::Port::String_strcasecmp(inTag.c_str(), "scale") == 0) {
-                    scale = atof((const char *)xmlTextReaderValue(parser));
+                    scale = static_cast<float>(atof((const char *)xmlTextReaderValue(parser)));
                 } else if (TAK::Engine::Port::String_strcasecmp(inTag.c_str(), "color") == 0) {
                     parseKMLColor(&color, (const char *)xmlTextReaderValue(parser));
                 }
@@ -559,7 +559,7 @@ namespace
             Port::String styleStr;
             atakmap::feature::IconPointStyle(color, href, scale).toOGR(styleStr);
             value[styleId].insert(styleStr.get());
-        } catch (std::invalid_argument &e) {
+        } catch (std::invalid_argument &) {
             code = TE_Err;
         }
         return code;
@@ -575,7 +575,7 @@ namespace
         tagStack.push((const char *)xmlTextReaderConstName(parser));
 
         int color = -1;
-        int width = 1;
+        float width = 1;
         int success;
         do {
             success = xmlTextReaderRead(parser);
@@ -601,7 +601,7 @@ namespace
                 if (TAK::Engine::Port::String_strcasecmp(inTag.c_str(), "color") == 0) {
                     parseKMLColor(&color, (const char *)xmlTextReaderValue(parser));
                 } else if (TAK::Engine::Port::String_strcasecmp(inTag.c_str(), "width") == 0) {
-                    width = atof((const char *)xmlTextReaderValue(parser));
+                    width = static_cast<float>(atof((const char *)xmlTextReaderValue(parser)));
                 }
                 break;
             }

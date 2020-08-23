@@ -20,8 +20,8 @@ public :
     Ellipsoid(std::unique_ptr<TAK::Engine::Math::Ellipsoid2, void(*)(const TAK::Engine::Math::Ellipsoid2 *)> &&impl);
     virtual ~Ellipsoid();
 public : // GeometryModel interface
-    virtual bool intersect(const Ray<double> *ray, Point<double> *isectPoint) const;
-    virtual GeometryModel::GeometryClass getGeomClass() const;
+    virtual bool intersect(const Ray<double> *ray, Point<double> *isectPoint) const override;
+    virtual GeometryModel::GeometryClass getGeomClass() const override;
 private:
     std::unique_ptr<TAK::Engine::Math::Ellipsoid2, void(*)(const TAK::Engine::Math::Ellipsoid2 *)> impl;
 public :

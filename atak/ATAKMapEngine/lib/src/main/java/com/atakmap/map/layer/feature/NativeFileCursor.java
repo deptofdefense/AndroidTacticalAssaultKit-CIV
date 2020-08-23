@@ -58,13 +58,8 @@ public class NativeFileCursor implements DataSourceFeatureDataStore.FileCursor {
     }
 
     protected void finalize() {
-        this.rwlock.acquireRead();
-        try {
-            if(this.pointer.raw != 0L)
-                Log.w("NativeFileCursor", "Leaking native cursor");
-        } finally {
-            this.rwlock.releaseRead();
-        }
+        if(this.pointer.raw != 0L)
+            Log.w("NativeFileCursor", "Leaking native cursor");
     }
 
     static native void destruct(Pointer pointer);

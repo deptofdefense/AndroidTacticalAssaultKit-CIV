@@ -35,6 +35,13 @@ public class SensorDetailHandler extends CotDetailHandler {
     public static final String FOV_GREEN = "fovGreen";
     public static final String FOV_BLUE = "fovBlue";
 
+    public static final String ROLL_ATTRIBUTE = "roll";
+    public static final String VFOV_ATTRIBUTE = "vfov";
+    public static final String MODEL_ATTRIBUTE = "model";
+    public static final String ELEVATION_ATTRIBUTE = "elevation";
+
+    // skipping the type field
+
     public static final int MAX_SENSOR_RANGE = 15000;
 
     // TODO: Why is this here, in a detail handler class?
@@ -70,6 +77,7 @@ public class SensorDetailHandler extends CotDetailHandler {
             return false;
 
         CotDetail sensor = new CotDetail("sensor");
+
         sensor.setAttribute(RANGE_ATTRIBUTE, String.valueOf(
                 item.getMetaInteger(RANGE_ATTRIBUTE, 100)));
         sensor.setAttribute(AZIMUTH_ATTRIBUTE, String.valueOf(
@@ -89,6 +97,18 @@ public class SensorDetailHandler extends CotDetailHandler {
                 String.valueOf(item.getMetaDouble(FOV_GREEN, 1d)));
         sensor.setAttribute(FOV_BLUE,
                 String.valueOf(item.getMetaDouble(FOV_BLUE, 1d)));
+
+        sensor.setAttribute(VFOV_ATTRIBUTE,
+                String.valueOf(item.getMetaInteger(VFOV_ATTRIBUTE, 45)));
+        sensor.setAttribute(ROLL_ATTRIBUTE,
+                String.valueOf(item.getMetaInteger(ROLL_ATTRIBUTE, 0)));
+        sensor.setAttribute(ELEVATION_ATTRIBUTE,
+                String.valueOf(item.getMetaInteger(ELEVATION_ATTRIBUTE, 0)));
+
+        if (item.hasMetaValue(MODEL_ATTRIBUTE))
+            sensor.setAttribute(MODEL_ATTRIBUTE,
+                    item.getMetaString(MODEL_ATTRIBUTE, "unknown"));
+
         detail.addChild(sensor);
         return true;
     }
@@ -104,15 +124,27 @@ public class SensorDetailHandler extends CotDetailHandler {
         double range = parseDouble(detail.getAttribute(RANGE_ATTRIBUTE),
                 Double.NaN);
 
-        if (Double.isNaN(azimuth) || Double.isNaN(fov) || Double.isNaN(range)) {
-            Log.w(TAG,
-                    "At least one of the required values was missing to plot a sensor FoV");
-            return ImportResult.FAILURE;
-        }
+        double vfov = parseDouble(detail.getAttribute(VFOV_ATTRIBUTE),
+                Double.NaN);
+        double roll = parseDouble(detail.getAttribute(ROLL_ATTRIBUTE),
+                Double.NaN);
+        double elevation = parseDouble(detail.getAttribute(ELEVATION_ATTRIBUTE),
+                Double.NaN);
+        String model = detail.getAttribute(MODEL_ATTRIBUTE);
 
-        item.setMetaInteger(AZIMUTH_ATTRIBUTE, (int) Math.round(azimuth));
-        item.setMetaInteger(FOV_ATTRIBUTE, (int) Math.round(fov));
-        item.setMetaInteger(RANGE_ATTRIBUTE, (int) Math.round(range));
+        item.setMetaInteger(VFOV_ATTRIBUTE, (int) Math.round(vfov));
+        item.setMetaInteger(ROLL_ATTRIBUTE, (int) Math.round(roll));
+        item.setMetaInteger(ELEVATION_ATTRIBUTE, (int) Math.round(elevation));
+        item.setMetaString(MODEL_ATTRIBUTE, model);
+
+        if (!Double.isNaN(azimuth))
+            item.setMetaInteger(AZIMUTH_ATTRIBUTE, (int) Math.round(azimuth));
+
+        if (!Double.isNaN(fov))
+            item.setMetaInteger(FOV_ATTRIBUTE, (int) Math.round(fov));
+
+        if (!Double.isNaN(range))
+            item.setMetaInteger(RANGE_ATTRIBUTE, (int) Math.round(range));
 
         int magRef = parseInt(detail.getAttribute(MAG_REF_ATTRIBUTE), 0);
         double red = parseDouble(detail.getAttribute(FOV_RED), 1);
@@ -133,6 +165,15 @@ public class SensorDetailHandler extends CotDetailHandler {
         float[] color = new float[] {
                 (float) red, (float) green, (float) blue, (float) alpha
         };
+
+        // in the past we just failed, we should probably instead fill in the fields since
+        // according to the sensor xsd most are optional and just not plot the field of view
+        // cone.
+
+        if (Double.isNaN(azimuth) || Double.isNaN(fov) || Double.isNaN(range)) {
+            return ImportResult.SUCCESS;
+        }
+
         return addFovToMap(marker, azimuth, fov, range, color, visible)
                 ? ImportResult.SUCCESS
                 : ImportResult.FAILURE;

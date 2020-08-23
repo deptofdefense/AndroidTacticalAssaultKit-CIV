@@ -483,13 +483,10 @@ public class AtakCertificateDatabase {
         String cert_begin = "-----BEGIN CERTIFICATE-----\n";
         String end_cert = "-----END CERTIFICATE-----";
         byte[] derCert = cert.getEncoded();
-        try { 
-            String encoded = new String(Base64.encode(derCert, Base64.DEFAULT), FileSystemUtils.UTF8_CHARSET);
-            String pemCert = cert_begin + encoded + end_cert;
-            return pemCert;
-        } catch (UnsupportedEncodingException e) { 
-            throw new CertificateEncodingException(e);
-        }
+
+        String encoded = new String(Base64.encode(derCert, Base64.DEFAULT), FileSystemUtils.UTF8_CHARSET);
+        String pemCert = cert_begin + encoded + end_cert;
+        return pemCert;
     }
 
     public static List<X509Certificate> getCACerts() {

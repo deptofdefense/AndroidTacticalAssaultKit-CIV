@@ -22,6 +22,7 @@ import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.AtakMapView;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.RenderContext;
 import com.atakmap.map.opengl.GLMapBatchable2;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
@@ -331,7 +332,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
     }
 
     /**
-     * Function to parse the the string, splits the string on newline char's else the string
+     * Function to parse the string, splits the string on newline char's else the string
      * will remain one big long string
      * @param text - The string to parse
      */
@@ -366,16 +367,13 @@ public class GLMarker2 extends GLPointMapItem2 implements
     private void centerText() {
         ArrayList<String> temp = new ArrayList<>();
         for (String s : _linesArray) {
-            StringBuilder front = new StringBuilder();
-            StringBuilder back = new StringBuilder();
-            StringBuilder full = new StringBuilder();
-            full.append(s);
+            StringBuilder full = new StringBuilder(s);
+
             //Get the width of the longest string
             while (_glText.getStringWidth(s) < _textWidth) {
-                //Append spaces on the front and back until we match the width
-                front.append(' ');
-                back.append(' ');
-                s = front.toString() + full.toString() + back.toString();
+                full.append(" ");
+                full.insert(0, " ");
+                s = full.toString();
             }
             temp.add(s);
         }
@@ -383,14 +381,12 @@ public class GLMarker2 extends GLPointMapItem2 implements
         //Do the same thing for the callsign
         _linesArray.clear();
         _linesArray = temp;
-        StringBuilder front = new StringBuilder();
-        StringBuilder back = new StringBuilder();
-        StringBuilder full = new StringBuilder();
-        full.append(_text);
+
+        StringBuilder full = new StringBuilder(_text);
         while (_glText.getStringWidth(_text) < _textWidth) {
-            front.append(' ');
-            back.append(' ');
-            _text = front.toString() + full.toString() + back.toString();
+            full.append(" ");
+            full.insert(0, " ");
+            _text = full.toString();
         }
     }
 
@@ -492,7 +488,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
         if ((_style & Marker.STYLE_ALERT_MASK) != 0) {
             // draw alert
             GLImageCache.Entry alertTexture = getAlertTexture(ortho
-                    .getSurface());
+                    .getRenderContext());
             if (alertTexture.getTextureId() != 0) {
                 if (_alertImage == null) {
                     _alertImage = new GLImage(alertTexture.getTextureId(),
@@ -1135,7 +1131,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
     }
 
     // XXX - from GLMapSurface
-    private static GLImageCache.Entry getAlertTexture(GLMapSurface surface) {
+    private static GLImageCache.Entry getAlertTexture(RenderContext surface) {
         if (_alertImageEntry == null) {
             _alertImageEntry = GLRenderGlobals.get(surface).getImageCache()
                     .fetchAndRetain(

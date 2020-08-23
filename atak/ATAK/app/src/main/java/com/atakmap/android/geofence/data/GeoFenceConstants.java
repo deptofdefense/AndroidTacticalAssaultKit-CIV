@@ -26,5 +26,9 @@ public class GeoFenceConstants {
 
     public static final String MARKER_MONITOR_UIDS = "geofence_monitor_uids";
 
+    // Metadata flag to determine if a geo-fence is being imported from CoT
+    // and therefore should NOT trigger a persist when added
+    public static final String GEO_FENCE_IMPORTED = "__geoFenceImported";
+
     public static final int DEFAULT_ENTRY_RADIUS_METERS = 160000;
 }

@@ -1,7 +1,9 @@
 
 package com.atakmap.android.hashtags.util;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
+
+import com.atakmap.coremap.locale.LocaleUtil;
 
 import java.util.AbstractSet;
 import java.util.Collection;
@@ -80,6 +82,6 @@ public class HashtagSet extends AbstractSet<String>
     }
 
     private String key(Object tag) {
-        return String.valueOf(tag).toLowerCase();
+        return String.valueOf(tag).toLowerCase(LocaleUtil.getCurrent());
     }
 }

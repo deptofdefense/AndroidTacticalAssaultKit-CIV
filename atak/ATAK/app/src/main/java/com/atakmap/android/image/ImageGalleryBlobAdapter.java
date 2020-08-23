@@ -430,7 +430,7 @@ public class ImageGalleryBlobAdapter
                 final String qp = u.getQueryParameter("query");
                 if (qp != null)
                     query = URLDecoder.decode(qp,
-                            FileSystemUtils.UTF8_CHARSET);
+                            FileSystemUtils.UTF8_CHARSET.name());
             } catch (UnsupportedEncodingException e) {
                 Log.e(TAG, "Failed to parse query: " + uri, e);
                 return;

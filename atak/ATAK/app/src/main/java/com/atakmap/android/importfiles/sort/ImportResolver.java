@@ -3,6 +3,7 @@ package com.atakmap.android.importfiles.sort;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.util.Pair;
 
 import com.atakmap.android.importexport.ImportExportMapComponent;
@@ -227,6 +228,16 @@ public abstract class ImportResolver {
      * @return Unique (by class, not instance), human readable name for this sorter. 
      */
     public abstract String getDisplayableName();
+
+    /**
+     * Get an icon that represents this sorter
+     * @return Icon or null to use a generic icon
+     */
+    public Drawable getIcon() {
+        MapView mv = MapView.getMapView();
+        return mv != null ? mv.getContext().getDrawable(
+                R.drawable.ic_menu_import_file) : null;
+    }
 
     /**
      * Get the content and MIME type

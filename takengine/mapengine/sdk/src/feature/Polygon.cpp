@@ -207,7 +207,7 @@ Polygon::computeWKB_Size ()
   {
     return std::accumulate (rings.begin (),
                             rings.end (),
-                            util::WKB_HEADER_SIZE + sizeof (std::size_t),
+                            util::WKB_HEADER_SIZE + sizeof (uint32_t),
                             addWKB_Size)
         - util::WKB_HEADER_SIZE * rings.size ();
   }
@@ -237,11 +237,11 @@ Polygon::toBlob (std::ostream& strm,
         break;
       }
 
-    util::write<uint32_t> (strm, rings.size ());
+    util::write<uint32_t> (strm, static_cast<uint32_t>(rings.size ()));
 
     const std::vector<LineString>::const_iterator end (rings.end ());
 
-    for (std::vector<LineString>::const_iterator iter (rings.begin ());
+    for (auto iter (rings.begin ());
          iter != end;
          ++iter)
       {
@@ -265,11 +265,11 @@ Polygon::toWKB (std::ostream& strm,
         util::write<uint32_t> (strm.put (util::ENDIAN_BYTE),
                                getDimension () == _2D ? 3 : 1003);
       }
-    util::write<uint32_t> (strm, rings.size ());
+    util::write<uint32_t> (strm, static_cast<uint32_t>(rings.size ()));
 
     const std::vector<LineString>::const_iterator end (rings.end ());
 
-    for (std::vector<LineString>::const_iterator iter (rings.begin ());
+    for (auto iter (rings.begin ());
          iter != end;
          ++iter)
       {

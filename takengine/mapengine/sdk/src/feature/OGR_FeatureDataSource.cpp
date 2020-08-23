@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <inttypes.h>
 #include <map>
 #include <memory>
 #include <stack>
@@ -25,9 +26,10 @@
 #include "util/Logging2.h"
 #include "util/Memory.h"
 
-#include "ogr_api.h"
+#include <ogr_api.h>
+#include <ogr_geometry.h>
 #ifdef __ANDROID__
-#include "ogr_core.h"
+#include <ogr_core.h>
 #endif
 #include "ogr_feature.h"
 #include "ogr_spatialref.h"
@@ -46,7 +48,7 @@ namespace {
     typedef std::unique_ptr<OGRCoordinateTransformation, decltype (&OGRCoordinateTransformation::DestroyCT)> OGR_CoordinateTransformationPtr;
     typedef std::unique_ptr<OGRFeature, decltype (&OGRFeature::DestroyFeature)> OGR_FeaturePtr;
     typedef std::unique_ptr<OGRSpatialReference, decltype (&OGRSpatialReference::DestroySpatialReference)> OGR_SpatialReferencePtr;
-    typedef std::unique_ptr<OGRGeometry, void(*)(const OGRGeometry *)> OGRGeometryPtr;
+    typedef std::unique_ptr<OGRGeometry, void(*)(OGRGeometry *)> OGRGeometryPtr;
     class GeoNode
     {
     public:
@@ -61,12 +63,12 @@ namespace {
         {
             return childIndex < childCount
                 ? parent->getGeometryRef(childIndex++)
-                : NULL;
+                : nullptr;
         }
     private:
         OGRGeometryCollection* parent;
-        std::size_t childCount;
-        std::size_t childIndex;
+        int childCount;
+        int childIndex;
     };
 
     class OGR_Content : public feature::FeatureDataSource::Content
@@ -82,19 +84,19 @@ namespace {
     public:
         OGR_Content (const char* filePath, std::size_t sizeThreshold);
     public ://  FeatureDataSource::Content INTERFACE
-        feature::FeatureDataSource::FeatureDefinition* get () const;
+        feature::FeatureDataSource::FeatureDefinition* get () const override;
 
-        const char* getFeatureSetName () const
+        const char* getFeatureSetName () const override
         {
             return currentFeatureSetName;
         }
 
-        double getMaxResolution () const
+        double getMaxResolution () const override
         { return 0.0; }
 
-        double getMinResolution () const;
+        double getMinResolution () const override;
 
-        const char* getProvider () const
+        const char* getProvider () const override
         {
 #ifdef __ANDROID__
             return "ogr";
@@ -103,11 +105,11 @@ namespace {
 #endif
         }
 
-        const char* getType () const
+        const char* getType () const override
         { return driver->getType (); }
 
-        bool moveToNextFeature ();
-        bool moveToNextFeatureSet ();
+        bool moveToNextFeature () override;
+        bool moveToNextFeatureSet () override;
     private:
         const util::AttributeSet& getCurrentFeatureAttributes () const;
         std::size_t preprocessDataset ();
@@ -116,10 +118,10 @@ namespace {
         TAK::Engine::Port::String filePath;
         std::size_t areaThreshold;
         GDAL_DatasetPtr dataSource;
-        std::size_t layerCount;
+        int layerCount;
         std::size_t levelOfDetail;
         TAK::Engine::Feature::OGRDriverDefinition2Ptr driver;
-        std::size_t layerIndex;
+        int layerIndex;
         State state;
         OGRLayer* currentLayer;             // Reference only, not adopted.
         OGRFeatureDefn* currentLayerDef;    // Reference only, not adopted.
@@ -138,23 +140,23 @@ namespace {
     const double RADIANS (M_PI / 180.0);
 
     inline std::size_t mapnikTileX (std::size_t level, double lon)
-    { return (lon + 180.0) / 360.0 * (1 << level); }
+    { return static_cast<std::size_t>((lon + 180.0) / 360.0 * (1 << level)); }
 
     inline std::size_t mapnikTileY (std::size_t level, double lat)
     {
         double radLat (lat * RADIANS);
 
-        return (1 << level)
+        return static_cast<std::size_t>((1 << level)
             * (1.0 - std::log (std::tan (radLat) + 1.0 / std::cos (radLat)) / M_PI)
-            / 2.0;
+            / 2.0);
     }
 
-    inline std::size_t mapnikPixelY(int level, int ytile, double lat)
+    inline std::size_t mapnikPixelY(std::size_t level, std::size_t ytile, double lat)
     {
         return mapnikTileY(level + 8, lat) - (ytile << 8);
     }
 
-    inline std::size_t mapnikPixelX(int level, int xtile, double lng)
+    inline std::size_t mapnikPixelX(std::size_t level, std::size_t xtile, double lng)
     {
         return mapnikTileX(level + 8, lng) - (xtile << 8);
     }
@@ -183,14 +185,14 @@ namespace {
         double mbrLRLon = env.MaxX;
         double mbrLRLat = env.MinY;
 
-        int tileULx = mapnikTileX(level, mbrULLon);
-        int tileULy = mapnikTileY(level, mbrULLat);
-        int tileURx = mapnikTileX(level, mbrLRLon);
-        int tileURy = mapnikTileY(level, mbrULLat);
-        int tileLRx = mapnikTileX(level, mbrLRLon);
-        int tileLRy = mapnikTileY(level, mbrLRLat);
-        int tileLLx = mapnikTileX(level, mbrULLon);
-        int tileLLy = mapnikTileY(level, mbrLRLat);
+        std::size_t tileULx = mapnikTileX(level, mbrULLon);
+        std::size_t tileULy = mapnikTileY(level, mbrULLat);
+        std::size_t tileURx = mapnikTileX(level, mbrLRLon);
+        std::size_t tileURy = mapnikTileY(level, mbrULLat);
+        std::size_t tileLRx = mapnikTileX(level, mbrLRLon);
+        std::size_t tileLRy = mapnikTileY(level, mbrLRLat);
+        std::size_t tileLLx = mapnikTileX(level, mbrULLon);
+        std::size_t tileLLy = mapnikTileY(level, mbrLRLat);
 
         int64_t pxULx = mapnikPixelX(level, tileULx, mbrULLon) + (tileULx * 256);
         int64_t pxULy = mapnikPixelY(level, tileULy, mbrULLat) + (tileULy * 256);
@@ -201,22 +203,27 @@ namespace {
         int64_t pxLLx = mapnikPixelX(level, tileLLx, mbrULLon) + (tileLLx * 256);
         int64_t pxLLy = mapnikPixelY(level, tileLLy, mbrLRLat) + (tileLLy * 256);
 
-        int upperDx = (int)labs(pxURx - pxULx);
-        int upperDy = (int)labs(pxURy - pxULy);
-        int rightDx = (int)labs(pxLRx - pxURx);
-        int rightDy = (int)labs(pxLRy - pxURy);
-        int lowerDx = (int)labs(pxLRx - pxLLx);
-        int lowerDy = (int)labs(pxLRy - pxLLy);
-        int leftDx = (int)labs(pxLLx - pxLLx);
-        int leftDy = (int)labs(pxLRy - pxURy);
+#ifdef _MSC_VER
+#define te_llabs(x) _abs64(x)
+#else
+#define te_llabs(x) llabs(x)
+#endif
+        int64_t upperDx = te_llabs(pxURx - pxULx);
+        int64_t upperDy = te_llabs(pxURy - pxULy);
+        int64_t rightDx = te_llabs(pxLRx - pxURx);
+        int64_t rightDy = te_llabs(pxLRy - pxURy);
+        int64_t lowerDx = te_llabs(pxLRx - pxLLx);
+        int64_t lowerDy = te_llabs(pxLRy - pxLLy);
+        int64_t leftDx = te_llabs(pxLLx - pxLLx);
+        int64_t leftDy = te_llabs(pxLRy - pxURy);
 
-        double upperSq = ((upperDx * upperDx) + (upperDy * upperDy));
-        double rightSq = ((rightDx * rightDx) + (rightDy * rightDy));
-        double lowerSq = ((lowerDx * lowerDx) + (lowerDy * lowerDy));
-        double leftSq = ((leftDx * leftDx) + (leftDy * leftDy));
+        auto upperSq = static_cast<double>((upperDx * upperDx) + (upperDy * upperDy));
+        auto rightSq = static_cast<double>((rightDx * rightDx) + (rightDy * rightDy));
+        auto lowerSq = static_cast<double>((lowerDx * lowerDx) + (lowerDy * lowerDy));
+        auto leftSq = static_cast<double>((leftDx * leftDx) + (leftDy * leftDy));
 
-        double diag0sq = ((pxLRx - pxULx) * (pxLRx - pxULx) + (pxLRy - pxULy) * (pxLRy - pxULy));
-        double diag1sq = ((pxURx - pxLLx) * (pxURx - pxLLx) + (pxURy - pxLLy) * (pxURy - pxLLy));
+        auto diag0sq = static_cast<double>(((pxLRx - pxULx) * (pxLRx - pxULx) + (pxLRy - pxULy) * (pxLRy - pxULy)));
+        auto diag1sq = static_cast<double>(((pxURx - pxLLx) * (pxURx - pxLLx) + (pxURy - pxLLy) * (pxURy - pxLLy)));
 
         //
         // NB:      This formula is wrong!!!  The subtracted term under the radical
@@ -233,7 +240,7 @@ namespace {
 
     OGRSpatialReference* createEPSG_4326 ()
     {
-        OGRSpatialReference* result(new OGRSpatialReference);
+        auto* result(new OGRSpatialReference);
         OGRErr err (result->importFromEPSG (4326));
 
         if (err != OGRERR_NONE)
@@ -253,12 +260,12 @@ namespace {
             if(OGR_GT_IsSubClassOf(geometry->getGeometryType(), wkbGeometryCollection)) {
                 const OGRGeometryCollection *collection (static_cast<const OGRGeometryCollection *>(geometry));
 #else
-            const OGRGeometryCollection* collection (dynamic_cast<const OGRGeometryCollection*> (geometry));
+            const auto* collection (dynamic_cast<const OGRGeometryCollection*> (geometry));
 
             if (collection) {
 #endif
-                std::size_t elementCount (collection->getNumGeometries ());
-                for (std::size_t i (0); i < elementCount; ++i) {
+                int elementCount (collection->getNumGeometries ());
+                for (int i (0); i < elementCount; ++i) {
                     count += getDeepGeometryCount (collection->getGeometryRef (i));
                 }
             } else {
@@ -278,8 +285,8 @@ namespace {
     int getSpatialRefID (const OGRSpatialReference& spatialRef)
     {
         int result (0);
-        if (!TAK::Engine::Port::String_strcasecmp (spatialRef.GetAuthorityName (NULL), "EPSG")) {
-            const char* value (spatialRef.GetAuthorityCode (NULL));
+        if (!TAK::Engine::Port::String_strcasecmp (spatialRef.GetAuthorityName (nullptr), "EPSG")) {
+            const char* value (spatialRef.GetAuthorityCode (nullptr));
             if (value) {
                 std::istringstream strm (value);
                 strm >> result;
@@ -291,7 +298,7 @@ namespace {
 
 
     OGRCoordinateTransformation* getLayerTransform (OGRLayer& layer) {
-        OGRCoordinateTransformation* result (NULL);
+        OGRCoordinateTransformation* result (nullptr);
 
         // Check that the spatial reference ID is WGS84 (4326).  If not, but the
         // layer has a projection, return a coordinate transformation to WGS84.
@@ -307,12 +314,12 @@ namespace {
         const OGRLinearRing *extRing = poly.getExteriorRing();
         if(!extRing)
             return false;
-        const std::size_t numPoints = extRing->getNumPoints();
+        int numPoints = extRing->getNumPoints();
         if(numPoints < 1)
             return false;
         try {
-            return (extRing->getX(0u) == extRing->getX(numPoints-1u)) &&
-                   (extRing->getY(0u) == extRing->getY(numPoints-1u));
+            return (extRing->getX(0u) == extRing->getX(numPoints-1)) &&
+                   (extRing->getY(0u) == extRing->getY(numPoints-1));
         } catch(...) {
             return false;
         }
@@ -324,15 +331,14 @@ namespace {
         case wkbLineString :
         case wkbLineString25D :
             {
-                std::unique_ptr<OGRPoint> retval(new OGRPoint());
 #ifdef __ANDROID__
                 const OGRLineString *linestring (static_cast<OGRLineString *>(geom.get()));
 #else
-                const OGRLineString *linestring = dynamic_cast<const OGRLineString *>(geom.get());
+                const auto *linestring = dynamic_cast<const OGRLineString *>(geom.get());
 #endif
                 if (linestring != nullptr && linestring->getNumPoints() < 2u) {
-                    linestring->getPoint(0, retval.get());
-                    geom = OGRGeometryPtr(retval.release(), Memory_deleter_const<OGRGeometry, OGRPoint>);
+                    geom = OGRGeometryPtr(OGRGeometryFactory::createGeometry(wkbPoint), OGRGeometryFactory::destroyGeometry);
+                    linestring->getPoint(0, static_cast<OGRPoint *>(geom.get()));
                 }
             }
             break;
@@ -342,7 +348,7 @@ namespace {
 #ifdef __ANDROID__
                 const OGRPolygon *polygon (static_cast<OGRPolygon *>(geom.get()));
 #else
-                const OGRPolygon *polygon = dynamic_cast<const OGRPolygon *>(geom.get());
+                const auto *polygon = dynamic_cast<const OGRPolygon *>(geom.get());
 #endif
 
                 const OGRLinearRing *extRing = polygon->getExteriorRing();
@@ -350,18 +356,11 @@ namespace {
                     return;
                 const std::size_t pointCount = extRing->getNumPoints();
                 if(pointCount == 1) {
-                    std::unique_ptr<OGRPoint> retval(new OGRPoint());
-                    extRing->getPoint(0, retval.get());
-                    geom = OGRGeometryPtr(retval.release(), Memory_deleter_const<OGRGeometry, OGRPoint>);
+                    geom = OGRGeometryPtr(OGRGeometryFactory::createGeometry(wkbPoint), OGRGeometryFactory::destroyGeometry);
+                    extRing->getPoint(0, static_cast<OGRPoint *>(geom.get()));
                 } else if(pointCount < 4 || (pointCount == 4 && !isClosed(*polygon))) {
-                    std::unique_ptr<OGRLineString> retval(new OGRLineString());
-                    for(std::size_t i = 0u; i < pointCount; i++) {
-                        OGRPoint pt;
-                        extRing->getPoint(i, &pt);
-                        retval->addPoint(&pt);
-                    }
-
-                    geom = OGRGeometryPtr(retval.release(), Memory_deleter_const<OGRGeometry, OGRLineString>);
+                    geom = OGRGeometryPtr(OGRGeometryFactory::createGeometry(extRing->getGeometryType()), OGRGeometryFactory::destroyGeometry);
+                    static_cast<OGRLineString &>(*geom).addSubLineString(extRing);
                 }
             }
             break;
@@ -381,13 +380,13 @@ namespace {
                 [] (GDALDataset* ds)
                   { GDALClose (static_cast<GDALDatasetH> (ds)); }),
         levelOfDetail (0),
-        driver(NULL, NULL),
+        driver(nullptr, nullptr),
         layerIndex (-1),
         state (Feature),
-        currentLayer (NULL),
-        layerTransform(NULL, OGRCoordinateTransformation::DestroyCT),
-        currentFeature(NULL, OGRFeature::DestroyFeature),
-        currentGeometry (NULL, NULL),
+        currentLayer (nullptr),
+        layerTransform(nullptr, OGRCoordinateTransformation::DestroyCT),
+        currentFeature(nullptr, OGRFeature::DestroyFeature),
+        currentGeometry (nullptr, nullptr),
         geometryCount (0)
     {
         if (!dataSource.get ()) {
@@ -434,7 +433,7 @@ namespace {
         std::unique_ptr<FeatureDefinition> result;
 
         result.reset (new FeatureDefinition (currentFeatureName, getCurrentFeatureAttributes ()));
-        currentGeometry->flattenTo2D ();
+
         switch (driver->getFeatureEncoding ())
         {
         case FeatureDefinition::WKB:
@@ -450,7 +449,7 @@ namespace {
             break;
         case FeatureDefinition::WKT:
             {
-                char* buff (NULL);
+                char* buff (nullptr);
                 currentGeometry->exportToWkt (&buff);
                 std::unique_ptr<char, decltype (&OGRFree)> cleanup (buff, OGRFree);
                 result->setGeometry (buff);
@@ -470,6 +469,30 @@ namespace {
         *currentFeature,
         *currentGeometry);
 
+
+
+        for (int i = 0; i < currentFeature->GetFieldCount(); ++i) {
+            OGRFieldDefn * ogrfdn = currentFeature->GetFieldDefnRef(i);
+            const char * name = ogrfdn->GetNameRef();
+            const OGRFieldType ogrFieldtype = ogrfdn->GetType();
+            if (!TAK::Engine::Port::String_strcasecmp(name, "altitudeMode")) {
+                const char * value = currentFeature->GetFieldAsString(i);
+                int altitudeMode = 0;
+                if (!TAK::Engine::Port::String_strcasecmp (value, "clampToGround"))
+                    altitudeMode = 0;
+                else if (!TAK::Engine::Port::String_strcasecmp (value, "relativeToGround"))
+                    altitudeMode = 1;
+                else if (!TAK::Engine::Port::String_strcasecmp (value, "absolute"))
+                    altitudeMode = 2;
+                result->setAltitudeMode(altitudeMode);
+            } else if (!TAK::Engine::Port::String_strcasecmp (name, "extrude")) {
+                result->setExtrude(currentFeature->GetFieldAsInteger(i) ? -1.0 : 0.0);
+            }
+        }
+
+
+
+
         if (styleString && styleString[0] == '@') {
             OGRStyleTable *styleTable = dataSource->GetStyleTable();
             if (styleTable) {
@@ -478,10 +501,10 @@ namespace {
 
             if (styleTable) {
                 const char *tableStyle = styleTable->Find(styleString);
-                tableStyle = NULL;
+                tableStyle = nullptr;
             }
 
-            styleString = static_cast<const char *>(NULL);
+            styleString = static_cast<const char *>(nullptr);
         }
         result->setStyle (styleString);
 
@@ -516,7 +539,7 @@ namespace {
                 } while (skipFeature);
                 if (currentFeature.get ()) {
                     setCurrentFeatureName ();
-                    currentGeometry = OGRGeometryPtr(currentFeature->GetGeometryRef (), Memory_leaker_const<OGRGeometry>);
+                    currentGeometry = OGRGeometryPtr(currentFeature->GetGeometryRef (), Memory_leaker<OGRGeometry>);
                     geometryCount = 0;
 
                     if (currentGeometry.get()) {
@@ -531,7 +554,7 @@ namespace {
                         if(OGR_GT_IsSubClassOf(currentGeometry->getGeometryType(), wkbGeometryCollection)) {
                             OGRGeometryCollection *collection (static_cast<OGRGeometryCollection *>(currentGeometry.get()));
 #else
-                        OGRGeometryCollection* collection (dynamic_cast<OGRGeometryCollection*> (currentGeometry.get()));
+                        auto* collection (dynamic_cast<OGRGeometryCollection*> (currentGeometry.get()));
 
                         if (collection) {
 #endif
@@ -552,19 +575,19 @@ namespace {
                 currentFeatureAttributes.reset ();
                 break;
             case Geometry:
-                currentGeometry = OGRGeometryPtr(geoStack.top ().getNextChild (), Memory_leaker_const<OGRGeometry>);
+                currentGeometry = OGRGeometryPtr(geoStack.top ().getNextChild (), Memory_leaker<OGRGeometry>);
 
                 if (currentGeometry.get()) {
 #ifdef __ANDROID__
                     if(OGR_GT_IsSubClassOf(currentGeometry->getGeometryType(), wkbGeometryCollection)) {
                         OGRGeometryCollection *collection (static_cast<OGRGeometryCollection *>(currentGeometry.get()));
 #else
-                    OGRGeometryCollection* collection (dynamic_cast<OGRGeometryCollection*> (currentGeometry.get()));
+                    auto* collection (dynamic_cast<OGRGeometryCollection*> (currentGeometry.get()));
                     if (collection) {
 #endif
 
                         geoStack.push (GeoNode (collection));
-                        currentGeometry = NULL;
+                        currentGeometry = nullptr;
                     } else {
                         massage(currentGeometry);
                         if (layerTransform.get ()) {
@@ -592,7 +615,7 @@ namespace {
     {
         do {
             if (currentLayer)
-                currentLayer = NULL;
+                currentLayer = nullptr;
             layerIndex++;
             if (layerIndex >= layerCount)
                 break; // no more layers
@@ -640,10 +663,10 @@ namespace {
     const util::AttributeSet& OGR_Content::getCurrentFeatureAttributes () const
     {
         if (!currentFeatureAttributes.get ()) {
-            std::size_t fieldCount (currentLayerDef->GetFieldCount ());
+           int fieldCount (currentLayerDef->GetFieldCount ());
             std::unique_ptr<util::AttributeSet> attributes (new util::AttributeSet);
 
-            for (std::size_t i (0); i < fieldCount; ++i) {
+            for (int i (0); i < fieldCount; ++i) {
                 OGRFieldDefn* fieldDef (currentLayerDef->GetFieldDefn (i));
                 if (fieldDef && currentFeature->IsFieldSet (i)) {
                     const char* attrName (fieldDef->GetNameRef ());
@@ -740,7 +763,7 @@ namespace {
         bool haveDatasetMBR (false);
 
         // Iterate over the layers in the dataset.
-        for (std::size_t i (0); i < layerCount; ++i) {
+        for (int i (0); i < layerCount; ++i) {
             OGRLayer* layer (dataSource->GetLayer (i));
 
             bool skipLayer = !layer;
@@ -837,7 +860,7 @@ namespace {
 
     void OGR_Content::setCurrentFeatureName ()
     {
-        currentFeatureName = static_cast<const char *>(NULL);
+        currentFeatureName = static_cast<const char *>(nullptr);
         if (currentFeature->GetFieldCount ()) {
             StringVector::const_iterator end (layerNameFields.end ());
             for (StringVector::const_iterator iter (layerNameFields.begin ()); !currentFeatureName && iter != end; ++iter) {
@@ -883,7 +906,7 @@ namespace atakmap {
 
 
         OGR_FeatureDataSource::OGR_FeatureDataSource () :
-            areaThreshold (ComputeAreaThreshold(std::ceil (core::AtakMapView::DENSITY)))
+            areaThreshold (ComputeAreaThreshold(static_cast<unsigned int>(std::ceil(core::AtakMapView::DENSITY))))
         { }
 
         FeatureDataSource::Content* OGR_FeatureDataSource::parseFile (const char* cfilePath) const
@@ -911,7 +934,7 @@ namespace atakmap {
          */
         inline std::size_t OGR_FeatureDataSource::ComputeAreaThreshold(unsigned int DPI)
         {
-        	return 64 * std::ceil(DPI * DPI / (96.0 * 96.0));
+            return static_cast<std::size_t>(64 * std::ceil(DPI * DPI / (96.0 * 96.0)));
         }
 
         std::size_t OGR_FeatureDataSource::ComputeLevelOfDetail(std::size_t threshold, OGREnvelope env)
@@ -932,7 +955,7 @@ namespace atakmap {
         		// Guess level (between 1 and 19) to bring area up above the threshold.
         		// (Each increase in level quadruples pixel count.)
         		static const double log_4(std::log(4));
-        		level = clamp<std::size_t>(1, 19, std::ceil(std::log(128.0 / area) / log_4));
+        		level = clamp<std::size_t>(1, 19, static_cast<size_t>(std::ceil(std::log(128.0 / area) / log_4)));
         		if (computeMapnikArea(level, env) >= threshold) {
         			// Reduce the level to the lowest one that produces an area that
         			// meets (or exceeds) the threshold.  (It's already known that level

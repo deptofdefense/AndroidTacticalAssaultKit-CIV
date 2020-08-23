@@ -17,6 +17,12 @@
             android:key="mediaLayerCacheForceRescan"
             android:summary="@string/preferences_text211"
             android:title="@string/preferences_text212" />
+
+        <CheckBoxPreference
+            android:title="@string/prefs_use_klv_elevation"
+            android:key="prefs_use_klv_elevation"
+            android:summary="@string/prefs_use_klv_elevation_sum"
+            android:defaultValue="false" />
     </PreferenceCategory>
 
 </PreferenceScreen>

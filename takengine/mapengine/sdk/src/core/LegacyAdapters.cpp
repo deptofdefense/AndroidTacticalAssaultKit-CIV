@@ -23,14 +23,14 @@ namespace {
         class VisibilityListenerAdapter;
     public :
         Layer2Adapter(const std::shared_ptr<Layer> &impl) NOTHROWS;
-        ~Layer2Adapter() NOTHROWS;
+        ~Layer2Adapter() NOTHROWS override;
     public:
-        virtual const char *getName() const NOTHROWS override;
-        virtual bool isVisible() const NOTHROWS override;
-        virtual void setVisible(const bool v) NOTHROWS override;
-        virtual TAKErr addVisibilityListener(Layer2::VisibilityListener *l) NOTHROWS override;
-        virtual TAKErr removeVisibilityListener(Layer2::VisibilityListener *l) NOTHROWS override;
-        virtual TAKErr getExtension(void **value, const char *extensionName) const NOTHROWS override;
+        const char *getName() const NOTHROWS override;
+        bool isVisible() const NOTHROWS override;
+        void setVisible(const bool v) NOTHROWS override;
+        TAKErr addVisibilityListener(Layer2::VisibilityListener *l) NOTHROWS override;
+        TAKErr removeVisibilityListener(Layer2::VisibilityListener *l) NOTHROWS override;
+        TAKErr getExtension(void **value, const char *extensionName) const NOTHROWS override;
     public :
         std::shared_ptr<Layer> impl;
     private :
@@ -43,7 +43,7 @@ namespace {
     public:
         VisibilityListenerAdapter(Layer2 &owner, Layer2::VisibilityListener &impl) NOTHROWS;
     public:
-        virtual void visibilityChanged(Layer &layer);
+        void visibilityChanged(Layer &layer) override;
     private:
         Layer2 &owner;
         Layer2::VisibilityListener &impl;
@@ -55,13 +55,13 @@ namespace {
         class VisibilityListenerAdapter;
     public:
         LayerAdapter(const std::shared_ptr<Layer2> &impl) NOTHROWS;
-        ~LayerAdapter() NOTHROWS;
+        ~LayerAdapter() NOTHROWS override;
     public:
-        virtual const char *getName() const NOTHROWS;
-        virtual bool isVisible() const NOTHROWS;
-        virtual void setVisible(bool v) NOTHROWS;
-        virtual void addVisibilityListener(Layer::VisibilityListener *l) NOTHROWS;
-        virtual void removeVisibilityListener(Layer::VisibilityListener *l) NOTHROWS;
+        const char *getName() const NOTHROWS override;
+        bool isVisible() const NOTHROWS override;
+        void setVisible(bool v) NOTHROWS override;
+        void addVisibilityListener(Layer::VisibilityListener *l) NOTHROWS override;
+        void removeVisibilityListener(Layer::VisibilityListener *l) NOTHROWS override;
     public:
         std::shared_ptr<Layer2> impl;
     private:
@@ -74,7 +74,7 @@ namespace {
     public:
         VisibilityListenerAdapter(Layer &owner, Layer::VisibilityListener &impl) NOTHROWS;
     public:
-        virtual TAKErr layerVisibilityChanged(const Layer2 &layer, const bool visible) NOTHROWS;
+        TAKErr layerVisibilityChanged(const Layer2 &layer, const bool visible) NOTHROWS override;
     private:
         Layer &owner;
         Layer::VisibilityListener &impl;
@@ -85,14 +85,14 @@ namespace {
     public :
         ProjectionAdapter_V1toV2(const std::shared_ptr<Projection> &impl) NOTHROWS;
     public :
-        virtual int getSpatialReferenceID() const NOTHROWS;
-        virtual TAKErr forward(TAK::Engine::Math::Point2<double> *proj, const GeoPoint2 &geo) const NOTHROWS;
-        virtual TAKErr inverse(GeoPoint2 *geo, const TAK::Engine::Math::Point2<double> &proj) const NOTHROWS;
-        virtual double getMinLatitude() const NOTHROWS;
-        virtual double getMaxLatitude() const NOTHROWS;
-        virtual double getMinLongitude() const NOTHROWS;
-        virtual double getMaxLongitude() const NOTHROWS;
-        virtual bool is3D() const NOTHROWS;
+        int getSpatialReferenceID() const NOTHROWS override;
+        TAKErr forward(TAK::Engine::Math::Point2<double> *proj, const GeoPoint2 &geo) const NOTHROWS override;
+        TAKErr inverse(GeoPoint2 *geo, const TAK::Engine::Math::Point2<double> &proj) const NOTHROWS override;
+        double getMinLatitude() const NOTHROWS override;
+        double getMaxLatitude() const NOTHROWS override;
+        double getMinLongitude() const NOTHROWS override;
+        double getMaxLongitude() const NOTHROWS override;
+        bool is3D() const NOTHROWS override;
     private :
         std::shared_ptr<Projection> impl;
     };
@@ -102,14 +102,14 @@ namespace {
     public:
         ProjectionAdapter_V2toV1(Projection2Ptr &&impl) NOTHROWS;
     public:
-        virtual int getSpatialReferenceID();
-        virtual void forward(const GeoPoint *geo, atakmap::math::Point<double> *proj);
-        virtual void inverse(const atakmap::math::Point<double> *proj, GeoPoint *geo);
-        virtual double getMinLatitude();
-        virtual double getMaxLatitude();
-        virtual double getMinLongitude();
-        virtual double getMaxLongitude();
-        virtual bool is3D();
+        int getSpatialReferenceID() override;
+        void forward(const GeoPoint *geo, atakmap::math::Point<double> *proj) override;
+        void inverse(const atakmap::math::Point<double> *proj, GeoPoint *geo) override;
+        double getMinLatitude() override;
+        double getMaxLatitude() override;
+        double getMinLongitude() override;
+        double getMaxLongitude() override;
+        bool is3D() override;
     private:
         Projection2Ptr impl;
     };
@@ -119,7 +119,7 @@ namespace {
     public :
         ProjectionSpiAdapter_V1toV3(std::unique_ptr<ProjectionSpi, void(*)(const ProjectionSpi *)> &&impl) NOTHROWS;
     public :
-        virtual TAKErr create(Projection2Ptr &value, const int srid) NOTHROWS;
+        TAKErr create(Projection2Ptr &value, const int srid) NOTHROWS override;
     private :
         std::unique_ptr<ProjectionSpi, void(*)(const ProjectionSpi *)> impl;
     };
@@ -129,7 +129,7 @@ namespace {
     public:
         ProjectionSpiAdapter_V2toV3(std::unique_ptr<ProjectionSpi2, void(*)(const ProjectionSpi2 *)> &&impl) NOTHROWS;
     public:
-        virtual TAKErr create(Projection2Ptr &value, const int srid) NOTHROWS;
+        TAKErr create(Projection2Ptr &value, const int srid) NOTHROWS override;
     private:
         std::unique_ptr<ProjectionSpi2, void(*)(const ProjectionSpi2 *)> impl;
     };
@@ -154,19 +154,19 @@ TAKErr TAK::Engine::Core::LegacyAdapters_adapt(std::shared_ptr<Layer2> &value, c
 
     TAKErr code(TE_Ok);
 
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex());
+    Lock lock(mutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     std::map<const Layer *, std::weak_ptr<Layer2>> &adapters = layer2Adapters();
-    std::map<const Layer *, std::weak_ptr<Layer2>>::iterator entry = adapters.find(layer.get());
+    auto entry = adapters.find(layer.get());
     if (entry != adapters.end()) {
         value = entry->second.lock();
         if (value.get())
             return code;
     }
 
-    if (const LayerAdapter *adapter = dynamic_cast<const LayerAdapter *>(layer.get()))
+    if (const auto *adapter = dynamic_cast<const LayerAdapter *>(layer.get()))
         value = adapter->impl;
     else
         value = Layer2Ptr(new Layer2Adapter(layer), Memory_deleter_const<Layer2, Layer2Adapter>);
@@ -193,18 +193,18 @@ TAKErr TAK::Engine::Core::LegacyAdapters_adapt(std::shared_ptr<Layer> &value, co
 
     TAKErr code(TE_Ok);
 
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex());
+    Lock lock(mutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     std::map<const Layer2 *, std::weak_ptr<Layer>> &adapters = layerAdapters();
-    std::map<const Layer2 *, std::weak_ptr<Layer>>::iterator entry = adapters.find(layer.get());
+    auto entry = adapters.find(layer.get());
     if (entry != adapters.end()) {
         value = entry->second.lock();
         if (value.get())
             return code;
     }
-    if (const Layer2Adapter *adapter = dynamic_cast<const Layer2Adapter *>(layer.get()))
+    if (const auto *adapter = dynamic_cast<const Layer2Adapter *>(layer.get()))
         value = adapter->impl;
     else
         value = LayerPtr(new LayerAdapter(layer), Memory_deleter_const<Layer, LayerAdapter>);
@@ -218,16 +218,16 @@ TAKErr TAK::Engine::Core::LegacyAdapters_adapt(std::shared_ptr<Layer> &value, co
 TAKErr TAK::Engine::Core::LegacyAdapters_find(std::shared_ptr<Layer> &value, const Layer2 &layer) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    if (const Layer2Adapter *adapter = dynamic_cast<const Layer2Adapter *>(&layer)) {
+    if (const auto *adapter = dynamic_cast<const Layer2Adapter *>(&layer)) {
         value = adapter->impl;
         return code;
     } else {
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex());
+        Lock lock(mutex());
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
 
         std::map<const Layer2 *, std::weak_ptr<Layer>> &adapters = layerAdapters();
-        std::map<const Layer2 *, std::weak_ptr<Layer>>::iterator entry = adapters.find(&layer);
+        auto entry = adapters.find(&layer);
         if (entry == adapters.end())
             return TE_InvalidArg;
 
@@ -243,16 +243,16 @@ TAKErr TAK::Engine::Core::LegacyAdapters_find(std::shared_ptr<Layer> &value, con
 TAKErr TAK::Engine::Core::LegacyAdapters_find(std::shared_ptr<Layer2> &value, const Layer &layer) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    if (const LayerAdapter *adapter = dynamic_cast<const LayerAdapter *>(&layer)) {
+    if (const auto *adapter = dynamic_cast<const LayerAdapter *>(&layer)) {
         value = adapter->impl;
         return code;
     } else {
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex());
+        Lock lock(mutex());
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
 
         std::map<const Layer *, std::weak_ptr<Layer2>> &adapters = layer2Adapters();
-        std::map<const Layer *, std::weak_ptr<Layer2>>::iterator entry = adapters.find(&layer);
+        auto entry = adapters.find(&layer);
         if (entry == adapters.end())
             return TE_InvalidArg;
 
@@ -305,8 +305,7 @@ namespace {
     {}
     Layer2Adapter::~Layer2Adapter() NOTHROWS
     {
-        LockPtr lock(NULL, NULL);
-        Lock_create(lock, mutex);
+        Lock lock(mutex);
         std::map<Layer2::VisibilityListener *, std::unique_ptr<VisibilityListenerAdapter>>::iterator it;
         for (it = listeners.begin(); it != listeners.end(); it++)
             impl->removeVisibilityListener(it->second.get());
@@ -327,13 +326,13 @@ namespace {
     TAKErr Layer2Adapter::addVisibilityListener(Layer2::VisibilityListener *l2) NOTHROWS
     {
         TAKErr code(TE_Ok);
-        Layer::VisibilityListener *l(NULL);
+        Layer::VisibilityListener *l(nullptr);
 
         if (!l2)
             return TE_InvalidArg;
 
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
+        Lock lock(mutex);
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
 
         std::map<Layer2::VisibilityListener *, std::unique_ptr<VisibilityListenerAdapter>>::iterator entry;
@@ -350,14 +349,12 @@ namespace {
     }
     TAKErr Layer2Adapter::removeVisibilityListener(VisibilityListener *l2) NOTHROWS
     {
-        TAKErr code(TE_Ok);
-        Layer::VisibilityListener *l(NULL);
-
         if (!l2)
             return TE_InvalidArg;
 
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
+        TAKErr code(TE_Ok);
+        Lock lock(mutex);
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
 
         std::map<Layer2::VisibilityListener *, std::unique_ptr<VisibilityListenerAdapter>>::iterator entry;
@@ -388,8 +385,7 @@ namespace {
     {}
     LayerAdapter::~LayerAdapter() NOTHROWS
     {
-        LockPtr lock(NULL, NULL);
-        Lock_create(lock, mutex);
+        Lock lock(mutex);
         std::map<Layer::VisibilityListener *, std::unique_ptr<VisibilityListenerAdapter>>::iterator it;
         for (it = listeners.begin(); it != listeners.end(); it++)
             impl->removeVisibilityListener(it->second.get());
@@ -412,10 +408,9 @@ namespace {
         if (!l)
             return;
 
-        Layer2::VisibilityListener *l2(NULL);
+        Layer2::VisibilityListener *l2(nullptr);
 
-        LockPtr lock(NULL, NULL);
-        Lock_create(lock, mutex);
+        Lock lock(mutex);
 
         std::map<Layer::VisibilityListener *, std::unique_ptr<VisibilityListenerAdapter>>::iterator entry;
         entry = listeners.find(l);
@@ -434,8 +429,8 @@ namespace {
         if (!l)
             return;
 
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
+        Lock lock(mutex);
+        code = lock.status;
 
         std::map<Layer::VisibilityListener *, std::unique_ptr<VisibilityListenerAdapter>>::iterator entry;
         entry = listeners.find(l);
@@ -584,7 +579,7 @@ namespace {
     TAKErr ProjectionSpiAdapter_V2toV3::create(Projection2Ptr &value, const int srid) NOTHROWS
     {
         TAKErr code(TE_Ok);
-        ProjectionPtr2 lproj(NULL, NULL);
+        ProjectionPtr2 lproj(nullptr, nullptr);
         code = impl->create(lproj, srid);
         TE_CHECKRETURN_CODE(code);
         if (!lproj.get())

@@ -49,7 +49,8 @@ public class ImportKMZSort extends ImportInPlaceResolver {
     public ImportKMZSort(Context context, boolean validateExt,
             boolean copyFile, boolean importInPlace, boolean bStrict) {
         super(".kmz", FileSystemUtils.OVERLAYS_DIRECTORY, validateExt,
-                copyFile, importInPlace, context.getString(R.string.kmz_file));
+                copyFile, importInPlace, context.getString(R.string.kmz_file),
+                context.getDrawable(R.drawable.ic_kml));
         _bStrict = bStrict;
     }
 
@@ -166,7 +167,8 @@ public class ImportKMZSort extends ImportInPlaceResolver {
 
                 InputStream is = null;
                 try {
-                    return ImportKMLSort.isKml(zipFile.getInputStream(zeDoc));
+                    return ImportKMLSort
+                            .isKml(is = zipFile.getInputStream(zeDoc));
                 } finally {
                     if (is != null) {
                         try {

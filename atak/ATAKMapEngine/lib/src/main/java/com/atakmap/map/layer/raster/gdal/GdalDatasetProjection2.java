@@ -259,7 +259,7 @@ public abstract class GdalDatasetProjection2 implements DatasetProjection2 {
     private static String getString(ByteBuffer buffer, int length) {
         if (buffer.remaining() < length)
             throw new BufferUnderflowException();
-        final String retval = new String(buffer.array(), buffer.position(), length, Charset.forName(FileSystemUtils.UTF8_CHARSET));
+        final String retval = new String(buffer.array(), buffer.position(), length, FileSystemUtils.UTF8_CHARSET);
         skip(buffer, length);
         return retval;
     }

@@ -33,21 +33,25 @@ namespace
     Mutex &mutex() NOTHROWS;
     void niobuffer_unref(const void *);
     void referenceNioBuffer(std::unique_ptr<const void, void(*)(const void *)> &value, JNIEnv &env, jobject buffer) NOTHROWS;
+
+    typedef std::unique_ptr<MeshBuilder, void(*)(const MeshBuilder *)> MeshBuilderPtr;
 }
 
-JNIEXPORT jlong JNICALL Java_com_atakmap_map_layer_model_ModelBuilder_create__II
+JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_model_ModelBuilder_create__II
   (JNIEnv *env, jclass clazz, jint drawMode, jint attrs)
 {
-    return INTPTR_TO_JLONG(new MeshBuilder((DrawMode)drawMode, attrs));
+    MeshBuilderPtr retval(new MeshBuilder((DrawMode)drawMode, attrs), Memory_deleter_const<MeshBuilder>);
+    return NewPointer(env, std::move(retval));
 }
 
-JNIEXPORT jlong JNICALL Java_com_atakmap_map_layer_model_ModelBuilder_create__III
+JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_model_ModelBuilder_create__III
   (JNIEnv *env, jclass clazz, jint drawMode, jint attrs, jint indexType)
 {
-    return INTPTR_TO_JLONG(new MeshBuilder((DrawMode)drawMode, attrs, (DataType)indexType));
+    MeshBuilderPtr retval(new MeshBuilder((DrawMode)drawMode, attrs, (DataType)indexType), Memory_deleter_const<MeshBuilder>);
+    return NewPointer(env, std::move(retval));
 }
 
-JNIEXPORT jlong JNICALL Java_com_atakmap_map_layer_model_ModelBuilder_create__IIIIIIIIIIIIIIZ
+JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_model_ModelBuilder_create__IIIIIIIIIIIIIIZ
   (JNIEnv *env, jclass clazz,
    jint drawMode,
    jint attributes,
@@ -73,10 +77,11 @@ JNIEXPORT jlong JNICALL Java_com_atakmap_map_layer_model_ModelBuilder_create__II
     layout.color.stride = colorStride;
     layout.interleaved = interleaved;
 
-    return INTPTR_TO_JLONG(new MeshBuilder((DrawMode)drawMode, layout));
+    MeshBuilderPtr retval(new MeshBuilder((DrawMode)drawMode, layout), Memory_deleter_const<MeshBuilder>);
+    return NewPointer(env, std::move(retval));
 }
 
-JNIEXPORT jlong JNICALL Java_com_atakmap_map_layer_model_ModelBuilder_create__IIIIIIIIIIIIIIZI
+JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_model_ModelBuilder_create__IIIIIIIIIIIIIIZI
   (JNIEnv *env, jclass clazz,
      jint drawMode,
      jint attributes,
@@ -103,7 +108,8 @@ JNIEXPORT jlong JNICALL Java_com_atakmap_map_layer_model_ModelBuilder_create__II
     layout.color.stride = colorStride;
     layout.interleaved = interleaved;
 
-    return INTPTR_TO_JLONG(new MeshBuilder((DrawMode)drawMode, layout, (DataType)indexType));
+    MeshBuilderPtr retval(new MeshBuilder((DrawMode)drawMode, layout, (DataType)indexType), Memory_deleter_const<MeshBuilder>);
+    return NewPointer(env, std::move(retval));
 }
 
 JNIEXPORT void JNICALL Java_com_atakmap_map_layer_model_ModelBuilder_reserveVertices
@@ -190,12 +196,10 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_model_ModelBuilder_build__J
     return NewPointer(env, std::move(retval));
 
 }
-
 JNIEXPORT void JNICALL Java_com_atakmap_map_layer_model_ModelBuilder_destruct
-  (JNIEnv *env, jclass clazz, jlong pointer)
+  (JNIEnv *env, jclass clazz, jobject mpointer)
 {
-    MeshBuilder *builder = JLONG_TO_INTPTR(MeshBuilder, pointer);
-    delete builder;
+    Pointer_destruct<MeshBuilder>(env, mpointer);
 }
 
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_model_ModelBuilder_build__IIIIII_3I_3I_3IIIIIIII_3I_3Ljava_lang_String_2_3IDDDDDDILjava_nio_Buffer_2

@@ -23,6 +23,7 @@ enum CloudIOOperation {
     CLOUDIO_OP_PUT,
     CLOUDIO_OP_MOVE,
     CLOUDIO_OP_MAKE_COLLECTION,
+    CLOUDIO_OP_DELETE,
 };
 
 struct COMMONCOMMO_API CloudCollectionEntry
@@ -109,6 +110,8 @@ public:
     virtual CommoResult moveResourceInit(int *cloudIOid,
                                          const char *fromPath,
                                          const char *toPath) = 0;
+    virtual CommoResult deleteResourceInit(int *cloudIOid,
+                                         const char *remotePath) = 0;
     virtual CommoResult createCollectionInit(int *cloudIOid,
                                              const char *path) = 0;
     

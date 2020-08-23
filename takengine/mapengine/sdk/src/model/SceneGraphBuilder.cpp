@@ -19,20 +19,25 @@ namespace
     public :
         SceneNodeImpl(SceneNodeImpl *parent, const Matrix2 *rootLocalFrame) NOTHROWS;
         SceneNodeImpl(SceneNodeImpl *parent, const Matrix2 *rootLocalFrame, const Envelope2 &aabb, const std::shared_ptr<const Mesh> &mesh, const std::size_t instanceId) NOTHROWS;
-        ~SceneNodeImpl() NOTHROWS;
+        ~SceneNodeImpl() NOTHROWS override;
     public :
-        bool isRoot() const NOTHROWS;
-        TAKErr getParent(const SceneNode **value) const NOTHROWS;
-        const Matrix2 *getLocalFrame() const NOTHROWS;
-        TAKErr getChildren(Collection<std::shared_ptr<SceneNode>>::IteratorPtr &value) const NOTHROWS;
-        bool hasChildren() const NOTHROWS;
-        virtual bool hasMesh() const NOTHROWS;
-        const Envelope2 &getAABB() const NOTHROWS;
-        std::size_t getNumLODs() const NOTHROWS;
-        TAKErr loadMesh(std::shared_ptr<const Mesh> &value, const std::size_t lod = 0u, ProcessingCallback *callback = NULL) NOTHROWS;
-        TAKErr getLevelOfDetail(std::size_t *value, const std::size_t lodIdx) const NOTHROWS;
-        TAKErr getLODIndex(std::size_t *value, const double clod, const int round = 0) const NOTHROWS;
-        TAKErr getInstanceID(std::size_t *value, const std::size_t lodIdx) const NOTHROWS;
+        bool isRoot() const NOTHROWS override;
+        TAKErr getParent(const SceneNode **value) const NOTHROWS override;
+        const Matrix2 *getLocalFrame() const NOTHROWS override;
+        TAKErr getChildren(Collection<std::shared_ptr<SceneNode>>::IteratorPtr &value) const NOTHROWS override;
+        bool hasChildren() const NOTHROWS override;
+        bool hasMesh() const NOTHROWS override;
+        const Envelope2 &getAABB() const NOTHROWS override;
+        std::size_t getNumLODs() const NOTHROWS override;
+        TAKErr loadMesh(std::shared_ptr<const Mesh> &value, const std::size_t lod = 0u, ProcessingCallback *callback = nullptr) NOTHROWS override;
+        TAKErr getLevelOfDetail(std::size_t *value, const std::size_t lodIdx) const NOTHROWS override;
+        TAKErr getLODIndex(std::size_t *value, const double clod, const int round = 0) const NOTHROWS override;
+        TAKErr getInstanceID(std::size_t *value, const std::size_t lodIdx) const NOTHROWS override;
+        bool hasSubscene() const NOTHROWS override;
+        TAKErr getSubsceneInfo(const SceneInfo** result) NOTHROWS override;
+        bool hasLODNode() const NOTHROWS override;
+        TAKErr getLODNode(std::shared_ptr<SceneNode>& value, const std::size_t lodIdx) NOTHROWS override;
+
     public :
         std::list<std::shared_ptr<SceneNode>> children;
         std::unique_ptr<Envelope2> aabb;
@@ -99,17 +104,17 @@ namespace
 }
 
 SceneGraphBuilder::SceneGraphBuilder(const Matrix2 *rootLocalFrame) NOTHROWS :
-    root(new SceneNodeImpl(NULL, rootLocalFrame), Memory_deleter_const<SceneNode, SceneNodeImpl>)
+    root(new SceneNodeImpl(nullptr, rootLocalFrame), Memory_deleter_const<SceneNode, SceneNodeImpl>)
 {
     nodes.insert(root.get());
 }
 SceneGraphBuilder::SceneGraphBuilder(const Envelope2 &aabb, const Matrix2 *rootLocalFrame, const std::shared_ptr<const Mesh> &mesh) NOTHROWS :
-    root(new SceneNodeImpl(NULL, rootLocalFrame, aabb, mesh, SceneNode::InstanceID_None), Memory_deleter_const<SceneNode, SceneNodeImpl>)
+    root(new SceneNodeImpl(nullptr, rootLocalFrame, aabb, mesh, SceneNode::InstanceID_None), Memory_deleter_const<SceneNode, SceneNodeImpl>)
 {
     nodes.insert(root.get());
 }
 SceneGraphBuilder::SceneGraphBuilder(const Envelope2 &aabb, const Matrix2 *rootLocalFrame, MeshPtr_const &&mesh) NOTHROWS :
-    root(new SceneNodeImpl(NULL, rootLocalFrame, aabb, std::move(mesh), SceneNode::InstanceID_None), Memory_deleter_const<SceneNode, SceneNodeImpl>)
+    root(new SceneNodeImpl(nullptr, rootLocalFrame, aabb, std::move(mesh), SceneNode::InstanceID_None), Memory_deleter_const<SceneNode, SceneNodeImpl>)
 {
     nodes.insert(root.get());
 }
@@ -131,7 +136,7 @@ TAKErr SceneGraphBuilder::addNode(SceneNode **value, const SceneNode &parent, co
     if (entry == nodes.end())
         return TE_InvalidArg;
     // cast the parent
-    SceneNodeImpl &parentImpl = const_cast<SceneNodeImpl &>(static_cast<const SceneNodeImpl &>(parent));
+    auto &parentImpl = const_cast<SceneNodeImpl &>(static_cast<const SceneNodeImpl &>(parent));
     // create the new child
     SceneNodePtr child(new SceneNodeImpl(&parentImpl, localFrame), Memory_deleter_const<SceneNode, SceneNodeImpl>);
     SceneNode *valueResult = child.get();
@@ -162,7 +167,7 @@ TAKErr SceneGraphBuilder::addNode(SceneNode **value, const SceneNode &parent, co
     if (entry == nodes.end())
         return TE_InvalidArg;
     // cast the parent
-    SceneNodeImpl &parentImpl = const_cast<SceneNodeImpl &>(static_cast<const SceneNodeImpl &>(parent));
+    auto &parentImpl = const_cast<SceneNodeImpl &>(static_cast<const SceneNodeImpl &>(parent));
     // create the new child
     SceneNodePtr child(new SceneNodeImpl(&parentImpl, localFrame, aabb, mesh, instanceId), Memory_deleter_const<SceneNode, SceneNodeImpl>);
     SceneNode *valueResult = child.get();
@@ -186,12 +191,12 @@ namespace
 {
     SceneNodeImpl::SceneNodeImpl(SceneNodeImpl *parent_, const Matrix2 *localFrame_) NOTHROWS :
     parent(parent_),
-        localFrame(localFrame_ ? new Matrix2(*localFrame_) : NULL),
+        localFrame(localFrame_ ? new Matrix2(*localFrame_) : nullptr),
         instanceId(SceneNode::InstanceID_None)
     {}
     SceneNodeImpl::SceneNodeImpl(SceneNodeImpl *parent_, const Matrix2 *localFrame_, const Envelope2 &aabb_,  const std::shared_ptr<const Mesh> &mesh_, const std::size_t instanceId_) NOTHROWS :
         parent(parent_),
-        localFrame(localFrame_ ? new Matrix2(*localFrame_) : NULL),
+        localFrame(localFrame_ ? new Matrix2(*localFrame_) : nullptr),
         mesh(mesh_),
         instanceId(instanceId_)
     {
@@ -264,5 +269,20 @@ namespace
             return TE_InvalidArg;
         *value = instanceId;
         return TE_Ok;
+    }
+    bool SceneNodeImpl::hasSubscene() const NOTHROWS
+    {
+        return false;
+    }
+    TAKErr SceneNodeImpl::getSubsceneInfo(const SceneInfo** result) NOTHROWS
+    {
+        return TE_IllegalState;
+    }
+    bool SceneNodeImpl::hasLODNode() const NOTHROWS {
+        return false;
+    }
+
+    TAKErr SceneNodeImpl::getLODNode(std::shared_ptr<SceneNode>& value, const std::size_t lodIdx) NOTHROWS {
+        return TE_Unsupported;
     }
 }

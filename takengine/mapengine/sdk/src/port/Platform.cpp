@@ -16,6 +16,116 @@
 
 using namespace TAK::Engine::Port;
 
+template <typename S, typename D>
+struct Convert {
+    static void func(void* dst, const void* src, size_t count) NOTHROWS {
+        D* dp = static_cast<D *>(dst);
+        const S* sp = static_cast<const S *>(src);
+        while (count > 0) {
+            *dp++ = static_cast<D>(*sp++);
+            --count;
+        }
+    }
+};
+
+typedef void (*ConvertFunc)(void*, const void*, size_t);
+
+/*
+TEDT_UInt8,
+TEDT_Int8,
+TEDT_UInt16,
+TEDT_Int16,
+TEDT_UInt32,
+TEDT_Int32,
+TEDT_UInt64,
+TEDT_Int64,
+TEDT_Float32,
+TEDT_Float64
+*/
+
+#define CONV_ROW(t) \
+    Convert<t, uint8_t>::func, \
+    Convert<t, int8_t>::func, \
+    Convert<t, uint16_t>::func, \
+    Convert<t, int16_t>::func, \
+    Convert<t, uint32_t>::func, \
+    Convert<t, int32_t>::func, \
+    Convert<t, uint64_t>::func, \
+    Convert<t, int64_t>::func, \
+    Convert<t, float>::func, \
+    Convert<t, double>::func \
+
+ConvertFunc convertMatrix[] = {
+    CONV_ROW(uint8_t),
+    CONV_ROW(int8_t),
+    CONV_ROW(uint16_t),
+    CONV_ROW(int16_t),
+    CONV_ROW(uint32_t),
+    CONV_ROW(int32_t),
+    CONV_ROW(uint64_t),
+    CONV_ROW(int64_t),
+    CONV_ROW(float),
+    CONV_ROW(double)
+};
+
+void TAK::Engine::Port::DataType_convert(void* dst, const void* src, size_t count, DataType dstType, DataType srcType) NOTHROWS {
+    void (*cvt)(void *, const void *, size_t) = convertMatrix[srcType * 10 + dstType];
+    cvt(dst, src, count);
+}
+
+size_t TAK::Engine::Port::DataType_size(DataType dataType) NOTHROWS {
+    switch (dataType) {
+    case TEDT_UInt8:
+    case TEDT_Int8:
+        return 1;
+    case TEDT_UInt16:
+    case TEDT_Int16:
+        return 2;
+    case TEDT_UInt32:
+    case TEDT_Int32:
+    case TEDT_Float32:
+        return 4;
+    case TEDT_UInt64:
+    case TEDT_Int64:
+    case TEDT_Float64:
+        return 8;
+    }
+    return 0;
+}
+
+bool TAK::Engine::Port::DataType_isFloating(DataType dataType) NOTHROWS {
+    return dataType == TEDT_Float32 ||
+        dataType == TEDT_Float64;
+}
+
+bool TAK::Engine::Port::DataType_isInteger(DataType dataType) NOTHROWS {
+    switch (dataType) {
+    case TEDT_UInt8:
+    case TEDT_Int8:
+    case TEDT_UInt16:
+    case TEDT_Int16:
+    case TEDT_UInt32:
+    case TEDT_Int32:
+    case TEDT_UInt64:
+    case TEDT_Int64:
+        return true;
+    }
+    return false;
+}
+
+bool TAK::Engine::Port::DataType_isUnsignedInteger(DataType dataType) NOTHROWS {
+    switch (dataType) {
+    case TEDT_UInt8:
+    case TEDT_UInt16:
+    case TEDT_UInt32:
+    case TEDT_UInt64:
+        return true;
+    }
+    return false;
+}
+
+
+
 int64_t TAK::Engine::Port::Platform_systime_millis() NOTHROWS
 {
 #if TE_HAVE_CXX_CHRONO

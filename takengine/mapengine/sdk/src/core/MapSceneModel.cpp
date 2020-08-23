@@ -69,8 +69,8 @@ namespace
 }
 
 MapSceneModel::MapSceneModel() :
-    earth(NULL),
-    projection(NULL, NULL),
+    earth(nullptr),
+    projection(nullptr, nullptr),
     forwardTransform(std::move(Matrix2Ptr(&impl.forwardTransform, Memory_leaker_const<Matrix2>))),
     inverseTransform(std::move(Matrix2Ptr(&impl.inverseTransform, Memory_leaker_const<Matrix2>)))
 {
@@ -79,16 +79,16 @@ MapSceneModel::MapSceneModel() :
 
 MapSceneModel::MapSceneModel(AtakMapView *view) :
     impl(view->getDisplayDpi(),
-         view->getWidth(),
-         view->getHeight(),
+         static_cast<int>(view->getWidth()),
+         static_cast<int>(view->getHeight()),
          view->getProjection(),
          getPoint(*view),
          getFocusX(*view), getFocusY(*view),
          view->getMapRotation(),
          view->getMapTilt(),
          view->getMapResolution()),
-    earth(NULL),
-    projection(NULL, NULL),
+    earth(nullptr),
+    projection(nullptr, nullptr),
     forwardTransform(std::move(Matrix2Ptr(&impl.forwardTransform, Memory_leaker_const<Matrix2>))),
     inverseTransform(std::move(Matrix2Ptr(&impl.inverseTransform, Memory_leaker_const<Matrix2>)))
 {
@@ -97,16 +97,16 @@ MapSceneModel::MapSceneModel(AtakMapView *view) :
 
 MapSceneModel::MapSceneModel(const AtakMapView *view, int srid, const GeoPoint *focusGeo, float focusX, float focusY, double rotation, double scale) :
     impl(view->getDisplayDpi(),
-         view->getWidth(),
-         view->getHeight(),
+         static_cast<int>(view->getWidth()),
+         static_cast<int>(view->getHeight()),
          srid,
          adapt(*focusGeo),
          focusX, focusY,
          rotation,
          view->getMapTilt(),
          view->getMapResolution(scale)),
-    earth(NULL),
-    projection(NULL, NULL),
+    earth(nullptr),
+    projection(nullptr, nullptr),
     forwardTransform(std::move(Matrix2Ptr(&impl.forwardTransform, Memory_leaker_const<Matrix2>))),
     inverseTransform(std::move(Matrix2Ptr(&impl.inverseTransform, Memory_leaker_const<Matrix2>)))
 {
@@ -115,16 +115,16 @@ MapSceneModel::MapSceneModel(const AtakMapView *view, int srid, const GeoPoint *
 
 MapSceneModel::MapSceneModel(const AtakMapView *view, int srid, const GeoPoint *focusGeo, float focusX, float focusY, double rotation, double tilt, double scale) :
     impl(view->getDisplayDpi(),
-             view->getWidth(),
-             view->getHeight(),
+             static_cast<int>(view->getWidth()),
+             static_cast<int>(view->getHeight()),
              srid,
              adapt(*focusGeo),
              focusX, focusY,
              rotation,
              tilt,
              view->getMapResolution(scale)),
-    earth(NULL),
-    projection(NULL, NULL),
+    earth(nullptr),
+    projection(nullptr, nullptr),
     forwardTransform(std::move(Matrix2Ptr(&impl.forwardTransform, Memory_leaker_const<Matrix2>))),
     inverseTransform(std::move(Matrix2Ptr(&impl.inverseTransform, Memory_leaker_const<Matrix2>)))
 {
@@ -133,8 +133,8 @@ MapSceneModel::MapSceneModel(const AtakMapView *view, int srid, const GeoPoint *
 
 MapSceneModel::MapSceneModel(const MapSceneModel &other) :
     impl(other.impl),
-    earth(NULL),
-    projection(NULL, NULL),
+    earth(nullptr),
+    projection(nullptr, nullptr),
     forwardTransform(std::move(Matrix2Ptr(&impl.forwardTransform, Memory_leaker_const<Matrix2>))),
     inverseTransform(std::move(Matrix2Ptr(&impl.inverseTransform, Memory_leaker_const<Matrix2>)))
 {
@@ -143,8 +143,8 @@ MapSceneModel::MapSceneModel(const MapSceneModel &other) :
 
 MapSceneModel::MapSceneModel(const MapSceneModel2 &other) :
     impl(other),
-    earth(NULL),
-    projection(NULL, NULL),
+    earth(nullptr),
+    projection(nullptr, nullptr),
     forwardTransform(std::move(Matrix2Ptr(&impl.forwardTransform, Memory_leaker_const<Matrix2>))),
     inverseTransform(std::move(Matrix2Ptr(&impl.inverseTransform, Memory_leaker_const<Matrix2>)))
 {
@@ -207,14 +207,13 @@ void MapSceneModel::set(const AtakMapView *view, int srid, const GeoPoint *focus
     TAKErr code(TE_Ok);
     GeoPoint2 focusGeo2;
     GeoPoint_adapt(&focusGeo2, *focusGeo);
-    code = impl.set(view->getDisplayDpi(), view->getWidth(), view->getHeight(), srid, focusGeo2, focusX, focusY, rotation, tilt, scale);
+    code = impl.set(view->getDisplayDpi(), static_cast<size_t>(view->getWidth()), static_cast<size_t>(view->getHeight()), srid, focusGeo2, focusX, focusY, rotation, tilt, scale);
 
     this->syncWithImpl();
 }
 
 void MapSceneModel::set(const AtakMapView *view, int srid, const GeoPoint *focusGeo, float focusX, float focusY, double rotation, double scale)
 {
-    TAKErr code(TAKErr::TE_Ok);
     set(view, srid, focusGeo, focusX, focusY, rotation, 0.0, scale);
 }
 
@@ -241,12 +240,12 @@ void MapSceneModel::syncWithImpl()
     //this->earth = impl.earth;
     this->earthPtr.reset();
 
-    if (Ellipsoid2 *e = dynamic_cast<Ellipsoid2 *>(impl.earth.get())) {
-        this->earthPtr.reset(new atakmap::math::Ellipsoid(std::unique_ptr<Ellipsoid2, void(*)(const Ellipsoid2 *)>(e, Memory_leaker_const<Ellipsoid2>)));
-    } else if (Plane2 *e = dynamic_cast<Plane2 *>(impl.earth.get())) {
-        this->earthPtr.reset(new Plane(std::unique_ptr<Plane2, void(*)(const Plane2 *)>(e, Memory_leaker_const<Plane2>)));
-    } else if (Sphere2 *e = dynamic_cast<Sphere2 *>(impl.earth.get())) {
-        this->earthPtr.reset(new Sphere(std::unique_ptr<Sphere2, void(*)(const Sphere2 *)>(e, Memory_leaker_const<Sphere2>)));
+    if (auto *ellipsoid = dynamic_cast<Ellipsoid2 *>(impl.earth.get())) {
+        this->earthPtr.reset(new atakmap::math::Ellipsoid(std::unique_ptr<Ellipsoid2, void(*)(const Ellipsoid2 *)>(ellipsoid, Memory_leaker_const<Ellipsoid2>)));
+    } else if (auto *plane = dynamic_cast<Plane2 *>(impl.earth.get())) {
+        this->earthPtr.reset(new Plane(std::unique_ptr<Plane2, void (*)(const Plane2 *)>(plane, Memory_leaker_const<Plane2>)));
+    } else if (auto *sphere = dynamic_cast<Sphere2 *>(impl.earth.get())) {
+        this->earthPtr.reset(new Sphere(std::unique_ptr<Sphere2, void (*)(const Sphere2 *)>(sphere, Memory_leaker_const<Sphere2>)));
     }
 
     this->earth = earthPtr.get();

@@ -27,7 +27,9 @@ public class ImportDRWSort extends ImportInPlaceResolver {
     public ImportDRWSort(Context context, boolean validateExt,
             boolean copyFile, boolean importInPlace) {
         super(".drw", FileSystemUtils.OVERLAYS_DIRECTORY, validateExt,
-                copyFile, importInPlace, context.getString(R.string.drw_file));
+                copyFile, importInPlace, context.getString(R.string.drw_file),
+                context.getDrawable(
+                        R.drawable.ic_geojson_file_notification_icon));
     }
 
     @Override

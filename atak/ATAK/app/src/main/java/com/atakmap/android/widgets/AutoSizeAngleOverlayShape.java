@@ -5,6 +5,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import com.atakmap.android.maps.AnchoredMapItem;
+import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.coremap.maps.conversion.GeomagneticField;
 
 import com.atakmap.android.maps.DefaultMetaDataHolder;
@@ -22,7 +24,8 @@ import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.coremap.maps.coords.NorthReference;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 
-public class AutoSizeAngleOverlayShape extends Shape {
+public class AutoSizeAngleOverlayShape extends Shape
+        implements AnchoredMapItem {
 
     protected NorthReference _azimuth = NorthReference.TRUE;
 
@@ -55,6 +58,11 @@ public class AutoSizeAngleOverlayShape extends Shape {
 
     public void setCenterMarker(Marker centerMarker) {
         this.centerMarker = centerMarker;
+    }
+
+    @Override
+    public PointMapItem getAnchorItem() {
+        return this.centerMarker;
     }
 
     public void addOnPropertyChangedListener(

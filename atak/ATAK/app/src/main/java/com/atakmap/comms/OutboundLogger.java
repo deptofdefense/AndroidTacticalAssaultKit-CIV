@@ -103,7 +103,7 @@ class OutboundLogger implements CommsLogger,
         try {
             fw = new OutputStreamWriter(
                     fos = new FileOutputStream(f),
-                    Charset.forName(FileSystemUtils.UTF8_CHARSET).newEncoder());
+                    FileSystemUtils.UTF8_CHARSET.newEncoder());
         } catch (Exception e) {
             Log.w(TAG, "Could not open log file: " + f, e);
             if (fos != null) {

@@ -136,29 +136,29 @@ class ENGINE_API Polygon
 
     Geometry*
     clone ()
-        const
+        const override
       { return new Polygon (*this); }
 
     std::size_t
     computeWKB_Size ()
-        const;
+        const override;
 
     //
     // Throws std::length_error if rings.empty().
     //
     Envelope
     getEnvelope ()
-        const;
+        const override;
 
     void
     toBlob (std::ostream&,
             BlobFormat)                 // Defaults to GEOMETRY.
-        const;
+        const override;
 
     void
     toWKB (std::ostream&,
            bool includeHeader)          // Defaults to true.
-        const;
+        const override;
 
 
                                         //====================================//
@@ -176,7 +176,7 @@ class ENGINE_API Polygon
 
 
     void
-    changeDimension (Dimension);
+    changeDimension (Dimension) override;
 
 
     //==================================

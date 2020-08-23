@@ -90,6 +90,13 @@ public class HashtagDialog implements View.OnClickListener {
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface d, int w) {
+                        // For ease of use, add whatever tag is sitting in the
+                        // edit text in case the user forgets to tap the (+) button
+                        String tag = _newTagET.getHashtag();
+                        if (!FileSystemUtils.isEmpty(tag))
+                            _tags.add(tag);
+
+                        // Notify callback
                         if (_callback != null)
                             _callback.onSetTags(_tags);
                     }

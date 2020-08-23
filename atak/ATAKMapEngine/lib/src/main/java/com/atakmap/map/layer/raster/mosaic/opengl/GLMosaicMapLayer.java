@@ -3,9 +3,11 @@ package com.atakmap.map.layer.raster.mosaic.opengl;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -24,10 +26,14 @@ import android.net.Uri;
 import android.util.Pair;
 
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.io.ZipVirtualFile;
+import com.atakmap.map.LegacyAdapters;
 import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.RenderContext;
+import com.atakmap.map.RenderSurface;
 import com.atakmap.map.layer.control.ColorControl;
 import com.atakmap.map.layer.control.Controls;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
@@ -53,11 +59,15 @@ import com.atakmap.map.layer.raster.tilereader.AndroidTileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReaderFactory;
 import com.atakmap.map.layer.raster.tilereader.opengl.GLQuadTileNode2;
+import com.atakmap.map.layer.raster.tilereader.opengl.GLQuadTileNode3;
 import com.atakmap.map.opengl.GLAsynchronousMapRenderable;
 import com.atakmap.map.opengl.GLMapRenderable;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.map.opengl.GLResolvableMapRenderable;
+import com.atakmap.map.opengl.LegacyElMgrTerrainRenderService;
+import com.atakmap.spatial.SpatialCalculator;
+import com.atakmap.util.Collections2;
 import com.atakmap.util.ConfigOptions;
 import com.atakmap.util.Disposable;
 import com.atakmap.util.Filter;
@@ -70,7 +80,7 @@ import com.atakmap.math.Rectangle;
 public class GLMosaicMapLayer extends
     GLAsynchronousMapRenderable<MosaicPendingData> implements GLMapLayer3 {
 
-    public static final String TAG = "GLGdalMosaicMapLayer";
+    public static final String TAG = "GLMosaicMapLayer";
 
     public final static GLMapLayerSpi3 SPI = new GLMapLayerSpi3() {
         @Override
@@ -94,7 +104,7 @@ public class GLMosaicMapLayer extends
             }
             return new GLMosaicMapLayer(surface, mosaic);
         }
-    
+
         @Override
         public int getPriority() {
             // MosaicDatasetDescriptor : DatasetDescriptor
@@ -105,13 +115,19 @@ public class GLMosaicMapLayer extends
     private final static Comparator<MosaicDatabase2.Frame> FRAME_STORAGE_COMPARATOR = new Comparator<MosaicDatabase2.Frame>() {
         @Override
         public int compare(MosaicDatabase2.Frame f0, MosaicDatabase2.Frame f1) {
+            // if same path, always same
+            final int path = f0.path.compareTo(f1.path);
+            if(path == 0)
+                return 0;
+
+            // with request, sort based on GSD, then type, then path
             if (f0.maxGsd < f1.maxGsd)
                 return 1;
             else if (f0.maxGsd > f1.maxGsd)
                 return -1;
             int retval = f0.type.compareTo(f1.type);
             if (retval == 0)
-                retval = f0.path.compareTo(f1.path);
+                retval = path;
             return retval;
         }
     };
@@ -139,12 +155,8 @@ public class GLMosaicMapLayer extends
      * have its <code>resume</code> method invoked on the GL thread before the next call
      * <code>super.draw</code>.
      */
-    private Collection<GLResolvableMapRenderable> resurrectedFrames;
+    private Collection<GLResolvableMapRenderable> resurrectedFrames;;
 
-    /** the zombie and visible frames, <B>in that order</B> */
-    private Collection<Collection<? extends GLResolvableMapRenderable>> zombieAndVisibleFrames;
-
-    /** A view into {@link #zombieAndVisibleFrames} */
     private Collection<GLResolvableMapRenderable> renderList;
 
     private DatasetDescriptor info;
@@ -157,7 +169,7 @@ public class GLMosaicMapLayer extends
     protected final boolean ownsIO;
 
     protected final boolean textureCacheEnabled;
-    
+
     protected Set<MapControl> controls;
     protected final RasterDataAccessControl rasterAccessControl;
     private final ColorControlImpl colorControlImpl;
@@ -167,26 +179,21 @@ public class GLMosaicMapLayer extends
 
     private ImagerySelectionControl.Mode resolutionSelectMode;
     private Set<String> imageryTypeFilter;
-    
+
     public GLMosaicMapLayer(MapRenderer surface, MosaicDatasetDescriptor info) {
         this.surface = surface;
         this.info = info;
 
         this.relativePaths = DatasetDescriptor.getExtraData(info, "relativePaths", "true").equals("true");
-        this.visibleFrames = new TreeMap<MosaicDatabase2.Frame, GLResolvableMapRenderable>(
-                FRAME_STORAGE_COMPARATOR);
-        this.zombieFrames = new TreeMap<MosaicDatabase2.Frame, GLResolvableMapRenderable>(
-                FRAME_STORAGE_COMPARATOR);
+        this.visibleFrames = new TreeMap<>(FRAME_STORAGE_COMPARATOR);
+        this.zombieFrames = new TreeMap<>(FRAME_STORAGE_COMPARATOR);
 
-        this.resurrectedFrames = new LinkedList<GLResolvableMapRenderable>();
+        this.renderList = new MultiCollection<GLResolvableMapRenderable>(Arrays.<Collection<? extends GLResolvableMapRenderable>>asList(this.zombieFrames.values(), this.visibleFrames.values()));
 
-        this.zombieAndVisibleFrames = new ArrayList<Collection<? extends GLResolvableMapRenderable>>(
-                2);
-        this.renderList = new MultiCollection<GLResolvableMapRenderable>(
-                this.zombieAndVisibleFrames);
+        this.resurrectedFrames = new LinkedList<>();
 
         this.baseUri = null;
-        
+
         if(info.getLocalData("asyncio") != null) {
             this.asyncio = (TileReader.AsynchronousIO)info.getLocalData("asyncio");
             this.ownsIO = false;
@@ -197,9 +204,9 @@ public class GLMosaicMapLayer extends
             this.asyncio = new TileReader.AsynchronousIO();
             this.ownsIO = true;
         }
-        
+
         this.textureCacheEnabled = (ConfigOptions.getOption("imagery.texture-cache", 1) != 0);
-        
+
         this.controls = Collections.newSetFromMap(new IdentityHashMap<MapControl, Boolean>());
 
         this.rasterAccessControl = new RasterDataAccessControlImpl();
@@ -222,43 +229,37 @@ public class GLMosaicMapLayer extends
 
     @Override
     public synchronized void draw(GLMapView view) {
-        Iterator<GLResolvableMapRenderable> resolvableIter;
-        MosaicDatabase2.Frame frame;
-        GLResolvableMapRenderable resolvable;
-
-        boolean allResolved = true;
-        resolvableIter = this.visibleFrames.values().iterator();
-        while (resolvableIter.hasNext())
-            allResolved &= (resolvableIter.next().getState() == GLResolvableMapRenderable.State.RESOLVED);
-
         // clean up the zombie list
-        Iterator<Map.Entry<MosaicDatabase2.Frame, GLResolvableMapRenderable>> zombieIter = this.zombieFrames
-                .entrySet().iterator();
-        Map.Entry<MosaicDatabase2.Frame, GLResolvableMapRenderable> entry;
-        while (zombieIter.hasNext()) {
-            entry = zombieIter.next();
-            frame = entry.getKey();
-            resolvable = entry.getValue();
-            if (allResolved ||
-                    resolvable.getState() == GLResolvableMapRenderable.State.UNRESOLVED ||
-                    resolvable.getState() == GLResolvableMapRenderable.State.UNRESOLVABLE ||
-                    !intersects(this.preparedState, frame)) {
+        if(!this.zombieFrames.isEmpty()) {
+            boolean allResolved = true;
+            for (Map.Entry<MosaicDatabase2.Frame, GLResolvableMapRenderable> entry : visibleFrames.entrySet()) {
+                // check if resolved
+                allResolved &= (entry.getValue().getState() == GLResolvableMapRenderable.State.RESOLVED);
+            }
 
-                // all visible frames are resolved, the zombie frame has no
-                // data or has fallen out of the ROI; release it
-                zombieIter.remove();
-                resolvable.release();
-            } else if (resolvable.getState() == GLResolvableMapRenderable.State.RESOLVING) {
-                resolvable.suspend();
+
+            Iterator<Map.Entry<MosaicDatabase2.Frame, GLResolvableMapRenderable>> zombieIter = this.zombieFrames.entrySet().iterator();
+            while (zombieIter.hasNext()) {
+                final Map.Entry<MosaicDatabase2.Frame, GLResolvableMapRenderable> entry = zombieIter.next();
+                final MosaicDatabase2.Frame frame = entry.getKey();
+                final GLResolvableMapRenderable resolvable = entry.getValue();
+                if (allResolved ||
+                        !intersects(this.preparedState, frame)) {
+
+                    // all visible frames are resolved, the zombie frame has no
+                    // data or has fallen out of the ROI; release it
+                    zombieIter.remove();
+                    resolvable.release();
+                } else if (resolvable.getState() == GLResolvableMapRenderable.State.RESOLVING) {
+                    resolvable.suspend();
+                }
             }
         }
-
         // resurrected frames have already been moved from the zombie or
         // retention lists to the visible list; we just need to tell them to
         // resume
-        resolvableIter = this.resurrectedFrames.iterator();
-        while (resolvableIter.hasNext())
-            resolvableIter.next().resume();
+        for(GLResolvableMapRenderable resurrected : this.resurrectedFrames)
+            resurrected.resume();
         this.resurrectedFrames.clear();
 
         // apply any color mmodulation settings
@@ -270,22 +271,6 @@ public class GLMosaicMapLayer extends
     }
 
     @Override
-    protected ViewState newViewStateInstance() {
-        return new QueryArgument();
-    }
-
-    @Override
-    protected boolean checkState() {
-        final QueryArgument prepared = (QueryArgument) this.preparedState;
-        final QueryArgument target = (QueryArgument) this.targetState;
-
-        //System.out.println("GLGdalMosaicMapLayer checkState prepared.valid=" + (prepared.valid != target.valid) + " prepared.types=" + !equals(prepared.types, target.types) + " super=" + super.checkState());
-
-        return (prepared.valid != target.valid)
-                || super.checkState();
-    }
-
-    @Override
     protected Collection<GLResolvableMapRenderable> getRenderList() {
         return this.renderList;
     }
@@ -294,11 +279,9 @@ public class GLMosaicMapLayer extends
     protected void resetPendingData(MosaicPendingData pendingData) {
         pendingData.frames.clear();
         pendingData.spatialCalc.clear();
-        
+
         pendingData.loaded.clear();
         for(MosaicDatabase2.Frame frame : this.visibleFrames.keySet())
-            pendingData.loaded.add(this.resolvePath(frame.path));
-        for(MosaicDatabase2.Frame frame : this.zombieFrames.keySet())
             pendingData.loaded.add(this.resolvePath(frame.path));
     }
 
@@ -307,7 +290,7 @@ public class GLMosaicMapLayer extends
         pendingData.frames.clear();
         pendingData.spatialCalc.dispose();
         pendingData.loaded.clear();
-        
+
         // NOTE: the renderables contained in the map have been instantiated but
         //       not yet initialized. This is an important distinction as we
         //       must invoke release to free any non-GL resources owned by the
@@ -315,7 +298,7 @@ public class GLMosaicMapLayer extends
         for(GLMapRenderable r : pendingData.renderablePreload.values())
             r.release();
         pendingData.renderablePreload.clear();
-        
+
         if(pendingData.database != null) {
             pendingData.database.close();
             pendingData.database = null;
@@ -330,7 +313,7 @@ public class GLMosaicMapLayer extends
         try {
             retval.database = MosaicDatabaseFactory2.create(mosaic.getMosaicDatabaseProvider());
             if(retval.database != null)
-                retval.database.open(mosaic.getMosaicDatabaseFile());    
+                retval.database.open(mosaic.getMosaicDatabaseFile());
         } catch(Throwable t) {
             Log.e(TAG, "Failed to open mosaic " + this.info.getUri());
         }
@@ -341,67 +324,72 @@ public class GLMosaicMapLayer extends
     @Override
     protected boolean updateRenderableReleaseLists(MosaicPendingData pendingData) {
         //long s = android.os.SystemClock.elapsedRealtime();
-        
-        GLResolvableMapRenderable mapRenderable;
 
-        // holds renderables that will be the new 'visibleFrames'
-        NavigableMap<MosaicDatabase2.Frame, GLResolvableMapRenderable> swap = new TreeMap<MosaicDatabase2.Frame, GLResolvableMapRenderable>(FRAME_STORAGE_COMPARATOR);
+        // establish list of renderables that need to be released, initialized
+        // with all current renderables
+        Map<MosaicDatabase2.Frame, GLResolvableMapRenderable> toRelease = new HashMap<>(this.visibleFrames);
 
         // move any previously visible nodes into our nowVisible map
         for (MosaicDatabase2.Frame frame : pendingData.frames) {
-            mapRenderable = null;
-            if (this.visibleFrames.containsKey(frame)) {
-                mapRenderable = this.visibleFrames.remove(frame);
-            } else if (this.zombieFrames.containsKey(frame)) {
-                mapRenderable = this.zombieFrames.remove(frame);
+            // visible, do not release
+            toRelease.remove(frame);
 
-                // the frame was a zombie, it needs to be marked as resurrected
-                this.resurrectedFrames.add(mapRenderable);
+            GLResolvableMapRenderable renderable = this.visibleFrames.get(frame);
+            if (renderable != null)
+                continue; // no-op
+
+            if(this.zombieFrames.containsKey(frame)) {
+                // transfer from the zombie list back to the visible list and resurrect
+                renderable = this.zombieFrames.remove(frame);
+                this.resurrectedFrames.add(renderable);
             } else if(pendingData.renderablePreload.containsKey(frame)) {
-                mapRenderable = pendingData.renderablePreload.remove(frame);
+                renderable = pendingData.renderablePreload.remove(frame);
 
                 // apply color modulation to the newly created renderable
-                ((ColorControlImpl)this.colorControl).apply(frame, mapRenderable);
+                ((ColorControlImpl)this.colorControl).apply(frame, renderable);
             } else {
                 // the frame is not in any of the lists and intersects the view,
                 // create a node for it
-                mapRenderable = this.createRootNode(frame);
+                renderable = this.createRootNode(frame);
 
                 // apply color modulation to the newly created renderable
-                ((ColorControlImpl)this.colorControl).apply(frame, mapRenderable);
+                ((ColorControlImpl)this.colorControl).apply(frame, renderable);
             }
 
                 // add it to the list of frames that are now visible
-            if(mapRenderable != null)
-                swap.put(frame, mapRenderable);
+            if(renderable != null)
+                this.visibleFrames.put(frame, renderable);
         }
         pendingData.frames.clear();
 
-        Iterator<Map.Entry<MosaicDatabase2.Frame, GLResolvableMapRenderable>> releaseIter = this.visibleFrames
+        // any resurrected frames are marked, clear and rebuild the zombie list
+        toRelease.putAll(this.zombieFrames);
+        this.zombieFrames.clear();
+
+        Iterator<Map.Entry<MosaicDatabase2.Frame, GLResolvableMapRenderable>> releaseIter = toRelease
                 .entrySet().iterator();
-        Map.Entry<MosaicDatabase2.Frame, GLResolvableMapRenderable> entry;
-        MosaicDatabase2.Frame frame;
         while (releaseIter.hasNext()) {
-            entry = releaseIter.next();
-            frame = entry.getKey();
-            mapRenderable = entry.getValue();
+            final Map.Entry<MosaicDatabase2.Frame, GLResolvableMapRenderable> entry = releaseIter.next();
+            final MosaicDatabase2.Frame frame = entry.getKey();
+            final GLResolvableMapRenderable mapRenderable = entry.getValue();
 
-            // if the frame marked for release intersects the current ROI, make
-            // it a zombie
-            if (mapRenderable.getState() != GLResolvableMapRenderable.State.UNRESOLVED &&
-                    mapRenderable.getState() != GLResolvableMapRenderable.State.UNRESOLVABLE &&
-                    intersects(this.targetState, frame)) {
+            // if the frame marked for release intersects the current ROI,
+            // transfer it to the zombie list
+            if (intersects(this.targetState, frame)) {
+                // transfer from previously visible to zombie
+                this.visibleFrames.remove(frame);
+                this.zombieFrames.put(frame, mapRenderable);
 
-                this.zombieFrames.put(entry.getKey(), entry.getValue());
+                // remove from release
                 releaseIter.remove();
             }
         }
 
         // retain a reference to the renderables that need to be released
-        final Collection<GLResolvableMapRenderable> releaseList = this.visibleFrames.values();
+        final Collection<GLResolvableMapRenderable> releaseList = toRelease.values();
+        for(MosaicDatabase2.Frame frame : toRelease.keySet())
+            visibleFrames.remove(frame);
 
-        // set visible to the swap map
-        this.visibleFrames = swap;
 
         this.surface.queueEvent(new Runnable() {
             @Override
@@ -414,9 +402,6 @@ public class GLMosaicMapLayer extends
                 releaseList.clear();
             }
         });
-        this.zombieAndVisibleFrames.clear();
-        this.zombieAndVisibleFrames.add(this.zombieFrames.values());
-        this.zombieAndVisibleFrames.add(this.visibleFrames.values());
 
         // NOTE: the renderables contained in the map have been instantiated but
         //       not yet initialized. This is an important distinction as we
@@ -438,51 +423,38 @@ public class GLMosaicMapLayer extends
     
     @Override
     protected void query(ViewState state, MosaicPendingData retval) {
-        if(retval.database == null)
+        if (retval.database == null)
             return;
 
-        final QueryArgument localQuery = (QueryArgument) state;
-        if (!localQuery.valid) {
-            Log.d(TAG, "QUERY INVALID!!!");
-            return;
-        }
+        final ViewState localQuery = (ViewState) state;
+        if(localQuery.crossesIDL) {
+            int processed = 0;
 
-        if(state.crossesIDL) {
-            Set<MosaicDatabase2.Frame> result = new TreeSet<MosaicDatabase2.Frame>(FRAME_STORAGE_COMPARATOR);
-
-            QueryArgument hemi = (QueryArgument)this.newViewStateInstance();
+            ViewState hemi = this.newViewStateInstance();
 
             // west of IDL
-            hemi.copy(state);
-            state.eastBound = 180d;
+            hemi.copy(localQuery);
+            hemi.eastBound = 180d;
             hemi.upperLeft.set(hemi.northBound, hemi.westBound);
             hemi.upperRight.set(hemi.northBound, hemi.eastBound);
             hemi.lowerRight.set(hemi.southBound, hemi.eastBound);
             hemi.lowerLeft.set(hemi.southBound, hemi.westBound);
-            this.queryImpl(localQuery, retval);
-            result.addAll(retval.frames);
-            
-            // reset
-            retval.frames.clear();
+            this.queryImpl(hemi, retval);
             
             // east of IDL
-            hemi.copy(state);
+            hemi.copy(localQuery);
             hemi.westBound = -180d;
             hemi.upperLeft.set(hemi.northBound, hemi.westBound);
             hemi.upperRight.set(hemi.northBound, hemi.eastBound);
             hemi.lowerRight.set(hemi.southBound, hemi.eastBound);
             hemi.lowerLeft.set(hemi.southBound, hemi.westBound);
             this.queryImpl(hemi, retval);
-            result.addAll(retval.frames);
-
-            retval.frames.clear();
-            retval.frames.addAll(result);
         } else {
             queryImpl(localQuery, retval);
         }
     }
 
-    private List<MosaicDatabase2.QueryParameters> constructQueryParams(QueryArgument localQuery) {
+    private List<MosaicDatabase2.QueryParameters> constructQueryParams(ViewState localQuery) {
         MosaicDatabase2.QueryParameters base = new MosaicDatabase2.QueryParameters();
         base.spatialFilter = DatasetDescriptor.createSimpleCoverage(localQuery.upperLeft,
                 localQuery.upperRight,
@@ -522,11 +494,11 @@ public class GLMosaicMapLayer extends
         return retval;
     }
     
-    private void queryImpl(QueryArgument localQuery, MosaicPendingData retval) {
+    private void queryImpl(ViewState localQuery, MosaicPendingData retval) {
         if(this.checkQueryThreadAbort())
             return;
 
-        //System.out.println("QUERY ON " + localQuery.upperLeft + " " + localQuery.lowerRight + " @ " + localQuery.drawMapResolution);
+        //Log.i(TAG, "QUERY ON " + localQuery.upperLeft + " (" + localQuery._left + "," + localQuery._top + ") " + localQuery.lowerRight + " (" + localQuery._right + "," + localQuery._bottom + ") @ " + localQuery.drawMapResolution);
 
         // compute the amount of buffering to be added around the bounds of the
         // frame -- target 2 pixels
@@ -541,8 +513,6 @@ public class GLMosaicMapLayer extends
 
         MosaicDatabase2.Cursor result = null;
 
-        //long s = android.os.SystemClock.elapsedRealtime();
-
         //int processed = 0;
         // wrap everything in a transaction
         retval.spatialCalc.beginBatch();
@@ -552,7 +522,7 @@ public class GLMosaicMapLayer extends
                     localQuery.lowerLeft,
                     localQuery.lowerRight);
             long coverageHandle = 0L;
-            long frameHandle;
+            long frameHandle = 0L;
 
             List<MosaicDatabase2.QueryParameters> params = this.constructQueryParams(localQuery);
 outer:      for(MosaicDatabase2.QueryParameters p : params) {
@@ -567,7 +537,6 @@ outer:      for(MosaicDatabase2.QueryParameters p : params) {
                             break outer;
 
                         //processed++;
-
                         frameHandle = retval.spatialCalc.createPolygon(result.getUpperLeft(),
                                 result.getUpperRight(),
                                 result.getLowerRight(),
@@ -596,10 +565,31 @@ outer:      for(MosaicDatabase2.QueryParameters p : params) {
                             }
                         }
 
-                        retval.frames.add(result.asFrame());
+                        // XXX - we're using the ID to indicate the pump in which it was fetched to sort zombie frames to the back
+                        MosaicDatabase2.Frame frame = new MosaicDatabase2.Frame(
+                                localQuery.drawVersion,
+                                result.getPath(),
+                                result.getType(),
+                                result.isPrecisionImagery(),
+                                result.getMinLat(),
+                                result.getMinLon(),
+                                result.getMaxLat(),
+                                result.getMaxLon(),
+                                result.getUpperLeft(),
+                                result.getUpperRight(),
+                                result.getLowerRight(),
+                                result.getLowerLeft(),
+                                result.getMinGSD(),
+                                result.getMaxGSD(),
+                                result.getWidth(),
+                                result.getHeight(),
+                                result.getSrid()
+                        );
+                        frame = result.asFrame();
+
+                        retval.frames.add(frame);
                         if (selectedType == null)
                             selectedType = result.getType();
-
                         // if the current coverage contains the ROI, break
                         try {
                             if (retval.spatialCalc.contains(coverageHandle, viewHandle))
@@ -615,28 +605,12 @@ outer:      for(MosaicDatabase2.QueryParameters p : params) {
                         result.close();
                 }
             }
+        } catch(Throwable t) {
+            Log.e(TAG, "Data query unexpectedly failed, results may be incomplete.", t);
         } finally {
             // dump everything -- we don't need it to persist
             retval.spatialCalc.endBatch(false);
         }
-
-        // instantiate (but do not initialize) renderables for all frames that
-        // are not currently loaded
-        GLResolvableMapRenderable renderable;
-        for(MosaicDatabase2.Frame frame : retval.frames) {
-            if(this.checkQueryThreadAbort())
-                break;
-
-            if(retval.loaded.contains(this.resolvePath(frame.path)))
-                continue;
-            renderable = this.createRootNode(frame);
-            if(renderable != null)
-                retval.renderablePreload.put(frame, renderable);
-        }
-        //long e = android.os.SystemClock.elapsedRealtime();
-
-        //System.out.println("PROCESSED " + processed + " in " + (e-s) + "ms");
-        //System.out.println("got " + retval.frames.size() + " results");
     }
 
     @Override
@@ -659,18 +633,20 @@ outer:      for(MosaicDatabase2.QueryParameters p : params) {
 
     protected GLResolvableMapRenderable createRootNode(MosaicDatabase2.Frame frame) {
         String tileCacheDatabase = null;
+        /*
         if (GLMosaicMapLayer.this.info.getExtraData("tilecacheDir") != null) {
             String tilecachePath = GLMosaicMapLayer.this.info.getExtraData("tilecacheDir");
             tileCacheDatabase = tilecachePath + File.pathSeparator + String.valueOf(frame.id);
         }
+         */
         
         TileReaderFactory.Options opts = new TileReaderFactory.Options();
         opts.asyncIO = this.asyncio;
         opts.cacheUri = tileCacheDatabase;
-        opts.preferredTileWidth = 512;
-        opts.preferredTileHeight = 512;
+        opts.preferredTileWidth = 256;
+        opts.preferredTileHeight = 256;
 
-        final GLQuadTileNode2.Options glopts = new GLQuadTileNode2.Options();
+        final GLQuadTileNode3.Options glopts = new GLQuadTileNode3.Options();
         glopts.levelTransitionAdjustment = -1d * ConfigOptions.getOption("imagery.zoom-level-adjust", 0d);
 //        glopts.levelTransitionAdjustment = 0.5d;
         // XXX - avoid cast
@@ -678,7 +654,7 @@ outer:      for(MosaicDatabase2.QueryParameters p : params) {
             glopts.textureCache = GLRenderGlobals.get(GLMosaicMapLayer.this.surface).getTextureCache();
         
         try {
-            return new GLQuadTileNode2(frame, opts, glopts, this.nodeInitializer);
+            return new GLQuadTileNode3(LegacyAdapters.getRenderContext(this.surface), frame, opts, glopts, this.nodeInitializer);
         } catch(Throwable t) {
             return null;
         }
@@ -859,53 +835,6 @@ outer:      for(MosaicDatabase2.QueryParameters p : params) {
     }
 
     /**************************************************************************/
-
-    private class QueryArgument extends ViewState {
-        public double minGSD;
-        public double maxGSD;
-        public boolean valid;
-
-        public QueryArgument() {
-            super();
-
-            this.minGSD = Double.NaN;
-            this.maxGSD = Double.NaN;
-            this.valid = false;
-        }
-
-        @Override
-        public void set(GLMapView view) {
-            super.set(view);
-
-            final double mapResolution = view.getSurface().getMapView()
-                    .getMapResolution(view.drawMapScale);
-
-            // query the database over the spatial ROI
-            this.minGSD = Double.NaN;
-            this.maxGSD = Double.NaN;
-            if (mapResolution < GLMosaicMapLayer.this.info.getMaxResolution(null)) {
-                // the map resolution exceeds what is available; cap maximum
-                // requested GSD at available
-                this.maxGSD = GLMosaicMapLayer.this.info.getMaxResolution(null);
-            } else {
-                // don't give anything with a resolution higher than the twice
-                // the current map resolution
-                    this.maxGSD = mapResolution;
-                }
-
-            this.valid = true;
-        }
-
-        @Override
-        public void copy(ViewState o) {
-            super.copy(o);
-
-            QueryArgument other = (QueryArgument) o;
-            this.minGSD = other.minGSD;
-            this.maxGSD = other.maxGSD;
-            this.valid = other.valid;
-        }
-    }
     
     private class RasterDataAccessControlImpl implements RasterDataAccessControl {
         @Override
@@ -1006,8 +935,6 @@ outer:      for(MosaicDatabase2.QueryParameters p : params) {
                 return;
             for(Map.Entry<MosaicDatabase2.Frame, GLResolvableMapRenderable> entry : GLMosaicMapLayer.this.visibleFrames.entrySet())
                 apply(entry.getKey(), entry.getValue());
-            for(Map.Entry<MosaicDatabase2.Frame, GLResolvableMapRenderable> entry : GLMosaicMapLayer.this.zombieFrames.entrySet())
-                apply(entry.getKey(), entry.getValue());
             this.dirty = false;
         }
 
@@ -1018,8 +945,8 @@ outer:      for(MosaicDatabase2.QueryParameters p : params) {
             
             final int color = modulate(layerColor, frameColor);
 
-            if(r instanceof GLQuadTileNode2) {
-                ((GLQuadTileNode2)r).setColor(color);
+            if(r instanceof GLQuadTileNode3) {
+                ((GLQuadTileNode3)r).setColor(color);
             } else if(r instanceof Controls){
                 ColorControl ctrl = ((Controls)r).getControl(ColorControl.class);
                 if(ctrl != null)
@@ -1058,7 +985,7 @@ outer:      for(MosaicDatabase2.QueryParameters p : params) {
         }
     }
 
-    private class SelectControlImpl implements ImagerySelectionControl {
+    final class SelectControlImpl implements ImagerySelectionControl {
 
         @Override
         public void setResolutionSelectMode(Mode mode) {
@@ -1080,5 +1007,11 @@ outer:      for(MosaicDatabase2.QueryParameters p : params) {
             GLMosaicMapLayer.this.imageryTypeFilter = filter;
             GLMosaicMapLayer.this.invalidateNoSync();
         }
+    }
+
+    final static class FrameRecord {
+        MosaicDatabase2.Frame frame;
+        int requestPump;
+        GLResolvableMapRenderable renderable;
     }
 }

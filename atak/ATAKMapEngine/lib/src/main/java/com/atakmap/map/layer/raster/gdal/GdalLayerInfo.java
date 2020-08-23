@@ -804,14 +804,14 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
             entry = iter.next();
             try {
                 paramString.append(URLEncoder.encode(entry.getKey(),
-                        DatasetDescriptor.URI_CHARACTER_ENCODING));
+                        DatasetDescriptor.URI_CHARACTER_ENCODING.name()));
             } catch (UnsupportedEncodingException e) {
                 throw new IllegalStateException(e);
             }
             paramString.append("=");
             try {
                 paramString.append(URLEncoder.encode(entry.getValue(),
-                        DatasetDescriptor.URI_CHARACTER_ENCODING));
+                        DatasetDescriptor.URI_CHARACTER_ENCODING.name()));
             } catch (UnsupportedEncodingException e) {
                 throw new IllegalStateException(e);
             }

@@ -18,6 +18,7 @@ public class CotAttribute {
      * @param value the value of the attribute
      */
     CotAttribute(final String name, final String value) {
+        //XXX-- do we allow a null attribute name? (see CotAttributeTest Contract Questions)
         _name = name;
         _value = value;
     }

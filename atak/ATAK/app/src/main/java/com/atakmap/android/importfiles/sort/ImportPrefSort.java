@@ -2,12 +2,15 @@
 package com.atakmap.android.importfiles.sort;
 
 import android.content.Context;
+import android.util.Pair;
 import android.widget.Toast;
 
 import com.atakmap.android.gui.ImportFileBrowserDialog;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.PreferenceControl;
+import com.atakmap.comms.http.HttpUtil;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.xml.XMLUtils;
 import com.atakmap.net.AtakAuthenticationCredentials;
 
 import org.w3c.dom.Document;
@@ -34,6 +37,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import javax.xml.XMLConstants;
+
 /**
  * Sorts ATAK Preferences Files
  * 
@@ -42,6 +47,8 @@ import javax.xml.transform.stream.StreamResult;
 public class ImportPrefSort extends ImportInternalSDResolver {
 
     private static final String TAG = "ImportPrefSort";
+
+    public static final String CONTENT_TYPE = "ATAK Preferences";
 
     //require this
     private final static String MATCH_XML = "<preferences";
@@ -62,7 +69,8 @@ public class ImportPrefSort extends ImportInternalSDResolver {
     public ImportPrefSort(Context context, boolean validateExt,
             boolean copyFile) {
         super(".pref", PreferenceControl.DIRNAME, validateExt, copyFile,
-                context.getString(R.string.preference_file));
+                context.getString(R.string.preference_file),
+                context.getDrawable(R.drawable.ic_menu_settings));
         _context = context;
     }
 
@@ -156,8 +164,9 @@ public class ImportPrefSort extends ImportInternalSDResolver {
             for (String prefsFile : prefFilesToCleanup) {
 
                 // read the prefs file into a document
-                DocumentBuilderFactory dbf = DocumentBuilderFactory
-                        .newInstance();
+                DocumentBuilderFactory dbf = XMLUtils
+                        .getDocumenBuilderFactory();
+
                 DocumentBuilder db = dbf.newDocumentBuilder();
                 File configFile = new File(prefsFile);
                 Document doc = db.parse(configFile);
@@ -202,14 +211,19 @@ public class ImportPrefSort extends ImportInternalSDResolver {
                 DOMSource source = new DOMSource(doc);
                 FileWriter writer = new FileWriter(new File(prefsFile));
                 StreamResult result = new StreamResult(writer);
-                TransformerFactory transformerFactory = TransformerFactory
-                        .newInstance();
+                TransformerFactory transformerFactory = XMLUtils
+                        .getTransformerFactory();
                 Transformer transformer = transformerFactory.newTransformer();
                 transformer.transform(source, result);
             }
         } catch (Exception e) {
             Log.e(TAG, "Exception in finalizeImport!", e);
         }
+    }
+
+    @Override
+    public Pair<String, String> getContentMIME() {
+        return new Pair<>(CONTENT_TYPE, HttpUtil.MIME_XML);
     }
 
     public static void importPrefs(final Context context) {

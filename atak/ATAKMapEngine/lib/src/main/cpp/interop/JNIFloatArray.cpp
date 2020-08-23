@@ -4,6 +4,8 @@
 
 using namespace TAKEngineJNI::Interop;
 
+using namespace TAK::Engine::Util;
+
 namespace
 {
     inline jfloat *pin(JNIEnv *env, jfloatArray jarr, jboolean *isCopy)
@@ -28,4 +30,28 @@ jfloatArray TAKEngineJNI::Interop::JNIFloatArray_newFloatArray(JNIEnv *env, cons
     jfloat *carr = jarr;
     memcpy(carr, data, len*sizeof(jfloat));
     return retval;
+}
+TAKErr TAKEngineJNI::Interop::JNIFloatArray_copy(jfloat *dst, JNIEnv &env, jfloatArray src, const std::size_t off, const std::size_t len) NOTHROWS
+{
+    if(!src)
+        return TE_InvalidArg;
+    if(!dst)
+        return TE_InvalidArg;
+    JNIFloatArray marr(env, src, JNI_ABORT);
+    if(off+len > marr.length())
+        return TE_InvalidArg;
+    memcpy(dst, marr.get<jfloat>()+off, sizeof(jfloat) * len);
+    return TE_Ok;
+}
+TAKErr TAKEngineJNI::Interop::JNIFloatArray_copy(jfloatArray dst, const std::size_t off, JNIEnv &env, const jfloat *src, const std::size_t len) NOTHROWS
+{
+    if(!src)
+        return TE_InvalidArg;
+    if(!dst)
+        return TE_InvalidArg;
+    JNIFloatArray marr(env, dst, 0);
+    if(len > marr.length())
+        return TE_InvalidArg;
+    memcpy(marr.get<jfloat>()+off, src, sizeof(jfloat) * len);
+    return TE_Ok;
 }

@@ -65,13 +65,9 @@ public class HashingUtils {
     public static String md5sum(String content) {
         if (content == null || content.length() < 1)
             return null;
-        try {
-            return md5sum(new ByteArrayInputStream(
-                    content.getBytes(FileSystemUtils.UTF8_CHARSET)));
-        } catch (UnsupportedEncodingException e) {
-            Log.e(TAG, "Error computing md5sum", e);
-        }
-        return null;
+
+        return md5sum(new ByteArrayInputStream(
+                content.getBytes(FileSystemUtils.UTF8_CHARSET)));
     }
 
     /*
@@ -133,13 +129,10 @@ public class HashingUtils {
     public static String sha256sum(String content) {
         if (content == null || content.length() < 1)
             return null;
-        try {
-            return sha256sum(new ByteArrayInputStream(
-                    content.getBytes(FileSystemUtils.UTF8_CHARSET)));
-        } catch (UnsupportedEncodingException e) {
-            Log.e(TAG, "Error computing sha256sum", e);
-        }
-        return null;
+
+        return sha256sum(new ByteArrayInputStream(
+                content.getBytes(FileSystemUtils.UTF8_CHARSET)));
+
     }
 
     public static String sha256sum(byte[] content) {
@@ -211,13 +204,10 @@ public class HashingUtils {
     public static String sha1sum(String content) {
         if (content == null || content.length() < 1)
             return null;
-        try {
-            return sha1sum(new ByteArrayInputStream(
-                    content.getBytes(FileSystemUtils.UTF8_CHARSET)));
-        } catch (UnsupportedEncodingException e) {
-            Log.e(TAG, "Error computing sha1sumsum", e);
-        }
-        return null;
+
+        return sha1sum(new ByteArrayInputStream(
+                content.getBytes(FileSystemUtils.UTF8_CHARSET)));
+
     }
 
     public static String sha1sum(byte[] content) {

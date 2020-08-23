@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:orientation="vertical" android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:textColor="#FFF"
+        android:textSize="16sp"
+        android:text="@string/route_method"/>
+
+    <Spinner
+        android:textColor="@color/white"
+        android:padding="6dp" style="@style/darkButton"
+        android:id="@+id/route_plan_method"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"/>
+
+    <LinearLayout
+        android:id="@+id/route_plan_options"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:padding="6dp"
+        android:orientation="vertical"/>
+    </LinearLayout>
+</ScrollView>

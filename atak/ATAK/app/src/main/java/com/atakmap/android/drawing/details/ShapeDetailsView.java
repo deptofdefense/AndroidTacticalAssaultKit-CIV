@@ -426,7 +426,9 @@ public class ShapeDetailsView extends GenericDetailsView implements
 
     @Override
     protected void _onHeightSelected() {
-        createHeightDialog(_shape, R.string.enter_shape_height);
+        createHeightDialog(_shape, R.string.enter_shape_height, new Span[] {
+                Span.METER, Span.YARD, Span.FOOT
+        });
     }
 
     @Override

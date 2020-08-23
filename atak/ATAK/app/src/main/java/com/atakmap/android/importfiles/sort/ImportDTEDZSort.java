@@ -10,6 +10,7 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
 import android.app.Notification;
+import android.util.Pair;
 
 import com.atakmap.android.util.NotificationUtil;
 
@@ -77,7 +78,8 @@ public class ImportDTEDZSort extends ImportInPlaceResolver {
             boolean copyFile, boolean importInPlace) {
         super(ext, FileSystemUtils.DTED_DIRECTORY, validateExt,
                 copyFile, importInPlace,
-                context.getString(R.string.zipped_dted));
+                context.getString(R.string.zipped_dted),
+                context.getDrawable(R.drawable.ic_overlay_dted));
         _context = context;
     }
 
@@ -89,6 +91,11 @@ public class ImportDTEDZSort extends ImportInPlaceResolver {
         // it is a .zip, now lets see if it contains a DTED directory 
         // but no manifest.
         return hasDTED(file);
+    }
+
+    @Override
+    public Pair<String, String> getContentMIME() {
+        return new Pair<>("Zipped DTED", "application/zip");
     }
 
     private static boolean containsDT(String s) {

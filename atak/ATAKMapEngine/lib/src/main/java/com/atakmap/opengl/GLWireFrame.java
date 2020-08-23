@@ -122,13 +122,14 @@ public final class GLWireFrame {
         if(dstIndexType != GLES30.GL_UNSIGNED_SHORT)
             throw new UnsupportedOperationException();
         ShortBuffer retval;
+        final int basePos = srcIndices.position();
         switch(mode) {
             case GLES20FixedPipeline.GL_TRIANGLE_FAN :
                 retval = allocateShorts(6*(count-2)); // 6 vertices per triangle
                 for(int i = 2; i < count; i++) {
-                    final short a = srcIndices.get(0);
-                    final short b = srcIndices.get(i-1);
-                    final short c = srcIndices.get(i);
+                    final short a = srcIndices.get(basePos + 0);
+                    final short b = srcIndices.get(basePos + i-1);
+                    final short c = srcIndices.get(basePos + i);
                     retval.put(a);
                     retval.put(b);
                     retval.put(b);
@@ -140,9 +141,9 @@ public final class GLWireFrame {
             case GLES20FixedPipeline.GL_TRIANGLES :
                 retval = allocateShorts(6*(count/3)); // 6 vertices per triangle
                 for(int i = 0; i < count/3; i++) {
-                    final short a = srcIndices.get(i*3);
-                    final short b = srcIndices.get(i*3 + 1);
-                    final short c = srcIndices.get(i*3 + 2);
+                    final short a = srcIndices.get(basePos + i*3);
+                    final short b = srcIndices.get(basePos + i*3 + 1);
+                    final short c = srcIndices.get(basePos + i*3 + 2);
                     retval.put(a);
                     retval.put(b);
                     retval.put(b);
@@ -154,9 +155,9 @@ public final class GLWireFrame {
             case GLES20FixedPipeline.GL_TRIANGLE_STRIP :
                 retval = allocateShorts(6*(count-2)); // 6 vertices per triangle
                 for(int i = 2; i < count; i++) {
-                    final short a = srcIndices.get(i-2);
-                    final short b = srcIndices.get(i-1);
-                    final short c = srcIndices.get(i);
+                    final short a = srcIndices.get(basePos + i-2);
+                    final short b = srcIndices.get(basePos + i-1);
+                    final short c = srcIndices.get(basePos + i);
                     if(a == b || b == c)
                         continue;
                     retval.put(a);
@@ -241,31 +242,32 @@ public final class GLWireFrame {
             default :
                 throw new IllegalArgumentException();
         }
+        final int basePos = srcIndices.position();
         switch(mode) {
             case GLES20FixedPipeline.GL_TRIANGLE_FAN :
                 retval = allocateFloats(6*(count-2)*size); // 6 vertices per triangle
                 for(int i = 2; i < count; i++) {
-                    final short a = srcIndices.get(0);
-                    final short b = srcIndices.get(i-1);
-                    final short c = srcIndices.get(i);
+                    final short a = srcIndices.get(basePos + 0);
+                    final short b = srcIndices.get(basePos + i-1);
+                    final short c = srcIndices.get(basePos + i);
                     vtx.copyVertex(srcVertices, stride, retval, a, b, c);
                 }
                 break;
             case GLES20FixedPipeline.GL_TRIANGLES :
                 retval = allocateFloats(6*count/3*size); // 6 vertices per triangle
                 for(int i = 0; i < count/3; i++) {
-                    final short a = srcIndices.get(i*3);
-                    final short b = srcIndices.get(i*3 + 1);
-                    final short c = srcIndices.get(i*3 + 2);
+                    final short a = srcIndices.get(basePos + i*3);
+                    final short b = srcIndices.get(basePos + i*3 + 1);
+                    final short c = srcIndices.get(basePos + i*3 + 2);
                     vtx.copyVertex(srcVertices, stride, retval, a, b, c);
                 }
                 break;
             case GLES20FixedPipeline.GL_TRIANGLE_STRIP :
                 retval = allocateFloats(6*(count-2)*size); // 6 vertices per triangle
                 for(int i = 2; i < count; i++) {
-                    final short a = srcIndices.get(i-2);
-                    final short b = srcIndices.get(i-1);
-                    final short c = srcIndices.get(i);
+                    final short a = srcIndices.get(basePos + i-2);
+                    final short b = srcIndices.get(basePos + i-1);
+                    final short c = srcIndices.get(basePos + i);
                     if(a == b || b == c)
                         continue;
                     vtx.copyVertex(srcVertices, stride, retval, a, b, c);

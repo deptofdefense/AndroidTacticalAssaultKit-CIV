@@ -1,7 +1,7 @@
 # For mac
 #PGSCUTILS_LIBDIR := shlib/macosx/x86_64
 PUBINCDIR := ../../core/include
-TAKTHIRDPARTYDIR := ../../../raster/takthirdparty/builds/linux-amd64-release
+TAKTHIRDPARTYDIR := ../../../takthirdparty/builds/linux-amd64-release
 PGSCTHREADDIR := $(TAKTHIRDPARTYDIR)/pgscthread
 CURL_CONF := $(TAKTHIRDPARTYDIR)/bin/curl-config
 

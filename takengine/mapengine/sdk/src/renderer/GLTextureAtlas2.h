@@ -71,13 +71,13 @@ namespace TAK {
             {
                 int x;
                 int y;
-                int width;
-                int height;
+                size_t width;
+                size_t height;
                 bool splitFreeHorizontal;
             private :
                 Rect();
             public :
-                Rect(const int x, const int y, const int width, const int height, const bool splitFreeHorizontal);
+                Rect(const int x, const int y, const size_t width, const size_t height, const bool splitFreeHorizontal);
             private:
                 int instance;
 
@@ -90,7 +90,7 @@ namespace TAK {
             public :
                 SheetRects(const int texid) NOTHROWS;
             public :
-                const SheetRects *find(const int texid) const NOTHROWS;
+                const SheetRects *find(const int tex_id) const NOTHROWS;
             public :
                 const int texid;
                 const int limit;

@@ -7,6 +7,7 @@ import java.util.LinkedList;
 
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.geometry.GeometryCollection;
@@ -27,6 +28,9 @@ public class GLBatchGeometryCollection extends GLBatchGeometry {
     Collection<GLBatchGeometry> collections;
 
     private Style style;
+    private Feature.AltitudeMode altitudeMode;
+    private double extrude;
+
     private int collectionEntityType;
     private int renderPass;
 
@@ -118,6 +122,32 @@ public class GLBatchGeometryCollection extends GLBatchGeometry {
         for(GLBatchGeometry child : points)
             child.setStyle(style);
         this.style = style;
+    }
+
+    @Override
+    public void setAltitudeMode(Feature.AltitudeMode altitudeMode) {
+        for(GLBatchGeometry child : collections)
+            child.setAltitudeMode(altitudeMode);
+        for(GLBatchGeometry child : polys)
+            child.setAltitudeMode(altitudeMode);
+        for(GLBatchGeometry child : lines)
+            child.setAltitudeMode(altitudeMode);
+        for(GLBatchGeometry child : points)
+            child.setAltitudeMode(altitudeMode);
+        this.altitudeMode = altitudeMode;
+    }
+
+    @Override
+    public void setExtrude(double value) {
+        for(GLBatchGeometry child : collections)
+            child.setExtrude(value);
+        for(GLBatchGeometry child : polys)
+            child.setExtrude(value);
+        for(GLBatchGeometry child : lines)
+            child.setExtrude(value);
+        for(GLBatchGeometry child : points)
+            child.setExtrude(value);
+        this.extrude = value;
     }
 
     public void setGeometry(GeometryCollection geometry) {

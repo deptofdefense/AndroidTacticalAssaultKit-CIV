@@ -20,12 +20,12 @@ RWMutex::~RWMutex() NOTHROWS
 TAKErr RWMutex::lockRead() NOTHROWS
 {
     TAKErr code(TE_Ok);
-    MonitorLockPtr lock(NULL, NULL);
-    code = MonitorLock_create(lock, monitor);
+    Monitor::Lock lock(monitor);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     while (writers || waitingWriters) {
-        code = lock->wait();
+        code = lock.wait();
         if (code == TE_Interrupted)
             code = TE_Ok;
         TE_CHECKBREAK_CODE(code);
@@ -38,14 +38,14 @@ TAKErr RWMutex::lockRead() NOTHROWS
 TAKErr RWMutex::unlockRead() NOTHROWS
 {
     TAKErr code(TE_Ok);
-    MonitorLockPtr lock(NULL, NULL);
-    code = MonitorLock_create(lock, monitor);
+    Monitor::Lock lock(monitor);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     if (!readers)
         return TE_IllegalState;
     readers--;
-    code = lock->broadcast();
+    code = lock.broadcast();
     TE_CHECKRETURN_CODE(code);
 
     return code;
@@ -53,8 +53,8 @@ TAKErr RWMutex::unlockRead() NOTHROWS
 TAKErr RWMutex::lockWrite() NOTHROWS
 {
     TAKErr code(TE_Ok);
-    MonitorLockPtr lock(NULL, NULL);
-    code = MonitorLock_create(lock, monitor);
+    Monitor::Lock lock(monitor);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     // signal that there is a waiting writer
@@ -64,7 +64,7 @@ TAKErr RWMutex::lockWrite() NOTHROWS
     // writer needs to wait until there are no writers or readers currently
     // accessing the resource
     while (writers || readers) {
-        code = lock->wait();
+        code = lock.wait();
         if (code == TE_Interrupted)
             code = TE_Ok;
         TE_CHECKBREAK_CODE(code);
@@ -81,14 +81,14 @@ TAKErr RWMutex::lockWrite() NOTHROWS
 TAKErr RWMutex::unlockWrite() NOTHROWS
 {
     TAKErr code(TE_Ok);
-    MonitorLockPtr lock(NULL, NULL);
-    code = MonitorLock_create(lock, monitor);
+    Monitor::Lock lock(monitor);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     if (!writers)
         return TE_IllegalState;
     writers--;
-    code = lock->broadcast();
+    code = lock.broadcast();
     TE_CHECKRETURN_CODE(code);
 
     return code;
@@ -97,6 +97,7 @@ TAKErr RWMutex::unlockWrite() NOTHROWS
 // ReadLock
 
 ReadLock::ReadLock(RWMutex &mutex_) NOTHROWS :
+    status(mutex_.lockRead()),
     mutex(mutex_)
 {}
 ReadLock::~ReadLock() NOTHROWS
@@ -107,6 +108,7 @@ ReadLock::~ReadLock() NOTHROWS
 // WriteLock
 
 WriteLock::WriteLock(RWMutex &mutex_) NOTHROWS :
+    status(mutex_.lockWrite()),
     mutex(mutex_)
 {}
 WriteLock::~WriteLock() NOTHROWS
@@ -117,20 +119,18 @@ WriteLock::~WriteLock() NOTHROWS
 
 TAKErr TAK::Engine::Thread::ReadLock_create(ReadLockPtr &value, RWMutex &mutex) NOTHROWS
 {
-    TAKErr code(TE_Ok);
-    code = mutex.lockRead();
-    TE_CHECKRETURN_CODE(code);
-
-    value = ReadLockPtr(new ReadLock(mutex), Memory_deleter_const<ReadLock>);
-    return code;
+    value = ReadLockPtr(new(std::nothrow) ReadLock(mutex), Memory_deleter_const<ReadLock>);
+    if (!value.get())
+        return TE_OutOfMemory;
+    TE_CHECKRETURN_CODE(value->status);
+    return TE_Ok;
 }
 
 TAKErr TAK::Engine::Thread::WriteLock_create(WriteLockPtr &value, RWMutex &mutex) NOTHROWS
 {
-    TAKErr code(TE_Ok);
-    code = mutex.lockWrite();
-    TE_CHECKRETURN_CODE(code);
-
-    value = WriteLockPtr(new WriteLock(mutex), Memory_deleter_const<WriteLock>);
-    return code;
+    value = WriteLockPtr(new(std::nothrow) WriteLock(mutex), Memory_deleter_const<WriteLock>);
+    if (!value.get())
+        return TE_OutOfMemory;
+    TE_CHECKRETURN_CODE(value->status);
+    return TE_Ok;
 }

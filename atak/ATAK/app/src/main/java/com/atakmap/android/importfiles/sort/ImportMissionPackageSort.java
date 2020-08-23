@@ -9,6 +9,7 @@ import com.atakmap.android.gui.ImportFileBrowserDialog;
 import com.atakmap.android.missionpackage.file.MissionPackageExtractorFactory;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -84,7 +85,8 @@ public class ImportMissionPackageSort extends ImportInternalSDResolver {
                 FileSystemUtils.TOOL_DATA_DIRECTORY + File.separatorChar
                         + context.getString(R.string.mission_package_folder),
                 validateExt, copyFile,
-                context.getString(R.string.mission_package_name));
+                context.getString(R.string.mission_package_name),
+                context.getDrawable(R.drawable.ic_menu_missionpackage));
         _context = context;
         _bStrict = bStrict;
     }
@@ -166,7 +168,8 @@ public class ImportMissionPackageSort extends ImportInternalSDResolver {
                             public void onFileSelected(
                                     File file) {
                                 ImportMissionPackageSort importer;
-                                if (file.toString().toLowerCase()
+                                if (file.toString()
+                                        .toLowerCase(LocaleUtil.getCurrent())
                                         .endsWith("zip"))
                                     importer = new ImportMissionPackageSort(
                                             context, ".zip",

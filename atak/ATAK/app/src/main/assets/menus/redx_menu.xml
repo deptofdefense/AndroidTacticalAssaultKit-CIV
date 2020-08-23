@@ -29,7 +29,7 @@
             submenu='menus/mgrs_entry_submenu.xml'
             disableSwap='true'
             disableIconSwap='true'
-            onClick='actions/move.xml'
+            onClick='actions/move_spi.xml'
             disabled='!{${preciseMove}}' />
 
     <button icon='icons/compass_rose.png'

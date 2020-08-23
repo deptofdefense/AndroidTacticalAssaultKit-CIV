@@ -431,8 +431,7 @@ class DataStoreImpl
       {
         if (listener)
           {
-            TAK::Engine::Thread::LockPtr lock(NULL, NULL);
-            TAK::Engine::Thread::Lock_create(lock, getMutex());      // Provided by DerivedDataStore.
+            TAK::Engine::Thread::Lock lock(getMutex()); // Provided by DerivedDataStore.
 
             listeners.insert (listener);
           }
@@ -447,8 +446,7 @@ class DataStoreImpl
       {
         if (listener)
           {
-            TAK::Engine::Thread::LockPtr lock(NULL, NULL);
-            TAK::Engine::Thread::Lock_create(lock, getMutex());
+            TAK::Engine::Thread::Lock lock(getMutex());
 
             listeners.erase (listener);
           }
@@ -481,8 +479,7 @@ class DataStoreImpl
         // iterator.
         //
 
-        TAK::Engine::Thread::LockPtr lock(NULL, NULL);
-        TAK::Engine::Thread::Lock_create(lock, getMutex());
+        TAK::Engine::Thread::Lock lock(getMutex());
         std::set<ContentListener*> listenersCopy (listeners);
 
         std::for_each (listenersCopy.begin (),

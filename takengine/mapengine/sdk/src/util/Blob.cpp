@@ -44,7 +44,7 @@ std::unique_ptr<const uint8_t, void (*)(const uint8_t *)> BlobImpl::takeData() N
     }
     size_t len = this->second - this->first;
     if (len) {
-        uint8_t *dataCopy = new uint8_t[this->second - this->first];
+        auto *dataCopy = new uint8_t[this->second - this->first];
         memcpy(dataCopy, this->first, len);
         data = dataCopy;
     }

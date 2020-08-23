@@ -4,14 +4,13 @@ package com.atakmap.android.rubbersheet.maps;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.maps.graphics.AbstractGLMapItem2;
-import com.atakmap.android.maps.tilesets.graphics.GLPendingTexture;
 import com.atakmap.android.model.opengl.GLModelRenderer2.TextureLoader;
 import com.atakmap.android.rubbersheet.data.RubberSheetManager;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.map.AtakMapView;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapSceneModel;
+import com.atakmap.map.layer.control.ColorControl;
 import com.atakmap.map.layer.model.Mesh;
 import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.ModelInfo;
@@ -23,62 +22,66 @@ import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 import com.atakmap.opengl.GLES20FixedPipeline;
-import com.atakmap.opengl.GLTexture;
 
 import java.io.File;
 
 public class GLRubberModel extends AbstractGLMapItem2 implements
         Shape.OnPointsChangedListener, AbstractSheet.OnAlphaChangedListener,
-        AbstractSheet.OnLoadListener, RubberModel.OnChangedListener {
+        AbstractSheet.OnLoadListener, RubberModel.OnChangedListener,
+        Shape.OnStrokeColorChangedListener {
 
     private static final String TAG = "GLRubberModel";
     private static final int MIN_RENDER_PX = 32;
 
-    private final MapRenderer _renderCtx;
-    private final RubberModel _subject;
+    protected final MapRenderer _renderCtx;
+    protected final RubberModel _subject;
 
-    // Alpha transparency
-    private float _alpha;
+    // Color and transparency
+    protected int _color;
+    protected float _alpha;
+    protected ColorControl[] _ctrl;
 
     // Model parameters
-    private Model _model;
-    private ModelInfo _modelInfo;
+    protected Model _model;
+    protected ModelInfo _modelInfo;
 
     // Used to transform to model to map coordinates
-    private Matrix _matrix = Matrix.getIdentity();
+    protected final Matrix _matrix = Matrix.getIdentity();
 
     // Rendering anchor point
-    private final GeoPoint _anchorPoint = GeoPoint.createMutable();
-    private PointD _modelAnchorPoint = new PointD(0, 0, 0);
+    protected final GeoPoint _anchorPoint = GeoPoint.createMutable();
+    protected PointD _modelAnchorPoint = new PointD(0, 0, 0);
 
     // Scaled dimensions of the model in meters [width, length, height]
-    private final double[] _modelDim = new double[3];
+    protected final double[] _modelDim = new double[3];
 
     // Used for tracking draw updates
-    private int _drawVersion;
+    protected int _drawVersion;
 
     // Model is loaded and ready to render
-    private boolean _readyToRender;
+    protected boolean _readyToRender;
 
     // Model is on screen and should be rendererd
-    private boolean _onScreen;
+    protected boolean _onScreen;
 
     // No level of detail - model is too small to bother rendering
-    private boolean _noLod;
+    protected boolean _noLod;
 
     // Meshes
-    private GLMesh[] _glMeshes;
-    private boolean _meshesLocked;
+    protected GLMesh[] _glMeshes;
+    protected boolean _meshesLocked;
 
     // Mesh textures
-    private GLPendingTexture _textureLoader;
-    private GLTexture _texture;
-    private MaterialManager _matManager;
+    protected MaterialManager _matManager;
+
+    // Subject was released
+    protected boolean _released;
 
     public GLRubberModel(MapRenderer ctx, RubberModel subject) {
         super(ctx, subject, GLMapView.RENDER_PASS_SCENES);
         _renderCtx = ctx;
         _subject = subject;
+        _color = subject.getStrokeColor();
         _alpha = subject.getAlpha() / 255f;
         _model = subject.getModel();
         _modelInfo = subject.getInfo();
@@ -93,8 +96,9 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
     @Override
     public void startObserving() {
         super.startObserving();
-        _subject.addOnPointsChangedListener(this);
+        _subject.addOnStrokeColorChangedListener(this);
         _subject.addOnAlphaChangedListener(this);
+        _subject.addOnPointsChangedListener(this);
         _subject.addChangeListener(this);
         _subject.addLoadListener(this);
         _subject.setRenderer(this);
@@ -105,8 +109,9 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
     public void stopObserving() {
         super.stopObserving();
         _subject.setRenderer(null);
-        _subject.removeOnPointsChangedListener(this);
+        _subject.removeOnStrokeColorChangedListener(this);
         _subject.removeOnAlphaChangedListener(this);
+        _subject.removeOnPointsChangedListener(this);
         _subject.removeChangeListener(this);
         _subject.removeLoadListener(this);
     }
@@ -114,17 +119,31 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
     @Override
     public void onAlphaChanged(AbstractSheet sheet, int alpha) {
         _alpha = alpha / 255f;
-        _renderCtx.requestRefresh();
+        requestRefresh();
+    }
+
+    @Override
+    public void onStrokeColorChanged(Shape s) {
+        _color = (s.getStrokeColor() & 0xFFFFFF) + 0xFF000000;
+        requestRefresh();
     }
 
     @Override
     public void onLoadStateChanged(AbstractSheet sheet, LoadState ls) {
         if (ls == LoadState.SUCCESS) {
-            _model = _subject.getModel();
-            _modelInfo = _subject.getInfo();
-            refresh();
+            _renderCtx.queueEvent(new Runnable() {
+                @Override
+                public void run() {
+                    if (_released)
+                        return;
+                    _model = _subject.getModel();
+                    _modelInfo = _subject.getInfo();
+                    releaseMesh();
+                    refresh();
+                }
+            });
         } else
-            _renderCtx.requestRefresh();
+            requestRefresh();
     }
 
     @Override
@@ -147,6 +166,17 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
     public void onAltitudeChanged(RubberModel model, double altitude,
             GeoPoint.AltitudeReference reference) {
         refresh();
+    }
+
+    protected void requestRefresh() {
+        _renderCtx.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                if (_released)
+                    return;
+                onRefresh();
+            }
+        });
     }
 
     private void refresh() {
@@ -192,6 +222,8 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
         _renderCtx.queueEvent(new Runnable() {
             @Override
             public void run() {
+                if (_released)
+                    return;
                 System.arraycopy(dim, 0, _modelDim, 0, 3);
                 if (_modelInfo.localFrame == null)
                     _modelInfo.localFrame = Matrix.getIdentity();
@@ -200,8 +232,13 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
                 _readyToRender = true;
                 _drawVersion = -1;
                 refreshLocalFrame();
+                onRefresh();
             }
         });
+    }
+
+    protected void onRefresh() {
+        // Sub-classes can update stuff here
     }
 
     @Override
@@ -210,41 +247,46 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
             return;
 
         // Update map forwards
-        if (_drawVersion != view.drawVersion) {
-            onDrawVersionChanged(view);
-            _drawVersion = view.drawVersion;
-        }
+        updateDrawVersion(view);
 
         // Only draw model if we have some decent level of detail
         if (!_noLod)
             drawModel(view);
     }
 
-    private boolean shouldRender() {
+    protected boolean shouldRender() {
         return _readyToRender && _onScreen && _modelInfo != null
-                && _model != null;
+                && _model != null && _alpha > 0.0f;
     }
 
-    private void onDrawVersionChanged(GLMapView view) {
+    protected void onDrawVersionChanged(GLMapView view) {
         // Update the model anchor point
         forward(view, _anchorPoint, _modelAnchorPoint);
 
         // Check if it's worth rendering the model from our current view
-        float minRenderPx = MIN_RENDER_PX * AtakMapView.DENSITY;
-        _noLod = _modelDim[0] / view.drawMapResolution < minRenderPx
-                || _modelDim[1] / view.drawMapResolution < minRenderPx;
+        _noLod = _modelDim[0] / view.drawMapResolution < MIN_RENDER_PX
+                || _modelDim[1] / view.drawMapResolution < MIN_RENDER_PX;
+    }
+
+    public void updateDrawVersion(GLMapView view) {
+        if (_drawVersion != view.drawVersion) {
+            onDrawVersionChanged(view);
+            _drawVersion = view.drawVersion;
+        }
     }
 
     private synchronized boolean drawModel(GLMapView view) {
-        if (_glMeshes == null) {
-            _glMeshes = new GLMesh[_model.getNumMeshes()];
-            for (int i = 0; i < _model.getNumMeshes(); ++i) {
-                Mesh mesh = _model.getMesh(i);
-                GLMesh glMesh = new GLMesh(_modelInfo, mesh,
-                        _modelAnchorPoint, _matManager);
-                _glMeshes[i] = glMesh;
-            }
+        if (_glMeshes == null)
+            _glMeshes = createGLMeshes();
+
+        if (_ctrl == null) {
+            _ctrl = new ColorControl[_glMeshes.length];
+            for (int i = 0; i < _ctrl.length; i++)
+                _ctrl[i] = _glMeshes[i].getControl(ColorControl.class);
         }
+
+        for (ColorControl col : _ctrl)
+            col.setColor(_color);
 
         GLES20FixedPipeline.glPushAlphaMod(_alpha);
         for (GLMesh mesh : _glMeshes)
@@ -252,6 +294,18 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
         GLES20FixedPipeline.glPopAlphaMod();
 
         return true;
+    }
+
+    protected GLMesh[] createGLMeshes() {
+        GLMesh[] meshes = new GLMesh[_model.getNumMeshes()];
+        for (int i = 0; i < _model.getNumMeshes(); ++i) {
+            Mesh mesh = _model.getMesh(i);
+            GLMesh glMesh = new GLMesh(_modelInfo, mesh,
+                    _modelAnchorPoint, _matManager);
+            glMesh.setDisposeMesh(!_subject.isSharedModel());
+            meshes[i] = glMesh;
+        }
+        return meshes;
     }
 
     /**
@@ -265,9 +319,7 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
         }
     }
 
-    @Override
-    public synchronized void release() {
-        stopObserving();
+    private synchronized void releaseMesh() {
         if (_glMeshes != null) {
             // if the meshes aren't locked release, otherwise they'll be
             // released when unlocked
@@ -277,21 +329,19 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
             }
             _glMeshes = null;
         }
+    }
+
+    @Override
+    public synchronized void release() {
+        _released = true;
+        stopObserving();
+        releaseMesh();
         _matManager.dispose();
         if (_model != null) {
             // XXX - disposal is a carryover from original prototype API,
             //       individual mesh dispose handles
             _model = null;
             _modelInfo = null;
-        }
-
-        if (_textureLoader != null) {
-            _textureLoader.cancel();
-            _textureLoader = null;
-        }
-        if (_texture != null) {
-            _texture.release();
-            _texture = null;
         }
     }
 

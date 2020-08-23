@@ -4,6 +4,7 @@ package com.atakmap.android.editableShapes;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.PointF;
+import android.graphics.RectF;
 import android.os.Bundle;
 import android.util.SparseArray;
 
@@ -23,6 +24,7 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.MetaDataHolder;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Polyline;
+import com.atakmap.android.maps.hittest.PartitionRect;
 import com.atakmap.android.missionpackage.export.MissionPackageExportWrapper;
 import com.atakmap.android.routes.Route;
 import com.atakmap.android.routes.RouteGpxIO;
@@ -41,8 +43,9 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
-import com.atakmap.coremap.maps.coords.Vector3D;
+import com.atakmap.coremap.maps.coords.Vector2D;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
+import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.math.MathUtils;
 import com.atakmap.spatial.file.export.GPXExportWrapper;
 import com.atakmap.spatial.file.export.KMZFolder;
@@ -70,7 +73,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -124,7 +126,8 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
 
     private Undoable _undo;
 
-    private final List<MutableGeoBounds> minibounds = new ArrayList<>();
+    private final List<MutableGeoBounds> _partitionBounds = new ArrayList<>();
+    private final List<RectF> _partitionRects = new ArrayList<>();
     private static final int PARTITION_SIZE = 25;
 
     private final GeoPointMetaData _avgAltitude = new GeoPointMetaData();
@@ -140,6 +143,7 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
 
     private final ConcurrentLinkedQueue<OnEditableChangedListener> _onEditableChanged = new ConcurrentLinkedQueue<>();
     private final MutableGeoBounds _bounds = new MutableGeoBounds(0, 0, 0, 0);
+    private final RectF _screenRect = new RectF();
 
     protected final MapView mapView;
     protected final Context context;
@@ -336,12 +340,22 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
         }
     }
 
+    /** 
+     * Mark for future improvement:
+     * If this method turns into a hotspot, it will be worth considering switching to 
+     * bounding sphere based geometry culling. Using the bounding sphere reduces down 
+     * to a single point transformation and a distance-squared comparison for test 
+     * geometries.
+     */
     @Override
-    public boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
+    public synchronized boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
             MapView view) {
+
+        // First check if the line is even touchable
         if (!getMetaBoolean("touchable", true))
             return false;
 
+        // Check if the line is being rendered
         double mapRes = view.getMapResolution();
         if (mapRes > getMetaDouble("maxLineRenderResolution",
                 Polyline.DEFAULT_MAX_LINE_RENDER_RESOLUTION))
@@ -350,50 +364,72 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
                 Polyline.DEFAULT_MIN_LINE_RENDER_RESOLUTION))
             return false;
 
-        final GeoBounds hitBox = view.createHitbox(point, _hitRadius);
-        if (!_bounds.intersects(hitBox)) {
-            //Log.d(TAG, "hit not contained in any geobounds");
-            return false;
+        // Determine if we need to do a 2D or 3D hit test so we can perform
+        // some optimizations
+        boolean test3D = view.getMapTilt() != 0
+                && getAltitudeMode() != AltitudeMode.ClampToGround;
+
+        float radius = _hitRadius;
+        Vector2D touch = new Vector2D(xpos, ypos);
+
+        // Build the screen hit rectangle (for 3D) or hit box bounds (for 2D)
+        GeoBounds hitBox = null;
+        RectF hitRect = null;
+        if (test3D) {
+            hitRect = new RectF((float) touch.x - radius,
+                    (float) touch.y - radius,
+                    (float) touch.x + radius,
+                    (float) touch.y + radius);
+            if (!RectF.intersects(_screenRect, hitRect))
+                return false;
+        } else {
+            hitBox = view.createHitbox(point, radius);
+            if (!_bounds.intersects(hitBox))
+                return false;
         }
-        Vector3D touch = new Vector3D(xpos, ypos, 0);
 
         // Search for point hits first
-        int detected_partition;
         List<Integer> hitBounds = new ArrayList<>();
-        Set<GeoPoint> hit = new HashSet<>();
         int numPointHits = 0;
         removeMetaData("hit_count");
-        for (int i = 0; i < minibounds.size(); ++i) {
-            detected_partition = i;
-            MutableGeoBounds mgb = minibounds.get(detected_partition);
-            if (mgb.intersects(hitBox)) {
-                //Log.d(TAG, "hit maybe contained in geobounds: " + i);
-                int start = detected_partition * PARTITION_SIZE;
-                int end = Math.min(start + PARTITION_SIZE, _points.size() - 1);
-                numPointHits += searchPartition2(hit, touch, hitBox, view,
-                        start, end, true);
-                if (numPointHits > 1) {
-                    // Multiple vertices hit
-                    setMetaInteger("hit_count", hit.size());
-                    return true;
-                }
-                // Cache hit bounds so we don't need to testOrthoHit again
-                hitBounds.add(detected_partition);
+        // Ensure the screen partitions are up to date with the bounds
+        if (_partitionBounds.size() != _partitionRects.size())
+            return false;
+
+        // Scan points within each intersected partition
+        for (int i = 0; i < _partitionBounds.size(); ++i) {
+            MutableGeoBounds mb = _partitionBounds.get(i);
+            RectF pr = _partitionRects.get(i);
+
+            // Hit test on mini bounds
+            if (test3D && !RectF.intersects(pr, hitRect)
+                    || !test3D && !mb.intersects(hitBox))
+                continue;
+
+            //Log.d(TAG, "hit maybe contained in geobounds: " + i);
+            int start = i * PARTITION_SIZE;
+            int end = Math.min(start + PARTITION_SIZE, _points.size() - 1);
+            numPointHits += testPointsHit(view, start, end, hitRect, hitBox);
+            if (numPointHits > 1) {
+                // Multiple vertices hit
+                setMetaInteger("hit_count", numPointHits);
+                return true;
             }
+            // Cache hit bounds so we don't need to testOrthoHit again
+            hitBounds.add(i);
         }
-        if (!hit.isEmpty())
-            // Only 1 vertex hit
+
+        // Hit a point - stop here
+        if (numPointHits > 0)
             return true;
 
         // Then search for line hits
-        hit.clear();
         for (int i = 0; i < hitBounds.size(); i++) {
-            detected_partition = hitBounds.get(i);
+            int partition = hitBounds.get(i);
             //Log.d(TAG, "hit maybe contained in geobounds: " + i);
-            int start = detected_partition * PARTITION_SIZE;
+            int start = partition * PARTITION_SIZE;
             int end = Math.min(start + PARTITION_SIZE, _points.size());
-            if (searchPartition2(hit, touch, hitBox, view, start, end,
-                    false) > 0)
+            if (testLinesHit(view, start, end, touch) != null)
                 return true;
         }
 
@@ -401,93 +437,136 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
         return false;
     }
 
-    protected final int searchPartition2(Set<GeoPoint> results,
-            Vector3D touch,
-            GeoBounds hitBox,
-            MapView view,
-            int start, int end,
-            boolean points) {
+    /**
+     * Test if a touch point is within a certain hit rectangle/bounds
+     * The hit bounds will be checked if non-null (since this operation is quicker)
+     * otherwise the hit rectangle will be checked
+     *
+     * @param view Map view
+     * @param startIdx Point start index
+     * @param endIdx Point end index
+     * @param hitRect Screen hit rectangle
+     * @param hitBox Hit bounds
+     * @return Number of hit results
+     */
+    protected final int testPointsHit(MapView view, int startIdx, int endIdx,
+            RectF hitRect, GeoBounds hitBox) {
 
-        final int count = _points.size();
         int numResults = 0;
-        if (points) {
-            // Search hit on all points only
-            int hitIndex = -1;
-            for (int i = start; i <= end && i < count; i++) {
-                // TODO: add selection indications for vertexes
-                final GeoPointMetaData gp = _points.get(i);
-                if (hitBox.contains(gp.get())) {
-                    if (hitIndex == -1)
-                        hitIndex = i;
-                    results.add(gp.get());
-                    numResults++;
-                }
-            }
-            if (hitIndex > -1) {
-                final GeoPointMetaData gp = _points.get(hitIndex);
-                setMetaString("hit_type", "point");
-                setMetaInteger("hit_index", hitIndex);
-                setMetaString("menu", getEditable() ? getCornerMenu()
-                        : getShapeMenu());
-                setMetaString("menu_point", gp.toString());
-                setTouchPoint(gp.get());
-            }
-        } else {
-            // Search hit on all lines
-            double unwrap = view.getIDLHelper().getUnwrap(
-                    this.minimumBoundingBox);
-            GeoPointMetaData lastPoint = null;
-            int currentIndex = 0;
-            PointF pt1, pt2 = null;
+        int count = _points.size();
+        int hitIndex = -1;
+        for (int i = startIdx; i <= endIdx && i < count; i++) {
+            GeoPoint gp = _points.get(i).get();
 
-            GeoPointMetaData currentPoint;
-
-            for (int i = start; i <= end; i++) {
-                if (i == count) {
-                    if (isClosed()) {
-                        // Handle closed polylines
-                        currentPoint = _points.get(0);
-                    } else
-                        continue;
-                } else
-                    currentPoint = _points.get(i);
-
-                if (lastPoint == null) {
-                    lastPoint = currentPoint;
-                    pt2 = view.forward(view.getRenderElevationAdjustedPoint(
-                            currentPoint.get()), unwrap);
-                    currentIndex++;
+            if (hitBox != null) {
+                // Geobounds check (2D only)
+                if (!hitBox.contains(gp))
                     continue;
-                }
+            } else if (hitRect != null) {
+                // Screen touch check (2D or 3D)
+                PointF pt = view
+                        .forward(view.getRenderElevationAdjustedPoint(gp));
+                if (!hitRect.contains(pt.x, pt.y))
+                    continue;
+            } else
+                continue;
 
-                pt1 = pt2;
-                pt2 = view.forward(view.getRenderElevationAdjustedPoint(
-                        currentPoint.get()), unwrap);
+            if (hitIndex == -1)
+                hitIndex = i;
+            numResults++;
+        }
 
-                // Check for touches on the actual line
-                Vector3D nearest = Vector3D.nearestPointOnSegment(touch,
-                        new Vector3D(pt1.x, pt1.y, 0),
-                        new Vector3D(pt2.x, pt2.y, 0));
-                if (_hitRadiusSq > nearest.distanceSq(touch)) {
-                    GeoPoint gp = view.inverseWithElevation(nearest.x,
-                            nearest.y).get();
-                    setMetaString("hit_type", "line");
-                    setMetaInteger("hit_index", currentIndex + start - 1);
-                    setMetaString("menu", getEditable() ? getLineMenu()
-                            : getShapeMenu());
-                    setMetaString("menu_point", gp.toString());
-                    setTouchPoint(gp);
-                    results.add(gp);
-                    numResults++;
-                    break;
-                }
-
-                lastPoint = currentPoint;
-                currentIndex++;
-            }
+        if (hitIndex > -1) {
+            final GeoPointMetaData gp = _points.get(hitIndex);
+            setMetaString("hit_type", "point");
+            setMetaInteger("hit_index", hitIndex);
+            setMetaString("menu", getEditable() ? getCornerMenu()
+                    : getShapeMenu());
+            setMetaString("menu_point", gp.toString());
+            setTouchPoint(gp.get());
         }
 
         return numResults;
+    }
+
+    /**
+     * Test if a touch point intersects any lines in the given partition
+     * - A partition being the points spanning from startIdx to endIdx
+     * - This method works for both 2D and 3D hit testing
+     *
+     * @param view Map view
+     * @param startIdx Starting point index to search (inclusive)
+     * @param endIdx Ending point index to search (inclusive)
+     * @param touch The 2D screen point to test
+     * @return Point that was hit or null if nothing hit
+     */
+    protected final GeoPoint testLinesHit(MapView view, int startIdx,
+            int endIdx, Vector2D touch) {
+        int count = _points.size();
+
+        // Search hit on all lines
+        boolean ignoreAlt = getAltitudeMode() == AltitudeMode.ClampToGround;
+        double unwrap = view.getIDLHelper().getUnwrap(this.minimumBoundingBox);
+        GeoPoint lastPoint = null;
+        int currentIndex = 0;
+        PointF pt1, pt2 = null;
+
+        GeoPoint curPoint;
+
+        for (int i = startIdx; i <= endIdx; i++) {
+            if (i == count) {
+                if (isClosed()) {
+                    // Handle closed polylines
+                    curPoint = _points.get(0).get();
+                } else
+                    continue;
+            } else
+                curPoint = _points.get(i).get();
+
+            if (ignoreAlt) {
+                // Omit the altitude since the point is clamped to the ground
+                curPoint = new GeoPoint(curPoint.getLatitude(),
+                        curPoint.getLongitude(), Double.NaN);
+            }
+
+            // Need to account for map tilt
+            if (view.getMapTilt() != 0)
+                curPoint = view.getRenderElevationAdjustedPoint(curPoint);
+
+            PointF pt = view.forward(curPoint, unwrap);
+
+            if (lastPoint == null) {
+                lastPoint = curPoint;
+                pt2 = pt;
+                currentIndex++;
+                continue;
+            }
+
+            pt1 = pt2;
+            pt2 = pt;
+
+            // Check for touches on the actual line
+            Vector2D nearest = Vector2D.nearestPointOnSegment(touch,
+                    new Vector2D(pt1.x, pt1.y),
+                    new Vector2D(pt2.x, pt2.y));
+            double dist = nearest.distanceSq(touch);
+            if (_hitRadiusSq > dist) {
+                GeoPoint gp = view.inverseWithElevation((float) nearest.x,
+                        (float) nearest.y).get();
+                setMetaString("hit_type", "line");
+                setMetaInteger("hit_index", currentIndex + startIdx - 1);
+                setMetaString("menu", getEditable() ? getLineMenu()
+                        : getShapeMenu());
+                setMetaString("menu_point", gp.toString());
+                setTouchPoint(gp);
+                return gp;
+            }
+
+            lastPoint = curPoint;
+            currentIndex++;
+        }
+
+        return null;
     }
 
     /**
@@ -984,7 +1063,7 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
                 .isContinuousScrollEnabled();
         _bounds.setWrap180(continuousScrollEnabled);
         if (_points.isEmpty()) {
-            minibounds.clear();
+            _partitionBounds.clear();
             _bounds.clear();
             return;
         }
@@ -1007,6 +1086,7 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
 
             double lat = p.get().getLatitude();
             double lon = p.get().getLongitude();
+            double alt = p.get().getAltitude();
             if (wrap180 && lon < 0)
                 lon += 360;
 
@@ -1034,17 +1114,15 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
                 if (wrap180 && Ex > 180)
                     Ex -= 360;
                 MutableGeoBounds mb;
-                if (mbCount < minibounds.size()) {
-                    mb = minibounds.get(mbCount);
-                    mb.set(Nx, Wx, Sx, Ex);
-                } else {
-                    mb = new MutableGeoBounds(Nx, Wx, Sx, Ex);
-                    minibounds.add(mb);
-                }
+                if (mbCount < _partitionBounds.size())
+                    mb = _partitionBounds.get(mbCount);
+                else
+                    _partitionBounds.add(mb = new MutableGeoBounds(0, 0, 0, 0));
+                mb.set(Sx, Wx, Nx, Ex);
                 mb.setWrap180(continuousScrollEnabled);
-                //Log.d(TAG, "computed a minibounds of: " + Nx + "," + Wx + "," + Sx + "," + Ex );
-                Nx = Sx = p.get().getLatitude();
-                Ex = Wx = p.get().getLongitude();
+                //Log.d(TAG, "computed a _partitionBounds of: " + Nx + "," + Wx + "," + Sx + "," + Ex );
+                Nx = Sx = lat;
+                Ex = Wx = lon;
                 mbCount++;
                 partNum = 0;
             }
@@ -1052,9 +1130,28 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
         }
         if (wrap180 && E > 180)
             E -= 360;
-        _bounds.set(N, W, S, E);
-        while (mbCount < minibounds.size())
-            minibounds.remove(mbCount);
+        _bounds.set(S, W, N, E);
+        while (mbCount < _partitionBounds.size())
+            _partitionBounds.remove(mbCount);
+    }
+
+    /**
+     * Update the screen bounding rectangles used for hit detection
+     * Should only be called on the GL thread by {@link GLEditablePolyline}
+     * during rendering
+     */
+    synchronized void updateScreenBounds(RectF full,
+            List<PartitionRect> partitions) {
+        _screenRect.set(full);
+        if (_partitionRects.size() != partitions.size()) {
+            _partitionRects.clear();
+            for (PartitionRect rect : partitions)
+                _partitionRects.add(new PartitionRect(rect));
+        } else {
+            // Save a bit of time by copying existing
+            for (int i = 0; i < partitions.size(); i++)
+                _partitionRects.get(i).set(partitions.get(i));
+        }
     }
 
     private void onAltChanged() {

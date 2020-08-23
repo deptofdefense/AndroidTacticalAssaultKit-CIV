@@ -6,11 +6,12 @@
 #include <feature/LegacyAdapters.h>
 #include <util/Memory.h>
 
-#include "../../common.h"
+#include "common.h"
 #include "jfeaturedefinition.h"
-#include "../JNIByteArray.h"
-#include "../JNIStringUTF.h"
-#include "Interop.h"
+#include "interop/JNIByteArray.h"
+#include "interop/JNIStringUTF.h"
+#include "interop/java/JNILocalRef.h"
+#include "interop/feature/Interop.h"
 
 using namespace TAKEngineJNI::Interop::Feature;
 
@@ -77,7 +78,7 @@ namespace
         TAKErr getMinResolution(double *value) const NOTHROWS;
         TAKErr getMaxResolution(double *value) const NOTHROWS;
         TAKErr getVisible(bool *value) const NOTHROWS;
-        TAKErr getFeatureSetVisible(bool *) const NOTHROWS;
+        TAKErr getFeatureSetVisible(bool *value) const NOTHROWS;
     public :
         jobject impl;
         TAK::Engine::Port::String type;
@@ -94,6 +95,8 @@ namespace
         TAKErr getRawGeometry(RawData *value) NOTHROWS;
         FeatureDefinition2::GeometryEncoding getGeomCoding() NOTHROWS;
         TAKErr getName(const char **value) NOTHROWS;
+        AltitudeMode getAltitudeMode() NOTHROWS;
+        double getExtrude() NOTHROWS;
         FeatureDefinition2::StyleEncoding getStyleCoding() NOTHROWS;
         TAKErr getRawStyle(RawData *value) NOTHROWS;
         TAKErr getAttributes(const atakmap::util::AttributeSet **value) NOTHROWS;
@@ -105,7 +108,7 @@ namespace
         std::unique_ptr<RawData, void(*)(const RawData *)> rawGeom;
         std::unique_ptr<RawData, void(*)(const RawData *)> rawStyle;
         GeometryPtr geom;
-        std::list<jobject> localRefs;
+        std::list<jobject> managedRefs;
     };
 
     bool FeatureDataSource2_class_init(JNIEnv *env) NOTHROWS;
@@ -153,10 +156,22 @@ TAKErr ManagedFeatureDataSource2::parse(ContentPtr &content, const char *file) N
     content = ContentPtr(new ManagedContent(env, result), Memory_deleter_const<FeatureDataSource2::Content, ManagedContent>);
     return TE_Ok;
 }
+
+TAK::Engine::Feature::AltitudeMode ManagedFeatureDataSource2::getAltitudeMode() const NOTHROWS
+{
+    return altMode;
+}
+
+double ManagedFeatureDataSource2::getExtrude() const NOTHROWS 
+{
+    return extrude;
+}
+
 const char *ManagedFeatureDataSource2::getName() const NOTHROWS
 {
     return name;
 }
+
 int ManagedFeatureDataSource2::parseVersion() const NOTHROWS
 {
     LocalJNIEnv env;
@@ -223,11 +238,9 @@ namespace
         if(!result)
             return TE_Done;
 
-        jobject jfdefn = env->CallObjectMethod(impl, FeatureDataSource_Content_class.get);
-        if(jfdefn) {
+        Java::JNILocalRef jfdefn(*env, env->CallObjectMethod(impl, FeatureDataSource_Content_class.get));
+        if(jfdefn)
             feature = FeatureDefinitionPtr(new ManagedFeatureDefinition(env, jfdefn), Memory_deleter_const<FeatureDefinition2, ManagedFeatureDefinition>);
-            env->DeleteLocalRef(jfdefn);
-        }
 
         return TE_Ok;
     }
@@ -253,7 +266,7 @@ namespace
         LocalJNIEnv env;
         if(env->ExceptionCheck())
             return TE_Err;
-        jstring result = (jstring)env->CallObjectMethod(impl, FeatureDataSource_Content_class.getFeatureSetName);
+        Java::JNILocalRef result(*env, env->CallObjectMethod(impl, FeatureDataSource_Content_class.getFeatureSetName));
         if(env->ExceptionCheck())
             return TE_Err;
         if(!result) {
@@ -311,9 +324,10 @@ namespace
             impl = NULL;
         }
 
-        std::list<jobject>::iterator it;
-        for(it = localRefs.begin(); it != localRefs.end(); it++)
-            env->DeleteLocalRef(*it);
+        for(auto it = managedRefs.begin(); it != managedRefs.end(); it++) {
+            env->DeleteGlobalRef(*it);
+        }
+        managedRefs.clear();
     }
     TAKErr ManagedFeatureDefinition::getRawGeometry(RawData *value) NOTHROWS
     {
@@ -323,12 +337,12 @@ namespace
                 return TE_Err;
             jint geomCoding = env->GetIntField(impl, FeatureDefinition_class.geomCoding);
             if(geomCoding == com_atakmap_map_layer_feature_FeatureDefinition_GEOM_WKT) {
-                jstring result = (jstring)env->GetObjectField(impl, FeatureDefinition_class.rawGeom);
+                Java::JNILocalRef result(*env, (jstring)env->GetObjectField(impl, FeatureDefinition_class.rawGeom));
                 if(env->ExceptionCheck())
                     return TE_Err;
                 rawGeom = std::unique_ptr<RawData, void(*)(const RawData *)>(new RawData(), raw_data_text_deleter);
                 if(result) {
-                    localRefs.push_back(result);
+                    managedRefs.push_back(env->NewGlobalRef(result));
 
                     JNIStringUTF jtext(*env, result);
                     const std::size_t len = strlen(jtext);
@@ -338,14 +352,14 @@ namespace
                     rawGeom->text = ctext.release();
                 }
             } else if(geomCoding == com_atakmap_map_layer_feature_FeatureDefinition_GEOM_WKB) {
-                jbyteArray result = (jbyteArray)env->GetObjectField(impl, FeatureDefinition_class.rawGeom);
+                Java::JNILocalRef result(*env, (jbyteArray)env->GetObjectField(impl, FeatureDefinition_class.rawGeom));
                 if(env->ExceptionCheck())
                     return TE_Err;
                 rawGeom = std::unique_ptr<RawData, void(*)(const RawData *)>(new RawData(), raw_data_binary_deleter);
                 if(result) {
-                    localRefs.push_back(result);
+                    managedRefs.push_back(env->NewGlobalRef(result));
 
-                    JNIByteArray jbinary(*env, result, JNI_ABORT);
+                    JNIByteArray jbinary(*env, (jbyteArray)result.get(), JNI_ABORT);
                     rawGeom->binary.len = jbinary.length();
                     array_ptr<uint8_t> cbinary(new uint8_t[rawGeom->binary.len]);
                     const jbyte *jb = jbinary;
@@ -353,14 +367,14 @@ namespace
                     rawGeom->binary.value = cbinary.release();
                 }
             } else if(geomCoding == com_atakmap_map_layer_feature_FeatureDefinition_GEOM_SPATIALITE_BLOB) {
-                jbyteArray result = (jbyteArray)env->GetObjectField(impl, FeatureDefinition_class.rawGeom);
+                Java::JNILocalRef result(*env, (jbyteArray)env->GetObjectField(impl, FeatureDefinition_class.rawGeom));
                 if(env->ExceptionCheck())
                     return TE_Err;
                 rawGeom = std::unique_ptr<RawData, void(*)(const RawData *)>(new RawData(), raw_data_binary_deleter);
                 if(result) {
-                    localRefs.push_back(result);
+                    managedRefs.push_back(env->NewGlobalRef(result));
 
-                    JNIByteArray jbinary(*env, result, JNI_ABORT);
+                    JNIByteArray jbinary(*env, (jbyteArray)result.get(), JNI_ABORT);
                     rawGeom->binary.len = jbinary.length();
                     array_ptr<uint8_t> cbinary(new uint8_t[rawGeom->binary.len]);
                     const jbyte *jb = jbinary;
@@ -368,12 +382,12 @@ namespace
                     rawGeom->binary.value = cbinary.release();
                 }
             } else if(geomCoding == com_atakmap_map_layer_feature_FeatureDefinition_GEOM_ATAK_GEOMETRY) {
-                jobject result = (jobject)env->GetObjectField(impl, FeatureDefinition_class.rawGeom);
+                Java::JNILocalRef result(*env, env->GetObjectField(impl, FeatureDefinition_class.rawGeom));
                 if(env->ExceptionCheck())
                     return TE_Err;
                 rawGeom = std::unique_ptr<RawData, void(*)(const RawData *)>(new RawData(), raw_data_object_leaker);
                 if(result) {
-                    localRefs.push_back(result);
+                    managedRefs.push_back(env->NewGlobalRef(result));
 
                     Geometry2 *cgeom;
                     TAKErr code = Interop_get(&cgeom, env, result);
@@ -409,11 +423,11 @@ namespace
     {
         if(!name) {
             LocalJNIEnv env;
-            jstring result = (jstring)env->GetObjectField(impl, FeatureDefinition_class.name);
+            Java::JNILocalRef result(*env, (jstring)env->GetObjectField(impl, FeatureDefinition_class.name));
             if(env->ExceptionCheck())
                 return TE_Err;
             if(result) {
-                localRefs.push_back(result);
+                managedRefs.push_back(env->NewGlobalRef(result));
                 JNIStringUTF jname(*env, result);
                 name = jname;
             }
@@ -421,6 +435,14 @@ namespace
 
         *value = name;
         return TE_Ok;
+    }
+    TAK::Engine::Feature::AltitudeMode ManagedFeatureDefinition::getAltitudeMode() NOTHROWS
+    {
+        return TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround;
+    }
+    double ManagedFeatureDefinition::getExtrude() NOTHROWS
+    {
+        return 0.0;
     }
     FeatureDefinition2::StyleEncoding ManagedFeatureDefinition::getStyleCoding() NOTHROWS
     {
@@ -443,12 +465,12 @@ namespace
                 return TE_Err;
             jint styleCoding = env->GetIntField(impl, FeatureDefinition_class.styleCoding);
             if(styleCoding == com_atakmap_map_layer_feature_FeatureDefinition_STYLE_OGR) {
-                jstring result = (jstring)env->GetObjectField(impl, FeatureDefinition_class.rawStyle);
+                Java::JNILocalRef result(*env,  (jstring)env->GetObjectField(impl, FeatureDefinition_class.rawStyle));
                 if(env->ExceptionCheck())
                     return TE_Err;
                 rawStyle = std::unique_ptr<RawData, void(*)(const RawData *)>(new RawData(), raw_data_text_deleter);
                 if(result) {
-                    localRefs.push_back(result);
+                    managedRefs.push_back(env->NewGlobalRef(result));
                     JNIStringUTF jtext(*env, result);
                     const std::size_t len = strlen(jtext);
                     array_ptr<char> ctext(new char[len+1u]);
@@ -457,12 +479,12 @@ namespace
                     rawStyle->text = ctext.release();
                 }
             } else if(styleCoding == com_atakmap_map_layer_feature_FeatureDefinition_STYLE_ATAK_STYLE) {
-                jobject result = (jobject)env->GetObjectField(impl, FeatureDefinition_class.rawStyle);
+                Java::JNILocalRef result(*env, env->GetObjectField(impl, FeatureDefinition_class.rawStyle));
                 if(env->ExceptionCheck())
                     return TE_Err;
                 rawStyle = std::unique_ptr<RawData, void(*)(const RawData *)>(new RawData(), raw_data_object_leaker);
                 if(result) {
-                    localRefs.push_back(result);
+                    managedRefs.push_back(env->NewGlobalRef(result));
                     Style *cstyle;
                     code = Interop_get(&cstyle, env, result);
                     TE_CHECKRETURN_CODE(code);
@@ -480,13 +502,13 @@ namespace
         LocalJNIEnv env;
         if(env->ExceptionCheck())
             return TE_Err;
-        jobject attributes = env->GetObjectField(impl, FeatureDefinition_class.attributes);
+        Java::JNILocalRef attributes(*env, env->GetObjectField(impl, FeatureDefinition_class.attributes));
         if(!attributes) {
             *value = NULL;
             return TE_Ok;
         }
 
-        localRefs.push_back(attributes);
+        managedRefs.push_back(env->NewGlobalRef(attributes));
         return Interop_get(value, env, attributes);
     }
     TAKErr ManagedFeatureDefinition::get(const Feature2 **value) NOTHROWS

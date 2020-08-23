@@ -504,10 +504,11 @@ public class CoordDialogView extends LinearLayout implements
                 && east.equals(_currMGRS[2]) && north.equals(_currMGRS[3])) {
             return null;
         }
+        GeoPointMetaData retval = _getMGRS();
         _currMGRS = new String[] {
                 zone, square, east, north
         };
-        return _getMGRS();
+        return retval;
     }
 
     private GeoPointMetaData _getUTMForConvert() {
@@ -527,10 +528,11 @@ public class CoordDialogView extends LinearLayout implements
                 && east.equals(_currUTM[1]) && north.equals(_currUTM[2])) {
             return null;
         }
+        GeoPointMetaData retval = _getUTM();
         _currMGRS = new String[] {
                 zone, east, north
         };
-        return _getUTM();
+        return retval;
     }
 
     private void _setMGRS(GeoPointMetaData p) {
@@ -617,10 +619,12 @@ public class CoordDialogView extends LinearLayout implements
         if (lat.equals(_currDD[0]) && lon.equals(_currDD[1])) {
             return null;
         }
+
+        GeoPointMetaData retval = _getDD();
         _currDD = new String[] {
                 lat, lon
         };
-        return _getDD();
+        return retval;
     }
 
     private GeoPointMetaData _getAddressForConvert() {
@@ -636,10 +640,11 @@ public class CoordDialogView extends LinearLayout implements
         if (lat.equals(_currAddress[0]) && lon.equals(_currAddress[1])) {
             return null;
         }
+        GeoPointMetaData retval = _getAddress();
         _currAddress = new String[] {
                 lat, lon
         };
-        return _getAddress();
+        return retval;
     }
 
     private void _setDD(GeoPointMetaData p) {
@@ -698,10 +703,12 @@ public class CoordDialogView extends LinearLayout implements
                 && lonD.equals(_currDM[2]) && lonM.equals(_currDM[3])) {
             return null;
         }
+
+        GeoPointMetaData retval = _getDM();
         _currDM = new String[] {
                 latD, latM, lonD, lonM
         };
-        return _getDM();
+        return retval;
     }
 
     private void _setDM(GeoPointMetaData p) {
@@ -767,10 +774,12 @@ public class CoordDialogView extends LinearLayout implements
                 && lonS.equals(_currDMS[5])) {
             return null;
         }
+
+        GeoPointMetaData retval = _getDMS();
         _currDMS = new String[] {
                 latD, latM, latS, lonD, lonM, lonS
         };
-        return _getDMS();
+        return retval;
     }
 
     private void _setDMS(GeoPointMetaData p) {

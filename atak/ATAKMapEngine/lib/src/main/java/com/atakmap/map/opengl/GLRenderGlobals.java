@@ -1,5 +1,7 @@
 package com.atakmap.map.opengl;
 
+import android.graphics.Bitmap;
+
 import java.util.IdentityHashMap;
 import java.util.Map;
 
@@ -8,7 +10,9 @@ import com.atakmap.android.maps.graphics.GLBitmapLoader;
 import com.atakmap.android.maps.graphics.GLImageCache;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.RenderContext;
 import com.atakmap.opengl.GLNinePatch;
+import com.atakmap.opengl.GLTexture;
 import com.atakmap.opengl.GLTextureAtlas;
 import com.atakmap.opengl.GLTextureCache;
 import com.atakmap.util.ConfigOptions;
@@ -18,9 +22,9 @@ public final class GLRenderGlobals {
  
     private final static String TAG = "GLRenderGlobals";
 
-    private final static Map<GLMapSurface, ReferenceCount<GLRenderGlobals>> instances = new IdentityHashMap<GLMapSurface, ReferenceCount<GLRenderGlobals>>();
+    private final static Map<RenderContext, ReferenceCount<GLRenderGlobals>> instances = new IdentityHashMap<>();
 
-    private GLMapSurface surface;
+    private RenderContext context;
 
     private GLTextureCache textureCache;
     private GLImageCache imageCache;
@@ -29,9 +33,10 @@ public final class GLRenderGlobals {
     private GLBitmapLoader bitmapLoader;
     private GLNinePatch smallNinePatch;
     private GLNinePatch mediumNinePatch;
-    
-    private GLRenderGlobals(GLMapSurface surface) {
-        this.surface = surface;
+    private GLTexture pixel;
+
+    private GLRenderGlobals(RenderContext surface) {
+        this.context = surface;
 
         this.textureCache = null;
         this.imageCache = null;
@@ -62,10 +67,17 @@ public final class GLRenderGlobals {
     
     public synchronized GLBitmapLoader getBitmapLoader() {
         if(this.bitmapLoader == null)
-            this.bitmapLoader = new GLBitmapLoader(this.surface, 1, Thread.MIN_PRIORITY);
+            this.bitmapLoader = new GLBitmapLoader(this.context, 1, Thread.MIN_PRIORITY);
         return this.bitmapLoader;
     }
 
+    public synchronized GLTexture getWhitePixel() {
+        if(this.pixel == null) {
+            this.pixel = new GLTexture(1, 1, Bitmap.Config.RGB_565);
+            this.pixel.load(Bitmap.createBitmap(new int[] {-1}, 1, 1, Bitmap.Config.RGB_565));
+        }
+        return this.pixel;
+    }
     synchronized void dispose() {
         if(this.bitmapLoader != null) {
             this.bitmapLoader.shutdown();
@@ -104,11 +116,11 @@ public final class GLRenderGlobals {
             return null;
         }
 
-        final GLMapSurface surface = ((GLMapView)renderer).getSurface();
+        final RenderContext surface = ((GLMapView)renderer).getRenderContext();
         return get(surface);
     }
 
-    public static synchronized GLRenderGlobals get(GLMapSurface surface) {
+    public static synchronized GLRenderGlobals get(RenderContext surface) {
         ReferenceCount<GLRenderGlobals> ref = instances.get(surface);
         if(ref == null)
             instances.put(surface, ref=new ReferenceCount<GLRenderGlobals>(new GLRenderGlobals(surface)));
@@ -117,14 +129,14 @@ public final class GLRenderGlobals {
         return ref.value;
     }
     
-    static synchronized GLRenderGlobals peek(GLMapSurface surface) {
+    static synchronized GLRenderGlobals peek(RenderContext surface) {
         ReferenceCount<GLRenderGlobals> ref = instances.get(surface);
         if(ref == null)
             return null;
         return ref.value;
     }
     
-    static void dispose(GLMapSurface surface) {
+    static void dispose(RenderContext surface) {
         instances.remove(surface);
     }
     

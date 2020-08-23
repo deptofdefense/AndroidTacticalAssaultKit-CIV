@@ -109,8 +109,8 @@ class ENGINE_API Point
     // If getDimension() == _3D, sets z value to 0.
     //
     void
-    set (double x,
-         double y)
+    set (double x_val,
+         double y_val)
         throw ();
 
     //
@@ -118,9 +118,9 @@ class ENGINE_API Point
     // Throws std::out_of_range if getDimension() == _2D.
     //
     void
-    set (double x,
-         double y,
-         double z)
+    set (double x_val,
+         double y_val,
+         double z_val)
         throw (std::out_of_range);
 
 
@@ -131,27 +131,27 @@ class ENGINE_API Point
 
     Geometry*
     clone ()
-        const
+        const override
       { return new Point (*this); }
 
     std::size_t
         computeWKB_Size()
-      const;
+      const override;
 
     Envelope
     getEnvelope ()
-        const
+        const override
       { return Envelope (x, y, z, x, y, z); }
 
     void
     toBlob (std::ostream&,
             BlobFormat)                 // Defaults to GEOMETRY.
-        const;
+        const override;
 
     void
     toWKB (std::ostream&,
            bool includeHeader)          // Defaults to true.
-        const;
+        const override;
 
                                         //====================================//
   protected:                            //                      PROTECTED     //
@@ -168,7 +168,7 @@ class ENGINE_API Point
 
 
     void
-    changeDimension (Dimension dim)
+    changeDimension (Dimension dim) override
       {
         if (dim == _2D)
           {

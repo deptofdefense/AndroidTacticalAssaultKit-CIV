@@ -161,7 +161,7 @@ public class HarrisConfigurator {
             write(port, "NETDEVICE PPP DATA_PORT CFG SNMASK 255.255.0.0\r");
 
             write(port, "NORMAL\r");
-        } catch (IOException e) {
+        } catch (Exception e) {
             Log.e(TAG, "error occured during configuration", e);
         }
     }

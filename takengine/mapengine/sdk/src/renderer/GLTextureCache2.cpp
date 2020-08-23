@@ -7,8 +7,8 @@ using namespace TAK::Engine::Renderer;
 using namespace TAK::Engine::Util;
 
 GLTextureCache2::GLTextureCache2(const std::size_t maxSize_) NOTHROWS :
-    head(NULL),
-    tail(NULL),
+    head(nullptr),
+    tail(nullptr),
     maxSize(maxSize_),
     size(0u),
     count(0u)
@@ -18,20 +18,20 @@ GLTextureCache2::~GLTextureCache2()
 {
     // clear the map and clean up allocations, but do NOT release GL resources
     nodeMap.clear();
-    while (head != NULL) {
+    while (head != nullptr) {
         BidirectionalNode *n = head;
 
         head = head->next;
         delete n;
         count--;
     }
-    tail = NULL;
+    tail = nullptr;
     size = 0u;
 }
 
 TAKErr GLTextureCache2::get(const GLTextureCache2::Entry **value, const char *key) const NOTHROWS
 {
-    std::map<std::string, BidirectionalNode *>::const_iterator entry = nodeMap.find(key);
+    auto entry = nodeMap.find(key);
     if (entry == nodeMap.end())
         return TE_InvalidArg;
 
@@ -43,7 +43,7 @@ TAKErr GLTextureCache2::get(const GLTextureCache2::Entry **value, const char *ke
 TAKErr GLTextureCache2::deleteEntry(const char *key) NOTHROWS
 {
     TAKErr code;
-    GLTextureCache2::EntryPtr entry(NULL, NULL);
+    GLTextureCache2::EntryPtr entry(nullptr, nullptr);
     code = this->remove(entry, key);
     TE_CHECKRETURN_CODE(code);
     if (entry->texture.get())
@@ -57,7 +57,7 @@ TAKErr GLTextureCache2::remove(GLTextureCache2::EntryPtr &val, const char *key) 
 
     code = TE_Ok;
 
-    std::map<std::string, BidirectionalNode *>::iterator entry = nodeMap.find(key);
+    auto entry = nodeMap.find(key);
     if (entry == nodeMap.end())
         return TE_InvalidArg;
 
@@ -65,20 +65,20 @@ TAKErr GLTextureCache2::remove(GLTextureCache2::EntryPtr &val, const char *key) 
     nodeMap.erase(entry);
     val = std::move(node->value);
 
-    if (node->prev != NULL) {
+    if (node->prev != nullptr) {
         node->prev->next = node->next;
     } else if (node == head) {
         head = node->next;
-        if (head != NULL)
-            head->prev = NULL;
+        if (head != nullptr)
+            head->prev = nullptr;
     }
 
-    if (node->next != NULL) {
+    if (node->next != nullptr) {
         node->next->prev = node->prev;
     } else if (node == tail) {
         tail = node->prev;
-        if (tail != NULL)
-            tail->next = NULL;
+        if (tail != nullptr)
+            tail->next = nullptr;
     }
 
     delete node;
@@ -113,10 +113,10 @@ TAKErr GLTextureCache2::put(const char *key, EntryPtr &&value) NOTHROWS
         TE_CHECKRETURN_CODE(code);
     }
 
-    std::auto_ptr<BidirectionalNode> nodePtr(new BidirectionalNode(tail, key, std::move(value)));
+    std::unique_ptr<BidirectionalNode> nodePtr(new BidirectionalNode(tail, key, std::move(value)));
     BidirectionalNode *node = nodePtr.get();
     nodeMap.insert(std::pair<std::string, BidirectionalNode *>(key, nodePtr.release()));
-    if (head == NULL)
+    if (head == nullptr)
         head = node;
     tail = node;
 
@@ -132,7 +132,7 @@ TAKErr GLTextureCache2::put(const char *key, EntryPtr &&value) NOTHROWS
 TAKErr GLTextureCache2::clear() NOTHROWS
 {
     nodeMap.clear();
-    while (head != NULL) {
+    while (head != nullptr) {
         BidirectionalNode *n = head;
 
         head = head->next;
@@ -141,7 +141,7 @@ TAKErr GLTextureCache2::clear() NOTHROWS
         delete n;
         count--;
     }
-    tail = NULL;
+    tail = nullptr;
     size = 0u;
 
     return TE_Ok;
@@ -165,7 +165,7 @@ TAKErr GLTextureCache2::trimToSize() NOTHROWS
         }
         nodeMap.erase(head->key);
         head = head->next;
-        head->prev = NULL;
+        head->prev = nullptr;
         count--;
         if (n->value->texture.get())
             n->value->texture->release();
@@ -213,35 +213,35 @@ TAKErr GLTextureCache2::sizeOf(std::size_t *value, const GLTexture2 &texture) NO
 
 GLTextureCache2::BidirectionalNode::BidirectionalNode(BidirectionalNode *prev_, std::string key_, EntryPtr &&value_) NOTHROWS :
     prev(prev_),
-    next(NULL),
+    next(nullptr),
     key(key_),
     value(std::move(value_))
 {
-    if (prev != NULL)
+    if (prev != nullptr)
         prev->next = this;
 }
 
 GLTextureCache2::Entry::Entry() NOTHROWS :
-    texture(NULL, NULL),
-    textureCoordinates(NULL, NULL),
-    vertexCoordinates(NULL, NULL),
-    indices(NULL, NULL),
+    texture(nullptr, nullptr),
+    textureCoordinates(nullptr, nullptr),
+    vertexCoordinates(nullptr, nullptr),
+    indices(nullptr, nullptr),
     numVertices(0u),
     numIndices(0u),
     hints(0u),
-    opaque(NULL, NULL),
+    opaque(nullptr, nullptr),
     opaqueSize(0u)
 {}
 
 GLTextureCache2::Entry::Entry(GLTexture2Ptr &&texture_) NOTHROWS :
     texture(std::move(texture_)),
-    textureCoordinates(NULL, NULL),
-    vertexCoordinates(NULL, NULL),
-    indices(NULL, NULL),
+    textureCoordinates(nullptr, nullptr),
+    vertexCoordinates(nullptr, nullptr),
+    indices(nullptr, nullptr),
     numVertices(0u),
     numIndices(0u),
     hints(0u),
-    opaque(NULL, NULL),
+    opaque(nullptr, nullptr),
     opaqueSize(0u)
 {}
 
@@ -252,11 +252,11 @@ GLTextureCache2::Entry::Entry(GLTexture2Ptr &&texture_,
     texture(std::move(texture_)),
     textureCoordinates(std::move(textureCoordinates_)),
     vertexCoordinates(std::move(vertexCoordinates_)),
-    indices(NULL, NULL),
+    indices(nullptr, nullptr),
     numVertices(numVertices_),
     numIndices(0u),
     hints(0u),
-    opaque(NULL, NULL),
+    opaque(nullptr, nullptr),
     opaqueSize(0u)
 {}
 
@@ -269,7 +269,7 @@ GLTextureCache2::Entry::Entry(GLTexture2Ptr &&texture_,
     texture(std::move(texture_)),
     textureCoordinates(std::move(textureCoordinates_)),
     vertexCoordinates(std::move(vertexCoordinates_)),
-    indices(NULL, NULL),
+    indices(nullptr, nullptr),
     numVertices(numVertices_),
     numIndices(0u),
     hints(hints_),
@@ -296,3 +296,7 @@ GLTextureCache2::Entry::Entry(GLTexture2Ptr &&texture_,
     opaqueSize(0u)
 {}
 
+bool GLTextureCache2::Entry::hasHint(int flags) const
+{
+    return ((this->hints & flags) == flags);
+}

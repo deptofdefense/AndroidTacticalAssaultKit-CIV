@@ -25,7 +25,7 @@ public class CotModificationManager {
         public abstract boolean checkAndPrompt(CotEvent event, Bundle bundle);
 
         /** 
-         * Temporarily expose the the mechansism for simulating previous behavior.
+         * Temporarily expose the mechansism for simulating previous behavior.
          */
         protected void approved(CotEvent event, Bundle extra) {
             extra.putBoolean("overwrite.value", true);

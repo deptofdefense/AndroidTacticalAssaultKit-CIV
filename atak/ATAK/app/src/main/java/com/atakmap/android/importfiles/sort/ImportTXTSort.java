@@ -89,7 +89,8 @@ final public class ImportTXTSort extends ImportInternalSDResolver {
     public ImportTXTSort(final Context context, final String ext,
             final boolean validateExt,
             boolean copyFile) {
-        super(ext, "", validateExt, copyFile, CONTENT_TYPE);
+        super(ext, "", validateExt, copyFile, CONTENT_TYPE,
+                context.getDrawable(R.drawable.ic_details));
         this._context = context;
 
         addSignature("<remoteResources", ImportManagerView.XML_FOLDER, null);

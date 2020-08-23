@@ -160,8 +160,7 @@ class LinkDetailHandler extends CotDetailHandler {
     }
 
     private void setupLinkLinkLine(MapItem marker, final String uid) {
-        final MapItem parent = _mapView.getRootGroup().deepFindUID(uid);
-        if (marker != null && parent != null) {
+        if (marker != null) {
             Log.d(TAG, "Requesting link to " + marker.getUID());
             Intent line = new Intent();
             line.setAction("com.atakmap.app.LINK_LINE");

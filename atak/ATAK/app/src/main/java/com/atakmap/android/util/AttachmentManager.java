@@ -359,7 +359,8 @@ public class AttachmentManager {
             final boolean createDir) {
         String uidEncoded;
         try {
-            uidEncoded = URLEncoder.encode(uid, FileSystemUtils.UTF8_CHARSET);
+            uidEncoded = URLEncoder.encode(uid,
+                    FileSystemUtils.UTF8_CHARSET.name());
         } catch (UnsupportedEncodingException e) {
             Log.d(TAG, "error getting uid", e);
             return null;

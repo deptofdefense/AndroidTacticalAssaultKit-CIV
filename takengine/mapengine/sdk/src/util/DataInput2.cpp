@@ -157,9 +157,7 @@ TAKEndian DataInput2::getSourceEndian() const NOTHROWS
         return TE_BigEndian;
 }
 
-FileInput2::FileInput2() NOTHROWS :
-    f(NULL)
-{}
+FileInput2::FileInput2() NOTHROWS : f_(nullptr), len_(-1LL) {}
 
 FileInput2::~FileInput2() NOTHROWS
 {
@@ -170,13 +168,13 @@ FileInput2::~FileInput2() NOTHROWS
 TAKErr FileInput2::open(const char *filename) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    if (f)
+    if (f_)
         return TE_IllegalState;
-    code = IO_length(&len, filename);
+    code = IO_length(&len_, filename);
     TE_CHECKRETURN_CODE(code);
-    f = fopen(filename, "rb");
-    if (!f) {
-        len = -1LL;
+    f_ = fopen(filename, "rb");
+    if (!f_) {
+        len_ = -1LL;
         return TE_IO;
     }
     return TE_Ok;
@@ -189,12 +187,12 @@ TAKErr FileInput2::close() NOTHROWS
 
 TAKErr FileInput2::closeImpl() NOTHROWS
 {
-    if (!f)
+    if (!f_)
         // Already closed
         return TE_Ok;
-    int err = fclose(f);
-    f = NULL;
-    len = -1LL;
+    int err = fclose(f_);
+    f_ = nullptr;
+    len_ = -1LL;
     return (!err) ? TE_Ok : TE_IO;
 }
 
@@ -213,7 +211,7 @@ TAKErr FileInput2::read(uint8_t *buf, std::size_t *numRead, const std::size_t le
     if (len == 0)
         return TE_Ok;
 
-    const std::size_t read = fread(buf, 1, len, f);
+    const std::size_t read = fread(buf, 1, len, f_);
     *numRead = read;
     if (!read)
         return TE_EOF;
@@ -224,24 +222,24 @@ TAKErr FileInput2::skip(size_t n) NOTHROWS
 {
     int r;
 #ifdef WIN32
-    r = _fseeki64(f, n, SEEK_CUR);
+    r = _fseeki64(f_, n, SEEK_CUR);
 #else
-    r = fseeko(f, n, SEEK_CUR);
+    r = fseeko(f_, n, SEEK_CUR);
 #endif
 
     return (r == 0) ? TE_Ok : TE_IO;
 }
 int64_t FileInput2::length() const NOTHROWS
 {
-    return len;
+    return len_;
 }
 TAKErr FileInput2::seek(const int64_t offset) NOTHROWS
 {
     int r;
 #ifdef WIN32
-    r = _fseeki64(f, offset, SEEK_SET);
+    r = _fseeki64(f_, offset, SEEK_SET);
 #else
-    r = fseeko(f, offset, SEEK_SET);
+    r = fseeko(f_, offset, SEEK_SET);
 #endif
     return (r == 0) ? TE_Ok : TE_IO;
 }
@@ -249,9 +247,9 @@ TAKErr FileInput2::seek(const int64_t offset) NOTHROWS
 TAKErr FileInput2::tell(int64_t *value) NOTHROWS
 {
 #ifdef WIN32
-    *value = _ftelli64(f);
+    *value = _ftelli64(f_);
 #else
-    *value = ftello(f);
+    *value = ftello(f_);
 #endif
     return (*value == -1LL) ? TE_IO : TE_Ok;
 }
@@ -260,7 +258,7 @@ TAKErr FileInput2::tell(int64_t *value) NOTHROWS
 
 
 MemoryInput2::MemoryInput2() NOTHROWS :
-    bytes(NULL, NULL),
+    bytes(nullptr, nullptr),
     curOffset(0),
     totalLen(0)
 {}
@@ -358,30 +356,30 @@ TAKErr MemoryInput2::reset() NOTHROWS
 
 
 ByteBufferInput2::ByteBufferInput2() NOTHROWS :
-    buffer(NULL),
-    len(-1LL)
+    buffer_(nullptr),
+    len_(-1LL)
 {}
 
 ByteBufferInput2::~ByteBufferInput2()
 {}
 
-TAKErr ByteBufferInput2::open(MemBufferT<uint8_t> *buffer_) NOTHROWS
+TAKErr ByteBufferInput2::open(MemBufferT<uint8_t> *buffer) NOTHROWS
 {
-    this->buffer = buffer_;
-    this->len = this->buffer->remaining();
+    this->buffer_ = buffer;
+    this->len_ = this->buffer_->remaining();
     return TE_Ok;
 }
 
 TAKErr ByteBufferInput2::close() NOTHROWS
 {
-    this->buffer = NULL;
-    this->len = -1LL;
+    this->buffer_ = nullptr;
+    this->len_ = -1LL;
     return TE_Ok;
 }
 
 TAKErr ByteBufferInput2::read(uint8_t *buf, std::size_t *numRead, const std::size_t len) NOTHROWS
 {
-    *numRead = this->buffer->get(buf, len);
+    *numRead = this->buffer_->get(buf, len);
     if ((*numRead) != len)
         return TE_IO;
     return TE_Ok;
@@ -390,7 +388,7 @@ TAKErr ByteBufferInput2::read(uint8_t *buf, std::size_t *numRead, const std::siz
 TAKErr ByteBufferInput2::readByte(uint8_t *value) NOTHROWS
 {
     try {
-        std::size_t actual = this->buffer->get(value, 1);
+        std::size_t actual = this->buffer_->get(value, 1);
         if (actual != 1)
             return TE_EOF;
         return TE_Ok;
@@ -402,14 +400,14 @@ TAKErr ByteBufferInput2::readByte(uint8_t *value) NOTHROWS
 
 TAKErr ByteBufferInput2::skip(const std::size_t n) NOTHROWS
 {
-    if (n > this->buffer->remaining())
+    if (n > this->buffer_->remaining())
     return TE_IO;
-    const std::size_t pos = std::min(this->buffer->position() + n, this->buffer->limit());
-    this->buffer->position(pos);
+    const std::size_t pos = std::min(this->buffer_->position() + n, this->buffer_->limit());
+    this->buffer_->position(pos);
     return TE_Ok;
 }
 int64_t ByteBufferInput2::length() const NOTHROWS
 {
-    return this->len;
+    return this->len_;
 }
 

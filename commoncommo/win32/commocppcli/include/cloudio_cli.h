@@ -47,7 +47,9 @@ namespace TAK {
             /** Rename a collection or file */
             Move,
             /** Create a new, empty collection */
-            MakeCollection
+            MakeCollection,
+            /** Delete a collection or file */
+            Delete
         };
 
         /**
@@ -305,6 +307,22 @@ namespace TAK {
             * </returns>
             */
             CommoResult moveResourceInit(int %cloudOpId, System::String ^fromPath, System::String ^toPath);
+
+            /**
+            * Create operation to delete a remote file or collection.
+            *
+            * <param name="cloudOpId">
+            * set to the unique operation id of the created operation
+            * on a Success return. Unchanged otherwise.
+            * </param>
+            * <param name="remotePath">
+            * the path to the remote file or collection to delete
+            * </param>
+            * <returns>
+            * Success if the operation is created
+            * </returns>
+            */
+            CommoResult deleteResourceInit(int %cloudOpId, System::String ^remotePath);
 
             /**
             * Create operation to create a new (empty) collection.

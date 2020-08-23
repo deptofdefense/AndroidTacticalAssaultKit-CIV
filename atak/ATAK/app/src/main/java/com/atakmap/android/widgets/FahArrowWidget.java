@@ -6,6 +6,7 @@ import android.graphics.RectF;
 import android.preference.PreferenceManager;
 import android.view.MotionEvent;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapGroup;
@@ -42,12 +43,12 @@ public class FahArrowWidget extends ShapeWidget implements
         SharedPreferences.OnSharedPreferenceChangeListener {
 
     public final static String TAG = "FahArrowWidget";
-    private final List<OnFahAngleChangedListener> _onFahAngleChanged = new LinkedList<>();
-    private final List<OnFahWidthChangedListener> _onFahWidthChanged = new LinkedList<>();
-    private final List<OnFahLegChangedListener> _onFahLegChanged = new LinkedList<>();
-    private final List<OnTouchableChangedListener> _onTouchableChanged = new LinkedList<>();
-    private final List<OnTargetPointChangedListener> _onTargetPointChanged = new LinkedList<>();
-    private final List<OnDesignatorPointChangedListener> _onDesignatorPointChanged = new LinkedList<>();
+    private final ConcurrentLinkedQueue<OnFahAngleChangedListener> _onFahAngleChanged = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<OnFahWidthChangedListener> _onFahWidthChanged = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<OnFahLegChangedListener> _onFahLegChanged = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<OnTouchableChangedListener> _onTouchableChanged = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<OnTargetPointChangedListener> _onTargetPointChanged = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<OnDesignatorPointChangedListener> _onDesignatorPointChanged = new ConcurrentLinkedQueue<>();
     private double _fahAngle;
     private double _fahOffset;
     private double _fahWidth;

@@ -352,51 +352,16 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_NativeFeatureDataSo
 JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_NativeFeatureDataSource_FeatureDataSourceContentFactory_1register
   (JNIEnv *env, jclass clazz, jobject jpointer, jint priority)
 {
-    std::shared_ptr<FeatureDataSource2> toRegister;
+    if(!Pointer_makeShared<FeatureDataSource2>(env, jpointer)) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_IllegalState);
+        return;
+    }
 
     // get shared_ptr from pointer
     jlong pointer = env->GetLongField(jpointer, Pointer_class.value);
-    jint type = env->GetIntField(jpointer, Pointer_class.type);
-    if(type == com_atakmap_interop_Pointer_RAW) {
-        // XXX - note this could cause some significant problems depending on
-        //       the memory management model employed by the owning Java object
 
-        // wrap raw pointer as unique_ptr with leaker
-        FeatureDataSourcePtr upointer(JLONG_TO_INTPTR(FeatureDataSource2, pointer), Memory_leaker_const<FeatureDataSource2>);
-
-        // promote to shared_ptr and update Java object fields
-        pointer = INTPTR_TO_JLONG(new std::shared_ptr<FeatureDataSource2>(std::move(upointer)));
-        type = com_atakmap_interop_Pointer_SHARED;
-        env->SetLongField(jpointer, Pointer_class.value, pointer);
-        env->SetIntField(jpointer, Pointer_class.type, type);
-
-        // set the value to register
-        toRegister = *JLONG_TO_INTPTR(std::shared_ptr<FeatureDataSource2>, pointer);
-    } else if(type == com_atakmap_interop_Pointer_UNIQUE) {
-        // obtain the unique_ptr
-        FeatureDataSourcePtr *cpointer = JLONG_TO_INTPTR(FeatureDataSourcePtr, pointer);
-        // reset local 'pointer' to a new shared_ptr instance promoted from unique_ptr
-        pointer = INTPTR_TO_JLONG(new std::shared_ptr<FeatureDataSource2>(std::move(*cpointer)));
-        // delete the unique_ptr pointer memory
-        delete cpointer;
-        // update the Java object
-        env->SetLongField(jpointer, Pointer_class.value, pointer);
-        env->SetIntField(jpointer, Pointer_class.type, com_atakmap_interop_Pointer_SHARED);
-
-        // set the value to register
-        toRegister = *JLONG_TO_INTPTR(std::shared_ptr<FeatureDataSource2>, pointer);
-    } else if(type == com_atakmap_interop_Pointer_SHARED) {
-        // set the value to register
-        toRegister = *JLONG_TO_INTPTR(std::shared_ptr<FeatureDataSource2>, pointer);
-    } else { // illegal state
-        ATAKMapEngineJNI_checkOrThrow(env, TE_IllegalState);
-        return;
-    }
-
-    if(!toRegister.get()) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_IllegalState);
-        return;
-    }
+    // set the value to register
+    std::shared_ptr<FeatureDataSource2> toRegister(*JLONG_TO_INTPTR(std::shared_ptr<FeatureDataSource2>, pointer));
 
     TAKErr code = FeatureDataSourceFactory_registerProvider(toRegister, priority);
     ATAKMapEngineJNI_checkOrThrow(env, code);

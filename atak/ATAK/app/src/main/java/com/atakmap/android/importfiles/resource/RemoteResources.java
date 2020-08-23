@@ -78,7 +78,7 @@ public class RemoteResources {
     /**
      * Allows for serialization of a remote resource.
      * @param file The destination file used for the serialized data
-     * @param serializer The serializer to be used when producing the the file.
+     * @param serializer The serializer to be used when producing the file.
      * @return boolean true is serialization was successful.
      */
     public boolean save(File file, Serializer serializer) {

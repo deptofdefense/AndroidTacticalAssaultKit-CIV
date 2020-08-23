@@ -1,0 +1,14 @@
+<menu buttonRadius='55' buttonSpan='45' buttonWidth='90' dragDismiss='true' buttonBg='bgs/button.xml'>
+
+
+    <button angle='-160'
+        icon='icons/copy_icon.png'
+        onClick='actions/coord_copy.xml'
+        selected='${doCopy}'/>
+
+    <button
+        icon='icons/expand_icon.png'
+        onClick='actions/coord_enlarge.xml'
+        selected='${doEnlarge}'/>
+
+</menu>

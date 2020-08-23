@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 
+import java.io.IOException;
 import com.atakmap.android.bluetooth.BluetoothDevicesConfig;
 import com.atakmap.android.data.DataMgmtReceiver;
 import com.atakmap.android.favorites.FavoriteListAdapter;
@@ -332,6 +333,16 @@ public class AppVersionUpgrade {
                     }
                 }
             }
+
+            // write .nomedia file so these icons don't show up in the gallery
+            File nomedia = new File(dir, ".nomedia");
+            if (!nomedia.exists())
+                try {
+                    nomedia.createNewFile();
+                } catch (IOException ioe) {
+                    Log.e(TAG, "error creating .nomedia file", ioe);
+                }
+
         }
 
         //In support of refactoring done in ATAK 3.8
@@ -586,7 +597,7 @@ public class AppVersionUpgrade {
 
     /**
      * If the given file has not already been copied to the device, copy the file.
-     * TODO - if a part of a source changes, we'll have to add versions the the xml
+     * TODO - if a part of a source changes, we'll have to add versions the xml
      *        files to ensure the lastest file has been copied to the device
      */
     private static void _copyWMSSource(Context context,

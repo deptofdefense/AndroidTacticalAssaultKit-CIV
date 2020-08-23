@@ -55,7 +55,9 @@ public:
                            const uint64_t sizeInBytes,
                            const std::string &senderCallsign,
                            const ContactUID *senderuid,
-                           const std::string &ackuid);
+                           const std::string &ackuid,
+                           const bool peerHosted,
+                           const int httpsPort);
     CoTFileTransferRequest(const CoTFileTransferRequest &src);
     ~CoTFileTransferRequest();
 
@@ -83,6 +85,15 @@ public:
     // uid to be used for any ack message
     // This may be the empty string, in which case no ack is requested
     const std::string ackuid;
+    
+    // true if the peerHosted attribute is present with value true to signify
+    // the file being sent is hosted by the sender and not some external server
+    bool peerHosted;
+    
+    // Value of the httpsPort attribute, if present with a valid unsigned
+    // port value.
+    // MP_LOCAL_PORT_DISABLE otherwise.
+    int httpsPort;
 };
 
 

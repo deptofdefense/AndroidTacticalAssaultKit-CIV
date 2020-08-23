@@ -11,7 +11,7 @@ namespace TAK
         namespace Core
         {
 
-            enum ENGINE_API AltitudeReference
+            enum AltitudeReference
             {
                 HAE, AGL, INDICATED, UNKNOWN
             };

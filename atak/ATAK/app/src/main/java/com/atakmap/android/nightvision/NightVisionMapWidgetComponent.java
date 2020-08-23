@@ -96,10 +96,13 @@ public class NightVisionMapWidgetComponent extends AbstractWidgetMapComponent
         selfWidget.setVisible(false);
         selfTray.addWidget(selfWidget);
 
-        nightVisionNotification = new NightVisionNotification(view);
+        nightVisionNotification = new NightVisionNotification();
         DocumentedIntentFilter iFilter = new DocumentedIntentFilter();
         iFilter.addAction(NightVisionNotification.NOTIFICATION_CONTROL);
         AtakBroadcast.getInstance().registerSystemReceiver(
+                nightVisionNotification, iFilter);
+
+        AtakBroadcast.getInstance().registerReceiver(
                 nightVisionNotification, iFilter);
 
         //receiver used to adjust brightness value inside atak

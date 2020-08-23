@@ -9,7 +9,9 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import android.graphics.Point;
 import android.view.Window;
@@ -28,9 +30,11 @@ import com.atakmap.android.contact.IndividualContact;
 import com.atakmap.android.data.URIContentHandler;
 import com.atakmap.android.data.URIContentListener;
 import com.atakmap.android.data.URIContentManager;
+import com.atakmap.android.data.URIContentProvider;
 import com.atakmap.android.dropdown.DropDown;
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.gui.TileButtonDialog;
+import com.atakmap.android.image.gallery.GalleryContentProvider;
 import com.atakmap.android.importfiles.ui.ImportManagerFileBrowser;
 import com.atakmap.android.hierarchy.filters.SearchFilter;
 import com.atakmap.android.importexport.ExportFileMarshal;
@@ -1378,5 +1382,47 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
         ATAKUtilities.scaleToFit(mv,
                 new GeoBounds(e.minY, e.minX, e.maxY, e.maxX),
                 mv.getWidth(), mv.getHeight());
+    }
+
+    public static void displayGallery(String title, List<GalleryItem> items) {
+        List<String> files = new ArrayList<>();
+        List<String> uids = new ArrayList<>();
+        Set<String> paths = new HashSet<>();
+        for (GalleryItem item : items) {
+            if (item instanceof GalleryFileItem) {
+                GalleryFileItem gfi = (GalleryFileItem) item;
+                File f = gfi.getFile();
+                MapItem mi = gfi.getMapItem();
+                if (f != null && !paths.contains(f.getAbsolutePath())) {
+                    files.add(f.getAbsolutePath());
+                    uids.add(mi != null ? mi.getUID() : null);
+                    paths.add(f.getAbsolutePath());
+                }
+            } else {
+                // TODO: If only there was a way to mix blobs and files in one gallery
+            }
+        }
+        Intent i = new Intent(ImageGalleryReceiver.IMAGE_GALLERY);
+        i.putExtra("title", title);
+        i.putExtra("files", files.toArray(new String[0]));
+        i.putExtra("uids", uids.toArray(new String[0]));
+        AtakBroadcast.getInstance().sendBroadcast(i);
+    }
+
+    public static void displayGallery() {
+        MapView mv = MapView.getMapView();
+        if (mv == null)
+            return;
+
+        List<GalleryItem> items = new ArrayList<>();
+        List<URIContentProvider> providers = URIContentManager.getInstance()
+                .getProviders(GalleryContentProvider.TOOL);
+        for (URIContentProvider pr : providers) {
+            if (!(pr instanceof GalleryContentProvider))
+                continue;
+            items.addAll(((GalleryContentProvider) pr).getItems());
+        }
+        displayGallery(mv.getContext().getString(R.string.gallery_title),
+                items);
     }
 }

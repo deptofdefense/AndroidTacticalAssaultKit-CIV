@@ -10,6 +10,7 @@ import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
+import com.atakmap.android.munitions.util.MunitionsHelper;
 import com.atakmap.android.nineline.RemarksConstants;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.Circle;
@@ -34,6 +35,7 @@ public class RangeRing extends PointMapItem implements AnchoredMapItem,
     private final int _innerRange;
     private final int _outerRange;
     private final String _fromLine;
+    private String _category;
 
     // TODO:switch to using GL version but for now this works
 
@@ -55,7 +57,7 @@ public class RangeRing extends PointMapItem implements AnchoredMapItem,
         setMetaString("iconUri", ATAKUtilities.getResourceUri(
                 R.drawable.ic_circle));
         setMetaInteger("color", Color.RED);
-        setMetaString("deleteAction", DangerCloseReceiver.REMOVE);
+        setMetaString("deleteAction", DangerCloseReceiver.REMOVE_WEAPON);
         setMetaBoolean("removable", false);
         setMetaString("menu", "menus/range_ring_menu.xml");
         SharedPreferences pref = PreferenceManager
@@ -88,7 +90,7 @@ public class RangeRing extends PointMapItem implements AnchoredMapItem,
             _standing.setMetaString("target",
                     _target.getMetaString("uid", null));
             _standing.setMetaBoolean("addToObjList", false);
-            if (_fromLine == null || _fromLine.equals("noLine")) {
+            if (hasNoLine()) {
                 _standing.setVisible(false);
             } else {
                 _standing.setVisible(_mapGroup.getVisible());
@@ -105,7 +107,7 @@ public class RangeRing extends PointMapItem implements AnchoredMapItem,
         _target.addOnGroupChangedListener(this);
         _mapGroup.addItem(this);
 
-        if (from != null && !from.equals("noLine")) {
+        if (!hasNoLine()) {
             DangerCloseCalculator.getInstance().registerListener(this, _target);
         }
         if (_target.getMetaInteger("dangerclose", 0) < _outerRange)
@@ -179,7 +181,7 @@ public class RangeRing extends PointMapItem implements AnchoredMapItem,
         _prone.setTitle(newName);
         _prone.setMetaString("target", _target.getMetaString("uid", null));
         _prone.setMetaBoolean("addToObjList", false);
-        if (_fromLine == null || _fromLine.equals("noLine")) {
+        if (hasNoLine()) {
             _prone.setVisible(false);
         } else {
             _prone.setVisible(_mapGroup.getVisible());
@@ -192,6 +194,14 @@ public class RangeRing extends PointMapItem implements AnchoredMapItem,
         _mapGroup.removeItem(_prone);
     }
 
+    public void setCategory(String category) {
+        _category = category;
+    }
+
+    public String getCategory() {
+        return _category;
+    }
+
     @Override
     public double getRange() {
         return _outerRange;
@@ -199,6 +209,10 @@ public class RangeRing extends PointMapItem implements AnchoredMapItem,
 
     public String getFromLine() {
         return _fromLine;
+    }
+
+    public boolean hasNoLine() {
+        return MunitionsHelper.hasNoLine(_fromLine);
     }
 
     @Override
@@ -236,7 +250,7 @@ public class RangeRing extends PointMapItem implements AnchoredMapItem,
         if (visible != getVisible()) {
             superSetVisible(visible);
             if (_target != null) {
-                if (!_fromLine.isEmpty())
+                if (!hasNoLine())
                     _target.setMetaBoolean(_fromLine
                             + RemarksConstants.WPN_DISPLAY, visible);
                 else
@@ -272,11 +286,18 @@ public class RangeRing extends PointMapItem implements AnchoredMapItem,
     @Override
     public boolean getVisible() {
         return super.getVisible() && (_target == null
-                || !_fromLine.isEmpty() && _target.getMetaBoolean(_fromLine
+                || !hasNoLine() && _target.getMetaBoolean(_fromLine
                         + RemarksConstants.WPN_DISPLAY, true)
                 || _target.getMetaBoolean(
                         TargetMunitionsDetailHandler.TARGET_MUNITIONS_VISIBLE,
                         true));
+    }
+
+    public void setStandingProneVisible(boolean visible) {
+        if (_standing != null)
+            _standing.setVisible(visible);
+        if (_prone != null)
+            _prone.setVisible(visible);
     }
 
     public String getWeaponName() {

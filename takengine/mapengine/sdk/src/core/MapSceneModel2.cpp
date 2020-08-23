@@ -8,6 +8,7 @@
 #include "core/GeoPoint.h"
 #include "core/Projection2.h"
 #include "core/ProjectionFactory3.h"
+#include "elevation/ElevationManager.h"
 #include "feature/Envelope2.h"
 #include "math/Point2.h"
 #include "math/Ellipsoid2.h"
@@ -20,7 +21,7 @@
 
 using namespace TAK::Engine::Core;
 
-using namespace TAK::Engine::Feature;
+using namespace TAK::Engine::Elevation;
 using namespace TAK::Engine::Math;
 using namespace TAK::Engine::Thread;
 using namespace TAK::Engine::Util;
@@ -55,7 +56,7 @@ namespace
         const double rotation,
         const double tilt) NOTHROWS;
 
-    TAKErr constructFromModel(MapCamera2 *value, const int mapWidth, const int mapHeight, Projection2& mapProjection,
+    TAKErr constructFromModel(MapCamera2 *value, const size_t mapWidth, const size_t mapHeight, Projection2 &mapProjection,
         const MapProjectionDisplayModel& displayModel, const GeoPoint2& focusGeo, const float focusScreenX, const float focusScreenY,
         const double mapRotation, const double mapTilt, const double mapResolution) NOTHROWS;
 
@@ -72,21 +73,21 @@ namespace
 }
 
 MapSceneModel2::MapSceneModel2() NOTHROWS :
-    earth(NULL, NULL),
-    projection(NULL, NULL)
+    earth(nullptr, nullptr),
+    projection(nullptr, nullptr)
 {}
 
-MapSceneModel2::MapSceneModel2(double displayDPI, int width, int height, int srid, const GeoPoint2& focusGeo, float focusX,
+MapSceneModel2::MapSceneModel2(double displayDPI, std::size_t width, std::size_t height, int srid, const GeoPoint2 &focusGeo, float focusX,
     float focusY, double rotation, double tilt, double resolution) NOTHROWS :
-    projection(NULL, NULL),
-    earth(NULL, NULL)
+    projection(nullptr, nullptr),
+    earth(nullptr, nullptr)
 {
     init(displayDPI, width, height, srid, focusGeo, focusX, focusY, rotation, tilt, resolution);
 }
 
 MapSceneModel2::MapSceneModel2(const MapSceneModel2 &other) NOTHROWS :
-    projection(NULL, NULL),
-    earth(NULL, NULL)
+    projection(nullptr, nullptr),
+    earth(nullptr, nullptr)
 {
     *this = other;
 }
@@ -188,8 +189,8 @@ TAKErr MapSceneModel2::inverse(GeoPoint2 *value, const Point2<float> &point,
     return TE_Err;
 }
 
-TAKErr MapSceneModel2::init(double displayDPI, int width, int height, int srid, const GeoPoint2& focusGeo, float focusX,
-    float focusY, double rotation, double tilt, double resolution) NOTHROWS
+TAKErr MapSceneModel2::init(double display_dpi, std::size_t map_width, std::size_t map_height, int srid, const GeoPoint2 &focusGeo, float focus_x,
+    float focus_y, double rotation, double tilt, double resolution) NOTHROWS
 {
     TAKErr code(TE_Ok);
 
@@ -199,18 +200,19 @@ TAKErr MapSceneModel2::init(double displayDPI, int width, int height, int srid, 
 
     this->displayModel = getDisplayModel(*this->projection);
 
-    this->width = width;
-    this->height = height;
-    this->focusX = focusX;
-    this->focusY = focusY;
+    this->displayDpi = display_dpi;
+    this->width = map_width;
+    this->height = map_height;
+    this->focusX = focus_x;
+    this->focusY = focus_y;
     this->gsd = resolution;
 
     // assign the publicly visible 'earth' pointer. we'll use a "leaker" here
     // because the actual memory is owned by 'displayModel'
     this->earth = GeometryModel2Ptr(this->displayModel->earth.get(), Memory_leaker_const<GeometryModel2>);
 
-    constructFromModel(&this->camera, width, height, *this->projection, *this->displayModel,
-        focusGeo, focusX, focusY, rotation, tilt, resolution);
+    constructFromModel(&this->camera, map_width, map_height, *this->projection, *this->displayModel,
+        focusGeo, focus_x, focus_y, rotation, tilt, resolution);
 
     // construct the forward transform based on the projection and
     // model-view matrices
@@ -220,7 +222,7 @@ TAKErr MapSceneModel2::init(double displayDPI, int width, int height, int srid, 
     //           positive Y-axis pointing up with extents of [-1,1]
 
     // XXX - pixel centers for target coordinate space ?
-    this->forwardTransform.scale((double)width / 2.0, -(double)height / 2.0);
+    this->forwardTransform.scale((double)map_width / 2.0, -(double)map_height / 2.0);
     this->forwardTransform.translate(1.0, -1.0);
     this->forwardTransform.concatenate(this->camera.projection);
     this->forwardTransform.concatenate(this->camera.modelView);
@@ -232,15 +234,15 @@ TAKErr MapSceneModel2::init(double displayDPI, int width, int height, int srid, 
 }
 
 
-TAKErr MapSceneModel2::set(const double displayDpi, const std::size_t width, const std::size_t height, const int srid, const GeoPoint2 &focusGeo, const float focusX, const float focusY, const double rotation, const double tilt, const double resolution) NOTHROWS
+TAKErr MapSceneModel2::set(const double display_dpi, const std::size_t map_width, const std::size_t map_height, const int srid, const GeoPoint2 &focus_geo, const float focus_x, const float focus_y, const double rotation, const double tilt, const double resolution) NOTHROWS
 {
-    return this->init(displayDpi,
-                      width,
-                      height,
+    return this->init(display_dpi,
+                      map_width,
+                      map_height,
                       srid,
-                      focusGeo,
-                      focusX,
-                      focusY,
+                      focus_geo,
+                      focus_x,
+                      focus_y,
                       rotation,
                       tilt,
                       resolution);
@@ -290,8 +292,7 @@ std::shared_ptr<MapProjectionDisplayModel> MapSceneModel2::getDisplayModel(Proje
     TAG ": Failed to find MapProjectionDisplayModel for SRID %d, using estimation.",
     proj.getSpatialReferenceID());*/
 
-    TAK::Engine::Thread::LockPtr lock(NULL, NULL);
-    Lock_create(lock, mutex());
+    Lock lock(mutex());
 
     std::map<int, std::shared_ptr<MapProjectionDisplayModel>> &displayModelCache = computedDisplayModelCache();
 
@@ -399,7 +400,7 @@ TAKErr TAK::Engine::Core::MapSceneModel2_intersects(bool *value, const MapSceneM
 {
     Matrix2 xform(scene.forwardTransform);
 
-    Envelope2 mbb(mbbMinX_, mbbMinY_, mbbMinZ_, mbbMaxX_, mbbMaxY_, mbbMaxZ_);
+    TAK::Engine::Feature::Envelope2 mbb(mbbMinX_, mbbMinY_, mbbMinZ_, mbbMaxX_, mbbMaxY_, mbbMaxZ_);
 
     double minX;
     double minY;
@@ -494,10 +495,10 @@ TAKErr TAK::Engine::Core::MapSceneModel2_intersects(bool *value, const MapSceneM
 #if 1
     // XXX - observing intersect failure for equirectangular with perspective camera on Y-axis
     if(scene.projection->getSpatialReferenceID() == 4326 && scene.camera.mode == MapCamera2::Perspective)
-        *value = atakmap::math::Rectangle<double>::intersects(0, 0, scene.width, scene.height, minX, 0, maxX, scene.height);
+        *value = atakmap::math::Rectangle<double>::intersects(0, 0, static_cast<double>(scene.width), static_cast<double>(scene.height), minX, 0, maxX, static_cast<double>(scene.height));
     else
 #endif
-    *value = atakmap::math::Rectangle<double>::intersects(0, 0, scene.width, scene.height, minX, minY, maxX, maxY);
+    *value = atakmap::math::Rectangle<double>::intersects(0, 0, static_cast<double>(scene.width), static_cast<double>(scene.height), minX, minY, maxX, maxY);
 
     return TE_Ok;
 }
@@ -515,7 +516,7 @@ namespace
     {
         TAKErr code(TE_Ok);
 
-        Projection2Ptr ecef(NULL, NULL);
+        Projection2Ptr ecef(nullptr, nullptr);
         code = ProjectionFactory3_create(ecef, 4978);
         TE_CHECKRETURN_CODE(code);
 
@@ -665,7 +666,7 @@ namespace
         return code;
     }
 
-    TAKErr constructFromModel(MapCamera2 *retval, const int mapWidth, const int mapHeight, Projection2& mapProjection,
+    TAKErr constructFromModel(MapCamera2 *retval, const size_t mapWidth, const size_t mapHeight, Projection2 &mapProjection,
         const MapProjectionDisplayModel& displayModel, const GeoPoint2& focusGeo, const float focusScreenX, const float focusScreenY,
         const double mapRotation, const double mapTilt, const double mapResolution) NOTHROWS
     {
@@ -674,7 +675,7 @@ namespace
         // compute range based on
         // m_MetersPerPixel=TAN_FOV_ANGLE*_range/_view.Height;
         const double m_MetersPerPixel = mapResolution;
-        const double _viewHeight = mapHeight;
+        const auto _viewHeight = static_cast<double>(mapHeight);
 
 
         double _range = (m_MetersPerPixel*(_viewHeight / 2.0) / std::tan((HVFOV)*M_PI / 180.0));
@@ -720,7 +721,7 @@ namespace
             _posTarget.y*displayModel.projectionYToNominalMeters,
             _posTarget.z*displayModel.projectionZToNominalMeters);
 
-        const double _viewWidth = mapWidth;
+        const auto _viewWidth = static_cast<double>(mapWidth);
         const double aspect = _viewWidth / _viewHeight;
         const double scale = std::tan((HVFOV)*M_PI / 180.0)*_range;
 
@@ -769,8 +770,6 @@ namespace
         retval->target = _posTarget;
         retval->modelView = xmodel;
         retval->projection = xproj;
-        retval->near = 1.0;
-        retval->far = xEyePosLength*2.0;
         retval->aspectRatio = aspect;
         retval->fov = HVFOV*2.0;
         retval->mode = cameraMode;
@@ -782,14 +781,57 @@ namespace
         GeoPoint2 camLocation;
         mapProjection.inverse(&camLocation, retval->location);
         // use a minimum height of 2m (~person standing)
-        double heightMsl = std::max(!isnan(camLocation.altitude) ? camLocation.altitude : camLocation.altitude, 2.0);
+        double heightMsl = std::max(!isnan(camLocation.altitude) ? camLocation.altitude : 0.0, 2.0);
+        // convert HAE to MSL
+        double mslOffset;
+        if(ElevationManager_getGeoidHeight(&mslOffset, camLocation.latitude, camLocation.longitude) == TE_Ok)
+            heightMsl -= mslOffset;
         // https://en.wikipedia.org/wiki/Horizon#Distance_to_the_horizon
         const double horizonDistance = sqrt((2.0*TAK::Engine::Core::Ellipsoid2::WGS84.semiMajorAxis*heightMsl) + (heightMsl*heightMsl));
 
         // the far distance in meters will be the minimm of the distance  to
         // the horizon and the center of the earth -- if the distance to the
         // horizon is less than the eye altitude, simply use the eye altitude
-        retval->far = std::max(horizonDistance, heightMsl);
+        const double farMeters = std::max(horizonDistance, heightMsl);
+
+        // compute camera location/target in meters
+        const double camLocMetersX = retval->location.x*displayModel.projectionXToNominalMeters;
+        const double camLocMetersY = retval->location.y*displayModel.projectionYToNominalMeters;
+        const double camLocMetersZ = retval->location.z*displayModel.projectionZToNominalMeters;
+        const double camTgtMetersX = retval->target.x*displayModel.projectionXToNominalMeters;
+        const double camTgtMetersY = retval->target.y*displayModel.projectionYToNominalMeters;
+        const double camTgtMetersZ = retval->target.z*displayModel.projectionZToNominalMeters;
+
+        // distance from camera to target
+        const double dist = length(camLocMetersX-camTgtMetersX, camLocMetersY-camTgtMetersY, camLocMetersZ-camTgtMetersZ);
+
+        // direction of camera pointing
+        const double dirMeterX = (camTgtMetersX-camLocMetersX)/dist;
+        const double dirMeterY = (camTgtMetersY-camLocMetersY)/dist;
+        const double dirMeterZ = (camTgtMetersZ-camLocMetersZ)/dist;
+
+        // compute the projected location, scaled to meters at the computed far
+        // distance
+        Point2<double> farLocation;
+        farLocation.x = camLocMetersX+(farMeters*dirMeterX);
+        farLocation.y = camLocMetersY+(farMeters*dirMeterY);
+        farLocation.z = camLocMetersZ+(farMeters*dirMeterZ);
+
+        // unscale from meters to original projection units
+        farLocation.x /= displayModel.projectionXToNominalMeters;
+        farLocation.y /= displayModel.projectionYToNominalMeters;
+        farLocation.z /= displayModel.projectionZToNominalMeters;
+
+        // obtain the far location in screen space to get the 'z'
+        retval->modelView.transform(&farLocation, farLocation);
+        retval->projection.transform(&farLocation, farLocation);
+
+        // clamp the far plane to -1f
+        retval->far = std::max(-1.f, -(float)farLocation.z);
+        if(cameraMode == MapCamera2::Perspective)
+            retval->near = 0.01f;
+        else
+            retval->near = 0.075f;
 
         return code;
     }
@@ -939,8 +981,8 @@ namespace
         TAKErr code(TE_Ok);
         const double TAN_FOV_ANGLE = std::tan(HVFOV / 180.0*M_PI);
 
-        const float mapWidth = scene.width;
-        const float mapHeight = scene.height;
+        const auto mapWidth = static_cast<float>(scene.width);
+        const auto mapHeight = static_cast<float>(scene.height);
         //const double mapResolution = TAN_FOV_ANGLE*MathUtils.distance(scene.camera.location.x, scene.camera.location.y, scene.camera.location.z, scene.camera.target.x, scene.camera.target.y, scene.camera.target.z)*1.25d / mapHeight;
         const double mapResolution = TAN_FOV_ANGLE*length(scene.camera.location.x-scene.camera.target.x,
                                                           scene.camera.location.y-scene.camera.target.y,

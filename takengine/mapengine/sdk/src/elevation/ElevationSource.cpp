@@ -23,29 +23,29 @@ ElevationSource::OnContentChangedListener::~OnContentChangedListener() NOTHROWS
 {}
 
 ElevationSource::QueryParameters::QueryParameters() NOTHROWS :
-    spatialFilter(NULL, NULL),
+    spatialFilter(nullptr, nullptr),
     targetResolution(NAN),
     maxResolution(NAN),
     minResolution(NAN),
-    types(NULL, NULL),
-    authoritative(NULL, NULL),
+    types(nullptr, nullptr),
+    authoritative(nullptr, nullptr),
     minCE(NAN),
     minLE(NAN),
-    order(NULL, NULL),
-    flags(NULL, NULL)
+    order(nullptr, nullptr),
+    flags(nullptr, nullptr)
 {}
 
 ElevationSource::QueryParameters::QueryParameters(const QueryParameters &other) NOTHROWS :
-    spatialFilter(NULL, NULL),
+    spatialFilter(nullptr, nullptr),
     targetResolution(other.targetResolution),
     maxResolution(other.maxResolution),
     minResolution(other.minResolution),
-    types(NULL, NULL),
-    authoritative(NULL, NULL),
+    types(nullptr, nullptr),
+    authoritative(nullptr, nullptr),
     minCE(other.minCE),
     minLE(other.minLE),
-    order(NULL, NULL),
-    flags(NULL, NULL)
+    order(nullptr, nullptr),
+    flags(nullptr, nullptr)
 {
     if(other.spatialFilter)
         Geometry_clone(this->spatialFilter, *other.spatialFilter);
@@ -217,8 +217,6 @@ bool TAK::Engine::Elevation::ElevationSource_resolutionAsc(ElevationChunkCursor 
     } while (false);
 
     return cursor_compare(a, b);
-
-    return &a < &b;
 }
 bool TAK::Engine::Elevation::ElevationSource_ceDesc(ElevationChunkCursor &a, ElevationChunkCursor &b) NOTHROWS
 {

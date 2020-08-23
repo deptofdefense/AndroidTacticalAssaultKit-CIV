@@ -42,7 +42,7 @@ namespace atakmap {
             ~OGR_FeatureDataSource() throw ()
             { }
         public ://  FeatureDataSource INTERFACE
-            const char* getName() const throw ()
+            const char* getName() const throw () override
             {
 #ifdef __ANDROID__
                 return "ogr";
@@ -51,9 +51,9 @@ namespace atakmap {
 #endif
             }
 
-            Content* parseFile(const char* filePath) const;
+            Content* parseFile(const char* filePath) const override;
 
-            unsigned int parseVersion() const throw ()
+            unsigned int parseVersion() const throw () override
             { return 18; }
         public :
 			static std::size_t ComputeAreaThreshold(unsigned int DPI);

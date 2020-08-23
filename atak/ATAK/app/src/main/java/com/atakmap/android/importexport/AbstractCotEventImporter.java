@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 
 import com.atakmap.android.cot.CotMapAdapter;
+import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.cot.event.CotAttribute;
@@ -181,11 +182,7 @@ public abstract class AbstractCotEventImporter extends AbstractImporter
      * @return Converted value or default value if conversion failed
      */
     protected double parseDouble(String value, double defaultVal) {
-        try {
-            return Double.parseDouble(value);
-        } catch (Exception e) {
-            return defaultVal;
-        }
+        return MathUtils.parseDouble(value, defaultVal);
     }
 
     /**
@@ -195,11 +192,7 @@ public abstract class AbstractCotEventImporter extends AbstractImporter
      * @return Converted value or default if failed
      */
     protected int parseInt(String value, int defaultVal) {
-        try {
-            return Integer.parseInt(value);
-        } catch (Exception e) {
-            return defaultVal;
-        }
+        return MathUtils.parseInt(value, defaultVal);
     }
 
     /**

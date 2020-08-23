@@ -143,6 +143,20 @@ public class CloudClient {
     }
     
     /**
+     * Create operation to delete a remote cloud resource.
+     * 
+     * @param remotePath the path to the remote location to delete
+     * @return the unique operation id of the created operation
+     * @throws CommoException if the operation cannot be created
+     */
+    public int deleteResourceInit(String remotePath) throws CommoException
+    {
+        checkPtr();
+        checkNull("remotePath", remotePath);
+        return deleteResourceInitNative(nativePtr, remotePath);
+    }
+    
+    /**
      * Create operation to create a new (empty) collection.
      * 
      * @param remotePath the path at which to create the new collection
@@ -194,6 +208,8 @@ public class CloudClient {
             String file) throws CommoException;
     private static native int moveResourceInitNative(long nativePtr, 
             String fromPath, String toPath) throws CommoException;
+    private static native int deleteResourceInitNative(long nativePtr, 
+            String remotePath) throws CommoException;
     private static native int createCollectionInitNative(long nativePtr, 
             String path) throws CommoException;
     private static native void startOperationNative(long nativePtr, 

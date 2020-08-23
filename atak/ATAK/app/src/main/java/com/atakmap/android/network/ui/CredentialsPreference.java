@@ -7,16 +7,23 @@ import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.preference.DialogPreference;
+import android.text.Editable;
+import android.text.method.HideReturnsTransformationMethod;
+import android.text.method.PasswordTransformationMethod;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import com.atakmap.android.gui.PanPreference;
 
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.app.R;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.net.AtakAuthenticationCredentials;
 import com.atakmap.net.AtakAuthenticationDatabase;
@@ -100,12 +107,44 @@ public class CredentialsPreference extends DialogPreference {
         AtakAuthenticationCredentials credentials = AtakAuthenticationDatabase
                 .getCredentials(credentialsType);
 
+
+        final EditText username = view.findViewById(R.id.txt_name);
+        final EditText pwdText = view.findViewById(R.id.password);
+
+        final CheckBox checkBox = view.findViewById(R.id.password_checkbox);
+        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
+                if (isChecked) {
+                    pwdText.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
+                } else {
+                    pwdText.setTransformationMethod(PasswordTransformationMethod.getInstance());
+                }
+            }
+        });
+
         if (credentials != null) {
-            EditText username = view.findViewById(R.id.txt_name);
-            EditText password = view.findViewById(R.id.password);
             username.setText(credentials.username);
-            password.setText(credentials.password);
+            pwdText.setText(credentials.password);
+
+            if (!FileSystemUtils.isEmpty(credentials.password)) {
+                checkBox.setEnabled(false);
+                pwdText.addTextChangedListener(new AfterTextChangedWatcher() {
+                    @Override
+                    public void afterTextChanged(Editable s) {
+                        if (s != null && s.length() == 0) {
+                            checkBox.setEnabled(true);
+                            pwdText.removeTextChangedListener(this);
+                        }
+                    }
+                });
+            } else {
+                checkBox.setEnabled(true);
+            }
         }
+
+
+
 
         return view;
     }

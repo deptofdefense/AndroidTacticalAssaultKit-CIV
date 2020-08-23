@@ -26,15 +26,6 @@ public class PersistentDataSourceFeatureDataStoreGLLayerSpi2 implements GLLayerS
 
     @Override
     public GLLayer2 create(Pair<MapRenderer, Layer> arg) {
-        final MapRenderer surface = arg.first;
-        final Layer layer = arg.second;
-        if(!(layer instanceof FeatureLayer))
-            return null;
-        FeatureDataStore dataStore = ((FeatureLayer)layer).getDataStore();
-        if(dataStore instanceof PersistentDataSourceFeatureDataStore)
-            return new GLBatchGeometryFeatureDataStoreRenderer(surface, (FeatureLayer)layer);
-        if(dataStore instanceof PersistentDataSourceFeatureDataStore2)
-            return new GLBatchGeometryFeatureDataStoreRenderer(surface, (FeatureLayer)layer);
-        return null;
+        return GLBatchGeometryFeatureDataStoreRenderer.SPI.create(arg);
     }
 }

@@ -148,15 +148,15 @@ Database::query(const char *tables, const std::vector<std::string> *columns,
 {
     std::stringstream sql;
 
-    if ((groupBy == NULL || !groupBy->length()) && !(having == NULL || !having->length())) {
+    if ((groupBy == nullptr || !groupBy->length()) && !(having == nullptr || !having->length())) {
         throw DB_Error(
             "HAVING argument without groupby argument is not allowed");
     }
     sql << "SELECT ";
     if (columns && columns->size() != 0) {
-        int n = columns->size();
+        size_t n = columns->size();
 
-        for (int i = 0; i < n; i++) {
+        for (size_t i = 0; i < n; i++) {
             std::string c = columns->at(i);
 
             if (i > 0) {
@@ -195,7 +195,7 @@ std::map<TAK::Engine::Port::String, std::vector<TAK::Engine::Port::String>, TAK:
 getColumnNames (Database& db)
   {
     std::map<TAK::Engine::Port::String, std::vector<TAK::Engine::Port::String>, TAK::Engine::Port::StringLess> result;
-    std::auto_ptr<Cursor> tableResult (db.query (tableNameQuery));
+    std::unique_ptr<Cursor> tableResult (db.query (tableNameQuery));
 
     while (tableResult->moveToNext ())
       {
@@ -215,7 +215,7 @@ getColumnNames (Database& db,
   {
     std::string tableInfoQuery = createTableInfoQuery (tableName);
     std::vector<TAK::Engine::Port::String> result;
-    std::auto_ptr<Cursor> colResult
+    std::unique_ptr<Cursor> colResult
         (db.query (tableInfoQuery.c_str()));
     std::size_t nameCol (colResult->getColumnIndex ("name"));
 
@@ -232,7 +232,7 @@ getColumnNames (Database& db,
 const char*
 getDatabaseFilePath (Database& db)
   {
-    const char* result (NULL);
+    const char* result (nullptr);
 #ifndef MSVC
     SpatiaLiteDB* spatialDB (dynamic_cast<SpatiaLiteDB*> (&db));
     if (spatialDB)
@@ -242,7 +242,7 @@ getDatabaseFilePath (Database& db)
     else
 #endif
       {
-        std::auto_ptr<Cursor> dbResult (db.query ("PRAGMA database_list"));
+        std::unique_ptr<Cursor> dbResult (db.query ("PRAGMA database_list"));
 
         while (!result && dbResult->moveToNext ())
           {
@@ -261,7 +261,7 @@ int64_t
 getNextAutoincrementID (Database& db,
                         const char* table)
   {
-    std::auto_ptr<Cursor> dbResult
+    std::unique_ptr<Cursor> dbResult
         (db.query (autoincrementQuery, std::vector<const char*> (1, table)));
 
     return dbResult->moveToNext () ? dbResult->getLong (0) + 1 : 1;
@@ -272,7 +272,7 @@ std::vector<TAK::Engine::Port::String>
 getTableNames (Database& db)
   {
     std::vector<TAK::Engine::Port::String> result;
-    std::auto_ptr<Cursor> tableResult (db.query (tableNameQuery));
+    std::unique_ptr<Cursor> tableResult (db.query (tableNameQuery));
 
     const char *tblName;
     while (tableResult->moveToNext ())
@@ -298,7 +298,7 @@ getTableNames (Database& db)
 unsigned long
 lastChangeCount (Database& db)
   {
-    std::auto_ptr<Cursor> qResult (db.query ("SELECT changes()"));
+    std::unique_ptr<Cursor> qResult (db.query ("SELECT changes()"));
 
     return qResult->moveToNext () ? qResult->getInt (0) : 0;
   }
@@ -307,7 +307,7 @@ lastChangeCount (Database& db)
 int64_t
 lastInsertRowID (Database& db)
   {
-    std::auto_ptr<Cursor> qResult (db.query ("SELECT last_insert_rowid()"));
+    std::unique_ptr<Cursor> qResult (db.query ("SELECT last_insert_rowid()"));
 
     return qResult->moveToNext () ? qResult->getLong (0) : 0;
   }

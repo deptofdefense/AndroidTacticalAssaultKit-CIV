@@ -428,7 +428,7 @@ class ENGINE_API AttributeSet
       public:
           NullAttrItem() { }
           virtual ~NullAttrItem() { }
-          virtual Type attrType() const { return (Type)type; }
+          virtual Type attrType() const override { return (Type)type; }
           bool isNull() const { return true; }
       };
 
@@ -438,10 +438,10 @@ class ENGINE_API AttributeSet
           BasicAttrItem(const T &value_)
           : value(value_) { }
           virtual ~BasicAttrItem() { }
-          virtual Type attrType() const { return (Type)type; }
+          virtual Type attrType() const override { return (Type)type; }
 
           const T &get() const { return value; }
-          bool isNull() const { return false; }
+          bool isNull() const override { return false; }
       private:
           T value;
       };
@@ -463,8 +463,8 @@ class ENGINE_API AttributeSet
                                     items.data() + items.size());
           }
 
-          virtual Type attrType() const { return type; }
-          virtual bool isNull() const { return nullValue; }
+          virtual Type attrType() const override { return type; }
+          virtual bool isNull() const override { return nullValue; }
           virtual ~BasicArrayAttrItem() { }
 
       private:
@@ -479,10 +479,10 @@ class ENGINE_API AttributeSet
           StringArrayAttrItem(const char * const *begin,
                               const char * const *end);
 
-          virtual Type attrType() const;
+          virtual Type attrType() const override;
 
           std::pair<const char * const*, const char * const*> get() const;
-          virtual bool isNull() const { return nullValue; }
+          virtual bool isNull() const override { return nullValue; }
       private:
           std::vector<const char *> ptrs;
           std::vector<std::string> strs;
@@ -496,8 +496,8 @@ class ENGINE_API AttributeSet
           BlobArrayAttrItem(const Blob *begin,
                             const Blob *end);
 
-          virtual Type attrType() const;
-          virtual bool isNull() const { return nullValue; }
+          virtual Type attrType() const override;
+          virtual bool isNull() const override { return nullValue; }
 
           std::pair<const Blob *, const Blob *> get() const;
       private:

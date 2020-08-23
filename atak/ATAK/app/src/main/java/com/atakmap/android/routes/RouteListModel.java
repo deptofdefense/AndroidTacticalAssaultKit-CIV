@@ -101,13 +101,9 @@ public class RouteListModel extends FilterMapOverlay.ListModelImpl
         int i = v.getId();
         if (i == R.id.create_route_button) {// Create new route and start editing it
             new RouteCreationDialog(_mapView).show();
-
         } else if (i == R.id.import_route_button) {
             AtakBroadcast.getInstance().sendBroadcast(
                     new Intent(RouteMapReceiver.ROUTE_IMPORT));
-            AtakBroadcast.getInstance().sendBroadcast(new Intent(
-                    HierarchyListReceiver.CLOSE_HIERARCHY));
-
         }
     }
 

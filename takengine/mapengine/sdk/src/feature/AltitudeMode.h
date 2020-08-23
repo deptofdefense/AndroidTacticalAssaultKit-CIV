@@ -6,7 +6,7 @@
 namespace TAK {
     namespace Engine {
         namespace Feature {
-            enum ENGINE_API AltitudeMode
+            enum AltitudeMode
             {
                 /** Clamped to terrain surface */
                 TEAM_ClampToGround,

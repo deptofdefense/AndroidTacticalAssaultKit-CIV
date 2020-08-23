@@ -811,8 +811,11 @@ public abstract class MapItem extends FilterMetaDataHolder
         // Add new tags to remarks
         StringBuilder sb = new StringBuilder(remarks.trim());
         for (String tag : tags) {
-            if (!_hashtags.contains(tag))
-                sb.append(" ").append(tag);
+            if (!_hashtags.contains(tag)) {
+                if (sb.length() > 0)
+                    sb.append(" ");
+                sb.append(tag);
+            }
         }
 
         setRemarks(sb.toString());

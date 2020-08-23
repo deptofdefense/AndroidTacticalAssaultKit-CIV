@@ -7,9 +7,9 @@ import android.view.View;
 
 import com.atakmap.android.mapcompass.CompassArrowMapComponent;
 import com.atakmap.android.maps.MapEvent;
+import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.rubbersheet.maps.RubberModel;
-import com.atakmap.android.rubbersheet.maps.RubberSheetMapGroup;
 import com.atakmap.android.util.EditAction;
 import com.atakmap.app.R;
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -33,13 +33,13 @@ public class RubberModelEditTool extends RubberSheetEditTool {
 
     private final double[] _scratchRot = new double[3];
 
-    private RubberModel _model;
+    protected RubberModel _model;
     private double[] _rotation;
     private Point _startTilt;
     private double _oldAlt;
     private AltitudeReference _oldAltRef;
 
-    public RubberModelEditTool(MapView mapView, RubberSheetMapGroup group) {
+    public RubberModelEditTool(MapView mapView, MapGroup group) {
         super(mapView, group);
         _identifier = TOOL_NAME;
 
@@ -153,6 +153,12 @@ public class RubberModelEditTool extends RubberSheetEditTool {
         if (v == _buttons[ELEV] && _mapView.getMapTilt() == 0d) {
             CompassArrowMapComponent.getInstance().enable3DControls(true);
             _mapView.getMapController().tiltTo(_mapView.getMaxMapTilt(), false);
+        }
+
+        // Tilt the map back when switching from elevation to drag
+        else if (v == _buttons[DRAG] && getMode() == ELEV) {
+            _mapView.getMapController().tiltTo(0, false);
+            _mapView.getMapController().panTo(_center.get(), false);
         }
 
         super.onClick(v);

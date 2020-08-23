@@ -169,7 +169,8 @@ public class SensorDetailsView extends GenericPointDetailsView implements
                         ConnectionEntry ce = s.get(0);
                         videoAliasButton.setText(ce.getAlias());
                         sensorItem.setMetaString("videoUID", ce.getUID());
-                        sensorItem.setMetaString("videoUrl", ConnectionEntry.getURL(ce));
+                        sensorItem.setMetaString("videoUrl",
+                                ConnectionEntry.getURL(ce, false));
                         sensorItem.persist(_mapView.getMapEventDispatcher(),
                                 null, this.getClass());
                     }
@@ -672,6 +673,7 @@ public class SensorDetailsView extends GenericPointDetailsView implements
                 if (sensorItem.hasMetaValue(SensorDetailHandler.HIDE_FOV))
                     fovVisibleCB.setChecked(false);
 
+                _extrasLayout.setItem(sensorItem);
             }
         });
     }
@@ -796,7 +798,7 @@ public class SensorDetailsView extends GenericPointDetailsView implements
         ConnectionEntry entry = VideoManager.getInstance()
                 .getEntry(selected.getUID());
         if (entry != null && entry.isRemote()) {
-            sensorItem.setMetaString("videoUrl", ConnectionEntry.getURL(entry));
+            sensorItem.setMetaString("videoUrl", ConnectionEntry.getURL(entry, false));
             sensorItem.setMetaString("videoUID", entry.getUID());
             sensorItem.persist(_mapView.getMapEventDispatcher(), null,
                     getClass());

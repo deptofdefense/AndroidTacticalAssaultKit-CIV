@@ -22,6 +22,7 @@ import android.widget.ToggleButton;
 import android.graphics.Color;
 
 import com.atakmap.android.dropdown.DropDown;
+import com.atakmap.android.munitions.util.MunitionsHelper;
 import com.atakmap.android.util.SimpleItemSelectedListener;
 
 import com.atakmap.android.dropdown.DropDownReceiver;
@@ -29,15 +30,12 @@ import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
-import com.atakmap.android.nineline.RemarksConstants;
 import com.atakmap.android.util.Circle;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
@@ -55,6 +53,7 @@ public class DangerCloseReceiver extends DropDownReceiver implements
 
     public static final String ADD = "com.atakmap.android.munitions.ADD";
     public static final String REMOVE = "com.atakmap.android.munitions.REMOVE";
+    public static final String REMOVE_WEAPON = "com.atakmap.android.munitions.REMOVE_WEAPON";
     public static final String TOGGLE = "com.atakmap.android.munitions.TOGGLE";
     public static final String OPEN = "com.atakmap.android.munitions.OPEN";
     public static final String REMOVE_ALL = "com.atakmap.android.munitions.REMOVE_MUNITION_FROM_ALL";
@@ -216,7 +215,8 @@ public class DangerCloseReceiver extends DropDownReceiver implements
             }
 
             // Remove munition from target
-            case REMOVE: {
+            case REMOVE:
+            case REMOVE_WEAPON: {
                 String tgt = intent.getStringExtra("targetUID");
                 String wpn = intent.getStringExtra("weaponName");
                 String fromLine = intent.getStringExtra("fromLine");
@@ -234,8 +234,17 @@ public class DangerCloseReceiver extends DropDownReceiver implements
                     rangeUID = tgt + "." + wpn + "." + fromLine;
 
                 MapItem item = _mapView.getRootGroup().deepFindUID(rangeUID);
-                if (item instanceof RangeRing)
-                    ((RangeRing) item).remove();
+                if (item instanceof RangeRing) {
+                    RangeRing rr = (RangeRing) item;
+                    PointMapItem target = rr.getAnchorItem();
+                    if (target != null) {
+                        MunitionsHelper helper = new MunitionsHelper(_mapView,
+                                target, fromLine);
+                        helper.removeRangeRing(rr,
+                                action.equals(REMOVE_WEAPON));
+                        helper.persist();
+                    }
+                }
                 break;
             }
 
@@ -386,45 +395,16 @@ public class DangerCloseReceiver extends DropDownReceiver implements
                         .findViewById(R.id.danger_toggle_button);
                 MapGroup root = _mapView.getRootGroup();
                 MapItem targetItem = root.deepFindItem("uid", target);
-                if (FileSystemUtils.isEmpty(_fromLine)) { //target munitions
-                    hide.setChecked(targetItem.getMetaBoolean(
-                            TargetMunitionsDetailHandler.TARGET_MUNITIONS_VISIBLE,
-                            true));
-                    if (hide.isChecked()) {
-                        targetItem
-                                .setMetaBoolean(
-                                        TargetMunitionsDetailHandler.TARGET_MUNITIONS_VISIBLE,
-                                        true);
-                    } else {
-                        targetItem
-                                .setMetaBoolean(
-                                        TargetMunitionsDetailHandler.TARGET_MUNITIONS_VISIBLE,
-                                        false);
-                    }
-                } else if (_fromLine.equals("nineline")) { //nineline munitions
-                    hide.setChecked(targetItem.getMetaBoolean("nineline" +
-                            RemarksConstants.WPN_DISPLAY, true));
-                    if (hide.isChecked()) {
-                        targetItem.setMetaBoolean("nineline" +
-                                RemarksConstants.WPN_DISPLAY, true);
-                    } else {
-                        targetItem
-                                .setMetaBoolean("nineline" +
-                                        RemarksConstants.WPN_DISPLAY,
-                                        false);
-                    }
-                } else if (_fromLine.equals("fiveline")) { //fiveline munitions
-                    hide.setChecked(targetItem.getMetaBoolean("fiveline" +
-                            RemarksConstants.WPN_DISPLAY, true));
-                    if (hide.isChecked()) {
-                        targetItem.setMetaBoolean("fiveline" +
-                                RemarksConstants.WPN_DISPLAY, true);
-                    } else {
-                        targetItem
-                                .setMetaBoolean("fiveline" +
-                                        RemarksConstants.WPN_DISPLAY,
-                                        false);
-                    }
+
+                if (targetItem instanceof PointMapItem) {
+                    MunitionsHelper helper = new MunitionsHelper(_mapView,
+                            (PointMapItem) targetItem, _fromLine);
+                    // At this point we should set the visibility to true by default
+                    // Meaning if this drop-down is opened for a specific line type
+                    // the visibility is turned on (unless it was explicitly turn off)
+                    boolean visible = helper.isVisible(true);
+                    helper.setVisible(visible);
+                    hide.setChecked(visible);
                 }
 
                 back = content
@@ -731,56 +711,14 @@ public class DangerCloseReceiver extends DropDownReceiver implements
      */
     protected void removeAllItems(final String fromLine) {
         MapItem targetItem = _mapView.getRootGroup().deepFindUID(target);
-        Map<String, Object> munMap = null;
-        if (target == null || _mapGroup == null)
+        if (target == null || !(targetItem instanceof PointMapItem)
+                || _mapGroup == null)
             return;
 
         Log.d(TAG, "group size: " + _mapGroup.getItemCount());
-
-        List<MapItem> items = new ArrayList<>(_mapGroup.getItems());
-        for (MapItem i : items) {
-
-            String ringTargetUID = i.getMetaString("target", "");
-
-            if (ringTargetUID.equals(target)) {
-                if (FileSystemUtils.isEmpty(fromLine)) {
-                    if (targetItem != null
-                            && targetItem.hasMetaValue("targetMunitions")) {
-                        munMap = targetItem.getMetaMap("targetMunitions");
-                        targetItem.removeMetaData("targetMunitions");
-                    }
-                } else if (fromLine.equals("nineline")) {
-                    //Look for the proper metadata based on fromLine
-                    if (targetItem != null
-                            && targetItem.hasMetaValue("nineLineMunitions")) {
-                        munMap = targetItem.getMetaMap("nineLineMunitions");
-                        targetItem.removeMetaData("nineLineMunitions");
-                    }
-                } else {
-                    if (targetItem != null
-                            && targetItem.hasMetaValue("fiveLineMunitions")) {
-                        munMap = targetItem.getMetaMap("fiveLineMunitions");
-                        targetItem.removeMetaData("fiveLineMunitions");
-                    }
-                }
-
-                if (munMap != null) {
-                    //Remove only if UID's match and it is in the correct metadata
-                    for (Map.Entry<String, Object> e : munMap.entrySet()) {
-                        HashMap<String, Map> entryMap = (HashMap<String, Map>) e
-                                .getValue();
-                        if (i instanceof RangeRing) {
-                            RangeRing r = (RangeRing) i;
-                            if (entryMap.containsKey(r.getWeaponName())) {
-                                r.remove();
-                            }
-                        } else {
-                            _mapGroup.removeItem(i);
-                        }
-                    }
-                }
-            }
-        }
+        MunitionsHelper helper = new MunitionsHelper(_mapView,
+                (PointMapItem) targetItem, fromLine);
+        helper.removeAllWeapons();
 
         Log.d(TAG, "group size: " + _mapGroup.getItemCount());
         _dcAdapter.removeAll();
@@ -795,58 +733,18 @@ public class DangerCloseReceiver extends DropDownReceiver implements
         MapGroup group = _mapView.getRootGroup().findMapGroup(
                 "Weapons");
         MapGroup root = _mapView.getRootGroup();
-        Map<String, Object> munMap = null;
-        MapItem targetItem = root.deepFindItem("uid", target);
+        MapItem targetItem = root.deepFindUID(target);
 
         // if any of these are null, return
 
-        if (target == null || targetItem == null || group == null)
+        if (target == null || !(targetItem instanceof PointMapItem)
+                || group == null)
             return;
 
-        for (MapItem i : group.getItems()) {
-            String ringTargetUID = i.getMetaString("target", "");
-            //target specific or 9-line specific munitions
-            if (ringTargetUID.equals(target)) {
-                if (FileSystemUtils.isEmpty(fromLine)) {
-                    if (targetItem.hasMetaValue("targetMunitions")) {
-                        munMap = targetItem.getMetaMap("targetMunitions");
-                        targetItem.setMetaBoolean(
-                                TargetMunitionsDetailHandler.TARGET_MUNITIONS_VISIBLE,
-                                visible);
-                    }
-                } else if (fromLine.equals("nineline")) {
-                    //Look for the proper metadata based on fromLine
-                    if (targetItem.hasMetaValue("nineLineMunitions")) {
-                        munMap = targetItem.getMetaMap("nineLineMunitions");
-                        targetItem.setMetaBoolean("nineline"
-                                + RemarksConstants.WPN_DISPLAY, visible);
-                    }
-                } else {
-                    //Look for the proper metadata
-                    if (targetItem.hasMetaValue("fiveLineMunitions")) {
-                        munMap = targetItem.getMetaMap("fiveLineMunitions");
-                        targetItem.setMetaBoolean("fiveline"
-                                + RemarksConstants.WPN_DISPLAY, visible);
-                    }
-                }
-                if (munMap != null && i instanceof RangeRing) {
-                    //Change vis only if UID's match and it is in the correct metadata
-                    RangeRing r = (RangeRing) i;
-                    for (Map.Entry<String, Object> e : munMap.entrySet()) {
-                        Object o = e.getValue();
-                        if (!(o instanceof HashMap))
-                            continue;
-                        Map<String, Map> entryMap = (HashMap<String, Map>) o;
-                        if (entryMap.containsKey(r.getWeaponName())) {
-                            if (r.get_standing() != null)
-                                r.get_standing().setVisible(visible);
-                            if (r.get_prone() != null)
-                                r.get_prone().setVisible(visible);
-                        }
-                    }
-                }
-            }
-        }
+        MunitionsHelper helper = new MunitionsHelper(_mapView,
+                (PointMapItem) targetItem, fromLine);
+        helper.setVisible(visible);
+        helper.setRangeRingsVisible(visible);
     }
 
     private String getTitle() {
@@ -985,89 +883,14 @@ public class DangerCloseReceiver extends DropDownReceiver implements
     public boolean createDangerClose(PointMapItem tar, String weaponName,
             String categoryName, String description, int inner, int outer,
             boolean remove, String fromLine, boolean persist) {
-
-        final String weaponTarget = tar.getUID();
-        Map<String, Object> munitionsData = null;
-        String mapName = "";
-        boolean wpnVis = false;
-        if (fromLine == null || fromLine.equals("")) {
-            munitionsData = tar.getMetaMap("targetMunitions");
-            mapName = "targetMunitions";
-            wpnVis = tar.getMetaBoolean(
-                    TargetMunitionsDetailHandler.TARGET_MUNITIONS_VISIBLE,
-                    true);
-        } else if (fromLine.equals("nineline")) {
-            munitionsData = tar.getMetaMap("nineLineMunitions");
-            mapName = "nineLineMunitions";
-            wpnVis = tar.getMetaBoolean(
-                    fromLine + RemarksConstants.WPN_DISPLAY, false);
-        } else if (fromLine.equals("fiveline")) {
-            munitionsData = tar.getMetaMap("fiveLineMunitions");
-            mapName = "fiveLineMunitions";
-            wpnVis = tar.getMetaBoolean(
-                    fromLine + RemarksConstants.WPN_DISPLAY, false);
-        }
-        if (munitionsData == null)
-            munitionsData = new HashMap<>();
-
-        if (!remove) {
-            // Try to retrieve the munition if it already exists
-            Map<String, Object> category = (Map<String, Object>) munitionsData
-                    .get(categoryName);
-            if (category == null)
-                category = new HashMap<>();
-            Map<String, Object> weapon = (Map<String, Object>) category
-                    .get(weaponName);
-            if (weapon == null) {
-                weapon = new HashMap<>();
-                // Going by the syntax from the DangerCloseLibrary\res\xml\ordnance_table.xml file
-                weapon.put("name", weaponName);
-                weapon.put("description", description);
-                weapon.put("prone", Integer.toString(inner));
-                weapon.put("standing", Integer.toString(outer));
-            }
-            category.put(weaponName, weapon);
-            munitionsData.put(categoryName, category);
-            tar.setMetaMap(mapName, munitionsData);
-        } else {
-            Log.d(TAG, "Call to delete a munition weapon");
-            // Try to retrieve the munition if it already exists
-            Map<String, Object> category = (Map<String, Object>) munitionsData
-                    .get(categoryName);
-            Log.d(TAG, "CategoryName is " + categoryName);
-            // TODO Why is this a tool anyways? Tools usually require user interaction - looks more
-            // like a broadcastreceiver functionality to me
-            if (category == null)
-                return false;
-            Map<String, Object> weapon = (Map<String, Object>) category
-                    .get(weaponName);
-            Log.d(TAG, "WeaponName is " + weaponName);
-            if (weapon == null)
-                return false;
-            category.remove(weaponName);
-            // Clear out that category if nothing remains
-            if (category.isEmpty())
-                munitionsData.remove(categoryName);
-        }
-
-        RangeRing rr = (RangeRing) _mapView.getRootGroup().deepFindItem(
-                "uid", weaponTarget + "." + weaponName + "." + fromLine);
-
-        if (rr == null) {
-            if (!remove)
-                rr = new RangeRing(_mapView, _mapGroup, tar, weaponName,
-                        inner,
-                        outer, fromLine);
-        } else {
-            if (remove)
-                rr.remove();
-        }
-        if (rr != null && rr.get_standing() != null)
-            rr.get_standing().setVisible(wpnVis);
-        if (rr != null && rr.get_prone() != null)
-            rr.get_prone().setVisible(wpnVis);
+        MunitionsHelper helper = new MunitionsHelper(_mapView, tar, fromLine);
+        if (!remove)
+            helper.addWeapon(categoryName, weaponName, description, inner,
+                    outer);
+        else
+            helper.removeWeapon(categoryName, weaponName);
         if (persist)
-            tar.persist(_mapView.getMapEventDispatcher(), null, getClass());
+            helper.persist();
         return true;
     }
 }

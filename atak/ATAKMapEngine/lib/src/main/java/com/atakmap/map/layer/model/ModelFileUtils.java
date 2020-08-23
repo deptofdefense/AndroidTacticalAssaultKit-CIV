@@ -2,6 +2,7 @@ package com.atakmap.map.layer.model;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.xml.XMLUtils;
 import com.atakmap.io.ZipVirtualFile;
 
 import org.w3c.dom.Document;
@@ -59,18 +60,7 @@ public class ModelFileUtils {
 
     public static Document parseXML(InputStream stream) {
         try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            try {
-                dbf.setFeature(
-                        "http://apache.org/xml/features/disallow-doctype-decl",
-                        true);
-            } catch (Exception ignored) {
-            }
-
-            try {
-                dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            } catch (Exception ignored) {
-            }
+            DocumentBuilderFactory dbf = XMLUtils.getDocumenBuilderFactory();
 
             dbf.setNamespaceAware(false);
             dbf.setValidating(false);

@@ -61,11 +61,11 @@ namespace TAK {
                 Util::TAKErr getGeometry(std::shared_ptr<Geometry2> &value, const std::size_t i) const NOTHROWS;
                 std::size_t getNumGeometries() const NOTHROWS;
             public :
-                virtual std::size_t getDimension() const NOTHROWS;
-                virtual Util::TAKErr getEnvelope(Envelope2 *value) const NOTHROWS;
+                virtual std::size_t getDimension() const NOTHROWS override;
+                virtual Util::TAKErr getEnvelope(Envelope2 *value) const NOTHROWS override;
             private :
-                virtual Util::TAKErr setDimensionImpl(const std::size_t dimension) NOTHROWS;
-                virtual bool equalsImpl(const Geometry2 &other) NOTHROWS;
+                virtual Util::TAKErr setDimensionImpl(const std::size_t dimension) NOTHROWS override;
+                virtual bool equalsImpl(const Geometry2 &other) NOTHROWS override;
             private :
                 std::size_t dimension;
                 std::vector<std::shared_ptr<Geometry2>> geometries;

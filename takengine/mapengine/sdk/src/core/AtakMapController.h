@@ -41,10 +41,14 @@ public :
     void rotateTo(const double theta, const bool animate);
     void rotateBy(double theta, float xpos, float ypos, bool animate);
     void rotateTo(double theta, const GeoPoint &point, bool animate);
+    void rotateBy(double theta, const GeoPoint &point, bool animate);
     void tiltTo(const double tilt, const bool animate);
+    void tiltTo(const double tilt, const double rotation, const bool animate);
     void tiltBy(const double tilt, const float xpos, const float ypos, const bool animate);
     void tiltTo(const double tilt, const GeoPoint &point, const bool animate);
+    void tiltBy(const double tilt, const GeoPoint &point, const bool animate);
     void updateBy(const double scale, const double rotation, const double tilt, const float xpos, const float ypos, const bool animate);
+    void updateBy(const double scale, const double rotation, const double tilt, const GeoPoint &point, const bool animate);
 
 
     void addFocusPointChangedListener(MapControllerFocusPointChangedListener *listener);
@@ -57,7 +61,8 @@ public :
     void getFocusPoint(atakmap::math::Point<float> *focus);
 
     void setFocusPointOffset(const atakmap::math::Point<float> *focusOffset);
-
+public :
+    void panByScaleRotate(const float x, const float y, const double scale, const double rotation, const bool animate);
 private :
     void setDefaultFocusPoint(const atakmap::math::Point<float> *defaultFocus);
 

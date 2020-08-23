@@ -128,6 +128,11 @@ public class OSMDroidTileReader extends AbstractTilePyramidTileReader {
 
     @Override
     protected Bitmap getTileImpl(int level, long tileColumn, long tileRow, ReadResult[] code) {
+        return getTileImpl(level, tileColumn, tileRow, null, code);
+    }
+
+    @Override
+    protected Bitmap getTileImpl(int level, long tileColumn, long tileRow, BitmapFactory.Options opts, ReadResult[] code) {
         QueryIface stmt = null;
         try {
             stmt = this.database.compileQuery("SELECT tile FROM tiles WHERE key = ? LIMIT 1");
@@ -142,7 +147,7 @@ public class OSMDroidTileReader extends AbstractTilePyramidTileReader {
             
             final byte[] compressed = stmt.getBlob(0);
             code[0] = ReadResult.SUCCESS;
-            return BitmapFactory.decodeByteArray(compressed, 0, compressed.length);
+            return BitmapFactory.decodeByteArray(compressed, 0, compressed.length, opts);
         } catch(Exception e) {
             code[0] = ReadResult.ERROR;
             return null;

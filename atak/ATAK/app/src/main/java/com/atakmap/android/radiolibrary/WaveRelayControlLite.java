@@ -41,7 +41,9 @@ public class WaveRelayControlLite
 
     private static final int _DEFAULT_BUFFER_LENGTH = 1024 * 64;
     private static final int _MULTICAST_PORT = 14534;
-    private static final String _MULTICAST_ADDRESS = "239.24.200.39";
+    private static final byte[] _MULTICAST_ADDRESS = {
+            (byte) 239, (byte) 24, (byte) 200, (byte) 39
+    }; // "239.24.200.39";
 
     private final CotServiceRemote cotServiceRemote = new CotServiceRemote();
 
@@ -82,7 +84,10 @@ public class WaveRelayControlLite
     }
 
     public void dispose() {
-        stop();
+        boolean wrRedirect = prefs.getBoolean("waveRelayRedirect", false);
+        if (wrRedirect) {
+            stop();
+        }
         prefs.unregisterOnSharedPreferenceChangeListener(this);
     }
 
@@ -237,7 +242,8 @@ public class WaveRelayControlLite
                     Log.e(TAG, "multicast socket creation failed");
                     return;
                 }
-                ms.joinGroup(InetAddress.getByName(_MULTICAST_ADDRESS));
+
+                ms.joinGroup(InetAddress.getByAddress(_MULTICAST_ADDRESS));
                 ms.setSoTimeout(5000);
 
                 DatagramPacket pack = new DatagramPacket(

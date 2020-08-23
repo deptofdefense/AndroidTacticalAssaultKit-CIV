@@ -11,7 +11,7 @@ namespace TAK {
     namespace Engine {
         namespace Thread {
             namespace Impl {
-                class MutexImpl
+                class ENGINE_API MutexImpl
                 {
                 protected:
                     MutexImpl() NOTHROWS;

@@ -39,8 +39,8 @@ namespace atakmap
             bool vbo;
 
             ArrayPointer();
-            void setPointer(int size, int type, int stride, const void *pointer);
-            void setPointer(int size, int type, int stride, int position);
+            void setPointer(int size_val, int type_val, int stride_val, const void *pointer_val);
+            void setPointer(int size_val, int type_val, int stride_val, int position_val);
         };
 
         struct ENGINE_API Program
@@ -71,13 +71,13 @@ namespace atakmap
         class ENGINE_API GLES20FixedPipeline
         {
         public:
-            enum ENGINE_API ClientState {
+            enum ClientState {
                 CS_GL_VERTEX_ARRAY,
                 CS_GL_TEXTURE_COORD_ARRAY,
                 CS_GL_COLOR_ARRAY
             };
 
-            enum ENGINE_API MatrixMode {
+            enum MatrixMode {
                 MM_GL_PROJECTION,
                 MM_GL_TEXTURE,
                 MM_GL_MODELVIEW
@@ -122,6 +122,7 @@ namespace atakmap
             void glColorPointer(int size, int type, int stride, int position);
             float getPointSize();
             void glPointSize(float size);
+            void glLineWidth(float w);
 
             // Equiv to glPushAttrib(GL_ALL_ATTRIB_BITS)
             void pushAllAttribs();

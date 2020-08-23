@@ -217,9 +217,12 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
      */
     public static void forward(GLMapView ortho, GeoPoint gp, PointD point,
             double unwrap, double terrain, boolean clampSubAlt) {
+
+        // capture here as `gp==ortho.scratch.geo` will get blown away below
         final double lat = gp.getLatitude();
         final double lng = gp.getLongitude();
         final double alt = gp.getAltitude();
+        final boolean altValid = gp.isAltitudeValid();
         final AltitudeReference altRef = gp.getAltitudeReference();
 
         // adjust altitude
@@ -230,7 +233,7 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
         // Z/altitude
         if (ortho.drawTilt > 0d) {
             double adjustedAlt = alt;
-            if (gp.isAltitudeValid()) {
+            if (altValid) {
                 switch (altRef) {
                     case HAE:
                         // expect HAE; done
@@ -254,10 +257,7 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
             adjustedAlt = (adjustedAlt + GLMapView.elevationOffset)
                     * ortho.elevationScaleFactor;
 
-            ortho.scratch.geo.set(
-                    Double.isNaN(alt) ? gp
-                            : new GeoPoint(gp.getLatitude(), gp.getLongitude(),
-                                    adjustedAlt));
+            ortho.scratch.geo.set(lat, lng, adjustedAlt);
         }
 
         ortho.scene.forward(ortho.scratch.geo, point);

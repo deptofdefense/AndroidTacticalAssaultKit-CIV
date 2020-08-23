@@ -184,19 +184,35 @@ public class MapMenuReceiver extends BroadcastReceiver {
         _layoutWidget.clearMenu();
     }
 
-    public synchronized void addEventListener(MapMenuEventListener l) {
-        if (!_listeners.contains(l))
-            _listeners.add(l);
+    /**
+     * Add a listener to <a href="#{@link}">{@link MapMenuWidget}</a>
+     * lifecycle events. Listeners are visited prior to menu display.
+     * Listeners should return true when the menu should <b>not</b> be created.
+     * @param listener receives fully formed menus after creation prior to display
+     */
+    public synchronized void addEventListener(MapMenuEventListener listener) {
+        if (!_listeners.contains(listener))
+            _listeners.add(listener);
     }
 
-    public synchronized void removeEventListener(MapMenuEventListener l) {
-        _listeners.remove(l);
+    /**
+     * Remove menu event listener from receiving lifecycle events.
+     * @param listener
+     */
+    public synchronized void removeEventListener(
+            MapMenuEventListener listener) {
+        _listeners.remove(listener);
     }
 
     private synchronized List<MapMenuEventListener> getListeners() {
         return new ArrayList<>(_listeners);
     }
 
+    /**
+     * Gets root level <a href="#{@link}">{@link MenuLayoutWidget}</a>.
+     * This layout widget is the parent of all displayed radial menus.
+     * @return layout widget
+     */
     public static MenuLayoutWidget getMenuWidget() {
         MapView mv = MapView.getMapView();
         if (mv == null)
@@ -220,5 +236,25 @@ public class MapMenuReceiver extends BroadcastReceiver {
     public static MapItem getCurrentItem() {
         MenuLayoutWidget menu = getMenuWidget();
         return menu != null ? menu.getMapItem() : null;
+    }
+
+    /**
+     * Add an additional map menu factory that creates radial menus.
+     * Factories return a <a href="#{@link}">{@link MapMenuWidget}</a>
+     * in response to a <a href="#{@link}">{@link MapItem}</a>. Factories
+     * should return a "default" menu when the provided item is null.
+     * @param factory creator of fully populated MapItemWidgets
+     **/
+    public boolean registerMapMenuFactory(MapMenuFactory factory) {
+        return _layoutWidget.registerMapMenuFactory(factory);
+    }
+
+    /**
+     * Removes an added map menu factory.
+     * @param factory instance to be removed from list of factories
+     * @return whether a factory was actually removed from the list.
+     */
+    public boolean unregisterMapMenuFactory(MapMenuFactory factory) {
+        return _layoutWidget.unregisterMapMenuFactory(factory);
     }
 }

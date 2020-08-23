@@ -182,7 +182,9 @@ public class WFSImporter extends AbstractImporter {
     private static File getWorkingDir(String address) {
         try {
             return new File(FileSystemUtils.getItem("wfs/.datastore"),
-                    URLEncoder.encode(address, FileSystemUtils.UTF8_CHARSET)
+                    URLEncoder
+                            .encode(address,
+                                    FileSystemUtils.UTF8_CHARSET.name())
                             .replace('%', '_'));
         } catch (UnsupportedEncodingException e) {
             throw new IllegalStateException();

@@ -158,20 +158,25 @@ public class MapItemSelectTool extends Tool implements
     public void onToolEnd() {
         _container.closePrompt();
 
-        if (_callbackIntent != null) {
-            if (!_itemMap.isEmpty()) {
-                if (_multiSelect && _doneSelected)
-                    _callbackIntent.putExtra("itemUIDs", _itemMap.keySet()
-                            .toArray(new String[0]));
-                else
-                    _callbackIntent.putExtra("itemUID", _itemMap.keySet()
-                            .iterator().next());
-            }
-            AtakBroadcast.getInstance().sendBroadcast(_callbackIntent);
-        }
-
         if (_multiSelect && !_dropDown.isClosed())
             _dropDown.closeDropDown();
+
+        if (_callbackIntent != null) {
+            final Intent i = new Intent(_callbackIntent);
+            if (!_itemMap.isEmpty()) {
+                if (_multiSelect && _doneSelected)
+                    i.putExtra("itemUIDs", _itemMap.keySet()
+                            .toArray(new String[0]));
+                else
+                    i.putExtra("itemUID", _itemMap.keySet().iterator().next());
+            }
+            _mapView.post(new Runnable() {
+                @Override
+                public void run() {
+                    AtakBroadcast.getInstance().sendBroadcast(i);
+                }
+            });
+        }
 
         _itemMap.clear();
         _mapItems.clear();

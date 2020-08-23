@@ -10,11 +10,12 @@ import com.atakmap.math.MathUtils;
 import com.atakmap.util.ReadWriteLock;
 
 import java.lang.ref.WeakReference;
-import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
 public class NativeFeatureDataStore2 implements FeatureDataStore2 {
+    final static String TAG = "NativeFeatureDataStore2";
+
     final ReadWriteLock rwlock = new ReadWriteLock();
     Pointer pointer;
     Map<OnDataStoreContentChangedListener, Pointer> listeners;
@@ -639,11 +640,6 @@ public class NativeFeatureDataStore2 implements FeatureDataStore2 {
 
     @Override
     public void dispose() {
-        this.finalize();
-    }
-
-    @Override
-    public void finalize() {
         this.rwlock.acquireWrite();
         try {
             if(this.pointer.raw != 0L)
@@ -657,10 +653,12 @@ public class NativeFeatureDataStore2 implements FeatureDataStore2 {
                 removeOnDataStoreContentChangedListener(0L, callback);
             this.listeners.clear();
         }
+    }
 
-        try {
-            super.finalize();
-        } catch(Throwable ignored) {}
+    @Override
+    public void finalize() {
+        if(this.pointer.raw != 0L)
+            Log.w(TAG, "Native FeatureDataStore2 leaked");
     }
 
     /*************************************************************************/
@@ -687,6 +685,15 @@ public class NativeFeatureDataStore2 implements FeatureDataStore2 {
 
     /*************************************************************************/
 
+    static long getPointer(FeatureDataStore2 managed) {
+        if(managed instanceof NativeFeatureDataStore2)
+            return ((NativeFeatureDataStore2)managed).pointer.raw;
+        else
+            return 0L;
+    }
+    static FeatureDataStore2 create(Pointer pointer, Object ownerRef) {
+        return new NativeFeatureDataStore2(pointer);
+    }
     static native void destruct(Pointer pointer);
 
     static native Pointer FeatureQueryParameters_create();

@@ -51,6 +51,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -559,7 +560,7 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
                 pmi.setVisible(false);
 
                 String input = new String(receivePacket.getData(), 0,
-                        receivePacket.getLength());
+                        receivePacket.getLength(), StandardCharsets.UTF_8);
                 Log.i(TAG, "receive: " + input);
                 String[] tokens = input.split(",");
 

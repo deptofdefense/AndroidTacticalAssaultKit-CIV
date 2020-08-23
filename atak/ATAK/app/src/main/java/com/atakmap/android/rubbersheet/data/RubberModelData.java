@@ -51,6 +51,9 @@ public class RubberModelData extends AbstractSheetData {
     // Sub-model directory
     public String subModel;
 
+    protected RubberModelData() {
+    }
+
     public RubberModelData(File f) {
         super(f);
     }

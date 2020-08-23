@@ -4,13 +4,16 @@ package com.atakmap.app.preferences;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.Preference;
 import android.preference.PreferenceManager;
 
+import com.atakmap.android.gui.HintDialogHelper;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.app.R;
 
-public class AdvancedLoggingPreferenceFragment extends AtakPreferenceFragment {
+public class AdvancedLoggingPreferenceFragment extends AtakPreferenceFragment
+        implements Preference.OnPreferenceChangeListener {
 
     private static final String TAG = "AdvancedLoggingPreferenceFragment";
     private SharedPreferences _prefs;
@@ -42,5 +45,21 @@ public class AdvancedLoggingPreferenceFragment extends AtakPreferenceFragment {
 
         context = getActivity();
         _prefs = PreferenceManager.getDefaultSharedPreferences(context);
+
+        Preference collectMetrics = findPreference("collect_metrics");
+        if (collectMetrics != null)
+            collectMetrics.setOnPreferenceChangeListener(this);
+    }
+
+    @Override
+    public boolean onPreferenceChange(Preference pref, Object value) {
+        if (pref.getKey().equals("collect_metrics") && value == Boolean.TRUE) {
+            // Show metrics hint dialog
+            HintDialogHelper.showHint(context,
+                    getString(R.string.metric_plugin_hint),
+                    getString(R.string.metric_plugin_hint_message),
+                    "tak.hint.logging.metric");
+        }
+        return true;
     }
 }

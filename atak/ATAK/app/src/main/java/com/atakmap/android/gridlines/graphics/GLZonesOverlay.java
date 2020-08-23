@@ -7,6 +7,8 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.map.AtakMapView;
+import com.atakmap.map.Globe;
+import com.atakmap.map.RenderSurface;
 import com.atakmap.map.opengl.GLMapRenderable;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
@@ -53,8 +55,8 @@ public class GLZonesOverlay implements GLMapRenderable {
             }
         }
 
-        final double drawZoom = convertMapScaleToLegacyZoom(map.getSurface()
-                .getMapView(),
+        final double drawZoom = convertMapScaleToLegacyZoom(
+                map.getRenderSurface(),
                 map.drawMapScale);
 
         float alpha = (float) Math.max(Math.min(drawZoom / 15d, 1d), 0d);
@@ -116,9 +118,9 @@ public class GLZonesOverlay implements GLMapRenderable {
         }
     }
 
-    protected static double convertMapScaleToLegacyZoom(AtakMapView mapView,
+    protected static double convertMapScaleToLegacyZoom(RenderSurface mapView,
             double scale) {
-        return (scale * mapView.fullEquitorialExtentPixels)
+        return (scale * Globe.getFullEquitorialExtentPixels(mapView.getDpi()))
                 / mapView.getWidth();
     }
 
@@ -394,12 +396,8 @@ public class GLZonesOverlay implements GLMapRenderable {
 
         line.setPoints(GeoPointMetaData.wrap(pts));
 
-        // Don't wrap longitude lines
-        MutableGeoBounds mgb = (MutableGeoBounds) glline.getBounds();
-        mgb.set(start, end);
-        mgb.setWrap180(false);
-
-        glline.draw(view);
+        // zones have no elevation, just render them as part of the SURFACE pass.
+        glline.draw(view, GLMapView.RENDER_PASS_SURFACE);
     }
 
     protected static double dist(double x0, double y0, double x1, double y1) {

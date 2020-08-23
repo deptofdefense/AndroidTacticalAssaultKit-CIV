@@ -15,7 +15,7 @@ extern "C" void te_free_v(const void *buf)
 #if defined(_MSC_VER) && __EXP_ENABLE_VIRTUALALLOC
         VirtualFree(const_cast<void *>(buf), 0, MEM_RELEASE);
 #else
-        const uint8_t *arg = static_cast<const uint8_t *>(buf);
+        const auto *arg = static_cast<const uint8_t *>(buf);
         delete[] arg;
 #endif
 }

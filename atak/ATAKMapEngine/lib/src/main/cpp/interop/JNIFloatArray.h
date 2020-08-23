@@ -4,6 +4,7 @@
 #include <jni.h>
 
 #include <port/Platform.h>
+#include <util/Error.h>
 
 #include "JNIPrimitiveArray.h"
 
@@ -16,6 +17,8 @@ namespace TAKEngineJNI {
         };
 
         jfloatArray JNIFloatArray_newFloatArray(JNIEnv *env, const jfloat *data, const std::size_t len) NOTHROWS;
+        TAK::Engine::Util::TAKErr JNIFloatArray_copy(jfloat *dst, JNIEnv &env, jfloatArray src, const std::size_t off, const std::size_t len) NOTHROWS;
+        TAK::Engine::Util::TAKErr JNIFloatArray_copy(jfloatArray dst, const std::size_t off, JNIEnv &env, const jfloat *src, const std::size_t len) NOTHROWS;
     }
 }
 #endif

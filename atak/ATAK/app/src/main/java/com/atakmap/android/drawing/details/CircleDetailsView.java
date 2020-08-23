@@ -502,7 +502,9 @@ public class CircleDetailsView extends GenericDetailsView implements
 
     @Override
     protected void _onHeightSelected() {
-        createHeightDialog(_circle, R.string.circle_height);
+        createHeightDialog(_circle, R.string.circle_height, new Span[] {
+                Span.METER, Span.YARD, Span.FOOT
+        });
     }
 
     @Override

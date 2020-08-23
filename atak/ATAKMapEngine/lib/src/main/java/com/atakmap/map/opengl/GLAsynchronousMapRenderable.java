@@ -486,8 +486,7 @@ public abstract class GLAsynchronousMapRenderable<Pending>
          */
         public void set(GLMapView view) {
             this.drawMapScale = view.drawMapScale;
-            this.drawMapResolution = view.getSurface().getMapView()
-                    .getMapResolution(this.drawMapScale);
+            this.drawMapResolution = view.drawMapResolution;
             this.drawLat = view.drawLat;
             this.drawLng = view.drawLng;
             this.drawRotation = view.drawRotation;

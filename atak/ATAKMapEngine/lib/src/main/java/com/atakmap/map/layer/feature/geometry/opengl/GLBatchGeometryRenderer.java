@@ -16,6 +16,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import android.graphics.Color;
+import android.graphics.PointF;
 import android.opengl.GLES30;
 
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
@@ -24,6 +25,7 @@ import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.AtakMapView;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureDataStore;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Point;
@@ -33,13 +35,14 @@ import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Rectangle;
+import com.atakmap.math.Vector3D;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLRenderBatch2;
 import com.atakmap.opengl.GLTextureAtlas;
 import com.atakmap.util.ConfigOptions;
 
 public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable2 {
-    
+
     private static Comparator<GLBatchPoint> POINT_BATCH_COMPARATOR = new Comparator<GLBatchPoint>() {
         @Override
         public int compare(GLBatchPoint lhs, GLBatchPoint rhs) {
@@ -82,7 +85,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     
     private LinkedList<GLBatchPolygon> polys = new LinkedList<GLBatchPolygon>();
     private LinkedList<GLBatchLineString> lines = new LinkedList<GLBatchLineString>();
-    private ArrayList<GLBatchPoint> batchPoints2 = new ArrayList<GLBatchPoint>();
+    private LinkedList<GLBatchPoint> batchPoints2 = new LinkedList<GLBatchPoint>();
     private LinkedList<GLBatchPoint> labels = new LinkedList<GLBatchPoint>();
     private LinkedList<GLBatchPoint> loadingPoints = new LinkedList<GLBatchPoint>();
 
@@ -107,6 +110,8 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     
     private VectorProgram vectorProgram2d;
     private VectorProgram vectorProgram3d;
+
+    private GLMapView glmv;
         
     public GLBatchGeometryRenderer() {
         this(null);
@@ -114,72 +119,106 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
 
     public GLBatchGeometryRenderer(MapRenderer renderCtx) {
         this.renderCtx = renderCtx;
+        this.glmv = renderCtx instanceof GLMapView ? (GLMapView) renderCtx : null;
 
         this.state = new BatchPipelineState();
         this.batch = null;
         
         this.buffers = null;
     }
-    
-    /** @deprecated */
+
+    @Deprecated
     public long hitTest(Point loc, double thresholdMeters) {
         ArrayList<Long> fid = new ArrayList<Long>();
         this.hitTest2(fid, loc, thresholdMeters, 1);
         if(fid.isEmpty())
             return FeatureDataStore.FEATURE_ID_NONE;
-        return fid.get(0).longValue();
+        return fid.get(0);
     }
-    
-    public void hitTest2(Collection<Long> fids, Point loc, double thresholdMeters, int limit) {
-        final double locx = loc.getX();
-        final double locy = loc.getY();
-        final double rlat = Math.toRadians(locy);
-        final double metersDegLat = 111132.92 - 559.82 * Math.cos(2* rlat) + 1.175*Math.cos(4*rlat);
-        final double metersDegLng = 111412.84 * Math.cos(rlat) - 93.5 * Math.cos(3*rlat);
 
-        final double ra = thresholdMeters/metersDegLat;
-        final double ro = thresholdMeters/metersDegLng;
-        
-        final Envelope hitBox = new Envelope(locx-ro, locy-ra, Double.NaN, locx+ro, locy+ra, Double.NaN);
-            
+    @Deprecated
+    public void hitTest2(Collection<Long> fids, Point loc, double metersRadius, int limit) {
+        if (glmv == null)
+            return;
+
+        GeoPoint geoPoint = new GeoPoint(loc.getY(), loc.getX());
+
+        double mercatorscale = Math.cos(Math.toRadians(loc.getY()));
+        if (mercatorscale < 0.0001)
+            mercatorscale = 0.0001;
+        float screenRadius = (float) (metersRadius / (glmv.drawMapResolution * mercatorscale));
+        PointF screenPoint = glmv.forward(geoPoint);
+
+        hitTest3(fids, geoPoint, metersRadius, screenPoint, screenRadius, limit);
+    }
+
+    public void hitTest3(Collection<Long> fids, GeoPoint geoPoint, double metersRadius,
+            PointF screenPoint, float screenRadius, int limit) {
+
+        // Invert screen point for bottom-left coordinate system
+        if (glmv != null)
+            screenPoint.y = (glmv.getTop() - glmv.getBottom()) - screenPoint.y;
+
+        // Screen based hit test for points
+        // Each point contains the last computed screen location
+        final Rectangle hitBox = new Rectangle(
+                screenPoint.x - screenRadius,
+                screenPoint.y - screenRadius,
+                screenRadius * 2, screenRadius * 2);
+
         Iterator<GLBatchPoint> pointIter;
-        
+
         pointIter = this.labels.descendingIterator();
         while(pointIter.hasNext()) {
             GLBatchPoint item = pointIter.next();
-            if(Rectangle.contains(hitBox.minX, hitBox.minY, hitBox.maxX, hitBox.maxY, item.longitude, item.latitude)) {
-                fids.add(Long.valueOf(item.featureId));
-                if(fids.size() == limit)
-                    return;
-            }
-        }
-        
-        for(int i = this.batchPoints2.size()-1; i >= 0; i--) {
-            GLBatchPoint item = this.batchPoints2.get(i);
-            if(Rectangle.contains(hitBox.minX, hitBox.minY, hitBox.maxX, hitBox.maxY, item.longitude, item.latitude)) {
-                fids.add(Long.valueOf(item.featureId));
+            if(hitBox.contains(item.screenX, item.screenY)) {
+                fids.add(item.featureId);
                 if(fids.size() == limit)
                     return;
             }
         }
 
+        for(int i = this.batchPoints2.size()-1; i >= 0; i--) {
+            GLBatchPoint item = this.batchPoints2.get(i);
+            if(hitBox.contains(item.screenX, item.screenY)) {
+                fids.add(item.featureId);
+                if(fids.size() == limit)
+                    return;
+            }
+        }
+
+        // Switch to geodetic hit tests for lines
+        // This is more memory-efficient than storing the screen point for every line vertex
+        // Also, since lines (currently) aren't rendered floating above terrain this will
+        // work just fine, for now.
+        double locx = geoPoint.getLongitude();
+        double locy = geoPoint.getLatitude();
+        double rlat = Math.toRadians(locy);
+        double metersDegLat = 111132.92 - 559.82 * Math.cos(2* rlat) + 1.175*Math.cos(4*rlat);
+        double metersDegLng = 111412.84 * Math.cos(rlat) - 93.5 * Math.cos(3*rlat);
+
+        double ra = metersRadius / metersDegLat;
+        double ro = metersRadius / metersDegLng;
+
+        Envelope hitEnv = new Envelope(locx-ro, locy-ra, Double.NaN, locx+ro, locy+ra, Double.NaN);
+
         Iterator<? extends GLBatchLineString> lineIter;
-        
+
         lineIter = this.lines.descendingIterator();
         do {
-            long fid = hitTestLineStrings(lineIter, loc, thresholdMeters, hitBox);
+            long fid = hitTestLineStrings(lineIter, geoPoint, metersRadius, hitEnv, glmv, screenPoint, screenRadius);
             if(fid != FeatureDataStore.FEATURE_ID_NONE) {
-                fids.add(Long.valueOf(fid));
+                fids.add(fid);
                 if(fids.size() == limit)
                     return;
             }
         } while(lineIter.hasNext());
-        
+
         lineIter = this.polys.descendingIterator();
         do {
-            long fid = hitTestLineStrings(lineIter, loc, thresholdMeters, hitBox);
+            long fid = hitTestLineStrings(lineIter, geoPoint, metersRadius, hitEnv, glmv, screenPoint, screenRadius);
             if(fid != FeatureDataStore.FEATURE_ID_NONE) {
-                fids.add(Long.valueOf(fid));
+                fids.add(fid);
                 if(fids.size() == limit)
                     return;
             }
@@ -348,10 +387,10 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             this.batch.end();
             GLES20FixedPipeline.glPopMatrix();
         }
-
         // lines
         if(this.lines.size() > 0)
-            this.batchDrawLines(view);
+            this.batchDrawLines(view, true);
+
     }
     
     private void renderSprites(GLMapView view) {
@@ -383,7 +422,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         final Iterator<GLBatchPoint> iter = this.loadingPoints.iterator();        
         while(iter.hasNext()) {
             GLBatchPoint point = iter.next();
-            GLBatchPoint.getOrFetchIcon(view.getSurface(), point);
+            GLBatchPoint.getOrFetchIcon(view.getRenderContext(), point);
             if(point.textureKey != 0L) {
                 this.batchPoints2.add(point);
                 iter.remove();
@@ -420,8 +459,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             forcePointsDraw = ConfigOptions.getOption("glbatchgeometryrenderer.force-points-draw", 0);
         if((forceGLRB == 0 && forcePointsDraw == 0) && (numBatchPoints > POINT_BATCHING_THRESHOLD ||
                 (numBatchPoints > 1 &&
-                        (!GLMapSurface.SETTING_displayLabels ||
-                         view.drawMapScale < GLBatchPoint.defaultLabelRenderScale)))) {
+                        (!GLMapSurface.SETTING_displayLabels)))) {
 
             // batch if there are many points on the screen or if we have more
             // than one point and labels are not going to be drawn
@@ -449,6 +487,10 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                 point.batch(view, this.batch, GLMapView.RENDER_PASS_SPRITES);
             this.batch.end();
         }
+
+        // lines
+        if(this.lines.size() > 0)
+            this.batchDrawLines(view, false);
     }
     
     int forceGLRB = -1;
@@ -459,19 +501,19 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         return GLMapView.RENDER_PASS_SPRITES|GLMapView.RENDER_PASS_SURFACE;
     }
 
-    private void batchDrawLines(GLMapView view) {
+    private void batchDrawLines(GLMapView view, boolean renderClampToGroundPass) {
         final boolean hardwareTransforms = (view.drawMapResolution > view.hardwareTransformResolutionThreshold/4d);
         if(hardwareTransforms) {
             GLES20FixedPipeline.glPushMatrix();
             GLES20FixedPipeline.glLoadMatrixf(view.sceneModelForwardMatrix, 0);
-            batchDrawLinesImpl(view, GLGeometry.VERTICES_PROJECTED);
+            batchDrawLinesImpl(view, GLGeometry.VERTICES_PROJECTED, renderClampToGroundPass);
             GLES20FixedPipeline.glPopMatrix();
         } else {
-            batchDrawLinesImpl(view, GLGeometry.VERTICES_PIXEL);
+            batchDrawLinesImpl(view, GLGeometry.VERTICES_PIXEL, renderClampToGroundPass);
         }
     }
     
-    private void batchDrawLinesImpl(GLMapView view, int vertexType) {
+    private void batchDrawLinesImpl(GLMapView view, int vertexType, boolean renderClampToGroundPass) {
         VectorProgram vectorProgram;
         final int maxBufferedPoints;
         if(this.vectorProgram3d == null)
@@ -509,6 +551,11 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         GLBatchLineString line;
         for(GLBatchGeometry g : this.lines) {
             line = (GLBatchLineString)g;
+            if (!renderClampToGroundPass && line.altitudeMode == Feature.AltitudeMode.ClampToGround)
+                continue;
+            if (renderClampToGroundPass && line.altitudeMode != Feature.AltitudeMode.ClampToGround)
+                continue;
+            
             if(line.numRenderPoints < 2)
                 continue;
 
@@ -679,7 +726,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                 continue;
             
             if(point.textureKey == 0L) {
-                GLBatchPoint.getOrFetchIcon(view.getSurface(), point);
+                GLBatchPoint.getOrFetchIcon(view.getRenderContext(), point);
                 continue;
             }
             
@@ -721,7 +768,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             } else {
                 double alt = 0d;
                 if(view.drawTilt > 0d) {
-                    final double el = point.validateLocalElevation(view);
+                    final double el = point.computeAltitude(view);
                     // note: always NaN if source alt is NaN
                     double adjustedAlt = (el + view.elevationOffset) * view.elevationScaleFactor;
 
@@ -858,13 +905,17 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     
     /**************************************************************************/
     
-    private static long hitTestLineStrings(Iterator<? extends GLBatchLineString> iter, Point loc, double radius, Envelope hitBox) {
+    private static long hitTestLineStrings(Iterator<? extends GLBatchLineString> iter,
+            GeoPoint loc, double radius, Envelope hitBox, GLMapView view,
+            PointF screenPoint, float screenRadius) {
         GLBatchLineString item;
         while (iter.hasNext()) {
             item = iter.next();
             if(item.renderPoints == null)
                 continue;            
-            if(testOrthoHit(item.renderPoints, item.numRenderPoints, 3, item.mbb, loc, radius, hitBox))
+            if(testOrthoHit(item.renderPoints, item.numRenderPoints, 3,
+                    item.mbb, item.altitudeMode, loc, radius, hitBox, view,
+                    screenPoint, screenRadius))
                 return item.featureId;
         }
 
@@ -1048,16 +1099,17 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     }
     
     private static boolean testOrthoHit(DoubleBuffer linestring, int numPoints,
-            int size,
-            Envelope mbr, Point loc, double radius, Envelope test) {
-        final long linestringPtr = Unsafe.getBufferPointer(linestring);
+            int size, Envelope mbr, Feature.AltitudeMode altMode, GeoPoint loc,
+            double radius, Envelope test, GLMapView view, PointF screenPoint,
+            float screenRadius) {
+        long linestringPtr = Unsafe.getBufferPointer(linestring);
         double x0;
         double y0;
         double x1;
         double y1;
-        int idx;
+        double z0, z1;
 
-        double lx = loc.getX();
+        double lx = loc.getLongitude();
         Envelope t2 = new Envelope(test.minX, test.minY, test.minZ,
                 test.maxX, test.maxY, test.maxZ);
 
@@ -1072,24 +1124,58 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             lx -= 360;
         }
 
-        if (!Rectangle.intersects(mbr.minX, mbr.minY, mbr.maxX, mbr.maxY,
+        boolean onGround = view.drawTilt == 0 || altMode == Feature.AltitudeMode.ClampToGround;
+
+        // if it is not tilted, then a simple intersect should suffice for the first pass.
+        if (onGround && !Rectangle.intersects(mbr.minX, mbr.minY, mbr.maxX, mbr.maxY,
                                   t2.minX, t2.minY, t2.maxX, t2.maxY)) {
 
             //Log.d(TAG, "hit not contained in any geobounds");
             return false;
         }
 
-        final double ly = loc.getY();
+        // Distance calculation is squared
+        float radiusSq = screenRadius * screenRadius;
+
+        int bytesPerPoint = size * 8;
+        final double ly = loc.getLatitude();
         for (int i = 0; i < numPoints-1; ++i) {
-            idx = (i*(8*size));
-            x0 = Unsafe.getDouble(linestringPtr+idx);
-            y0 = Unsafe.getDouble(linestringPtr+idx+8);
-            x1 = Unsafe.getDouble(linestringPtr+idx+(8*size));
-            y1 = Unsafe.getDouble(linestringPtr+idx+(8*size)+8);
-            
-            if(isectTest(x0, y0, x1, y1, lx, ly, radius, t2)) {
+            x0 = Unsafe.getDouble(linestringPtr);
+            y0 = Unsafe.getDouble(linestringPtr + 8);
+            x1 = Unsafe.getDouble(linestringPtr + bytesPerPoint);
+            y1 = Unsafe.getDouble(linestringPtr + bytesPerPoint + 8);
+
+            if(onGround && isectTest(x0, y0, x1, y1, lx, ly, radius, t2)) {
                 return true;
             }
+
+            // perform Vector3D intersection
+            if (view.drawTilt > 0) {
+
+                z0 = Unsafe.getDouble(linestringPtr + 16);
+                z1 = Unsafe.getDouble(linestringPtr + bytesPerPoint + 16);
+
+                if (altMode == Feature.AltitudeMode.Relative) {
+                    z0 += view.getTerrainMeshElevation(y0, x0);
+                    z1 += view.getTerrainMeshElevation(y1, x1);
+                }
+
+                com.atakmap.coremap.maps.coords.Vector3D touch =
+                        new com.atakmap.coremap.maps.coords.Vector3D(screenPoint.x, screenPoint.y, 0);
+                PointF spt1 = view.forward(new GeoPoint(y0, x0, z0));
+                PointF spt2 = view.forward(new GeoPoint(y1, x1, z1));
+
+                com.atakmap.coremap.maps.coords.Vector3D nearest = com.atakmap.coremap.maps.coords.Vector3D.nearestPointOnSegment(touch,
+                        new com.atakmap.coremap.maps.coords.Vector3D(spt1.x, spt1.y, 0),
+                        new com.atakmap.coremap.maps.coords.Vector3D(spt2.x, spt2.y, 0));
+
+                double dist = nearest.distanceSq(touch);
+                if (dist <= radiusSq) {
+                    return true;
+                }
+            }
+
+            linestringPtr += bytesPerPoint;
         }
         //Log.d(TAG, "hit not contained in any sub geobounds");
         return false;

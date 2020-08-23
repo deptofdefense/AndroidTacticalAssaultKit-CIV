@@ -5,6 +5,7 @@
 
 #include <util/NonCopyable.h>
 
+#include "feature/AltitudeMode.h"
 #include "port/Platform.h"
 #include "util/AttributeSet.h"
 #include "util/Error.h"
@@ -60,6 +61,10 @@ namespace TAK {
                 virtual Util::TAKErr getRawGeometry(RawData *value) NOTHROWS = 0;
                 /** coding of the geometry data. */
                 virtual GeometryEncoding getGeomCoding() NOTHROWS = 0;
+                /** access the altitude mode of the geometry. */
+                virtual AltitudeMode getAltitudeMode() NOTHROWS = 0;
+                /** access the extrude value of the geometry. */
+                virtual double getExtrude() NOTHROWS = 0;
                 /** feature name */
                 virtual Util::TAKErr getName(const char **value) NOTHROWS = 0;
                 /** coding of the style data. */

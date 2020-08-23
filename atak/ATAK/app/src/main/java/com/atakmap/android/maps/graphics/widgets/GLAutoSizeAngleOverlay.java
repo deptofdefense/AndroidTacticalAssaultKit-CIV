@@ -85,8 +85,10 @@ public class GLAutoSizeAngleOverlay extends GLShape implements
         top = new PointF(center.x, center.y + radius);
 
         //check if it is too far out to show the overlay
+        // Also check if the distance calculation returns NaN, otherwise we get some weird behavior
+        // if globe display mode is enabled and the user zooms out to view the entire globe
         double dist = ortho.inverse(top).distanceTo(sw.getCenter().get());
-        if (dist > 100000 && !centerMoved)
+        if ((dist > 100000 && !centerMoved) || Double.isNaN(dist))
             return false;
 
         offsetX = (float) Math.cos(Math.toRadians(sw.getOffsetAngle()))

@@ -7,6 +7,11 @@
 #include "port/Platform.h"
 #include "util/Error.h"
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4250)
+#endif
+
 namespace TAK {
     namespace Engine {
         namespace Feature {
@@ -18,27 +23,27 @@ namespace TAK {
             protected:
                 virtual ~AbstractDataSourceFeatureDataStore2() NOTHROWS = 0;
             public: // DataSourceFeatureDataStore2 impl
-                virtual TAK::Engine::Util::TAKErr contains(bool *value, const char *file) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr getFile(TAK::Engine::Port::String &file, const int64_t fsid) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr add(const char *file) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr add(const char *file, const char *hint) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr remove(const char *file) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr update(const char *file) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr update(const int64_t fsid) NOTHROWS;
+                virtual TAK::Engine::Util::TAKErr contains(bool *value, const char *file) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr getFile(TAK::Engine::Port::String &file, const int64_t fsid) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr add(const char *file) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr add(const char *file, const char *hint) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr remove(const char *file) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr update(const char *file) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr update(const int64_t fsid) NOTHROWS override;
             protected: // AbstractFeatureDataStore2 impl
-                virtual TAK::Engine::Util::TAKErr insertFeatureSetImpl(FeatureSetPtr &featureSet, const char *provider, const char *type, const char *name, const double minResolution, const double maxResolution, const bool returnRef) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr updateFeatureSetImpl(const int64_t fsid, const char *name) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr updateFeatureSetImpl(const int64_t fsid, const double minResolution, const double maxResolution) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr updateFeatureSetImpl(const int64_t fsid, const char *name, const double minResolution, const double maxResolution) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr deleteFeatureSetImpl(const int64_t fsid) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr insertFeatureImpl(FeaturePtr *feature, const int64_t fsid, const char *name, const atakmap::feature::Geometry &geom, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attributes, const bool returnRef) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr updateFeatureImpl(const int64_t fid, const char *name) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr updateFeatureImpl(const int64_t fid, const atakmap::feature::Geometry &geom) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr updateFeatureImpl(const int64_t fid, const atakmap::feature::Style *style) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr updateFeatureImpl(const int64_t fid, const atakmap::util::AttributeSet &attributes) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr updateFeatureImpl(const int64_t fid, const char *name, const atakmap::feature::Geometry &geom, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attributes) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr deleteFeatureImpl(const int64_t fsid) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr deleteAllFeaturesImpl(const int64_t fsid) NOTHROWS;
+                virtual TAK::Engine::Util::TAKErr insertFeatureSetImpl(FeatureSetPtr_const *featureSet, const char *provider, const char *type, const char *name, const double minResolution, const double maxResolution) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr updateFeatureSetImpl(const int64_t fsid, const char *name) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr updateFeatureSetImpl(const int64_t fsid, const double minResolution, const double maxResolution) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr updateFeatureSetImpl(const int64_t fsid, const char *name, const double minResolution, const double maxResolution) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr deleteFeatureSetImpl(const int64_t fsid) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr insertFeatureImpl(FeaturePtr_const *feature, const int64_t fsid, const char *name, const atakmap::feature::Geometry &geom, const AltitudeMode altitudeMode, const double extrude, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attributes) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr updateFeatureImpl(const int64_t fid, const char *name) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr updateFeatureImpl(const int64_t fid, const atakmap::feature::Geometry &geom) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr updateFeatureImpl(const int64_t fid, const atakmap::feature::Style *style) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr updateFeatureImpl(const int64_t fid, const atakmap::util::AttributeSet &attributes) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr updateFeatureImpl(const int64_t fid, const char *name, const atakmap::feature::Geometry &geom, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attributes) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr deleteFeatureImpl(const int64_t fsid) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr deleteAllFeaturesImpl(const int64_t fsid) NOTHROWS override;
             protected:
                 virtual TAK::Engine::Util::TAKErr containsImpl(bool *value, const char *path) NOTHROWS = 0;
 
@@ -116,5 +121,9 @@ namespace TAK {
         }
     }
 }
+
+#ifdef _MSC_VER
+#pragma warning( pop )
+#endif
 
 #endif // TAK_ENGINE_FEATURE_ABSTRACTDATASOURCEFEATUREDATASTORE2_H_INCLUDED

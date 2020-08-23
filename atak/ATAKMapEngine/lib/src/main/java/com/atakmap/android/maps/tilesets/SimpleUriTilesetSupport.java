@@ -165,7 +165,7 @@ public class SimpleUriTilesetSupport {
                         + URLEncoder.encode(
                                 "SELECT tile FROM tiles WHERE key = "
                                         + OSMUtils.getOSMDroidSQLiteIndex(osmLevel, lngIndex,
-                                                osmLatIndex), FileSystemUtils.UTF8_CHARSET);
+                                                osmLatIndex), FileSystemUtils.UTF8_CHARSET.name());
             } catch (UnsupportedEncodingException e) {
                 throw new IllegalStateException(e);
             }
@@ -186,7 +186,7 @@ public class SimpleUriTilesetSupport {
                                 "SELECT tile_data FROM tiles WHERE zoom_level = "
                                         + String.valueOf(osmLevel) + " AND tile_column = "
                                         + String.valueOf(lngIndex) + " AND tile_row = "
-                                        + String.valueOf(latIndex), FileSystemUtils.UTF8_CHARSET);
+                                        + String.valueOf(latIndex), FileSystemUtils.UTF8_CHARSET.name());
             } catch (UnsupportedEncodingException e) {
                 throw new IllegalStateException(e);
             }

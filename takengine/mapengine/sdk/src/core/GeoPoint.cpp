@@ -94,17 +94,20 @@ bool GeoPoint::isValid() const
 {
     return !isnan(latitude)
         && !isnan(longitude)
+#if 0
         && fabs(latitude) <= 90
-        && fabs(longitude) <= 180;
+        && fabs(longitude) <= 180
+#endif
+        ;
 }
 
-void GeoPoint::set(double lat, double lon, double alt, AltitudeReference altRef, double ce90, double le90) {
+void GeoPoint::set(double lat, double lon, double alt, AltitudeReference alt_ref, double ce_90, double le_90) {
     this->latitude = lat;
     this->longitude = lon;
     this->altitude = alt;
-    this->altitudeRef = altRef;
-    this->ce90 = ce90;
-    this->le90 = le90;
+    this->altitudeRef = alt_ref;
+    this->ce90 = ce_90;
+    this->le90 = le_90;
 }
 
 void GeoPoint::set(double lat, double lon)

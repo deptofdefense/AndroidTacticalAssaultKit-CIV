@@ -18,7 +18,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_math_Mesh_create
     GeometryModel2Ptr retval(new Mesh(reinterpret_cast<double *>(vertices), numCols, numRows), Memory_deleter_const<GeometryModel2, Mesh>);
     env->ReleaseDoubleArrayElements(jvertices, vertices, JNI_ABORT);
 
-    return NewPointer(env, new GeometryModel2Ptr(std::move(retval)));
+    return NewPointer(env, std::move(retval));
 }
 
 

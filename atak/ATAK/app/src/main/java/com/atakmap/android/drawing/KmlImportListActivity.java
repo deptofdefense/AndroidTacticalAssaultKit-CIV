@@ -7,6 +7,7 @@ import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.os.Bundle;
 
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.metrics.activity.MetricListActivity;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
 import java.io.File;
@@ -16,12 +17,7 @@ import java.io.File;
  * we deprecated. It probably won't work anymore and I don't know what it was trying to do even when
  * it did work.
  */
-public class KmlImportListActivity extends ListActivity {
-
-    private static final String SAVE_PATH = FileSystemUtils.getItem(
-            FileSystemUtils.OVERLAYS_DIRECTORY)
-            .getPath()
-            + File.separatorChar;
+public class KmlImportListActivity extends MetricListActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

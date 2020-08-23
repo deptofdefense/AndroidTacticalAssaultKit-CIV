@@ -2,7 +2,6 @@
 package com.atakmap.app;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -17,7 +16,6 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.ActivityInfo;
-import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -35,7 +33,7 @@ import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -69,6 +67,7 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.conversion.UnitChangeReceiver;
 import com.atakmap.android.metrics.MetricsApi;
 import com.atakmap.android.network.AtakAuthenticatedConnectionCallback;
+import com.atakmap.android.network.AtakWebProtocolHandlerCallbacks;
 import com.atakmap.android.overlay.DefaultMapGroupOverlay;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
@@ -101,6 +100,8 @@ import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
+import com.atakmap.io.UriFactory;
+import com.atakmap.io.WebProtocolHandler;
 import com.atakmap.map.AtakMapController;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.DatasetDescriptorFactory2;
@@ -194,6 +195,15 @@ public class ATAKActivity extends MapActivity implements
         _controlPrefs = PreferenceManager.getDefaultSharedPreferences(this);
         _controlPrefs.registerOnSharedPreferenceChangeListener(this);
 
+        // please note - this should never be set to false unless being called as part of 
+        // automatated testing.
+        callSystemExit = _controlPrefs
+                .getBoolean("callSystemExit", true);
+
+        // now blank callSystemExit out so that if the automated tests crash or are stopped by the 
+        // user this boolean does not continue to be set.
+        _controlPrefs.edit().remove("callSystemExit").apply();
+
         // important second step record the session id
         _controlPrefs.edit().putString("core_sessionid",
                 java.util.UUID.randomUUID().toString()).apply();
@@ -244,6 +254,8 @@ public class ATAKActivity extends MapActivity implements
             return;
         }
 
+        FileSystemUtils.clearCachedMountPoints();
+
         AtakBroadcast.init(this);
 
         // keeps the GPS alive and provide TTS services
@@ -267,8 +279,12 @@ public class ATAKActivity extends MapActivity implements
         CertificateManager.getInstance().initialize(this);
         CertificateManager
                 .setKeyManagerFactory(KeyManagerFactory.getInstance(this));
+        AtakAuthenticatedConnectionCallback authCallback = new AtakAuthenticatedConnectionCallback(
+                this);
         AtakAuthenticationHandlerHTTP
-                .setCallback(new AtakAuthenticatedConnectionCallback(this));
+                .setCallback(authCallback);
+        UriFactory.registerProtocolHandler(new WebProtocolHandler(
+                new AtakWebProtocolHandlerCallbacks(authCallback)));
 
         LocaleUtil.setLocale(getResources().getConfiguration().locale);
 
@@ -680,7 +696,7 @@ public class ATAKActivity extends MapActivity implements
             warningShown.setBoolean(activityThread, true);
             Log.d(TAG, "Android PI+ warning flag set to already shown");
         } catch (Exception e) {
-            Log.e(TAG, "unable to set the Android PI warning shown flag", e);
+            Log.e(TAG, "unable to set the Android PI warning shown flag");
         }
     }
 
@@ -763,7 +779,7 @@ public class ATAKActivity extends MapActivity implements
         DocumentedIntentFilter filter = new DocumentedIntentFilter();
         filter.addAction(
                 "com.atakmap.app.QUITAPP",
-                "Intent to start the quiting process, if the boolean extra FORCE_QUIT is set, the the application will not prompt the user before quitting");
+                "Intent to start the quiting process, if the boolean extra FORCE_QUIT is set, the application will not prompt the user before quitting");
         AtakBroadcast.getInstance().registerReceiver(_quitReceiver, filter);
 
         filter = new DocumentedIntentFilter();
@@ -1526,7 +1542,7 @@ public class ATAKActivity extends MapActivity implements
         _mapView.getMapOverlayManager().addShapesOverlay(
                 new DefaultMapGroupOverlay(_mapView, linkGroup, iconUri));
         AtakBroadcast.getInstance().registerReceiver(
-                _linkLineReceiver = new LinkLineReceiver(
+                _linkLineReceiver = new LinkLineReceiver(_mapView,
                         _mapView.getRootGroup(),
                         linkGroup),
                 filter);
@@ -1569,13 +1585,15 @@ public class ATAKActivity extends MapActivity implements
                     "screenViewMapScale", "0"));
             double tilt = Double.parseDouble(_controlPrefs.getString(
                     "screenViewMapTilt", "0"));
+            boolean enabled3D = _controlPrefs.getBoolean(
+                    "status_3d_enabled", false);
 
             Log.d(TAG, "using saved screen location lat: " + lat + " lon: "
                     + lon
                     + " scale: " + scale);
             if (lat != 0 || lon != 0 || scale != 0) {
                 ctrl.panZoomTo(new GeoPoint(lat, lon), scale, true);
-                if (tilt != 0)
+                if (tilt != 0 && enabled3D)
                     ctrl.tiltTo(tilt, true);
             } else {
                 Log.d(TAG, "no location found, go to (0,0)");
@@ -1594,11 +1612,6 @@ public class ATAKActivity extends MapActivity implements
         }
 
         DatabaseFactory.notifyOnDestroy();
-
-        // please note - this should never be set to false unless being called as part of 
-        // automatated testing.
-        final boolean callSystemExit = _controlPrefs
-                .getBoolean("callSystemExit", true);
 
         // during shutdown it is best if the powerManager.isScreenOn is not called
         paused = true;
@@ -1850,8 +1863,9 @@ public class ATAKActivity extends MapActivity implements
 
     @Override
     public void onNewIntent(Intent intent) {
-
         Log.d(TAG, "new intent received");
+        super.onNewIntent(intent);
+
         if ((intent != null) && (intent.getExtras() != null)
                 && intent.getExtras().containsKey("internalIntent")) {
             Intent s = intent.getExtras().getParcelable(
@@ -2376,7 +2390,7 @@ public class ATAKActivity extends MapActivity implements
             if (os != null) {
                 try {
                     output = new PrintStream(os, false,
-                            FileSystemUtils.UTF8_CHARSET);
+                            FileSystemUtils.UTF8_CHARSET.name());
                 } catch (UnsupportedEncodingException ignore) {
                 }
             }
@@ -2540,6 +2554,8 @@ public class ATAKActivity extends MapActivity implements
             Intent data) {
         Log.d(TAG, "Got Activity Result for request[" + requestCode + "]: " +
                 (resultCode == Activity.RESULT_OK ? "OK" : "ERROR"));
+
+        super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == 0) {
             // HACK - sending the point data through the result_canceled
@@ -2805,40 +2821,24 @@ public class ATAKActivity extends MapActivity implements
     @Override
     public void onRequestPermissionsResult(int requestCode,
             @NonNull String[] permissions, @NonNull int[] grantResults) {
-        Log.d(TAG, "onRequestPermissionsResult called: " + requestCode);
-        switch (requestCode) {
-            case Permissions.REQUEST_ID:
-                if (grantResults.length > 0) {
-                    boolean b = true;
-                    for (int i = 0; i < grantResults.length; ++i) {
-                        if (Build.VERSION.SDK_INT >= 29
-                                || !Permissions.ACCESS_BACKGROUND_LOCATION
-                                        .equals(permissions[i])) {
-                            b = b && (grantResults[i] == PackageManager.PERMISSION_GRANTED);
-                            if (grantResults[i] != PackageManager.PERMISSION_GRANTED)
-                                Log.d(TAG,
-                                        "onRequestPermissionResult not granted: "
-                                                + permissions[i]);
-                        }
-                    }
-
-                    if (b) {
-                        acceptedPermissions = true;
-                        onCreate(null);
-                        return;
-                    }
-                }
+        boolean b = Permissions.onRequestPermissionsResult(requestCode,
+                permissions, grantResults);
+        if (b) {
+            acceptedPermissions = true;
+            onCreate(null);
+            return;
         }
         if (count > 3) {
             Permissions.displayNeverAskAgainDialog(this);
         } else {
             count++;
-            Log.d(TAG, "need to generate a new request");
+            Log.d(TAG, "need to generate a new permission request");
 
-            if (Build.VERSION.SDK_INT >= 23)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
                 requestPermissions(Permissions.PermissionsList,
                         Permissions.REQUEST_ID);
         }
+
     }
 
     synchronized private void cancelForeground() {
@@ -2991,4 +2991,7 @@ public class ATAKActivity extends MapActivity implements
     private FileObserver observer;
 
     private final FileLogger fileLogger = new FileLogger();
+
+    // only ever set to false when an automated test is being run.
+    private boolean callSystemExit;
 }

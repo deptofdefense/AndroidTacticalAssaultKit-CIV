@@ -7,12 +7,13 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.widget.SimpleAdapter;
 
+import com.atakmap.android.metrics.activity.MetricListActivity;
 import com.atakmap.app.R;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class CotObjectsListActivity extends ListActivity {
+public class CotObjectsListActivity extends MetricListActivity {
     // private ObjectProperties[] _props;
     private SimpleAdapter _adapter;
     private ArrayList<HashMap<String, String>> _listData;

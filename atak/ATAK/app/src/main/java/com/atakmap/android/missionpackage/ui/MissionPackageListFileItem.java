@@ -3,6 +3,7 @@ package com.atakmap.android.missionpackage.ui;
 
 import com.atakmap.android.data.URIContentHandler;
 import com.atakmap.android.data.URIContentManager;
+import com.atakmap.android.hashtags.HashtagContent;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.file.MissionPackageContent;
 import com.atakmap.android.missionpackage.file.NameValuePair;
@@ -10,6 +11,7 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.assets.Icon;
 
 import java.io.File;
+import java.util.Collection;
 
 /**
  * UI convenience wrapper around File MissionPackageContent
@@ -90,6 +92,25 @@ public class MissionPackageListFileItem extends MissionPackageListItem {
             return 0;
 
         return new File(path).length();
+    }
+
+    @Override
+    public void addHashtags(Collection<String> tags) {
+        if (tags.isEmpty())
+            return;
+
+        String path = getPath();
+        if (FileSystemUtils.isEmpty(path))
+            return;
+
+        URIContentHandler handler = URIContentManager.getInstance()
+                .getHandler(new File(path));
+        if (handler instanceof HashtagContent) {
+            HashtagContent content = (HashtagContent) handler;
+            Collection<String> itemTags = content.getHashtags();
+            itemTags.addAll(tags);
+            content.setHashtags(itemTags);
+        }
     }
 
     @Override

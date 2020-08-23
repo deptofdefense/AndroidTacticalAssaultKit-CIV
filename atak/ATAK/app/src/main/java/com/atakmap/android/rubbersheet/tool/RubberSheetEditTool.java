@@ -53,7 +53,7 @@ public class RubberSheetEditTool extends RectangleEditTool
 
     protected final Context _context;
     protected final AtakPreferences _prefs;
-    protected final RubberSheetMapGroup _group;
+    protected final MapGroup _group;
     protected final TextContainer _cont;
     protected AbstractSheet _sheet;
     protected double[] _p0, _p1, _p2, _p3;
@@ -63,7 +63,7 @@ public class RubberSheetEditTool extends RectangleEditTool
     private double _oldTilt;
     private boolean _oldTiltEnabled;
 
-    public RubberSheetEditTool(MapView mapView, RubberSheetMapGroup group) {
+    public RubberSheetEditTool(MapView mapView, MapGroup group) {
         super(mapView, null, null);
         _context = mapView.getContext();
         _identifier = TOOL_NAME;
@@ -172,9 +172,8 @@ public class RubberSheetEditTool extends RectangleEditTool
         return mode == MapMode.USER_DEFINED_UP && !locked;
     }
 
-    private void unregisterListeners() {
+    protected void unregisterListeners() {
         if (_sheet != null) {
-
             _mapView.getMapTouchController().setToolActive(false);
             _mapView.getMapTouchController().setUserOrientation(freeRotate());
             _cont.closePrompt();
@@ -320,13 +319,13 @@ public class RubberSheetEditTool extends RectangleEditTool
         reset();
     }
 
-    private static class RotateAction extends EditAction {
+    protected static class RotateAction extends EditAction {
 
         private final AbstractSheet _sheet;
         private final GeoPointMetaData[] _oldPoints;
         private final GeoPointMetaData[] _newPoints;
 
-        RotateAction(AbstractSheet sheet, GeoPointMetaData[] oldPoints) {
+        public RotateAction(AbstractSheet sheet, GeoPointMetaData[] oldPoints) {
             _sheet = sheet;
             _oldPoints = oldPoints;
             _newPoints = sheet.getMetaDataPoints();

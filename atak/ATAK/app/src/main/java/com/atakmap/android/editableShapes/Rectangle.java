@@ -12,6 +12,7 @@ import com.atakmap.android.importexport.handlers.ParentMapItem;
 import com.atakmap.android.maps.AnchoredMapItem;
 import com.atakmap.android.maps.Association;
 import com.atakmap.android.maps.MapGroup;
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.MetaShape;
@@ -48,12 +49,14 @@ import java.util.UUID;
  * See {@link DrawingRectangle} for the default drawing shape implementation
  */
 public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
-        ParentMapItem, OnSharedPreferenceChangeListener {
+        ParentMapItem, OnSharedPreferenceChangeListener,
+        MapItem.OnGroupChangedListener, PointMapItem.OnPointChangedListener {
 
     private static final double DEFAULT_STROKE_WEIGHT = 3.0d;
     private static final double EDITABLE_STROKE_WEIGHT = 4.0d;
-    private static final double Z_ORDER_LINES = -0.01;
-    private static final double Z_ORDER_MARKERS = -0.02;
+    private static final double Z_ORDER_FILL = -0.01;
+    private static final double Z_ORDER_LINES = -0.02;
+    private static final double Z_ORDER_MARKERS = -0.03;
 
     private double preEditStrokeWeight = DEFAULT_STROKE_WEIGHT;
 
@@ -69,6 +72,7 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
     private final MapGroup _childMapGroup;
     private int _color, _fillColor, _lineStyle;
     private boolean _tacticalOverlay;
+    private boolean _showLines = true;
     private final UnitPreferences _unitPrefs;
 
     /************************ CONSTRUCTORS ****************************/
@@ -407,6 +411,72 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
         return _center;
     }
 
+    /**
+     * Helper method to check if the center marker is a generic shape marker
+     * as opposed to a marker explicitly set by the user
+     * @return True if the center marker is a generic shape marker
+     */
+    public boolean isCenterShapeMarker() {
+        Marker marker = getCenterMarker();
+        return marker != null && marker.getType().equals(getCenterMarkerType());
+    }
+
+    /**
+     * Set the center marker for this rectangle
+     * @param marker Center marker or null to use the generic shape marker
+     */
+    public void setCenterMarker(Marker marker) {
+        if (marker != null && _center == marker)
+            return;
+
+        if (_center != null) {
+            _center.removeOnPointChangedListener(this);
+            _center.removeOnGroupChangedListener(this);
+            if (isCenterShapeMarker())
+                _center.removeFromGroup();
+            else if (getUID().equals(_center.getMetaString(
+                    "shapeUID", "")))
+                _center.removeMetaData("shapeUID");
+        }
+        if (marker == null) {
+            // Create the default shape marker
+            marker = _createCenterMarker();
+            marker.setTitle(getTitle());
+            marker.setVisible(getVisible());
+        }
+        _center = marker;
+        if (isCenterShapeMarker()) {
+            _center.setMetaString(getUIDKey(), getUID());
+            if (_center.getGroup() == null)
+                _childMapGroup.addItem(_center);
+        } else {
+            setCenterPoint(_center.getGeoPointMetaData());
+            _center.addOnPointChangedListener(this);
+        }
+        _center.addOnGroupChangedListener(this);
+    }
+
+    public Marker getCenterMarker() {
+        return _center;
+    }
+
+    /**
+     * Set the center point of this circle
+     * This will move the anchor marker as well
+     * @param point Center point
+     */
+    public void setCenterPoint(GeoPointMetaData point) {
+        // Update center marker position
+        Marker center = getCenterMarker();
+        if (center != null && !center.getPoint().equals(point.get()))
+            center.setPoint(point);
+
+        // Move rectangle to new position
+        GeoPointMetaData oldPoint = computeCenter();
+        if (!oldPoint.equals(point))
+            move(oldPoint, point);
+    }
+
     @Override
     public void setZOrder(double zOrder) {
         if (Double.compare(zOrder, Double.NEGATIVE_INFINITY) == 0)
@@ -414,6 +484,8 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
             zOrder = -1e8;
 
         // Top to bottom: Markers -> Lines -> Fill
+        if (_filledShape != null)
+            _filledShape.setZOrder(zOrder + Z_ORDER_FILL);
         for (Association a : _lines) {
             a.setZOrder(zOrder + Z_ORDER_LINES);
             if (a.getMarker() != null)
@@ -464,7 +536,7 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
         _childMapGroup.setFriendlyName(title);
         if (_center != null) {
             _center.setMetaString("shapeName", title);
-            _center.setMetaString("callsign", title);
+            _center.setTitle(title);
             _center.refresh(MapView.getMapView().getMapEventDispatcher(), null,
                     this.getClass());
         }
@@ -499,6 +571,14 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
      */
     public PointMapItem getPointAt(int index) {
         return _points.get(index);
+    }
+
+    /**
+     * Get all the anchor markers this rectangle uses
+     * @return List of anchor markers
+     */
+    public List<PointMapItem> getAnchorMarkers() {
+        return new ArrayList<>(_points);
     }
 
     /**
@@ -597,6 +677,7 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
             _filledShape.setFillColor(_fillColor);
             _filledShape.setStrokeColor(0);
             setStyle(getStyle() | Shape.STYLE_FILLED_MASK);
+            _filledShape.setZOrder(getZOrder() + Z_ORDER_FILL);
         } else {
             if (_filledShape != null) {
                 _childMapGroup.removeItem(_filledShape);
@@ -625,13 +706,6 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
         return _fillColor;
     }
 
-    private void setCenterMarker(Marker center) {
-        _center = center;
-        _center.setMetaString(getUIDKey(), getUID());
-        _childMapGroup.addItem(_center);
-
-    }
-
     private void setMirrorWidth(boolean mirrorWidth) {
         _mirrorWidth = mirrorWidth;
     }
@@ -643,9 +717,10 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
     @Override
     public void setVisible(boolean visible) {
         super.setVisible(visible);
+        boolean linesVisible = _showLines && visible;
         for (Association a : _lines) {
-            a.setVisible(visible);
-            a.getMarker().setVisible(_editable && visible);
+            a.setVisible(linesVisible);
+            a.getMarker().setVisible(_editable && linesVisible);
         }
         for (PointMapItem p : _points) {
             p.setVisible(_editable && visible);
@@ -684,8 +759,24 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
     }
 
     @Override
+    public void setMovable(boolean movable) {
+        super.setMovable(movable);
+        if (_center != null)
+            _center.setMovable(movable);
+    }
+
+    @Override
+    public void setClickable(boolean clickable) {
+        super.setClickable(clickable);
+        if (_center != null)
+            _center.setClickable(clickable);
+    }
+
+    @Override
     public void setEditable(boolean editable) {
         _editable = editable;
+        if (_center != null)
+            _center.setEditable(_editable);
         this.setVisible(this.getVisible());
         for (Association a : _lines) {
             a.getMarker().setMetaBoolean("drag", editable);
@@ -722,6 +813,26 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
             String key) {
         //if labels are shown, update units
         _recalculateLabels();
+    }
+
+    @Override
+    public void onItemAdded(MapItem item, MapGroup group) {
+    }
+
+    @Override
+    public void onItemRemoved(MapItem item, MapGroup group) {
+        if (item == _center) {
+            if (isCenterShapeMarker())
+                removeFromGroup();
+            else
+                setCenterMarker(null);
+        }
+    }
+
+    @Override
+    public void onPointChanged(PointMapItem item) {
+        if (item == _center && !isCenterShapeMarker())
+            setCenterPoint(item.getGeoPointMetaData());
     }
 
     /**
@@ -763,6 +874,19 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
 
     public boolean showTacticalOverlay() {
         return _tacticalOverlay;
+    }
+
+    /**
+     * Toggle the lines of the rectangle
+     * @param showLines True to show the lines that make up the rectangle
+     */
+    public void showLines(boolean showLines) {
+        _showLines = showLines;
+        setVisible(getVisible());
+    }
+
+    public boolean showLines() {
+        return _showLines;
     }
 
     /************************ PROTECTED METHODS ****************************/
@@ -1222,6 +1346,8 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
     @Override
     public boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
             MapView view) {
+        if (!_showLines)
+            return false;
         for (Association a : _lines) {
             if (a.testOrthoHit(xpos, ypos, point, view)) {
                 setTouchPoint(a.findTouchPoint());

@@ -103,7 +103,7 @@ public class GdalLibrary {
                     inputStream.close();
             }
             final int libVersion = Integer.parseInt(gdal.VersionInfo("VERSION_NUM"));
-            final int devVersion = Integer.parseInt(new String(versionBytes));
+            final int devVersion = Integer.parseInt(new String(versionBytes, FileSystemUtils.UTF8_CHARSET));
 
             unpackData = (libVersion > devVersion);
         }

@@ -239,7 +239,7 @@ public final class FileStorageService {
         }
 
         /**
-         * @return the the size of the file in bytes
+         * @return the size of the file in bytes
          */
         public long getSize() {
             return size;

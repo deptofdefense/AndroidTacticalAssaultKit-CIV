@@ -21,9 +21,15 @@ import android.view.View;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
+import com.atakmap.android.gui.PanEditTextPreference;
+import com.atakmap.android.gui.PanListPreference;
+import com.atakmap.android.gui.PanMultiSelectListPreference;
+import com.atakmap.android.gui.SMSNumberPreference;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.metrics.activity.MetricPreferenceActivity;
+import com.atakmap.android.network.ui.CredentialsPreference;
 import com.atakmap.android.nightvision.NightVisionNotification;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.preference.PluginPreferenceFragment;
@@ -38,7 +44,7 @@ import com.atakmap.coremap.log.Log;
 
 import java.util.List;
 
-public class SettingsActivity extends PreferenceActivity implements
+public class SettingsActivity extends MetricPreferenceActivity implements
         FragmentManager.OnBackStackChangedListener {
 
     public static final String TAG = "SettingsActivity";
@@ -58,12 +64,7 @@ public class SettingsActivity extends PreferenceActivity implements
         super.onCreate(null);
         AtakPreferenceFragment.setOrientation(SettingsActivity.this);
 
-        AtakPreferenceFragment.setContext(this);
-        com.atakmap.android.gui.PanEditTextPreference.setContext(this);
-        com.atakmap.android.gui.PanListPreference.setContext(this);
-        com.atakmap.android.gui.PanMultiSelectListPreference.setContext(this);
-        com.atakmap.android.gui.SMSNumberPreference.setContext(this);
-        com.atakmap.android.network.ui.CredentialsPreference.setContext(this);
+        setPreferenceContext();
 
         AtakPreferenceFragment.setSoftKeyIllumination(this);
 
@@ -127,7 +128,7 @@ public class SettingsActivity extends PreferenceActivity implements
         }
 
         if (MapView.getMapView() != null)
-            nvn = new NightVisionNotification(MapView.getMapView());
+            nvn = new NightVisionNotification();
 
         if (actionBar != null)
             actionBar.setDisplayHomeAsUpEnabled(true);
@@ -174,11 +175,22 @@ public class SettingsActivity extends PreferenceActivity implements
         DocumentedIntentFilter filter = new DocumentedIntentFilter();
         filter.addAction(
                 "com.atakmap.app.QUITAPP",
-                "Intent to start the quiting process, if the boolean extra FORCE_QUIT is set, the the application will not prompt the user before quitting");
+                "Intent to start the quiting process, if the boolean extra FORCE_QUIT is set, the application will not prompt the user before quitting");
 
         if (MapView.getMapView() != null)
             AtakBroadcast.getInstance().registerReceiver(_quitReceiver, filter);
 
+    }
+
+    // XXX - Is there ever a situation where any of these would be different
+    // from one another? Why 6 different calls?
+    private void setPreferenceContext() {
+        AtakPreferenceFragment.setContext(this);
+        PanEditTextPreference.setContext(this);
+        PanListPreference.setContext(this);
+        PanMultiSelectListPreference.setContext(this);
+        SMSNumberPreference.setContext(this);
+        CredentialsPreference.setContext(this);
     }
 
     private String tempkey;
@@ -242,6 +254,7 @@ public class SettingsActivity extends PreferenceActivity implements
      */
     @Override
     protected void onResume() {
+        setPreferenceContext();
         AtakPreferenceFragment.setOrientation(SettingsActivity.this);
         handleNightVision();
         super.onResume();

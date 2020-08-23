@@ -149,7 +149,7 @@ Geometry *
 GeometryCollection::add (const Geometry* element)
     throw (std::invalid_argument)
   {
-    Geometry *result (NULL);
+    Geometry *result (nullptr);
 
     if (element)
       {
@@ -169,7 +169,7 @@ Geometry *
 GeometryCollection::add (const Geometry &element)
     throw (std::invalid_argument)
   {
-    Geometry *result(NULL);
+    Geometry *result(nullptr);
     if (&element)
       {
         if (element.getDimension () != getDimension ())
@@ -211,7 +211,7 @@ GeometryCollection::computeWKB_Size ()
   {
     return std::accumulate (elements.begin (),
                             elements.end (),
-                            util::WKB_HEADER_SIZE + sizeof (std::size_t),
+                            util::WKB_HEADER_SIZE + sizeof (uint32_t),
                             addWKB_Size);
   }
 
@@ -226,7 +226,7 @@ GeometryCollection::getEnvelope ()
       }
 
     const GeometryVector::const_iterator end (elements.end ());
-    GeometryVector::const_iterator iter (elements.begin ());
+    auto iter (elements.begin ());
     Envelope env ((*iter)->getEnvelope ());
     double minX (env.minX);
     double minY (env.minY);
@@ -257,11 +257,11 @@ GeometryCollection::toBlob (std::ostream& strm,
   {
     insertBlobHeader (strm, getEnvelope ());
     util::write<uint32_t> (strm, getDimension () == _2D ? 7 : 1007);
-    util::write<uint32_t> (strm, elements.size ());
+    util::write<uint32_t> (strm, static_cast<uint32_t>(elements.size ()));
 
     const GeometryVector::const_iterator end (elements.end ());
 
-    for (GeometryVector::const_iterator iter (elements.begin ());
+    for (auto iter (elements.begin ());
          iter != end;
          ++iter)
       {
@@ -281,11 +281,11 @@ GeometryCollection::toWKB (std::ostream& strm,
         util::write<uint32_t> (strm.put (util::ENDIAN_BYTE),
                                getDimension () == _2D ? 7 : 1007);
       }
-    util::write<uint32_t> (strm, elements.size ());
+    util::write<uint32_t> (strm, static_cast<uint32_t>(elements.size ()));
 
     const GeometryVector::const_iterator end (elements.end ());
 
-    for (GeometryVector::const_iterator iter (elements.begin ());
+    for (auto iter (elements.begin ());
          iter != end;
          ++iter)
       {

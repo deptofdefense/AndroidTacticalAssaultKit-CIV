@@ -7,6 +7,7 @@ import android.util.Pair;
 import android.util.Xml;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -116,6 +117,23 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
         InputStream inputStream = null;
         try {
             ZipVirtualFile docFile = new ZipVirtualFile(file, "doc.kml");
+            if (!docFile.exists()) {
+                ZipVirtualFile zipFile;
+                try {
+                    zipFile = new ZipVirtualFile(file);
+                    final String[] files = zipFile.list();
+                    if (files != null) {
+                        for (String f : files) {
+                            if (f.toLowerCase(LocaleUtil.getCurrent()).endsWith(".kml")) {
+                                docFile = new ZipVirtualFile(file, f);
+                                break;
+                            }
+                        }
+                    }
+                } catch (IllegalArgumentException e) {
+                    Log.d(TAG, "error opening" + file, e);
+                }
+            }
             inputStream = docFile.openStream();
             parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);

@@ -1,10 +1,10 @@
 
 package com.atakmap.android.user.icon;
 
-import android.support.v4.app.Fragment;
+import androidx.fragment.app.Fragment;
 
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.maps.Marker;
 import com.atakmap.app.R;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
@@ -24,7 +24,8 @@ public class VehiclePallet implements IconPallet {
 
     @Override
     public String getTitle() {
-        return MapView.getMapView().getContext().getString(R.string.vehicles);
+        return MapView.getMapView().getContext().getString(
+                R.string.vehicle_outlines);
     }
 
     @Override
@@ -43,7 +44,7 @@ public class VehiclePallet implements IconPallet {
     }
 
     @Override
-    public Marker getPointPlacedIntent(GeoPointMetaData point, String uid)
+    public MapItem getPointPlacedIntent(GeoPointMetaData point, String uid)
             throws CreatePointException {
         return fragment.getPointPlacedIntent(point, uid);
     }

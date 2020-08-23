@@ -3,7 +3,7 @@ package com.atakmap.android.image;
 
 import android.content.Context;
 import com.atakmap.coremap.maps.conversion.GeomagneticField;
-import android.support.media.ExifInterface;
+import androidx.exifinterface.media.ExifInterface;
 import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
@@ -43,6 +43,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -893,7 +894,7 @@ public class ExifHelper {
                 // Chunk type
                 String chunkType = null;
                 if (fis.read(buf, 0, 4) == 4)
-                    chunkType = new String(buf, 0, 4);
+                    chunkType = new String(buf, 0, 4, StandardCharsets.UTF_8);
                 if (chunkType == null)
                     break;
 

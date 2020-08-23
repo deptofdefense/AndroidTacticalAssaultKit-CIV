@@ -34,9 +34,15 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
     private final LayoutInflater _inflater;
     private final List<TileButton> _buttons = new ArrayList<>();
     private final boolean _bPersistent;
+
     private AlertDialog _dialog;
+    private TextView _messageTxt;
     private DialogInterface.OnClickListener _onClick;
     private Drawable _icon;
+    private String _title;
+    private String _message, _cancelText;
+    private View _customView;
+    private ViewGroup _customViewContainer;
 
     // Tile button measurements
     private final float _dp;
@@ -71,6 +77,76 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
         _inflater = LayoutInflater.from(_context);
         _bPersistent = bPersistent;
         _dp = _context.getResources().getDisplayMetrics().density;
+        _cancelText = _context.getString(R.string.cancel);
+    }
+
+    /**
+     * Set the title of this dialog
+     * @param title Title
+     * @return Tile button dialog
+     */
+    public synchronized TileButtonDialog setTitle(String title) {
+        _title = title;
+        if (_dialog != null)
+            _dialog.setTitle(title);
+        return this;
+    }
+
+    public TileButtonDialog setTitle(int titleId, Object... args) {
+        return setTitle(_plugin.getString(titleId, args));
+    }
+
+    /**
+     * Set the message displayed above the buttons
+     * @param message Message
+     * @return Tile button dialog
+     */
+    public synchronized TileButtonDialog setMessage(String message) {
+        _message = message;
+        if (_messageTxt != null) {
+            if (!FileSystemUtils.isEmpty(_message)) {
+                _messageTxt.setText(_message);
+                _messageTxt.setVisibility(View.VISIBLE);
+            } else
+                _messageTxt.setVisibility(View.GONE);
+        }
+        return this;
+    }
+
+    public TileButtonDialog setMessage(int msgId, Object... args) {
+        return setMessage(_plugin.getString(msgId, args));
+    }
+
+    /**
+     * Set the cancel button text
+     * @param txt Cancel text
+     * @return Tile button dialog
+     */
+    public TileButtonDialog setCancelText(String txt) {
+        _cancelText = txt;
+        if (_dialog != null)
+            _dialog.getButton(DialogInterface.BUTTON_NEGATIVE)
+                    .setText(txt);
+        return this;
+    }
+
+    public TileButtonDialog setCancelText(int txtId, Object... args) {
+        return setCancelText(_plugin.getString(txtId, args));
+    }
+
+    /**
+     * Set a custom view to be displayed between the message and buttons
+     * @param v View
+     * @return Tile button dialog
+     */
+    public TileButtonDialog setCustomView(View v) {
+        _customView = v;
+        if (_customViewContainer != null) {
+            _customViewContainer.removeAllViews();
+            if (_customView != null)
+                _customViewContainer.addView(_customView);
+        }
+        return this;
     }
 
     /**
@@ -106,53 +182,49 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
                 textId != 0 ? _plugin.getString(textId) : null);
     }
 
-    synchronized public void addButton(TileButton addButton) {
+    public synchronized TileButtonDialog addButton(TileButton addButton) {
         if (addButton != null)
             _buttons.add(addButton);
+        return this;
     }
 
-    synchronized public void removeButton(TileButton removeButton) {
+    public synchronized void removeButton(TileButton removeButton) {
         if (removeButton != null)
             _buttons.remove(removeButton);
     }
 
-    synchronized public void setOnClickListener(
+    public synchronized TileButtonDialog setOnClickListener(
             DialogInterface.OnClickListener onClick) {
         _onClick = onClick;
+        return this;
     }
 
-    synchronized public void setIcon(Drawable icon) {
+    public synchronized TileButtonDialog setIcon(Drawable icon) {
         _icon = icon;
         if (_dialog != null)
             _dialog.setIcon(_icon);
+        return this;
     }
 
-    public void setIcon(int iconId) {
-        setIcon(_plugin.getDrawable(iconId));
+    public TileButtonDialog setIcon(int iconId) {
+        return setIcon(_plugin.getDrawable(iconId));
     }
 
-    synchronized public void show(String title, String message,
-            boolean showCancel) {
-        show(title, message, showCancel, null);
-    }
-
-    synchronized public void show(String title, String message,
-            boolean showCancel, String cancelTitle) {
+    public synchronized void show(boolean showCancel) {
         dismiss();
         if (_buttons.size() == 0) {
-            Toast.makeText(_context,
-                    "no options available",
+            Toast.makeText(_context, R.string.no_available_options,
                     Toast.LENGTH_SHORT).show();
             return;
         }
         View v = _inflater.inflate(R.layout.tile_button_dialog,
                 _mapView, false);
 
-        TextView msg = v.findViewById(R.id.message);
-        if (!FileSystemUtils.isEmpty(message))
-            msg.setText(message);
-        else
-            msg.setVisibility(View.GONE);
+        _messageTxt = v.findViewById(R.id.message);
+        _customViewContainer = v.findViewById(R.id.custom_container);
+
+        setMessage(_message);
+        setCustomView(_customView);
 
         LinearLayout cont = v.findViewById(R.id.container);
 
@@ -189,23 +261,19 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
         AlertDialog.Builder b = new AlertDialog.Builder(_context);
         if (_icon != null)
             b.setIcon(_icon);
-        if (!FileSystemUtils.isEmpty(title))
-            b.setTitle(title);
+        if (!FileSystemUtils.isEmpty(_title))
+            b.setTitle(_title);
         b.setView(v);
-        if (showCancel)
-            b.setNegativeButton(
-                    FileSystemUtils.isEmpty(cancelTitle)
-                            ? _context.getString(R.string.cancel)
-                            : cancelTitle,
+        if (showCancel) {
+            b.setNegativeButton(_cancelText,
                     new DialogInterface.OnClickListener() {
                         @Override
-                        public void onClick(DialogInterface dialogInterface,
-                                int i) {
-                            if (_onClick != null) {
+                        public void onClick(DialogInterface d, int w) {
+                            if (_onClick != null)
                                 _onClick.onClick(_dialog, WHICH_CANCEL);
-                            }
                         }
                     });
+        }
         _dialog = b.create();
         _dialog.show();
         _dialog.setOnDismissListener(this);
@@ -214,13 +282,33 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
         forceWrapContent(cont);
     }
 
+    public void show() {
+        show(false);
+    }
+
+    // XXX - Really no reason to have all these overloaded methods as opposed
+    // to just using setTitle/setMessage/etc. methods
+
+    public void show(String title, String message,
+            boolean showCancel, String cancelTitle) {
+        setTitle(title);
+        setMessage(message);
+        setCancelText(cancelTitle);
+        show(showCancel);
+    }
+
+    public void show(String title, String message, boolean showCancel) {
+        show(title, message, showCancel, null);
+    }
+
     public void show(String title, String message) {
         show(title, message, false);
     }
 
     public void show(int titleId, int msgId, boolean showCancel) {
-        show(titleId != 0 ? _plugin.getString(titleId) : null,
-                msgId != 0 ? _plugin.getString(msgId) : null, showCancel);
+        setTitle(titleId);
+        setMessage(msgId);
+        show(showCancel);
     }
 
     public void show(int titleId, int msgId) {
@@ -228,11 +316,12 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
     }
 
     public void show(int titleId, boolean showCancel) {
-        show(titleId, 0, showCancel);
+        setTitle(titleId);
+        show(showCancel);
     }
 
     public void show(int titleId) {
-        show(titleId, 0, false);
+        show(titleId, false);
     }
 
     @Override
@@ -301,7 +390,7 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
             view.setTag(this);
         }
 
-        synchronized public void setOnClickListener(
+        public synchronized void setOnClickListener(
                 final View.OnClickListener ocl) {
             view.setOnClickListener(
                     internalClickListener = new View.OnClickListener() {

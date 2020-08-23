@@ -35,7 +35,7 @@ using namespace TAK::Engine::Port;
     (VISIBILITY_SETTINGS_FEATURESET | \
      VISIBILITY_SETTINGS_FEATURE)
 
-#define DATABASE_VERSION 3
+#define FEATURE_DATABASE_VERSION 5  // Added support for read_only property
 
 namespace
 {
@@ -101,13 +101,15 @@ namespace
     public :
         DefaultFeatureDefinition(const Feature2 &impl) NOTHROWS;
     public:
-        virtual TAKErr getRawGeometry(FeatureDefinition2::RawData *value) NOTHROWS;
-        virtual FeatureDefinition2::GeometryEncoding getGeomCoding() NOTHROWS;
-        virtual TAKErr getName(const char **value) NOTHROWS ;
-        virtual FeatureDefinition2::StyleEncoding getStyleCoding() NOTHROWS;
-        virtual TAKErr getRawStyle(FeatureDefinition2::RawData *value) NOTHROWS;
-        virtual TAKErr getAttributes(const atakmap::util::AttributeSet **value) NOTHROWS;
-        virtual TAKErr get(const Feature2 **feature) NOTHROWS;
+        TAKErr getRawGeometry(FeatureDefinition2::RawData *value) NOTHROWS override;
+        FeatureDefinition2::GeometryEncoding getGeomCoding() NOTHROWS override;
+        AltitudeMode getAltitudeMode() NOTHROWS override;
+        double getExtrude() NOTHROWS override;
+        TAKErr getName(const char **value) NOTHROWS override;
+        FeatureDefinition2::StyleEncoding getStyleCoding() NOTHROWS override;
+        TAKErr getRawStyle(FeatureDefinition2::RawData *value) NOTHROWS override;
+        TAKErr getAttributes(const atakmap::util::AttributeSet **value) NOTHROWS override;
+        TAKErr get(const Feature2 **feature) NOTHROWS override;
     private :
         const Feature2 &impl;
     }; // FeatureDefinition
@@ -117,16 +119,17 @@ namespace
 
 FDB::FDB(int modificationFlags, int visibilityFlags) NOTHROWS :
     AbstractFeatureDataStore2(modificationFlags, visibilityFlags),
-    databaseFile(NULL),
-    database(NULL, NULL),
-    spatialIndexEnabled(false),
-    infoDirty(true),
-    visible(true),
-    visibleCheck(true),
-    minLod(0),
-    maxLod(0x7FFFFFFF),
-    lodCheck(true),
-    attrSchemaDirty(true)
+    database_file_(nullptr),
+    database_(nullptr, nullptr),
+    spatial_index_enabled_(false),
+    info_dirty_(true),
+    visible_(true),
+    visible_check_(true),
+    min_lod_(0),
+    max_lod_(0x7FFFFFFF),
+    lod_check_(true),
+    read_only_(false),
+    attr_schema_dirty_(true)
 {
     static TAKErr attrSpecCodersInitialized = AttributeSpec::initCoders();
 }
@@ -137,22 +140,23 @@ FDB::~FDB() NOTHROWS
 TAKErr FDB::open(const char *path) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    if (this->database.get())
+    if (this->database_.get())
         return TE_IllegalState;
-    return this->open(path, true);
+    int dbVersionIgnored;
+    return this->open(path, &dbVersionIgnored, true);
 }
 
-TAKErr FDB::open(const char *path, bool buildIndices) NOTHROWS
+TAKErr FDB::open(const char *path, int* dbVersion, bool buildIndices) NOTHROWS
 {
     TAKErr code;
 
-    this->databaseFile = path;
-    const bool creating = (!atakmap::util::pathExists(this->databaseFile) || atakmap::util::getFileSize(this->databaseFile) == 0LL);
+    this->database_file_ = path;
+    const bool creating = (!atakmap::util::pathExists(this->database_file_) || atakmap::util::getFileSize(this->database_file_) == 0LL);
 
-    code = Databases_openDatabase(this->database, this->databaseFile);
+    code = Databases_openDatabase(this->database_, this->database_file_);
     TE_CHECKRETURN_CODE(code);
 
 #ifdef MSVC
@@ -160,7 +164,7 @@ TAKErr FDB::open(const char *path, bool buildIndices) NOTHROWS
     //       synchronous mode.  We're going to turn off for windows builds;
     //       this yields approximately a 20x speedup for visibility
     //       toggling.
-    code = this->database->execute("pragma synchronous = OFF", NULL, 0);
+    code = this->database_->execute("pragma synchronous = OFF", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 #endif
 
@@ -168,23 +172,20 @@ TAKErr FDB::open(const char *path, bool buildIndices) NOTHROWS
         code = this->buildTables(buildIndices);
         TE_CHECKRETURN_CODE(code);
 
-        this->spatialIndexEnabled = buildIndices;
+        this->spatial_index_enabled_ = buildIndices;
     } else {
         // test for spatial index
         std::vector<Port::String> tableNames;
         Port::STLVectorAdapter<Port::String> tableNamesV(tableNames);
-        code = Databases_getTableNames(tableNamesV, *this->database);
+        code = Databases_getTableNames(tableNamesV, *this->database_);
         TE_CHECKRETURN_CODE(code);
 
         Port::String idxFeaturesGeomStr("idx_features_geometry");
-        code = tableNamesV.contains(&this->spatialIndexEnabled, idxFeaturesGeomStr);
+        code = tableNamesV.contains(&this->spatial_index_enabled_, idxFeaturesGeomStr);
         TE_CHECKRETURN_CODE(code);
     }
 
-    this->attrSchemaDirty = true;
-
-    code = this->refresh();
-    TE_CHECKRETURN_CODE(code);
+    this->attr_schema_dirty_ = true;
 
 #ifdef __APPLE__
     //XXX- should only be used for internal dbs
@@ -199,17 +200,26 @@ TAKErr FDB::open(const char *path, bool buildIndices) NOTHROWS
     }
 #endif
 
+    this->database_->getVersion(dbVersion);
+
+    if (*dbVersion < FEATURE_DATABASE_VERSION) {
+        this->upgradeTables(dbVersion);
+    }
+
+    code = this->refresh();
+    TE_CHECKRETURN_CODE(code);
+
     return code;
 }
 
 TAKErr FDB::buildTables(const bool indices) NOTHROWS
 {
     TAKErr code;
-    QueryPtr result(NULL, NULL);
+    QueryPtr result(nullptr, nullptr);
 
     std::pair<int, int> version;
     try {
-        version = atakmap::feature::getSpatialiteVersion(*this->database);
+        version = atakmap::feature::getSpatialiteVersion(*this->database_);
     } catch(...) {
         return TE_Err;
     }
@@ -224,14 +234,14 @@ TAKErr FDB::buildTables(const bool indices) NOTHROWS
 
     result.reset();
 
-    code = this->database->query(result, initSpatialMetadataSql);
+    code = this->database_->query(result, initSpatialMetadataSql);
     TE_CHECKRETURN_CODE(code);
 
     code = result->moveToNext();
     TE_CHECKRETURN_CODE(code);
     result.reset();
 
-    code = this->database->execute(
+    code = this->database_->execute(
         "CREATE TABLE featuresets"
         "    (id INTEGER PRIMARY KEY AUTOINCREMENT,"
         "     name TEXT,"
@@ -244,11 +254,12 @@ TAKErr FDB::buildTables(const bool indices) NOTHROWS
         "     lod_version INTEGER,"
         "     lod_check INTEGER,"
         "     type TEXT,"
-        "     provider TEXT)",
-        NULL, 0);
+        "     provider TEXT,"
+        "     read_only INTEGER)",
+        nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
-    code = this->database->execute(
+    code = this->database_->execute(
         "CREATE TABLE features"
         "    (fid INTEGER PRIMARY KEY AUTOINCREMENT,"
         "     fsid INTEGER,"
@@ -260,13 +271,15 @@ TAKErr FDB::buildTables(const bool indices) NOTHROWS
         "     visible_version INTEGER,"
         "     min_lod INTEGER,"
         "     max_lod INTEGER,"
-        "     lod_version INTEGER)",
-        NULL, 0);
+        "     lod_version INTEGER,"
+        "     altitude_mode INTEGER,"
+        "     extrude REAL)",
+        nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
     result.reset();
 
-    code = this->database->query(
+    code = this->database_->query(
         result,
         "SELECT AddGeometryColumn(\'features\', \'geometry\', 4326, \'GEOMETRY\', \'XY\')");
     TE_CHECKRETURN_CODE(code);
@@ -274,26 +287,26 @@ TAKErr FDB::buildTables(const bool indices) NOTHROWS
     TE_CHECKRETURN_CODE(code);
     result.reset();
 
-    code = this->database->execute(
+    code = this->database_->execute(
         "CREATE TABLE styles"
         "    (id INTEGER PRIMARY KEY AUTOINCREMENT,"
         "     coding TEXT,"
         "     value BLOB)",
-        NULL, 0);
+        nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
-    code = this->database->execute(
+    code = this->database_->execute(
         "CREATE TABLE attributes"
         "    (id INTEGER PRIMARY KEY AUTOINCREMENT,"
         "     value BLOB)",
-        NULL, 0);
+        nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
-    code = this->database->execute("CREATE TABLE attribs_schema"
+    code = this->database_->execute("CREATE TABLE attribs_schema"
         "    (id INTEGER PRIMARY KEY AUTOINCREMENT,"
         "     name TEXT,"
         "     coding INTEGER)",
-        NULL, 0);
+        nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
     code = this->createTriggersNoSync();
@@ -303,8 +316,35 @@ TAKErr FDB::buildTables(const bool indices) NOTHROWS
         TE_CHECKRETURN_CODE(code);
     }
 
-    code = this->database->setVersion(DATABASE_VERSION);
+    code = this->database_->setVersion(FEATURE_DATABASE_VERSION);
     TE_CHECKRETURN_CODE(code);
+
+    return code;
+}
+
+TAKErr FDB::upgradeTables(int* dbVersion) NOTHROWS 
+{
+    TAKErr code;
+    code = this->database_->execute("ALTER TABLE featuresets ADD COLUMN read_only INTEGER", nullptr, 0);
+    TE_CHECKRETURN_CODE(code);
+
+    code = this->database_->execute("UPDATE featuresets SET read_only = 0", nullptr, 0);
+    TE_CHECKRETURN_CODE(code);
+
+    if (*dbVersion <= 3) {
+        code = this->database_->execute("ALTER TABLE features ADD COLUMN altitude_mode INTEGER", nullptr, 0);
+        TE_CHECKRETURN_CODE(code);
+
+        code = this->database_->execute("ALTER TABLE features ADD COLUMN extrude REAL", nullptr, 0);
+        TE_CHECKRETURN_CODE(code);
+
+        code = this->database_->execute("UPDATE features SET altitude_mode = 0, extrude = 0", nullptr, 0);
+        TE_CHECKRETURN_CODE(code);
+    }
+
+    code = this->database_->setVersion(FEATURE_DATABASE_VERSION);
+    TE_CHECKRETURN_CODE(code);
+    *dbVersion = FEATURE_DATABASE_VERSION;
 
     return code;
 }
@@ -313,19 +353,19 @@ TAKErr FDB::createIndicesNoSync() NOTHROWS
 {
     TAKErr code;
 
-    code = this->database
+    code = this->database_
         ->execute(
         "CREATE INDEX IF NOT EXISTS IdxFeaturesLevelOfDetail ON features(min_lod, max_lod)",
-        NULL, 0);
+        nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
-    code = this->database->execute(
+    code = this->database_->execute(
         "CREATE INDEX IF NOT EXISTS IdxFeaturesName ON features(name)",
-        NULL, 0);
+        nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
-    QueryPtr result(NULL, NULL);
-    code = this->database->query(result, "SELECT CreateSpatialIndex(\'features\', \'geometry\')");
+    QueryPtr result(nullptr, nullptr);
+    code = this->database_->query(result, "SELECT CreateSpatialIndex(\'features\', \'geometry\')");
     TE_CHECKRETURN_CODE(code);
     code = result->moveToNext();
     TE_CHECKRETURN_CODE(code);
@@ -337,14 +377,14 @@ TAKErr FDB::createIndicesNoSync() NOTHROWS
 TAKErr FDB::dropIndicesNoSync() NOTHROWS
 {
     TAKErr code;
-    code = this->database->execute("DROP INDEX IF EXISTS IdxFeaturesLevelOfDetail", NULL, 0);
+    code = this->database_->execute("DROP INDEX IF EXISTS IdxFeaturesLevelOfDetail", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute("DROP INDEX IF EXISTS IdxFeaturesGroupIdName", NULL, 0);
+    code = this->database_->execute("DROP INDEX IF EXISTS IdxFeaturesGroupIdName", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
     std::vector<Port::String> tableNames;
     Port::STLVectorAdapter<Port::String> tableNamesV(tableNames);
-    code = Databases_getTableNames(tableNamesV, *this->database);
+    code = Databases_getTableNames(tableNamesV, *this->database_);
     TE_CHECKRETURN_CODE(code);
 
     bool hasSpatialIndex;
@@ -353,13 +393,13 @@ TAKErr FDB::dropIndicesNoSync() NOTHROWS
     TE_CHECKRETURN_CODE(code);
 
     if (hasSpatialIndex) {
-        QueryPtr result(NULL, NULL);
-        code = this->database->query(result, "SELECT DisableSpatialIndex(\'features\', \'geometry\')");
+        QueryPtr result(nullptr, nullptr);
+        code = this->database_->query(result, "SELECT DisableSpatialIndex(\'features\', \'geometry\')");
         TE_CHECKRETURN_CODE(code);
         code = result->moveToNext();
         TE_CHECKRETURN_CODE(code);
         result.reset();
-        code = this->database->execute("DROP TABLE idx_features_geometry", NULL, 0);
+        code = this->database_->execute("DROP TABLE idx_features_geometry", nullptr, 0);
         TE_CHECKRETURN_CODE(code);
     }
 
@@ -369,57 +409,57 @@ TAKErr FDB::dropIndicesNoSync() NOTHROWS
 TAKErr FDB::createTriggersNoSync() NOTHROWS
 {
     TAKErr code;
-    code = this->database->execute(
+    code = this->database_->execute(
         "CREATE TRIGGER IF NOT EXISTS features_visible_update AFTER UPDATE OF visible ON features "
         "BEGIN "
         "UPDATE featuresets SET visible_check = 1 WHERE id = OLD.fsid; "
         "UPDATE features SET visible_version = (SELECT visible_version FROM featuresets WHERE id = OLD.fsid LIMIT 1) WHERE fid = OLD.fid; "
-        "END;", NULL, 0);
+        "END;", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute(
+    code = this->database_->execute(
         "CREATE TRIGGER IF NOT EXISTS featuresets_visible_update AFTER UPDATE OF visible ON featuresets "
         "BEGIN "
         "UPDATE featuresets SET visible_version = (OLD.visible_version+1), visible_check = 0 WHERE id = OLD.id; "
-        "END;", NULL, 0);
+        "END;", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute(
+    code = this->database_->execute(
         "CREATE TRIGGER IF NOT EXISTS features_min_lod_update AFTER UPDATE OF min_lod ON features "
         "BEGIN "
         "UPDATE featuresets SET lod_check = 1 WHERE id = OLD.fsid; "
         "UPDATE features SET lod_version = (SELECT lod_version FROM featuresets WHERE id = OLD.fsid LIMIT 1) WHERE fid = OLD.fid; "
-        "END;", NULL, 0);
+        "END;", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute(
+    code = this->database_->execute(
         "CREATE TRIGGER IF NOT EXISTS features_max_lod_update AFTER UPDATE OF max_lod ON features "
         "BEGIN "
         "UPDATE featuresets SET lod_check = 1 WHERE id = OLD.fsid; "
         "UPDATE features SET lod_version = (SELECT lod_version FROM featuresets WHERE id = OLD.fsid LIMIT 1) WHERE fid = OLD.fid; "
-        "END;", NULL, 0);
+        "END;", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute(
+    code = this->database_->execute(
         "CREATE TRIGGER IF NOT EXISTS featuresets_min_lod_update AFTER UPDATE OF min_lod ON featuresets "
         "BEGIN "
         "UPDATE featuresets SET lod_version = (OLD.lod_version+1), lod_check = 0 WHERE id = OLD.id; "
-        "END;", NULL, 0);
+        "END;", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute(
+    code = this->database_->execute(
         "CREATE TRIGGER IF NOT EXISTS featuresets_max_lod_update AFTER UPDATE OF max_lod ON featuresets "
         "BEGIN "
         "UPDATE featuresets SET lod_version = (OLD.lod_version+1), lod_check = 0 WHERE id = OLD.id; "
-        "END;", NULL, 0);
+        "END;", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute(
+    code = this->database_->execute(
         "CREATE TRIGGER IF NOT EXISTS featuresets_name_update AFTER UPDATE OF name ON featuresets "
         "BEGIN "
         "UPDATE featuresets SET name_version = (OLD.name_version+1) WHERE id = OLD.id; "
-        "END;", NULL, 0);
+        "END;", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute(
+    code = this->database_->execute(
         "CREATE TRIGGER IF NOT EXISTS featuresets_delete AFTER DELETE ON featuresets "
         "FOR EACH ROW "
         "BEGIN "
         "DELETE FROM features WHERE fsid = OLD.id; "
-        "END;", NULL, 0);
+        "END;", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
     return code;
@@ -427,27 +467,31 @@ TAKErr FDB::createTriggersNoSync() NOTHROWS
 
 TAKErr FDB::validateInfo() NOTHROWS
 {
-    if (!this->infoDirty)
+    if (!this->info_dirty_)
         return TE_Ok;
 
     TAKErr code;
 
-    this->visible = false;
-    this->visibleCheck = false;
-    this->minLod = 0x7FFFFFFF;
-    this->maxLod = 0;
-    this->lodCheck = false;
+    int dbVersion;
+    this->database_->getVersion(&dbVersion);
 
-    QueryPtr result(NULL, NULL);
+    this->visible_ = false;
+    this->visible_check_ = false;
+    this->min_lod_ = 0x7FFFFFFF;
+    this->max_lod_ = 0;
+    this->lod_check_ = false;
+    this->read_only_ = false;
 
     const char *sql = "SELECT"
                       "    id,"
                       "    name, name_version,"
                       "    visible, visible_version, visible_check,"
-                      "    min_lod, max_lod, lod_version, lod_check"
+                      "    min_lod, max_lod, lod_version, lod_check,"
+                      "    read_only"
                       " FROM featuresets";
 
-    code = this->database->query(result, sql);
+    QueryPtr result(nullptr, nullptr);
+    code = this->database_->query(result, sql);
     TE_CHECKRETURN_CODE(code);
     do {
         code = result->moveToNext();
@@ -458,8 +502,8 @@ TAKErr FDB::validateInfo() NOTHROWS
         TE_CHECKBREAK_CODE(code);
 
         std::map<int64_t, std::shared_ptr<FeatureSetDefn>>::iterator entry;
-        entry = this->featureSets.find(fsid);
-        if (entry == this->featureSets.end())
+        entry = this->feature_sets_.find(fsid);
+        if (entry == this->feature_sets_.end())
             continue;
 
         std::shared_ptr<FeatureSetDefn> fs = entry->second;
@@ -493,21 +537,25 @@ TAKErr FDB::validateInfo() NOTHROWS
         code = result->getInt(&scratch.i, 9);
         TE_CHECKBREAK_CODE(code);
         fs->lodCheck = !!scratch.i;
+        code = result->getInt(&scratch.i, 10);
+        TE_CHECKBREAK_CODE(code);
+        fs->readOnly = !!scratch.i;
 
-        this->visible |= fs->visible;
-        this->visibleCheck |= fs->visibleCheck;
+        this->visible_ |= fs->visible;
+        this->visible_check_ |= fs->visibleCheck;
 
-        if (fs->minLod < this->minLod)
-            this->minLod = fs->minLod;
-        if (fs->maxLod > this->maxLod)
-            this->maxLod = fs->maxLod;
-        this->lodCheck |= fs->lodCheck;
+        if (fs->minLod < this->min_lod_)
+            this->min_lod_ = fs->minLod;
+        if (fs->maxLod > this->max_lod_)
+            this->max_lod_ = fs->maxLod;
+        this->lod_check_ |= fs->lodCheck;
+        this->read_only_ |= fs->readOnly;
     } while (true);
     if (code == TE_Done)
         code = TE_Ok;
     TE_CHECKRETURN_CODE(code);
 
-    this->infoDirty = false;
+    this->info_dirty_ = false;
     result.reset();
 
     return code;
@@ -518,10 +566,10 @@ TAKErr FDB::validateAttributeSchema() NOTHROWS
     TAKErr code;
 
     code = TE_Ok;
-    if (this->attrSchemaDirty) {
-        QueryPtr result(NULL, NULL);
+    if (this->attr_schema_dirty_) {
+        QueryPtr result(nullptr, nullptr);
 
-        code = this->database->query(result, "SELECT id, name, coding FROM attribs_schema");
+        code = this->database_->query(result, "SELECT id, name, coding FROM attribs_schema");
         TE_CHECKRETURN_CODE(code);
 
         int64_t id;
@@ -539,14 +587,14 @@ TAKErr FDB::validateAttributeSchema() NOTHROWS
             TE_CHECKBREAK_CODE(code);
 
             std::shared_ptr<AttributeSpec> schemaSpec(new AttributeSpec(name, id, coding));
-            this->idToAttrSchema[id] = schemaSpec;
+            this->id_to_attr_schema_[id] = schemaSpec;
 
             KeyAttrSchemaMap::iterator parentSpec;
-            parentSpec = this->keyToAttrSchema.find(name);
-            if (parentSpec != this->keyToAttrSchema.end()) {
+            parentSpec = this->key_to_attr_schema_.find(name);
+            if (parentSpec != this->key_to_attr_schema_.end()) {
                 parentSpec->second->secondaryDefs[coding] = schemaSpec;
             } else {
-                this->keyToAttrSchema[name] = schemaSpec;
+                this->key_to_attr_schema_[name] = schemaSpec;
             }
         } while (true);
         if (code == TE_Done)
@@ -555,7 +603,7 @@ TAKErr FDB::validateAttributeSchema() NOTHROWS
 
         result.reset();
 
-        this->attrSchemaDirty = false;
+        this->attr_schema_dirty_ = false;
     }
 
     return code;
@@ -648,7 +696,7 @@ TAKErr FDB::isCompatible(bool *matched, const FeatureSetDefn &defn, const Featur
 TAKErr FDB::isCompatible(bool *matched, const FeatureSetQueryParameters *params) NOTHROWS
 {
     *matched = false;
-    if (this->featureSets.empty())
+    if (this->feature_sets_.empty())
         return TE_Ok;
 
     TAKErr code;
@@ -656,7 +704,7 @@ TAKErr FDB::isCompatible(bool *matched, const FeatureSetQueryParameters *params)
     code = TE_Ok;
 
     std::map<int64_t, std::shared_ptr<FeatureSetDefn>>::iterator fs;
-    for (fs = this->featureSets.begin(); fs != this->featureSets.end(); fs++) {
+    for (fs = this->feature_sets_.begin(); fs != this->feature_sets_.end(); fs++) {
         code = isCompatible(matched, *fs->second, params);
         TE_CHECKBREAK_CODE(code);
         if (*matched)
@@ -668,7 +716,7 @@ TAKErr FDB::isCompatible(bool *matched, const FeatureSetQueryParameters *params)
 TAKErr FDB::isCompatible(bool *matched, const FeatureQueryParameters *params) NOTHROWS
 {
     *matched = false;
-    if (this->featureSets.empty())
+    if (this->feature_sets_.empty())
         return TE_Ok;
 
     TAKErr code;
@@ -676,7 +724,7 @@ TAKErr FDB::isCompatible(bool *matched, const FeatureQueryParameters *params) NO
     code = TE_Ok;
 
     std::map<int64_t, std::shared_ptr<FeatureSetDefn>>::iterator fs;
-    for (fs = this->featureSets.begin(); fs != this->featureSets.end(); fs++) {
+    for (fs = this->feature_sets_.begin(); fs != this->feature_sets_.end(); fs++) {
         code = isCompatible(matched, *fs->second, params);
         TE_CHECKBREAK_CODE(code);
         if (*matched)
@@ -688,11 +736,11 @@ TAKErr FDB::isCompatible(bool *matched, const FeatureQueryParameters *params) NO
 TAKErr FDB::getFeature(FeaturePtr_const &feature, const int64_t fid) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    if (!this->database.get()) {
+    if (!this->database_.get()) {
         return TE_IllegalState;
     }
 
@@ -702,7 +750,7 @@ TAKErr FDB::getFeature(FeaturePtr_const &feature, const int64_t fid) NOTHROWS
     params.limit = 1;
 
 
-    FeatureCursorPtr result(NULL, NULL);
+    FeatureCursorPtr result(nullptr, nullptr);
     code = this->queryFeatures(result, params);
     TE_CHECKRETURN_CODE(code);
     code = result->moveToNext();
@@ -725,13 +773,16 @@ TAKErr FDB::getFeature(FeaturePtr_const &feature, const int64_t fid) NOTHROWS
 TAKErr FDB::queryFeatures(FeatureCursorPtr &result) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    if (!this->database.get()) {
+    if (!this->database_.get()) {
         return TE_IllegalState;
     }
+
+    int dbVersion;
+    this->database_->getVersion(&dbVersion);
 
     const int idCol = 0;
     const int fsidCol = 1;
@@ -742,6 +793,8 @@ TAKErr FDB::queryFeatures(FeatureCursorPtr &result) NOTHROWS
     int geomCol = -1;
     int styleCol = -1;
     int attribsCol = -1;
+    int altitudeModeCol = -1;
+    int extrudeCol = -1;
 
     std::ostringstream sql;
     sql << "SELECT features.fid, features.fsid, features.version";
@@ -749,6 +802,10 @@ TAKErr FDB::queryFeatures(FeatureCursorPtr &result) NOTHROWS
     nameCol = extrasCol++;
     sql << ", features.geometry";
     geomCol = extrasCol++;
+    sql << ", features.altitude_mode";
+    altitudeModeCol = extrasCol++;
+    sql << ", features.extrude";
+    extrudeCol = extrasCol++;
     sql << ", styles.value";
     styleCol = extrasCol++;
     sql << ", attributes.value";
@@ -757,22 +814,14 @@ TAKErr FDB::queryFeatures(FeatureCursorPtr &result) NOTHROWS
     sql << " LEFT JOIN styles ON features.style_id = styles.id";
     sql << " LEFT JOIN attributes ON features.attribs_id = attributes.id";
 
-    QueryPtr cursor(NULL, NULL);
+    QueryPtr cursor(nullptr, nullptr);
 
-    code = this->database->query(cursor, sql.str().c_str());
+    code = this->database_->query(cursor, sql.str().c_str());
     TE_CHECKRETURN_CODE(code);
 
-    result = FeatureCursorPtr(
-            new FeatureCursorImpl(*this,
-                                  std::move(cursor),
-                                  idCol,
-                                  fsidCol,
-                                  versionCol,
-                                  nameCol,
-                                  geomCol,
-                                  styleCol,
-                                  attribsCol),
-            deleter_const<FeatureCursor2, FeatureCursorImpl>);
+    result = FeatureCursorPtr(new FeatureCursorImpl(*this, std::move(cursor), idCol, fsidCol, versionCol, nameCol, geomCol, styleCol,
+                                                    attribsCol, altitudeModeCol, extrudeCol),
+                              deleter_const<FeatureCursor2, FeatureCursorImpl>);
     cursor.release();
     cursor.reset();
 
@@ -782,13 +831,16 @@ TAKErr FDB::queryFeatures(FeatureCursorPtr &result) NOTHROWS
 TAKErr FDB::queryFeatures(FeatureCursorPtr &result, const FeatureQueryParameters &params) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    if (!this->database.get()) {
+    if (!this->database_.get()) {
         return TE_IllegalState;
     }
+
+    int dbVersion;
+    this->database_->getVersion(&dbVersion);
 
     const int ignoredFields = params.ignoredFields;
 
@@ -801,6 +853,8 @@ TAKErr FDB::queryFeatures(FeatureCursorPtr &result, const FeatureQueryParameters
     int geomCol = -1;
     int styleCol = -1;
     int attribsCol = -1;
+    int altitudeModeCol = -1;
+    int extrudeCol = -1;
 
     std::list<BindArgument> args;
 
@@ -816,7 +870,7 @@ TAKErr FDB::queryFeatures(FeatureCursorPtr &result, const FeatureQueryParameters
             std::ostringstream geomStr;
             geomStr << "features.geometry";
 
-            Collection<FeatureQueryParameters::SpatialOp>::IteratorPtr opsIter(NULL, NULL);
+            Collection<FeatureQueryParameters::SpatialOp>::IteratorPtr opsIter(nullptr, nullptr);
             code = params.ops->iterator(opsIter);
             TE_CHECKRETURN_CODE(code);
             do {
@@ -846,6 +900,10 @@ TAKErr FDB::queryFeatures(FeatureCursorPtr &result, const FeatureQueryParameters
             sql << ", features.geometry";
         }
         geomCol = extrasCol++;
+        sql << ", features.altitude_mode";
+        altitudeModeCol = extrasCol++;
+        sql << ", features.extrude";
+        extrudeCol = extrasCol++;
     }
     if (!MathUtils_hasBits(ignoredFields, FeatureQueryParameters::StyleField)) {
         sql << ", styles.value";
@@ -873,7 +931,7 @@ TAKErr FDB::queryFeatures(FeatureCursorPtr &result, const FeatureQueryParameters
     if (params.visibleOnly) {
         this->validateInfo();
 
-        std::set<std::shared_ptr<const FeatureSetDefn>>::iterator iter = fsNoCheck.begin();
+        auto iter = fsNoCheck.begin();
         std::shared_ptr<const FeatureSetDefn> defn;
         while (iter != fsNoCheck.end()) {
             defn = *iter;
@@ -888,7 +946,7 @@ TAKErr FDB::queryFeatures(FeatureCursorPtr &result, const FeatureQueryParameters
     if (!isnan(params.minResolution) || !isnan(params.maxResolution)) {
         this->validateInfo();
 
-        std::set<std::shared_ptr<const FeatureSetDefn>>::iterator iter = fsNoCheck.begin();
+        auto iter = fsNoCheck.begin();
         std::shared_ptr<const FeatureSetDefn> defn;
         while (iter != fsNoCheck.end()) {
             defn = *iter;
@@ -938,7 +996,7 @@ TAKErr FDB::queryFeatures(FeatureCursorPtr &result, const FeatureQueryParameters
             if (!params.order->empty()) {
                 bool first = true;
                 std::ostringstream orderSql;
-                Collection<FeatureQueryParameters::Order>::IteratorPtr orderIter(NULL, NULL);
+                Collection<FeatureQueryParameters::Order>::IteratorPtr orderIter(nullptr, nullptr);
                 code = params.order->iterator(orderIter);
                 TE_CHECKBREAK_CODE(code);
                 do {
@@ -973,22 +1031,14 @@ TAKErr FDB::queryFeatures(FeatureCursorPtr &result, const FeatureQueryParameters
                 }
             }
 
-            QueryPtr result(NULL, NULL);
+            QueryPtr queryResult(nullptr, nullptr);
             STLListAdapter<BindArgument> subargsAdapter(subargs);
-            code = BindArgument::query(result, *this->database, subsql.str().c_str(), subargsAdapter);
+            code = BindArgument::query(queryResult, *this->database_, subsql.str().c_str(), subargsAdapter);
             TE_CHECKBREAK_CODE(code);
 
-            retval.push_back(
-                new FeatureCursorImpl(*this,
-                                      std::move(result),
-                                      idCol,
-                                      fsidCol,
-                                      versionCol,
-                                      nameCol,
-                                      geomCol,
-                                      styleCol,
-                                      attribsCol));
-            result.reset();
+            retval.push_back(new FeatureCursorImpl(*this, std::move(queryResult), idCol, fsidCol, versionCol, nameCol, geomCol, styleCol,
+                                                   attribsCol, altitudeModeCol, extrudeCol));
+            queryResult.reset();
         }
     }
 
@@ -1023,7 +1073,7 @@ TAKErr FDB::queryFeatures(FeatureCursorPtr &result, const FeatureQueryParameters
             if (!params.order->empty()) {
                 bool first = true;
                 std::ostringstream orderSql;
-                Collection<FeatureQueryParameters::Order>::IteratorPtr orderIter(NULL, NULL);
+                Collection<FeatureQueryParameters::Order>::IteratorPtr orderIter(nullptr, nullptr);
                 code = params.order->iterator(orderIter);
                 TE_CHECKBREAK_CODE(code);
                 do {
@@ -1058,34 +1108,25 @@ TAKErr FDB::queryFeatures(FeatureCursorPtr &result, const FeatureQueryParameters
                 }
             }
 
-            QueryPtr result(NULL, NULL);
+            QueryPtr queryResult(nullptr, nullptr);
             STLListAdapter<BindArgument> subargsAdapter(subargs);
-            code = BindArgument::query(result, *this->database, subsql.str().c_str(), subargsAdapter);
+            code = BindArgument::query(queryResult, *this->database_, subsql.str().c_str(), subargsAdapter);
             TE_CHECKBREAK_CODE(code);
 
-            retval.push_back(
-                new FeatureCursorImpl(*this,
-                                      std::move(result),
-                                      idCol,
-                                      fsidCol,
-                                      versionCol,
-                                      nameCol,
-                                      geomCol,
-                                      styleCol,
-                                      attribsCol));
-            result.release();
-            result.reset();
+            retval.push_back(new FeatureCursorImpl(*this, std::move(queryResult), idCol, fsidCol, versionCol, nameCol, geomCol, styleCol,
+                                                   attribsCol, altitudeModeCol, extrudeCol));
+            queryResult.reset();
         } while (false);
     }
 
     if (retval.size() == 1) {
-        std::list<FeatureCursorImpl *>::iterator cursor = retval.begin();
+        auto cursor = retval.begin();
         result = FeatureCursorPtr(*cursor, deleter_const<FeatureCursor2, FeatureCursorImpl>);
         retvalMgr.release();
 
         return code;
     } else {
-        std::auto_ptr<MultiplexingFeatureCursor> cursor(new MultiplexingFeatureCursor(*params.order));
+        std::unique_ptr<MultiplexingFeatureCursor> cursor(new MultiplexingFeatureCursor(*params.order));
         std::list<FeatureCursorImpl *>::iterator it;
         // XXX - if loop does not complete, may result in double-delete on entries added
         for (it = retval.begin(); it != retval.end(); it++) {
@@ -1106,17 +1147,17 @@ TAKErr FDB::queryFeatures(FeatureCursorPtr &result, const FeatureQueryParameters
 TAKErr FDB::queryFeaturesCount(int *value) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    if (!this->database.get()) {
+    if (!this->database_.get()) {
         return TE_IllegalState;
     }
 
-    QueryPtr result(NULL, NULL);
+    QueryPtr result(nullptr, nullptr);
 
-    code = this->database->query(result, "SELECT Count(1) FROM features");
+    code = this->database_->query(result, "SELECT Count(1) FROM features");
     code = result->moveToNext();
     if (code == TE_Done) {
         *value = 0;
@@ -1133,11 +1174,11 @@ TAKErr FDB::queryFeaturesCount(int *value) NOTHROWS
 TAKErr FDB::queryFeaturesCount(int *value, const FeatureQueryParameters &params) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    if (!this->database.get()) {
+    if (!this->database_.get()) {
         return TE_IllegalState;
     }
 
@@ -1156,7 +1197,7 @@ TAKErr FDB::queryFeaturesCount(int *value, const FeatureQueryParameters &params)
         code = this->validateInfo();
         TE_CHECKRETURN_CODE(code);
 
-        std::set<std::shared_ptr<const FeatureSetDefn>>::iterator iter = fsNoCheck.begin();
+        auto iter = fsNoCheck.begin();
         std::shared_ptr<const FeatureSetDefn> defn;
         while (iter != fsNoCheck.end()) {
             defn = *iter;
@@ -1172,13 +1213,13 @@ TAKErr FDB::queryFeaturesCount(int *value, const FeatureQueryParameters &params)
         code = this->validateInfo();
         TE_CHECKRETURN_CODE(code);
 
-        std::set<std::shared_ptr<const FeatureSetDefn>>::iterator iter = fsNoCheck.begin();
+        auto iter = fsNoCheck.begin();
         std::shared_ptr<const FeatureSetDefn>defn;
         while (iter != fsNoCheck.end()) {
             defn = *iter;
             if (defn->lodCheck) {
                 fsCheck.push_back(defn);
-                fsNoCheck.erase(iter);
+                iter = fsNoCheck.erase(iter);
             } else {
                 iter++;
             }
@@ -1232,7 +1273,7 @@ TAKErr FDB::queryFeaturesCount(int *value, const FeatureQueryParameters &params)
             if (!params.order->empty()) {
                 bool first = true;
                 std::ostringstream orderSql;
-                Collection<FeatureQueryParameters::Order>::IteratorPtr orderIter(NULL, NULL);
+                Collection<FeatureQueryParameters::Order>::IteratorPtr orderIter(nullptr, nullptr);
                 code = params.order->iterator(orderIter);
                 TE_CHECKBREAK_CODE(code);
                 do {
@@ -1270,10 +1311,10 @@ TAKErr FDB::queryFeaturesCount(int *value, const FeatureQueryParameters &params)
                 subsql << ")";
             }
 
-            QueryPtr result(NULL, NULL);
+            QueryPtr result(nullptr, nullptr);
 
             STLListAdapter<BindArgument> subargsAdapter(subargs);
-            code = BindArgument::query(result, *this->database, subsql.str().c_str(), subargsAdapter);
+            code = BindArgument::query(result, *this->database_, subsql.str().c_str(), subargsAdapter);
             TE_CHECKBREAK_CODE(code);
             code = result->moveToNext();
             if (code == TE_Ok) {
@@ -1295,7 +1336,7 @@ TAKErr FDB::queryFeaturesCount(int *value, const FeatureQueryParameters &params)
     }
 
     if (!fsNoCheck.empty()) {
-        if (fsNoCheck.size() == this->featureSets.size())
+        if (fsNoCheck.size() == this->feature_sets_.size())
             fsNoCheck.clear();
 
         do {
@@ -1320,14 +1361,14 @@ TAKErr FDB::queryFeaturesCount(int *value, const FeatureQueryParameters &params)
             if (select) {
                 subsql << " WHERE ";
                 subsql << select;
-                STLListAdapter<BindArgument> subargsAdapter(subargs);
-                where.getBindArgs(subargsAdapter);
+                STLListAdapter<BindArgument> whereargs_adapter(subargs);
+                where.getBindArgs(whereargs_adapter);
             }
 
             if (!params.order->empty()) {
                 bool first = true;
                 std::ostringstream orderSql;
-                Collection<FeatureQueryParameters::Order>::IteratorPtr orderIter(NULL, NULL);
+                Collection<FeatureQueryParameters::Order>::IteratorPtr orderIter(nullptr, nullptr);
                 code = params.order->iterator(orderIter);
                 TE_CHECKBREAK_CODE(code);
                 do {
@@ -1335,8 +1376,8 @@ TAKErr FDB::queryFeaturesCount(int *value, const FeatureQueryParameters &params)
                     code = orderIter->get(order);
                     TE_CHECKBREAK_CODE(code);
 
-                    STLListAdapter<BindArgument> subargsAdapter(subargs);
-                    code = appendOrder(&first, orderSql, subargsAdapter, order);
+                    STLListAdapter<BindArgument> orderargs_adapter(subargs);
+                    code = appendOrder(&first, orderSql, orderargs_adapter, order);
                     TE_CHECKBREAK_CODE(code);
 
                     code = orderIter->next();
@@ -1365,11 +1406,11 @@ TAKErr FDB::queryFeaturesCount(int *value, const FeatureQueryParameters &params)
                 subsql << ")";
             }
 
-            QueryPtr result(NULL, NULL);
+            QueryPtr result(nullptr, nullptr);
 
             {
-            STLListAdapter<BindArgument> subargsAdapter(subargs);
-            code = BindArgument::query(result, *this->database, subsql.str().c_str(), subargsAdapter);
+            STLListAdapter<BindArgument> queryargs_adapter(subargs);
+            code = BindArgument::query(result, *this->database_, subsql.str().c_str(), queryargs_adapter);
             TE_CHECKBREAK_CODE(code);
             }
 
@@ -1399,17 +1440,17 @@ TAKErr FDB::queryFeaturesCount(int *value, const FeatureQueryParameters &params)
 TAKErr FDB::getFeatureSet(FeatureSetPtr_const &featureSet, const int64_t fsid) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    if (!this->database.get()) {
+    if (!this->database_.get()) {
         return TE_IllegalState;
     }
 
     std::map<int64_t, std::shared_ptr<FeatureSetDefn>>::iterator entry;
-    entry = this->featureSets.find(fsid);
-    if (entry == this->featureSets.end()) {
+    entry = this->feature_sets_.find(fsid);
+    if (entry == this->feature_sets_.end()) {
         return TE_InvalidArg;
     }
 
@@ -1442,7 +1483,7 @@ TAKErr FDB::filterNoSync(std::set<std::shared_ptr<const FeatureSetDefn>> &retval
     TAKErr code;
     size_t offsetCountdown = 0;
     size_t limit = SIZE_MAX;
-    if (params->offset) {
+    if (params && params->offset) {
         offsetCountdown = params->offset;
     }
 
@@ -1453,7 +1494,7 @@ TAKErr FDB::filterNoSync(std::set<std::shared_ptr<const FeatureSetDefn>> &retval
     }
 
     std::map<int64_t, std::shared_ptr<FeatureSetDefn>>::iterator entry;
-    for (entry = this->featureSets.begin(); entry != this->featureSets.end(); entry++) {
+    for (entry = this->feature_sets_.begin(); entry != this->feature_sets_.end(); entry++) {
         std::shared_ptr<FeatureSetDefn> fs = entry->second;
 
         bool compatible;
@@ -1501,7 +1542,7 @@ TAKErr FDB::filterNoSync(std::set<std::shared_ptr<const FeatureSetDefn>> &retval
     }
 
     std::map<int64_t, std::shared_ptr<FeatureSetDefn>>::iterator fs;
-    for (fs = this->featureSets.begin(); fs != this->featureSets.end(); fs++) {
+    for (fs = this->feature_sets_.begin(); fs != this->feature_sets_.end(); fs++) {
         bool compatible;
         code = isCompatible(&compatible, *fs->second, params);
         TE_CHECKBREAK_CODE(code);
@@ -1546,10 +1587,10 @@ TAKErr FDB::filterNoSync(std::set<std::shared_ptr<const FeatureSetDefn>> &retval
 
                     sql << " LIMIT 1";
 
-                    QueryPtr result(NULL, NULL);
+                    QueryPtr result(nullptr, nullptr);
 
                     STLListAdapter<BindArgument> argsAdapter(args);
-                    code = BindArgument::query(result, *this->database, sql.str().c_str(), argsAdapter);
+                    code = BindArgument::query(result, *this->database_, sql.str().c_str(), argsAdapter);
                     TE_CHECKBREAK_CODE(code);
                     code = result->moveToNext();
                     if (code == TE_Done) {
@@ -1591,10 +1632,10 @@ TAKErr FDB::filterNoSync(std::set<std::shared_ptr<const FeatureSetDefn>> &retval
 
                     sql << " LIMIT 1";
 
-                    QueryPtr result(NULL, NULL);
+                    QueryPtr result(nullptr, nullptr);
 
                     STLListAdapter<BindArgument> argsAdapter(args);
-                    code = BindArgument::query(result, *this->database, sql.str().c_str(), argsAdapter);
+                    code = BindArgument::query(result, *this->database_, sql.str().c_str(), argsAdapter);
                     TE_CHECKBREAK_CODE(code);
                     code = result->moveToNext();
                     if (code == TE_Done) {
@@ -1625,11 +1666,11 @@ TAKErr FDB::filterNoSync(std::set<std::shared_ptr<const FeatureSetDefn>> &retval
 TAKErr FDB::queryFeatureSets(FeatureSetCursorPtr &result) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    if (!this->database.get()) {
+    if (!this->database_.get()) {
         return TE_IllegalState;
     }
 
@@ -1639,7 +1680,7 @@ TAKErr FDB::queryFeatureSets(FeatureSetCursorPtr &result) NOTHROWS
     std::vector<std::shared_ptr<const FeatureSetDefn>> retval;
 
     std::map<int64_t, std::shared_ptr<FeatureSetDefn>>::iterator entry;
-    for (entry = this->featureSets.begin(); entry != this->featureSets.end(); entry++)
+    for (entry = this->feature_sets_.begin(); entry != this->feature_sets_.end(); entry++)
         retval.push_back(entry->second);
 
     STLVectorAdapter<std::shared_ptr<const FeatureSetDefn>> retvalAdapter(retval);
@@ -1651,11 +1692,11 @@ TAKErr FDB::queryFeatureSets(FeatureSetCursorPtr &result) NOTHROWS
 TAKErr FDB::queryFeatureSets(FeatureSetCursorPtr &result, const FeatureSetQueryParameters &params) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    if (!this->database.get()) {
+    if (!this->database_.get()) {
         return TE_IllegalState;
     }
 
@@ -1671,32 +1712,32 @@ TAKErr FDB::queryFeatureSets(FeatureSetCursorPtr &result, const FeatureSetQueryP
 TAKErr FDB::queryFeatureSetsCount(int *value) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    if (!this->database.get()) {
+    if (!this->database_.get()) {
         return TE_IllegalState;
     }
 
-    *value = this->featureSets.size();
+    *value = static_cast<int>(this->feature_sets_.size());
     return TE_Ok;
 }
 
 TAKErr FDB::queryFeatureSetsCount(int *value, const FeatureSetQueryParameters &params) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    if (!this->database.get()) {
+    if (!this->database_.get()) {
         return TE_IllegalState;
     }
 
     std::set<std::shared_ptr<const FeatureSetDefn>> fs;
     code = this->filterNoSync(fs, &params, false);
     TE_CHECKRETURN_CODE(code);
-    *value = fs.size();
+    *value = static_cast<int>(fs.size());
     return code;
 }
 
@@ -1704,11 +1745,11 @@ TAKErr FDB::queryFeatureSetsCount(int *value, const FeatureSetQueryParameters &p
 TAKErr FDB::isFeatureVisible(bool *value, const int64_t fid) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    if (!this->database.get()) {
+    if (!this->database_.get()) {
         return TE_IllegalState;
     }
 
@@ -1729,17 +1770,17 @@ TAKErr FDB::isFeatureVisible(bool *value, const int64_t fid) NOTHROWS
 TAKErr FDB::isFeatureSetVisible(bool *value, const int64_t fsid) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    if (!this->database.get()) {
+    if (!this->database_.get()) {
         return TE_IllegalState;
     }
 
     std::map<int64_t, std::shared_ptr<FeatureSetDefn>>::iterator featureSet;
-    featureSet = this->featureSets.find(fsid);
-    if (featureSet == this->featureSets.end())
+    featureSet = this->feature_sets_.find(fsid);
+    if (featureSet == this->feature_sets_.end())
         return TE_InvalidArg;
 
     code = this->validateInfo();
@@ -1762,14 +1803,175 @@ TAKErr FDB::isFeatureSetVisible(bool *value, const int64_t fsid) NOTHROWS
     return code;
 }
 
+TAKErr FDB::setFeatureSetReadOnlyImpl(const int64_t fsid, const bool readOnly) NOTHROWS 
+{
+    int dbVersion;
+    database_->getVersion(&dbVersion);
+    if (dbVersion != FEATURE_DATABASE_VERSION)
+        return TAKErr::TE_Unsupported;
+
+    TAKErr code;
+    std::map<int64_t, std::shared_ptr<FeatureSetDefn>>::iterator entry;
+
+    entry = this->feature_sets_.find(fsid);
+    if (entry == this->feature_sets_.end()) {
+        return TE_InvalidArg;
+    }
+
+    StatementPtr stmt(nullptr, nullptr);
+
+    code = this->database_->compileStatement(stmt, "UPDATE featuresets SET read_only = ? WHERE id = ?");
+    TE_CHECKRETURN_CODE(code);
+    code = stmt->bindInt(1, readOnly ? 1 : 0);
+    TE_CHECKRETURN_CODE(code);
+    code = stmt->bindLong(2, fsid);
+    TE_CHECKRETURN_CODE(code);
+
+    code = stmt->execute();
+    TE_CHECKRETURN_CODE(code);
+
+    stmt.reset();
+
+    entry->second->readOnly = readOnly;
+
+    return code;
+}
+
+TAKErr FDB::setFeatureSetsReadOnlyImpl(const FeatureSetQueryParameters &paramsRef, const bool readOnly) NOTHROWS
+{
+    TAKErr code;
+
+    const FeatureSetQueryParameters *params = &paramsRef;
+
+    std::set<std::shared_ptr<const FeatureSetDefn>> fs;
+    code = this->filterNoSync(fs, params, false);
+    TE_CHECKRETURN_CODE(code);
+
+    if (fs.empty()) {
+        // params not compatible; no-op
+        return TE_Ok;
+    }
+
+    std::ostringstream sql;
+    std::list<BindArgument> args;
+
+    sql << "UPDATE featuresets SET read_only = ?";
+    args.push_back(BindArgument(visible_ ? 1 : 0));
+
+    if (params) {
+        sql << " WHERE id IN (";
+
+        auto iter = fs.begin();
+#if 0
+        if (!iter.hasNext())
+            throw new IllegalStateException();
+#endif
+        sql << "?";
+        args.push_back(BindArgument((*iter)->fsid));
+        iter++;
+
+        while (iter != fs.end()) {
+            sql << ", ?";
+            args.push_back(BindArgument((*iter)->fsid));
+            iter++;
+        }
+        sql << ")";
+    }
+
+    StatementPtr stmt(nullptr, nullptr);
+
+    code = this->database_->compileStatement(stmt, sql.str().c_str());
+    TE_CHECKRETURN_CODE(code);
+
+    int idx = 1;
+
+    std::list<BindArgument>::iterator arg;
+    for (arg = args.begin(); arg != args.end(); arg++) {
+        code = (*arg).bind(*stmt, idx++);
+        TE_CHECKBREAK_CODE(code);
+    }
+    TE_CHECKRETURN_CODE(code);
+    code = stmt->execute();
+    TE_CHECKRETURN_CODE(code);
+
+    stmt.reset();
+
+    std::set<std::shared_ptr<const FeatureSetDefn>>::iterator defn_const;
+    for (defn_const = fs.begin(); defn_const != fs.end(); defn_const++) {
+        // XXX - consider non-const filter variant
+        std::shared_ptr<FeatureSetDefn> defn = this->feature_sets_[(*defn_const)->fsid];
+
+        defn->readOnly = readOnly;
+    }
+
+    return code;
+}
+
+TAKErr FDB::isFeatureSetReadOnly(bool *value, const int64_t fsid) NOTHROWS 
+{
+    TAKErr code(TE_Ok);
+    Lock lock(mutex_);
+    code = lock.status;
+    TE_CHECKRETURN_CODE(code);
+
+    if (!this->database_.get()) {
+        return TE_IllegalState;
+    }
+
+    std::map<int64_t, std::shared_ptr<FeatureSetDefn>>::iterator featureSet;
+    featureSet = this->feature_sets_.find(fsid);
+    if (featureSet == this->feature_sets_.end())
+        return TE_InvalidArg;
+
+    code = this->validateInfo();
+    TE_CHECKRETURN_CODE(code);
+
+    *value = featureSet->second->readOnly;
+
+    return code;
+}
+
+TAKErr FDB::isFeatureReadOnly(bool *value, const int64_t fid) NOTHROWS 
+{
+    int dbVersion;
+    database_->getVersion(&dbVersion);
+    if (dbVersion != FEATURE_DATABASE_VERSION)
+        return TAKErr::TE_Unsupported;
+
+    TAKErr code;
+    QueryPtr query(nullptr, nullptr);
+
+    code = this->database_->compileQuery(query,
+                                        "SELECT COUNT(1) FROM features LEFT JOIN featuresets ON features.fsid = featuresets.id WHERE "
+                                        "featuresets.read_only = 1 AND features.fid = ?");
+    TE_CHECKRETURN_CODE(code);
+    code = query->bindLong(1, fid);
+    TE_CHECKRETURN_CODE(code);
+
+    code = query->moveToNext();
+    if (code == TE_Done)
+        return TE_InvalidArg;
+    TE_CHECKRETURN_CODE(code);
+
+    if (value) {
+        int32_t readOnly;
+        code = query->getInt(&readOnly, 0);
+        *value = readOnly != 0;
+    }
+
+    query.reset();
+
+    return code;
+}
+
 //public synchronized boolean isAvailable() {
 TAKErr FDB::isAvailable(bool *available) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    *available = !!this->database.get();
+    *available = !!this->database_.get();
     return TE_Ok;
 }
 
@@ -1777,41 +1979,43 @@ TAKErr FDB::isAvailable(bool *available) NOTHROWS
 TAKErr FDB::refresh() NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    if (!this->database.get()) {
+    if (!this->database_.get()) {
         return TE_IllegalState;
     }
 
-    this->featureSets.clear();
+    this->feature_sets_.clear();
 
-    this->visible = false;
-    this->visibleCheck = false;
-    this->minLod = 0x7FFFFFFF;
-    this->maxLod = 0;
-    this->lodCheck = false;
+    int dbVersion;
+    this->database_->getVersion(&dbVersion);
 
-    QueryPtr result(NULL, NULL);
+    this->visible_ = false;
+    this->visible_check_ = false;
+    this->min_lod_ = 0x7FFFFFFF;
+    this->max_lod_ = 0;
+    this->lod_check_ = false;
+    this->read_only_ = false;
 
-    const char * sql =
-        "SELECT"
-        "    id,"
-        "    name, name_version,"
-        "    visible, visible_version, visible_check,"
-        "    min_lod, max_lod, lod_version, lod_check,"
-        "    type, provider"
-        " FROM featuresets";
+    const char *sql = "SELECT"
+                      "    id,"
+                      "    name, name_version,"
+                      "    visible, visible_version, visible_check,"
+                      "    min_lod, max_lod, lod_version, lod_check,"
+                      "    type, provider, read_only"
+                      " FROM featuresets";
 
-    code = this->database->query(result, sql);
+    QueryPtr result(nullptr, nullptr);
+    code = this->database_->query(result, sql);
     TE_CHECKRETURN_CODE(code);
 
     do {
         code = result->moveToNext();
         TE_CHECKBREAK_CODE(code);
 
-        std::auto_ptr<FeatureSetDefn> fs(new FeatureSetDefn());
+        std::unique_ptr<FeatureSetDefn> fs(new FeatureSetDefn());
 
         union {
             const char *s;
@@ -1848,25 +2052,28 @@ TAKErr FDB::refresh() NOTHROWS
         code = result->getString(&scratch.s, 11);
         TE_CHECKBREAK_CODE(code);
         fs->provider = scratch.s;
+        code = result->getInt(&scratch.i, 12);
+        TE_CHECKBREAK_CODE(code);
+        fs->readOnly = !!scratch.i;
 
+        this->visible_ |= fs->visible;
+        this->visible_check_ |= fs->visibleCheck;
 
-        this->visible |= fs->visible;
-        this->visibleCheck |= fs->visibleCheck;
-
-        if (fs->minLod < this->minLod)
-            this->minLod = fs->minLod;
-        if (fs->maxLod > this->maxLod)
-            this->maxLod = fs->maxLod;
-        this->lodCheck |= fs->lodCheck;
+        if (fs->minLod < this->min_lod_)
+            this->min_lod_ = fs->minLod;
+        if (fs->maxLod > this->max_lod_)
+            this->max_lod_ = fs->maxLod;
+        this->lod_check_ |= fs->lodCheck;
+        this->read_only_ |= fs->readOnly;
 
         int64_t fsid = fs->fsid;
-        this->featureSets[fsid] = std::shared_ptr<FeatureSetDefn>(fs.release());
+        this->feature_sets_[fsid] = std::shared_ptr<FeatureSetDefn>(fs.release());
     } while (true);
     if (code == TE_Done)
         code = TE_Ok;
     TE_CHECKRETURN_CODE(code);
 
-    this->infoDirty = false;
+    this->info_dirty_ = false;
     result.reset();
 
     this->dispatchDataStoreContentChangedNoSync(true);
@@ -1878,31 +2085,33 @@ TAKErr FDB::refresh() NOTHROWS
 TAKErr FDB::getUri(TAK::Engine::Port::String &value) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    if (!this->database.get())
+    if (!this->database_.get())
         return TE_IllegalState;
 
-    value = this->databaseFile;
+    value = this->database_file_;
     return TE_Ok;
 }
 
 TAKErr FDB::getMaxFeatureVersion(const int64_t fsid, int64_t* version) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    if (!this->database.get()) {
+    if (!this->database_.get()) {
         return TE_IllegalState;
     }
 
-    QueryPtr result(NULL, NULL);
+    QueryPtr result(nullptr, nullptr);
 
-    code = this->database->query(result, "SELECT max(version) FROM features WHERE fsid = ?");
-    result->bindLong(1, fsid);
+    code = this->database_->query(result, "SELECT max(version) FROM features WHERE fsid = ?");
+    TE_CHECKRETURN_CODE(code);
+    code = result->bindLong(1, fsid);
+    TE_CHECKRETURN_CODE(code);
     code = result->moveToNext();
     if (code == TE_Ok) {
         code = result->getLong(version, 0);
@@ -1916,23 +2125,23 @@ TAKErr FDB::getMaxFeatureVersion(const int64_t fsid, int64_t* version) NOTHROWS
 TAKErr FDB::close() NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    if (!this->database.get())
+    if (!this->database_.get())
         return TE_IllegalState;
     return closeImpl();
 }
 
 TAKErr FDB::closeImpl() NOTHROWS
 {
-    if (this->database.get()) {
-        this->featureSets.clear();
-        this->attrSchemaDirty = true;
-        this->idToAttrSchema.clear();
-        this->infoDirty = true;
-        this->keyToAttrSchema.clear();
-        this->database.reset();
+    if (this->database_.get()) {
+        this->feature_sets_.clear();
+        this->attr_schema_dirty_ = true;
+        this->id_to_attr_schema_.clear();
+        this->info_dirty_ = true;
+        this->key_to_attr_schema_.clear();
+        this->database_.reset();
     }
 
     return TE_Ok;
@@ -1942,9 +2151,9 @@ TAKErr FDB::closeImpl() NOTHROWS
 TAKErr FDB::setFeatureVisibleImpl(const int64_t fid, const bool visible) NOTHROWS
 {
     TAKErr code;
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
-    code = this->database->compileStatement(stmt, "UPDATE features SET visible = ? WHERE fid = ?");
+    code = this->database_->compileStatement(stmt, "UPDATE features SET visible = ? WHERE fid = ?");
 	TE_CHECKRETURN_CODE(code);
 	code = stmt->bindInt(1, visible ? 1 : 0);
     TE_CHECKRETURN_CODE(code);
@@ -1956,7 +2165,7 @@ TAKErr FDB::setFeatureVisibleImpl(const int64_t fid, const bool visible) NOTHROW
 
     stmt.reset();
 
-    this->infoDirty = true;
+    this->info_dirty_ = true;
 
     return code;
 }
@@ -2056,9 +2265,9 @@ TAKErr FDB::setFeaturesVisibleImpl(const FeatureQueryParameters &paramsRef, cons
         }
 
         // visibility for all features is being toggled
-        StatementPtr stmt(NULL, NULL);
+        StatementPtr stmt(nullptr, nullptr);
 
-        code = this->database->compileStatement(stmt, sql.str().c_str());
+        code = this->database_->compileStatement(stmt, sql.str().c_str());
         int idx = 1;
         std::list<BindArgument>::iterator arg;
         for (arg = args.begin(); arg != args.end(); arg++) {
@@ -2086,7 +2295,7 @@ TAKErr FDB::setFeaturesVisibleImpl(const FeatureQueryParameters &paramsRef, cons
             code = this->validateInfo();
             TE_CHECKRETURN_CODE(code);
 
-            std::set<std::shared_ptr<const FeatureSetDefn>>::iterator iter = fsNoCheck.begin();
+            auto iter = fsNoCheck.begin();
             std::shared_ptr<const FeatureSetDefn>defn;
             while (iter != fsNoCheck.end()) {
                 defn = *iter;
@@ -2101,7 +2310,7 @@ TAKErr FDB::setFeaturesVisibleImpl(const FeatureQueryParameters &paramsRef, cons
         if (!isnan(params->minResolution) || !isnan(params->maxResolution)) {
             this->validateInfo();
 
-            std::set<std::shared_ptr<const FeatureSetDefn>>::iterator iter = fsNoCheck.begin();
+            auto iter = fsNoCheck.begin();
             std::shared_ptr<const FeatureSetDefn>defn;
             while (iter != fsNoCheck.end()) {
                 defn = *iter;
@@ -2136,9 +2345,9 @@ TAKErr FDB::setFeaturesVisibleImpl(const FeatureQueryParameters &paramsRef, cons
                 STLListAdapter<BindArgument> argsAdapter(args);
                 where.getBindArgs(argsAdapter);
 
-                StatementPtr stmt(NULL, NULL);
+                StatementPtr stmt(nullptr, nullptr);
 
-                code = this->database->compileStatement(stmt, sql.str().c_str());
+                code = this->database_->compileStatement(stmt, sql.str().c_str());
                 TE_CHECKRETURN_CODE(code);
                 int idx = 1;
                 std::list<BindArgument>::iterator arg;
@@ -2156,7 +2365,7 @@ TAKErr FDB::setFeaturesVisibleImpl(const FeatureQueryParameters &paramsRef, cons
 
         if (!fsNoCheck.empty()) {
             // if all FS are no-check, clear the set for where building
-            if (fsNoCheck.size() == this->featureSets.size())
+            if (fsNoCheck.size() == this->feature_sets_.size())
                 fsNoCheck.clear();
 
             do {
@@ -2182,9 +2391,9 @@ TAKErr FDB::setFeaturesVisibleImpl(const FeatureQueryParameters &paramsRef, cons
                     where.getBindArgs(argsAdapter);
                 }
 
-                StatementPtr stmt(NULL, NULL);
+                StatementPtr stmt(nullptr, nullptr);
 
-                code = this->database->compileStatement(stmt, sql.str().c_str());
+                code = this->database_->compileStatement(stmt, sql.str().c_str());
                 TE_CHECKBREAK_CODE(code);
                 int idx = 1;
 
@@ -2201,7 +2410,7 @@ TAKErr FDB::setFeaturesVisibleImpl(const FeatureQueryParameters &paramsRef, cons
         }
 
         // some unknown features had visibility toggled; mark info as dirty
-        this->infoDirty = true;
+        this->info_dirty_ = true;
 
         return code;
     }
@@ -2213,14 +2422,14 @@ TAKErr FDB::setFeatureSetVisibleImpl(const int64_t fsid, const bool visible) NOT
     TAKErr code;
     std::map<int64_t, std::shared_ptr<FeatureSetDefn>>::iterator entry;
 
-    entry = this->featureSets.find(fsid);
-    if (entry == this->featureSets.end()) {
+    entry = this->feature_sets_.find(fsid);
+    if (entry == this->feature_sets_.end()) {
         return TE_InvalidArg;
     }
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
-    code = this->database->compileStatement(stmt, "UPDATE featuresets SET visible = ? WHERE id = ?");
+    code = this->database_->compileStatement(stmt, "UPDATE featuresets SET visible = ? WHERE id = ?");
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindInt(1, visible ? 1 : 0);
     TE_CHECKRETURN_CODE(code);
@@ -2267,7 +2476,7 @@ TAKErr FDB::setFeatureSetsVisibleImpl(const FeatureSetQueryParameters &paramsRef
     if (params) {
         sql << " WHERE id IN (";
 
-        std::set<std::shared_ptr<const FeatureSetDefn>>::iterator iter = fs.begin();
+        auto iter = fs.begin();
 #if 0
         if (!iter.hasNext())
             throw new IllegalStateException();
@@ -2284,9 +2493,9 @@ TAKErr FDB::setFeatureSetsVisibleImpl(const FeatureSetQueryParameters &paramsRef
         sql << ")";
     }
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
-    code = this->database->compileStatement(stmt, sql.str().c_str());
+    code = this->database_->compileStatement(stmt, sql.str().c_str());
     TE_CHECKRETURN_CODE(code);
 
     int idx = 1;
@@ -2305,7 +2514,7 @@ TAKErr FDB::setFeatureSetsVisibleImpl(const FeatureSetQueryParameters &paramsRef
     std::set<std::shared_ptr<const FeatureSetDefn>>::iterator defn_const;
     for (defn_const = fs.begin(); defn_const != fs.end(); defn_const++) {
         // XXX - consider non-const filter variant
-        std::shared_ptr<FeatureSetDefn> defn = this->featureSets[(*defn_const)->fsid];
+        std::shared_ptr<FeatureSetDefn> defn = this->feature_sets_[(*defn_const)->fsid];
 
         defn->visible = visible;
         defn->visibleVersion++;
@@ -2318,9 +2527,9 @@ TAKErr FDB::setFeatureSetsVisibleImpl(const FeatureSetQueryParameters &paramsRef
 TAKErr FDB::setFeatureVersionImpl(const int64_t featureID, const int64_t version) NOTHROWS
 {
     TAKErr code;
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
-    code = this->database->compileStatement(stmt, "UPDATE features SET version = ? WHERE fid = ?");
+    code = this->database_->compileStatement(stmt, "UPDATE features SET version = ? WHERE fid = ?");
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindLong(1, version);
     TE_CHECKRETURN_CODE(code);
@@ -2332,7 +2541,7 @@ TAKErr FDB::setFeatureVersionImpl(const int64_t featureID, const int64_t version
 
     stmt.reset();
 
-    this->infoDirty = true;
+    this->info_dirty_ = true;
 
     return code;
 }
@@ -2359,9 +2568,9 @@ TAKErr FDB::insertFeatureSetImpl(FeatureSetPtr_const *returnRef, const char *pro
 
     TAKErr code;
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
     {
-        code = this->database->compileStatement(stmt,
+        code = this->database_->compileStatement(stmt,
             "INSERT INTO featuresets"
             "    (name,"
             "     name_version,"
@@ -2373,8 +2582,9 @@ TAKErr FDB::insertFeatureSetImpl(FeatureSetPtr_const *returnRef, const char *pro
             "     lod_version,"
             "     lod_check,"
             "     type,"
-            "     provider)"
-            " VALUES (?, 1, 1, 1, 0, ?, ?, 1, 0, ?, ?)");
+            "     provider,"
+            "     read_only)"
+            " VALUES (?, 1, 1, 1, 0, ?, ?, 1, 0, ?, ?, 1)");
         TE_CHECKRETURN_CODE(code);
 
         code = stmt->bindString(1, name);
@@ -2394,7 +2604,7 @@ TAKErr FDB::insertFeatureSetImpl(FeatureSetPtr_const *returnRef, const char *pro
     }
 
     int64_t fsid;
-    code = Databases_lastInsertRowID(&fsid, *this->database);
+    code = Databases_lastInsertRowID(&fsid, *this->database_);
     TE_CHECKRETURN_CODE(code);
 
     std::shared_ptr<FeatureSetDefn> defn(new FeatureSetDefn());
@@ -2411,7 +2621,7 @@ TAKErr FDB::insertFeatureSetImpl(FeatureSetPtr_const *returnRef, const char *pro
     defn->visibleCheck = false;
     defn->visibleVersion = 1;
 
-    this->featureSets[fsid] = defn;
+    this->feature_sets_[fsid] = defn;
     if (returnRef) {
         code = this->getFeatureSetImpl(*returnRef, *defn);
         TE_CHECKRETURN_CODE(code);
@@ -2428,9 +2638,9 @@ TAKErr FDB::insertFeatureSetImpl(const int64_t fsid, const char *provider, const
 
     TAKErr code;
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
-    code = this->database->compileStatement(stmt,
+    code = this->database_->compileStatement(stmt,
         "INSERT INTO featuresets"
         "    (id,"
         "     name,"
@@ -2443,8 +2653,9 @@ TAKErr FDB::insertFeatureSetImpl(const int64_t fsid, const char *provider, const
         "     lod_version,"
         "     lod_check,"
         "     type,"
-        "     provider)"
-        " VALUES (?, ?, 1, 1, 1, 0, ?, ?, 1, 0, ?, ?)");
+        "     provider,"
+        "     read_only)"
+        " VALUES (?, ?, 1, 1, 1, 0, ?, ?, 1, 0, ?, ?, 1)");
     TE_CHECKRETURN_CODE(code);
 
     code = stmt->bindLong(1, fsid);
@@ -2479,7 +2690,7 @@ TAKErr FDB::insertFeatureSetImpl(const int64_t fsid, const char *provider, const
     defn->visibleCheck = false;
     defn->visibleVersion = 1;
 
-    this->featureSets[fsid] = defn;
+    this->feature_sets_[fsid] = defn;
 
     return code;
 }
@@ -2490,14 +2701,14 @@ TAKErr FDB::updateFeatureSetImpl(const int64_t fsid, const char *name) NOTHROWS
     TAKErr code;
 
     std::map<int64_t, std::shared_ptr<FeatureSetDefn>>::iterator defn;
-    defn = this->featureSets.find(fsid);
-    if (defn == this->featureSets.end()) {
+    defn = this->feature_sets_.find(fsid);
+    if (defn == this->feature_sets_.end()) {
         return TE_InvalidArg;
     }
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
-    code = this->database->compileStatement(stmt, "UPDATE featuresets SET name = ? WHERE id = ?");
+    code = this->database_->compileStatement(stmt, "UPDATE featuresets SET name = ? WHERE id = ?");
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindString(1, name);
     TE_CHECKRETURN_CODE(code);
@@ -2522,14 +2733,14 @@ TAKErr FDB::updateFeatureSetImpl(const int64_t fsid, const double minResolution,
     TAKErr code;
 
     std::map<int64_t, std::shared_ptr<FeatureSetDefn>>::iterator defn;
-    defn = this->featureSets.find(fsid);
-    if (defn == this->featureSets.end()) {
+    defn = this->feature_sets_.find(fsid);
+    if (defn == this->feature_sets_.end()) {
         return TE_InvalidArg;
     }
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
-    code = this->database->compileStatement(stmt, "UPDATE featuresets SET min_lod = ?, max_lod = ? WHERE id = ?");
+    code = this->database_->compileStatement(stmt, "UPDATE featuresets SET min_lod = ?, max_lod = ? WHERE id = ?");
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindInt(1, OSMUtils::mapnikTileLevel(minResolution));
     TE_CHECKRETURN_CODE(code);
@@ -2559,14 +2770,14 @@ TAKErr FDB::updateFeatureSetImpl(const int64_t fsid, const char *name, const dou
     TAKErr code;
 
     std::map<int64_t, std::shared_ptr<FeatureSetDefn>>::iterator defn;
-    defn = this->featureSets.find(fsid);
-    if (defn == this->featureSets.end()) {
+    defn = this->feature_sets_.find(fsid);
+    if (defn == this->feature_sets_.end()) {
         return TE_InvalidArg;
     }
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
-    code = this->database->compileStatement(stmt, "UPDATE featuresets SET name = ?, min_lod = ?, max_lod = ? WHERE id = ?");
+    code = this->database_->compileStatement(stmt, "UPDATE featuresets SET name = ?, min_lod = ?, max_lod = ? WHERE id = ?");
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindString(1, name);
     TE_CHECKRETURN_CODE(code);
@@ -2599,14 +2810,14 @@ TAK::Engine::Util::TAKErr FDB::updateFeatureSetImpl(const int64_t fsid, const ch
     TAK::Engine::Util::TAKErr code;
 
     std::map<int64_t, std::shared_ptr<FeatureSetDefn>>::iterator defn;
-    defn = this->featureSets.find(fsid);
-    if (defn == this->featureSets.end()) {
+    defn = this->feature_sets_.find(fsid);
+    if (defn == this->feature_sets_.end()) {
         return Util::TE_InvalidArg;
     }
 
-    DB::StatementPtr stmt(NULL, NULL);
+    DB::StatementPtr stmt(nullptr, nullptr);
 
-    code = this->database->compileStatement(stmt, "UPDATE featuresets SET name = ?, type = ?, min_lod = ?, max_lod = ? WHERE id = ?");
+    code = this->database_->compileStatement(stmt, "UPDATE featuresets SET name = ?, type = ?, min_lod = ?, max_lod = ? WHERE id = ?");
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindString(1, name);
     TE_CHECKRETURN_CODE(code);
@@ -2640,13 +2851,13 @@ TAKErr FDB::deleteFeatureSetImpl(const int64_t fsid) NOTHROWS
     TAKErr code;
     std::map<int64_t, std::shared_ptr<FeatureSetDefn>>::iterator featureSet;
 
-    featureSet = this->featureSets.find(fsid);
-    if (featureSet == this->featureSets.end())
+    featureSet = this->feature_sets_.find(fsid);
+    if (featureSet == this->feature_sets_.end())
         return TE_InvalidArg;
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
-    code = this->database->compileStatement(stmt, "DELETE FROM featuresets WHERE id = ?");
+    code = this->database_->compileStatement(stmt, "DELETE FROM featuresets WHERE id = ?");
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindLong(1, fsid);
     code = stmt->execute();
@@ -2655,7 +2866,7 @@ TAKErr FDB::deleteFeatureSetImpl(const int64_t fsid) NOTHROWS
     stmt.reset();
 
     // remove from featureSets
-    this->featureSets.erase(featureSet);
+    this->feature_sets_.erase(featureSet);
 
     return code;
 }
@@ -2664,27 +2875,24 @@ TAKErr FDB::deleteFeatureSetImpl(const int64_t fsid) NOTHROWS
 TAKErr FDB::deleteAllFeatureSetsImpl() NOTHROWS
 {
     TAKErr code;
-    this->featureSets.clear();
+    this->feature_sets_.clear();
 
     // delete features first in single statement to avoid the trigger
-    code = this->database->execute("DELETE FROM features", NULL, 0);
+    code = this->database_->execute("DELETE FROM features", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute("DELETE FROM featuresets", NULL, 0);
+    code = this->database_->execute("DELETE FROM featuresets", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
     return code;
 }
 
 //protected boolean insertFeatureImpl(int64_t fsid, String name, Geometry geom, Style style, AttributeSet attributes, Feature[] returnRef) {
-TAKErr FDB::insertFeatureImpl(FeaturePtr_const *returnRef, const int64_t fsid, const char *name, const atakmap::feature::Geometry &geom, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attributes) NOTHROWS
+TAKErr FDB::insertFeatureImpl(FeaturePtr_const *returnRef, const int64_t fsid, const char *name, const atakmap::feature::Geometry &geom, const AltitudeMode altitudeMode, const double extrude, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attributes) NOTHROWS
 {
-    Feature2 f(FeatureDataStore2::FEATURE_ID_NONE,
-               fsid,
-               name,
-               std::move(GeometryPtr_const(&geom, leaker_const<atakmap::feature::Geometry>)),
-               std::move(StylePtr_const(style, leaker_const<atakmap::feature::Style>)),
-               std::move(AttributeSetPtr_const(&attributes, leaker_const<atakmap::util::AttributeSet>)),
-               FeatureDataStore2::FEATURE_VERSION_NONE);
+    Feature2 f(
+        FeatureDataStore2::FEATURE_ID_NONE, fsid, name, std::move(GeometryPtr_const(&geom, leaker_const<atakmap::feature::Geometry>)),
+        altitudeMode, extrude, std::move(StylePtr_const(style, leaker_const<atakmap::feature::Style>)),
+        std::move(AttributeSetPtr_const(&attributes, leaker_const<atakmap::util::AttributeSet>)), FeatureDataStore2::FEATURE_VERSION_NONE);
     DefaultFeatureDefinition fDef(f);
 	int64_t fid;
     return this->insertFeatureImpl(returnRef, &fid, fsid, fDef);
@@ -2693,7 +2901,7 @@ TAKErr FDB::insertFeatureImpl(FeaturePtr_const *returnRef, const int64_t fsid, c
 //protected boolean insertFeatureImpl(int64_t fsid, FeatureDefinition def, Feature[] returnRef) {
 TAKErr FDB::insertFeatureImpl(FeaturePtr_const *returnRef, int64_t* fid, const int64_t fsid, FeatureDefinition2 &def) NOTHROWS
 {
-    if (this->featureSets.find(fsid) == this->featureSets.end())
+    if (this->feature_sets_.find(fsid) == this->feature_sets_.end())
         return TE_InvalidArg;
 
     TAKErr code;
@@ -2724,7 +2932,7 @@ TAKErr FDB::insertFeatureImpl(int64_t *fid, InsertContext &ctx, const int64_t fs
     }
     case FeatureDefinition2::StyleStyle:
     {
-        const atakmap::feature::Style *style = (const atakmap::feature::Style *)rawStyle.object;
+        const auto *style = (const atakmap::feature::Style *)rawStyle.object;
         if (style) {
             try {
                 if (style->toOGR(ogrStyle) != TE_Ok)
@@ -2761,7 +2969,7 @@ TAKErr FDB::insertFeatureImpl(int64_t *fid, InsertContext &ctx, const int64_t fs
     int64_t styleId;
     if (entry == ctx.styleIds.end()) {
         if (!ctx.insertStyleStatement.get()) {
-            code = this->database->compileStatement(ctx.insertStyleStatement, "INSERT INTO styles (coding, value) VALUES ('ogr', ?)");
+            code = this->database_->compileStatement(ctx.insertStyleStatement, "INSERT INTO styles (coding, value) VALUES ('ogr', ?)");
             TE_CHECKRETURN_CODE(code);
         }
 
@@ -2777,12 +2985,15 @@ TAKErr FDB::insertFeatureImpl(int64_t *fid, InsertContext &ctx, const int64_t fs
         code = ctx.insertStyleStatement->clearBindings();
         TE_CHECKRETURN_CODE(code);
 
-        code = Databases_lastInsertRowID(&styleId, *this->database);
+        code = Databases_lastInsertRowID(&styleId, *this->database_);
         TE_CHECKRETURN_CODE(code);
         ctx.styleIds[ogrStyle] = styleId;
     } else {
         styleId = entry->second;
     }
+
+    AltitudeMode altitudeMode = def.getAltitudeMode();
+    double extrude = def.getExtrude();
 
     int64_t attributesId = 0LL;
     const atakmap::util::AttributeSet *attribs;
@@ -2800,7 +3011,7 @@ TAKErr FDB::insertFeatureImpl(int64_t *fid, InsertContext &ctx, const int64_t fs
 
         if (codedAttribsLen) {
             if (!ctx.insertAttributesStatement.get()) {
-                code = this->database->compileStatement(ctx.insertAttributesStatement, "INSERT INTO attributes (value) VALUES (?)");
+                code = this->database_->compileStatement(ctx.insertAttributesStatement, "INSERT INTO attributes (value) VALUES (?)");
                 TE_CHECKRETURN_CODE(code);
             }
             code = ctx.insertAttributesStatement->clearBindings();
@@ -2814,12 +3025,12 @@ TAKErr FDB::insertFeatureImpl(int64_t *fid, InsertContext &ctx, const int64_t fs
             code = ctx.insertAttributesStatement->clearBindings();
             TE_CHECKRETURN_CODE(code);
 
-            code = Databases_lastInsertRowID(&attributesId, *this->database);
+            code = Databases_lastInsertRowID(&attributesId, *this->database_);
             TE_CHECKRETURN_CODE(code);
         }
     }
 
-    Statement2 *stmt(NULL);
+    Statement2 *stmt(nullptr);
 
     FeatureDefinition2::RawData rawGeom;
     code = def.getRawGeometry(&rawGeom);
@@ -2830,27 +3041,29 @@ TAKErr FDB::insertFeatureImpl(int64_t *fid, InsertContext &ctx, const int64_t fs
         case FeatureDefinition2::GeomGeometry:
         {
             if (!ctx.insertFeatureBlobStatement.get()) {
-                code = this->database
-                ->compileStatement(ctx.insertFeatureBlobStatement,
-                                   "INSERT INTO features "
-                                   "(name, " // 1
-                                   " geometry, " // 2
-                                   " style_id," // 3
-                                   " attribs_id," // 4
-                                   " visible," // 5
-                                   " visible_version," // 6
-                                   " min_lod," // 7
-                                   " max_lod," // 8
-                                   " lod_version, " // 9
-                                   " version, " // 10
-                                   " fsid) " // 11
-                                   " VALUES (?, ?, ?, ?, 1, 0, 0, ?, 0, 1, ?)");
+                code = this->database_->compileStatement(ctx.insertFeatureBlobStatement,
+                                                        "INSERT INTO features "
+                                                        "(name, "            // 1
+                                                        " geometry, "        // 2
+                                                        " style_id,"         // 3
+                                                        " attribs_id,"       // 4
+                                                        " visible,"          // 5
+                                                        " visible_version,"  // 6
+                                                        " min_lod,"          // 7
+                                                        " max_lod,"          // 8
+                                                        " lod_version, "     // 9
+                                                        " version, "         // 10
+                                                        " fsid, "            // 11
+                                                        " altitude_mode, "   // 12
+                                                        " extrude)"          // 13
+                                                        " VALUES (?, ?, ?, ?, 1, 0, 0, ?, 0, 1, ?, ?, ?)");
+                
                 TE_CHECKBREAK_CODE(code);
                 continue;
             }
             if (code == TE_Ok) {
                 stmt = ctx.insertFeatureBlobStatement.get();
-                const atakmap::feature::Geometry *geom = static_cast<const atakmap::feature::Geometry *>(rawGeom.object);
+                const auto *geom = static_cast<const atakmap::feature::Geometry *>(rawGeom.object);
                 std::ostringstream strm;
                 geom->toBlob(strm);
                 blobString = strm.str();
@@ -2861,21 +3074,23 @@ TAKErr FDB::insertFeatureImpl(int64_t *fid, InsertContext &ctx, const int64_t fs
         case FeatureDefinition2::GeomBlob:
         {
             if (!ctx.insertFeatureBlobStatement.get()) {
-                code = this->database
-                    ->compileStatement(ctx.insertFeatureBlobStatement,
-                    "INSERT INTO features "
-                    "(name, " // 1
-                    " geometry, " // 2
-                    " style_id," // 3
-                    " attribs_id," // 4
-                    " visible," // 5
-                    " visible_version," // 6
-                    " min_lod," // 7
-                    " max_lod," // 8
-                    " lod_version, " // 9
-                    " version, " // 10
-                    " fsid) " // 11
-                    " VALUES (?, ?, ?, ?, 1, 0, 0, ?, 0, 1, ?)");
+                code = this->database_->compileStatement(ctx.insertFeatureBlobStatement,
+                                                        "INSERT INTO features "
+                                                        "(name, "            // 1
+                                                        " geometry, "        // 2
+                                                        " style_id,"         // 3
+                                                        " attribs_id,"       // 4
+                                                        " visible,"          // 5
+                                                        " visible_version,"  // 6
+                                                        " min_lod,"          // 7
+                                                        " max_lod,"          // 8
+                                                        " lod_version, "     // 9
+                                                        " version, "         // 10
+                                                        " fsid, "            // 11
+                                                        " altitude_mode, "   // 12
+                                                        " extrude)"          // 13
+                                                        " VALUES (?, ?, ?, ?, 1, 0, 0, ?, 0, 1, ?, ?, ?)");
+                
                 TE_CHECKBREAK_CODE(code);
                 continue;
             }
@@ -2888,21 +3103,23 @@ TAKErr FDB::insertFeatureImpl(int64_t *fid, InsertContext &ctx, const int64_t fs
         case FeatureDefinition2::GeomWkb:
         {
             if (!ctx.insertFeatureWkbStatement.get()) {
-                code = this->database
-                    ->compileStatement(ctx.insertFeatureWkbStatement,
-                    "INSERT INTO features "
-                    "(name, " // 1
-                    " geometry, " // 2
-                    " style_id," // 3
-                    " attribs_id," // 4
-                    " visible," // 5
-                    " visible_version," // 6
-                    " min_lod," // 7
-                    " max_lod," // 8
-                    " lod_version, " // 9
-                    " version, " // 10
-                    " fsid) " // 11
-                    " VALUES (?, GeomFromWKB(?, 4326), ?, ?, 1, 0, 0, ?, 0, 1, ?)");
+                code = this->database_->compileStatement(ctx.insertFeatureWkbStatement,
+                                                        "INSERT INTO features "
+                                                        "(name, "            // 1
+                                                        " geometry, "        // 2
+                                                        " style_id,"         // 3
+                                                        " attribs_id,"       // 4
+                                                        " visible,"          // 5
+                                                        " visible_version,"  // 6
+                                                        " min_lod,"          // 7
+                                                        " max_lod,"          // 8
+                                                        " lod_version, "     // 9
+                                                        " version, "         // 10
+                                                        " fsid, "            // 11
+                                                        " altitude_mode, "   // 12
+                                                        " extrude)"          // 13
+                                                        " VALUES (?, GeomFromWKB(?, 4326), ?, ?, 1, 0, 0, ?, 0, 1, ?, ?, ?)");
+                
                 TE_CHECKBREAK_CODE(code);
                 continue;
             }
@@ -2915,21 +3132,22 @@ TAKErr FDB::insertFeatureImpl(int64_t *fid, InsertContext &ctx, const int64_t fs
         case FeatureDefinition2::GeomWkt:
         {
             if (!ctx.insertFeatureWktStatement.get()) {
-                code = this->database
-                    ->compileStatement(ctx.insertFeatureWktStatement,
-                    "INSERT INTO features "
-                    "(name, " // 1
-                    " geometry, " // 2
-                    " style_id," // 3
-                    " attribs_id," // 4
-                    " visible," // 5
-                    " visible_version," // 6
-                    " min_lod," // 7
-                    " max_lod," // 8
-                    " lod_version, " // 9
-                    " version, " // 10
-                    " fsid) " // 11
-                    " VALUES (?, GeomFromText(?, 4326), ?, ?, 1, 0, 0, ?, 0, 1, ?)");
+                code = this->database_->compileStatement(ctx.insertFeatureWktStatement,
+                                                        "INSERT INTO features "
+                                                        "(name, "            // 1
+                                                        " geometry, "        // 2
+                                                        " style_id,"         // 3
+                                                        " attribs_id,"       // 4
+                                                        " visible,"          // 5
+                                                        " visible_version,"  // 6
+                                                        " min_lod,"          // 7
+                                                        " max_lod,"          // 8
+                                                        " lod_version, "     // 9
+                                                        " version, "         // 10
+                                                        " fsid, "            // 11
+                                                        " altitude_mode, "   // 12
+                                                        " extrude)"          // 13
+                                                        " VALUES (?, GeomFromText(?, 4326), ?, ?, 1, 0, 0, ?, 0, 1, ?, ?, ?)");
                 TE_CHECKBREAK_CODE(code);
                 continue;
             }
@@ -2980,6 +3198,12 @@ TAKErr FDB::insertFeatureImpl(int64_t *fid, InsertContext &ctx, const int64_t fs
     // FSID
     code = stmt->bindLong(idx++, fsid);
     TE_CHECKRETURN_CODE(code);
+    // altitude mode
+    code = stmt->bindInt(idx++, altitudeMode);
+    TE_CHECKRETURN_CODE(code);
+    // extrude
+    code = stmt->bindDouble(idx++, extrude);
+    TE_CHECKRETURN_CODE(code);
 
     code = stmt->execute();
     TE_CHECKRETURN_CODE(code);
@@ -2988,7 +3212,7 @@ TAKErr FDB::insertFeatureImpl(int64_t *fid, InsertContext &ctx, const int64_t fs
     code = stmt->clearBindings();
     TE_CHECKRETURN_CODE(code);
 
-    code = Databases_lastInsertRowID(fid, *this->database);
+    code = Databases_lastInsertRowID(fid, *this->database_);
     TE_CHECKRETURN_CODE(code);
 
     return code;
@@ -2998,9 +3222,9 @@ TAKErr FDB::insertFeatureImpl(int64_t *fid, InsertContext &ctx, const int64_t fs
 TAKErr FDB::updateFeatureImpl(const int64_t fid, const char *name) NOTHROWS
 {
     TAKErr code;
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
-    code = this->database->compileStatement(stmt, "UPDATE features SET name = ?, version = (version+1) WHERE fid = ?");
+    code = this->database_->compileStatement(stmt, "UPDATE features SET name = ?, version = (version+1) WHERE fid = ?");
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindString(1, name);
     TE_CHECKRETURN_CODE(code);
@@ -3018,21 +3242,43 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const char *name) NOTHROWS
 TAKErr FDB::updateFeatureImpl(const int64_t fid, const atakmap::feature::Geometry &geom) NOTHROWS
 {
     TAKErr code;
-    BlobPtr wkb(NULL, NULL);
+    BlobPtr wkb(nullptr, nullptr);
 
     code = LegacyAdapters_toWkb(wkb, geom);
     TE_CHECKRETURN_CODE(code);
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
-    code = this->database->compileStatement(stmt, "UPDATE features SET geometry = GeomFromWkb(?, 4326), version = (version + 1) WHERE fid = ?");
+    code = this->database_->compileStatement(stmt, "UPDATE features SET geometry = GeomFromWkb(?, 4326), version = (version + 1) WHERE fid = ?");
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindBlob(1, wkb->first, (wkb->second - wkb->first));
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindLong(2, fid);
     TE_CHECKRETURN_CODE(code);
     code = stmt->execute();
-    TE_CHECK_CODE_LOG_DB_ERRMSG(code, this->database);
+    TE_CHECK_CODE_LOG_DB_ERRMSG(code, this->database_);
+    TE_CHECKRETURN_CODE(code);
+
+    stmt.reset();
+
+    return code;
+}
+
+TAKErr FDB::updateFeatureImpl(const int64_t fid, const TAK::Engine::Feature::AltitudeMode altitudeMode, double extrude) NOTHROWS 
+{
+    TAKErr code;
+
+    StatementPtr stmt(nullptr, nullptr);
+
+    code = this->database_->compileStatement(stmt, "UPDATE features SET altitude_mode = ?, extrude = ?, version = (version+1) WHERE fid = ?");
+    TE_CHECKRETURN_CODE(code);
+    code = stmt->bindInt(1, altitudeMode);
+    TE_CHECKRETURN_CODE(code);
+    code = stmt->bindDouble(2, extrude);
+    TE_CHECKRETURN_CODE(code);
+    code = stmt->bindLong(3, fid);
+    TE_CHECKRETURN_CODE(code);
+    code = stmt->execute();
     TE_CHECKRETURN_CODE(code);
 
     stmt.reset();
@@ -3046,7 +3292,7 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const atakmap::feature::Style *
     TAKErr code;
 
     int64_t styleId;
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
     if (style) {
         Port::String ogrStyle;
         try {
@@ -3058,7 +3304,7 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const atakmap::feature::Style *
 
         stmt.reset();
 
-        code = this->database->compileStatement(stmt, "INSERT INTO styles (coding, value) VALUES('ogr', ?)");
+        code = this->database_->compileStatement(stmt, "INSERT INTO styles (coding, value) VALUES('ogr', ?)");
         TE_CHECKRETURN_CODE(code);
         code = stmt->bindString(1, ogrStyle);
         TE_CHECKRETURN_CODE(code);
@@ -3067,7 +3313,7 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const atakmap::feature::Style *
 
         stmt.reset();
 
-        code = Databases_lastInsertRowID(&styleId, *this->database);
+        code = Databases_lastInsertRowID(&styleId, *this->database_);
         TE_CHECKRETURN_CODE(code);
     } else {
         styleId = 0LL;
@@ -3075,7 +3321,7 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const atakmap::feature::Style *
 
     stmt.reset();
 
-    code = this->database->compileStatement(stmt, "UPDATE features SET style_id = ?, version = (version + 1) WHERE fid = ?");
+    code = this->database_->compileStatement(stmt, "UPDATE features SET style_id = ?, version = (version + 1) WHERE fid = ?");
     TE_CHECKRETURN_CODE(code);
     if (styleId > 0LL)
         code = stmt->bindLong(1, styleId);
@@ -3107,12 +3353,12 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const atakmap::util::AttributeS
     code = ctx.codedAttribs.get(&blob, &blobLen);
     TE_CHECKRETURN_CODE(code);
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
     stmt.reset();
 
-    QueryPtr result(NULL, NULL);
-    code = this->database->compileQuery(result, "SELECT attribs_id FROM features WHERE fid = ?");
+    QueryPtr result(nullptr, nullptr);
+    code = this->database_->compileQuery(result, "SELECT attribs_id FROM features WHERE fid = ?");
     TE_CHECKRETURN_CODE(code);
     code = result->bindLong(1u, fid);
     TE_CHECKRETURN_CODE(code);
@@ -3128,7 +3374,7 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const atakmap::util::AttributeS
     int64_t attribsId;
     if (currentAttribsId == 0LL) {
         stmt.reset();
-        code = this->database->compileStatement(stmt, "INSERT INTO attributes (value) VALUES(?)");
+        code = this->database_->compileStatement(stmt, "INSERT INTO attributes (value) VALUES(?)");
         TE_CHECKRETURN_CODE(code);
         code = stmt->bindBlob(1, blob, blobLen);
         TE_CHECKRETURN_CODE(code);
@@ -3137,11 +3383,11 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const atakmap::util::AttributeS
 
         stmt.reset();
         
-        code = Databases_lastInsertRowID(&attribsId, *this->database);
+        code = Databases_lastInsertRowID(&attribsId, *this->database_);
         TE_CHECKRETURN_CODE(code);
     } else {
         stmt.reset();
-        code = this->database->compileStatement(stmt, "UPDATE attributes SET value = ? WHERE id = ?");
+        code = this->database_->compileStatement(stmt, "UPDATE attributes SET value = ? WHERE id = ?");
         TE_CHECKRETURN_CODE(code);
         code = stmt->bindBlob(1, blob, blobLen);
         TE_CHECKRETURN_CODE(code);
@@ -3155,7 +3401,7 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const atakmap::util::AttributeS
         attribsId = currentAttribsId;
     }
 
-    code = this->database->compileStatement(stmt, "UPDATE features SET attribs_id = ?, version = (version + 1) WHERE fid = ?");
+    code = this->database_->compileStatement(stmt, "UPDATE features SET attribs_id = ?, version = (version + 1) WHERE fid = ?");
     TE_CHECKRETURN_CODE(code);
 
     code = stmt->bindLong(1, attribsId);
@@ -3175,7 +3421,7 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const char *name, const atakmap
 {
     TAKErr code;
 
-    BlobPtr wkb(NULL, NULL);
+    BlobPtr wkb(nullptr, nullptr);
     code = LegacyAdapters_toWkb(wkb, geom);
     TE_CHECKRETURN_CODE(code);
 
@@ -3189,7 +3435,7 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const char *name, const atakmap
     code = ctx.codedAttribs.get(&attribsBlob, &attribsBlobLen);
     TE_CHECKRETURN_CODE(code);
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
     int64_t styleId;
     if (style) {
@@ -3203,7 +3449,7 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const char *name, const atakmap
 
         stmt.reset();
 
-        code = this->database->compileStatement(stmt, "INSERT INTO styles(coding,value) VALUES('ogr', ?)");
+        code = this->database_->compileStatement(stmt, "INSERT INTO styles(coding,value) VALUES('ogr', ?)");
         TE_CHECKRETURN_CODE(code);
         code = stmt->bindString(1, ogrStyle);
         TE_CHECKRETURN_CODE(code);
@@ -3212,14 +3458,14 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const char *name, const atakmap
 
         stmt.reset();
 
-        code = Databases_lastInsertRowID(&styleId, *this->database);
+        code = Databases_lastInsertRowID(&styleId, *this->database_);
         TE_CHECKRETURN_CODE(code);
     } else {
         styleId = 0LL;
     }
     
-    QueryPtr result(NULL, NULL);
-    code = this->database->compileQuery(result, "SELECT attribs_id FROM features WHERE fid = ?");
+    QueryPtr result(nullptr, nullptr);
+    code = this->database_->compileQuery(result, "SELECT attribs_id FROM features WHERE fid = ?");
     TE_CHECKRETURN_CODE(code);
     code = result->bindLong(1u, fid);
     TE_CHECKRETURN_CODE(code);
@@ -3235,7 +3481,7 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const char *name, const atakmap
     int64_t attribsId;
     if (currentAttribsId == 0LL) {
         stmt.reset();
-        code = this->database->compileStatement(stmt, "INSERT INTO attributes (value) VALUES(?)");
+        code = this->database_->compileStatement(stmt, "INSERT INTO attributes (value) VALUES(?)");
         TE_CHECKRETURN_CODE(code);
         code = stmt->bindBlob(1, attribsBlob, attribsBlobLen);
         TE_CHECKRETURN_CODE(code);
@@ -3244,11 +3490,11 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const char *name, const atakmap
 
         stmt.reset();
         
-        code = Databases_lastInsertRowID(&attribsId, *this->database);
+        code = Databases_lastInsertRowID(&attribsId, *this->database_);
         TE_CHECKRETURN_CODE(code);
     } else {
         stmt.reset();
-        code = this->database->compileStatement(stmt, "UPDATE attributes SET value = ? WHERE id = ?");
+        code = this->database_->compileStatement(stmt, "UPDATE attributes SET value = ? WHERE id = ?");
         TE_CHECKRETURN_CODE(code);
         code = stmt->bindBlob(1, attribsBlob, attribsBlobLen);
         TE_CHECKRETURN_CODE(code);
@@ -3264,7 +3510,7 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const char *name, const atakmap
 
     stmt.reset();
 
-    code = this->database->compileStatement(stmt, "UPDATE features SET name = ?, geometry = GeomFromWkb(?, 4326), style_id = ?, attribs_id = ?, version = version + 1 WHERE fid = ?");
+    code = this->database_->compileStatement(stmt, "UPDATE features SET name = ?, geometry = GeomFromWkb(?, 4326), style_id = ?, attribs_id = ?, version = version + 1 WHERE fid = ?");
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindString(1, name);
     TE_CHECKRETURN_CODE(code);
@@ -3291,9 +3537,9 @@ TAKErr FDB::updateFeatureImpl(const int64_t fid, const char *name, const atakmap
 TAKErr FDB::deleteFeatureImpl(const int64_t fid) NOTHROWS
 {
     TAKErr code;
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
-    code = this->database->compileStatement(stmt, "DELETE FROM features WHERE fid = ?");
+    code = this->database_->compileStatement(stmt, "DELETE FROM features WHERE fid = ?");
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindLong(1, fid);
     TE_CHECKRETURN_CODE(code);
@@ -3312,12 +3558,12 @@ TAKErr FDB::deleteAllFeaturesImpl(const int64_t fsid) NOTHROWS
 {
     TAKErr code;
 
-    if (this->featureSets.find(fsid) == this->featureSets.end())
+    if (this->feature_sets_.find(fsid) == this->feature_sets_.end())
         return TE_InvalidArg;
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
-    code = this->database->compileStatement(stmt, "DELETE FROM features WHERE fsid = ?");
+    code = this->database_->compileStatement(stmt, "DELETE FROM features WHERE fsid = ?");
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindLong(1, fsid);
     TE_CHECKRETURN_CODE(code);
@@ -3433,7 +3679,7 @@ TAKErr FDB::buildParamsWhereClauseNoCheck(bool *emptyResults, const FeatureQuery
         code = appendSpatialFilter(*params.spatialFilter,
             whereClause,
             indexedSpatialFilter &&
-            this->spatialIndexEnabled);
+            this->spatial_index_enabled_);
         TE_CHECKRETURN_CODE(code);
     }
 
@@ -3597,7 +3843,7 @@ TAKErr FDB::buildParamsWhereClauseCheck(bool *emptyResults, const FeatureQueryPa
         code = appendSpatialFilter(*params.spatialFilter,
             whereClause,
             indexedSpatialFilter &&
-            this->spatialIndexEnabled);
+            this->spatial_index_enabled_);
         TE_CHECKRETURN_CODE(code);
     }
 
@@ -3673,26 +3919,26 @@ TAKErr FDB::encodeAttributes(FDB &impl, InsertContext &ctx, const atakmap::util:
 
     code = dos.writeInt(1); // version
     TE_CHECKRETURN_CODE(code);
-    code = dos.writeInt(keys.size()); // number of entries
+    code = dos.writeInt(static_cast<int32_t>(keys.size())); // number of entries
     TE_CHECKRETURN_CODE(code);
 
     std::vector<const char *>::iterator key;
     for (key = keys.begin(); key != keys.end(); key++) {
         AttributeSpec *schemaSpec;
         KeyAttrSchemaMap::iterator schemaSpecEntry;
-        schemaSpecEntry = impl.keyToAttrSchema.find(*key);
-        if (schemaSpecEntry == impl.keyToAttrSchema.end()) {
+        schemaSpecEntry = impl.key_to_attr_schema_.find(*key);
+        if (schemaSpecEntry == impl.key_to_attr_schema_.end()) {
             std::shared_ptr<AttributeSpec> spec;
-            code = insertAttrSchema(spec, ctx, *impl.database, *key, metadata);
+            code = insertAttrSchema(spec, ctx, *impl.database_, *key, metadata);
             TE_CHECKBREAK_CODE(code);
 
-            impl.keyToAttrSchema[*key] = spec;
-            impl.idToAttrSchema[spec->id] = spec;
+            impl.key_to_attr_schema_[*key] = spec;
+            impl.id_to_attr_schema_[spec->id] = spec;
 
             schemaSpec = spec.get();
         } else {
             AttributeSet::Type type = metadata.getAttributeType(*key);
-            std::map<AttributeSet::Type, int>::iterator typeCode = ATTRIB_TYPES.find(type);
+            auto typeCode = ATTRIB_TYPES.find(type);
             if (typeCode == ATTRIB_TYPES.end()) {
                 Logger::log(Logger::Warning, ABS_TAG  ": Skipping attribute %s with unsupported type %d", key, type);
                 continue;
@@ -3706,11 +3952,11 @@ TAKErr FDB::encodeAttributes(FDB &impl, InsertContext &ctx, const atakmap::util:
                 secondarySchema = schemaSpec->secondaryDefs.find(typeCode->second);
                 if (secondarySchema == schemaSpec->secondaryDefs.end()) {
                     std::shared_ptr<AttributeSpec> secondarySpec;
-                    code = insertAttrSchema(secondarySpec, ctx, *impl.database, *key, metadata);
+                    code = insertAttrSchema(secondarySpec, ctx, *impl.database_, *key, metadata);
                     TE_CHECKBREAK_CODE(code);
 
                     schemaSpec->secondaryDefs[typeCode->second]  = secondarySpec;
-                    impl.idToAttrSchema[secondarySpec->id] = secondarySpec;
+                    impl.id_to_attr_schema_[secondarySpec->id] = secondarySpec;
 
                     schemaSpec = secondarySpec.get();
                 }
@@ -3750,7 +3996,7 @@ TAKErr FDB::decodeAttributes(AttributeSetPtr_const &result, const uint8_t *blob,
         return TE_Ok;
     }
 
-    std::auto_ptr<MemoryInput2> dis(new MemoryInput2());
+    std::unique_ptr<MemoryInput2> dis(new MemoryInput2());
     code = dis->open(blob, blobLen);
     TE_CHECKRETURN_CODE(code);
 
@@ -3779,7 +4025,7 @@ TAKErr FDB::decodeAttributesImpl(AttributeSetPtr_const &result , DataInput2 &dis
     code = dis.readInt(&numKeys); // number of entries
     TE_CHECKRETURN_CODE(code);
 
-    std::auto_ptr<AttributeSet> retval(new AttributeSet());
+    std::unique_ptr<AttributeSet> retval(new AttributeSet());
 
 
     for (int i = 0; i < numKeys; i++) {
@@ -3798,7 +4044,7 @@ TAKErr FDB::decodeAttributesImpl(AttributeSetPtr_const &result , DataInput2 &dis
             code = schemaSpec->second->coder.decode(*retval, dis, schemaSpec->second->key);
             TE_CHECKBREAK_CODE(code);
         } else {
-            AttributeSetPtr_const nested(NULL, NULL);
+            AttributeSetPtr_const nested(nullptr, nullptr);
             code = decodeAttributesImpl(nested, dis, schema);
             TE_CHECKBREAK_CODE(code);
             retval->setAttributeSet(schemaSpec->second->key, *nested);
@@ -3849,7 +4095,7 @@ TAKErr FDB::AttributeSpec::initCoders() NOTHROWS
     CLAZZ_TO_CODER[AttributeSet::DOUBLE] = AttributeCoder{ encodeDouble, decodeDouble };
     CLAZZ_TO_CODER[AttributeSet::STRING] = AttributeCoder{ encodeString, decodeString };
     CLAZZ_TO_CODER[AttributeSet::BLOB] = AttributeCoder{ encodeBinary, decodeBinary };
-    CLAZZ_TO_CODER[AttributeSet::ATTRIBUTE_SET] = AttributeCoder{ NULL, NULL };
+    CLAZZ_TO_CODER[AttributeSet::ATTRIBUTE_SET] = AttributeCoder{ nullptr, nullptr };
     CLAZZ_TO_CODER[AttributeSet::INT_ARRAY] = AttributeCoder{ encodeIntArray, decodeIntArray };
     CLAZZ_TO_CODER[AttributeSet::LONG_ARRAY] = AttributeCoder{ encodeLongArray, decodeLongArray };
     CLAZZ_TO_CODER[AttributeSet::DOUBLE_ARRAY] = AttributeCoder{ encodeDoubleArray, decodeDoubleArray };
@@ -3866,19 +4112,21 @@ TAKErr FDB::AttributeSpec::initCoders() NOTHROWS
 /**************************************************************************/
 // FeatureCursorImpl
 
-FDB::FeatureCursorImpl::FeatureCursorImpl(FDB &owner_, QueryPtr &&filter_, const int idCol_, const int fsidCol_, const int versionCol_, const int nameCol_, const int geomCol_, const int styleCol_, const int attribsCol_) NOTHROWS :
-    CursorWrapper2(std::move(filter_)),
-    owner(owner_),
-    idCol(idCol_),
-    fsidCol(fsidCol_),
-    nameCol(nameCol_),
-    geomCol(geomCol_),
-    styleCol(styleCol_),
-    attribsCol(attribsCol_),
-    versionCol(versionCol_),
-    rowFeature(NULL, NULL),
-    rowAttribs(NULL, NULL)
-{}
+FDB::FeatureCursorImpl::FeatureCursorImpl(FDB &owner_, QueryPtr &&filter_, const int idCol_, const int fsidCol_, const int versionCol_,
+                                          const int nameCol_, const int geomCol_, const int styleCol_, const int attribsCol_,
+                                          const int altitudeModeCol_, const int extrudeCol_) NOTHROWS : CursorWrapper2(std::move(filter_)),
+                                                                                                        owner(owner_),
+                                                                                                        idCol(idCol_),
+                                                                                                        fsidCol(fsidCol_),
+                                                                                                        nameCol(nameCol_),
+                                                                                                        geomCol(geomCol_),
+                                                                                                        styleCol(styleCol_),
+                                                                                                        attribsCol(attribsCol_),
+                                                                                                        versionCol(versionCol_),
+                                                                                                        altitudeModeCol(altitudeModeCol_),
+                                                                                                        extrudeCol(extrudeCol_),
+                                                                                                        rowFeature(nullptr, nullptr),
+                                                                                                        rowAttribs(nullptr, nullptr) {}
 
 TAKErr FDB::FeatureCursorImpl::getId(int64_t *value) NOTHROWS
 {
@@ -3893,11 +4141,12 @@ TAKErr FDB::FeatureCursorImpl::getVersion(int64_t *value) NOTHROWS
 TAKErr FDB::FeatureCursorImpl::getRawGeometry(FeatureDefinition2::RawData *value) NOTHROWS
 {
     if (this->geomCol < 0) {
-        value->binary.value = NULL;
+        value->binary.value = nullptr;
         value->binary.len = 0;
         return TE_Ok;
     }
     return this->filter->getBlob(&value->binary.value, &value->binary.len, this->geomCol);
+
 }
 
 FeatureDefinition2::GeometryEncoding FDB::FeatureCursorImpl::getGeomCoding() NOTHROWS
@@ -3905,10 +4154,30 @@ FeatureDefinition2::GeometryEncoding FDB::FeatureCursorImpl::getGeomCoding() NOT
     return FeatureDefinition2::GeomBlob;
 }
 
+AltitudeMode FDB::FeatureCursorImpl::getAltitudeMode() NOTHROWS 
+{
+    if (this->altitudeModeCol == -1) {
+        return AltitudeMode::TEAM_ClampToGround;
+    }
+    int value;
+    this->filter->getInt(&value, this->altitudeModeCol);
+    return (AltitudeMode)value;
+}
+
+double FDB::FeatureCursorImpl::getExtrude() NOTHROWS 
+{
+    if (this->extrudeCol == -1) {
+        return 0.0;
+    }
+    double value;
+    this->filter->getDouble(&value, this->extrudeCol);
+    return value;
+}
+
 TAKErr FDB::FeatureCursorImpl::getName(const char **value) NOTHROWS
 {
     if (this->nameCol < 0) {
-        *value = NULL;
+        *value = nullptr;
         return TE_Ok;
     }
     return this->filter->getString(value, this->nameCol);
@@ -3922,7 +4191,7 @@ FeatureDefinition2::StyleEncoding FDB::FeatureCursorImpl::getStyleCoding() NOTHR
 TAKErr FDB::FeatureCursorImpl::getRawStyle(RawData *value) NOTHROWS
 {
     if (this->styleCol < 0) {
-        value->binary.value = NULL;
+        value->binary.value = nullptr;
         value->binary.len = 0;
         return TE_Ok;
     }
@@ -3935,7 +4204,7 @@ TAKErr FDB::FeatureCursorImpl::getAttributes(const atakmap::util::AttributeSet *
     TAKErr code;
 
     if (this->attribsCol < 0) {
-        *value = NULL;
+        *value = nullptr;
         return TE_Ok;
     }
 
@@ -3950,12 +4219,12 @@ TAKErr FDB::FeatureCursorImpl::getAttributes(const atakmap::util::AttributeSet *
     TE_CHECKRETURN_CODE(code);
 
     // XXX -
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, owner.mutex);
+    Lock lock(owner.mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
     code = owner.validateAttributeSchema();
     TE_CHECKRETURN_CODE(code);
-    code = decodeAttributes(this->rowAttribs, attribsBlob, attribsBlobLen, owner.idToAttrSchema);
+    code = decodeAttributes(this->rowAttribs, attribsBlob, attribsBlobLen, owner.id_to_attr_schema_);
     TE_CHECKRETURN_CODE(code);
 
     *value = this->rowAttribs.get();
@@ -4003,7 +4272,7 @@ TAKErr FDB::FeatureCursorImpl::moveToNext() NOTHROWS
 
 FDB::FeatureSetCursorImpl::FeatureSetCursorImpl(FDB &owner_, TAK::Engine::Port::Collection<std::shared_ptr<const FeatureSetDefn>> &rows_) NOTHROWS :
     owner(owner_),
-    rowData(NULL, NULL),
+    rowData(nullptr, nullptr),
     pos(-1)
 {
     // XXX - violates coding standard
@@ -4018,7 +4287,7 @@ TAKErr FDB::FeatureSetCursorImpl::get(const FeatureSet2 **featureSet) NOTHROWS
 {
     TAKErr code;
 
-    if (pos < 0 || pos >= rows.size())
+    if (pos < 0 || static_cast<std::size_t>(pos) >= rows.size())
         return TE_IllegalState;
 
     code = TE_Ok;
@@ -4040,13 +4309,13 @@ TAKErr FDB::FeatureSetCursorImpl::moveToNext() NOTHROWS
 }
 
 FDB::InsertContext::InsertContext() NOTHROWS :
-    insertFeatureBlobStatement(NULL, NULL),
-    insertFeatureWktStatement(NULL, NULL),
-    insertFeatureWkbStatement(NULL, NULL),
-    insertStyleStatement(NULL, NULL),
-    insertAttributesStatement(NULL, NULL),
-    insertAttributeSchemaStatement(NULL, NULL),
-    insertGeomArg(NULL, 0u)
+    insertFeatureBlobStatement(nullptr, nullptr),
+    insertFeatureWktStatement(nullptr, nullptr),
+    insertFeatureWkbStatement(nullptr, nullptr),
+    insertStyleStatement(nullptr, nullptr),
+    insertAttributesStatement(nullptr, nullptr),
+    insertAttributeSchemaStatement(nullptr, nullptr),
+    insertGeomArg(nullptr, 0u)
 {
     codedAttribs.open(512);
 }
@@ -4070,28 +4339,28 @@ TAKErr FDB::Builder::createIndices() NOTHROWS
 TAKErr FDB::Builder::beginBulkInsertion() NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, db.mutex);
+    Lock lock(db.mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    if (!db.database)
+    if (!db.database_)
         return TE_IllegalState;
-    return db.database->beginTransaction();
+    return db.database_->beginTransaction();
 }
 
 TAKErr FDB::Builder::endBulkInsertion(const bool commit) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, db.mutex);
+    Lock lock(db.mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    if (!db.database)
+    if (!db.database_)
         return TE_IllegalState;
 
     if (commit) {
-        code = db.database->setTransactionSuccessful();
+        code = db.database_->setTransactionSuccessful();
         TE_CHECKRETURN_CODE(code);
     }
-    code = db.database->endTransaction();
+    code = db.database_->endTransaction();
     TE_CHECKRETURN_CODE(code);
 
     return code;
@@ -4100,7 +4369,7 @@ TAKErr FDB::Builder::endBulkInsertion(const bool commit) NOTHROWS
 TAKErr FDB::Builder::insertFeatureSet(int64_t *fsid, const char *provider, const char *type, const char *name, const double minResolution, const double maxResolution) NOTHROWS
 {
     TAKErr code;
-    FeatureSetPtr_const inserted(NULL, NULL);
+    FeatureSetPtr_const inserted(nullptr, nullptr);
 
     code = db.insertFeatureSetImpl(&inserted, provider, type, name, minResolution, maxResolution);
     TE_CHECKRETURN_CODE(code);
@@ -4116,12 +4385,12 @@ TAKErr FDB::Builder::insertFeatureSet(const int64_t fsid, const char *provider, 
 
 TAKErr FDB::Builder::insertFeature(int64_t* fid, const int64_t fsid, FeatureDefinition2 &def) NOTHROWS
 {
-    return db.insertFeatureImpl(NULL, fid, fsid, def);
+    return db.insertFeatureImpl(nullptr, fid, fsid, def);
 }
 
-TAKErr FDB::Builder::insertFeature(const int64_t fsid, const char *name, const atakmap::feature::Geometry &geometry, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attribs) NOTHROWS
+TAKErr FDB::Builder::insertFeature(const int64_t fsid, const char *name, const atakmap::feature::Geometry &geometry, const AltitudeMode altitudeMode, const double extrude, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attribs) NOTHROWS
 {
-    return db.insertFeatureImpl(NULL, fsid, name, geometry, style, attribs);
+    return db.insertFeatureImpl(nullptr, fsid, name, geometry, altitudeMode, extrude, style, attribs);
 }
 
 TAKErr FDB::Builder::setFeatureSetVisible(const int64_t fsid, const bool& visible) NOTHROWS
@@ -4206,7 +4475,7 @@ TAKErr appendSpatialFilter(const atakmap::feature::Geometry &filter, WhereClause
 
     whereClause.beginCondition();
     if (spatialFilterEnabled) {
-        BlobPtr filterBlob(NULL, NULL);
+        BlobPtr filterBlob(nullptr, nullptr);
         code = LegacyAdapters_toBlob(filterBlob, filter);
         TE_CHECKRETURN_CODE(code);
 
@@ -4264,7 +4533,7 @@ TAKErr encodeString(DataOutput2 &dos, const atakmap::util::AttributeSet &attr, c
     const char *value = attr.getString(key);
     const std::size_t valLen = strlen(value);
     if (valLen > 0) {
-        code = dos.writeInt(strlen(value));
+        code = dos.writeInt(static_cast<int32_t>(strlen(value)));
         TE_CHECKRETURN_CODE(code);
         code = dos.writeString(value);
         TE_CHECKRETURN_CODE(code);
@@ -4288,7 +4557,7 @@ TAKErr decodeString(atakmap::util::AttributeSet &attr, DataInput2 &dos, const ch
         memset(value.get(), 0x00, len + 1);
         code = dos.readString(value.get(), &numRead, len);
         TE_CHECKRETURN_CODE(code);
-        if (numRead < len)
+        if (numRead < static_cast<std::size_t>(len))
             return TE_IO;
         try {
             attr.setString(key, value.get());
@@ -4297,7 +4566,7 @@ TAKErr decodeString(atakmap::util::AttributeSet &attr, DataInput2 &dos, const ch
         }
     } else {
         try {
-            attr.setString(key, NULL);
+            attr.setString(key, nullptr);
         } catch (...) {
             return TE_Err;
         }
@@ -4311,7 +4580,7 @@ TAKErr encodeBinary(DataOutput2 &dos, const atakmap::util::AttributeSet &attr, c
     if (!attr.containsAttribute(key)) return TE_InvalidArg;
     atakmap::util::AttributeSet::Blob value = attr.getBlob(key);
     if (value.first) {
-        code = dos.writeInt(value.second - value.first);
+        code = dos.writeInt(static_cast<int32_t>(value.second - value.first));
         TE_CHECKRETURN_CODE(code);
         code = dos.write(value.first, (value.second - value.first));
         TE_CHECKRETURN_CODE(code);
@@ -4333,7 +4602,7 @@ TAKErr decodeBinary(atakmap::util::AttributeSet &attr, DataInput2 &dos, const ch
         value.reset(new uint8_t[len]);
         code = dos.read(value.get(), &numRead, len);
         TE_CHECKRETURN_CODE(code);
-        if (numRead < len)
+        if (numRead < static_cast<std::size_t>(len))
             return TE_IO;
         try {
             attr.setBlob(key, atakmap::util::AttributeSet::Blob(value.get(), value.get()+len));
@@ -4361,7 +4630,7 @@ TAKErr decodeBinary(atakmap::util::AttributeSet &attr, DataInput2 &dos, const ch
             TE_CHECKRETURN_CODE(code); \
         } else { \
             std::size_t len = (value.second-value.first); \
-            code = dos.writeInt(len); \
+            code = dos.writeInt(static_cast<int32_t>(len)); \
             TE_CHECKRETURN_CODE(code); \
             for(std::size_t i = 0; i < len; i++) { \
                 code = dos.write##name(value.first[i]); \
@@ -4379,7 +4648,7 @@ TAKErr decodeBinary(atakmap::util::AttributeSet &attr, DataInput2 &dos, const ch
         TE_CHECKRETURN_CODE(code); \
         if(len > 0) { \
             array_ptr<type> value(new type[len]); \
-            for(std::size_t i = 0; i < len; i++) { \
+            for(std::size_t i = 0; i < static_cast<std::size_t>(len); i++) { \
                 code = dos.read##name(value.get()+i); \
                 TE_CHECKBREAK_CODE(code); \
             } \
@@ -4411,14 +4680,14 @@ TAKErr encodeStringArray(DataOutput2 &dos, const atakmap::util::AttributeSet &at
     TAKErr code;
     if (!attr.containsAttribute(key)) return TE_InvalidArg;
     atakmap::util::AttributeSet::StringArray arr = attr.getStringArray(key);
-    int length = (arr.first) ? (arr.second-arr.first) : -1;
+    auto length = static_cast<int32_t>((arr.first) ? (arr.second-arr.first) : -1);
     code = dos.writeInt(length);
     TE_CHECKRETURN_CODE(code);
     for (int i = 0; i < length; i++) {
         const char *value = arr.first[i];
         const std::size_t valLen = strlen(value);
         if (valLen > 0) {
-            code = dos.writeInt(valLen);
+            code = dos.writeInt(static_cast<int32_t>(valLen));
             TE_CHECKBREAK_CODE(code);
             code = dos.writeString(value);
             TE_CHECKBREAK_CODE(code);
@@ -4476,14 +4745,14 @@ TAKErr encodeBinaryArray(DataOutput2 &dos, const atakmap::util::AttributeSet &at
     TAKErr code;
     if (!attr.containsAttribute(key)) return TE_InvalidArg;
     atakmap::util::AttributeSet::BlobArray arr = attr.getBlobArray(key);
-    int length = (arr.first) ? (arr.second - arr.first) : -1;
+    auto length = static_cast<int32_t>((arr.first) ? (arr.second - arr.first) : -1);
     code = dos.writeInt(length);
     TE_CHECKRETURN_CODE(code);
     for (int i = 0; i < length; i++) {
         atakmap::util::AttributeSet::Blob value = arr.first[i];
         const std::size_t valLen = (value.second-value.first);
         if (valLen > 0) {
-            code = dos.writeInt(valLen);
+            code = dos.writeInt(static_cast<int32_t>(valLen));
             TE_CHECKBREAK_CODE(code);
             code = dos.write(value.first, valLen);
             TE_CHECKBREAK_CODE(code);
@@ -4562,6 +4831,16 @@ TAKErr DefaultFeatureDefinition::getRawGeometry(FeatureDefinition2::RawData *val
 FeatureDefinition2::GeometryEncoding DefaultFeatureDefinition::getGeomCoding() NOTHROWS
 {
     return FeatureDefinition2::GeomGeometry;
+}
+
+AltitudeMode DefaultFeatureDefinition::getAltitudeMode() NOTHROWS 
+{
+    return impl.getAltitudeMode();
+}
+
+double DefaultFeatureDefinition::getExtrude() NOTHROWS 
+{
+    return impl.getExtrude();
 }
 
 TAKErr DefaultFeatureDefinition::getName(const char **value) NOTHROWS
