@@ -15,7 +15,7 @@ public class BloodHoundMapComponent extends AbstractMapComponent {
 
     public static final String TAG = "BloodHoundMapComponent";
 
-    private BloodHoundButtonTool _buttonTool;
+    private BloodHoundTool _buttonTool;
     private BloodHoundLinkReceiver _linkReceiver;
     private BloodHoundLinkManager _linkManager;
 
@@ -28,7 +28,7 @@ public class BloodHoundMapComponent extends AbstractMapComponent {
 
         // Tool that displays bloodhound data for any 2 markers in the
         // bottom-left corner widget
-        _buttonTool = new BloodHoundButtonTool(view);
+        _buttonTool = new BloodHoundTool(view);
     }
 
     @Override

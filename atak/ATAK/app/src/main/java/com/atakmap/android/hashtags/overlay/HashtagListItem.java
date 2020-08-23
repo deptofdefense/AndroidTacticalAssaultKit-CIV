@@ -13,6 +13,7 @@ import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.hierarchy.action.Visibility2;
 import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem2;
 import com.atakmap.app.R;
+import com.atakmap.coremap.locale.LocaleUtil;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -44,7 +45,7 @@ public class HashtagListItem extends AbstractHierarchyListItem2 implements
 
     @Override
     public String getUID() {
-        return _tag.toLowerCase();
+        return _tag.toLowerCase(LocaleUtil.getCurrent());
     }
 
     @Override
@@ -107,7 +108,8 @@ public class HashtagListItem extends AbstractHierarchyListItem2 implements
     public Set<HierarchyListItem> find(String terms) {
         Set<HierarchyListItem> ret = new HashSet<>();
         for (HierarchyListItem item : getChildren()) {
-            if (item.getTitle().toLowerCase().contains(terms))
+            if (item.getTitle().toLowerCase(LocaleUtil.getCurrent())
+                    .contains(terms))
                 ret.add(item);
         }
         return ret;

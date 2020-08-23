@@ -18,6 +18,7 @@ import android.view.WindowManager;
 import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -36,22 +37,26 @@ import com.atakmap.map.layer.raster.osm.OSMDroidMosaicDatabase;
 import com.atakmap.map.opengl.GLMapRenderer;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.projection.ECEFProjection;
+import com.atakmap.map.projection.EquirectangularMapProjection;
 import com.atakmap.map.projection.MapProjectionDisplayModel;
 import com.atakmap.map.projection.Projection;
 import com.atakmap.map.projection.ProjectionFactory;
-import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
+import com.atakmap.math.PointD;
 import com.atakmap.opengl.GLSLUtil;
+import com.atakmap.util.Collections2;
+import com.atakmap.util.ConfigOptions;
+import com.atakmap.util.ReadWriteLock;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.RandomAccess;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -117,6 +122,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  *       
  */
 public class AtakMapView extends ViewGroup {
+
+    static {
+        EngineLibrary.initialize();
+    }
 
     public enum InverseMode {
         Model,
@@ -197,6 +206,7 @@ public class AtakMapView extends ViewGroup {
 
     /**
      * View bounds resize listener
+     *
      */
     public static interface OnMapViewResizedListener {
         /**
@@ -267,10 +277,9 @@ public class AtakMapView extends ViewGroup {
         WindowManager windowManager = (WindowManager) context
                 .getSystemService(Context.WINDOW_SERVICE);
         windowManager.getDefaultDisplay().getMetrics(displayMetrics);
-        this.displayDPI = displayMetrics.densityDpi;
-        this.displayResolution = ((1.0d / this.displayDPI) * (1.0d / INCHES_PER_METER));
 
-        this.fullEquitorialExtentPixels = (WGS84_EQUITORIAL_CIRCUMFERENCE * INCHES_PER_METER * this.displayDPI);
+        final double displayDpi = Math.sqrt(displayMetrics.xdpi*displayMetrics.ydpi);
+        this.fullEquitorialExtentPixels = Globe.getFullEquitorialExtentPixels(displayDpi);
 
         //flagged during scan - can reenable if needed for testing
         //String gdalDataPath = System.getProperty("GDAL_DATA_DIR", context.getFilesDir().getAbsolutePath() + File.separator + "GDAL");
@@ -278,24 +287,31 @@ public class AtakMapView extends ViewGroup {
         String gdalDataPath = context.getFilesDir().getAbsolutePath() + File.separator + "GDAL";
         GdalLibrary.init(new File(gdalDataPath));
 
-        this.setProjection(ProjectionFactory.getProjection(4326));
-
+        double minMapScale = 2.5352504279048383E-9d;
+        double maxMapScale = 0.01d;
         if (attrs != null) {
-            this.minMapScale = _getAttributeDouble(attrs, null, "minMapScale", this.minMapScale);
-            this.maxMapScale = _getAttributeDouble(attrs, null, "maxMapScale", this.maxMapScale);
+            minMapScale = _getAttributeDouble(attrs, null, "minMapScale", minMapScale);
+            maxMapScale = _getAttributeDouble(attrs, null, "maxMapScale", maxMapScale);
         }
 
-        final double minMapScale180 = Math.max(displayMetrics.heightPixels+2d, displayMetrics.widthPixels+2d)/fullEquitorialExtentPixels;
-        this.minMapScale = Math.max(minMapScale180, minMapScale);
+        final double pad = 2d;
+        final double minMapScale180 = Math.max(displayMetrics.heightPixels+pad, displayMetrics.widthPixels+pad)/fullEquitorialExtentPixels;
+        minMapScale = Math.max(minMapScale180, minMapScale);
 
-        this.layersChangedListeners = Collections.newSetFromMap(new IdentityHashMap<OnLayersChangedListener, Boolean>());
-        this.layers = new ArrayList<Layer>();
-
+        this.globe = new Globe(displayMetrics.widthPixels, displayMetrics.heightPixels, displayDpi, minMapScale, maxMapScale);
+        if(this.globe.pointer.raw == 0L)
+            throw new OutOfMemoryError();
+        this.rwlock = this.globe.rwlock;
+        Globe.setMaxMapTilt(this.globe.pointer.raw, 89d);
         controller = new AtakMapController(this);
 
-        _latitude = (this.getMinLatitude() + this.getMaxLatitude()) / 2d;
-        _longitude = (this.getMinLongitude() + this.getMaxLongitude()) / 2d;
-        this.mapScale = this.minMapScale;
+        this.callbackForwarder = new CallbackForwarder(this);
+        this.globe.addOnContinuousScrollEnabledChangedListener(this.callbackForwarder);
+        this.globe.addOnElevationExaggerationFactorChangedListener(this.callbackForwarder);
+        this.globe.addOnLayersChangedListener(this.callbackForwarder);
+        this.globe.addOnMapMovedListener(this.callbackForwarder);
+        this.globe.addOnMapProjectionChangedListener(this.callbackForwarder);
+        this.globe.addOnMapViewResizedListener(this.callbackForwarder);
 
         unscaledDensity = getResources().getDisplayMetrics().density / 1.5f; // 1.5 is the density of the
                                                                      // SII, which our sizes were
@@ -341,29 +357,33 @@ public class AtakMapView extends ViewGroup {
         
         this.initGLSurface();
 
-        tMapSceneModel = new MapSceneModel(this);
+        this.renderer.setDisplayMode(MapRenderer2.DisplayMode.Flat);
+
+        this.tMapSceneModel = this.renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
     }
     
     protected void initGLSurface() {
         GLSLUtil.setContext(this.getContext());
 
+        ConfigOptions.setOption("glmapview.tilt-skew-offset", 1.0);
+        ConfigOptions.setOption("glmapview.tilt-skew-mult", 2.5);
+
         this.glSurface = new GLMapSurface(this, new GLMapRenderer());
         this.addView(this.glSurface);
-        
+
+        this.renderer = this.glSurface.getGLMapView();
+        this.renderSurface = this.renderer.getRenderContext().getRenderSurface();
+
+
         this.addOnDisplayFlagsChangedListener(this.glSurface);
 
         final GLMapView glMapView = this.glSurface.getGLMapView();
-        this.addOnMapMovedListener (glMapView);
-        this.addOnMapProjectionChangedListener(glMapView);
-        this.addOnLayersChangedListener(glMapView);
-        this.addOnElevationExaggerationFactorChangedListener(glMapView);
-        this.addOnContinuousScrollEnabledChangedListener(glMapView);
-        
-        this.getMapController ().addOnFocusPointChangedListener (glMapView);
+        // start GLMapView to sync with the globe and start receiving events
+        glMapView.start();
     }
 
     protected void registerServiceProviders() {
-        // XXX - feature / raster providers registered in in Layers.registerAll? 
+        // XXX - feature / raster providers registered in in Layers.registerAll?
         
         // FeatureDataSource
 
@@ -380,6 +400,10 @@ public class AtakMapView extends ViewGroup {
         Layers.registerAll();
     }
 
+    public final Globe getGlobe() {
+        return this.globe;
+    }
+
     /** @deprecated use {@link #updateView(double, double, double, double, double, boolean)} */
     public void updateView (double latitude,
                              double longitude,
@@ -387,7 +411,7 @@ public class AtakMapView extends ViewGroup {
                              double rotation,
                              boolean animate)
       {
-        this.updateView(latitude, longitude, scale, rotation, _tilt, animate);
+        this.updateView(latitude, longitude, scale, rotation, getMapTilt(), animate);
       }
 
     /**
@@ -404,40 +428,15 @@ public class AtakMapView extends ViewGroup {
                               double scale,
                               double rotation,
                               double tilt,
-                              boolean animate)
-      {
-        _latitude = MathUtils.clamp (Double.isNaN (latitude) ? 0.0 : latitude,
-                           getMinLatitude (),
-                           Math.min(getMaxLatitude (), 90d-(1d-scale)));
-        _longitude = MathUtils.clamp (Double.isNaN (longitude) ? 0.0 : longitude,
-                            getMinLongitude (),
-                            getMaxLongitude ());
-        mapScale = MathUtils.clamp (Double.isNaN (scale) ? 0.0 : scale,
-                          getMinMapScale (),
-                          getMaxMapScale ());
-        if (Double.isNaN (rotation))
-          {
-            rotation = 0.0;
-          }
-        else if (rotation < 0.0)
-          {
-            rotation = 360.0 + rotation % 360.0;
-          }
-        else if (rotation >= 360.0)
-          {
-            rotation %= 360.0;
-          }
-        _rotation = rotation;
-        if(Double.isNaN(tilt)) {
-            tilt = 0d;
-        } else {
-            tilt = MathUtils.clamp(tilt, 0d, 89d);
-        }
+                              boolean animate) {
 
-        _tilt = tilt;
-        _animate = animate;
-        tMapSceneModel = new MapSceneModel(this);
-        this.onMapMoved();
+        final MapRenderer2 renderer = this.glSurface.getGLMapView();
+        renderer.lookAt(new GeoPoint(latitude, longitude), Globe.getMapResolution(getDisplayDpi(), scale), rotation, tilt, animate);
+        this.tMapSceneModel = renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
+    }
+
+    public double getDisplayDpi() {
+        return renderSurface.getDpi();
     }
 
     /**************************************************************************/
@@ -477,10 +476,10 @@ public class AtakMapView extends ViewGroup {
      * exceptions being thrown.
      */
     public void destroy() {
-        _onMapViewResized.clear();
-        _onMapMoved.clear();
+        this.callbackForwarder._onMapViewResized.clear();
+        this.callbackForwarder._onMapMoved.clear();
         _onActionBarToggled.clear();
-        _onMapProjectionChanged.clear();
+        this.callbackForwarder._onMapProjectionChanged.clear();
         
         this.removeAllLayers();
 
@@ -489,15 +488,29 @@ public class AtakMapView extends ViewGroup {
             this.removeOnDisplayFlagsChangedListener(this.glSurface);
             
             final GLMapView glMapView = this.glSurface.getGLMapView();
-
-            this.removeOnMapMovedListener (glMapView);
-            this.removeOnMapProjectionChangedListener(glMapView);
-            this.removeOnElevationExaggerationFactorChangedListener(glMapView);
-            this.removeOnContinuousScrollEnabledChangedListener(glMapView);
-            this.removeOnLayersChangedListener(glMapView);
+            // stop GLMapView to stop receiving further events
+            glMapView.stop();
 
             this.glSurface.dispose();
             this.glSurface = null;
+        }
+
+        this.rwlock.acquireWrite();
+        try {
+            if(this.globe.pointer.raw == 0L)
+                return;
+
+            this.globe.removeOnContinuousScrollEnabledChangedListener(this.callbackForwarder);
+            this.globe.removeOnElevationExaggerationFactorChangedListener(this.callbackForwarder);
+            this.globe.removeOnLayersChangedListener(this.callbackForwarder);
+            this.globe.removeOnMapMovedListener(this.callbackForwarder);
+            this.globe.removeOnMapProjectionChangedListener(this.callbackForwarder);
+            this.globe.removeOnMapViewResizedListener(this.callbackForwarder);
+
+            // destroy the pointer
+            this.globe.dispose();
+        } finally {
+            this.rwlock.releaseWrite();
         }
     }
 
@@ -509,9 +522,8 @@ public class AtakMapView extends ViewGroup {
      * 
      * @param layer The layer to be added
      */
-    public synchronized void addLayer(Layer layer) {
-        this.layers.add(layer);
-        this.dispatchOnLayerAddedNoSync(layer);
+    public void addLayer(Layer layer) {
+        this.globe.addLayer(layer);
     }
     
     /**
@@ -527,8 +539,7 @@ public class AtakMapView extends ViewGroup {
      *                                      {@link AtakMapView#getNumLayers()}.
      */
     public synchronized void addLayer(int position, Layer layer) {
-        this.layers.add(position, layer);
-        this.dispatchOnLayerAddedNoSync(layer);
+        this.globe.addLayer(position, layer);
     }
     
     /**
@@ -537,8 +548,7 @@ public class AtakMapView extends ViewGroup {
      * @param layer The layer to remove.
      */
     public synchronized void removeLayer(Layer layer) {
-        if(this.layers.remove(layer))
-            this.dispatchOnLayerRemovedNoSync(Collections.singleton(layer));
+        this.globe.removeLayer(layer);
     }
     
     /**
@@ -546,19 +556,7 @@ public class AtakMapView extends ViewGroup {
      * map.
      */
     public synchronized void removeAllLayers() {
-        LinkedList<Layer> scratch = new LinkedList<Layer>();
-        if(this.layers instanceof RandomAccess) {
-            scratch.addAll(this.layers);
-            this.layers.clear();
-        } else {
-            Iterator<Layer> iter = this.layers.iterator();
-            while(iter.hasNext()) {
-                scratch.add(iter.next());
-                iter.remove();
-            }
-        }
-        this.dispatchOnLayerRemovedNoSync(scratch);
-        scratch.clear();
+        this.globe.removeAllLayers();
     }
     
     /**
@@ -573,23 +571,8 @@ public class AtakMapView extends ViewGroup {
      *                                      or equal to
      *                                      {@link AtakMapView#getNumLayers()}.
      */
-    public synchronized void setLayerPosition(Layer layer, int position) {
-        final int oldPos = this.layers.indexOf(layer);
-        if(oldPos < 0)
-            throw new IllegalArgumentException();
-        if(position == oldPos)
-            return;
-
-        this.layers.remove(oldPos);
-        if(position > oldPos) {
-            this.layers.add(position-1, layer);
-        } else if(position < oldPos) {
-            this.layers.add(position, layer);
-        } else {
-            throw new IllegalStateException();
-        }
-        
-        this.dispatchOnLayerPositionChanged(layer, oldPos, position);
+    public void setLayerPosition(Layer layer, int position) {
+        this.globe.setLayerPosition(layer, position);
     }
     
     /**
@@ -598,8 +581,8 @@ public class AtakMapView extends ViewGroup {
      * 
      * @return  The number of layers.
      */
-    public synchronized int getNumLayers() {
-        return this.layers.size();
+    public int getNumLayers() {
+        return this.globe.getNumLayers();
     }
     
     /**
@@ -615,8 +598,8 @@ public class AtakMapView extends ViewGroup {
      *                                      or equal to
      *                                      {@link AtakMapView#getNumLayers()}.
      */
-    public synchronized Layer getLayer(int position) {
-        return this.layers.get(position);
+    public Layer getLayer(int position) {
+        return this.globe.getLayer(position);
     }
     
     /**
@@ -625,8 +608,8 @@ public class AtakMapView extends ViewGroup {
      * 
      * @return  A list of the current layers
      */
-    public synchronized List<Layer> getLayers() {
-        return new LinkedList<Layer>(this.layers);
+    public List<Layer> getLayers() {
+        return this.globe.getLayers();
     }
 
     /**
@@ -635,7 +618,7 @@ public class AtakMapView extends ViewGroup {
      * @param l The listener to add
      */
     public synchronized void addOnLayersChangedListener(OnLayersChangedListener l) {
-        this.layersChangedListeners.add(l);
+        this.callbackForwarder.layersChangedListeners.add(l);
     }
     
     /**
@@ -644,22 +627,22 @@ public class AtakMapView extends ViewGroup {
      * @param l The listener to remove
      */
     public synchronized void removeOnLayersChangedListener(OnLayersChangedListener l) {
-        this.layersChangedListeners.remove(l);
+        this.callbackForwarder.layersChangedListeners.remove(l);
     }
     
     protected void dispatchOnLayerAddedNoSync(Layer layer) {
-        for(OnLayersChangedListener listener : this.layersChangedListeners)
+        for(OnLayersChangedListener listener : this.callbackForwarder.layersChangedListeners)
             listener.onLayerAdded(this, layer);
     }
     
     protected void dispatchOnLayerRemovedNoSync(Collection<Layer> layers) {
         for(Layer layer : layers)
-            for(OnLayersChangedListener listener : this.layersChangedListeners)
+            for(OnLayersChangedListener listener : this.callbackForwarder.layersChangedListeners)
                 listener.onLayerRemoved(this, layer);
     }
     
     protected void dispatchOnLayerPositionChanged(Layer l, int oldPos, int newPos) {
-        for(OnLayersChangedListener listener : this.layersChangedListeners)
+        for(OnLayersChangedListener listener : this.callbackForwarder.layersChangedListeners)
             listener.onLayerPositionChanged(this, l, oldPos, newPos);
     }
     
@@ -713,7 +696,10 @@ public class AtakMapView extends ViewGroup {
      * @return [-90, 90]
      */
     public double getLatitude() {
-        return _latitude;
+        final GeoPointMetaData gpm = getPoint();
+        if(gpm == null)
+            return 0d;
+        return gpm.get().getLatitude();
     }
 
     /**
@@ -722,7 +708,10 @@ public class AtakMapView extends ViewGroup {
      * @return [-180, 180]
      */
     public double getLongitude() {
-        return _longitude;
+        final GeoPointMetaData gpm = getPoint();
+        if(gpm == null)
+            return 0d;
+        return gpm.get().getLongitude();
     }
 
     /**
@@ -731,7 +720,14 @@ public class AtakMapView extends ViewGroup {
      * @return  The map center
      */
     public GeoPointMetaData getPoint() {
-        return GeoPointMetaData.wrap(new GeoPoint(_latitude, _longitude));
+        final MapSceneModel scene = tMapSceneModel;
+        if(scene.mapProjection.getSpatialReferenceID() == 4326 && scene.camera.elevation == -90d)
+            return GeoPointMetaData.wrap(new GeoPoint(scene.camera.target.y, scene.camera.target.x));
+
+        GeoPoint geo = scene.inverse(new PointF(scene.focusx, scene.focusy), null);
+        if(geo == null)
+            geo = GeoPoint.ZERO_POINT;
+        return GeoPointMetaData.wrap(geo);
     }
 
     /**
@@ -740,7 +736,7 @@ public class AtakMapView extends ViewGroup {
      * @return
      */
     public double getMinLatitude() {
-        return this.projection.getMinLatitude();
+        return this.globe.getMinLatitude();
     }
 
     /**
@@ -749,7 +745,7 @@ public class AtakMapView extends ViewGroup {
      * @return
      */
     public double getMaxLatitude() {
-        return this.projection.getMaxLatitude();
+        return this.globe.getMaxLatitude();
     }
 
     /**
@@ -758,7 +754,7 @@ public class AtakMapView extends ViewGroup {
      * @return
      */
     public double getMinLongitude() {
-        return this.projection.getMinLongitude();
+        return this.globe.getMinLongitude();
     }
 
     /**
@@ -767,7 +763,7 @@ public class AtakMapView extends ViewGroup {
      * @return
      */
     public double getMaxLongitude() {
-        return this.projection.getMaxLongitude();
+        return this.globe.getMaxLongitude();
     }
 
     /**
@@ -776,19 +772,19 @@ public class AtakMapView extends ViewGroup {
      * @return  The current map rotation, in degrees
      */
     public double getMapRotation() {
-        return _rotation;
+        return tMapSceneModel.camera.azimuth;
     }
 
     public double getMapTilt() {
-        return _tilt;
+        return 90d+tMapSceneModel.camera.elevation;
     }
 
     public void addOnMapViewResizedListener(OnMapViewResizedListener l) {
-        _onMapViewResized.add(l);
+        this.callbackForwarder._onMapViewResized.add(l);
     }
 
     public void removeOnMapViewResizedListener(OnMapViewResizedListener l) {
-        _onMapViewResized.remove(l);
+        this.callbackForwarder._onMapViewResized.remove(l);
     }
 
     public void addOnActionBarToggledListener(OnActionBarToggledListener l) {
@@ -808,14 +804,10 @@ public class AtakMapView extends ViewGroup {
         {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_SCROLL: {
-                    if (event.getAxisValue(MotionEvent.AXIS_VSCROLL) < 0.0f)
-                    {
-                        getMapController().zoomTo (this.mapScale / 2, true);
-                    }
-                    else
-                    {
-                        getMapController().zoomTo (this.mapScale * 2, true);
-                    }
+                    final double mapScale = Globe.getMapScale(getDisplayDpi(), tMapSceneModel.gsd);
+                    final double dir = (event.getAxisValue(MotionEvent.AXIS_VSCROLL) < 0.0f) ? 0.5d : 2d;
+
+                    getMapController().zoomTo (mapScale*dir, true);
                     return true;
                 }
             }
@@ -864,19 +856,19 @@ public class AtakMapView extends ViewGroup {
     }
 
     public void addOnMapMovedListener(OnMapMovedListener l) {
-        _onMapMoved.add(l);
+        this.callbackForwarder._onMapMoved.add(l);
     }
 
     public void removeOnMapMovedListener(OnMapMovedListener l) {
-        _onMapMoved.remove(l);
+        this.callbackForwarder._onMapMoved.remove(l);
     }
 
     public void addOnMapProjectionChangedListener(OnMapProjectionChangedListener l) {
-        _onMapProjectionChanged.add(l);
+        this.callbackForwarder._onMapProjectionChanged.add(l);
     }
 
     public void removeOnMapProjectionChangedListener(OnMapProjectionChangedListener l) {
-        _onMapProjectionChanged.remove(l);
+        this.callbackForwarder._onMapProjectionChanged.remove(l);
     }
 
     @Override
@@ -886,28 +878,18 @@ public class AtakMapView extends ViewGroup {
             if (child != null)
                 child.layout(l, t, r, b);
         }
-
-        this.controller.setDefaultFocusPoint(this.getWidth() / 2,
-                this.getHeight() / 2 + (getDefaultActionBarHeight() / 2));
-        tMapSceneModel = new MapSceneModel(this);
-        onMapViewResized();
     }
 
     protected void onMapViewResized() {
-        for (OnMapViewResizedListener l : _onMapViewResized) {
-            l.onMapViewResized(this);
-        }
+        this.callbackForwarder.onMapViewResized(this.globe);
     }
 
     protected void onMapMoved() {
-        for (OnMapMovedListener l : _onMapMoved) {
-            l.onMapMoved(this, _animate);
-        }
+        this.callbackForwarder.onMapMoved(this.globe, this.renderer.isAnimating());
     }
 
     protected void onMapProjectionChanged() {
-        for (OnMapProjectionChangedListener l : _onMapProjectionChanged)
-            l.onMapProjectionChanged(this);
+        this.callbackForwarder.onMapProjectionChanged(this.globe);
     }
 
     public void onActionBarToggled(int height) {
@@ -921,9 +903,19 @@ public class AtakMapView extends ViewGroup {
         DEFAULT_ACTION_BAR_HEIGHT = height;
         onActionBarToggled(height);
 
-        // Default focus point depends on default AB height, so update now
-        this.controller.setDefaultFocusPoint(this.getWidth() / 2,
-                this.getHeight() / 2 + (getDefaultActionBarHeight() / 2));
+        this.rwlock.acquireRead();
+        try {
+            if(this.globe.pointer.raw == 0L)
+                throw new IllegalStateException();
+            // Default focus point depends on default AB height, so update now
+            float offy = (getDefaultActionBarHeight() / 2f);
+            if(renderer.getDisplayOrigin() == MapRenderer2.DisplayOrigin.Lowerleft)
+                offy *= -1f;
+            renderer.setFocusPointOffset(0, offy);
+            tMapSceneModel = renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
+        } finally {
+            this.rwlock.releaseRead();
+        }
     }
 
     /**
@@ -990,7 +982,15 @@ public class AtakMapView extends ViewGroup {
      * @return The current projection.
      */
     public Projection getProjection() {
-        return this.projection;
+        switch(this.renderer.getDisplayMode()) {
+            case Flat :
+                return EquirectangularMapProjection.INSTANCE;
+            case Globe:
+                return ECEFProjection.INSTANCE;
+            default :
+                throw new IllegalStateException();
+
+        }
     }
 
     /**
@@ -998,23 +998,20 @@ public class AtakMapView extends ViewGroup {
      * 
      * @param proj The new projection to be used.
      */
-    public synchronized void setProjection(Projection proj) {
-        if (this.projection == proj
-                || (this.projection != null && this.projection.getSpatialReferenceID() == proj
-                        .getSpatialReferenceID()))
-            return;
+    public synchronized boolean setProjection(Projection proj) {
+        if(proj == null)
+            return false;
+        final int srid = proj.getSpatialReferenceID();
+        if(srid == 4326) {
+            this.renderer.setDisplayMode(MapRenderer2.DisplayMode.Flat);
+        } else if(srid == 4978) {
+            this.renderer.setDisplayMode(MapRenderer2.DisplayMode.Globe);
+        } else {
 
-        if(!MapProjectionDisplayModel.isSupported(proj.getSpatialReferenceID())) {
-            Log.w("AtakMapView", "SRID " + proj.getSpatialReferenceID() + " not supported for display");
-            return;
+            return false;
         }
-
-        this.projection = proj;
-
-        // null check to account for initialization call to setProjection
-        if (controller != null)
-              tMapSceneModel = new MapSceneModel(this);
-        this.onMapProjectionChanged();        
+        tMapSceneModel = renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
+        return true;
     }
 
     /**
@@ -1023,7 +1020,7 @@ public class AtakMapView extends ViewGroup {
      * @return The current scale of the map.
      */
     public double getMapScale() {
-        return this.mapScale;
+        return Globe.getMapScale(renderSurface.getDpi(), tMapSceneModel.gsd);
     }
 
     /**
@@ -1032,7 +1029,7 @@ public class AtakMapView extends ViewGroup {
      * @return  The minimum allowed scale for the map.
      */
     public double getMinMapScale() {
-        return this.minMapScale;
+        return this.globe.getMinMapScale();
     }
 
     /**
@@ -1041,7 +1038,7 @@ public class AtakMapView extends ViewGroup {
      * @return  The maximum allowed scale for the map.
      */
     public double getMaxMapScale() {
-        return this.maxMapScale;
+        return this.globe.getMaxMapScale();
     }
 
     /**
@@ -1051,8 +1048,10 @@ public class AtakMapView extends ViewGroup {
      * @return The number of meters per pixel.
      */
     public double getMapResolution() {
-        return this.getMapResolution(this.mapScale);
+        return tMapSceneModel.gsd;
     }
+
+
 
     /**
      * Returns the equitorial pixel resolution, in meters, at the specified map
@@ -1061,8 +1060,10 @@ public class AtakMapView extends ViewGroup {
      * @return The number of meters per pixel.
      */
     public double getMapResolution(double mapScale) {
-        return (this.displayResolution / mapScale);
+        return Globe.getMapResolution(renderSurface.getDpi(), mapScale);
     }
+
+
 
     /**
      * Converts a map resolution value, in meters per pixel, to map scale.
@@ -1072,48 +1073,40 @@ public class AtakMapView extends ViewGroup {
      * @return  The equivalent map scale
      */
     public double mapResolutionAsMapScale(double resolution) {
-        return (this.displayResolution / resolution);
+        return Globe.getMapScale(this.renderSurface.getDpi(), resolution);
     }
 
+
     public synchronized void setElevationExaggerationFactor(double factor) {
-        if(factor == this.elevationExaggerationFactor)
-            return;
-        
-        this.elevationExaggerationFactor = factor;
-        for(OnElevationExaggerationFactorChangedListener l : this.elevationExaggerationFactorListeners)
-            l.onTerrainExaggerationFactorChanged(this, this.elevationExaggerationFactor);
+        this.renderer.setElevationExaggerationFactor(factor);
     }
-    
-    public synchronized double getElevationExaggerationFactor() {
-        return this.elevationExaggerationFactor;
+
+    public double getElevationExaggerationFactor() {
+        return this.renderer.getElevationExaggerationFactor();
     }
-    
+
     public synchronized void addOnElevationExaggerationFactorChangedListener(OnElevationExaggerationFactorChangedListener l) {
-        this.elevationExaggerationFactorListeners.add(l);
+        this.callbackForwarder.elevationExaggerationFactorListeners.add(l);
     }
     
     public synchronized void removeOnElevationExaggerationFactorChangedListener(OnElevationExaggerationFactorChangedListener l) {
-        this.elevationExaggerationFactorListeners.remove(l);
+        this.callbackForwarder.elevationExaggerationFactorListeners.remove(l);
     }
     
-    public synchronized void setContinuousScrollEnabled(boolean enabled) {
-        if(enabled == this.continuousScrollEnabled)
-            return;
-        this.continuousScrollEnabled = enabled;
-        for(OnContinuousScrollEnabledChangedListener l : this.continuousScrollEnabledListeners)
-            l.onContinuousScrollEnabledChanged(this, this.continuousScrollEnabled);
+    public void setContinuousScrollEnabled(boolean enabled) {
+        this.globe.setContinuousScrollEnabled(enabled);
     }
     
-    public synchronized boolean isContinuousScrollEnabled() {
-        return this.continuousScrollEnabled;
+    public boolean isContinuousScrollEnabled() {
+        return this.globe.isContinuousScrollEnabled();
     }
     
     public synchronized void addOnContinuousScrollEnabledChangedListener(OnContinuousScrollEnabledChangedListener l) {
-        this.continuousScrollEnabledListeners.add(l);
+        this.callbackForwarder.continuousScrollEnabledListeners.add(l);
     }
     
     public synchronized void removeOnContinuousScrollEnabledChangedListener(OnContinuousScrollEnabledChangedListener l) {
-        this.continuousScrollEnabledListeners.remove(l);
+        this.callbackForwarder.continuousScrollEnabledListeners.remove(l);
     }
     
     /**
@@ -1169,32 +1162,46 @@ public class AtakMapView extends ViewGroup {
     }
     
     public GeoPointMetaData inverse(PointF p, InverseMode mode) {
+        GeoPointMetaData gpm = new GeoPointMetaData();
+        inverseImpl(p, mode, gpm);
+        return gpm;
+    }
+
+    protected MapRenderer2.InverseResult inverseImpl(PointF p, InverseMode mode, GeoPointMetaData gpm) {
+        if(this.renderer == null)
+            return MapRenderer2.InverseResult.None;
+
+        int hints;
         switch(mode) {
+            case RayCast:
+                // XXX - legacy only intersected with terrain here
+                hints = MapRenderer2.HINT_RAYCAST_IGNORE_SURFACE_MESH;
+                break;
             case Model :
-                return inverseGeom(p);
-            case RayCast :
-                return projectToTerrain(p.x, p.y);
+                // ignore surface and terrain meshes
+                hints = MapRenderer2.HINT_RAYCAST_IGNORE_SURFACE_MESH|MapRenderer2.HINT_RAYCAST_IGNORE_TERRAIN_MESH;
+                break;
             default :
                 throw new IllegalStateException();
         }
+
+        GeoPoint lla = GeoPoint.createMutable();
+        final MapRenderer2.InverseResult result = this.renderer.inverse(
+                new PointD(p.x, p.y, 0d),
+                lla,
+                MapRenderer2.InverseMode.RayCast,
+                hints,
+                MapRenderer2.DisplayOrigin.UpperLeft);
+
+        if(result != MapRenderer2.InverseResult.None) {
+            lla.set(lla.getLatitude(), GeoCalculations.wrapLongitude(lla.getLongitude()), lla.getAltitude(), lla.getAltitudeReference(), lla.getCE(), lla.getLE());
+            gpm.set(lla);
+        }
+        return result;
     }
 
     public GeoPointMetaData inverse(float x, float y, InverseMode mode) {
         return this.inverse(new PointF(x, y), mode);
-    }
-
-    private GeoPointMetaData inverseGeom(PointF p) {
-        GeoPoint retval = GeoPoint.createMutable();
-        if(tMapSceneModel.inverse(p, retval) == null)
-            return new GeoPointMetaData();
-
-        if(this.continuousScrollEnabled) {
-            if(retval.getLongitude() < -180d)
-                retval.set(retval.getLatitude(), retval.getLongitude()+360d);
-            else if(retval.getLongitude() > 180d)
-                retval.set(retval.getLatitude(), retval.getLongitude()-360d);
-        }
-        return GeoPointMetaData.wrap(retval);
     }
 
     /**
@@ -1208,53 +1215,6 @@ public class AtakMapView extends ViewGroup {
      */
     public GeoPointMetaData inverse(float x, float y) {
         return this.inverse(new PointF(x, y), InverseMode.RayCast);
-    }
-
-    /**
-     * This method will project the point onto the map returning the intersection
-     * with the point which will also include the elevation.
-     *
-     * @param x
-     *             The x screen coordinate to project
-     * @param y
-     *             The y screen coordinate to project
-     * @return The geo coordinates on the map that the screen coordinate was projected to
-     */
-    private GeoPointMetaData projectToTerrain( final float x, final float y )
-    {
-        GeoPointMetaData point = null;
-        boolean oldLookup = true;
-        if( getMapTilt( ) > 0 )
-        {
-            GLMapView mapView = null;
-            GLMapSurface surface = getGLSurface( );
-            if( surface != null )
-            {
-                mapView = surface.getGLMapView( );
-            }
-
-            if( mapView != null )
-            {
-                point = projectToTerrainImpl( x, y, mapView );
-                oldLookup = false;
-            }
-        }
-        if( oldLookup )
-        {
-            point = inverseGeom( new PointF(x, y) );
-        }
-
-        return point;
-    }
-
-    private GeoPointMetaData projectToTerrainImpl( final float x, final float y, GLMapView mapView ) {
-        MapSceneModel sceneModel = getSceneModel( );
-        GeoPointMetaData gpm = new GeoPointMetaData();
-        GeoPoint hit = mapView.intersectWithTerrain2(sceneModel, x, y);
-        if( hit != null )
-            return gpm.set(hit);
-        else
-            return gpm.set(sceneModel.inverse(new PointF(x, y), null));
     }
 
     /**
@@ -1331,36 +1291,141 @@ public class AtakMapView extends ViewGroup {
             this.resume();
         }
     }
+
+    /**
+     * @deprecated place holder pending better API
+     */
+    public GeoPoint getRenderElevationAdjustedPoint(final GeoPoint point) {
+        if (point == null || this.getMapTilt() == 0d)
+            return point;
+
+        final GLMapView glview = this.getGLSurface().getGLMapView();
+
+        // XXX - not really ideal to reach down into the renderer, but the hit
+        //       test should be totally deferred to the renderer
+        double alt = point.getAltitude();
+        if (!point.isAltitudeValid())
+            alt = glview
+                    .getElevation(point.getLatitude(), point.getLongitude());
+        final double el = GeoPoint.isAltitudeValid(alt) ? alt : 0d;
+        return new GeoPoint(
+                point.getLatitude(),
+                point.getLongitude(),
+                (el + GLMapView.elevationOffset)
+                        * this.getElevationExaggerationFactor());
+    }
+
     /**************************************************************************/
 
     private static MapTextFormat _defaultTextFormat;
-    private ConcurrentLinkedQueue<OnMapViewResizedListener> _onMapViewResized = new ConcurrentLinkedQueue<OnMapViewResizedListener>();
     private ConcurrentLinkedQueue<OnActionBarToggledListener> _onActionBarToggled = new ConcurrentLinkedQueue<OnActionBarToggledListener>();
     private final AtakMapController controller;
 
     protected SharedPreferences preferenceManager;
 
-    private double _latitude;
-    private double _longitude;
-    private double _rotation = 0d;
-    private double _tilt = 0d;
-    private boolean _animate = false;
+    private CallbackForwarder callbackForwarder;
 
-    private ConcurrentLinkedQueue<OnMapMovedListener> _onMapMoved = new ConcurrentLinkedQueue<OnMapMovedListener>();
-    private ConcurrentLinkedQueue<OnMapProjectionChangedListener> _onMapProjectionChanged = new ConcurrentLinkedQueue<OnMapProjectionChangedListener>();
-    private Set<OnElevationExaggerationFactorChangedListener> elevationExaggerationFactorListeners = Collections.newSetFromMap(new IdentityHashMap<OnElevationExaggerationFactorChangedListener, Boolean>());
-    private Set<OnContinuousScrollEnabledChangedListener> continuousScrollEnabledListeners = Collections.newSetFromMap(new IdentityHashMap<OnContinuousScrollEnabledChangedListener, Boolean>());
     private MapTouchHandler touchHandler;
+
+    final ReadWriteLock rwlock;
+    Globe globe;
 
     /**************************************************************************/
 
-    private final static double WGS84_EQUITORIAL_RADIUS = 6378137.0d;
-    private final static double WGS84_EQUITORIAL_CIRCUMFERENCE = 2.0d * WGS84_EQUITORIAL_RADIUS
-            * Math.PI;
-    private final static double INCHES_PER_METER = 39.37d;
+    private static class CallbackForwarder implements
+            Globe.OnMapMovedListener,
+            Globe.OnLayersChangedListener,
+            Globe.OnMapProjectionChangedListener,
+            Globe.OnMapViewResizedListener,
+            Globe.OnElevationExaggerationFactorChangedListener,
+            Globe.OnContinuousScrollEnabledChangedListener {
 
-    /** The dots-per-inch (pixels-per-inch) of the display */
-    private double displayDPI;
+        final WeakReference<AtakMapView> ownerRef;
+        final ConcurrentLinkedQueue<OnMapMovedListener> _onMapMoved = new ConcurrentLinkedQueue<>();
+        final ConcurrentLinkedQueue<OnMapProjectionChangedListener> _onMapProjectionChanged = new ConcurrentLinkedQueue<>();
+        final Set<OnElevationExaggerationFactorChangedListener> elevationExaggerationFactorListeners = Collections2.newIdentityHashSet();
+        final Set<OnContinuousScrollEnabledChangedListener> continuousScrollEnabledListeners = Collections2.newIdentityHashSet();
+        final ConcurrentLinkedQueue<OnMapViewResizedListener> _onMapViewResized = new ConcurrentLinkedQueue<OnMapViewResizedListener>();
+        final Set<OnLayersChangedListener> layersChangedListeners = Collections2.newIdentityHashSet();
+
+        CallbackForwarder(AtakMapView owner) {
+            this.ownerRef = new WeakReference<>(owner);
+        }
+
+
+        @Override
+        public void onMapMoved(Globe ignored, boolean animate) {
+            final AtakMapView view = this.ownerRef.get();
+            view.tMapSceneModel = view.renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
+            for(OnMapMovedListener l : _onMapMoved)
+                l.onMapMoved(view, animate);
+        }
+
+        @Override
+        public void onLayerAdded(Globe ignored, Layer layer) {
+            final AtakMapView view = this.ownerRef.get();
+            synchronized(view) {
+                for(OnLayersChangedListener l : layersChangedListeners)
+                    l.onLayerAdded(view, layer);
+            }
+        }
+
+        @Override
+        public void onLayerRemoved(Globe ignored, Layer layer) {
+            final AtakMapView view = this.ownerRef.get();
+            synchronized(view) {
+                for(OnLayersChangedListener l : layersChangedListeners)
+                    l.onLayerRemoved(view, layer);
+            }
+        }
+
+        @Override
+        public void onLayerPositionChanged(Globe ignored, Layer layer, int oldPosition, int newPosition) {
+            final AtakMapView view = this.ownerRef.get();
+            synchronized(view) {
+                for(OnLayersChangedListener l : layersChangedListeners)
+                    l.onLayerPositionChanged(view, layer, oldPosition, newPosition);
+            }
+        }
+
+        @Override
+        public void onTerrainExaggerationFactorChanged(Globe ignored, double factor) {
+            final AtakMapView view = this.ownerRef.get();
+            synchronized(view) {
+                for(OnElevationExaggerationFactorChangedListener l : elevationExaggerationFactorListeners)
+                    l.onTerrainExaggerationFactorChanged(view, factor);
+            }
+        }
+
+        @Override
+        public void onContinuousScrollEnabledChanged(Globe ignored, boolean enabled) {
+            final AtakMapView view = this.ownerRef.get();
+            synchronized(view) {
+                for(OnContinuousScrollEnabledChangedListener l : continuousScrollEnabledListeners)
+                    l.onContinuousScrollEnabledChanged(view, enabled);
+            }
+        }
+
+        @Override
+        public void onMapViewResized(Globe ignored) {
+            final AtakMapView view = this.ownerRef.get();
+            view.tMapSceneModel = view.renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
+            for (OnMapViewResizedListener l : _onMapViewResized) {
+                l.onMapViewResized(view);
+            }
+        }
+
+        @Override
+        public void onMapProjectionChanged(Globe ignored) {
+            final AtakMapView view = this.ownerRef.get();
+            view.tMapSceneModel = view.renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
+            for (OnMapProjectionChangedListener l : _onMapProjectionChanged)
+                l.onMapProjectionChanged(view);
+        }
+    }
+
+    /**************************************************************************/
+
 
     /** The font-size for the construction of the default text format **/
     private static int FONT_SIZE;
@@ -1371,27 +1436,12 @@ public class AtakMapView extends ViewGroup {
     /** Height of action bar when displayed  */
     private static int DEFAULT_ACTION_BAR_HEIGHT;
 
-    /** The resolution of the screen, in meters, at a scale of 1:1 */
-    private final double displayResolution;
-
     /** the extent, in pixels, of the equator at a scale of 1:1 */
     public final double fullEquitorialExtentPixels;
-    /** the current scale of the map */
-    private double mapScale;
-
-    private double minMapScale = 2.5352504279048383E-9d;
-    private double maxMapScale = 0.01d;
-
-    /** the current projection */
-    private Projection projection;
 
     private GLMapSurface glSurface;
-    
-    private List<Layer> layers;
-    private Set<OnLayersChangedListener> layersChangedListeners;
 
-
-    private MapSceneModel tMapSceneModel;
-    private double elevationExaggerationFactor = 1d;
-    private boolean continuousScrollEnabled = true;
+    MapSceneModel tMapSceneModel;
+    MapRenderer2 renderer;
+    private RenderSurface renderSurface;
 }

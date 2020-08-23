@@ -355,7 +355,8 @@ public class StateSaverListener implements
                                 + " callsign: "
                                 +
                                 mi.getMetaString("callsign",
-                                        "[not set] result: " + cotEvent));
+                                        "[not set]")
+                                + " result: " + cotEvent);
             }
 
         } else if (event.getType().equals(MapEvent.ITEM_REMOVED)) // it its ITEM_* item exists

@@ -38,5 +38,9 @@
     <dimen name="listview_row_font_lrg">20sp</dimen>
 
     <dimen name="SectionHeaderSize">20sp</dimen>
+
+    <dimen name="vehicle_icon_size">48dp</dimen>
+    <dimen name="vehicle_text_size">10sp</dimen>
+
 </resources>
 

@@ -25,6 +25,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.MultiPolyline;
 import com.atakmap.android.maps.PointMapItem;
+import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.overlay.DefaultMapGroupOverlay;
 import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.android.overlay.MapOverlayParent;
@@ -36,6 +37,7 @@ import com.atakmap.app.preferences.GeocoderPreferenceFragment;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.map.layer.feature.Feature;
 
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -221,7 +223,7 @@ public class UserMapComponent extends AbstractMapComponent {
 
         // com.atakmap.android.maps.REMOVE
         BroadcastReceiver _removeReceiver = new RemoveBroadcastReceiver(
-                _mapView.getRootGroup());
+                _mapView);
         DocumentedIntentFilter removeFilter = new DocumentedIntentFilter();
         removeFilter.addAction("com.atakmap.android.maps.REMOVE");
         this.registerReceiver(context, _removeReceiver, removeFilter);
@@ -316,6 +318,12 @@ public class UserMapComponent extends AbstractMapComponent {
         spotMapFilter.addAction(SpotMapReceiver.PLACE_SPOT);
         spotMapFilter.addAction(SpotMapReceiver.TOGGLE_LABEL);
         this.registerReceiver(context, spotMapReceiver, spotMapFilter);
+
+        DocumentedIntentFilter clampToggle = new DocumentedIntentFilter();
+        clampToggle.addAction("com.atakmap.android.maps.CLAMP_TOGGLE",
+                "Listen for a generic action that toggles the rendering mode of a line within the system clamp to ground or absolute");
+        AtakBroadcast.getInstance().registerReceiver(clampToggleReceiver,
+                clampToggle);
 
         CompassOverlayReceiver cor = new CompassOverlayReceiver(_mapView);
         DocumentedIntentFilter compassFilter = new DocumentedIntentFilter();
@@ -430,6 +438,32 @@ public class UserMapComponent extends AbstractMapComponent {
                 }
 
                 _registerIfTaskable((Marker) event.getItem());
+            }
+        }
+    };
+
+    private final BroadcastReceiver clampToggleReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            if (action != null
+                    && action.equals("com.atakmap.android.maps.CLAMP_TOGGLE")) {
+                String uid = intent.getStringExtra("uid");
+                if (uid == null)
+                    return;
+                final MapItem mi = _mapView.getMapItem(uid);
+                if (mi instanceof Polyline) {
+                    if (mi.hasMetaValue("absolute")) {
+                        ((Polyline) mi).setAltitudeMode(
+                                Feature.AltitudeMode.ClampToGround);
+                        mi.removeMetaData("absolute");
+                    } else {
+                        mi.setMetaBoolean("absolute", true);
+                        ((Polyline) mi)
+                                .setAltitudeMode(Feature.AltitudeMode.Absolute);
+                    }
+                }
+
             }
         }
     };

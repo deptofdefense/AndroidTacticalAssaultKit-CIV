@@ -14,7 +14,7 @@ namespace TAK {
             class Bindable
             {
             protected:
-                virtual ~Bindable() NOTHROWS = 0;
+                virtual ~Bindable() NOTHROWS = default;
             public:
                 /**
                 * Binds the specified blob on the specified index.

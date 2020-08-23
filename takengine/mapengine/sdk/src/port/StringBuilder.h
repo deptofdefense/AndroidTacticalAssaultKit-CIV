@@ -96,11 +96,11 @@ namespace TAK {
 				struct {
 					char *dyn;
 					char inl[SMALL_STRING_CAP_MAX];
-				} buf;
+				} buf_;
 
-				size_t len;
-				size_t cap;
-				Util::TAKErr err;
+				size_t len_;
+				size_t cap_;
+				Util::TAKErr err_;
 			};
 
 			inline Util::TAKErr StringBuilder_combine(StringBuilder &sb) NOTHROWS  {

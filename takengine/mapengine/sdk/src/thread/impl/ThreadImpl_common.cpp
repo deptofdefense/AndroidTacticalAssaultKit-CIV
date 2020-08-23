@@ -21,15 +21,6 @@ CondVarImpl::~CondVarImpl() NOTHROWS
 {}
 
 /*****************************************************************************/
-// Lock definitions
-
-LockImpl::LockImpl() NOTHROWS
-{}
-
-LockImpl::~LockImpl() NOTHROWS
-{}
-
-/*****************************************************************************/
 // MutexImpl definitions
 
 MutexImpl::MutexImpl() NOTHROWS
@@ -46,11 +37,11 @@ ThreadID::ThreadID(std::unique_ptr<Impl::ThreadIDImpl, void(*)(const Impl::Threa
 {}
 
 ThreadID::ThreadID() NOTHROWS :
-    impl(NULL, NULL)
+    impl(nullptr, nullptr)
 {}
 
 ThreadID::ThreadID(const ThreadID &other) NOTHROWS :
-    impl(NULL, NULL)
+    impl(nullptr, nullptr)
 {
     if (other.impl.get())
         other.impl->clone(impl);
@@ -86,7 +77,7 @@ Thread::~Thread() NOTHROWS
 
 ThreadID Thread::getID() const NOTHROWS
 {
-    ThreadIDImplPtr id(NULL, NULL);
+    ThreadIDImplPtr id(nullptr, nullptr);
     this->getID(id);
     return ThreadID(std::move(id));
 }
@@ -107,10 +98,10 @@ TAKErr TAK::Engine::Thread::Thread_sleep(const int64_t milliseconds) NOTHROWS
         return TE_Ok;
     TAKErr code(TE_Ok);
     Monitor monitor;
-    MonitorLockPtr lock(NULL, NULL);
-    code = MonitorLock_create(lock, monitor);
+    Monitor::Lock lock(monitor);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    code = lock->wait(milliseconds);
+    code = lock.wait(milliseconds);
     if (code == TE_TimedOut) // we are expecting timeout
         code = TE_Ok;
     TE_CHECKRETURN_CODE(code);

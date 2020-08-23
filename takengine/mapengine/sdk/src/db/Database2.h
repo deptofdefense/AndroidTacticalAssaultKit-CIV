@@ -35,9 +35,9 @@ namespace TAK {
                 virtual ~Database2() = 0;
             public:
                 virtual TAK::Engine::Util::TAKErr execute(const char *sql, const char **args, const std::size_t len) NOTHROWS = 0;
-                virtual TAK::Engine::Util::TAKErr query(QueryPtr &cursor, const char *sql) NOTHROWS = 0;
+                virtual TAK::Engine::Util::TAKErr query(QueryPtr &query, const char *sql) NOTHROWS = 0;
                 virtual TAK::Engine::Util::TAKErr compileStatement(StatementPtr &stmt, const char *sql) NOTHROWS = 0;
-                virtual TAK::Engine::Util::TAKErr compileQuery(QueryPtr &err, const char *sql) NOTHROWS = 0;
+                virtual TAK::Engine::Util::TAKErr compileQuery(QueryPtr &query, const char *sql) NOTHROWS = 0;
 
                 virtual TAK::Engine::Util::TAKErr isReadOnly(bool *value) NOTHROWS = 0;
                 virtual TAK::Engine::Util::TAKErr getVersion(int *value) NOTHROWS = 0;

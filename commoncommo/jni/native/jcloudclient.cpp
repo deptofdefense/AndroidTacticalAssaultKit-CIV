@@ -215,6 +215,7 @@ bool CloudIOJNI::reflectionInit(JNIEnv *env)
     ret = ret && CHECK_CLOUDOP(PUT);
     ret = ret && CHECK_CLOUDOP(MOVE);
     ret = ret && CHECK_CLOUDOP(MAKE_COLLECTION);
+    ret = ret && CHECK_CLOUDOP(DELETE);
 
 
 cleanup:
@@ -346,6 +347,24 @@ JNIEXPORT jint JNICALL Java_com_atakmap_commoncommo_CloudClient_moveResourceInit
     CommoResult r = c->moveResourceInit(&id, from, to);
     env->ReleaseStringUTFChars(jto, to);
     env->ReleaseStringUTFChars(jfrom, from);
+    if (r != COMMO_SUCCESS)
+        env->ThrowNew(CommoJNI::jclass_commoexception, "");
+
+    return id;
+}
+
+
+JNIEXPORT jint JNICALL Java_com_atakmap_commoncommo_CloudClient_deleteResourceInitNative
+  (JNIEnv *env, jclass selfCls, jlong nativePtr, jstring jpath)
+{
+    CloudClient *c = JLONG_TO_PTR(CloudClient, nativePtr);
+    const char *path = env->GetStringUTFChars(jpath, NULL);
+    if (!path)
+        return 0;
+    
+    jint id = 0;
+    CommoResult r = c->deleteResourceInit(&id, path);
+    env->ReleaseStringUTFChars(jpath, path);
     if (r != COMMO_SUCCESS)
         env->ThrowNew(CommoJNI::jclass_commoexception, "");
 

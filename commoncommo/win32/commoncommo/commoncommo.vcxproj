@@ -31,6 +31,7 @@
     <ClInclude Include="..\..\core\impl\cotmessage.h" />
     <ClInclude Include="..\..\core\impl\cryptoutil.h" />
     <ClInclude Include="..\..\core\impl\datagramsocketmanagement.h" />
+    <ClInclude Include="..\..\core\impl\httpsproxy.h" />
     <ClInclude Include="..\..\core\impl\hwifscanner.h" />
     <ClInclude Include="..\..\core\impl\internalutils.h" />
     <ClInclude Include="..\..\core\impl\missionpackagemanager.h" />
@@ -44,6 +45,7 @@
     <ClInclude Include="..\..\core\impl\takmessage.h" />
     <ClInclude Include="..\..\core\impl\tcpsocketmanagement.h" />
     <ClInclude Include="..\..\core\impl\threadedhandler.h" />
+    <ClInclude Include="..\..\core\include\cloudio.h" />
     <ClInclude Include="..\..\core\include\commo.h" />
     <ClInclude Include="..\..\core\include\commologger.h" />
     <ClInclude Include="..\..\core\include\commoresult.h" />
@@ -62,6 +64,7 @@
     <ClCompile Include="..\..\core\impl\cotmessage.cpp" />
     <ClCompile Include="..\..\core\impl\cryptoutil.cpp" />
     <ClCompile Include="..\..\core\impl\datagramsocketmanagement.cpp" />
+    <ClCompile Include="..\..\core\impl\httpsproxy.cpp" />
     <ClCompile Include="..\..\core\impl\hwifscanner.cpp" />
     <ClCompile Include="..\..\core\impl\internalutils.cpp" />
     <ClCompile Include="..\..\core\impl\missionpackagemanager.cpp" />

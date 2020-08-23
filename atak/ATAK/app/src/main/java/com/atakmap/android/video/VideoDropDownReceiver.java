@@ -4,6 +4,9 @@ package com.atakmap.android.video;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.preference.PreferenceManager;
 
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -83,9 +86,11 @@ import org.apache.sanselan.formats.tiff.write.TiffOutputSet;
 public class VideoDropDownReceiver extends DropDownReceiver implements
         OnStateListener, MediaConsumer, StatusUpdateConsumer,
         SeekBar.OnSeekBarChangeListener, View.OnClickListener, KLVConsumer,
-        View.OnLongClickListener {
+        View.OnLongClickListener, OnSharedPreferenceChangeListener {
 
     public static final String TAG = "VideoDropDownReceiver";
+
+    private SharedPreferences _prefs;
 
     private final Object surfaceLock = new Object();
     private final Object processorLock = new Object();
@@ -171,9 +176,15 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
     private long timeSinceLastUpdate;
     private static final long METADATA_TIME_GUARD = 66;
 
+    private static AlternativeVideoPlayer avp = new WaveRelayAlternativePlayer();
+
     public VideoDropDownReceiver(final MapView mapView, Context context) {
         super(mapView);
         this.context = context;
+
+        _prefs = PreferenceManager
+                .getDefaultSharedPreferences(mapView.getContext());
+        _prefs.registerOnSharedPreferenceChangeListener(this);
 
         LayoutInflater inflator = LayoutInflater.from(context);
         videoView = inflator.inflate(R.layout.video, null);
@@ -298,6 +309,19 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
 
         overlays = videoView.findViewById(R.id.overlays);
 
+        vmd.useKlvElevation = _prefs.getBoolean("prefs_use_klv_elevation",
+                false);
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(
+            final SharedPreferences sp,
+            final String key) {
+
+        if (key.equals("prefs_use_klv_elevation")) {
+            vmd.useKlvElevation = _prefs.getBoolean("prefs_use_klv_elevation",
+                    false);
+        }
     }
 
     private void changeOutput(SurfaceTexture tex) {
@@ -603,6 +627,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
 
     @Override
     public void disposeImpl() {
+        _prefs.unregisterOnSharedPreferenceChangeListener(this);
     }
 
     @Override
@@ -630,6 +655,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
             }
         }
 
+        connectionEntry = connectionEntry.copy();
         final AlternativeVideoPlayer a = getAlternativeVideoPlayer();
         if (a != null && a.launchOther(connectionEntry))
             return;
@@ -747,8 +773,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                         seekbar.setVisibility(View.INVISIBLE);
                         playPauseBtn.setVisibility(View.INVISIBLE);
                     }
-                    recordBtn.setEnabled(
-                            ce.getProtocol() == ConnectionEntry.Protocol.UDP);
+                    recordBtn.setEnabled(false);
                 }
             });
 
@@ -816,14 +841,16 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                 case RTMPS:
                 case HTTPS:
                 case HTTP:
+                case SRT:
                     setupTmpDir();
-                    String addr = ConnectionEntry.getURL(ce);
+                    String addr = ConnectionEntry.getURL(ce, false);
+                    Log.d(TAG, "connect to " + addr);
                     processor = new MediaProcessor(addr);
                     break;
                 case RTSP: {
 
                     setupTmpDir();
-                    final String rtspaddr = ConnectionEntry.getURL(ce);
+                    final String rtspaddr = ConnectionEntry.getURL(ce, false);
                     processor = new MediaProcessor(rtspaddr,
                             ce.getNetworkTimeout(),
                             ce.getBufferTime(), 0, tmpDir);
@@ -837,10 +864,19 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
 
             // could get really messy here because the procesor could be cancelled
             // need some suggestions from downsj
-            if (ce.getProtocol() == ConnectionEntry.Protocol.UDP)
-                processor.setMediaConsumer(
-                        MediaProcessor.MediaFileType.MEDIATYPE_NATIVE,
+            try {
+                boolean supported = processor.setMediaConsumer(
+                        MediaProcessor.MediaFileType.MEDIATYPE_MPEGTS,
                         this);
+                if (supported)
+                    getMapView().post(new Runnable() {
+                        public void run() {
+                            recordBtn.setEnabled(true);
+                        }
+                    });
+            } catch (Exception e) {
+                Log.d(TAG, "could not record from this stream", e);
+            }
 
             processor.setStatusUpdateConsumer(this);
 
@@ -1254,7 +1290,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                     connectionText.setText(context
                             .getString(R.string.connecting_to)
                             + vmd.connectionEntry.getAlias() + " at "
-                            + ConnectionEntry.getURL(vmd.connectionEntry));
+                            + ConnectionEntry.getURL(vmd.connectionEntry, true));
 
                     if (status_switcher.getNextView() == status_connecting) {
                         status_switcher.showNext();
@@ -1358,8 +1394,6 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
 
     }
 
-    private static AlternativeVideoPlayer avp = new WaveRelayAlternativePlayer();
-
     /**
      * Method for setting the alternative video player for TAK.
      * @param a the implementation of the alternative video player or null if no alternative should
@@ -1397,7 +1431,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
         boolean launchLongPress(final ConnectionEntry ce);
 
         /**
-         * The action to take when the the video connection is requested from a
+         * The action to take when the video connection is requested from a
          * marker on the map.
          * @param ce the Connection Entry, can be null
          * @return true if the alternative player was successful.   If false, the default behavior is
@@ -1429,7 +1463,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
             if (ce == null)
                 return false;
 
-            String uri = ConnectionEntry.getURL(ce);
+            String uri = ConnectionEntry.getURL(ce, false);
             final ConnectionEntry.Protocol p = ce.getProtocol();
             if (p == ConnectionEntry.Protocol.UDP
                     || p == ConnectionEntry.Protocol.RTSP

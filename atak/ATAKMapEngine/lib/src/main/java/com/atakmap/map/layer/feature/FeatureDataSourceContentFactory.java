@@ -2,15 +2,9 @@
 package com.atakmap.map.layer.feature;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
 import java.util.Map;
 
-import com.atakmap.coremap.log.Log;
 import com.atakmap.interop.Pointer;
 
 public final class FeatureDataSourceContentFactory {

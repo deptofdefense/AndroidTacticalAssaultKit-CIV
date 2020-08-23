@@ -205,7 +205,8 @@ public class WMTSQueryLayers extends QueryLayers {
             AtakAuthenticationHandlerHTTP.Connection connection;
             connection = AtakAuthenticationHandlerHTTP
                     .makeAuthenticatedConnection(
-                            (HttpURLConnection) conn, 3);
+                            (HttpURLConnection) conn, 3, true,
+                            AtakAuthenticationHandlerHTTP.UNAUTHORIZED_ONLY);
             conn = connection.conn;
             input = connection.stream;
         } else {

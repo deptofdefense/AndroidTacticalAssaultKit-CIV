@@ -421,7 +421,7 @@ public class CotMapComponent extends AbstractMapComponent implements
                 _cotPrefsChangedListener);
 
         /*
-         * Listen for all user created map items, as they need to be added the the
+         * Listen for all user created map items, as they need to be added the
          * CotMarkerMaintainer.
          */
         view.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_ADDED,
@@ -692,10 +692,16 @@ public class CotMapComponent extends AbstractMapComponent implements
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-            int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
 
-            batteryPct.set((int) (level * 100 / (double) scale));
+            try { 
+                
+                int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+
+                batteryPct.set((int) (level * 100 / (double) scale));
+            } catch (Exception ignore) { 
+                Log.e(TAG, "battery intent does not contain any data");
+            }
         }
     };
 
@@ -970,7 +976,7 @@ public class CotMapComponent extends AbstractMapComponent implements
 
     /**
      * Allows for a Self SA (PPLI) message to contain additional dynamically registered information.
-     * This detail can be modified by the client without having to add it again to the the self marker.
+     * This detail can be modified by the client without having to add it again to the self marker.
      */
     public void addAdditionalDetail(final String detailName,
             final CotDetail detail) {

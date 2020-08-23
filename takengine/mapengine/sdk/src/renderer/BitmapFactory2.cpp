@@ -47,61 +47,112 @@ TAKErr TAK::Engine::Renderer::BitmapFactory2_decode(BitmapPtr &result, DataInput
 
     return code;
 }
+TAKErr TAK::Engine::Renderer::BitmapFactory2_decode(BitmapPtr &result, const uint8_t *data, const std::size_t dataLen, const BitmapDecodeOptions *opts) NOTHROWS
+{
+    TAKErr code(TE_Ok);
 
+    std::ostringstream os;
+    os << "/vsimem/";
+    os << (intptr_t)data;
 
+    const std::string gdalMemoryFile(os.str().c_str());
+
+    VSILFILE *fpMem = VSIFileFromMemBuffer(gdalMemoryFile.c_str(), (GByte*) data , (vsi_l_offset) dataLen, FALSE);
+    if (nullptr == fpMem)
+        return TE_IllegalState;
+
+    int gdalCode = VSIFCloseL(fpMem);
+    code = 0 == gdalCode ?
+        BitmapFactory2_decode(result, gdalMemoryFile.c_str(), opts) :
+        TE_IllegalState;
+
+    VSIUnlink(gdalMemoryFile.c_str());
+
+    return code;
+}
 TAKErr TAK::Engine::Renderer::BitmapFactory2_decode(BitmapPtr &result, const char *bitmapFilePath, const BitmapDecodeOptions *opts) NOTHROWS
 {
     TAKErr code(TE_Ok);
     GdalBitmapReader reader(bitmapFilePath);
+    // check if the dataset could be opened
     if (nullptr == reader.getDataset())
-        return TE_IllegalState;
+        return TE_InvalidArg;
 
-    const int64_t srcWidth = reader.getWidth();
-    const int64_t srcHeight = reader.getHeight();
-    std::size_t dstWidth = srcWidth;
-    std::size_t dstHeight = srcHeight;
+    const int srcWidth = reader.getWidth();
+    const int srcHeight = reader.getHeight();
+    int dstWidth = srcWidth;
+    int dstHeight = srcHeight;
 
 #if 1
+    // XXX - force subsampling
     if (dstWidth > 2048 || dstHeight > 2048) {
         double sampleX = 2048.0 / (double)srcWidth;
         double sampleY = 2048.0 / (double)srcHeight;
         double sample = std::min(sampleX, sampleY);
-        dstWidth = (std::size_t)((double)dstWidth * sample);
-        dstHeight = (std::size_t)((double)dstHeight * sample);
+        dstWidth = static_cast<int>((double)dstWidth * sample);
+        dstHeight = static_cast<int>((double)dstHeight * sample);
     }
 #endif
+    Bitmap2::Format bitmapFormat;
+    switch(reader.getFormat()) {
+    case GdalBitmapReader::MONOCHROME:
+        bitmapFormat = Bitmap2::MONOCHROME;
+        break;
+    case GdalBitmapReader::MONOCHROME_ALPHA:
+        bitmapFormat = Bitmap2::MONOCHROME_ALPHA;
+        break;
+    case GdalBitmapReader::RGB:
+        bitmapFormat = Bitmap2::RGB24;
+        break;
+    case GdalBitmapReader::RGBA:
+        bitmapFormat = Bitmap2::RGBA32;
+        break;
+    case GdalBitmapReader::ARGB:
+        bitmapFormat = Bitmap2::ARGB32;
+        break;
+    default:
+        return TE_IllegalState;
+    }
 
     int numDataElements(0);
     code = reader.getPixelSize(numDataElements);
     TE_CHECKRETURN_CODE(code);
-    const int64_t byteCount = numDataElements * dstWidth * dstHeight;
+    const auto byteCount = static_cast<std::size_t>(numDataElements * dstWidth * dstHeight);
 
-    Bitmap2::DataPtr data(new uint8_t[byteCount], Util::Memory_array_deleter_const<uint8_t>);
-    code = reader.read(0, 0, srcWidth, srcHeight, dstWidth, dstHeight, data.get(), byteCount);
-    if (TE_Ok == code) {
-        Bitmap2::Format bitmapFormat;
-        switch(reader.getFormat()) {
-        case GdalBitmapReader::MONOCHROME:
-            bitmapFormat = Bitmap2::MONOCHROME;
-            break;
-        case GdalBitmapReader::MONOCHROME_ALPHA:
-            bitmapFormat = Bitmap2::MONOCHROME_ALPHA;
-            break;
-        case GdalBitmapReader::RGB:
-            bitmapFormat = Bitmap2::RGB24;
-            break;
-        case GdalBitmapReader::RGBA:
-            bitmapFormat = Bitmap2::RGBA32;
-            break;
-        case GdalBitmapReader::ARGB:
-            bitmapFormat = Bitmap2::ARGB32;
-            break;
-        default:
-            return TE_IllegalState;
+    do {
+        // check for data emplacement
+        if (opts && (opts->emplaceData != BitmapDecodeOptions::None) && result.get()) {
+            if (opts->emplaceData == BitmapDecodeOptions::Coerce) {
+                // set the output dimensions
+                dstWidth = (int)result->getWidth();
+                dstHeight = (int)result->getHeight();
+                if ((dstWidth*numDataElements) == (int)result->getStride() &&
+                    bitmapFormat == result->getFormat()) {
+
+                    break;
+                }
+
+                // XXX - coerce format/stride
+            } else if (opts->emplaceData == BitmapDecodeOptions::IfMatches) {
+                // if everything matches, emplace the data
+                if (srcWidth == (int)result->getWidth() &&
+                    srcHeight == (int)result->getHeight() &&
+                    (srcWidth*numDataElements) == (int)result->getStride() &&
+                    bitmapFormat == result->getFormat()) {
+
+                    break;
+                }
+            }
         }
-        result = BitmapPtr(new Bitmap2(std::move(data), dstWidth, dstHeight, bitmapFormat), Memory_deleter_const<Bitmap2>);
-    }
 
-    return code;
+        Bitmap2::DataPtr data(new(std::nothrow) uint8_t[byteCount], Util::Memory_array_deleter_const<uint8_t>);
+        if (!data.get())
+            return TE_OutOfMemory;
+        result = BitmapPtr(new(std::nothrow) Bitmap2(std::move(data), dstWidth, dstHeight, bitmapFormat), Memory_deleter_const<Bitmap2>);
+        if (!result.get())
+            return TE_OutOfMemory;
+    } while (false);
+
+    return reader.read(0, 0, srcWidth, srcHeight, dstWidth, dstHeight, result->getData(), byteCount);
 }
 

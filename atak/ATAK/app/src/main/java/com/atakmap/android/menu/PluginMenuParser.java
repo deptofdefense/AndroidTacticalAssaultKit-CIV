@@ -30,6 +30,7 @@ import android.content.Context;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.xml.XMLUtils;
 
 /**
  * Allows for the plugin to load menu items.   Without this class, the plugin would manually need to create the
@@ -50,7 +51,8 @@ public class PluginMenuParser {
      * @return - the XML with encoded local actions and icons or empty if 
      * the menu is not found
      */
-    public static String getMenu(Context pluginContext, String layout) {
+    public static String getMenu(final Context pluginContext,
+            final String layout) {
         /* since this can be triggered on different threads loading different markers of
          * the same type, synchronize around the menu map so the parsing will only happen
          * once for each type
@@ -79,19 +81,8 @@ public class PluginMenuParser {
                     return "";
                 }
 
-                DocumentBuilderFactory docFactory = DocumentBuilderFactory
-                        .newInstance();
-                try {
-                    docFactory.setFeature(
-                            "http://apache.org/xml/features/disallow-doctype-decl",
-                            true);
-                } catch (Exception ignored) {
-                }
-                try {
-                    docFactory.setFeature(
-                            XMLConstants.FEATURE_SECURE_PROCESSING, true);
-                } catch (Exception ignored) {
-                }
+                DocumentBuilderFactory docFactory = XMLUtils
+                        .getDocumenBuilderFactory();
 
                 DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
                 Document dom = docBuilder.parse(layoutIS);
@@ -138,17 +129,16 @@ public class PluginMenuParser {
                 DOMSource domSource = new DOMSource(dom);
                 StringWriter writer = new StringWriter();
                 StreamResult result = new StreamResult(writer);
-                TransformerFactory tf = TransformerFactory.newInstance();
+
+                TransformerFactory tf = XMLUtils.getTransformerFactory();
+
                 Transformer transformer = tf.newTransformer();
                 transformer.transform(domSource, result);
                 cache.put(layout, writer.toString());
                 return writer.toString();
-            } catch (IOException | ParserConfigurationException ioe) {
+            } catch (IOException | ParserConfigurationException | SAXException
+                    | TransformerException ioe) {
                 Log.d(TAG, "error: " + ioe);
-            } catch (SAXException se) {
-                Log.d(TAG, "error: " + se);
-            } catch (TransformerException te) {
-                Log.d(TAG, "error: " + te);
             } finally {
                 if (layoutIS != null)
                     try {
@@ -193,7 +183,7 @@ public class PluginMenuParser {
         try {
             is = pluginContext.getAssets().open(file);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            int size = 0;
+            int size;
             byte[] buffer = new byte[1024];
 
             while ((size = is.read(buffer, 0, 1024)) >= 0) {
@@ -202,7 +192,7 @@ public class PluginMenuParser {
             is.close();
             buffer = outputStream.toByteArray();
 
-            return "base64:/"
+            return "base64://"
                     + new String(Base64.encode(buffer, Base64.URL_SAFE
                             | Base64.NO_WRAP), FileSystemUtils.UTF8_CHARSET);
 

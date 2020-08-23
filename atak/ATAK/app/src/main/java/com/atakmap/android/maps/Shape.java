@@ -308,7 +308,7 @@ public abstract class Shape extends MapItem implements Capturable {
     /**
      * Get the strokeWeight property value
      * 
-     * @return
+     * @return the weight as a number scaled by density.
      */
     public double getStrokeWeight() {
         return _strokeWeight / MapView.DENSITY;
@@ -483,10 +483,23 @@ public abstract class Shape extends MapItem implements Capturable {
         path.reset();
     }
 
+    /**
+     * The array of points without any metadata
+     * @return the points
+     */
     public abstract GeoPoint[] getPoints();
 
+    /**
+     * The array of points that make up the shape with the corresponding metadata.
+     * @return the points.
+     */
     public abstract GeoPointMetaData[] getMetaDataPoints();
 
+    /**
+     * The bounds of the shape
+     * @param bounds a preallocated bounds object
+     * @return the upper left and lower right of the shape.
+     */
     public abstract GeoBounds getBounds(MutableGeoBounds bounds);
 
 }

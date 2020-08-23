@@ -4,6 +4,7 @@ package com.atakmap.map.layer.feature.geometry.opengl;
 import java.nio.ByteBuffer;
 
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.opengl.GLMapBatchable;
@@ -20,11 +21,13 @@ public abstract class GLBatchGeometry implements GLMapRenderable,
     public long featureId;
     public int lod;
     public int subid;
+    public long version;
 
     GLBatchGeometry(MapRenderer surface, int zOrder) {
         this.renderContext = surface;
         this.zOrder = zOrder;
         this.subid = 0;
+        this.version = 0;
     }
 
     /** may be called on any thread */
@@ -67,4 +70,19 @@ public abstract class GLBatchGeometry implements GLMapRenderable,
     protected abstract void setGeometryImpl(ByteBuffer blob, int type);
     /** always invoked on GL thread */
     protected abstract void setGeometryImpl(Geometry geom);
+
+
+    /**
+     * Sets the altitude mode associated with this batch geometry.   Can be one of
+     * ClampToGround, Relative, or Absolute.
+     * @param altitudeMode the altitude mode.
+     */
+    public abstract void setAltitudeMode(Feature.AltitudeMode altitudeMode);
+
+
+    /**
+     * Sets the extrusion associated with this batch geometry.
+     * @param value the extrude value.
+     */
+    public abstract void setExtrude(double value);
 }

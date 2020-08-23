@@ -4,7 +4,7 @@ package com.atakmap.android.maps;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;

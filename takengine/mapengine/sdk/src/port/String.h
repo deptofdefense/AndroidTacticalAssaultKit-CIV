@@ -40,7 +40,7 @@ namespace TAK {
             };
 
             ENGINE_API Util::TAKErr String_parseDouble(double *value, const char *str) NOTHROWS;
-            ENGINE_API Util::TAKErr String_parseInteger(int *value, const char *str, const std::size_t base = 10u) NOTHROWS;
+            ENGINE_API Util::TAKErr String_parseInteger(int *value, const char *str, const int base = 10) NOTHROWS;
 
 
             /**

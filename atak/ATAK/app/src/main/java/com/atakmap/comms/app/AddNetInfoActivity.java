@@ -1,6 +1,7 @@
 
 package com.atakmap.comms.app;
 
+import com.atakmap.android.metrics.activity.MetricActivity;
 import com.atakmap.comms.NetConnectString;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -43,7 +44,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class AddNetInfoActivity extends Activity {
+public class AddNetInfoActivity extends MetricActivity {
 
     private static final String TAG = "AddNetInfoActivity";
 

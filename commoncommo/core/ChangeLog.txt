@@ -1,3 +1,54 @@
+** Release 2020-06-09
+NEW FEATURES
+* The "CloudClient" API now includes a method by which to request
+  that a remote resource (file or collection) be deleted.
+
+BUG FIXES
+* Fix a logging message associated with the https server to report
+  the correct old port when the port is changed. It was reporting
+  the old port as the current http server port.
+* Fix default connection timeout used by https proxy.  Was 20 seconds, now
+  90 seconds for consistency with prior (pre-https) mission package api
+
+API CHANGES
+* Addition of CloudClient::deleteResourceInit() and
+  CloudIOOperation::CLOUDIO_OP_DELETE. These are related to the new remote
+  resource delete feature
+* Win32 C++/CLI Only: Added Commo::SetMissionPackageLocalHttpsParams()
+  and Commo::GenerateSelfSignedCertificate() to C++/CLI bindings. See
+  2020-05-27 notes for more on this new API.
+
+
+** Release 2020-05-27
+NEW FEATURES
+* Data package transfers directly from device to device (no TAK server
+  involved) now prefer to use https when enabled on the sending device
+  and the receiving device supports it.  This behavior is invoked on
+  receipt if a few new tags in the CoT message initiating the file transfer
+  are present. For the next few releases, commo will support interop with
+  older versions by continuing to host sent files on both http and https
+  and setting these new tags to signal current version receivers that https
+  is available.  In some future release, the send path will set only one of
+  these new tags (which signals the transfer is peer to peer to help
+  receiver determine correct trust parameters versus those that are hosted
+  on a TAK server), will begin sending https URLs directly, and will
+  terminate the availability of the http server hosting files to send.
+
+API CHANGES
+* Added Commo::setMissionPackageLocalHttpsParams() to configure the
+  https server. Applications need to invoke this to enable the https
+  functionality.
+* Added Commo::generateSelfSignedCertifate() as a convenience to generate
+  a certificate for the device to use.
+
+
+** Release 2020-04-07
+BUG FIXES
+* Data package uploads to a TAK server would cause commo to not clean
+  up properly during shutdown likely resulting in a crash. This problem
+  first appeared in release 2018-05-08
+
+
 ** Release 2020-02-13
 BUG FIXES
 * When translating from TAK Protocol (protobuf) back to XML,

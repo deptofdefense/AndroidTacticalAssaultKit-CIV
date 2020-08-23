@@ -13,6 +13,7 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.layers.LayersMapComponent;
 import com.atakmap.android.maps.tilesets.mobac.QueryLayers.Style;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.map.layer.raster.DatasetDescriptorFactory2;
 import com.atakmap.map.layer.raster.mobac.MobacMapSourceFactory;
@@ -38,6 +39,8 @@ import java.util.Set;
  * directly specified by the map server for this layer.
  */
 public abstract class WebMapLayer {
+    private final static String TAG = "WebMapLayer";
+
     protected final QueryLayers queryLayer;
 
     // human readable name for this layer
@@ -231,6 +234,8 @@ public abstract class WebMapLayer {
                     break;
                 case Terrain:
                     subdir = "terrain";
+                case SurfaceMesh:
+                    subdir = "meshes";
                     break;
                 default:
                     throw new IllegalArgumentException(
@@ -247,6 +252,9 @@ public abstract class WebMapLayer {
                     throw new IllegalStateException(
                             "Could not generate filename for map server layer output");
             } else {
+                if (!f.getParentFile().exists() && !f.getParentFile().mkdirs())
+                    Log.w(TAG,
+                            "Failed to create output directory for service definition");
                 break;
             }
         }

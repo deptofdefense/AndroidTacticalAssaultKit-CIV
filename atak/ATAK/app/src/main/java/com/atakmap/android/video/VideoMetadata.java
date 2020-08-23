@@ -1,10 +1,12 @@
 
 package com.atakmap.android.video;
 
+import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.log.Log;
 import com.partech.pgscmedia.frameaccess.DecodedMetadataItem;
 import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.elevation.ElevationData;
+import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
@@ -56,6 +58,8 @@ public class VideoMetadata {
     String platformTail = null;
 
     long metadataTimestamp = -1;
+
+    boolean useKlvElevation = false;
 
     public void update(
             final Map<DecodedMetadataItem.MetadataItemIDs, DecodedMetadataItem> items) {
@@ -276,18 +280,32 @@ public class VideoMetadata {
                             + e.getValue() + " " + ex);
                 }
 
-                // only perform a lookup if the lat/lon has changed
-                if (Double.compare(prevFrameLatitude, frameLatitude) != 0 ||
-                        Double.compare(prevFrameLongitude,
-                                frameLongitude) != 0) {
-                    double alt = ElevationManager.getElevation(frameLatitude,
-                            frameLongitude, DTM_FILTER, frameDTED);
-
-                    prevFrameLatitude = frameLatitude;
-                    prevFrameLongitude = frameLongitude;
-                }
-
             }
+        }
+        // only perform a lookup if the lat/lon has changed
+        if (Double.compare(prevFrameLatitude, frameLatitude) != 0 ||
+                Double.compare(prevFrameLongitude,
+                        frameLongitude) != 0) {
+
+            if (useKlvElevation && !Double.isNaN(frameElevation)) {
+                double haeAlt = EGM96.getHAE(frameLatitude, frameLongitude,
+                        frameElevation);
+                frameDTED
+                        .set(new GeoPoint(frameLatitude, frameLongitude,
+                                haeAlt))
+                        .setAltitudeSource(GeoPointMetaData.CALCULATED);
+            } else if (useKlvElevation && !Double.isNaN(frameHAE)) {
+                frameDTED
+                        .set(new GeoPoint(frameLatitude, frameLongitude,
+                                frameHAE))
+                        .setAltitudeSource(GeoPointMetaData.CALCULATED);
+            } else {
+                double alt = ElevationManager.getElevation(frameLatitude,
+                        frameLongitude, DTM_FILTER, frameDTED);
+            }
+
+            prevFrameLatitude = frameLatitude;
+            prevFrameLongitude = frameLongitude;
         }
 
     }
@@ -336,7 +354,7 @@ public class VideoMetadata {
         corner3lon = Double.NaN;
         corner4lat = Double.NaN;
         corner4lon = Double.NaN;
-        frameDTED.set(GeoPoint.ZERO_POINT);
+        frameDTED.set(GeoPoint.UNKNOWN_POINT);
     }
 
 }

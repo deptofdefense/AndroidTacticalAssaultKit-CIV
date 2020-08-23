@@ -29,8 +29,6 @@ namespace TAK {
             private :
                 Mutex mutex;
                 CondVar cond;
-
-                friend ENGINE_API Util::TAKErr MonitorLock_create(std::unique_ptr<Monitor::Lock, void(*)(const Monitor::Lock *)> &, Monitor &) NOTHROWS;
             };
 
             /**
@@ -38,8 +36,9 @@ namespace TAK {
              */
             class ENGINE_API Monitor::Lock
             {
+            public :
+                Lock(Monitor &owner) NOTHROWS;
             private :
-                Lock(Monitor &owner, LockPtr &&impl) NOTHROWS;
                 Lock(const Lock &) NOTHROWS;
             public :
                 ~Lock() NOTHROWS;
@@ -75,9 +74,9 @@ namespace TAK {
                 Util::TAKErr broadcast() NOTHROWS;
             private :
                 Monitor &owner;
-                LockPtr impl;
-
-                friend ENGINE_API Util::TAKErr MonitorLock_create(std::unique_ptr<Monitor::Lock, void(*)(const Monitor::Lock *)> &, Monitor &) NOTHROWS;
+                TAK::Engine::Thread::Lock impl;
+            public :
+                const Util::TAKErr status;
             };
 
             typedef std::unique_ptr<Monitor::Lock, void(*)(const Monitor::Lock *)> MonitorLockPtr;

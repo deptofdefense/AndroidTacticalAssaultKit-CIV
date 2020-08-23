@@ -29,12 +29,22 @@ import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Tool for the creation of new drawing rectangles.
+ *
+ * Once the user has finished creating a rectangle with the tool, returns the uid
+ * of the newly created DrawingRectangle in an intent specified by the user by setting
+ * the "callback" parcelable when starting the tool.   This is an
+ * intent to fire when the tool is completed.
+ */
 public class DrawingRectangleCreationTool extends Tool implements
         MapEventDispatcher.MapEventDispatchListener {
 
     public static final String TAG = "DrawingRectangleCreationTool";
 
     private DrawingRectangle.Builder _b;
+
+    private Intent _callback;
 
     protected final MapGroup _drawingGroup;
 
@@ -47,9 +57,9 @@ public class DrawingRectangleCreationTool extends Tool implements
 
     private int mode = FIRST_POINT;
 
-    private static final String TOOL_IDENTIFIER = "org.android.maps.drawing.tools.RectangleCreationTool";
+    public static final String TOOL_IDENTIFIER = "org.android.maps.drawing.tools.RectangleCreationTool";
 
-    private final ImageButton _button;
+    private ImageButton _button = null;
 
     private final MapView _mapView;
 
@@ -59,9 +69,11 @@ public class DrawingRectangleCreationTool extends Tool implements
             ImageButton button) {
         super(mapView, TOOL_IDENTIFIER);
         _mapView = mapView;
-        _button = button;
         _drawingGroup = drawingGroup;
-        initButton();
+        if (button != null) {
+            _button = button;
+            initButton();
+        }
     }
 
     /******************** INHERITED METHODS *************************/
@@ -77,6 +89,8 @@ public class DrawingRectangleCreationTool extends Tool implements
 
         _mapView.getMapEventDispatcher().pushListeners();
         this.clearExtraListeners();
+
+        _callback = extras.getParcelable("callback");
 
         _setup();
         TextContainer.getInstance().displayPrompt(
@@ -95,14 +109,18 @@ public class DrawingRectangleCreationTool extends Tool implements
         if (!_b.built()) {
             _b.dispose();
         } else {
-
             // If properly built then show the details for the item
+            if (_callback != null) {
+                Intent callbackIntent = new Intent(_callback);
+                callbackIntent.putExtra("uid", _b.build().getUID());
+                AtakBroadcast.getInstance().sendBroadcast(callbackIntent);
+            }
+
             Intent intent = new Intent();
             intent.setAction(DrawingToolsMapReceiver.ZOOM_ACTION);
             intent.putExtra(DrawingToolsMapReceiver.EXTRA_CREATION_MODE, true);
             intent.putExtra("uid", _b.build().getUID());
             AtakBroadcast.getInstance().sendBroadcast(intent);
-
         }
         _b = null;
         TextContainer.getInstance().closePrompt();
@@ -130,9 +148,10 @@ public class DrawingRectangleCreationTool extends Tool implements
                     if (FileSystemUtils.isEmpty(tTitle))
                         continue;
                     String[] n = tTitle.split(" ");
+
                     try {
                         numUsed[j] = Integer.parseInt(n[n.length - 1]);
-                    } catch (NumberFormatException e) {
+                    } catch (Exception e) {
                         // The title has been editedA
                         numUsed[j] = 0;
                     }

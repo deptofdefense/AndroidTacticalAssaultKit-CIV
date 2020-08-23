@@ -301,7 +301,8 @@ public class DeviceProfileOperation extends HTTPOperation {
             if (android.os.Build.VERSION.SDK_INT < 26) {
                 builder = new Notification.Builder(context);
             } else {
-                builder = new Notification.Builder(context, "com.atakmap.app.def");
+                builder = new Notification.Builder(context,
+                        "com.atakmap.app.def");
             }
             builder.setContentTitle(title)
                     .setContentText(messageTitle)
@@ -349,9 +350,11 @@ public class DeviceProfileOperation extends HTTPOperation {
                                             .GetTimeRemainingString(
                                                     progressTracker
                                                             .getTimeRemaining()));
-                    builder.setProgress(100,
-                            progressTracker.getCurrentProgress(), false);
-                    builder.setContentText(message);
+                    if (builder != null) {
+                        builder.setProgress(100,
+                                progressTracker.getCurrentProgress(), false);
+                        builder.setContentText(message);
+                    }
                     if (notifyManager != null)
                         notifyManager.notify(notifId, builder.build());
                     Log.d(TAG, message);

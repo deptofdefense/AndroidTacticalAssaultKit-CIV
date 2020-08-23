@@ -30,7 +30,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:padding="@dimen/auto_margin"
-                android:text="P"
+                android:text="@string/pitch_button_text"
                 android:textSize="13sp"
                 style="@style/darkButton"
                 android:visibility="gone"/>
@@ -49,7 +49,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:padding="@dimen/auto_margin"
-                android:text="R"
+                android:text="@string/rollbuttontext"
                 android:textSize="13sp"
                 style="@style/darkButton"
                 android:visibility="gone"/>

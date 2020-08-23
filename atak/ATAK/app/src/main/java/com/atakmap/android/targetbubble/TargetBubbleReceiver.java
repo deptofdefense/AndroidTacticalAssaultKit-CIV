@@ -30,7 +30,6 @@ import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.android.widgets.LayoutWidget;
 import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.android.widgets.MarkerIconWidget;
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.gui.FastMGRS;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapItem;
@@ -41,6 +40,9 @@ import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.targetbubble.MapTargetBubble.OnLocationChangedListener;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+
+import com.atakmap.map.elevation.ElevationManager;
+import com.atakmap.map.elevation.ElevationData;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
@@ -441,7 +443,7 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
         if (_editPoint != null) {
             GeoPointMetaData prevPt = _editPoint.getGeoPointMetaData();
             if (prevPt.getAltitudeSource().equals(GeoPointMetaData.USER)) {
-                Log.d(TAG, "user defined altitude detected");
+                //Log.d(TAG, "user defined altitude detected");
                 // update the altitude
                 return GeoPointMetaData.wrap(
                         new GeoPoint(lat, lon, prevPt.get().getAltitude()),
@@ -451,10 +453,14 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
             }
         }
 
-        final Dt2ElevationModel dem = Dt2ElevationModel.getInstance();
-        GeoPointMetaData gpm = dem.queryPoint(lat, lon);
-        return GeoPointMetaData.wrap(gpm.get(),
-                GeoPointMetaData.USER, gpm.getAltitudeSource());
+        // the return should be the same as what occurs when the user drops the point initially
+        // The only difference with this return is that the 3-D model is not considered during the
+        // movement.    This is because the target bubble fails to show the 3-D model during the
+        // fine adjust process.
+        // see MapView::inverseWithElevation
+        final GeoPointMetaData gpm = new GeoPointMetaData();
+        double alt = ElevationManager.getElevation(lat, lon, null, gpm);
+        return gpm;
     }
 
     private void _setMapDataTargetPoint() {

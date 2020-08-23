@@ -35,7 +35,7 @@ public abstract class MapDataRef {
 
         String uriDecoded;
         try {
-            uriDecoded = URLDecoder.decode(uri, FileSystemUtils.UTF8_CHARSET);
+            uriDecoded = URLDecoder.decode(uri, FileSystemUtils.UTF8_CHARSET.name());
         } catch (UnsupportedEncodingException e) {
             Log.e(TAG, "unable to process uri: " + uri, e);
             return null;
@@ -59,7 +59,7 @@ public abstract class MapDataRef {
                 Log.e(TAG, "error: ", ex);
             }
         } else if (scheme.equals("asset")) {
-            String path = u.getPath();
+            String path = u.getHost() + u.getPath();
             if (path.startsWith("/")) {
                 path = path.substring(1);
             }
@@ -70,7 +70,7 @@ public abstract class MapDataRef {
             return new ResourceMapDataRef(pack + path);
         } else if (scheme.equals("base64")) { 
             // Make it into a base64MapDataRef
-            String path = u.getPath();
+            String path = u.getHost() + u.getPath();
             if (path.startsWith("/")) {
                 path = path.substring(1);
             }

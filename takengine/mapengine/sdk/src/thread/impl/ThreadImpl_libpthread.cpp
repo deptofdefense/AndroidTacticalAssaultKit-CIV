@@ -1,6 +1,5 @@
 #include "thread/Thread.h"
 #include "thread/impl/CondImpl.h"
-#include "thread/impl/LockImpl.h"
 #include "thread/impl/MutexImpl.h"
 #include "thread/impl/ThreadImpl.h"
 
@@ -98,19 +97,7 @@ namespace
         pthread_mutex_t mutex_s;
         pthread_mutexattr_t attr_s;
 
-        friend TAKErr TAK::Engine::Thread::Impl::LockImpl_create(LockImplPtr &value, MutexImpl &mutex) NOTHROWS;
         friend TAKErr TAK::Engine::Thread::Impl::CondVarImpl_create(CondVarImplPtr &value) NOTHROWS;
-    };
-
-    class PThreadsLockImpl : public LockImpl
-    {
-    public:
-        PThreadsLockImpl(PThreadsMutexImpl &mutex) NOTHROWS;
-        ~PThreadsLockImpl() NOTHROWS;
-    private:
-        PThreadsMutexImpl &mutex;
-
-        friend class PThreadsCondVarImpl;
     };
 
     class PThreadsCondVarImpl : public CondVarImpl
@@ -118,9 +105,9 @@ namespace
     public:
         PThreadsCondVarImpl() NOTHROWS;
     public:
-        virtual TAKErr broadcast(LockImpl &lock) NOTHROWS;
-        virtual TAKErr signal(LockImpl &lock) NOTHROWS;
-        virtual TAKErr wait(LockImpl &lock, const int64_t milliSeconds) NOTHROWS;
+        virtual TAKErr broadcast(MutexImpl &lock) NOTHROWS;
+        virtual TAKErr signal(MutexImpl &lock) NOTHROWS;
+        virtual TAKErr wait(MutexImpl &lock, const int64_t milliSeconds) NOTHROWS;
     private:
         std::unique_ptr<pthread_cond_t, int(*)(pthread_cond_t *)> impl;
         pthread_cond_t impl_s;
@@ -156,23 +143,6 @@ TAKErr TAK::Engine::Thread::Impl::CondVarImpl_create(CondVarImplPtr &value) NOTH
     // XXX - could check initialization here
 
     return TE_Ok;
-}
-
-/*****************************************************************************/
-// Lock definitions
-
-TAKErr TAK::Engine::Thread::Impl::LockImpl_create(LockImplPtr &value, MutexImpl &mutex) NOTHROWS
-{
-    TAKErr code(TE_Ok);
-    PThreadsMutexImpl &mutexImpl = static_cast<PThreadsMutexImpl &>(mutex);
-
-    code = mutexImpl.lock();
-    if (code != TE_Ok)
-        return code;
-
-    value = LockImplPtr(new PThreadsLockImpl(mutexImpl), Memory_deleter_const<LockImpl, PThreadsLockImpl>);
-
-    return code;
 }
 
 /*****************************************************************************/
@@ -241,7 +211,7 @@ namespace
             impl = std::unique_ptr<pthread_cond_t, int(*)(pthread_cond_t *)>(&impl_s, pthread_cond_destroy);
     }
 
-    TAKErr PThreadsCondVarImpl::broadcast(LockImpl &lock) NOTHROWS
+    TAKErr PThreadsCondVarImpl::broadcast(MutexImpl &lock) NOTHROWS
     {
         if (!impl.get())
             return TE_IllegalState;
@@ -251,7 +221,7 @@ namespace
         return TE_Ok;
     }
 
-    TAKErr PThreadsCondVarImpl::signal(LockImpl &lock) NOTHROWS
+    TAKErr PThreadsCondVarImpl::signal(MutexImpl &lock) NOTHROWS
     {
         if (!impl.get())
             return TE_IllegalState;
@@ -261,12 +231,12 @@ namespace
         return TE_Ok;
     }
 
-    TAKErr PThreadsCondVarImpl::wait(LockImpl &lock, const int64_t milliseconds) NOTHROWS
+    TAKErr PThreadsCondVarImpl::wait(MutexImpl &mutex, const int64_t milliseconds) NOTHROWS
     {
         TAKErr code(TE_Ok);
-        PThreadsLockImpl &lockImpl = static_cast<PThreadsLockImpl &>(lock);
+        PThreadsMutexImpl &pthreadMutexImpl = static_cast<PThreadsMutexImpl &>(mutex);
         pthread_mutex_t *mutexImpl(NULL);
-        code = lockImpl.mutex.getMutex(&mutexImpl);
+        code = pthreadMutexImpl.getMutex(&mutexImpl);
         if (code != TE_Ok)
             return code;
 
@@ -301,17 +271,6 @@ namespace
         if (err)
             return TE_Err;
         return TE_Ok;
-    }
-
-    // PThreadsLockImpl
-
-    PThreadsLockImpl::PThreadsLockImpl(PThreadsMutexImpl &mutex_) NOTHROWS :
-        mutex(mutex_)
-    {}
-
-    PThreadsLockImpl::~PThreadsLockImpl() NOTHROWS
-    {
-        mutex.unlock();
     }
 
     // PThreadsMutexImpl

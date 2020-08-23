@@ -16,11 +16,13 @@ import java.util.Set;
 import com.atakmap.coremap.log.Log;
 
 import android.database.sqlite.SQLiteException;
+import android.graphics.PointF;
 import android.util.Pair;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.Layer2;
 import com.atakmap.map.layer.control.AttributionControl;
 import com.atakmap.map.layer.control.Controls;
@@ -31,8 +33,10 @@ import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.FeatureCursor;
 import com.atakmap.map.layer.feature.FeatureDataStore2;
 import com.atakmap.map.layer.feature.FeatureDataStore2.FeatureSetQueryParameters;
+import com.atakmap.map.layer.feature.FeatureDataStore3;
 import com.atakmap.map.layer.feature.FeatureDefinition;
 import com.atakmap.map.layer.feature.FeatureDefinition2;
+import com.atakmap.map.layer.feature.FeatureDefinition3;
 import com.atakmap.map.layer.feature.FeatureLayer;
 import com.atakmap.map.layer.feature.FeatureLayer2;
 import com.atakmap.map.layer.feature.FeatureLayer3;
@@ -57,6 +61,8 @@ import com.atakmap.map.layer.feature.geometry.opengl.GLBatchPoint;
 import com.atakmap.map.layer.feature.ogr.style.FeatureStyleParser;
 import com.atakmap.map.layer.feature.service.FeatureHitTestControl;
 import com.atakmap.map.layer.opengl.GLAsynchronousLayer2;
+import com.atakmap.map.layer.opengl.GLLayer2;
+import com.atakmap.map.layer.opengl.GLLayerSpi2;
 import com.atakmap.map.layer.raster.osm.OSMUtils;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.Statistics;
@@ -65,6 +71,27 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
         GLAsynchronousLayer2<LinkedList<GLBatchGeometry>> implements
         FeatureDataStore2.OnDataStoreContentChangedListener,
         FeatureHitTestControl {
+
+    public final static GLLayerSpi2 SPI = new GLLayerSpi2() {
+        @Override
+        public int getPriority() {
+            // make default impl, over
+            return 2;
+        }
+
+        @Override
+        public GLLayer2 create(Pair<MapRenderer, Layer> object) {
+            final MapRenderer ctx = object.first;
+            final Layer layer = object.second;
+            if(layer instanceof FeatureLayer)
+                return new GLBatchGeometryFeatureDataStoreRenderer(ctx, (FeatureLayer)layer);
+            else if(layer instanceof FeatureLayer2)
+                return new GLBatchGeometryFeatureDataStoreRenderer(ctx, (FeatureLayer2)layer);
+            else if(layer instanceof FeatureLayer3)
+                return new GLBatchGeometryFeatureDataStoreRenderer(ctx, (FeatureLayer3)layer);
+            return null;
+        }
+    };
 
     private final static Set<Class<? extends MapControl>> filteredControls = new HashSet<Class<? extends MapControl>>();
     static {
@@ -307,6 +334,7 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
                         break;
 
                     featureId = cursor.getId();
+                    final long version = cursor.getVersion();
 
                     GLBatchGeometry glitem = this.glSpatialItems.get(featureId);
                     if (glitem != null) {
@@ -318,7 +346,10 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
 
                         // if we've already simplified the geometry at the
                         // current level of detail, just go with what we have.
-                        if (glitem.lod == lod) {
+                        //
+                        // also make sure to verify if the version is the same otherwise
+                        // go through the complete initialization
+                        if (glitem.lod == lod  && glitem.version == version) {
                             result.add(glitem);
                             continue;
                         }
@@ -328,6 +359,7 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
                     boolean useBlobGeom = false;
                     blob = null;
                     geom = null;
+
                     if(cursor.getGeomCoding() == FeatureDefinition.GEOM_SPATIALITE_BLOB) {
                         byte[] rawGeom = (byte[])cursor.getRawGeometry();
                         if (rawGeom == null)
@@ -372,7 +404,7 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
                         } else if(geom == null) {
                             continue;
                         } else {
-                            throw new IllegalStateException();
+                            throw new IllegalStateException("unknown geometry encountered");
                         }
                     }
 
@@ -410,30 +442,34 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
 
                         glitem.init(featureId.longValue(), cursor.getName());
 
-                        style = null;
-                        if(cursor.getStyleCoding() == FeatureDefinition.STYLE_OGR) {
-                            final String styleString = (String)cursor.getRawStyle();
-                            if (styleString != null) {
-                                style = styleMap.get(styleString);
-                                if (style == null) {
-                                    style = FeatureStyleParser.parse2(styleString);
-                                    if(style != null)
-                                        styleMap.put(styleString, style);
-                                }
-                            }
-                        } else if(cursor.getStyleCoding() == FeatureDefinition.STYLE_ATAK_STYLE) {
-                            style = (Style)cursor.getRawStyle();
-                        } else {
-                            style = cursor.get().getStyle();
-                        }
-                        if (style != null)
-                            glitem.setStyle(style);
+
 
                         this.glSpatialItems.put(featureId, glitem);
                     }
 
                     if(this.checkQueryThreadAbort())
                         break;
+
+                    style = null;
+                    if(cursor.getStyleCoding() == FeatureDefinition.STYLE_OGR) {
+                        final String styleString = (String)cursor.getRawStyle();
+                        if (styleString != null) {
+                            style = styleMap.get(styleString);
+                            if (style == null) {
+                                style = FeatureStyleParser.parse2(styleString);
+                                if(style != null)
+                                    styleMap.put(styleString, style);
+                            }
+                        }
+                    } else if(cursor.getStyleCoding() == FeatureDefinition.STYLE_ATAK_STYLE) {
+                        style = (Style)cursor.getRawStyle();
+                    } else {
+                        style = cursor.get().getStyle();
+                    }
+                    if (style != null)
+                        glitem.setStyle(style);
+
+
 
                     // XXX - geometry only needs to get set on GLBatchPoint once
                     if(useBlobGeom) {
@@ -464,10 +500,16 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
                                 glitem.setGeometry(geom, lod);
                                 break;
                             default:
-                                throw new IllegalStateException();
+                                throw new IllegalStateException("unknown type encountered");
                         }
                     }
 
+                    if (cursor instanceof FeatureDefinition3) {
+                        glitem.setAltitudeMode(((FeatureDefinition3) cursor).getAltitudeMode());
+                        glitem.setExtrude(((FeatureDefinition3) cursor).getExtrude());
+                    }
+
+                    glitem.version = version;
                     // only add the result if it's visible
                     result.add(glitem);
                 }
@@ -498,7 +540,7 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
             //       asynchronous renderables. Log exception for 2.2 release.
             
             //throw new RuntimeException(e);
-            Log.e("GLPersistentDataSourceFeatureDataStore", "Unexpected SQLite exception", e);
+            Log.e(TAG, "Unexpected SQLite exception", e);
         }
     }
 
@@ -535,18 +577,19 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
                         float screenY,
                         final GeoPoint touch,
                         double resolution,
-                        float radius,
+                        final float screenRadius,
                         final int limit) {
 
         double mercatorscale = Math.cos(Math.toRadians(touch.getLatitude()));
         if (mercatorscale < 0.0001)
             mercatorscale = 0.0001;
-        final double meters = radius * resolution * mercatorscale;
+        final double metersRadius = screenRadius * resolution * mercatorscale;
 
         // geometries are modified on the GL thread so we need to do the
         // hit-testing on that thread
         final Collection<Long> glfids = new LinkedList<Long>();
         final boolean[] signaled = new boolean[] {false};
+        final PointF screenPoint = new PointF(screenX, screenY);
         
         this.renderContext.queueEvent(new Runnable() {
             @Override
@@ -554,11 +597,12 @@ public class GLBatchGeometryFeatureDataStoreRenderer extends
                 synchronized(GLBatchGeometryFeatureDataStoreRenderer.this) {
                     if(GLBatchGeometryFeatureDataStoreRenderer.this.batchRenderer != null) {
                         //long s = System.currentTimeMillis();
-                        GLBatchGeometryFeatureDataStoreRenderer.this.batchRenderer.hitTest2(
+                        GLBatchGeometryFeatureDataStoreRenderer.this.batchRenderer.hitTest3(
                                 glfids,
-                                new Point(touch.getLongitude(),
-                                          touch.getLatitude()),
-                                meters,
+                                touch,
+                                metersRadius,
+                                screenPoint,
+                                screenRadius,
                                 limit);
                         //long e = System.currentTimeMillis();
                         //Log.d(TAG, "HIT TEST [" + subject.getName() + "] in " + (e-s) + "ms");

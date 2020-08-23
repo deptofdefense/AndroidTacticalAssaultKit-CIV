@@ -454,7 +454,11 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
         h.lockBtn.setVisibility(View.GONE);
         h.vizBtn.setVisibility(View.GONE);
 
-        h.sendBtn.setVisibility(View.VISIBLE);
+        if (getDescriptorFile(tsInfo) != null)
+            h.sendBtn.setVisibility(View.VISIBLE);
+        else
+            h.sendBtn.setVisibility(View.INVISIBLE);
+
         h.sendBtn.setOnClickListener(this);
 
         FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
@@ -581,7 +585,7 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
             int sliderMax;
             double minRes;
             double maxRes;
-            if (downloadable) {
+            if (downloadable && spec != null) {
                 ResolutionLevelSpec res = resolutionLevel.get(spec.desc);
                 if (res == null) {
                     res = new ResolutionLevelSpec(spec.desc);
@@ -676,17 +680,26 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
         }
     }
 
-    private void showSendDialog(LayerSelection selection) {
+    private File getDescriptorFile(LayerSelection selection) {
         DatasetDescriptor desc = getDataset(selection);
         if (desc == null)
-            return;
+            return null;
 
         String uri = desc.getUri();
         if (FileSystemUtils.isEmpty(uri))
-            return;
+            return null;
 
         File xmlFile = new File(uri);
         if (!FileSystemUtils.isFile(xmlFile))
+            return null;
+
+        return xmlFile;
+    }
+
+    private void showSendDialog(LayerSelection selection) {
+        File xmlFile = getDescriptorFile(selection);
+
+        if (xmlFile == null)
             return;
 
         SendDialog.Builder b = new SendDialog.Builder(_mapView);

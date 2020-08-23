@@ -1,20 +1,26 @@
 package com.atakmap.map.layer.feature.geometry;
 
+import com.atakmap.interop.InteropCleaner;
+import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
-import com.atakmap.lang.Unsafe;
+import com.atakmap.lang.ref.Cleaner;
+import com.atakmap.util.Disposable;
 import com.atakmap.util.ReadWriteLock;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.util.LinkedList;
 
-public abstract class Geometry {
+public abstract class Geometry implements Disposable {
+
+    final static NativePeerManager.Cleaner CLEANER = new InteropCleaner(Geometry.class);
 
     final ReadWriteLock rwlock = new ReadWriteLock();
     Pointer pointer;
     Geometry owner;
+    Cleaner cleaner;
 
     Geometry(Pointer pointer) {
+        cleaner = NativePeerManager.register(this, pointer, rwlock, null, CLEANER);
+
         this.pointer = pointer;
         this.owner = null;
     }
@@ -80,48 +86,20 @@ public abstract class Geometry {
     public final int computeWkbSize() {
         this.rwlock.acquireRead();
         try {
-            return computeWkbSize(pointer);
+            return GeometryFactory.computeWkbSize(pointer.raw);
         } finally {
             this.rwlock.releaseRead();
         }
     }
 
     public final void toWkb(ByteBuffer buffer) {
-        this.rwlock.acquireRead();
-        try {
-            final int written;
-            if (buffer.isDirect()) {
-                written = toWkb(this.pointer, (buffer.order() == ByteOrder.LITTLE_ENDIAN), Unsafe.getBufferPointer(buffer) + buffer.position(), buffer.remaining());
-            } else if (buffer.hasArray()) {
-                written = toWkb(this.pointer, (buffer.order() == ByteOrder.LITTLE_ENDIAN), buffer.array(), buffer.position(), buffer.limit());
-            } else {
-                final int size = computeWkbSize(pointer);
-                byte[] wkb = new byte[size];
-                written = toWkb(this.pointer, (buffer.order() == ByteOrder.LITTLE_ENDIAN), wkb, 0, size);
-                final int pos = buffer.position();
-                buffer.put(wkb, 0, written);
-                buffer.position(pos);
-            }
-
-            buffer.position(buffer.position() + written);
-        } finally {
-            this.rwlock.releaseRead();
-        }
+        GeometryFactory.toWkb(this, buffer);
     }
 
     @Override
-    public final void finalize() {
-        this.rwlock.acquireWrite();
-        try {
-            if(this.pointer.value != 0L)
-                destroy(this.pointer);
-        } finally {
-            this.rwlock.releaseWrite();
-        }
-
-        try {
-            super.finalize();
-        } catch(Throwable ignored) {}
+    public final void dispose() {
+        if(cleaner != null)
+            cleaner.clean();
     }
 
     @Override
@@ -208,9 +186,6 @@ public abstract class Geometry {
     static native boolean equals(long a, long b);
     static native void destroy(Pointer pointer);
     static native void getEnvelope(Pointer pointer, double[] envelope);
-    static native int computeWkbSize(Pointer pointer);
-    static native int toWkb(Pointer pointer, boolean littleEndian, long buffer, int lim);
-    static native int toWkb(Pointer pointer, boolean littleEndian, byte[] arr, int off, int lim);
     static native int getDimension(Pointer pointer);
     static native void setDimension(Pointer pointer, int dimension);
     static native int getGeometryClass(Pointer pointer);

@@ -9,7 +9,7 @@ namespace atakmap {
         namespace osm {
 
             namespace {
-                OSMUtils *singleton = NULL;
+                OSMUtils *singleton = nullptr;
             }
 
             OSMUtils::OSMUtils() : tableName("tiles")
@@ -21,7 +21,7 @@ namespace atakmap {
 
             const OSMUtils& OSMUtils::getInstance()
             {
-                if (singleton == NULL)
+                if (singleton == nullptr)
                     singleton = new OSMUtils();
                 return *singleton;
             }
@@ -126,7 +126,15 @@ namespace atakmap {
                     return INT_MAX;
 
                 // XXX - not sure whether we want ceil or floor here.....
-                return (int)(log(156543.034 * cos(lat) / resolution) / M_LN2);
+                return (int)mapnikTileLeveld(resolution, lat);
+            }
+
+            double OSMUtils::mapnikTileLeveld(double resolution, double lat)
+            {
+                if (resolution == 0.0)
+                    return INT_MAX;
+
+                return (log(156543.034 * cos(lat) / resolution) / M_LN2);
             }
 
 

@@ -1,6 +1,6 @@
 <set>
     <broadcast>
-        <action>com.atakmap.android.munitions.REMOVE</action>
+        <action>com.atakmap.android.munitions.REMOVE_WEAPON</action>
         <extras>
             <string key='targetUID'>${uid}</string>
         </extras>

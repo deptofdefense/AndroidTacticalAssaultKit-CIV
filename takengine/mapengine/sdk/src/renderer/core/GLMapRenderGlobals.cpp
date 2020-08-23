@@ -10,6 +10,7 @@
 
 using namespace TAK::Engine::Renderer;
 
+using namespace TAK::Engine::Core;
 using namespace TAK::Engine::Thread;
 using namespace TAK::Engine::Util;
 
@@ -42,25 +43,25 @@ namespace
         std::unique_ptr<GLTextureCache2> cache2;
     };
 
-    std::map<const GLRenderContext *, std::unique_ptr<Context>> contextMap;
+    std::map<const RenderContext *, std::unique_ptr<Context>> contextMap;
     Mutex contextMapMutex;
 
     std::size_t maxTextureUnits(0);
     std::size_t textureUnitLimit;
 }
 
-TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getTextureAtlas(GLTextureAtlas **value, const GLRenderContext *ctx) NOTHROWS
+TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getTextureAtlas(GLTextureAtlas **value, const RenderContext &ctx) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, contextMapMutex);
+    Lock lock(contextMapMutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    std::map<const GLRenderContext *, std::unique_ptr<Context>>::iterator entry;
+    std::map<const RenderContext *, std::unique_ptr<Context>>::iterator entry;
     do {
-        entry = contextMap.find(ctx);
+        entry = contextMap.find(&ctx);
         if (entry == contextMap.end()) {
-            contextMap[ctx] = std::unique_ptr<Context>(new Context);
+            contextMap[&ctx] = std::unique_ptr<Context>(new Context);
             continue;
         }
         break;
@@ -72,17 +73,17 @@ TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getTextureAtlas(GLTexture
     return TE_Ok;
 }
 
-TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getIconAtlas(GLTextureAtlas **value, const GLRenderContext *ctx) NOTHROWS
+TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getIconAtlas(GLTextureAtlas **value, const RenderContext &ctx) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, contextMapMutex);
+    Lock lock(contextMapMutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    std::map<const GLRenderContext *, std::unique_ptr<Context>>::iterator entry;
+    std::map<const RenderContext *, std::unique_ptr<Context>>::iterator entry;
     do {
-        entry = contextMap.find(ctx);
+        entry = contextMap.find(&ctx);
         if (entry == contextMap.end()) {
-            contextMap[ctx] = std::unique_ptr<Context>(new Context);
+            contextMap[&ctx] = std::unique_ptr<Context>(new Context);
             continue;
         }
         break;
@@ -94,17 +95,17 @@ TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getIconAtlas(GLTextureAtl
     return TE_Ok;
 }
 
-TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getTextureCache(GLTextureCache **value, const GLRenderContext *ctx) NOTHROWS
+TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getTextureCache(GLTextureCache **value, const RenderContext &ctx) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, contextMapMutex);
+    Lock lock(contextMapMutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    std::map<const GLRenderContext *, std::unique_ptr<Context>>::iterator entry;
+    std::map<const RenderContext *, std::unique_ptr<Context>>::iterator entry;
     do {
-        entry = contextMap.find(ctx);
+        entry = contextMap.find(&ctx);
         if (entry == contextMap.end()) {
-            contextMap[ctx] = std::unique_ptr<Context>(new Context);
+            contextMap[&ctx] = std::unique_ptr<Context>(new Context);
             continue;
         }
         break;
@@ -135,39 +136,45 @@ std::size_t TAK::Engine::Renderer::Core::GLMapRenderGlobals_getNominalIconSize()
 #endif
 }
 
-TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getBitmapLoader(TAK::Engine::Renderer::AsyncBitmapLoader2 **value, const GLRenderContext *ctx) NOTHROWS
+TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getBitmapLoader(TAK::Engine::Renderer::AsyncBitmapLoader2 **value, const RenderContext &ctx) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, contextMapMutex);
+    Lock lock(contextMapMutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    std::map<const GLRenderContext *, std::unique_ptr<Context>>::iterator entry;
+    std::map<const RenderContext *, std::unique_ptr<Context>>::iterator entry;
     do {
-        entry = contextMap.find(ctx);
+        entry = contextMap.find(&ctx);
         if (entry == contextMap.end()) {
-            contextMap[ctx] = std::unique_ptr<Context>(new Context);
+            contextMap[&ctx] = std::unique_ptr<Context>(new Context);
             continue;
         }
         break;
     } while (true);
 
-    if (!entry->second->bitmapLoader.get())
+    if (!entry->second->bitmapLoader.get()) {
+        // See comments on AsyncBitmapLoader2 constructor as to why this is needed
+#ifdef WIN32
+        entry->second->bitmapLoader.reset(new AsyncBitmapLoader2(TE_GLMRG_ASYNC_BITMAP_LOADER_THREADS, false));
+#else
         entry->second->bitmapLoader.reset(new AsyncBitmapLoader2(TE_GLMRG_ASYNC_BITMAP_LOADER_THREADS));
+#endif
+    }
     *value = entry->second->bitmapLoader.get();
     return TE_Ok;
 }
 
-TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getTextureAtlas2(GLTextureAtlas2 **value, const GLRenderContext *ctx) NOTHROWS
+TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getTextureAtlas2(GLTextureAtlas2 **value, const RenderContext &ctx) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, contextMapMutex);
+    Lock lock(contextMapMutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    std::map<const GLRenderContext *, std::unique_ptr<Context>>::iterator entry;
+    std::map<const RenderContext *, std::unique_ptr<Context>>::iterator entry;
     do {
-        entry = contextMap.find(ctx);
+        entry = contextMap.find(&ctx);
         if (entry == contextMap.end()) {
-            contextMap[ctx] = std::unique_ptr<Context>(new Context);
+            contextMap[&ctx] = std::unique_ptr<Context>(new Context);
             continue;
         }
         break;
@@ -179,17 +186,17 @@ TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getTextureAtlas2(GLTextur
     return TE_Ok;
 }
 
-TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getIconAtlas2(GLTextureAtlas2 **value, const GLRenderContext *ctx) NOTHROWS
+TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getIconAtlas2(GLTextureAtlas2 **value, const RenderContext &ctx) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, contextMapMutex);
+    Lock lock(contextMapMutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    std::map<const GLRenderContext *, std::unique_ptr<Context>>::iterator entry;
+    std::map<const RenderContext *, std::unique_ptr<Context>>::iterator entry;
     do {
-        entry = contextMap.find(ctx);
+        entry = contextMap.find(&ctx);
         if (entry == contextMap.end()) {
-            contextMap[ctx] = std::unique_ptr<Context>(new Context);
+            contextMap[&ctx] = std::unique_ptr<Context>(new Context);
             continue;
         }
         break;
@@ -203,17 +210,17 @@ TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getIconAtlas2(GLTextureAt
 }
 
 
-TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getTextureCache2(GLTextureCache2 **value, const GLRenderContext *ctx) NOTHROWS
+TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getTextureCache2(GLTextureCache2 **value, const RenderContext &ctx) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, contextMapMutex);
+    Lock lock(contextMapMutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    std::map<const GLRenderContext *, std::unique_ptr<Context>>::iterator entry;
+    std::map<const RenderContext *, std::unique_ptr<Context>>::iterator entry;
     do {
-        entry = contextMap.find(ctx);
+        entry = contextMap.find(&ctx);
         if (entry == contextMap.end()) {
-            contextMap[ctx] = std::unique_ptr<Context>(new Context);
+            contextMap[&ctx] = std::unique_ptr<Context>(new Context);
             continue;
         }
         break;
@@ -226,17 +233,17 @@ TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getTextureCache2(GLTextur
 }
 
 #ifndef __ANDROID__
-TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getLabelManager(TAK::Engine::Renderer::Core::GLLabelManager** value, const GLRenderContext* ctx) NOTHROWS
+TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getLabelManager(TAK::Engine::Renderer::Core::GLLabelManager** value, const RenderContext &ctx) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, contextMapMutex);
+    Lock lock(contextMapMutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    std::map<const GLRenderContext*, std::unique_ptr<Context>>::iterator entry;
+    std::map<const RenderContext*, std::unique_ptr<Context>>::iterator entry;
     do {
-        entry = contextMap.find(ctx);
+        entry = contextMap.find(&ctx);
         if (entry == contextMap.end()) {
-            contextMap[ctx] = std::unique_ptr<Context>(new Context);
+            contextMap[&ctx] = std::unique_ptr<Context>(new Context);
             continue;
         }
         break;
@@ -251,8 +258,8 @@ TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getLabelManager(TAK::Engi
 TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getTextureUnitLimit(std::size_t *value) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, contextMapMutex);
+    Lock lock(contextMapMutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
     if (!maxTextureUnits) {
         int glLimit;
@@ -273,8 +280,8 @@ TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_getTextureUnitLimit(std::
 TAKErr TAK::Engine::Renderer::Core::GLMapRenderGlobals_setTextureUnitLimit(const std::size_t limit) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, contextMapMutex);
+    Lock lock(contextMapMutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
     textureUnitLimit = limit;
     return TE_Ok;

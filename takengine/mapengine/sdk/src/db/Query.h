@@ -27,7 +27,7 @@ namespace TAK {
                     TEFT_Float,
                 };
             protected:
-                virtual ~Query() throw () = 0;
+                virtual ~Query() NOTHROWS = default;
             public:
                 virtual TAK::Engine::Util::TAKErr getColumnIndex(std::size_t *value, const char *columnName) NOTHROWS = 0;
                 virtual TAK::Engine::Util::TAKErr getColumnName(const char **value, const std::size_t columnIndex) NOTHROWS = 0;

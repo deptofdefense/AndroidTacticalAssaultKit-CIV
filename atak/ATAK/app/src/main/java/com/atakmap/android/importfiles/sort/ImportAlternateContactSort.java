@@ -3,7 +3,9 @@ package com.atakmap.android.importfiles.sort;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.drawable.Drawable;
 import android.preference.PreferenceManager;
+import android.util.Pair;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
@@ -232,6 +234,16 @@ public class ImportAlternateContactSort extends ImportResolver {
     @Override
     public String getDisplayableName() {
         return _context.getString(R.string.contact_info);
+    }
+
+    @Override
+    public Drawable getIcon() {
+        return _context.getDrawable(R.drawable.ic_menu_contact);
+    }
+
+    @Override
+    public Pair<String, String> getContentMIME() {
+        return new Pair<>("Contact Info", "text/csv");
     }
 
     @Override

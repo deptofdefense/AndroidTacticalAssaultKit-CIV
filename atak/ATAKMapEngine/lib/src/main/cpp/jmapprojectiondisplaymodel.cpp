@@ -30,24 +30,15 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_projection_MapProjectionDisplayModel
         return;
     }
 
-    jint type = env->GetIntField(mpointer, Pointer_class.type);
-    jlong ptr = env->GetLongField(mpointer, Pointer_class.value);
-    if(type == com_atakmap_interop_Pointer_UNIQUE) {
-        MapProjectionDisplayModelPtr *cpointer = JLONG_TO_INTPTR(MapProjectionDisplayModelPtr, ptr);
-
-        // promote to shared pointer
-        std::shared_ptr<MapProjectionDisplayModel> *model = new std::shared_ptr<MapProjectionDisplayModel>(std::move(*cpointer));
-        env->SetLongField(mpointer, Pointer_class.value, INTPTR_TO_JLONG(model));
-        env->SetIntField(mpointer, Pointer_class.type, com_atakmap_interop_Pointer_SHARED);
-
-        MapProjectionDisplayModel_registerModel(*model);
-    } else if(type == com_atakmap_interop_Pointer_SHARED) {
-        std::shared_ptr<MapProjectionDisplayModel> *model = JLONG_TO_INTPTR(std::shared_ptr<MapProjectionDisplayModel>, ptr);
-
-        MapProjectionDisplayModel_registerModel(*model);
-    } else {
+    if(!Pointer_makeShared<MapProjectionDisplayModel>(env, mpointer)) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return;
     }
+
+    jlong ptr = env->GetLongField(mpointer, Pointer_class.value);
+    std::shared_ptr<MapProjectionDisplayModel> *model = JLONG_TO_INTPTR(std::shared_ptr<MapProjectionDisplayModel>, ptr);
+
+    MapProjectionDisplayModel_registerModel(*model);
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_projection_MapProjectionDisplayModel_unregisterImpl
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -107,8 +98,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_projection_MapProjectionDisplayMo
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return 0LL;
     }
-    GeometryModel2Ptr retval(model->earth.get(), Memory_leaker_const<GeometryModel2>);
-    return NewPointer(env, std::move(retval));
+    return NewPointer(env, model->earth.get(), true);
 }
 JNIEXPORT jint JNICALL Java_com_atakmap_map_projection_MapProjectionDisplayModel_getSRID
   (JNIEnv *env, jclass clazz, jlong modelPtr)

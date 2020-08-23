@@ -111,7 +111,7 @@ void DataOutput2::setSourceEndian2(const TAKEndian e) NOTHROWS
 
 
 FileOutput2::FileOutput2() NOTHROWS :
-    f(NULL)
+    f(nullptr)
 {}
 
 FileOutput2::~FileOutput2() NOTHROWS
@@ -138,7 +138,7 @@ TAKErr FileOutput2::close() NOTHROWS
     if (fclose(f) != 0)
         return TE_IO;
     else
-        f = NULL;
+        f = nullptr;
     return TE_Ok;
 }
 
@@ -193,7 +193,7 @@ TAKErr FileOutput2::tell(int64_t *value) NOTHROWS
 
 
 MemoryOutput2::MemoryOutput2() NOTHROWS :
-    bytes(NULL),
+    bytes(nullptr),
     curOffset(0),
     totalLen(0)
 {}
@@ -211,7 +211,7 @@ TAKErr MemoryOutput2::open(uint8_t *buffer, const std::size_t len) NOTHROWS
 
 TAKErr MemoryOutput2::close() NOTHROWS
 {
-    bytes = NULL;
+    bytes = nullptr;
     return TE_Ok;
 }
 
@@ -261,7 +261,7 @@ TAKErr MemoryOutput2::remaining(std::size_t *value) NOTHROWS
 }
 
 ByteBufferOutput2::ByteBufferOutput2() NOTHROWS :
-    buffer(NULL)
+    buffer(nullptr)
 {}
 
 ByteBufferOutput2::~ByteBufferOutput2()
@@ -275,7 +275,7 @@ TAKErr ByteBufferOutput2::open(MemBufferT<uint8_t> *buffer_) NOTHROWS
 
 TAKErr ByteBufferOutput2::close() NOTHROWS
 {
-    this->buffer = NULL;
+    this->buffer = nullptr;
     return TE_Ok;
 }
 
@@ -308,8 +308,8 @@ TAKErr ByteBufferOutput2::skip(const std::size_t n) NOTHROWS
 
 
 DynamicOutput::DynamicOutput() NOTHROWS :
-    buffer(NULL),
-    writePtr(NULL),
+    buffer(nullptr),
+    writePtr(nullptr),
     capacity(0)
 {}
 
@@ -329,7 +329,7 @@ TAKErr DynamicOutput::open(const std::size_t capacity_) NOTHROWS
 TAKErr DynamicOutput::close() NOTHROWS
 {
     buffer.reset();
-    writePtr = NULL;
+    writePtr = nullptr;
     capacity = 0;
     return TE_Ok;
 }
@@ -363,7 +363,7 @@ TAKErr DynamicOutput::writeByte(const uint8_t value) NOTHROWS
 
 TAKErr DynamicOutput::skip(const std::size_t n) NOTHROWS
 {
-    return write(NULL, n);
+    return write(nullptr, n);
 }
 
 TAKErr DynamicOutput::get(const uint8_t **buf, std::size_t *len) NOTHROWS

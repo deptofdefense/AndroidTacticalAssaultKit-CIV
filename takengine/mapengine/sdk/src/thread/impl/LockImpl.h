@@ -23,7 +23,7 @@ namespace TAK {
                 private:
                     LockImpl(const LockImpl &) NOTHROWS;
                 protected:
-                    virtual ~LockImpl() NOTHROWS = 0;
+                    virtual ~LockImpl() NOTHROWS;
                 };
 
                 typedef std::unique_ptr<LockImpl, void(*)(const LockImpl *)> LockImplPtr;

@@ -34,6 +34,7 @@ import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 
+import com.atakmap.android.cotdetails.extras.ExtraDetailsLayout;
 import com.atakmap.android.dropdown.DropDown;
 import com.atakmap.android.dropdown.DropDownManager;
 import com.atakmap.android.dropdown.DropDownReceiver;
@@ -128,6 +129,7 @@ public class RoutePlannerView extends LinearLayout implements
     private TextView _routeType;
     private RemarksLayout _remarksLayout;
     private ContactPointAdapter _adapter;
+    private ExtraDetailsLayout _extrasLayout;
 
     public RoutePlannerView(Context context) {
         super(context);
@@ -183,6 +185,9 @@ public class RoutePlannerView extends LinearLayout implements
 
         // Remarks
         _remarksLayout = findViewById(R.id.remarksLayout);
+
+        // Extra views for tools and plugins
+        _extrasLayout = findViewById(R.id.extrasLayout);
 
         // Route action buttons
         findViewById(R.id.share_route).setOnClickListener(this);
@@ -619,6 +624,8 @@ public class RoutePlannerView extends LinearLayout implements
                     ActionBarReceiver.getInstance().setToolView(_undoToolbar);
                 else if (_undoToolbar == toolbar && !onTop)
                     ActionBarReceiver.getInstance().setToolView(null, false);
+
+                _extrasLayout.setItem(_route);
             }
         });
 

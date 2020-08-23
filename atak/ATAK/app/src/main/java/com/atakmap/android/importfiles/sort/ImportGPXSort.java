@@ -31,7 +31,8 @@ public class ImportGPXSort extends ImportInPlaceResolver {
     public ImportGPXSort(Context context, boolean validateExt,
             boolean copyFile, boolean importInPlace) {
         super(".gpx", FileSystemUtils.OVERLAYS_DIRECTORY, validateExt,
-                copyFile, importInPlace, context.getString(R.string.gpx_file));
+                copyFile, importInPlace, context.getString(R.string.gpx_file),
+                context.getDrawable(R.drawable.ic_gpx));
     }
 
     protected ImportGPXSort(boolean validateExt,

@@ -1,27 +1,27 @@
 package com.atakmap.util;
 
-import java.util.ArrayList;
-
 public class ResourcePool<T> {
 
     protected final int capacity;
-    private ArrayList<T> pool;
+    private Object[] pool;
+    private int size;
 
     public ResourcePool(int capacity) {
         this.capacity = capacity;
-        this.pool = new ArrayList<T>(capacity);
+        this.pool = new Object[capacity];
+        this.size = 0;
     }
     
     public synchronized boolean put(T obj) {
-        if(this.pool.size() == this.capacity)
+        if(this.size == this.capacity)
             return false;
-        return this.pool.add(obj);
+        this.pool[this.size++] = obj;
+        return true;
     }
     
     public synchronized T get() {
-        final int size = this.pool.size();
-        if(size < 1)
+        if(this.size == 0)
             return null;
-        return this.pool.remove(size-1);
+        return (T)this.pool[--this.size];
     }
 }

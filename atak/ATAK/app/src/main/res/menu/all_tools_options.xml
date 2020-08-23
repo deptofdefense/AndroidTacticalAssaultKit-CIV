@@ -1,15 +1,16 @@
-<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
         android:id="@+id/allToolsEdit"
-        android:showAsAction="always|withText"
         android:icon="@drawable/edit"
-        android:title="@string/configure"/>
+        android:title="@string/configure"
+        android:showAsAction="ifRoom|withText" />
     <item
         android:id="@+id/allToolsAppMgmt"
-        android:showAsAction="always|withText"
         android:icon="@drawable/ic_menu_plugins"
-        android:title="@string/manage_plugins"/>
+        android:title="@string/manage_plugins"
+        android:showAsAction="ifRoom|withText" />
     <item
         android:id="@+id/mp_add_actionbar"
         android:icon="@drawable/ic_menu_plus"

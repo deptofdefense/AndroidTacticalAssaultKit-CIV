@@ -16,13 +16,7 @@ Please make sure to set the ANDROID_HOME environment variable or create a local.
 The local.properties file should have the following line:
 sdk.dir=/path/to/android/sdk
 
-
-
-In Android Studio - remember to select milDebug as the default buildVariant otherwise you will build ausDebug by default.   This is because Android Studio alphabetically sorts the flavors and builds the first one by default.    This feature can be found under Build->Select Build Variants.
-If you are having trouble building flavors, please delete the .iml files, the .idea directory after you have closed out of the project.  Then reimport it.   This seems to be an issue in the 3.5 series of Android Studio.
-
-
-As of December 5, 2019 - ATAK is compiled to use targetSdkVersion 26 but still provide support for the minSdkVersion 21.    Be careful when developing new code within core to make sure that appropriate safeguards are in place that retain system compatibility for minSdkVersion 21.
+As of 04 May 2020 - ATAK is compiled to use targetSdkVersion 29 but still provide support for the minSdkVersion 21.    Be careful when developing new code within core to make sure that appropriate safeguards are in place that retain system compatibility for minSdkVersion 21.
 
 
 
@@ -33,12 +27,11 @@ Requirements for Development
 The following tools are required (at a minimum) to compile and deploy ATAK:
 
 - Java Development Kit 1.8 or greater (OpenJDK)
-- Android SDK with API level 21 installed
 - Git client 2.19 or greater
 
 If you are using the command line to build and deploy ATAK:
 
-- gradle
+- gradlew
 
 If using an IDE:
 
@@ -325,6 +318,11 @@ Useful Information
          
          gitlab-runner exec docker sdk 
 
+  NOTE: If you plugin makes use of git-lfs and you are trying to run it locally
+
+         gitlab-runner exec docker --pre-clone-script "git config --global lfs.url https://gitlab-ci-token:<your token>@repo-url/info/lfs" assembleMilRelease
+
+
 7) Testing your app with App Standby
 
 To test the App Standby mode with your app:
@@ -343,3 +341,4 @@ To test the App Standby mode with your app:
     $ adb shell am get-inactive com.atakmap.app
 
     Observe the behavior of your app after waking it. Make sure the app recovers gracefully from standby mode. In particular, you should check if your app's Notifications and background jobs continue to function as expected. 
+

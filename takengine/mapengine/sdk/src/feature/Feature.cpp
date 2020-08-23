@@ -2,6 +2,7 @@
 #include "feature/Feature.h"
 
 #include "feature/FeatureDataStore.h"
+#include "feature/Style.h"
 #include "util/AttributeSet.h"
 
 using namespace atakmap::feature;

@@ -37,10 +37,13 @@ import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureCursor;
 import com.atakmap.map.layer.feature.FeatureDataSource;
 import com.atakmap.map.layer.feature.FeatureDataStore;
+import com.atakmap.map.layer.feature.FeatureDataStore3;
 import com.atakmap.map.layer.feature.FeatureDefinition;
 import com.atakmap.map.layer.feature.FeatureDefinition2;
+import com.atakmap.map.layer.feature.FeatureDefinition3;
 import com.atakmap.map.layer.feature.FeatureSet;
 import com.atakmap.map.layer.feature.FeatureSetCursor;
+import com.atakmap.map.layer.feature.Utils;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.cursor.BruteForceLimitOffsetFeatureCursor;
 import com.atakmap.map.layer.feature.cursor.MultiplexingFeatureCursor;
@@ -76,7 +79,7 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
             VISIBILITY_SETTINGS_FEATURESET |
             VISIBILITY_SETTINGS_FEATURE;
     
-    private final static int DATABASE_VERSION = 2;
+    private final static int DATABASE_VERSION = 4;
 
     final String databaseFile;
 
@@ -136,6 +139,14 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
 
             // test for spatial index
             this.spatialIndexEnabled = (Databases.getTableNames(this.database).contains("idx_features_geometry"));
+
+            int version = database.getVersion();
+            if (version < DATABASE_VERSION) {
+                database.execute("ALTER TABLE features ADD COLUMN altitude_mode INTEGER DEFAULT 0", null);
+                database.execute("ALTER TABLE features ADD COLUMN extrude REAL DEFAULT 0.0", null);
+                database.setVersion(DATABASE_VERSION);
+            }
+
         }
         
         this.idToAttrSchema = new HashMap<Long, AttributeSpec>();
@@ -195,7 +206,9 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
                               "     visible_version INTEGER," +
                               "     min_lod INTEGER," +
                               "     max_lod INTEGER," +
-                              "     lod_version INTEGER)",
+                              "     lod_version INTEGER," +
+                              "     altitude_mode INTEGER," +
+                              "     extrude REAL)",
                               null);
         
         result = null;
@@ -490,13 +503,31 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
                                                               final AttributeSet attributes,
                                                               final long timestamp,
                                                               final long version) throws DataStoreException {
-        
+       return this.insertFeatureImpl(fsid, fid, name, geomCoding, rawGeom, styleCoding, rawStyle, attributes, Feature.AltitudeMode.ClampToGround, 0.0, timestamp, version);
+    }
+
+
+
+    @Override
+    protected synchronized Pair<Long, Long> insertFeatureImpl(final long fsid,
+                                                              long fid,
+                                                              final String name,
+                                                              final int geomCoding,
+                                                              final Object rawGeom,
+                                                              final int styleCoding,
+                                                              final Object rawStyle,
+                                                              final AttributeSet attributes,
+                                                              final Feature.AltitudeMode altitudeMode,
+                                                              final double extrude,
+                                                              final long timestamp,
+                                                              final long version) throws DataStoreException {
+
         if(!this.featureSets.containsKey(Long.valueOf(fsid)))
             return Pair.<Long, Long>create(Long.valueOf(FEATURE_ID_NONE), Long.valueOf(version));
 
         InsertContext ctx = new InsertContext();
         try {
-            fid = this.insertFeatureImpl(ctx, fsid, fid, new FeatureDefinition2() {
+            fid = this.insertFeatureImpl(ctx, fsid, fid, new FeatureDefinition3() {
                 @Override
                 public Object getRawGeometry() { return rawGeom; }
                 @Override
@@ -512,7 +543,12 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
                 @Override
                 public Feature get() { return new Feature(this); }
                 @Override
-                public long getTimestamp() { return timestamp; }                
+                public long getTimestamp() { return timestamp; }
+                @Override
+                public Feature.AltitudeMode getAltitudeMode() { return altitudeMode; };
+                @Override
+                public double getExtrude() { return extrude; };
+
             }, version);
             return Pair.<Long, Long>create(Long.valueOf(fid), Long.valueOf(version == FEATURE_VERSION_NONE ? 1L : version));
         } finally {
@@ -555,7 +591,14 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
     protected void updateFeatureImpl(long fid, int updatePropertyMask, String name,
             Geometry geometry, Style style, AttributeSet attributes, int attrUpdateType)
             throws DataStoreException {
-        
+        this.updateFeatureImpl(fid, updatePropertyMask, name, geometry, style, attributes, Feature.AltitudeMode.ClampToGround, 0.0, attrUpdateType);
+
+    }
+
+    @Override
+    protected void updateFeatureImpl(long fid, int updatePropertyMask, String name,
+                                     Geometry geometry, Style style, AttributeSet attributes, Feature.AltitudeMode altitudeMode, double extrude, int attrUpdateType)
+            throws DataStoreException {
         switch(updatePropertyMask) {
             case 0 :
                 break;
@@ -571,8 +614,17 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
             case PROPERTY_FEATURE_ATTRIBUTES :
                 this.updateFeatureImpl(fid, attributes);
                 break;
+            case PROPERTY_FEATURE_ALTITUDE_MODE:
+                this.updateFeatureImpl(fid, altitudeMode);
+                break;
+            case PROPERTY_FEATURE_EXTRUDE:
+                this.updateFeatureImpl(fid, extrude);
+                break;
             case PROPERTY_FEATURE_NAME|PROPERTY_FEATURE_GEOMETRY|PROPERTY_FEATURE_STYLE|PROPERTY_FEATURE_ATTRIBUTES :
                 this.updateFeatureImpl(fid, name, geometry, style, attributes);
+                break;
+            case PROPERTY_FEATURE_NAME|PROPERTY_FEATURE_GEOMETRY|PROPERTY_FEATURE_STYLE|PROPERTY_FEATURE_ATTRIBUTES|PROPERTY_FEATURE_ALTITUDE_MODE|PROPERTY_FEATURE_EXTRUDE :
+                this.updateFeatureImpl(fid, name, geometry, style, attributes, altitudeMode, extrude);
                 break;
             default :
                 // XXX -
@@ -591,7 +643,9 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
         final int fsidCol = 1;
         final int versionCol = 2;
         int extrasCol = versionCol + 1;
-        
+
+        int extrudeCol = -1;
+        int altitudeModeCol = -1;
         int nameCol = -1;
         int geomCol = -1;
         int styleCol = -1;
@@ -606,6 +660,21 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
             sql.append(", features.name");
             nameCol = extrasCol++;
         }
+
+        // TODO minor - augment to use MathUtils.hasBits.   will be overcome by the future transition to native
+        if (true) {
+            sql.append(", features.extrude");
+            extrudeCol = extrasCol++;
+        }
+
+        // TODO minor - augment to use MathUtils.hasBits.   will be overcome by the future transition to native
+        if (true) {
+            sql.append(", features.altitude_mode");
+            altitudeModeCol = extrasCol++;
+        }
+
+
+
         if(!MathUtils.hasBits(ignoredFields, PROPERTY_FEATURE_GEOMETRY)) {
             if(params != null && params.spatialOps != null) {
                 StringBuilder geomStr = new StringBuilder("features.geometry");            
@@ -657,7 +726,9 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
                                              nameCol,
                                              geomCol,
                                              styleCol,
-                                             attribsCol);
+                                             attribsCol,
+                                             altitudeModeCol,
+                                             extrudeCol);
                 result = null;
                 return retval;
             } finally {
@@ -750,7 +821,9 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
                                                      nameCol,
                                                      geomCol,
                                                      styleCol,
-                                                     attribsCol));
+                                                     attribsCol,
+                                                     altitudeModeCol,
+                                                     extrudeCol));
                     result = null;
                 } finally {
                     if(result != null)
@@ -810,7 +883,9 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
                                                      nameCol,
                                                      geomCol,
                                                      styleCol,
-                                                     attribsCol));
+                                                     attribsCol,
+                                                     altitudeModeCol,
+                                                     extrudeCol));
                     result = null;
                 } finally {
                     if(result != null)
@@ -891,7 +966,7 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
            (fsCheck.size() > 1 ||
                    (!fsCheck.isEmpty() && !fsNoCheck.isEmpty()))) {
             
-            return queryFeaturesCount(this, params);
+            return Utils.queryFeaturesCount(this, params);
         }
 
         StringBuilder sql = new StringBuilder();
@@ -1801,8 +1876,10 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
                                             " max_lod," + // 9
                                             " lod_version, " + // 10
                                             " version, " + // 11
-                                            " fsid) " + // 12
-                                            " VALUES (?, ?, ?, ?, ?, 1, 0, 0, ?, 0, ?, ?)");
+                                            " fsid, " + // 12
+                                            " altitude_mode, " + // 13
+                                            " extrude)" + // 14
+                                            " VALUES (?, ?, ?, ?, ?, 1, 0, 0, ?, 0, ?, ?, ?, ?)");
                             continue;
                         }
                         stmt = ctx.insertFeatureBlobStatement;
@@ -1825,8 +1902,10 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
                                             " max_lod," + // 9
                                             " lod_version, " + // 10
                                             " version, " + // 11
-                                            " fsid) " + // 12
-                                            " VALUES (?, ?, GeomFromWKB(?, 4326), ?, ?, 1, 0, 0, ?, 0, ?, ?)");
+                                            " fsid, " + // 12
+                                            " altitude_mode, " + // 13
+                                            " extrude)" + // 14
+                                            " VALUES (?, ?, GeomFromWKB(?, 4326), ?, ?, 1, 0, 0, ?, 0, ?, ?, ?, ?)");
                             continue;
                         }
                         stmt = ctx.insertFeatureWkbStatement;
@@ -1849,8 +1928,10 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
                                             " max_lod," + // 9
                                             " lod_version, " + // 10
                                             " version, " + // 11
-                                            " fsid) " + // 12
-                                            " VALUES (?, ?, GeomFromText(?, 4326), ?, ?, 1, 0, 0, ?, 0, ?, ?)");
+                                            " fsid, " + // 12
+                                            " altitude_mode, " + // 13
+                                            " extrude)" + // 14
+                                            " VALUES (?, ?, GeomFromText(?, 4326), ?, ?, 1, 0, 0, ?, 0, ?, ?, ?, ?)");
                             continue;
                         }
                         stmt = ctx.insertFeatureWktStatement;
@@ -1873,8 +1954,10 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
                                             " max_lod," + // 9
                                             " lod_version, " + // 10
                                             " version, " + // 11
-                                            " fsid) " + // 12
-                                            " VALUES (?, ?, GeomFromWKB(?, 4326), ?, ?, 1, 0, 0, ?, 0, ?, ?)");
+                                            " fsid, " + // 12
+                                            " altitude_mode, " + // 13
+                                            " extrude)" + // 14
+                                            " VALUES (?, ?, GeomFromWKB(?, 4326), ?, ?, 1, 0, 0, ?, 0, ?, ?, ?, ?)");
                             continue;
                         }
                         stmt = ctx.insertFeatureWkbStatement;
@@ -1922,6 +2005,9 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
             // FSID
             stmt.bind(idx++, fsid);
 
+            stmt.bind(idx++, getAltitudeMode(def).value());
+            stmt.bind(idx++, getExtrude(def));
+
             stmt.execute();
         } finally {
             if(stmt != null)
@@ -1943,6 +2029,50 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
                 stmt.close();
         }
         
+        return true;
+    }
+
+    /**
+     * Implementation of the ability to update the extrude value.   Since this is likely dont done very
+     * often it can be a stand alone operation.
+     * @param fid the feature id
+     * @param extrude the extrude value
+     * @return true if it succeeeds.
+     */
+    private boolean updateFeatureImpl(long fid, double extrude) {
+        StatementIface stmt = null;
+        try {
+            stmt = this.database.compileStatement("UPDATE features SET extrude = ? WHERE fid = ?");
+            stmt.bind(1, extrude);
+            stmt.bind(2, fid);
+            stmt.execute();
+        } finally {
+            if(stmt != null)
+                stmt.close();
+        }
+
+        return true;
+    }
+
+    /**
+     * Implementation of the ability to update the altitudeMode.   Since this is likely dont done very
+     * often it can be a stand alone operation.
+     * @param fid the feature id
+     * @param altitudeMode the AltitudeMode for the feature
+     * @return true if it succeeds.
+     */
+    private boolean updateFeatureImpl(long fid, Feature.AltitudeMode altitudeMode) {
+        StatementIface stmt = null;
+        try {
+            stmt = this.database.compileStatement("UPDATE features SET altitude_mode = ? WHERE fid = ?");
+            stmt.bind(1, altitudeMode.value());
+            stmt.bind(2, fid);
+            stmt.execute();
+        } finally {
+            if(stmt != null)
+                stmt.close();
+        }
+
         return true;
     }
 
@@ -2088,6 +2218,68 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
             if(stmt != null)
                 stmt.close();
         }
+
+        return true;
+    }
+
+    private boolean updateFeatureImpl(long fid, String name, Geometry geom, Style style, AttributeSet attributes, Feature.AltitudeMode altitudeMode, double extrude) {
+        byte[] wkb = null;
+        if(geom != null) {
+            wkb = new byte[geom.computeWkbSize()];
+            geom.toWkb(ByteBuffer.wrap(wkb));
+        }
+        String ogrStyle = FeatureStyleParser.pack(style);
+        byte[] attribsBlob = null;
+        if(attributes != null) {
+            InsertContext ctx = new InsertContext();
+            try {
+                encodeAttributes(this, ctx, attributes);
+                attribsBlob = (ctx.codedAttribs.size() > 0) ? ctx.codedAttribs.toByteArray() : null;
+            } finally {
+                ctx.dispose();
+            }
+        }
+
+        StatementIface stmt;
+
+        stmt = null;
+        try {
+            stmt = this.database.compileStatement("INSERT INTO styles(coding,value) VALUES('ogr', ?)");
+            stmt.bind(1, ogrStyle);
+            stmt.execute();
+        } finally {
+            if(stmt != null)
+                stmt.close();
+        }
+        final long styleId = Databases.lastInsertRowId(this.database);
+
+        stmt = null;
+        try {
+            stmt = this.database.compileStatement("INSERT INTO attributes (value) VALUES(?)");
+            stmt.bind(1, attribsBlob);
+            stmt.execute();
+        } finally {
+            if(stmt != null)
+                stmt.close();
+        }
+        final long attribsId = Databases.lastInsertRowId(this.database);
+
+        stmt = null;
+        try {
+            stmt = this.database.compileStatement("UPDATE features SET name = ?, geometry = GeomFromWkb(?, 4326), style_id = ?, attribs_id = ? WHERE fid = ?");
+            stmt.bind(1, name);
+            stmt.bind(2, wkb);
+            stmt.bind(3, styleId);
+            stmt.bind(4, attribsId);
+            stmt.bind(5, fid);
+            stmt.execute();
+        } finally {
+            if(stmt != null)
+                stmt.close();
+        }
+
+        updateFeatureImpl(fid, extrude);
+        updateFeatureImpl(fid, altitudeMode);
 
         return true;
     }
@@ -2782,7 +2974,7 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
     /**************************************************************************/
     // FeatureCursorImpl
 
-    private final class FeatureCursorImpl extends CursorWrapper implements FeatureCursor {
+    private final class FeatureCursorImpl extends CursorWrapper implements FeatureCursor, FeatureDefinition3 {
 
         private final int idCol;
         private final int fsidCol;
@@ -2791,10 +2983,12 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
         private final int styleCol;
         private final int attribsCol;
         private final int versionCol;
+        private final int altidueModeCol;
+        private final int extrudeCol;
         
         private Feature row;
 
-        protected FeatureCursorImpl(CursorIface filter, int idCol, int fsidCol, int versionCol, int nameCol, int geomCol, int styleCol, int attribsCol) {
+        protected FeatureCursorImpl(CursorIface filter, int idCol, int fsidCol, int versionCol, int nameCol, int geomCol, int styleCol, int attribsCol, int altidueModeCol, int extrudeCol) {
             super(filter);
             
             this.idCol = idCol;
@@ -2804,6 +2998,9 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
             this.geomCol = geomCol;
             this.styleCol = styleCol;
             this.attribsCol = attribsCol;
+            this.altidueModeCol = altidueModeCol;
+            this.extrudeCol = extrudeCol;
+
             
             this.row = null;
         }
@@ -2819,6 +3016,10 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
                 final byte[] geomBlob = (byte[])this.getRawGeometry();
                 final String ogrStyle = (String)this.getRawStyle();
                 final AttributeSet attribs = this.getAttributes();
+
+                final long timestamp = this.getTimestamp();
+                final double extrude = this.getExtrude();
+                final Feature.AltitudeMode altitudeMode = this.getAltitudeMode();
     
                 Geometry geom = null;
                 if(geomBlob != null)
@@ -2826,8 +3027,10 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
                 Style style = null;
                 if(ogrStyle != null)
                     style = FeatureStyleParser.parse2(ogrStyle);
+
+
     
-                this.row = new Feature(fsid, fid, name, geom, style, attribs, 0L, version);
+                this.row = new Feature(fsid, fid, name, geom, style, attribs, altitudeMode, extrude, timestamp, version);
             }
 
             return this.row;
@@ -2895,6 +3098,23 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
             this.row = null;
             return super.moveToNext();
         }
+
+        @Override
+        public long getTimestamp() { return 0; }
+
+        @Override
+        public Feature.AltitudeMode getAltitudeMode() {
+            if (this.altidueModeCol == -1)
+                return Feature.AltitudeMode.ClampToGround;
+            return Feature.AltitudeMode.from(this.getInt(altidueModeCol));
+        }
+        @Override
+        public double getExtrude() {
+            if (this.extrudeCol == -1)
+                return 0d;
+            return this.getDouble(extrudeCol);
+        }
+
     }
 
     /**************************************************************************/
@@ -3118,4 +3338,6 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
             return new Feature(this);
         }
     }
+
+
 }

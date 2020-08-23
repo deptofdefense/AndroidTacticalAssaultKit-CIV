@@ -39,23 +39,29 @@ MosaicDatabase2::~MosaicDatabase2() NOTHROWS
 // MosaicDatabase2::QueryParameters
 
 MosaicDatabase2::QueryParameters::QueryParameters() NOTHROWS :
-    path(NULL),
-    spatialFilter(NULL, NULL),
+    path(nullptr),
+    spatialFilter(nullptr, nullptr),
     minGsd(NAN),
     maxGsd(NAN),
-    types(NULL, NULL),
+    types(nullptr, nullptr),
     srid(-1),
-    imagery(QueryParameters::AllImagery)
+    imagery(QueryParameters::AllImagery),
+    minGsdCompare(MaximumGsd),
+    maxGsdCompare(MaximumGsd),
+    order(MaxGsdDesc)
 {}
         
 MosaicDatabase2::QueryParameters::QueryParameters(const QueryParameters &other) NOTHROWS :
     path(other.path),
-    spatialFilter(NULL, NULL),
+    spatialFilter(nullptr, nullptr),
     minGsd(other.minGsd),
     maxGsd(other.maxGsd),
-    types(NULL, NULL),
+    types(nullptr, nullptr),
     srid(other.srid),
-    imagery(other.imagery)
+    imagery(other.imagery),
+    minGsdCompare(other.minGsdCompare),
+    maxGsdCompare(other.maxGsdCompare),
+    order(other.order)
 {
     if (other.spatialFilter.get()) {
         TAKErr code(TE_Ok);

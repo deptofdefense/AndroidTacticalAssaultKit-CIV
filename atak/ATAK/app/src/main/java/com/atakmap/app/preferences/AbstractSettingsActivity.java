@@ -4,8 +4,10 @@ package com.atakmap.app.preferences;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.v4.app.NavUtils;
+import androidx.core.app.NavUtils;
 import android.view.MenuItem;
+
+import com.atakmap.android.metrics.activity.MetricActivity;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.android.preference.AtakPreferenceFragment;
@@ -14,7 +16,7 @@ import com.atakmap.android.util.ATAKConstants;
 /**
  * Serves as a baseclass for both <code>SettingsActivity</code> and <code>NetworkSettingsActivity</code>.
  */
-abstract public class AbstractSettingsActivity extends Activity {
+abstract public class AbstractSettingsActivity extends MetricActivity {
     private static final String TAG = "AbstractSettingsActivity";
 
     protected abstract int getSubtitle();

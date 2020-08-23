@@ -187,7 +187,7 @@ public class TextWidget extends MapWidget2 {
      * @param background the background to be used for rendering the widget.
      */
     public void setBackground(final int background) {
-        if (this.background == background) {
+        if (this.background != background) {
             this.background = background;
             onHasBackgroundChanged();
         }

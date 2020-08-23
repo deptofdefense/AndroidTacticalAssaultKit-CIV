@@ -7,8 +7,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.overlay.DefaultMapGroupOverlay;
@@ -199,7 +199,7 @@ public class DoghouseReceiver extends BroadcastReceiver implements
     /**
      * Change visibility of the doghouse when routes get faded out
      * e.g. their alpha value dips. 50 is an arbitrary threshold
-     * @param s
+     * @param s the shape
      */
     @Override
     public void onStrokeColorChanged(Shape s) {

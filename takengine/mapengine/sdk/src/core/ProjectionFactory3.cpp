@@ -43,7 +43,7 @@ namespace // unnamed namespace
     class InternalProjectionSpi : public ProjectionSpi3
     {
     public:
-        virtual TAKErr create(Projection2Ptr &value, const int srid) NOTHROWS;
+        TAKErr create(Projection2Ptr &value, const int srid) NOTHROWS override;
     private:
         EquirectangularProjection proj4326;
         WebMercatorProjection proj3857;
@@ -94,8 +94,8 @@ TAKErr TAK::Engine::Core::ProjectionFactory3_create(Projection2Ptr &value, const
 {
     TAKErr code(TE_Ok);
 
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, factoryMutex());
+    Lock lock(factoryMutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     // if the SDK implementations are preferred, see if the projection can be
@@ -125,8 +125,8 @@ TAKErr TAK::Engine::Core::ProjectionFactory3_registerSpi(const std::shared_ptr<P
 {
     TAKErr code(TE_Ok);
 
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, factoryMutex());
+    Lock lock(factoryMutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     SpiRegistryEntry entry;
@@ -143,8 +143,8 @@ TAKErr TAK::Engine::Core::ProjectionFactory3_unregisterSpi(const ProjectionSpi3 
 {
     TAKErr code(TE_Ok);
 
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, factoryMutex());
+    Lock lock(factoryMutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     std::set<SpiRegistryEntry, SpiRegistryComparator> &registry = spis();
@@ -162,8 +162,8 @@ TAKErr TAK::Engine::Core::ProjectionFactory3_unregisterSpi(const ProjectionSpi3 
 TAKErr TAK::Engine::Core::ProjectionFactory3_setPreferSdkProjections(const bool sdk) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, factoryMutex());
+    Lock lock(factoryMutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     sdkPreferred = sdk;

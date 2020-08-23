@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.util.Pair;
 import android.widget.BaseAdapter;
 
+import com.atakmap.android.contentservices.ServiceFactory;
 import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.features.FeatureDataStoreDeepMapItemQuery;
 import com.atakmap.android.hierarchy.HierarchyListFilter;
@@ -37,8 +38,8 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
-import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.formats.c3dt.Cesium3DTilesModelInfoSpi;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.control.RendererRefreshControl;
 import com.atakmap.map.layer.feature.Feature;
@@ -67,6 +68,7 @@ import com.atakmap.map.layer.opengl.GLLayerSpi2;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -82,6 +84,8 @@ import jassimp.AiBufferAllocator;
 import jassimp.Jassimp;
 
 public class ModelMapComponent extends AbstractMapComponent {
+
+    private final static int SYNC_VERSION = 1;
 
     public static final String ACTION_SCENE_RENDERER_REFRESH = "com.atakmap.android.model.SCENE_RENDERER_REFRESH";
 
@@ -117,6 +121,8 @@ public class ModelMapComponent extends AbstractMapComponent {
     public void onCreate(final Context context, Intent intent, MapView view) {
         this.view = view;
 
+        ConfigOptions.setOption("3dtiles.cache-dir",
+                FileSystemUtils.getItem("3dtilescache").getAbsolutePath());
         ConfigOptions.setOption("TAK.Engine.Model.default-icon",
                 "resource://" + R.drawable.icon_3d_map);
         Jassimp.setBufferAllocator(new AiBufferAllocator() {
@@ -152,6 +158,29 @@ public class ModelMapComponent extends AbstractMapComponent {
         }
         modelDataStore = new FeatureSetDatabase2(dbFile);
         modelLayer = new FeatureLayer3(NAME, modelDataStore);
+        File versionFile = FileSystemUtils
+                .getItem("Databases/models.db/catalog.version");
+        boolean reimport = true;
+        try {
+            try (RandomAccessFile ver = new RandomAccessFile(versionFile,
+                    "rw")) {
+                do {
+                    // if there's at least 4 bytes, compare the version
+                    if (ver.length() >= 4) {
+                        final int localVersion = ver.readInt();
+                        // if up to date, no reimport; leave alone
+                        if (localVersion >= SYNC_VERSION) {
+                            reimport = false;
+                            break;
+                        }
+                    }
+                    // seek to start, write out the version
+                    ver.seek(0);
+                    ver.writeInt(SYNC_VERSION);
+                } while (false);
+            }
+        } catch (Throwable ignored) {
+        }
 
         // Used to map model files to associated metadata
         this.contentResolver = new ModelContentResolver(view, modelDataStore);
@@ -160,7 +189,7 @@ public class ModelMapComponent extends AbstractMapComponent {
         GLLayerFactory.register(new GLLayerSpi2() {
             @Override
             public int getPriority() {
-                return 2;
+                return 3;
             }
 
             @Override
@@ -172,8 +201,6 @@ public class ModelMapComponent extends AbstractMapComponent {
                         (FeatureLayer3) object.second);
             }
         });
-
-        view.addLayer(MapView.RenderStack.VECTOR_OVERLAYS, modelLayer);
 
         this.overlay = new OverlayImpl();
         view.getMapOverlayManager().addOverlay(this.overlay);
@@ -202,9 +229,27 @@ public class ModelMapComponent extends AbstractMapComponent {
         ImporterManager.registerImporter(importer);
         MarshalManager.registerMarshal(ModelMarshal.INSTANCE);
         ImportExportMapComponent.getInstance().addImporterClass(
-                ImportInPlaceResolver.fromMarshal(ModelMarshal.INSTANCE));
+                ImportInPlaceResolver.fromMarshal(ModelMarshal.INSTANCE,
+                        context.getDrawable(R.drawable.ic_model_building)));
+
+        // Cesium 3D Tiles importer
+        ModelInfoFactory.registerSpi(Cesium3DTilesModelInfoSpi.INSTANCE);
+
+        // importer management
+
+        ImporterManager
+                .registerImporter(StreamingMeshServiceImportUtil.importer);
+        MarshalManager.registerMarshal(StreamingMeshServiceImportUtil.marshal);
+        ImportExportMapComponent.getInstance().addImporterClass(
+                ImportInPlaceResolver
+                        .fromMarshal(StreamingMeshServiceImportUtil.marshal));
+
+        ImportFilesTask.registerExtension(".dae");
         ImportFilesTask.registerExtension(".obj");
         ImportFilesTask.registerExtension(".zip");
+        ImportFilesTask.registerExtension(".json");
+
+        ServiceFactory.registerServiceQuery(new Cesium3DTilesServiceQuery());
 
         DocumentedIntentFilter intentFilter = new DocumentedIntentFilter();
         intentFilter.addAction(DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION);
@@ -228,13 +273,18 @@ public class ModelMapComponent extends AbstractMapComponent {
             }
         }, refreshRendererFilter);
 
-        this.scanForModels();
+        this.scanForModels(reimport);
+
+        view.addLayer(MapView.RenderStack.VECTOR_OVERLAYS, modelLayer);
     }
 
-    private void scanForModels() {
+    private void scanForModels(final boolean reimport) {
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
+                final Bundle b = new Bundle();
+                b.putBoolean("ignoreExisting", !reimport);
+
                 // first clean out any invalid models
                 try {
                     FeatureSetCursor result = null;
@@ -243,10 +293,24 @@ public class ModelMapComponent extends AbstractMapComponent {
                         while (result.moveToNext()) {
                             FeatureSet fs = result.get();
                             File f = new File(fs.getName());
-                            if (!f.exists())
+                            if (!fs.getName().startsWith("http:")
+                                    && !fs.getName().startsWith("https:")
+                                    && !f.exists()) {
                                 modelDataStore.deleteFeatureSet(fs.getId());
-                            else
+                            } else if (reimport) {
+                                try {
+                                    final Uri uri;
+                                    if (f.exists())
+                                        uri = Uri.fromFile(f);
+                                    else
+                                        uri = Uri.parse(fs.getName());
+                                    // force reimport
+                                    importImpl(uri, b);
+                                } catch (Exception ignored) {
+                                }
+                            } else {
                                 contentResolver.addModelHandler(fs);
+                            }
                         }
                     } catch (Exception e) {
                         Log.e(TAG, "Failed to resolve models", e);
@@ -261,26 +325,28 @@ public class ModelMapComponent extends AbstractMapComponent {
                 File[] dirs = FileSystemUtils.getItems("overlays");
                 if (dirs != null) {
                     for (File d : dirs) {
-                        loadFiles(d);
+                        loadFiles(d, b);
                     }
                 }
             }
 
-            private void loadFiles(File dir) {
+            private void loadFiles(File dir, Bundle b) {
                 File[] listing = dir.listFiles();
                 if (listing == null)
                     return;
-                Bundle b = new Bundle();
-                b.putBoolean("ignoreExisting", true);
                 for (final File f : listing) {
                     if (f.isDirectory())
-                        loadFiles(f);
+                        loadFiles(f, b);
                     else
-                        try {
-                            importer.importData(Uri.fromFile(f), null, b);
-                        } catch (IOException e) {
-                            Log.e(TAG, "error occured", e);
-                        }
+                        importImpl(Uri.fromFile(f), b);
+                }
+            }
+
+            private void importImpl(Uri uri, Bundle b) {
+                try {
+                    importer.importData(uri, null, b);
+                } catch (IOException e) {
+                    Log.e(TAG, "error occured", e);
                 }
             }
         }, TAG + "-ScanForModels");

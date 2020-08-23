@@ -6,11 +6,12 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
+import com.atakmap.coremap.log.Log;
 import com.atakmap.interop.Pointer;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.style.Style;
 
-public class PersistentDataSourceFeatureDataStore2 implements DataSourceFeatureDataStore {
+public final class PersistentDataSourceFeatureDataStore2 implements DataSourceFeatureDataStore {
     NativeFeatureDataStore2 impl;
     Pointer pointer;
     Map<FeatureDataStore.OnDataStoreContentChangedListener, FeatureDataStore2.OnDataStoreContentChangedListener> listeners;
@@ -474,11 +475,6 @@ public class PersistentDataSourceFeatureDataStore2 implements DataSourceFeatureD
 
     @Override
     public void dispose() {
-        this.finalize();
-    }
-
-    @Override
-    public void finalize() {
         this.impl.rwlock.acquireWrite();
         try {
             if(this.pointer.raw != 0L)
@@ -487,10 +483,12 @@ public class PersistentDataSourceFeatureDataStore2 implements DataSourceFeatureD
         } finally {
             this.impl.rwlock.releaseWrite();
         }
+    }
 
-        try {
-            super.finalize();
-        } catch(Throwable ignored) {}
+    @Override
+    public void finalize() {
+        if(this.pointer.raw != 0L)
+            Log.w("PersistentDataSourceFeatureDataStore2", "Leaking native cursor");
     }
 
     final static class FeatureSetCursorAdapter implements FeatureSetCursor {

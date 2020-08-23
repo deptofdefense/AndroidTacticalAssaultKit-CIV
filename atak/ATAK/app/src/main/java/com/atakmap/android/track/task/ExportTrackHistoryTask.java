@@ -1074,8 +1074,9 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
                                     DELIMITER);
                     fileWriter.append(String.valueOf(c.gp.getLongitude()))
                             .append(DELIMITER);
-                    fileWriter.append(c.gp.isAltitudeValid() ? "" + DELIMITER
-                            : c.gp.getAltitude() + DELIMITER);
+                    fileWriter.append(c.gp.isAltitudeValid()
+                            ? String.valueOf(c.gp.getAltitude())
+                            : "").append(DELIMITER);
                     fileWriter.append(String.valueOf(c.gp.getCE()))
                             .append(DELIMITER);
                     fileWriter.append(String.valueOf(c.gp.getLE()))

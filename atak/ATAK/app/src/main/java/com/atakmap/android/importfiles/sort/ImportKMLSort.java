@@ -33,7 +33,8 @@ public class ImportKMLSort extends ImportInPlaceResolver {
     public ImportKMLSort(Context context, boolean validateExt,
             boolean copyFile, boolean importInPlace) {
         super(".kml", FileSystemUtils.OVERLAYS_DIRECTORY, validateExt,
-                copyFile, importInPlace, context.getString(R.string.kml_file));
+                copyFile, importInPlace, context.getString(R.string.kml_file),
+                context.getDrawable(R.drawable.ic_kml));
 
         _context = context;
     }

@@ -68,6 +68,8 @@ namespace TAKEngine {
                 virtual TAK::Engine::Model::DrawMode getDrawMode() const NOTHROWS;
                 virtual const TAK::Engine::Feature::Envelope2 &getAABB() const NOTHROWS;
                 virtual const TAK::Engine::Model::VertexDataLayout &getVertexDataLayout() const NOTHROWS;
+                virtual std::size_t getNumBuffers() const NOTHROWS;
+                virtual TAK::Engine::Util::TAKErr getBuffer(const TAK::Engine::Util::MemBuffer2 **value, const std::size_t idx) const NOTHROWS;
             public :
                 jobject jmodel;
             private :

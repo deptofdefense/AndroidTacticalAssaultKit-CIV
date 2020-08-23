@@ -51,6 +51,10 @@ namespace
         std::size_t elementSize;
     };
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#endif
 
 #define ELEMENT_ACCESS_DECL(t) \
     template<class T> \
@@ -128,48 +132,52 @@ namespace
     public : // ModelImplBase interface
         TAKErr reserveIndices(const std::size_t count) NOTHROWS;
         TAKErr addIndex(const std::size_t index) NOTHROWS;
-        TAKErr addIndices(const uint32_t *indices, const std::size_t count) NOTHROWS;
-        TAKErr addIndices(const uint16_t *indices, const std::size_t count) NOTHROWS;
-        TAKErr addIndices(const uint8_t *indices, const std::size_t count) NOTHROWS;
+        TAKErr addIndices(const uint32_t *added_indices, const std::size_t count) NOTHROWS;
+        TAKErr addIndices(const uint16_t *added_indices, const std::size_t count) NOTHROWS;
+        TAKErr addIndices(const uint8_t *added_indices, const std::size_t count) NOTHROWS;
+        TAKErr addBuffer(std::unique_ptr<const void, void(*)(const void*)>&& buffer, size_t bufferSize) NOTHROWS;
     public : // Mesh abstract interface
-        virtual TAKErr getVertices(const void **value, const std::size_t attr) const NOTHROWS = 0;
+        TAKErr getVertices(const void **value, const std::size_t attr) const NOTHROWS override = 0;
     public : // Mesh implementation
-        std::size_t getNumMaterials() const NOTHROWS;
-        TAKErr getMaterial(Material *value, const std::size_t index) const NOTHROWS;
-        std::size_t getNumFaces() const NOTHROWS;
-        bool isIndexed() const NOTHROWS;
-        std::size_t getNumVertices() const NOTHROWS;
-        TAKErr getPosition(Point2<double> *value, const std::size_t index) const NOTHROWS;
-        TAKErr getTextureCoordinate(Point2<float> *value, const VertexAttribute texCoordIdx, const std::size_t index) const NOTHROWS;
-        TAKErr getNormal(Point2<float> *value, const std::size_t index) const NOTHROWS;
-        TAKErr getColor(unsigned int *value, const std::size_t index) const NOTHROWS;
-        TAKErr getVertexAttributeType(DataType *value, const unsigned int attr) const NOTHROWS;
-        TAKErr getIndexType(DataType *value) const NOTHROWS;
-        TAKErr getIndex(size_t *value, const std::size_t index) const NOTHROWS;
-        const void *getIndices() const NOTHROWS;
-        std::size_t getIndexOffset() const NOTHROWS;
-        std::size_t getNumIndices() const NOTHROWS;
-        WindingOrder getFaceWindingOrder() const NOTHROWS;
-        DrawMode getDrawMode() const NOTHROWS;
-        const Envelope2 &getAABB() const NOTHROWS;
-        const VertexDataLayout &getVertexDataLayout() const NOTHROWS;
+        std::size_t getNumMaterials() const NOTHROWS override;
+        TAKErr getMaterial(Material *value, const std::size_t index) const NOTHROWS override;
+        std::size_t getNumFaces() const NOTHROWS override;
+        bool isIndexed() const NOTHROWS override;
+        std::size_t getNumVertices() const NOTHROWS override;
+        TAKErr getPosition(Point2<double> *value, const std::size_t index) const NOTHROWS override;
+        TAKErr getTextureCoordinate(Point2<float> *value, const VertexAttribute texCoordIdx, const std::size_t index) const NOTHROWS override;
+        TAKErr getNormal(Point2<float> *value, const std::size_t index) const NOTHROWS override;
+        TAKErr getColor(unsigned int *value, const std::size_t index) const NOTHROWS override;
+        TAKErr getVertexAttributeType(DataType *value, const unsigned int attr) const NOTHROWS override;
+        TAKErr getIndexType(DataType *value) const NOTHROWS override;
+        TAKErr getIndex(size_t *value, const std::size_t index) const NOTHROWS override;
+        const void *getIndices() const NOTHROWS override;
+        std::size_t getIndexOffset() const NOTHROWS override;
+        std::size_t getNumIndices() const NOTHROWS override;
+        WindingOrder getFaceWindingOrder() const NOTHROWS override;
+        DrawMode getDrawMode() const NOTHROWS override;
+        const Envelope2 &getAABB() const NOTHROWS override;
+        const VertexDataLayout &getVertexDataLayout() const NOTHROWS override;
+        TAKErr getBuffer(const MemBuffer2** buffer, size_t index) const NOTHROWS override;
+        size_t getNumBuffers() const NOTHROWS override;
     public:
         std::unique_ptr<MemBuffer2> indices;
         WindingOrder windingOrder;
         std::vector<Material> materials;
         std::unique_ptr<ElementAccess<std::size_t>> indexAccess;
+        std::vector<std::unique_ptr<MemBuffer2>> buffers;
     protected :
-        std::unique_ptr<ElementAccess<double>> positionAccess;
+        std::unique_ptr<ElementAccess<double>> position_access_;
         std::map<VertexAttribute, std::unique_ptr<ElementAccess<float>>> texCoordAccess;
-        std::unique_ptr<ElementAccess<float>> normalAccess;
-        std::unique_ptr<ElementAccess<float>> colorAccess;
+        std::unique_ptr<ElementAccess<float>> normal_access_;
+        std::unique_ptr<ElementAccess<float>> color_access_;
         std::size_t vertexCount;
-        Envelope2 aabb;
+        Envelope2 aabb_;
     private :
-        bool indexed;
+        bool indexed_;
         DataType indexType;
-        DrawMode drawMode;
-        VertexDataLayout layout;
+        DrawMode draw_mode_;
+        VertexDataLayout layout_;
     };
 
     class InterleavedModelBase : public ModelImplBase
@@ -178,24 +186,26 @@ namespace
         InterleavedModelBase(const DrawMode &mode, const VertexDataLayout &layout) NOTHROWS;
         InterleavedModelBase(const DrawMode &mode, const VertexDataLayout &layout, const DataType &indexType) NOTHROWS;
     public :
-        virtual TAKErr addVertex(const double posx, const double posy, const double posz,
+        TAKErr addVertex(const double posx, const double posy, const double posz,
                                  const float texu, const float texv,
                                  const float nx, const float ny, const float nz,
-                                 const float r, const float g, const float b, const float a) NOTHROWS = 0;
-        virtual TAKErr addVertex(const double posx, const double posy, const double posz,
+                                 const float r, const float g, const float b, const float a) NOTHROWS override = 0;
+        TAKErr addVertex(const double posx, const double posy, const double posz,
                                  const float *texCoords,
                                  const float nx, const float ny, const float nz,
-                                 const float r, const float g, const float b, const float a) NOTHROWS = 0;
-        TAKErr reserveVertices(const std::size_t count) NOTHROWS;
+                                 const float r, const float g, const float b, const float a) NOTHROWS override = 0;
+        TAKErr reserveVertices(const std::size_t count) NOTHROWS override;
     public :
-        TAKErr getVertices(const void **value, const std::size_t attr) const NOTHROWS;
+        TAKErr getVertices(const void **value, const std::size_t attr) const NOTHROWS override;
     protected:
         std::unique_ptr<MemBuffer2> vertices;
 
         friend TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &, const DrawMode, const WindingOrder, const VertexDataLayout &, const std::size_t, const Material *, const Envelope2 &, const std::size_t, const void *) NOTHROWS;
         friend TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &, const DrawMode, const WindingOrder, const VertexDataLayout &, const std::size_t, const Material *, const Envelope2 &, const std::size_t, const void *, const DataType, const std::size_t, const void *) NOTHROWS;
-        friend TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &, const DrawMode, const WindingOrder, const VertexDataLayout &, const std::size_t, const Material *, const Envelope2 &, const std::size_t, VertexPtr &&) NOTHROWS;
-        friend TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &, const DrawMode, const WindingOrder, const VertexDataLayout &, const std::size_t, const Material *, const Envelope2 &, const std::size_t, VertexPtr &&, const DataType, const std::size_t, VertexPtr &&) NOTHROWS;
+        friend TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMeshWithBuffers(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, VertexArrayPtr&& vertices,
+            size_t numBuffers, MemBufferArg* buffers) NOTHROWS;
+        friend TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMeshWithBuffers(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, std::unique_ptr<const void, void(*)(const void*)>&& vertices, const Port::DataType indexType, const std::size_t numIndices, std::unique_ptr<const void, void(*)(const void*)>&& indices,
+            size_t numBuffers, MemBufferArg* buffers) NOTHROWS;
     };
 
     class DefaultInterleavedModel : public InterleavedModelBase
@@ -207,12 +217,12 @@ namespace
         TAKErr addVertex(const double posx, const double posy, const double posz,
                          const float texu, const float texv,
                          const float nx, const float ny, const float nz,
-                         const float r, const float g, const float b, const float a) NOTHROWS;
+                         const float r, const float g, const float b, const float a) NOTHROWS override;
         TAKErr addVertex(const double posx, const double posy, const double posz,
                          const float *texCoords,
                          const float nx, const float ny, const float nz,
-                         const float r, const float g, const float b, const float a) NOTHROWS;
-        TAKErr reserveVertices(const std::size_t count) NOTHROWS;
+                         const float r, const float g, const float b, const float a) NOTHROWS override;
+        TAKErr reserveVertices(const std::size_t count) NOTHROWS override;
     };
 
     class GenericInterleavedModel : public InterleavedModelBase
@@ -224,11 +234,11 @@ namespace
         TAKErr addVertex(const double posx, const double posy, const double posz,
                          const float texu, const float texv,
                          const float nx, const float ny, const float nz,
-                         const float r, const float g, const float b, const float a) NOTHROWS;
+                         const float r, const float g, const float b, const float a) NOTHROWS override;
         TAKErr addVertex(const double posx, const double posy, const double posz,
                          const float *texCoords,
                          const float nx, const float ny, const float nz,
-                         const float r, const float g, const float b, const float a) NOTHROWS;
+                         const float r, const float g, const float b, const float a) NOTHROWS override;
     };
 
     class NonInterleavedModel : public ModelImplBase
@@ -240,16 +250,16 @@ namespace
         TAKErr addVertex(const double posx, const double posy, const double posz,
                          const float texu, const float texv,
                          const float nx, const float ny, const float nz,
-                         const float r, const float g, const float b, const float a) NOTHROWS;
+                         const float r, const float g, const float b, const float a) NOTHROWS override;
         TAKErr addVertex(const double posx, const double posy, const double posz,
                          const float *texCoords,
                          const float nx, const float ny, const float nz,
-                         const float r, const float g, const float b, const float a) NOTHROWS;
-        TAKErr reserveVertices(const std::size_t count) NOTHROWS;
+                         const float r, const float g, const float b, const float a) NOTHROWS override;
+        TAKErr reserveVertices(const std::size_t count) NOTHROWS override;
     public :
-        TAKErr getVertices(const void **value, const std::size_t attr) const NOTHROWS;
+        TAKErr getVertices(const void **value, const std::size_t attr) const NOTHROWS override;
     private :
-        std::unique_ptr<MemBuffer2> positions;
+        std::unique_ptr<MemBuffer2> positions_;
         std::map<VertexAttribute, std::unique_ptr<MemBuffer2>> texCoords;
         std::unique_ptr<MemBuffer2> normals;
         std::unique_ptr<MemBuffer2> colors;
@@ -293,7 +303,7 @@ MeshBuilder::MeshBuilder(const DrawMode &mode, const unsigned int attrs, const D
 {}
 
 MeshBuilder::MeshBuilder(const DrawMode &mode, const VertexDataLayout &layout) NOTHROWS :
-    impl(NULL, NULL),
+    impl(nullptr, nullptr),
     initErr(checkInitParams(mode, layout, TEDT_UInt16))
 {
     if(initErr != TE_Ok)
@@ -308,7 +318,7 @@ MeshBuilder::MeshBuilder(const DrawMode &mode, const VertexDataLayout &layout) N
 }
 
 MeshBuilder::MeshBuilder(const DrawMode &mode, const VertexDataLayout &layout, const DataType &indexType) NOTHROWS :
-   impl(NULL, NULL),
+   impl(nullptr, nullptr),
    initErr(checkInitParams(mode, layout, indexType))
 {
     if(initErr != TE_Ok)
@@ -330,7 +340,7 @@ TAKErr MeshBuilder::reserveVertices(const std::size_t count) NOTHROWS
     TE_CHECKRETURN_CODE(initErr);
     if(!impl.get())
         return TE_IllegalState;
-    ModelImplBase &mimpl = static_cast<ModelImplBase &>(*impl);
+    auto &mimpl = static_cast<ModelImplBase &>(*impl);
     return mimpl.reserveVertices(count);
 }
 
@@ -339,7 +349,7 @@ TAKErr MeshBuilder::reserveIndices(const std::size_t count) NOTHROWS
     TE_CHECKRETURN_CODE(initErr);
     if(!impl.get())
         return TE_IllegalState;
-    ModelImplBase &mimpl = static_cast<ModelImplBase &>(*impl);
+    auto &mimpl = static_cast<ModelImplBase &>(*impl);
     return mimpl.reserveIndices(count);
 }
 
@@ -357,7 +367,7 @@ TAKErr MeshBuilder::setWindingOrder(const WindingOrder &windingOrder) NOTHROWS
         default :
             return TE_InvalidArg;
     }
-    ModelImplBase &mimpl = static_cast<ModelImplBase &>(*impl);
+    auto &mimpl = static_cast<ModelImplBase &>(*impl);
     mimpl.windingOrder = windingOrder;
     return TE_Ok;
 }
@@ -365,10 +375,9 @@ TAKErr MeshBuilder::addMaterial(const Material &material) NOTHROWS
 {
     TE_CHECKRETURN_CODE(initErr);
 
-    TAKErr code(TE_Ok);
     if(!impl.get())
         return TE_IllegalState;
-    ModelImplBase &mimpl = static_cast<ModelImplBase &>(*impl);
+    auto &mimpl = static_cast<ModelImplBase &>(*impl);
     mimpl.materials.push_back(material);
     return TE_Ok;
 }
@@ -380,7 +389,7 @@ TAKErr MeshBuilder::addVertex(double posx, double posy, double posz,
     TE_CHECKRETURN_CODE(initErr);
     if(!impl.get())
         return TE_IllegalState;
-    ModelImplBase &mimpl = static_cast<ModelImplBase &>(*impl);
+    auto &mimpl = static_cast<ModelImplBase &>(*impl);
     return mimpl.addVertex(posx, posy, posz, texu, texv, nx, ny, nz, r, g, b, a);
 }
 TAKErr MeshBuilder::addVertex(double posx, double posy, double posz,
@@ -391,7 +400,7 @@ TAKErr MeshBuilder::addVertex(double posx, double posy, double posz,
     TE_CHECKRETURN_CODE(initErr);
     if(!impl.get())
         return TE_IllegalState;
-    ModelImplBase &mimpl = static_cast<ModelImplBase &>(*impl);
+    auto &mimpl = static_cast<ModelImplBase &>(*impl);
     return mimpl.addVertex(posx, posy, posz, texCoords, nx, ny, nz, r, g, b, a);
 }
 
@@ -400,7 +409,7 @@ TAKErr MeshBuilder::addIndex(const std::size_t index) NOTHROWS
     TE_CHECKRETURN_CODE(initErr);
     if(!impl.get())
         return TE_IllegalState;
-    ModelImplBase &mimpl = static_cast<ModelImplBase &>(*impl);
+    auto &mimpl = static_cast<ModelImplBase &>(*impl);
     return mimpl.addIndex(index);
 }
 TAKErr MeshBuilder::addIndices(const uint32_t *indices, const std::size_t count) NOTHROWS
@@ -408,7 +417,7 @@ TAKErr MeshBuilder::addIndices(const uint32_t *indices, const std::size_t count)
     TE_CHECKRETURN_CODE(initErr);
     if(!impl.get())
         return TE_IllegalState;
-    ModelImplBase &mimpl = static_cast<ModelImplBase &>(*impl);
+    auto &mimpl = static_cast<ModelImplBase &>(*impl);
     return mimpl.addIndices(indices, count);
 }
 TAKErr MeshBuilder::addIndices(const uint16_t *indices, const std::size_t count) NOTHROWS
@@ -416,7 +425,7 @@ TAKErr MeshBuilder::addIndices(const uint16_t *indices, const std::size_t count)
     TE_CHECKRETURN_CODE(initErr);
     if(!impl.get())
         return TE_IllegalState;
-    ModelImplBase &mimpl = static_cast<ModelImplBase &>(*impl);
+    auto &mimpl = static_cast<ModelImplBase &>(*impl);
     return mimpl.addIndices(indices, count);
 }
 TAKErr MeshBuilder::addIndices(const uint8_t *indices, const std::size_t count) NOTHROWS
@@ -424,15 +433,24 @@ TAKErr MeshBuilder::addIndices(const uint8_t *indices, const std::size_t count) 
     TE_CHECKRETURN_CODE(initErr);
     if(!impl.get())
         return TE_IllegalState;
-    ModelImplBase &mimpl = static_cast<ModelImplBase &>(*impl);
+    auto &mimpl = static_cast<ModelImplBase &>(*impl);
     return mimpl.addIndices(indices, count);
 }
+
+TAKErr MeshBuilder::addBuffer(std::unique_ptr<const void, void(*)(const void*)>&& buffer, size_t bufferSize) NOTHROWS {
+    TE_CHECKRETURN_CODE(initErr);
+    if (!impl.get())
+        return TE_IllegalState;
+    auto& mimpl = static_cast<ModelImplBase&>(*impl);
+    return mimpl.addBuffer(std::move(buffer), bufferSize);
+}
+
 
 TAKErr MeshBuilder::build(MeshPtr &value) NOTHROWS
 {
     if(!impl.get())
         return TE_IllegalState;
-    ModelImplBase &mimpl = static_cast<ModelImplBase &>(*impl);
+    auto &mimpl = static_cast<ModelImplBase &>(*impl);
     if(mimpl.isIndexed())
         mimpl.indices->flip();
     value = std::move(impl);
@@ -443,7 +461,7 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &value, cons
 {
     TAKErr code(TE_Ok);
     value = MeshPtr(new GenericInterleavedModel(mode, layout), Memory_deleter_const<Mesh, GenericInterleavedModel>);
-    GenericInterleavedModel &impl = static_cast<GenericInterleavedModel &>(*value);
+    auto &impl = static_cast<GenericInterleavedModel &>(*value);
 
     switch(order) {
         case TEWO_Clockwise :
@@ -464,7 +482,7 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &value, cons
     for (std::size_t i = 0; i < numMaterials; i++)
         impl.materials.push_back(materials[i]);
 
-    impl.aabb = aabb;
+    impl.aabb_ = aabb;
 
     return code;
 }
@@ -472,7 +490,7 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &value, cons
 {
     TAKErr code(TE_Ok);
     value = MeshPtr(new GenericInterleavedModel(mode, layout, indexType), Memory_deleter_const<Mesh, GenericInterleavedModel>);
-    GenericInterleavedModel &impl = static_cast<GenericInterleavedModel &>(*value);
+    auto &impl = static_cast<GenericInterleavedModel &>(*value);
 
     switch(order) {
         case TEWO_Clockwise :
@@ -498,7 +516,7 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &value, cons
     for (std::size_t i = 0; i < numMaterials; i++)
         impl.materials.push_back(materials[i]);
 
-    impl.aabb = aabb;
+    impl.aabb_ = aabb;
 
     return code;
 }
@@ -506,7 +524,7 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, c
 {
     TAKErr code(TE_Ok);
     value = MeshPtr(new NonInterleavedModel(mode, layout), Memory_deleter_const<Mesh, NonInterleavedModel>);
-    NonInterleavedModel &impl = static_cast<NonInterleavedModel &>(*value);
+    auto &impl = static_cast<NonInterleavedModel &>(*value);
 
     switch(order) {
         case TEWO_Clockwise :
@@ -530,7 +548,7 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, c
         TE_CHECKRETURN_CODE(code); \
     }
 
-    COPY_VERTICES(TEVA_Position, positions, positions);
+    COPY_VERTICES(TEVA_Position, positions, positions_);
     COPY_VERTICES(TEVA_TexCoord0, *texCoords++, texCoords[TEVA_TexCoord0]);
     COPY_VERTICES(TEVA_TexCoord1, *texCoords++, texCoords[TEVA_TexCoord1]);
     COPY_VERTICES(TEVA_TexCoord2, *texCoords++, texCoords[TEVA_TexCoord2]);
@@ -548,7 +566,7 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, c
     for (std::size_t i = 0; i < numMaterials; i++)
         impl.materials.push_back(materials[i]);
 
-    impl.aabb = aabb;
+    impl.aabb_ = aabb;
 
     return code;
 }
@@ -556,7 +574,7 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, c
 {
     TAKErr code(TE_Ok);
     value = MeshPtr(new NonInterleavedModel(mode, layout, indexType), Memory_deleter_const<Mesh, NonInterleavedModel>);
-    NonInterleavedModel &impl = static_cast<NonInterleavedModel &>(*value);
+    auto &impl = static_cast<NonInterleavedModel &>(*value);
 
     switch(order) {
         case TEWO_Clockwise :
@@ -580,7 +598,7 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, c
         TE_CHECKRETURN_CODE(code); \
     }
 
-    COPY_VERTICES(TEVA_Position, positions, positions);
+    COPY_VERTICES(TEVA_Position, positions, positions_);
     COPY_VERTICES(TEVA_TexCoord0, *texCoords++, texCoords[TEVA_TexCoord0]);
     COPY_VERTICES(TEVA_TexCoord1, *texCoords++, texCoords[TEVA_TexCoord1]);
     COPY_VERTICES(TEVA_TexCoord2, *texCoords++, texCoords[TEVA_TexCoord2]);
@@ -604,16 +622,17 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, c
     for (std::size_t i = 0; i < numMaterials; i++)
         impl.materials.push_back(materials[i]);
 
-    impl.aabb = aabb;
+    impl.aabb_ = aabb;
 
     return code;
 }
 
-TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Feature::Envelope2 &aabb, const std::size_t numVertices, VertexArrayPtr &&vertices) NOTHROWS
+TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMeshWithBuffers(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Feature::Envelope2 &aabb, const std::size_t numVertices, VertexArrayPtr &&vertices,
+    size_t numBuffers, MemBufferArg *buffers) NOTHROWS
 {
     TAKErr code(TE_Ok);
     value = MeshPtr(new GenericInterleavedModel(mode, layout), Memory_deleter_const<Mesh, GenericInterleavedModel>);
-    GenericInterleavedModel &impl = static_cast<GenericInterleavedModel &>(*value);
+    auto &impl = static_cast<GenericInterleavedModel &>(*value);
 
     switch(order) {
         case TEWO_Clockwise :
@@ -635,15 +654,25 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &value, cons
     for (std::size_t i = 0; i < numMaterials; i++)
         impl.materials.push_back(materials[i]);
 
-    impl.aabb = aabb;
+    impl.aabb_ = aabb;
+
+    if (buffers) {
+        for (size_t i = 0; i < numBuffers; ++i)
+            impl.addBuffer(std::move(buffers[i].buffer), buffers[i].bufferSize);
+    }
 
     return code;
 }
-TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Feature::Envelope2 &aabb, const std::size_t numVertices, VertexArrayPtr &&vertices, const Port::DataType indexType, const std::size_t numIndices, VertexArrayPtr &&indices) NOTHROWS
-{
+
+TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, VertexArrayPtr&& vertices) NOTHROWS {
+    return MeshBuilder_buildInterleavedMeshWithBuffers(value, mode, order, layout, numMaterials, materials, aabb, numVertices, std::move(vertices), 0, nullptr);
+}
+
+TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMeshWithBuffers(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, std::unique_ptr<const void, void(*)(const void*)>&& vertices, const Port::DataType indexType, const std::size_t numIndices, std::unique_ptr<const void, void(*)(const void*)>&& indices,
+    size_t numBuffers, MemBufferArg* buffers) NOTHROWS {
     TAKErr code(TE_Ok);
     value = MeshPtr(new GenericInterleavedModel(mode, layout, indexType), Memory_deleter_const<Mesh, GenericInterleavedModel>);
-    GenericInterleavedModel &impl = static_cast<GenericInterleavedModel &>(*value);
+    auto &impl = static_cast<GenericInterleavedModel &>(*value);
 
     switch(order) {
         case TEWO_Clockwise :
@@ -667,15 +696,23 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &value, cons
     for (std::size_t i = 0; i < numMaterials; i++)
         impl.materials.push_back(materials[i]);
 
-    impl.aabb = aabb;
+    impl.aabb_ = aabb;
+
+    if (buffers) {
+        for (size_t i = 0; i < numBuffers; ++i)
+            impl.addBuffer(std::move(buffers[i].buffer), buffers[i].bufferSize);
+    }
 
     return code;
+}
+TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, VertexArrayPtr&& vertices, const Port::DataType indexType, const std::size_t numIndices, VertexArrayPtr&& indices) NOTHROWS {
+    return MeshBuilder_buildInterleavedMeshWithBuffers(value, mode, order, layout, numMaterials, materials, aabb, numVertices, std::move(vertices), indexType, numIndices, std::move(indices), 0, nullptr);
 }
 TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Feature::Envelope2 &aabb, const std::size_t numVertices, VertexArrayPtr &&positions, VertexArrayPtr &&texCoords0, VertexArrayPtr &&texCoords1, VertexArrayPtr &&texCoords2, VertexArrayPtr &&texCoords3, VertexArrayPtr &&texCoords4, VertexArrayPtr &&texCoords5, VertexArrayPtr &&texCoords6, VertexArrayPtr &&texCoords7, VertexArrayPtr &&normals, VertexArrayPtr &&colors) NOTHROWS
 {
     TAKErr code(TE_Ok);
     value = MeshPtr(new NonInterleavedModel(mode, layout), Memory_deleter_const<Mesh, NonInterleavedModel>);
-    NonInterleavedModel &impl = static_cast<NonInterleavedModel &>(*value);
+    auto &impl = static_cast<NonInterleavedModel &>(*value);
     TE_CHECKRETURN_CODE(code);
 
     switch(order) {
@@ -696,7 +733,7 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, c
         impl.dstVa.reset(new MemBuffer2(std::move(srcVa), size)); \
     }
 
-    COPY_VERTICES(TEVA_Position, positions, positions);
+    COPY_VERTICES(TEVA_Position, positions, positions_);
     COPY_VERTICES(TEVA_TexCoord0, texCoords0, texCoords[TEVA_TexCoord0]);
     COPY_VERTICES(TEVA_TexCoord1, texCoords1, texCoords[TEVA_TexCoord1]);
     COPY_VERTICES(TEVA_TexCoord2, texCoords2, texCoords[TEVA_TexCoord2]);
@@ -714,7 +751,7 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, c
     for (std::size_t i = 0; i < numMaterials; i++)
         impl.materials.push_back(materials[i]);
 
-    impl.aabb = aabb;
+    impl.aabb_ = aabb;
 
     return code;
 }
@@ -722,7 +759,7 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, c
 {
     TAKErr code(TE_Ok);
     value = MeshPtr(new NonInterleavedModel(mode, layout, indexType), Memory_deleter_const<Mesh, NonInterleavedModel>);
-    NonInterleavedModel &impl = static_cast<NonInterleavedModel &>(*value);
+    auto &impl = static_cast<NonInterleavedModel &>(*value);
     TE_CHECKRETURN_CODE(code);
 
     switch(order) {
@@ -743,7 +780,7 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, c
         impl.dstVa.reset(new MemBuffer2(std::move(srcVa), size)); \
     }
 
-    COPY_VERTICES(TEVA_Position, positions, positions);
+    COPY_VERTICES(TEVA_Position, positions, positions_);
     COPY_VERTICES(TEVA_TexCoord0, texCoords0, texCoords[TEVA_TexCoord0]);
     COPY_VERTICES(TEVA_TexCoord1, texCoords1, texCoords[TEVA_TexCoord1]);
     COPY_VERTICES(TEVA_TexCoord2, texCoords2, texCoords[TEVA_TexCoord2]);
@@ -763,7 +800,7 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, c
     for (std::size_t i = 0; i < numMaterials; i++)
         impl.materials.push_back(materials[i]);
 
-    impl.aabb = aabb;
+    impl.aabb_ = aabb;
 
     return code;
 }
@@ -852,27 +889,27 @@ namespace
     inline TAKErr t##_ElementAccess<T>::put(MemBuffer2 &buf, const T a, const T b) NOTHROWS \
     { \
         t arr[2]; \
-        arr[0] = a; \
-        arr[1] = b; \
+        arr[0] = static_cast<t>(a); \
+        arr[1] = static_cast<t>(b); \
         return buf.put(arr, 2); \
     } \
     template<class T> \
     inline TAKErr t##_ElementAccess<T>::put(MemBuffer2 &buf, const T a, const T b, const T c) NOTHROWS \
     { \
         t arr[3]; \
-        arr[0] = a; \
-        arr[1] = b; \
-        arr[2] = c; \
+        arr[0] = static_cast<t>(a); \
+        arr[1] = static_cast<t>(b); \
+        arr[2] = static_cast<t>(c); \
         return buf.put(arr, 3); \
     } \
     template<class T> \
     inline TAKErr t##_ElementAccess<T>::put(MemBuffer2 &buf, const T a, const T b, const T c, const T d) NOTHROWS \
     { \
         t arr[4]; \
-        arr[0] = a; \
-        arr[1] = b; \
-        arr[2] = c; \
-        arr[3] = d; \
+        arr[0] = static_cast<t>(a); \
+        arr[1] = static_cast<t>(b); \
+        arr[2] = static_cast<t>(c); \
+        arr[3] = static_cast<t>(d); \
         return buf.put(arr, 4); \
     }
 
@@ -994,13 +1031,17 @@ namespace
 
 #undef NORMALIZED_ELEMENT_ACCESS_DEFN
 
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
     //************************************************************************//
     // ModelImplBase
 
     ModelImplBase::ModelImplBase(const DrawMode &mode_, const VertexDataLayout &layout_) NOTHROWS :
-        drawMode(mode_),
-        layout(layout_),
-        indexed(false),
+        draw_mode_(mode_),
+        layout_(layout_),
+        indexed_(false),
         indexType(TEDT_UInt16),
         vertexCount(0u),
         windingOrder(TEWO_Undefined)
@@ -1008,9 +1049,9 @@ namespace
         initAttributeAccess();
     }
     ModelImplBase::ModelImplBase(const DrawMode &mode_, const VertexDataLayout &layout_, const DataType &indexType_) NOTHROWS :
-        drawMode(mode_),
-        layout(layout_),
-        indexed(true),
+        draw_mode_(mode_),
+        layout_(layout_),
+        indexed_(true),
         indexType(indexType_),
         vertexCount(0u),
         windingOrder(TEWO_Undefined)
@@ -1022,71 +1063,71 @@ namespace
 
     void ModelImplBase::initAttributeAccess() NOTHROWS
     {
-        if(layout.attributes&TEVA_Position)
-            createElementAccess(positionAccess, layout.position.type, false);
-        if(layout.attributes&TEVA_TexCoord0) {
+        if(layout_.attributes&TEVA_Position)
+            createElementAccess(position_access_, layout_.position.type, false);
+        if(layout_.attributes&TEVA_TexCoord0) {
             std::unique_ptr<ElementAccess<float>> access;
-            createElementAccess(access, layout.texCoord0.type, false);
+            createElementAccess(access, layout_.texCoord0.type, false);
             texCoordAccess[TEVA_TexCoord0] = std::move(access);
         }
-        if(layout.attributes&TEVA_TexCoord1) {
+        if(layout_.attributes&TEVA_TexCoord1) {
             std::unique_ptr<ElementAccess<float>> access;
-            createElementAccess(access, layout.texCoord1.type, false);
+            createElementAccess(access, layout_.texCoord1.type, false);
             texCoordAccess[TEVA_TexCoord1] = std::move(access);
         }
-        if(layout.attributes&TEVA_TexCoord2) {
+        if(layout_.attributes&TEVA_TexCoord2) {
             std::unique_ptr<ElementAccess<float>> access;
-            createElementAccess(access, layout.texCoord2.type, false);
+            createElementAccess(access, layout_.texCoord2.type, false);
             texCoordAccess[TEVA_TexCoord2] = std::move(access);
         }
-        if(layout.attributes&TEVA_TexCoord3) {
+        if(layout_.attributes&TEVA_TexCoord3) {
             std::unique_ptr<ElementAccess<float>> access;
-            createElementAccess(access, layout.texCoord3.type, false);
+            createElementAccess(access, layout_.texCoord3.type, false);
             texCoordAccess[TEVA_TexCoord3] = std::move(access);
         }
-        if(layout.attributes&TEVA_TexCoord4) {
+        if(layout_.attributes&TEVA_TexCoord4) {
             std::unique_ptr<ElementAccess<float>> access;
-            createElementAccess(access, layout.texCoord4.type, false);
+            createElementAccess(access, layout_.texCoord4.type, false);
             texCoordAccess[TEVA_TexCoord4] = std::move(access);
         }
-        if(layout.attributes&TEVA_TexCoord5) {
+        if(layout_.attributes&TEVA_TexCoord5) {
             std::unique_ptr<ElementAccess<float>> access;
-            createElementAccess(access, layout.texCoord5.type, false);
+            createElementAccess(access, layout_.texCoord5.type, false);
             texCoordAccess[TEVA_TexCoord5] = std::move(access);
         }
-        if(layout.attributes&TEVA_TexCoord6) {
+        if(layout_.attributes&TEVA_TexCoord6) {
             std::unique_ptr<ElementAccess<float>> access;
-            createElementAccess(access, layout.texCoord6.type, false);
+            createElementAccess(access, layout_.texCoord6.type, false);
             texCoordAccess[TEVA_TexCoord6] = std::move(access);
         }
-        if(layout.attributes&TEVA_TexCoord7) {
+        if(layout_.attributes&TEVA_TexCoord7) {
             std::unique_ptr<ElementAccess<float>> access;
-            createElementAccess(access, layout.texCoord7.type, false);
+            createElementAccess(access, layout_.texCoord7.type, false);
             texCoordAccess[TEVA_TexCoord7] = std::move(access);
         }
-        if(layout.attributes&TEVA_Normal)
-            createElementAccess(normalAccess, layout.normal.type, false);
-        if(layout.attributes&TEVA_Color) {
+        if(layout_.attributes&TEVA_Normal)
+            createElementAccess(normal_access_, layout_.normal.type, false);
+        if(layout_.attributes&TEVA_Color) {
             // do some special handling for normalization
-            switch(layout.color.type) {
+            switch(layout_.color.type) {
                 case TEDT_UInt8 :
                 case TEDT_UInt16 :
                 case TEDT_UInt32 :
-                    createElementAccess(colorAccess, layout.color.type, true);
+                    createElementAccess(color_access_, layout_.color.type, true);
                     break;
                 case TEDT_Float32 :
                 case TEDT_Float64 :
-                    createElementAccess(colorAccess, layout.color.type, false);
+                    createElementAccess(color_access_, layout_.color.type, false);
                     break;
                 default :
-                    createElementAccess(colorAccess, layout.color.type, true);
+                    createElementAccess(color_access_, layout_.color.type, true);
                     break;
             }
         }
     }
     TAKErr ModelImplBase::reserveIndices(const std::size_t count) NOTHROWS
     {
-        if(!indexed)
+        if(!indexed_)
             return TE_IllegalState;
         if(indices.get())
             return TE_IllegalState;
@@ -1098,7 +1139,7 @@ namespace
     }
     TAKErr ModelImplBase::addIndex(const std::size_t index) NOTHROWS
     {
-        if(!indexed)
+        if(!indexed_)
             return TE_IllegalState;
         if(!indices.get() || indices->remaining() < indexAccess->transferSize(1u)) {
             std::size_t newSize = indexAccess->transferSize(1024u);
@@ -1108,9 +1149,9 @@ namespace
         }
         return indexAccess->put(*indices, index);
     }
-    TAKErr ModelImplBase::addIndices(const uint32_t *indices, const std::size_t count) NOTHROWS
+    TAKErr ModelImplBase::addIndices(const uint32_t *added_indices, const std::size_t count) NOTHROWS
     {
-        if(!indexed) return TE_IllegalState;
+        if(!indexed_) return TE_IllegalState;
 
         TAKErr code(TE_Ok);
         if(!this->indices.get() || this->indices->remaining() < indexAccess->transferSize(count)) {
@@ -1121,16 +1162,16 @@ namespace
             TE_CHECKRETURN_CODE(code);
         }
         for(std::size_t i = 0u; i < count; i++) {
-            code = indexAccess->put(*this->indices, indices[i]);
+            code = indexAccess->put(*this->indices, added_indices[i]);
             TE_CHECKBREAK_CODE(code);
         }
         TE_CHECKRETURN_CODE(code);
 
         return TE_Ok;
     }
-    TAKErr ModelImplBase::addIndices(const uint16_t *indices, const std::size_t count) NOTHROWS
+    TAKErr ModelImplBase::addIndices(const uint16_t *added_indices, const std::size_t count) NOTHROWS
     {
-        if(!indexed) return TE_IllegalState;
+        if(!indexed_) return TE_IllegalState;
 
         TAKErr code(TE_Ok);
         if(!this->indices.get() || this->indices->remaining() < indexAccess->transferSize(count)) {
@@ -1141,28 +1182,36 @@ namespace
             TE_CHECKRETURN_CODE(code);
         }
         for(std::size_t i = 0u; i < count; i++) {
-            code = indexAccess->put(*this->indices, indices[i]);
+            code = indexAccess->put(*this->indices, added_indices[i]);
             TE_CHECKBREAK_CODE(code);
         }
         TE_CHECKRETURN_CODE(code);
 
         return TE_Ok;
     }
-    TAKErr ModelImplBase::addIndices(const uint8_t *indices, const std::size_t count) NOTHROWS
+    TAKErr ModelImplBase::addIndices(const uint8_t *added_indices, const std::size_t count) NOTHROWS
     {
-        if(!indexed)
+        if(!indexed_)
             return TE_IllegalState;
-        if(!this->indices.get() || this->indices->remaining() < indexAccess->transferSize(count)) {
-            resize(this->indices, this->indices->size()+indexAccess->transferSize(count));
-        }
         TAKErr code(TE_Ok);
+        if(!this->indices.get() || this->indices->remaining() < indexAccess->transferSize(count)) {
+            code = resize(this->indices, this->indices->size() + indexAccess->transferSize(count));
+            TE_CHECKRETURN_CODE(code);
+        }
         for(std::size_t i = 0u; i < count; i++) {
-            code = indexAccess->put(*this->indices, indices[i]);
+            code = indexAccess->put(*this->indices, added_indices[i]);
             TE_CHECKBREAK_CODE(code);
         }
         TE_CHECKRETURN_CODE(code);
 
         return TE_Ok;
+    }
+    TAKErr ModelImplBase::addBuffer(std::unique_ptr<const void, void(*)(const void*)>&& buffer, size_t bufferSize) NOTHROWS {
+        TAKErr code(TE_Ok);
+        TE_BEGIN_TRAP() {
+            buffers.push_back(std::unique_ptr<MemBuffer2>(new MemBuffer2(std::move(buffer), bufferSize)));
+        } TE_END_TRAP(code);
+        return code;
     }
     std::size_t ModelImplBase::getNumMaterials() const NOTHROWS
     {
@@ -1177,21 +1226,21 @@ namespace
     }
     std::size_t ModelImplBase::getNumFaces() const NOTHROWS
     {
-        const std::size_t vertexCount = isIndexed() ? getNumIndices() : getNumVertices();
-        switch(drawMode) {
+        const std::size_t vertex_count = isIndexed() ? getNumIndices() : getNumVertices();
+        switch(draw_mode_) {
             case TEDM_Points :
-                return vertexCount;
+                return vertex_count;
             case TEDM_Triangles :
-                return vertexCount / 3u;
+                return vertex_count / 3u;
             case TEDM_TriangleStrip :
-                return vertexCount - 2u;
+                return vertex_count - 2u;
             default :
                 return 0u;
         }
     }
     bool ModelImplBase::isIndexed() const NOTHROWS
     {
-        return indexed;
+        return indexed_;
     }
     std::size_t ModelImplBase::getNumVertices() const NOTHROWS
     {
@@ -1200,15 +1249,15 @@ namespace
     TAKErr ModelImplBase::getPosition(Point2<double> *value, const std::size_t index) const NOTHROWS
     {
         TAKErr code(TE_Ok);
-        if(!positionAccess.get())
+        if(!position_access_.get())
             return TE_IllegalState;
         const void *vertices;
         code = getVertices(&vertices, TEVA_Position);
         TE_CHECKRETURN_CODE(code);
-        MemBuffer2 view(reinterpret_cast<const uint8_t *>(vertices)+layout.position.offset, (index+1u)*layout.position.stride);
-        code = view.position(index*layout.position.stride);
+        MemBuffer2 view(reinterpret_cast<const uint8_t *>(vertices)+layout_.position.offset, (index+1u)*layout_.position.stride);
+        code = view.position(index*layout_.position.stride);
         TE_CHECKRETURN_CODE(code);
-        code = positionAccess->get(&value->x, &value->y, &value->z, view);
+        code = position_access_->get(&value->x, &value->y, &value->z, view);
         TE_CHECKRETURN_CODE(code);
 
         return code;
@@ -1225,21 +1274,21 @@ namespace
             return TE_InvalidArg;
         VertexArray texCoord;
         if(texAttr == TEVA_TexCoord0)
-            texCoord = layout.texCoord0;
+            texCoord = layout_.texCoord0;
         else if(texAttr == TEVA_TexCoord1)
-            texCoord = layout.texCoord1;
+            texCoord = layout_.texCoord1;
         else if(texAttr == TEVA_TexCoord2)
-            texCoord = layout.texCoord2;
+            texCoord = layout_.texCoord2;
         else if(texAttr == TEVA_TexCoord3)
-            texCoord = layout.texCoord3;
+            texCoord = layout_.texCoord3;
         else if(texAttr == TEVA_TexCoord4)
-            texCoord = layout.texCoord4;
+            texCoord = layout_.texCoord4;
         else if(texAttr == TEVA_TexCoord5)
-            texCoord = layout.texCoord5;
+            texCoord = layout_.texCoord5;
         else if(texAttr == TEVA_TexCoord6)
-            texCoord = layout.texCoord6;
+            texCoord = layout_.texCoord6;
         else if(texAttr == TEVA_TexCoord7)
-            texCoord = layout.texCoord7;
+            texCoord = layout_.texCoord7;
         else
             return TE_InvalidArg;
         MemBuffer2 view(reinterpret_cast<const uint8_t *>(vertices)+texCoord.offset, (index+1u)*texCoord.stride);
@@ -1253,15 +1302,15 @@ namespace
     TAKErr ModelImplBase::getNormal(Point2<float> *value, const std::size_t index) const NOTHROWS
     {
         TAKErr code(TE_Ok);
-        if(!normalAccess.get())
+        if(!normal_access_.get())
             return TE_IllegalState;
         const void *vertices;
         code = getVertices(&vertices, TEVA_Normal);
         TE_CHECKRETURN_CODE(code);
-        MemBuffer2 view(reinterpret_cast<const uint8_t *>(vertices)+layout.normal.offset, (index+1u)*layout.normal.stride);
-        code = view.position(index*layout.normal.stride);
+        MemBuffer2 view(reinterpret_cast<const uint8_t *>(vertices)+layout_.normal.offset, (index+1u)*layout_.normal.stride);
+        code = view.position(index*layout_.normal.stride);
         TE_CHECKRETURN_CODE(code);
-        code = normalAccess->get(&value->x, &value->y, &value->z, view);
+        code = normal_access_->get(&value->x, &value->y, &value->z, view);
         TE_CHECKRETURN_CODE(code);
 
         return code;
@@ -1269,16 +1318,16 @@ namespace
     TAKErr ModelImplBase::getColor(unsigned int *value, const std::size_t index) const NOTHROWS
     {
         TAKErr code(TE_Ok);
-        if(!positionAccess.get())
+        if(!position_access_.get())
             return TE_IllegalState;
         const void *vertices;
         code = getVertices(&vertices, TEVA_Color);
         TE_CHECKRETURN_CODE(code);
-        MemBuffer2 view(reinterpret_cast<const uint8_t *>(vertices)+layout.color.offset, (index+1u)*layout.color.stride);
-        code = view.position(index*layout.color.stride);
+        MemBuffer2 view(reinterpret_cast<const uint8_t *>(vertices)+layout_.color.offset, (index+1u)*layout_.color.stride);
+        code = view.position(index*layout_.color.stride);
         TE_CHECKRETURN_CODE(code);
         float r, g, b, a;
-        code = colorAccess->get(&r, &g, &b, &a, view);
+        code = color_access_->get(&r, &g, &b, &a, view);
         TE_CHECKRETURN_CODE(code);
 
         *value =
@@ -1293,37 +1342,37 @@ namespace
     {
         switch(attr) {
             case TEVA_Color :
-                *value = layout.color.type;
+                *value = layout_.color.type;
                 break;
             case TEVA_Normal :
-                *value = layout.normal.type;
+                *value = layout_.normal.type;
                 break;
             case TEVA_Position :
-                *value = layout.position.type;
+                *value = layout_.position.type;
                 break;
             case TEVA_TexCoord0 :
-                *value = layout.texCoord0.type;
+                *value = layout_.texCoord0.type;
                 break;
             case TEVA_TexCoord1 :
-                *value = layout.texCoord1.type;
+                *value = layout_.texCoord1.type;
                 break;
             case TEVA_TexCoord2 :
-                *value = layout.texCoord2.type;
+                *value = layout_.texCoord2.type;
                 break;
             case TEVA_TexCoord3 :
-                *value = layout.texCoord3.type;
+                *value = layout_.texCoord3.type;
                 break;
             case TEVA_TexCoord4 :
-                *value = layout.texCoord4.type;
+                *value = layout_.texCoord4.type;
                 break;
             case TEVA_TexCoord5 :
-                *value = layout.texCoord5.type;
+                *value = layout_.texCoord5.type;
                 break;
             case TEVA_TexCoord6 :
-                *value = layout.texCoord6.type;
+                *value = layout_.texCoord6.type;
                 break;
             case TEVA_TexCoord7 :
-                *value = layout.texCoord7.type;
+                *value = layout_.texCoord7.type;
                 break;
             default :
                 return TE_InvalidArg;
@@ -1340,7 +1389,7 @@ namespace
     TAKErr ModelImplBase::getIndex(std::size_t *value, const std::size_t index) const NOTHROWS
     {
         TAKErr code(TE_Ok);
-        if(!indexed)
+        if(!indexed_)
             return TE_IllegalState;
         MemBuffer2 view(indices->get(), indexAccess->transferSize(getNumIndices()));
         code = view.position(indexAccess->transferSize(index));
@@ -1350,7 +1399,7 @@ namespace
     const void *ModelImplBase::getIndices() const NOTHROWS
     {
         if(!indices.get())
-            return NULL;
+            return nullptr;
         return (*indices).get();
     }
     std::size_t ModelImplBase::getIndexOffset() const NOTHROWS
@@ -1369,15 +1418,28 @@ namespace
     }
     DrawMode ModelImplBase::getDrawMode() const NOTHROWS
     {
-        return drawMode;
+        return draw_mode_;
     }
     const Envelope2 &ModelImplBase::getAABB() const NOTHROWS
     {
-        return aabb;
+        return aabb_;
     }
     const VertexDataLayout &ModelImplBase::getVertexDataLayout() const NOTHROWS
     {
-        return layout;
+        return layout_;
+    }
+
+    TAKErr ModelImplBase::getBuffer(const MemBuffer2** buffer, size_t index) const NOTHROWS {
+        if (index >= buffers.size())
+            return TE_BadIndex;
+        if (!buffer)
+            return TE_InvalidArg;
+        *buffer = buffers[index].get();
+        return TE_Ok;
+    }
+
+    size_t ModelImplBase::getNumBuffers() const NOTHROWS {
+        return buffers.size();
     }
 
     //************************************************************************//
@@ -1460,7 +1522,7 @@ namespace
 
         // write the vertex data
         if(layout.attributes&TEVA_Position) {
-            code = positionAccess->put(*vertices, posx, posy, posz);
+            code = position_access_->put(*vertices, posx, posy, posz);
             TE_CHECKRETURN_CODE(code);
         }
 #define ADD_VERTEX_TEXCOORD(teva) \
@@ -1480,28 +1542,28 @@ namespace
 #undef ADD_VERTEX_TEXCOORD
 
         if(layout.attributes&TEVA_Normal) {
-            code = normalAccess->put(*vertices, nx, ny, nz);
+            code = normal_access_->put(*vertices, nx, ny, nz);
             TE_CHECKRETURN_CODE(code);
         }
         if(layout.attributes&TEVA_Color) {
-            code = colorAccess->put(*vertices, r, g, b, a);
+            code = color_access_->put(*vertices, r, g, b, a);
             TE_CHECKRETURN_CODE(code);
         }
 
         if(!vertexCount) {
-            aabb.minX = posx;
-            aabb.minY = posy;
-            aabb.minZ = posz;
-            aabb.maxX = posx;
-            aabb.maxY = posy;
-            aabb.maxZ = posz;
+            aabb_.minX = posx;
+            aabb_.minY = posy;
+            aabb_.minZ = posz;
+            aabb_.maxX = posx;
+            aabb_.maxY = posy;
+            aabb_.maxZ = posz;
         } else {
-            if(posx < aabb.minX)        aabb.minX = posx;
-            else if(posx > aabb.maxX)   aabb.maxX = posx;
-            if(posy < aabb.minY)        aabb.minY = posy;
-            else if(posy > aabb.maxY)   aabb.maxY = posy;
-            if(posz < aabb.minZ)        aabb.minZ = posz;
-            else if(posz > aabb.maxZ)   aabb.maxZ = posz;
+            if(posx < aabb_.minX)        aabb_.minX = posx;
+            else if(posx > aabb_.maxX)   aabb_.maxX = posx;
+            if(posy < aabb_.minY)        aabb_.minY = posy;
+            else if(posy > aabb_.maxY)   aabb_.maxY = posy;
+            if(posz < aabb_.minZ)        aabb_.minZ = posz;
+            else if(posz > aabb_.maxZ)   aabb_.maxZ = posz;
         }
         vertexCount++;
         return code;
@@ -1528,7 +1590,7 @@ namespace
 
         // write the vertex data
         if(layout.attributes&TEVA_Position) {
-            code = positionAccess->put(*vertices, posx, posy, posz);
+            code = position_access_->put(*vertices, posx, posy, posz);
             TE_CHECKRETURN_CODE(code);
         }
 #define ADD_VERTEX_TEXCOORD(teva) \
@@ -1550,28 +1612,28 @@ namespace
 #undef ADD_VERTEX_TEXCOORD
 
         if(layout.attributes&TEVA_Normal) {
-            code = normalAccess->put(*vertices, nx, ny, nz);
+            code = normal_access_->put(*vertices, nx, ny, nz);
             TE_CHECKRETURN_CODE(code);
         }
         if(layout.attributes&TEVA_Color) {
-            code = colorAccess->put(*vertices, r, g, b, a);
+            code = color_access_->put(*vertices, r, g, b, a);
             TE_CHECKRETURN_CODE(code);
         }
 
         if(!vertexCount) {
-            aabb.minX = posx;
-            aabb.minY = posy;
-            aabb.minZ = posz;
-            aabb.maxX = posx;
-            aabb.maxY = posy;
-            aabb.maxZ = posz;
+            aabb_.minX = posx;
+            aabb_.minY = posy;
+            aabb_.minZ = posz;
+            aabb_.maxX = posx;
+            aabb_.maxY = posy;
+            aabb_.maxZ = posz;
         } else {
-            if(posx < aabb.minX)        aabb.minX = posx;
-            else if(posx > aabb.maxX)   aabb.maxX = posx;
-            if(posy < aabb.minY)        aabb.minY = posy;
-            else if(posy > aabb.maxY)   aabb.maxY = posy;
-            if(posz < aabb.minZ)        aabb.minZ = posz;
-            else if(posz > aabb.maxZ)   aabb.maxZ = posz;
+            if(posx < aabb_.minX)        aabb_.minX = posx;
+            else if(posx > aabb_.maxX)   aabb_.maxX = posx;
+            if(posy < aabb_.minY)        aabb_.minY = posy;
+            else if(posy > aabb_.maxY)   aabb_.maxY = posy;
+            if(posz < aabb_.minZ)        aabb_.minZ = posz;
+            else if(posz > aabb_.maxZ)   aabb_.maxZ = posz;
         }
         vertexCount++;
 
@@ -1617,7 +1679,7 @@ namespace
             }
             code = vertices->position(layout.position.offset + (layout.position.stride*vertexCount));
             TE_CHECKRETURN_CODE(code);
-            code = positionAccess->put(*vertices, posx, posy, posz);
+            code = position_access_->put(*vertices, posx, posy, posz);
             TE_CHECKRETURN_CODE(code);
         }
 #define ADD_VERTEX_TEXCOORD(teva, vao) \
@@ -1651,7 +1713,7 @@ namespace
             }
             code = vertices->position(layout.normal.offset + (layout.normal.stride*vertexCount));
             TE_CHECKRETURN_CODE(code);
-            code = normalAccess->put(*vertices, nx, ny, nz);
+            code = normal_access_->put(*vertices, nx, ny, nz);
             TE_CHECKRETURN_CODE(code);
         }
         if(layout.attributes&TEVA_Color) {
@@ -1662,24 +1724,24 @@ namespace
             }
             code = vertices->position(layout.color.offset + (layout.color.stride*vertexCount));
             TE_CHECKRETURN_CODE(code);
-            code = colorAccess->put(*vertices, r, g, b, a);
+            code = color_access_->put(*vertices, r, g, b, a);
             TE_CHECKRETURN_CODE(code);
         }
 #undef GROW_SIZE
         if(!vertexCount) {
-            aabb.minX = posx;
-            aabb.minY = posy;
-            aabb.minZ = posz;
-            aabb.maxX = posx;
-            aabb.maxY = posy;
-            aabb.maxZ = posz;
+            aabb_.minX = posx;
+            aabb_.minY = posy;
+            aabb_.minZ = posz;
+            aabb_.maxX = posx;
+            aabb_.maxY = posy;
+            aabb_.maxZ = posz;
         } else {
-            if(posx < aabb.minX)        aabb.minX = posx;
-            else if(posx > aabb.maxX)   aabb.maxX = posx;
-            if(posy < aabb.minY)        aabb.minY = posy;
-            else if(posy > aabb.maxY)   aabb.maxY = posy;
-            if(posz < aabb.minZ)        aabb.minZ = posz;
-            else if(posz > aabb.maxZ)   aabb.maxZ = posz;
+            if(posx < aabb_.minX)        aabb_.minX = posx;
+            else if(posx > aabb_.maxX)   aabb_.maxX = posx;
+            if(posy < aabb_.minY)        aabb_.minY = posy;
+            else if(posy > aabb_.maxY)   aabb_.maxY = posy;
+            if(posz < aabb_.minZ)        aabb_.minZ = posz;
+            else if(posz > aabb_.maxZ)   aabb_.maxZ = posz;
         }
         vertexCount++;
         return code;
@@ -1704,7 +1766,7 @@ namespace
             }
             code = vertices->position(layout.position.offset + (layout.position.stride*vertexCount));
             TE_CHECKRETURN_CODE(code);
-            code = positionAccess->put(*vertices, posx, posy, posz);
+            code = position_access_->put(*vertices, posx, posy, posz);
             TE_CHECKRETURN_CODE(code);
         }
 #define ADD_VERTEX_TEXCOORD(teva, vao) \
@@ -1740,7 +1802,7 @@ namespace
             }
             code = vertices->position(layout.normal.offset + (layout.normal.stride*vertexCount));
             TE_CHECKRETURN_CODE(code);
-            code = normalAccess->put(*vertices, nx, ny, nz);
+            code = normal_access_->put(*vertices, nx, ny, nz);
             TE_CHECKRETURN_CODE(code);
         }
         if(layout.attributes&TEVA_Color) {
@@ -1751,24 +1813,24 @@ namespace
             }
             code = vertices->position(layout.color.offset + (layout.color.stride*vertexCount));
             TE_CHECKRETURN_CODE(code);
-            code = colorAccess->put(*vertices, r, g, b, a);
+            code = color_access_->put(*vertices, r, g, b, a);
             TE_CHECKRETURN_CODE(code);
         }
 #undef GROW_SIZE
         if(!vertexCount) {
-            aabb.minX = posx;
-            aabb.minY = posy;
-            aabb.minZ = posz;
-            aabb.maxX = posx;
-            aabb.maxY = posy;
-            aabb.maxZ = posz;
+            aabb_.minX = posx;
+            aabb_.minY = posy;
+            aabb_.minZ = posz;
+            aabb_.maxX = posx;
+            aabb_.maxY = posy;
+            aabb_.maxZ = posz;
         } else {
-            if(posx < aabb.minX)        aabb.minX = posx;
-            else if(posx > aabb.maxX)   aabb.maxX = posx;
-            if(posy < aabb.minY)        aabb.minY = posy;
-            else if(posy > aabb.maxY)   aabb.maxY = posy;
-            if(posz < aabb.minZ)        aabb.minZ = posz;
-            else if(posz > aabb.maxZ)   aabb.maxZ = posz;
+            if(posx < aabb_.minX)        aabb_.minX = posx;
+            else if(posx > aabb_.maxX)   aabb_.maxX = posx;
+            if(posy < aabb_.minY)        aabb_.minY = posy;
+            else if(posy > aabb_.maxY)   aabb_.maxY = posy;
+            if(posz < aabb_.minZ)        aabb_.minZ = posz;
+            else if(posz > aabb_.maxZ)   aabb_.maxZ = posz;
         }
         vertexCount++;
         return code;
@@ -1788,24 +1850,24 @@ namespace
     {
         TAKErr code(TE_Ok);
 #define GROW_SIZE 1024u
-        if(!positions.get()) {
+        if(!positions_.get()) {
             code = reserveVertices(GROW_SIZE);
             TE_CHECKRETURN_CODE(code);
         }
         const VertexDataLayout layout = getVertexDataLayout();
         if(layout.attributes&TEVA_Position) {
             const std::size_t required = layout.position.offset + (layout.position.stride*(vertexCount+1u));
-            if(positions->limit() < required) {
-                code = resize(positions, layout.position.offset + (layout.position.stride*(vertexCount+GROW_SIZE)));
+            if(positions_->limit() < required) {
+                code = resize(positions_, layout.position.offset + (layout.position.stride*(vertexCount+GROW_SIZE)));
                 TE_CHECKRETURN_CODE(code);
-                code = positions->position(layout.position.offset + (layout.position.stride*vertexCount));
+                code = positions_->position(layout.position.offset + (layout.position.stride*vertexCount));
                 TE_CHECKRETURN_CODE(code);
             }
-            code = positionAccess->put(*positions, posx, posy, posz);
+            code = position_access_->put(*positions_, posx, posy, posz);
             TE_CHECKRETURN_CODE(code);
             // position the 'positions' buffer at the next position write pos
-            if(layout.position.stride > positionAccess->transferSize(3u)) {
-                code = positions->skip(layout.position.stride-positionAccess->transferSize(3u));
+            if(layout.position.stride > position_access_->transferSize(3u)) {
+                code = positions_->skip(layout.position.stride-position_access_->transferSize(3u));
                 TE_CHECKRETURN_CODE(code);
             }
         }
@@ -1846,11 +1908,11 @@ namespace
                 code = normals->position(layout.normal.offset + (layout.normal.stride*vertexCount));
                 TE_CHECKRETURN_CODE(code);
             }
-            code = normalAccess->put(*normals, nx, ny, nz);
+            code = normal_access_->put(*normals, nx, ny, nz);
             TE_CHECKRETURN_CODE(code);
             // position the 'normals' buffer at the next normal write position
-            if(layout.normal.stride > normalAccess->transferSize(3u)) {
-                code = normals->skip(layout.normal.stride-normalAccess->transferSize(3u));
+            if(layout.normal.stride > normal_access_->transferSize(3u)) {
+                code = normals->skip(layout.normal.stride-normal_access_->transferSize(3u));
                 TE_CHECKRETURN_CODE(code);
             }
         }
@@ -1862,29 +1924,29 @@ namespace
                 code = colors->position(layout.color.offset + (layout.color.stride*vertexCount));
                 TE_CHECKRETURN_CODE(code);
             }
-            code = colorAccess->put(*colors, r, g, b, a);
+            code = color_access_->put(*colors, r, g, b, a);
             TE_CHECKRETURN_CODE(code);
-            if(layout.color.stride > colorAccess->transferSize(4u)) {
-                code = colors->skip(layout.color.stride-colorAccess->transferSize(4u));
+            if (layout.color.stride > color_access_->transferSize(4u)) {
+                code = colors->skip(layout.color.stride - color_access_->transferSize(4u));
                 TE_CHECKRETURN_CODE(code);
             }
         }
 #undef GROW_SIZE
 
         if(!vertexCount) {
-            aabb.minX = posx;
-            aabb.minY = posy;
-            aabb.minZ = posz;
-            aabb.maxX = posx;
-            aabb.maxY = posy;
-            aabb.maxZ = posz;
+            aabb_.minX = posx;
+            aabb_.minY = posy;
+            aabb_.minZ = posz;
+            aabb_.maxX = posx;
+            aabb_.maxY = posy;
+            aabb_.maxZ = posz;
         } else {
-            if(posx < aabb.minX)        aabb.minX = posx;
-            else if(posx > aabb.maxX)   aabb.maxX = posx;
-            if(posy < aabb.minY)        aabb.minY = posy;
-            else if(posy > aabb.maxY)   aabb.maxY = posy;
-            if(posz < aabb.minZ)        aabb.minZ = posz;
-            else if(posz > aabb.maxZ)   aabb.maxZ = posz;
+            if(posx < aabb_.minX)        aabb_.minX = posx;
+            else if(posx > aabb_.maxX)   aabb_.maxX = posx;
+            if(posy < aabb_.minY)        aabb_.minY = posy;
+            else if(posy > aabb_.maxY)   aabb_.maxY = posy;
+            if(posz < aabb_.minZ)        aabb_.minZ = posz;
+            else if(posz > aabb_.maxZ)   aabb_.maxZ = posz;
         }
         vertexCount++;
         return code;
@@ -1896,24 +1958,24 @@ namespace
     {
         TAKErr code(TE_Ok);
 #define GROW_SIZE 1024u
-        if(!positions.get()) {
+        if(!positions_.get()) {
             code = reserveVertices(GROW_SIZE);
             TE_CHECKRETURN_CODE(code);
         }
         const VertexDataLayout layout = getVertexDataLayout();
         if(layout.attributes&TEVA_Position) {
             const std::size_t required = layout.position.offset + (layout.position.stride*(vertexCount+1u));
-            if(positions->limit() < required) {
-                code = resize(positions, layout.position.offset + (layout.position.stride*(vertexCount+GROW_SIZE)));
+            if(positions_->limit() < required) {
+                code = resize(positions_, layout.position.offset + (layout.position.stride*(vertexCount+GROW_SIZE)));
                 TE_CHECKRETURN_CODE(code);
-                code = positions->position(layout.position.offset + (layout.position.stride*vertexCount));
+                code = positions_->position(layout.position.offset + (layout.position.stride*vertexCount));
                 TE_CHECKRETURN_CODE(code);
             }
-            code = positionAccess->put(*positions, posx, posy, posz);
+            code = position_access_->put(*positions_, posx, posy, posz);
             TE_CHECKRETURN_CODE(code);
             // position the 'positions' buffer at the next position write pos
-            if(layout.position.stride > positionAccess->transferSize(3u)) {
-                code = positions->skip(layout.position.stride-positionAccess->transferSize(3u));
+            if(layout.position.stride > position_access_->transferSize(3u)) {
+                code = positions_->skip(layout.position.stride-position_access_->transferSize(3u));
                 TE_CHECKRETURN_CODE(code);
             }
         }
@@ -1956,11 +2018,11 @@ namespace
                 code = normals->position(layout.normal.offset + (layout.normal.stride*vertexCount));
                 TE_CHECKRETURN_CODE(code);
             }
-            code = normalAccess->put(*normals, nx, ny, nz);
+            code = normal_access_->put(*normals, nx, ny, nz);
             TE_CHECKRETURN_CODE(code);
             // position the 'normals' buffer at the next normal write position
-            if(layout.normal.stride > normalAccess->transferSize(3u)) {
-                code = normals->skip(layout.normal.stride-normalAccess->transferSize(3u));
+            if(layout.normal.stride > normal_access_->transferSize(3u)) {
+                code = normals->skip(layout.normal.stride-normal_access_->transferSize(3u));
                 TE_CHECKRETURN_CODE(code);
             }
         }
@@ -1972,29 +2034,29 @@ namespace
                 code = colors->position(layout.color.offset + (layout.color.stride*vertexCount));
                 TE_CHECKRETURN_CODE(code);
             }
-            code = colorAccess->put(*colors, r, g, b, a);
+            code = color_access_->put(*colors, r, g, b, a);
             TE_CHECKRETURN_CODE(code);
-            if(layout.color.stride > colorAccess->transferSize(4u)) {
-                code = colors->skip(layout.color.stride-colorAccess->transferSize(4u));
+            if (layout.color.stride > color_access_->transferSize(4u)) {
+                code = colors->skip(layout.color.stride - color_access_->transferSize(4u));
                 TE_CHECKRETURN_CODE(code);
             }
         }
 #undef GROW_SIZE
 
         if(!vertexCount) {
-            aabb.minX = posx;
-            aabb.minY = posy;
-            aabb.minZ = posz;
-            aabb.maxX = posx;
-            aabb.maxY = posy;
-            aabb.maxZ = posz;
+            aabb_.minX = posx;
+            aabb_.minY = posy;
+            aabb_.minZ = posz;
+            aabb_.maxX = posx;
+            aabb_.maxY = posy;
+            aabb_.maxZ = posz;
         } else {
-            if(posx < aabb.minX)        aabb.minX = posx;
-            else if(posx > aabb.maxX)   aabb.maxX = posx;
-            if(posy < aabb.minY)        aabb.minY = posy;
-            else if(posy > aabb.maxY)   aabb.maxY = posy;
-            if(posz < aabb.minZ)        aabb.minZ = posz;
-            else if(posz > aabb.maxZ)   aabb.maxZ = posz;
+            if(posx < aabb_.minX)        aabb_.minX = posx;
+            else if(posx > aabb_.maxX)   aabb_.maxX = posx;
+            if(posy < aabb_.minY)        aabb_.minY = posy;
+            else if(posy > aabb_.maxY)   aabb_.maxY = posy;
+            if(posz < aabb_.minZ)        aabb_.minZ = posz;
+            else if(posz > aabb_.maxZ)   aabb_.maxZ = posz;
         }
         vertexCount++;
         return code;
@@ -2004,11 +2066,11 @@ namespace
         TAKErr code(TE_Ok);
         const VertexDataLayout layout = getVertexDataLayout();
         if(layout.attributes&TEVA_Position) {
-            if(positions.get())
+            if(positions_.get())
                 return TE_IllegalState;
-            code = resize(positions, layout.position.offset + (layout.position.stride*(count+1u)));
+            code = resize(positions_, layout.position.offset + (layout.position.stride*(count+1u)));
             TE_CHECKRETURN_CODE(code);
-            code = positions->position(layout.position.offset);
+            code = positions_->position(layout.position.offset);
             TE_CHECKRETURN_CODE(code);
         }
 #define RESERVE_VERTICES_TEXCOORD(teva, vao) \
@@ -2057,9 +2119,9 @@ namespace
             return TE_InvalidArg;
         switch(attrs) {
             case TEVA_Position :
-                if(!positions.get())
+                if(!positions_.get())
                     return TE_IllegalState;
-                *vertices = (*positions).get();
+                *vertices = (*positions_).get();
                 break;
             case TEVA_Normal :
                 if(!normals.get())
@@ -2129,7 +2191,7 @@ namespace
     {
         TAKErr code(TE_Ok);
         if(!buf.get() || buf->size() < newSize) {
-            std::unique_ptr<void, void(*)(const void *)> membuf(NULL, NULL);
+            std::unique_ptr<void, void(*)(const void *)> membuf(nullptr, nullptr);
             code = allocateV(membuf, newSize);
             TE_CHECKRETURN_CODE(code);
             std::unique_ptr<MemBuffer2> resized(new MemBuffer2(std::move(membuf), newSize));

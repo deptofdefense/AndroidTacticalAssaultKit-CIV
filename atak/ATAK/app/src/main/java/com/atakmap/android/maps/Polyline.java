@@ -17,6 +17,8 @@ import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
+import com.atakmap.map.layer.feature.Feature;
+import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -80,6 +82,8 @@ public class Polyline extends Shape {
 
     private int _labelTextSize = MapView.getDefaultTextFormat().getFontSize();
     private Typeface _labelTypeface = Typeface.DEFAULT;
+
+    private AltitudeMode altitudeMode = AltitudeMode.ClampToGround;
 
     /*
      * public Polyline() { this(MapItem.createSerialId(), new DefaultMetaDataHolder()); }
@@ -247,6 +251,7 @@ public class Polyline extends Shape {
     private final ConcurrentLinkedQueue<OnBasicLineStyleChangedListener> _onBasicLineStyleChanged = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnLabelsChangedListener> _onLabelsChanged = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnLabelTextSizeChanged> _onLabelTextSizeChanged = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<OnAltitudeModeChangedListener> _onAltitudeModeChanged = new ConcurrentLinkedQueue<>();
 
     private int basicLineStyle = Polyline.BASIC_LINE_STYLE_SOLID;
 
@@ -260,6 +265,14 @@ public class Polyline extends Shape {
 
     public interface OnLabelTextSizeChanged {
         void onLabelTextSizeChanged(Polyline p);
+    }
+
+    public interface OnAltitudeModeChangedListener {
+        /**
+         * Called when the altitude mode is changed for the specific Polyline.
+         * @param altitudeMode the altitude mode that the polyline was set to.
+         */
+        void onAltitudeModeChanged(Feature.AltitudeMode altitudeMode);
     }
 
     public void setLabels(final Map<String, Object> labels) {
@@ -336,6 +349,27 @@ public class Polyline extends Shape {
         }
     }
 
+    public void addOnAltitudeModeChangedListener(
+            OnAltitudeModeChangedListener listener) {
+        _onAltitudeModeChanged.add(listener);
+    }
+
+    public void removeOnAltitudeModeChangedListener(
+            OnAltitudeModeChangedListener listener) {
+        _onAltitudeModeChanged.remove(listener);
+    }
+
+    protected void onAltitudeModeChanged() {
+        for (OnAltitudeModeChangedListener l : _onAltitudeModeChanged) {
+            l.onAltitudeModeChanged(altitudeMode);
+        }
+    }
+
+    public void setAltitudeMode(AltitudeMode altitudeMode) {
+        this.altitudeMode = altitudeMode;
+        onAltitudeModeChanged();
+    }
+
     @Override
     public GeoBounds getBounds(MutableGeoBounds bounds) {
         if (bounds != null) {
@@ -364,7 +398,8 @@ public class Polyline extends Shape {
         }
     }
 
-    /**sets the text size to use for the rendering label
+    /**
+     * Sets the text size to use for the rendering label
      * convenience method for setting label size meta
      * @param labelTextSize the int value size to use on the default format
      */
@@ -373,15 +408,25 @@ public class Polyline extends Shape {
         onLabelTextSizeChanged();
     }
 
-    /**gets the text size to use for the rendering label
+    /**
+     * Gets the text size to use for the rendering label
      * convenience method for getting label size meta
-     * return default MapView font size if key not found in mapping
+     * @return default MapView font size if key not found in mapping
      */
     public int getLabelTextSize() {
         return _labelTextSize;
     }
 
-    /**sets the text size and typeface to use for the rendering label
+    /**
+     * Gets the current Altitude Mode for the polyline.
+     * @return the altitude mode.
+     */
+    public AltitudeMode getAltitudeMode() {
+        return altitudeMode;
+    }
+
+    /**
+     * Sets the text size and typeface to use for the rendering label
      * @param labelTextSize the int value size to use on the default format
      * @param typeface the typeface graphic to use to draw the label text
      */
@@ -391,7 +436,8 @@ public class Polyline extends Shape {
         onLabelTextSizeChanged();
     }
 
-    /**sets the text typeface to use for the rendering label
+    /**
+     * Gets the text typeface to use for the rendering label
      * @param typeface the typeface graphic to use to draw the label text
      */
     public void setLabelTextTypeface(Typeface typeface) {

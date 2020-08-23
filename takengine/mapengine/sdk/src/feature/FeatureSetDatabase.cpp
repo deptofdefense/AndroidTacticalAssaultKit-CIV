@@ -75,18 +75,37 @@ private:
 FeatureSetDatabase::Builder::Builder() NOTHROWS
 {}
 
-TAKErr FeatureSetDatabase::Builder::create(const char *path) NOTHROWS
+TAKErr FeatureSetDatabase::Builder::create(const char *path) NOTHROWS 
+{
+    int dbVersionIgnored;
+    return create(path, &dbVersionIgnored);
+}
+
+TAKErr FeatureSetDatabase::Builder::create(const char *path, int* dbVersion) NOTHROWS
 {
     TAKErr code;
     if (db.get())
         return TE_IllegalState;
 
-    std::auto_ptr<FeatureSetDatabase> fsdb(new FeatureSetDatabase());
-    code = fsdb->open(path, false);
+    std::unique_ptr<FeatureSetDatabase> fsdb(new FeatureSetDatabase());
+    code = fsdb->open(path, dbVersion, false);
     TE_CHECKRETURN_CODE(code);
 
     impl.reset(new FDB::Builder(*fsdb));
     db.reset(fsdb.release());
+
+    return code;
+}
+
+TAKErr FeatureSetDatabase::Builder::close() NOTHROWS
+{
+    if (!db.get())
+        return TE_IllegalState;
+    TAKErr code(TAKErr::TE_Ok);
+
+    impl.release();
+    db->close();
+    db.release();
 
     return code;
 }
@@ -112,11 +131,11 @@ TAKErr FeatureSetDatabase::Builder::insertFeature(int64_t* fid, const int64_t fs
     return impl->insertFeature(fid, fsid, def);
 }
 
-TAKErr FeatureSetDatabase::Builder::insertFeature(const int64_t fsid, const char *name, const atakmap::feature::Geometry &geometry, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attribs) NOTHROWS
+TAKErr FeatureSetDatabase::Builder::insertFeature(const int64_t fsid, const char *name, const atakmap::feature::Geometry &geometry, const AltitudeMode altitudeMode, const double extrude, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attribs) NOTHROWS
 {
     if (!db.get())
         return TE_IllegalState;
-    return impl->insertFeature(fsid, name, geometry, style, attribs);
+    return impl->insertFeature(fsid, name, geometry, altitudeMode, extrude, style, attribs);
 }
 
 TAKErr FeatureSetDatabase::Builder::setFeatureSetVisible(const int64_t fsid, const bool visible) NOTHROWS 

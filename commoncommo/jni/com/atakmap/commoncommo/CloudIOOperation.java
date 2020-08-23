@@ -16,7 +16,9 @@ public enum CloudIOOperation {
     /** Rename a collection or file */
     MOVE(4),
     /** Create a new, empty collection */
-    MAKE_COLLECTION(5);
+    MAKE_COLLECTION(5),
+    /** Delete a file or folder */
+    DELETE(6);
     
     private final int id;
     

@@ -164,6 +164,11 @@ public final class SrtmElevationSource {
         }
 
         @Override
+        public Cursor query(QueryParameters params) {
+            return new SrtmCursorImpl(params);
+        }
+
+        @Override
         public ElevationChunk getTerrainTile(int zoom, int x, int y) {
             final String key = getFileName(zoom, x, y);
             // requested tile is out of bounds, return null
@@ -227,6 +232,19 @@ public final class SrtmElevationSource {
         public void removeOnContentChangedListener(OnContentChangedListener l) {} // no-op
 
         abstract String getFileName(int tileZoom, int tileX, int tileY);
+
+        private class SrtmCursorImpl extends CursorImpl {
+
+            SrtmCursorImpl(QueryParameters params) {
+                super(params);
+            }
+
+            @Override
+            public boolean moveToNext() {
+                // Make sure the STRM directory exists before continuing
+                return dir.exists() && super.moveToNext();
+            }
+        }
 
         final static class SRTM extends TileSource {
             SRTM(File directory) {

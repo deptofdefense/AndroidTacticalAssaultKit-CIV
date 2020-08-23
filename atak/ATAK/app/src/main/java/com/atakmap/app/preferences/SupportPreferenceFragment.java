@@ -7,7 +7,7 @@ import android.content.Intent;
 import android.app.Activity;
 import android.os.Bundle;
 import android.preference.Preference;
-import android.support.v4.app.NavUtils;
+import androidx.core.app.NavUtils;
 import android.text.Html;
 import android.view.LayoutInflater;
 import android.view.View;

@@ -1,0 +1,6 @@
+---
+Checks:            'modernize-redundant-void-arg,modernize-replace-auto-ptr,modernize-use-auto,modernize-use-nullptr,modernize-use-override'
+WarningsAsErrors:  ''
+HeaderFilterRegex: 'mapengine\sdk\src\**\*.h'
+FormatStyle:       'file'
+User:              irvingr

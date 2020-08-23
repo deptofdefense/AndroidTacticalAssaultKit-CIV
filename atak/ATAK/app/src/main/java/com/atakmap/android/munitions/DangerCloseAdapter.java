@@ -26,6 +26,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.xml.XMLUtils;
 
 import javax.xml.XMLConstants;
 import org.w3c.dom.Attr;
@@ -612,20 +613,8 @@ public class DangerCloseAdapter extends BaseAdapter
             File f = new File(location + item);
             if (f.exists()) {
                 try {
-                    DocumentBuilderFactory docFactory = DocumentBuilderFactory
-                            .newInstance();
-                    try {
-                        docFactory
-                                .setFeature(
-                                        "http://apache.org/xml/features/disallow-doctype-decl",
-                                        true);
-                    } catch (Exception ignored) {
-                    }
-                    try {
-                        docFactory.setFeature(
-                                XMLConstants.FEATURE_SECURE_PROCESSING, true);
-                    } catch (Exception ignored) {
-                    }
+                    DocumentBuilderFactory docFactory = XMLUtils
+                            .getDocumenBuilderFactory();
                     DocumentBuilder docBuilder = docFactory
                             .newDocumentBuilder();
                     Document dom = docBuilder.parse(f);
@@ -657,21 +646,8 @@ public class DangerCloseAdapter extends BaseAdapter
                                         + w.active);
 
                         //Overwrite the existing XML file
-                        TransformerFactory transformerFactory = TransformerFactory
-                                .newInstance();
-                        try {
-                            transformerFactory
-                                    .setFeature(
-                                            "http://apache.org/xml/features/disallow-doctype-decl",
-                                            true);
-                        } catch (Exception ignored) {
-                        }
-                        try {
-                            transformerFactory.setFeature(
-                                    XMLConstants.FEATURE_SECURE_PROCESSING,
-                                    true);
-                        } catch (Exception ignored) {
-                        }
+                        TransformerFactory transformerFactory = XMLUtils
+                                .getTransformerFactory();
                         javax.xml.transform.Transformer transformer = transformerFactory
                                 .newTransformer();
                         DOMSource source = new DOMSource(dom);
@@ -914,21 +890,8 @@ public class DangerCloseAdapter extends BaseAdapter
             File f = new File(location + item);
             if (f.exists()) {
                 try {
-                    DocumentBuilderFactory docFactory = DocumentBuilderFactory
-                            .newInstance();
-
-                    try {
-                        docFactory
-                                .setFeature(
-                                        "http://apache.org/xml/features/disallow-doctype-decl",
-                                        true);
-                    } catch (Exception ignored) {
-                    }
-                    try {
-                        docFactory.setFeature(
-                                XMLConstants.FEATURE_SECURE_PROCESSING, true);
-                    } catch (Exception ignored) {
-                    }
+                    DocumentBuilderFactory docFactory = XMLUtils
+                            .getDocumenBuilderFactory();
                     DocumentBuilder docBuilder = docFactory
                             .newDocumentBuilder();
                     Document dom = docBuilder.parse(f);
@@ -957,8 +920,8 @@ public class DangerCloseAdapter extends BaseAdapter
                             "Failed to create directory"
                                     + fd.getAbsolutePath());
 
-                DocumentBuilderFactory dbFactory = DocumentBuilderFactory
-                        .newInstance();
+                DocumentBuilderFactory dbFactory = XMLUtils
+                        .getDocumenBuilderFactory();
                 DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
                 Document doc = dBuilder.newDocument();
 
@@ -970,20 +933,8 @@ public class DangerCloseAdapter extends BaseAdapter
                             .getElementsByTagName("Custom_Threat_Rings");
                     customNode = nodes.item(0);
 
-                    TransformerFactory transformerFactory = TransformerFactory
-                            .newInstance();
-                    try {
-                        transformerFactory
-                                .setFeature(
-                                        "http://apache.org/xml/features/disallow-doctype-decl",
-                                        true);
-                    } catch (Exception ignored) {
-                    }
-                    try {
-                        transformerFactory.setFeature(
-                                XMLConstants.FEATURE_SECURE_PROCESSING, true);
-                    } catch (Exception ignored) {
-                    }
+                    TransformerFactory transformerFactory = XMLUtils
+                            .getTransformerFactory();
                     javax.xml.transform.Transformer transformer = transformerFactory
                             .newTransformer();
                     DOMSource source = new DOMSource(doc);
@@ -1021,21 +972,8 @@ public class DangerCloseAdapter extends BaseAdapter
             if (f.exists()) {
                 try {
                     //build the DOM
-                    DocumentBuilderFactory docFactory = DocumentBuilderFactory
-                            .newInstance();
-
-                    try {
-                        docFactory
-                                .setFeature(
-                                        "http://apache.org/xml/features/disallow-doctype-decl",
-                                        true);
-                    } catch (Exception ignored) {
-                    }
-                    try {
-                        docFactory.setFeature(
-                                XMLConstants.FEATURE_SECURE_PROCESSING, true);
-                    } catch (Exception ignored) {
-                    }
+                    DocumentBuilderFactory docFactory = XMLUtils
+                            .getDocumenBuilderFactory();
                     DocumentBuilder docBuilder = docFactory
                             .newDocumentBuilder();
                     Document dom = docBuilder.parse(f);
@@ -1079,21 +1017,8 @@ public class DangerCloseAdapter extends BaseAdapter
                     customNode = custom;
 
                     //Overwrite the existing XML file
-                    TransformerFactory transformerFactory = TransformerFactory
-                            .newInstance();
-
-                    try {
-                        transformerFactory
-                                .setFeature(
-                                        "http://apache.org/xml/features/disallow-doctype-decl",
-                                        true);
-                    } catch (Exception ignored) {
-                    }
-                    try {
-                        transformerFactory.setFeature(
-                                XMLConstants.FEATURE_SECURE_PROCESSING, true);
-                    } catch (Exception ignored) {
-                    }
+                    TransformerFactory transformerFactory = XMLUtils
+                            .getTransformerFactory();
                     javax.xml.transform.Transformer transformer = transformerFactory
                             .newTransformer();
                     DOMSource source = new DOMSource(dom);
@@ -1136,20 +1061,8 @@ public class DangerCloseAdapter extends BaseAdapter
 
         try {
             //build the DOM
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory
-                    .newInstance();
-
-            try {
-                docFactory.setFeature(
-                        "http://apache.org/xml/features/disallow-doctype-decl",
-                        true);
-            } catch (Exception ignored) {
-            }
-            try {
-                docFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,
-                        true);
-            } catch (Exception ignored) {
-            }
+            DocumentBuilderFactory docFactory = XMLUtils
+                    .getDocumenBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             Document dom = docBuilder.parse(new File(location + item));
 
@@ -1246,20 +1159,8 @@ public class DangerCloseAdapter extends BaseAdapter
             }
 
             //overwrite the existing XML file
-            TransformerFactory transformerFactory = TransformerFactory
-                    .newInstance();
-
-            try {
-                transformerFactory.setFeature(
-                        "http://apache.org/xml/features/disallow-doctype-decl",
-                        true);
-            } catch (Exception ignored) {
-            }
-            try {
-                transformerFactory.setFeature(
-                        XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            } catch (Exception ignored) {
-            }
+            TransformerFactory transformerFactory = XMLUtils
+                    .getTransformerFactory();
             javax.xml.transform.Transformer transformer = transformerFactory
                     .newTransformer();
             transformer.transform(new DOMSource(dom),
@@ -1281,25 +1182,13 @@ public class DangerCloseAdapter extends BaseAdapter
     void parseFlightMunitions(String flightMunitionsXML) {
         if (flightMunitionsXML != null && !flightMunitionsXML.isEmpty()) {
             try {
-                DocumentBuilderFactory docFactory = DocumentBuilderFactory
-                        .newInstance();
-                try {
-                    docFactory
-                            .setFeature(
-                                    "http://apache.org/xml/features/disallow-doctype-decl",
-                                    true);
-                } catch (Exception ignored) {
-                }
-                try {
-                    docFactory.setFeature(
-                            XMLConstants.FEATURE_SECURE_PROCESSING, true);
-                } catch (Exception ignored) {
-                }
+                DocumentBuilderFactory docFactory = XMLUtils
+                        .getDocumenBuilderFactory();
                 DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
 
                 InputStream is = new ByteArrayInputStream(
-                        flightMunitionsXML.getBytes(Charset
-                                .forName(FileSystemUtils.UTF8_CHARSET)));
+                        flightMunitionsXML
+                                .getBytes(FileSystemUtils.UTF8_CHARSET));
                 Document dom = docBuilder.parse(is);
                 checkEachItemForActiveStatus(dom.getChildNodes());
                 flightsNode = dom.getFirstChild(); // OSRMunitions
@@ -1317,20 +1206,8 @@ public class DangerCloseAdapter extends BaseAdapter
 
     private void parseData(Context context) {
         try {
-            DocumentBuilderFactory docFactory = DocumentBuilderFactory
-                    .newInstance();
-
-            try {
-                docFactory.setFeature(
-                        "http://apache.org/xml/features/disallow-doctype-decl",
-                        true);
-            } catch (Exception ignored) {
-            }
-            try {
-                docFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,
-                        true);
-            } catch (Exception ignored) {
-            }
+            DocumentBuilderFactory docFactory = XMLUtils
+                    .getDocumenBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
             InputStream is = context.getAssets()
                     .open("ordnance/ordnance_table.xml");

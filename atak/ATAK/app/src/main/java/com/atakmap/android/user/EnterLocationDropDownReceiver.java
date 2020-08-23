@@ -6,14 +6,15 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.PorterDuff;
 import android.preference.PreferenceManager;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
-import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
-import android.support.v4.view.ViewPager.OnPageChangeListener;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.viewpager.widget.PagerAdapter;
+import androidx.viewpager.widget.ViewPager;
+import androidx.viewpager.widget.ViewPager.OnPageChangeListener;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -30,6 +31,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.atakmap.android.maps.MapTouchController;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.android.contact.ContactPresenceDropdown;
 import com.atakmap.android.coordoverlay.CoordOverlayMapReceiver;
@@ -55,12 +57,10 @@ import com.atakmap.android.user.icon.Icon2525bPallet;
 import com.atakmap.android.user.icon.IconPallet;
 import com.atakmap.android.user.icon.IconPallet.CreatePointException;
 import com.atakmap.android.user.icon.MissionSpecificPallet;
-import com.atakmap.android.user.icon.OverheadPallet;
 import com.atakmap.android.user.icon.SpotMapPallet;
 import com.atakmap.android.user.icon.UserIconPallet;
 import com.atakmap.android.user.icon.UserIconPalletFragment;
 import com.atakmap.android.user.icon.VehiclePallet;
-import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -75,13 +75,13 @@ import java.util.UUID;
  * 
  */
 public class EnterLocationDropDownReceiver extends DropDownReceiver implements
-        OnStateListener, View.OnAttachStateChangeListener,
-        Marker.OnIconChangedListener, Marker.OnTitleChangedListener {
+        OnStateListener, View.OnAttachStateChangeListener {
 
     private static final String TAG = "EnterLocationDropDownReceiver";
 
     public static final String START = "com.atakmap.android.user.ENTER_LOCATION_DROP_DOWN";
 
+    private final Context _context;
     private ImageButton _iconManagerButton;
     private ImageButton _recentlyAddedButton;
 
@@ -100,18 +100,11 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
 
     protected boolean _initialLoad;
 
-    private Marker _lastPoint;
+    private MapItem _lastPoint;
     private ImageView _lastPointIcon;
     private TextView _lastPointTitle;
     private TextView _lastPointLabel;
     private LinearLayout _lastPoint_ll;
-
-    /**
-     * UID for pending last point dropped, but waiting for item to be created (refreshed)
-     * The "last point" includes points created via UI, does not include points received via
-     * network or other means
-     */
-    private String _pendingUid;
 
     private final SharedPreferences _prefs;
     protected static EnterLocationDropDownReceiver instance;
@@ -127,13 +120,14 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
 
     protected EnterLocationDropDownReceiver(MapView mapView) {
         super(mapView);
-        _prefs = PreferenceManager.getDefaultSharedPreferences(mapView
-                .getContext());
+        _context = mapView.getContext();
+        _prefs = PreferenceManager.getDefaultSharedPreferences(_context);
         _selectedIconPallet = null;
-        _pendingUid = null;
         _initialLoad = true;
         mapView.getMapEventDispatcher().addMapEventListener(
                 MapEvent.ITEM_REFRESH, _mapListener);
+        mapView.getMapEventDispatcher().addMapEventListener(
+                MapEvent.ITEM_PERSIST, _mapListener);
         mapView.getMapEventDispatcher().addMapEventListener(
                 MapEvent.ITEM_REMOVED, _mapListener);
         _initView();
@@ -161,6 +155,11 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
                             break;
                         }
                     }
+                } else if (_initialLoad && !FileSystemUtils.isEmpty(
+                        _iconPalletAdapter.pallets)) {
+                    // Last pallet selected preference
+                    String iconsetUid = _prefs.getString("iconset.selected.uid", "");
+                    setPallet(iconsetUid);
                 }
 
                 if (_selectedIconPallet != null) {
@@ -168,6 +167,7 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
                     _selectedIconPallet.refresh();
                 }
 
+                _initialLoad = false;
                 this.showDropDown(_layout, THIRD_WIDTH, FULL_HEIGHT, FULL_WIDTH,
                         HALF_HEIGHT, this);
 
@@ -225,7 +225,9 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
                     return;
                 }
 
-                _iconPalletAdapter.addPallet(new UserIconPallet(iconset));
+                int order = intent.getIntExtra("order", -1);
+
+                addPallet(new UserIconPallet(iconset), order);
                 break;
             }
             case IconsMapAdapter.ICONSET_REMOVED: {
@@ -261,8 +263,12 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
      * If this is used by a plugin, the plugin must call removePallet when
      * the plugin is unloaded or bad things will happen.
      */
-    public synchronized void addPallet(final IconPallet p) {
-        _iconPalletAdapter.addPallet(p);
+    public synchronized void addPallet(final IconPallet p, int order) {
+        _iconPalletAdapter.addPallet(p, order);
+    }
+
+    public void addPallet(final IconPallet p) {
+        addPallet(p, -1);
     }
 
     /**
@@ -295,9 +301,6 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
 
         pallets.add(new SpotMapPallet());
         Log.d(TAG, "Adding SpotMapPallet");
-
-        pallets.add(new OverheadPallet());
-        Log.d(TAG, "Adding OverheadPallet");
 
         pallets.add(new VehiclePallet());
         Log.d(TAG, "Adding VehiclePallet");
@@ -349,11 +352,10 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
             return null;
         }
 
-        _pendingUid = UUID.randomUUID().toString();
         MapItem createdPoint = null;
         try {
             createdPoint = _selectedIconPallet.getPointPlacedIntent(point,
-                    _pendingUid);
+                    UUID.randomUUID().toString());
         } catch (CreatePointException e) {
             Log.w(TAG,
                     _selectedIconPallet.toString()
@@ -373,6 +375,14 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
             AtakBroadcast.getInstance().sendBroadcast(_callbackIntent);
         }
 
+        _lastPoint = createdPoint;
+        getMapView().post(new Runnable() {
+            @Override
+            public void run() {
+                refreshLastPoint();
+            }
+        });
+
         return createdPoint;
     }
 
@@ -385,13 +395,11 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
             Log.w(TAG, "Unable to process invalid point");
             return null;
         }
-        _pendingUid = UUID.randomUUID().toString();
         Marker createdPoint = null;
         try {
             //Set the UID as that will be the same for all points
             PlacePointTool.MarkerCreator mc = new PlacePointTool.MarkerCreator(
-                    point)
-                            .setUid(_pendingUid);
+                    point).setUid(UUID.randomUUID().toString());
             //Set the options associated with a med-evac
             mc = mc
                     .setType("b-r-f-h-c")
@@ -434,15 +442,12 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
 
         //setup last point UI
         _lastPointIcon = _layout.findViewById(R.id.lastPointIcon);
-        _lastPointIcon.setOnClickListener(_lastPointZoomListener);
         _lastPointTitle = _layout.findViewById(R.id.lastPointTitle);
-        _lastPointTitle.setOnClickListener(_lastPointZoomListener);
         _lastPointLabel = _layout.findViewById(R.id.lastPointLabel);
         _lastPoint_ll = _layout.findViewById(R.id.lastPoint_ll);
-        _lastPointLabel.setOnClickListener(_lastPointZoomListener);
+        _lastPoint_ll.setOnClickListener(_lastPointZoomListener);
 
-        Button del = _layout
-                .findViewById(R.id.lastPointDelete);
+        ImageButton del = _layout.findViewById(R.id.lastPointDelete);
         del.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -451,44 +456,34 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
                     return;
                 }
 
-                AlertDialog.Builder b = new AlertDialog.Builder(getMapView()
-                        .getContext());
-                b.setTitle(
-                        getMapView().getResources().getString(
-                                R.string.confirmation_dialogue))
-                        .setMessage(
-                                getMapView().getResources().getString(
-                                        R.string.remove)
-                                        + _lastPoint.getTitle()
-                                        + getMapView()
-                                                .getResources()
-                                                .getString(
-                                                        R.string.question_mark_symbol))
-                        .setPositiveButton(R.string.yes,
-                                new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface arg0,
-                                            int arg1) {
-                                        synchronized (this) {
-                                            if (_lastPoint != null) {
-                                                MapGroup g = _lastPoint
-                                                        .getGroup();
-                                                if (g != null) {
-                                                    g.removeItem(_lastPoint);
-                                                } else {
-                                                    _lastPoint = null; // it's already been removed, don't try to
-                                                }
-                                            }
+                AlertDialog.Builder b = new AlertDialog.Builder(_context);
+                b.setTitle(R.string.confirmation_dialogue);
+                b.setMessage(_context.getString(
+                        R.string.confirmation_remove_details,
+                        _lastPoint.getTitle()));
+                b.setPositiveButton(R.string.yes,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface d, int w) {
+                                synchronized (this) {
+                                    if (_lastPoint != null) {
+                                        MapGroup g = _lastPoint
+                                                .getGroup();
+                                        if (g != null) {
+                                            g.removeItem(_lastPoint);
+                                        } else {
+                                            _lastPoint = null; // it's already been removed, don't try to
                                         }
                                     }
-                                })
-                        .setNegativeButton(R.string.cancel, null);
+                                }
+                            }
+                        });
+                b.setNegativeButton(R.string.cancel, null);
                 b.show();
             }
         });
 
-        Button send = _layout
-                .findViewById(R.id.lastPointSend);
+        ImageButton send = _layout.findViewById(R.id.lastPointSend);
         send.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -515,8 +510,7 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
             }
         });
 
-        Button rename = _layout
-                .findViewById(R.id.lastPointRename);
+        ImageButton rename = _layout.findViewById(R.id.lastPointRename);
 
         rename.setOnClickListener(new OnClickListener() {
             @Override
@@ -531,58 +525,43 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
                 input.setText(_lastPoint.getTitle());
                 input.selectAll();
 
-                AlertDialog dialog = new AlertDialog.Builder(getMapView()
-                        .getContext())
-                                .setMessage(
-                                        getMapView().getResources().getString(
-                                                R.string.rename))
-                                .setView(input)
-                                .setPositiveButton(
-                                        getMapView().getResources().getString(
-                                                R.string.ok),
-                                        new DialogInterface.OnClickListener() {
-                                            @Override
-                                            public void onClick(
-                                                    DialogInterface dialog,
-                                                    int whichButton) {
-                                                if (_lastPoint == null) {
-                                                    Log.w(TAG,
-                                                            "Last point not set");
-                                                    return;
-                                                }
+                AlertDialog.Builder b = new AlertDialog.Builder(_context);
+                b.setTitle(R.string.rename);
+                b.setView(input);
+                b.setPositiveButton(R.string.ok,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface d, int w) {
+                                if (_lastPoint == null) {
+                                    Log.w(TAG, "Last point not set");
+                                    return;
+                                }
 
-                                                String newName = input.getText()
-                                                        .toString().trim();
-                                                if (FileSystemUtils
-                                                        .isEmpty(newName)) {
-                                                    Log.w(TAG,
-                                                            "New name not set");
-                                                    return;
-                                                }
+                                String newName = input.getText().toString()
+                                        .trim();
+                                if (FileSystemUtils.isEmpty(newName)) {
+                                    Log.w(TAG, "New name not set");
+                                    return;
+                                }
 
-                                                _lastPoint.setMetaString(
-                                                        "callsign",
-                                                        newName);
-                                                _lastPoint.setTitle(newName);
-                                                _lastPointTitle
-                                                        .setText(newName);
-                                                _lastPoint.refresh(getMapView()
-                                                        .getMapEventDispatcher(),
-                                                        null,
-                                                        this.getClass());
-                                                _lastPoint.persist(getMapView()
-                                                        .getMapEventDispatcher(),
-                                                        null,
-                                                        this.getClass());
-                                            }
-                                        })
-                                .setNegativeButton(R.string.cancel, null)
-                                .create();
-                Window w = dialog.getWindow();
+                                _lastPoint.setMetaString("callsign", newName);
+                                _lastPoint.setTitle(newName);
+                                _lastPointTitle.setText(newName);
+                                _lastPoint.refresh(
+                                        getMapView().getMapEventDispatcher(),
+                                        null, this.getClass());
+                                _lastPoint.persist(
+                                        getMapView().getMapEventDispatcher(),
+                                        null, this.getClass());
+                            }
+                        });
+                b.setNegativeButton(R.string.cancel, null);
+                AlertDialog d = b.create();
+                Window w = d.getWindow();
                 if (w != null)
                     w.setSoftInputMode(
                             WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
-                dialog.show();
+                d.show();
             }
         });
 
@@ -600,14 +579,6 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
         _iconPalletAdapter.setPallets(loadPallets());
         if (_selectedIconPallet != null)
             _palletTitle.setText(_selectedIconPallet.getTitle());
-
-        //on first load, switch to the user's last viewed pallet
-        if (_initialLoad
-                && !FileSystemUtils.isEmpty(_iconPalletAdapter.pallets)) {
-            _initialLoad = false;
-            String iconsetUid = _prefs.getString("iconset.selected.uid", "");
-            setPallet(iconsetUid);
-        }
     }
 
     /**
@@ -682,10 +653,11 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
         _layout = null;
 
         _lastPoint = null;
-        _pendingUid = null;
         if (_mapListener != null) {
             getMapView().getMapEventDispatcher().removeMapEventListener(
                     MapEvent.ITEM_REFRESH, _mapListener);
+            getMapView().getMapEventDispatcher().removeMapEventListener(
+                    MapEvent.ITEM_PERSIST, _mapListener);
             getMapView().getMapEventDispatcher().removeMapEventListener(
                     MapEvent.ITEM_REMOVED, _mapListener);
         }
@@ -925,32 +897,25 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
         }
     };
 
-    private void setLastPoint(Marker marker, boolean addListeners) {
-        if (marker == null || marker.getType().equals("b-r-f-h-c")) {
+    private void refreshLastPoint() {
+        if (_lastPoint == null) {
             Log.w(TAG, "null marker or CASEVAC");
             return;
         }
 
         _lastPointLabel.setVisibility(View.VISIBLE);
         _lastPoint_ll.setVisibility(View.VISIBLE);
-        _lastPoint = marker;
         _lastPointTitle.setText(_lastPoint.getTitle());
-
-        if (addListeners) {
-            _lastPoint.addOnIconChangedListener(this);
-            _lastPoint.addOnTitleChangedListener(this);
-        }
 
         //Log.d(TAG, "setLastPoint: " + marker.getTitle());
 
         // ICON
-        ATAKUtilities.SetIcon(getMapView().getContext(), _lastPointIcon,
-                _lastPoint);
+        _lastPointIcon.setImageDrawable(_lastPoint.getIconDrawable());
+        _lastPointIcon.setColorFilter(_lastPoint.getIconColor(),
+                PorterDuff.Mode.MULTIPLY);
     }
 
     private void unsetLastPoint() {
-        _lastPoint.removeOnIconChangedListener(this);
-        _lastPoint.removeOnTitleChangedListener(this);
 
         _lastPoint = null;
         _lastPointTitle.setText("");
@@ -968,77 +933,33 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
                 return;
             }
 
-            getMapView().getMapController().panTo(_lastPoint.getPoint(), false);
+            MapTouchController.goTo(_lastPoint, false);
         }
     };
 
-    @Override
-    public void onIconChanged(final Marker marker) {
-        if (_lastPoint == null) {
-            return;
-        }
-
-        if (marker.getUID().equals(_lastPoint.getUID())) {
-            getMapView().post(new Runnable() {
-                @Override
-                public void run() {
-                    setLastPoint(marker, false);
-                }
-            });
-        } else {
-            Log.w(TAG, "Unexpected onIconChanged: " + marker.getTitle());
-        }
-    }
-
-    @Override
-    public void onTitleChanged(final Marker marker) {
-        if (_lastPoint == null) {
-            return;
-        }
-
-        if (marker.getUID().equals(_lastPoint.getUID())) {
-            getMapView().post(new Runnable() {
-                @Override
-                public void run() {
-                    setLastPoint(marker, false);
-                }
-            });
-        } else {
-            Log.w(TAG, "Unexpected onTitleChanged: " + marker.getTitle());
-        }
-    }
-
     private final MapEventDispatcher.MapEventDispatchListener _mapListener = new MapEventDispatcher.MapEventDispatchListener() {
         @Override
-        public void onMapEvent(final MapEvent event) {
-            if (event == null || event.getItem() == null
-                    || !(event.getItem() instanceof Marker)) {
+        public void onMapEvent(MapEvent event) {
+            if (event == null || event.getItem() == null)
                 return;
-            }
 
-            if (MapEvent.ITEM_REFRESH.equals(event.getType())) {
-                if (!FileSystemUtils.isEmpty(_pendingUid)
-                        && _pendingUid.equals(event.getItem().getUID())) {
-                    _pendingUid = null;
-                    getMapView().post(new Runnable() {
-                        @Override
-                        public void run() {
-                            setLastPoint((Marker) event.getItem(), true);
-                        }
-                    });
+            final String type = event.getType();
+            MapItem item = event.getItem();
+
+            if (_lastPoint == null || !item.getUID().equals(
+                    _lastPoint.getUID()))
+                return;
+
+            getMapView().post(new Runnable() {
+                @Override
+                public void run() {
+                    if (type.equals(MapEvent.ITEM_REFRESH)
+                            || type.equals(MapEvent.ITEM_PERSIST))
+                        refreshLastPoint();
+                    else if (type.equals(MapEvent.ITEM_REMOVED))
+                        unsetLastPoint();
                 }
-            } else if (MapEvent.ITEM_REMOVED.equals(event.getType())) {
-                if (_lastPoint != null
-                        && _lastPoint.getUID()
-                                .equals(event.getItem().getUID())) {
-                    getMapView().post(new Runnable() {
-                        @Override
-                        public void run() {
-                            unsetLastPoint();
-                        }
-                    });
-                }
-            }
+            });
         }
     };
 
@@ -1140,14 +1061,17 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
             }
         }
 
-        synchronized void addPallet(IconPallet pallet) {
+        synchronized void addPallet(IconPallet pallet, int order) {
             IconPallet existing = getPallet(pallet.getUid());
             if (existing != null) {
                 Log.w(TAG, "Pallet already exists: " + pallet.toString());
                 return;
             }
 
-            pallets.add(pallet);
+            if (order >= 0)
+                pallets.add(Math.min(order, pallets.size()), pallet);
+            else
+                pallets.add(pallet);
             notifyDataSetChanged();
         }
 

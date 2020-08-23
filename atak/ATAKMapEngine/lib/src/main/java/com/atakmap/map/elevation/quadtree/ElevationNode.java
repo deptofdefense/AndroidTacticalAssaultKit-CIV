@@ -8,7 +8,6 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
  * This object represents a node in the {@link ElevationQuadTree} which can store data for
  * for the elevation based on the area that it covers.
  *
- * @author CSRA
  */
 public class ElevationNode implements Comparable<ElevationNode>
 {

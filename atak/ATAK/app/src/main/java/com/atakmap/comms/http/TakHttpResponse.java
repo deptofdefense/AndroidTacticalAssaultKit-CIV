@@ -100,7 +100,7 @@ public class TakHttpResponse {
         checkGZip();
 
         String ret = EntityUtils.toString(_response.getEntity(),
-                FileSystemUtils.UTF8_CHARSET);
+                FileSystemUtils.UTF8_CHARSET.name());
         if (!FileSystemUtils.isEmpty(verify)) {
             if (FileSystemUtils.isEmpty(ret)) {
                 Log.w(TAG, "Failed to parse response body");

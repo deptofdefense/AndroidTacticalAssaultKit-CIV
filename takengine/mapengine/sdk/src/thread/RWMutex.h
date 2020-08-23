@@ -14,7 +14,7 @@ namespace TAK {
             class ENGINE_API ReadLock;
             class ENGINE_API WriteLock;
 
-            enum ENGINE_API RWMutexPolicy
+            enum RWMutexPolicy
             {
                 /**
                  * Hint for fair scheduling. Pending write acquisition is given
@@ -76,8 +76,6 @@ namespace TAK {
 
                 friend class ENGINE_API ReadLock;
                 friend class ENGINE_API WriteLock;
-                friend ENGINE_API Util::TAKErr ReadLock_create(std::unique_ptr<ReadLock, void(*)(const ReadLock *)> &value, RWMutex &mutex) NOTHROWS;
-                friend ENGINE_API Util::TAKErr WriteLock_create(std::unique_ptr<WriteLock, void(*)(const WriteLock *)> &value, RWMutex &mutex) NOTHROWS;
             };
 
             /**
@@ -85,15 +83,16 @@ namespace TAK {
             */
             class ENGINE_API ReadLock
             {
-            private:
+            public:
                 ReadLock(RWMutex &mutex) NOTHROWS;
+            private :
                 ReadLock(const ReadLock &) NOTHROWS;
             public:
                 ~ReadLock() NOTHROWS;
+            public :
+                Util::TAKErr status;
             private:
                 RWMutex &mutex;
-
-                friend Util::TAKErr ReadLock_create(std::unique_ptr<ReadLock, void(*)(const ReadLock *)> &value, RWMutex &mutex) NOTHROWS;
             };
 
             typedef std::unique_ptr<ReadLock, void(*)(const ReadLock *)> ReadLockPtr;
@@ -103,15 +102,16 @@ namespace TAK {
             */
             class ENGINE_API WriteLock
             {
-            private:
+            public:
                 WriteLock(RWMutex &mutex) NOTHROWS;
+            private :
                 WriteLock(const WriteLock &) NOTHROWS;
             public:
                 ~WriteLock() NOTHROWS;
+            public :
+                Util::TAKErr status;
             private:
                 RWMutex &mutex;
-
-                friend ENGINE_API Util::TAKErr WriteLock_create(std::unique_ptr<WriteLock, void(*)(const WriteLock *)> &value, RWMutex &mutex) NOTHROWS;
             };
 
             typedef std::unique_ptr<WriteLock, void(*)(const WriteLock *)> WriteLockPtr;

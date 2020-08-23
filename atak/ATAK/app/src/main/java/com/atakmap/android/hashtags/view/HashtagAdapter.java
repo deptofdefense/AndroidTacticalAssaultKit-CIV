@@ -14,6 +14,7 @@ import com.atakmap.android.hashtags.HashtagContent;
 import com.atakmap.android.hashtags.HashtagManager;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
+import com.atakmap.coremap.locale.LocaleUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -104,14 +105,16 @@ public class HashtagAdapter extends BaseAdapter implements Filterable,
                 results.values = values;
                 results.count = values.size();
             } else {
-                final String prefixString = prefix.toString().toLowerCase();
+                final String prefixString = prefix.toString()
+                        .toLowerCase(LocaleUtil.getCurrent());
 
                 final int count = values.size();
                 final ArrayList<String> newValues = new ArrayList<>();
 
                 for (int i = 0; i < count; i++) {
                     final String value = values.get(i);
-                    final String valueText = value.toLowerCase();
+                    final String valueText = value
+                            .toLowerCase(LocaleUtil.getCurrent());
 
                     // First match against the whole, non-splitted value
                     if (valueText.startsWith(prefixString)) {

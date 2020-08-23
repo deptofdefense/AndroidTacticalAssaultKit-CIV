@@ -11,7 +11,7 @@ using namespace TAK::Engine::Util;
 // Mutex
 
 Mutex::Mutex(const MutexType type) NOTHROWS :
-    impl(NULL, NULL)
+    impl(nullptr, nullptr)
 {
     if (MutexImpl_create(impl, type) != TE_Ok)
         impl.reset();

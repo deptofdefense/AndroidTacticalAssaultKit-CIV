@@ -109,9 +109,9 @@ namespace atakmap {
             virtual bool supportsStateNoSync(int state) const;
 
         private:
-            mutable TAK::Engine::Thread::Mutex mutex;
-            mutable TAK::Engine::Thread::CondVar changeCV;
-            int state;
+            mutable TAK::Engine::Thread::Mutex mutex_;
+            mutable TAK::Engine::Thread::CondVar change_cv_;
+            int state_;
         };
 
         class ENGINE_API FutureError : public std::exception {
@@ -119,7 +119,7 @@ namespace atakmap {
             FutureError();
             FutureError(const char *message);
             virtual ~FutureError() NOTHROWS;
-            virtual const char *what() const NOTHROWS;
+            virtual const char *what() const NOTHROWS override;
 
         private:
             std::string message;
@@ -175,26 +175,26 @@ namespace atakmap {
                 if (state == Canceled) {
                     throw FutureError("canceled");
                 } else if (state == Error) {
-                    if (this->message) {
-                        throw FutureError(this->message.get());
+                    if (this->message_) {
+                        throw FutureError(this->message_.get());
                     } else {
                         throw FutureError();
                     }
                 }
-                return value;
+                return value_;
             }
 
             // Only to be called by the thread that initiated the Processing state
             bool completeProcessing(const T &value) {
                 bool result = false;
                 try {
-                    this->value = value;
+                    this->value_ = value;
                     result = setState(Complete);
                 } catch (const std::exception &e) {
-                    this->message = e.what();
+                    this->message_ = e.what();
                     this->setState(Error);
                 } catch (...) {
-                    this->message = "unknown exception";
+                    this->message_ = "unknown exception";
                     this->setState(Error);
                 }
                 return result;
@@ -202,13 +202,13 @@ namespace atakmap {
 
             // Only to be called by the thread that intiated the Processing state
             void completeProcessingWithError(const char *message) {
-                this->message = message;
+                this->message_ = message;
                 this->setState(Error);
             }
 
         private:
-            T value;
-            TAK::Engine::Port::String message;
+            T value_;
+            TAK::Engine::Port::String message_;
         };
 
         //
@@ -236,7 +236,7 @@ namespace atakmap {
                 return state != SharedState::Initial && state != SharedState::Processing;
             }
 
-            bool valid() const { return impl.get() != NULL; }
+            bool valid() const { return impl.get() != nullptr; }
 
             CancelationToken getCancelationToken() { return CancelationToken(impl); }
 
@@ -330,7 +330,7 @@ namespace atakmap {
                 return result;
             }
 
-            inline bool valid() const { return impl.get() != NULL; }
+            inline bool valid() const { return impl.get() != nullptr; }
 
             CancelationToken getCancelationToken() { return CancelationToken(impl); }
 

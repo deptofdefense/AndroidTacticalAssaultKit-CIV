@@ -19,6 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import com.atakmap.android.metrics.activity.MetricActivity;
 import com.atakmap.android.video.ConnectionEntry;
 import com.atakmap.app.R;
 import com.atakmap.comms.NetworkDeviceManager;
@@ -67,7 +68,8 @@ import java.util.Map;
  * when next the Activity is created.
  * <P>
  */
-public class Gv2FMobilePlayer extends Activity implements StatusUpdateConsumer,
+public class Gv2FMobilePlayer extends MetricActivity
+        implements StatusUpdateConsumer,
         KLVConsumer {
 
     public static final String TAG = "Gv2FMobilePlayer";
@@ -224,13 +226,13 @@ public class Gv2FMobilePlayer extends Activity implements StatusUpdateConsumer,
                             case HTTPS:
                             case HTTP:
                                 setupTmpDir();
-                                String addr = ConnectionEntry.getURL(ce);
+                                String addr = ConnectionEntry.getURL(ce, false);
                                 processor = new MediaProcessor(addr);
                                 break;
                             case RTSP: {
 
                                 setupTmpDir();
-                                String rtspaddr = ConnectionEntry.getURL(ce);
+                                String rtspaddr = ConnectionEntry.getURL(ce, false);
                                 processor = new MediaProcessor(rtspaddr,
                                         ce.getNetworkTimeout(),
                                         ce.getBufferTime(), 0, tmpDir);

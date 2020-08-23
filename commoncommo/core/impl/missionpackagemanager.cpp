@@ -115,6 +115,7 @@ MissionPackageManager::MissionPackageManager(CommoLogger *logger,
                 uploadCurlMultiCtx(NULL),
                 webserver(NULL),
                 webPort(MP_LOCAL_PORT_DISABLE),
+                httpsProxyPort(MP_LOCAL_PORT_DISABLE),
                 eventQueue(),
                 eventQueueMutex(),
                 eventQueueMonitor()
@@ -298,45 +299,7 @@ void MissionPackageManager::setLocalPort(int localPort)
         webPort = MP_LOCAL_PORT_DISABLE;
     }
     
-    // Abort outbound local transfers
-    InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Aborting existing outbound transfers using local web server as port is changing...");
-    TxTransferMap::iterator xferIter;
-    TxTransferMap::iterator nextXferIter;
-    xferIter = txTransfers.begin();
-    while (xferIter != txTransfers.end())
-    {
-        nextXferIter = xferIter;
-        nextXferIter++;
-        
-        std::set<std::string>::iterator ackIter;
-        for (ackIter = xferIter->second->localAcks.begin(); 
-                ackIter != xferIter->second->localAcks.end();
-                ackIter++)
-        {
-            std::map<std::string, const InternalContactUID *>::iterator i;
-            i = xferIter->second->outstandingAcks.find(*ackIter);
-            if (i == xferIter->second->outstandingAcks.end())
-                InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Unable to find destination contact to abort transfer!!");
-            else {
-                queueEvent(MPStatusEvent::createTxFinal(xferIter->second->id,
-                        i->second,
-                        MP_TRANSFER_FINISHED_DISABLED_LOCALLY,
-                        NULL,
-                        0));
-                xferIter->second->outstandingAcks.erase(i);
-            }
-            acksToIds.erase(*ackIter);
-        }
-        
-        xferIter->second->localAcks.clear();
-
-        if (xferIter->second->isDone()) {
-            delete xferIter->second;
-            txTransfers.erase(xferIter);
-        }
-        
-        xferIter = nextXferIter;
-    }
+    abortLocalTransfers();
 
 
     if (localPort == MP_LOCAL_PORT_DISABLE) {
@@ -364,6 +327,30 @@ void MissionPackageManager::setLocalPort(int localPort)
     
     // Success!
     webPort = localPort;
+}
+
+void MissionPackageManager::setLocalHttpsPort(int localPort)
+{
+    PGSC::Thread::LockPtr lock(NULL, NULL);
+    PGSC::Thread::Lock_create(lock, txTransfersMutex);
+    
+    InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO, "Changing local https server port to %d from current %d", localPort, httpsProxyPort);
+    if (localPort == httpsProxyPort)
+        // All good, nothing to change
+        return;
+    
+    
+    // Abort current local transfers
+    abortLocalTransfers();
+
+
+    if (localPort == MP_LOCAL_PORT_DISABLE) {
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Use of https proxy server disabled by request");
+    } else {
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO, "Now using local https proxy on port %d", localPort);
+    }
+    
+    httpsProxyPort = localPort;
 }
 
 atakmap::commoncommo::CommoResult MissionPackageManager::sendFileInit(int *xferId,
@@ -594,7 +581,7 @@ atakmap::commoncommo::CommoResult MissionPackageManager::sendFileStart(
     std::map<const InternalContactUID *, std::string>::iterator ackIter;
     for (ackIter = txCtx->localContactToAck.begin(); 
                  ackIter != txCtx->localContactToAck.end(); ++ackIter) {
-        if (localUrl.empty() || sendCoTRequest(localUrl, ackIter->second, txCtx, ackIter->first) == COMMO_CONTACT_GONE) {
+        if (localUrl.empty() || sendCoTRequest(localUrl, ackIter->second, txCtx, ackIter->first, httpsProxyPort) == COMMO_CONTACT_GONE) {
             if (transfersDisabled) {
                 InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR,
                     "MP Send to local contact failed - transfers disabled locally");
@@ -642,11 +629,58 @@ atakmap::commoncommo::CommoResult MissionPackageManager::sendFileStart(
 /***************************************************************************/
 // TX related private functions
 
+
+// NOTE: assumes holding of txTransfersMutex
+void MissionPackageManager::abortLocalTransfers()
+{
+    // Abort outbound local transfers
+    InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Aborting existing outbound transfers using local web server as port is changing...");
+    TxTransferMap::iterator xferIter;
+    TxTransferMap::iterator nextXferIter;
+    xferIter = txTransfers.begin();
+    while (xferIter != txTransfers.end())
+    {
+        nextXferIter = xferIter;
+        nextXferIter++;
+        
+        std::set<std::string>::iterator ackIter;
+        for (ackIter = xferIter->second->localAcks.begin(); 
+                ackIter != xferIter->second->localAcks.end();
+                ackIter++)
+        {
+            std::map<std::string, const InternalContactUID *>::iterator i;
+            i = xferIter->second->outstandingAcks.find(*ackIter);
+            if (i == xferIter->second->outstandingAcks.end())
+                InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Unable to find destination contact to abort transfer!!");
+            else {
+                queueEvent(MPStatusEvent::createTxFinal(xferIter->second->id,
+                        i->second,
+                        MP_TRANSFER_FINISHED_DISABLED_LOCALLY,
+                        NULL,
+                        0));
+                xferIter->second->outstandingAcks.erase(i);
+            }
+            acksToIds.erase(*ackIter);
+        }
+        
+        xferIter->second->localAcks.clear();
+
+        if (xferIter->second->isDone()) {
+            delete xferIter->second;
+            txTransfers.erase(xferIter);
+        }
+        
+        xferIter = nextXferIter;
+    }
+}
+
+
 atakmap::commoncommo::CommoResult MissionPackageManager::sendCoTRequest(
                     const std::string &downloadUrl,
                     const std::string &ackUid,
                     const TxTransferContext *ctx,
-                    const ContactUID *contact)
+                    const ContactUID *contact,
+                    const int localHttpsPort)
 {
     char uuidBuf[COMMO_UUID_STRING_BUFSIZE];
     clientio->createUUID(uuidBuf);
@@ -663,12 +697,17 @@ atakmap::commoncommo::CommoResult MissionPackageManager::sendCoTRequest(
                        ctx->fileSize,
                        ourCallsign,
                        ourContactUID,
-                       ackUid);
+                       ackUid,
+                       localHttpsPort == MP_LOCAL_PORT_DISABLE ? false : true,
+                       localHttpsPort);
     callsignMutex.unlock();
     CoTMessage msg(logger, uuidBuf, point, filexfer);
 
     std::string dbguid((const char *)contact->contactUID, contact->contactUIDLen);
-    InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "MP Send to %s - cot download request sending out for URL %s", dbguid.c_str(), downloadUrl.c_str());
+    InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG,
+            "MP Send to %s - cot download request sending out for URL %s (localhttps = %d)",
+            dbguid.c_str(), downloadUrl.c_str(),
+            localHttpsPort);
     ContactList cList(1, &contact);
     return contactMgr->sendCoT(&cList, &msg);
 }
@@ -846,6 +885,7 @@ void MissionPackageManager::uploadThreadProcess()
 
                     curl_slist_free_all(upCtx->headerList);
                     upCtx->headerList = NULL;
+                    uploadingRequests.erase(upCtx);
                 
                     // URL was previously obtained; Send out.
                     InternalUtils::logprintf(logger,
@@ -1147,7 +1187,7 @@ void MissionPackageManager::uploadThreadUploadCompleted(TxUploadContext *upCtx, 
             char uuidBuf[COMMO_UUID_STRING_BUFSIZE];
             clientio->createUUID(uuidBuf);
             uuidBuf[COMMO_UUID_STRING_BUFSIZE-1] = '\0';
-            if (sendCoTRequest(upCtx->urlFromServer, uuidBuf, upCtx->owner, *iter) == COMMO_CONTACT_GONE) {
+            if (sendCoTRequest(upCtx->urlFromServer, uuidBuf, upCtx->owner, *iter, MP_LOCAL_PORT_DISABLE) == COMMO_CONTACT_GONE) {
                 queueEvent(MPStatusEvent::createTxFinal(upCtx->owner->id,
                     *iter,
                     MP_TRANSFER_FINISHED_CONTACT_GONE,
@@ -1488,7 +1528,7 @@ void MissionPackageManager::receiveThreadProcess()
                 continue;
             }
 
-            std::string url = ftc->request->senderUrl;
+            std::string url = ftc->adjustedSenderUrl;
             if (!ftc->usingSenderURL) {
                 // If a tak server URL and we have tak server endpoint, we
                 // HAVE TO use the original url only.  Likewise, if we
@@ -1518,11 +1558,19 @@ void MissionPackageManager::receiveThreadProcess()
             }
 
             InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, 
-                            "Initiating download of %s from %s at %s URL %s "
+                            "Initiating download of %s from %s at %s URL %s%s%s%s"
                             "(attempt %d of %d)", ftc->request->name.c_str(),
                             ftc->request->senderCallsign.c_str(),
                             ftc->usingSenderURL ? "sender" : "alternate",
-                            url.c_str(), ftc->currentRetryCount,
+                            url.c_str(), 
+                            ftc->request->peerHosted ? " (peer hosted, url" : "",
+                            ftc->request->peerHosted ? 
+                             (ftc->request->httpsPort != MP_LOCAL_PORT_DISABLE ?
+                                " protocol and port adjusted, orig URL " : 
+                                " protocol adjusted, orig URL " ) : "",
+                            ftc->request->peerHosted ? 
+                                ftc->request->senderUrl.c_str() : "",
+                            ftc->currentRetryCount,
                             ftc->settings.getNumTries());
 
             ftc->curlCtx = curl_easy_init();
@@ -1556,8 +1604,13 @@ void MissionPackageManager::receiveThreadProcess()
             ftc->curlErrBuf[0] = 0;
 
             if (url.length() > 6 && url.substr(0, 6) == "https:") {
-                curl_easy_setopt(ftc->curlCtx, CURLOPT_SSL_CTX_FUNCTION, curlSslCtxSetupRedir);
-                curl_easy_setopt(ftc->curlCtx, CURLOPT_SSL_CTX_DATA, ftc);
+                if (ftc->request->peerHosted) {
+                    // Don't verify certs for peer hosted transfers
+                    curl_easy_setopt(ftc->curlCtx, CURLOPT_SSL_VERIFYPEER, 0L);
+                } else {
+                    curl_easy_setopt(ftc->curlCtx, CURLOPT_SSL_CTX_FUNCTION, curlSslCtxSetupRedir);
+                    curl_easy_setopt(ftc->curlCtx, CURLOPT_SSL_CTX_DATA, ftc);
+                }
                 // Don't verify hostnames in certs
                 curl_easy_setopt(ftc->curlCtx, CURLOPT_SSL_VERIFYHOST, 0L);
             }
@@ -1689,7 +1742,7 @@ void MissionPackageManager::receiveThreadProcess()
                                             "(attempt %d of %d)",
                                             ftc->request->name.c_str(),
                                             ftc->request->senderCallsign.c_str(),
-                                            ftc->request->senderUrl.c_str(),
+                                            ftc->adjustedSenderUrl.c_str(),
                                             ftc->currentRetryCount,
                                             ftc->settings.getNumTries());
                         ftc->usingSenderURL = false;
@@ -1831,48 +1884,62 @@ int MissionPackageManager::webThreadAccessHandlerCallback(
 
     try {
         static const std::string fileSpecifier("/getfile");
+        static const std::string infoSpecifier("/getinfo");
         std::string urlStr(url);
-        if (urlStr != fileSpecifier)
-            throw std::invalid_argument("Invalid URL requested");
+        FILE *f = NULL;
+        if (urlStr == infoSpecifier) {
+            static char infoResponse[] = "Commo file server";
+            response = MHD_create_response_from_buffer(
+                sizeof(infoResponse) - 1, infoResponse, MHD_RESPMEM_PERSISTENT);
+        
+        } else {
+            if (urlStr != fileSpecifier)
+                throw std::invalid_argument("Invalid URL requested");
 
-        const char *file = MHD_lookup_connection_value(connection,
-                                                MHD_GET_ARGUMENT_KIND, "file");
-        if (!file)
-            throw std::invalid_argument("No file id specified");
+            const char *file = MHD_lookup_connection_value(connection,
+                MHD_GET_ARGUMENT_KIND, "file");
+            if (!file)
+                throw std::invalid_argument("No file id specified");
 
-        int xferId = InternalUtils::intFromString(file);
-        std::string fileString;
-        {
-            PGSC::Thread::LockPtr lock(NULL, NULL);
-            PGSC::Thread::Lock_create(lock, txTransfersMutex);
-            TxTransferMap::iterator iter = txTransfers.find(xferId);
-            if (iter == txTransfers.end())
-                throw std::invalid_argument("Unknown transfer id");
-            fileString = iter->second->fileToSend;
+            int xferId = InternalUtils::intFromString(file);
+            std::string fileString;
+            {
+                PGSC::Thread::LockPtr lock(NULL, NULL);
+                PGSC::Thread::Lock_create(lock, txTransfersMutex);
+                TxTransferMap::iterator iter = txTransfers.find(xferId);
+                if (iter == txTransfers.end())
+                    throw std::invalid_argument("Unknown transfer id");
+                fileString = iter->second->fileToSend;
+            }
+
+            uint64_t size = InternalUtils::computeFileSize(fileString.c_str());
+            f = fopen(fileString.c_str(), "rb");
+            if (!f) {
+                InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG,
+                        "MP webserver: File ID %d mapped to file %s "
+                        "could not be opened.", xferId, fileString.c_str());
+                throw std::invalid_argument(
+                        "Could not open file to serve on web");
+            }
+
+            response = MHD_create_response_from_callback(size, 4096,
+                    webserverReaderCallback, f, webserverReaderFree);
         }
-
-        uint64_t size = InternalUtils::computeFileSize(fileString.c_str());
-        FILE *f = fopen(fileString.c_str(), "rb");
-        if (!f) {
-            InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG,
-                     "MP webserver: File ID %d mapped to file %s "
-                     "could not be opened.", xferId, fileString.c_str());
-            throw std::invalid_argument("Could not open file to serve on web");
-        }
-
-        response = MHD_create_response_from_callback(size, 4096, webserverReaderCallback, f, webserverReaderFree);
+        
         if (!response) {
-            fclose(f);
+            if (f)
+                fclose(f);
             throw std::invalid_argument("Could not create web response");
         }
         code = MHD_HTTP_OK;
     } catch (std::invalid_argument &e) {
         static char errPageStr[] = "<html><head><title>File not found</title></head><body>Could not locate specified file</body></html>";
-        response = MHD_create_response_from_buffer(sizeof(errPageStr) - 1, errPageStr, MHD_RESPMEM_PERSISTENT);
+        response = MHD_create_response_from_buffer(sizeof(errPageStr) - 1,
+                errPageStr, MHD_RESPMEM_PERSISTENT);
         code = MHD_HTTP_NOT_FOUND;
         InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG,
-                 "MP webserver: Error serving request: %s",
-                 e.what());
+                "MP webserver: Error serving request: %s",
+                e.what());
     }
     int ret = MHD_queue_response(connection, code, response);
     MHD_destroy_response(response);
@@ -1939,10 +2006,19 @@ MissionPackageManager::FileTransferContext::FileTransferContext(
                 sourceStreamEndpoint(sourceStreamEndpoint),
                 request(request), curlCtx(NULL),
                 curlErrBuf(),
+                adjustedSenderUrl(request->senderUrl),
                 usingSenderURL(true), senderURLIsTAKServer(false),
                 nextRetryTime(CommoTime::ZERO_TIME),
                 currentRetryCount(1), bytesTransferred(0), outputFile(NULL)
 {
+    if (request->peerHosted && request->httpsPort != MP_LOCAL_PORT_DISABLE) {
+        if (request->senderUrl.find("http://") == 0) {
+            std::string s = "https://";
+            s += request->senderUrl.substr(7);
+            if (InternalUtils::urlReplacePort(&s, request->httpsPort))
+                adjustedSenderUrl = s;
+        }
+    }
     if (request->senderUrl.find("/Marti/") != std::string::npos)
         senderURLIsTAKServer = true;
 }

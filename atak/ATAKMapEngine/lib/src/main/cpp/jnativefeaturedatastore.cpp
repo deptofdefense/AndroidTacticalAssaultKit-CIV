@@ -649,7 +649,7 @@ JNIEXPORT jlong JNICALL Java_com_atakmap_map_layer_feature_NativeFeatureDataStor
         cattrs = AttributeSetPtr_const(new AttributeSet(), Memory_deleter_const<AttributeSet>);
 
     FeaturePtr_const inserted(NULL, NULL);
-    code = dataStore->insertFeature(&inserted, fsid, cname, *cgeom, cstyle.get(), *cattrs);
+    code = dataStore->insertFeature(&inserted, fsid, cname, *cgeom, AltitudeMode::TEAM_ClampToGround, 0.0, cstyle.get(), *cattrs);
     if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return FeatureDataStore2::FEATURE_ID_NONE;
     return inserted->getId();
@@ -696,7 +696,7 @@ JNIEXPORT jlong JNICALL Java_com_atakmap_map_layer_feature_NativeFeatureDataStor
 
     TAKErr code(TE_Ok);
     FeaturePtr_const inserted(NULL, NULL);
-    code = dataStore->insertFeature(&inserted, feature->getFeatureSetId(), feature->getName(), *geom, feature->getStyle(), *attrs);
+    code = dataStore->insertFeature(&inserted, feature->getFeatureSetId(), feature->getName(), *geom, AltitudeMode::TEAM_ClampToGround, 0.0, feature->getStyle(), *attrs);
     if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return FeatureDataStore2::FEATURE_ID_NONE;
 

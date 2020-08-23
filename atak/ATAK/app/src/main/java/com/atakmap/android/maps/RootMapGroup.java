@@ -4,6 +4,7 @@ package com.atakmap.android.maps;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -248,6 +249,14 @@ public final class RootMapGroup extends DefaultMapGroup {
         return null;
     }
 
+    /**
+     * Get all items with a registered UID
+     * @return List of all map items on the map
+     */
+    public synchronized Collection<MapItem> getAllItems() {
+        return uidIndex.getItems();
+    }
+
     /*************************************************************************/
     // Default Map Group
 
@@ -357,12 +366,15 @@ public final class RootMapGroup extends DefaultMapGroup {
 
         /**
          * Retrieves a map item based on a supplied UID.
-         * @returns null if there is no map item.
+         * @return null if there is no map item.
          */
         public MapItem get(String uid) {
             // No need to synchronize get - this seems to work as expected
             return map.get(uid);
         }
 
+        public synchronized List<MapItem> getItems() {
+            return new ArrayList<>(map.values());
+        }
     }
 }

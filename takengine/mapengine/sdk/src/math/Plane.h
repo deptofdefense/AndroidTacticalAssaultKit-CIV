@@ -17,11 +17,11 @@ public :
     Plane(std::unique_ptr<TAK::Engine::Math::Plane2, void(*)(const TAK::Engine::Math::Plane2 *)> &&impl);
     virtual ~Plane();
 public :
-    virtual bool intersect(const Ray<double> *ray, Point<double> *isectPoint) const;
+    virtual bool intersect(const Ray<double> *ray, Point<double> *isectPoint) const override;
     bool intersectV(const Ray<double> *ray, Vector3<double> *result) const;
     double distance(const Vector3<double> *point) const;
     void normalize(Plane *result) const;
-    virtual GeometryModel::GeometryClass getGeomClass() const;
+    virtual GeometryModel::GeometryClass getGeomClass() const override;
 private :
     std::unique_ptr<TAK::Engine::Math::Plane2, void(*)(const TAK::Engine::Math::Plane2 *)> impl;
     Vector3<double> normal;

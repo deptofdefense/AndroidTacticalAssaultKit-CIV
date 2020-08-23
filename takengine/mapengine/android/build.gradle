@@ -8,7 +8,7 @@
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.5.3'
+        classpath 'com.android.tools.build:gradle:3.6.3'
     }
  }
 
@@ -221,16 +221,35 @@ task copyHeaders {
             delete buildIncludeDir
 
         // copy all headers into 'mapengine/build/include'
+
+        // library headers
         copy {
             include '**/*.h'
             from '../sdk/src'
             into buildIncludeDir + "/takengine"
         }
+        // thirdparty headers
         copy {
-            include '**/*.h'
-            include '**/*.hh'
-            from '../../../pgsc-utils/src/'
-            into buildIncludeDir + "/pgsc-utils"
+            include '*.h'
+            include '*.hh'
+            include 'LICENSE'
+            include 'README.md'
+            from '../../thirdparty/tinygltf/'
+            into buildIncludeDir + "/tinygltf"
+        }
+        copy {
+            include 'json.hpp'
+            from '../../thirdparty/tinygltf/'
+            into buildIncludeDir + "/json"
+        }
+        copy {
+            //
+            include '*.h'
+            include '*.hh'
+            include 'LICENSE'
+            include 'README.md'
+            from '../../thirdparty/tinygltfloader/'
+            into buildIncludeDir + "/tinygltfloader"
         }
     }
 }
@@ -241,6 +260,7 @@ task packageHeaders(type: Zip, dependsOn: ['copyHeaders']) {
     from '../build'
     include 'include/**/*.h'
     include 'include/**/*.hh'
+    include 'include/**/*.hpp'
     archiveName = 'takengine-api.zip'
     destinationDir = file('../build')
 }

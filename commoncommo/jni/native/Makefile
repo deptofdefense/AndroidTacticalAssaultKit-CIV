@@ -74,8 +74,8 @@ debug : LINK_FLAGS += $(DEBUG_LINK_FLAGS)
 release : CXXFLAGS += $(RELEASE_CXXFLAGS)
 debug release : $(LIBRARY)
 
-$(LIBRARY): $(OBJS)
-	$(CXX) $(LINK_FLAGS) -o $@ $^ $(LIBS)
+$(LIBRARY): $(OBJS) $(wildcard $(COMMOPATH)/core/impl/libcommoncommo.* $(TAKTHIRDPARTYDIR)/lib/libcommoncommo.*)
+	$(CXX) $(LINK_FLAGS) -o $@ $(OBJS) $(LIBS)
 
 
 clean:

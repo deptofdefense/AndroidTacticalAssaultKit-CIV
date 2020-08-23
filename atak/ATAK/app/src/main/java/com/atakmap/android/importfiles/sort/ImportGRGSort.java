@@ -24,8 +24,9 @@ public class ImportGRGSort extends ImportInPlaceResolver {
 
     public ImportGRGSort(Context context, boolean validateExt,
             boolean copyFile, boolean importInPlace) {
-        super(null, "grg", validateExt, copyFile, importInPlace, context
-                .getString(R.string.grg_file));
+        super(null, "grg", validateExt, copyFile, importInPlace,
+                context.getString(R.string.grg_file),
+                context.getDrawable(R.drawable.ic_overlay_gridlines));
 
     }
 

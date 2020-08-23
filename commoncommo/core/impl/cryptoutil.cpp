@@ -462,6 +462,125 @@ void CryptoUtil::freeCryptoString(char *cryptoString)
     free(cryptoString);
 }
 
+size_t CryptoUtil::generateSelfSignedCert(uint8_t **cert, const char *password)
+{
+    InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, 
+                             "generateSelfSignedCert - enter");
+    X509 *xcert;
+    EVP_PKEY *pkey;
+    RSA *rsa;
+    BIGNUM *bn;
+    X509_NAME *name = NULL;
+    
+    pkey = EVP_PKEY_new();
+    if (!pkey)
+        return 0;
+
+    xcert = X509_new();
+    if (!xcert) {
+        EVP_PKEY_free(pkey);
+        return 0;
+    }
+    
+    bn = BN_new();
+    if (!bn) {
+        EVP_PKEY_free(pkey);
+        X509_free(xcert);
+        return 0;
+    }
+    BN_set_word(bn, RSA_F4);
+    
+    rsa = RSA_new();
+    if (!rsa) {
+        RSA_free(rsa);
+        BN_free(bn);
+        EVP_PKEY_free(pkey);
+        X509_free(xcert);
+    }
+    
+    
+    if (!RSA_generate_key_ex(rsa, 2048, bn, NULL) ||
+                     !EVP_PKEY_assign_RSA(pkey, rsa)) {
+#ifdef DEBUG_COMMO_CRYPTO
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, 
+                                 "generateSelfSignedCert - rsa keygen failed");
+#endif
+        RSA_free(rsa);
+        BN_free(bn);
+        EVP_PKEY_free(pkey);
+        X509_free(xcert);
+        return 0;
+    }
+    rsa = NULL;
+    
+    static const int days = 365/2;
+    static const int serial = 1;
+    X509_set_version(xcert, 2);
+    ASN1_INTEGER_set(X509_get_serialNumber(xcert), serial);
+    X509_gmtime_adj(X509_get_notBefore(xcert), 0);
+    X509_gmtime_adj(X509_get_notAfter(xcert), 60 * 60 * 24 * days);
+    X509_set_pubkey(xcert, pkey);
+
+    name = X509_get_subject_name(xcert);
+    X509_NAME_add_entry_by_txt(name, "C", MBSTRING_ASC, 
+            (unsigned char *)"Unknown", -1, -1, 0);
+    X509_NAME_add_entry_by_txt(name, "O", MBSTRING_ASC,
+            (unsigned char *)"Unknown", -1, -1, 0);
+    X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC,
+            (unsigned char *)"unknown", -1, -1, 0);
+    X509_set_issuer_name(xcert, name);
+    X509_sign(xcert, pkey, EVP_sha1());
+    
+    PKCS12 *p12 = PKCS12_create(password, "unknown", pkey, xcert, NULL, 0, 0, 0, 0, 0);
+    if (!p12) {
+        BN_free(bn);
+        EVP_PKEY_free(pkey);
+        X509_free(xcert);
+        return 0;
+    }
+    
+    BIO *bio = BIO_new(BIO_s_mem());
+    int n = i2d_PKCS12_bio(bio, p12);
+    
+    size_t ret;
+    if (n != 1) {
+#ifdef DEBUG_COMMO_CRYPTO
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, 
+                                 "generateSelfSignedCert - p12 to bio failed");
+#endif
+        ret = 0;
+    } else {
+        char *bioMem;
+        long bioLen = BIO_get_mem_data(bio, &bioMem);
+        if (bioLen < 0) {
+#ifdef DEBUG_COMMO_CRYPTO
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, 
+                                 "generateSelfSignedCert - bio extract failed %ld", bioLen);
+#endif
+            ret = 0;
+        } else {
+            uint8_t *retbuf = new uint8_t[bioLen];
+            memcpy(retbuf, bioMem, bioLen);
+            *cert = retbuf;
+            ret = (size_t)bioLen;
+        }
+    }
+    BN_free(bn);
+    PKCS12_free(p12);
+    BIO_free(bio);
+#ifdef DEBUG_COMMO_CRYPTO
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, 
+                                 "generateSelfSignedCert - success returning %d", (int)ret);
+#endif
+    return ret;
+}
+
+
+void CryptoUtil::freeSelfSignedCert(uint8_t *cert)
+{
+    delete[] cert;
+}
+
 
 void CryptoUtil::logerr(const char *msg)
 {

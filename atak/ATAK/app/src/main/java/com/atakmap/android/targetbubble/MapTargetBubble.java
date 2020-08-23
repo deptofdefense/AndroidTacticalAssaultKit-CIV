@@ -2,6 +2,9 @@
 package com.atakmap.android.targetbubble;
 
 import com.atakmap.android.maps.MapView;
+import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.AtakMapController;
+import com.atakmap.map.Globe;
 import com.atakmap.map.layer.AbstractLayer;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.feature.geometry.Envelope;
@@ -14,23 +17,23 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class MapTargetBubble extends AbstractLayer {
 
-    private double _lat, _lng;
     private final int _x;
     private final int _y;
     private final int _width;
     private final int _height;
-    private double bubbleScale;
     private final ConcurrentLinkedQueue<OnLocationChangedListener> _onLocationChangedListener = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnScaleChangedListener> _onScaleChangedListener = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnCrosshairColorChangedListener> _onCrosshairColorChangedListener = new ConcurrentLinkedQueue<>();
 
-    private int crosshairColor;
-
-    private List<? extends Layer> layers;
-
     private Polygon viewport;
 
     private boolean coordExtraction;
+
+    private Globe globe;
+    private CrosshairLayer crosshair;
+    private double _latitude;
+    private double _longitude;
+    private double _scale;
 
     public MapTargetBubble(MapView mapView, int x, int y, int width,
             int height, double mapScale) {
@@ -52,7 +55,12 @@ public class MapTargetBubble extends AbstractLayer {
             Polygon viewport, double mapScale, boolean coordExtraction) {
         super("Target Bubble");
 
-        this.layers = layers;
+        this.globe = new Globe();
+        for (Layer layer : layers)
+            this.globe.addLayer(layer);
+
+        this.crosshair = new CrosshairLayer("Target Bubble Crosshair");
+        this.crosshair.setColor(0xFF000000);
 
         this.viewport = viewport;
 
@@ -74,8 +82,10 @@ public class MapTargetBubble extends AbstractLayer {
         if (mapScale <= 0.0d)
             mapScale = 1.0d / 1926.0d;
 
-        this.bubbleScale = mapScale;
-        this.crosshairColor = 0xFF000000;
+        _latitude = mapView.getLatitude();
+        _longitude = mapView.getLongitude();
+        _scale = mapScale;
+
         this.coordExtraction = coordExtraction;
     }
 
@@ -88,25 +98,33 @@ public class MapTargetBubble extends AbstractLayer {
     }
 
     public void shiftLocation(final double latShift, final double lngShift) {
-        setLocation(_lat + latShift, _lng + lngShift);
+        setLocation(_latitude + latShift, _longitude + lngShift);
     }
 
     public void setLocation(final double latitude, final double longitude) {
-        _lat = latitude;
-        _lng = longitude;
+        _latitude = latitude;
+        _longitude = longitude;
         onLocationChanged();
     }
 
     public List<Layer> getLayers() {
-        return new LinkedList<>(this.layers);
+        return this.globe.getLayers();
+    }
+
+    public Globe getGlobe() {
+        return this.globe;
+    }
+
+    public CrosshairLayer getCrosshair() {
+        return crosshair;
     }
 
     public double getLatitude() {
-        return _lat;
+        return _latitude;
     }
 
     public double getLongitude() {
-        return _lng;
+        return _longitude;
     }
 
     public int getX() {
@@ -132,16 +150,16 @@ public class MapTargetBubble extends AbstractLayer {
      * @return
      */
     public double getMapScale() {
-        return bubbleScale;
+        return _scale;
     }
 
     public void setMapScale(double scale) {
-        this.bubbleScale = scale;
+        _scale = scale;
         onScaleChanged();
     }
 
     public int getCrosshairColor() {
-        return this.crosshairColor;
+        return this.crosshair.getCrosshairColor();
     }
 
     /**
@@ -149,8 +167,9 @@ public class MapTargetBubble extends AbstractLayer {
      * @param color the crosshair changed
      */
     public void setCrosshairColor(int color) {
-        if (crosshairColor != color) {
-            this.crosshairColor = color;
+        if (getCrosshairColor() != color) {
+            this.crosshair.setColor(color);
+
             this.onCrosshairColorChanged();
         }
     }

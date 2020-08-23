@@ -27,7 +27,9 @@ public class ImportLPTSort extends ImportInPlaceResolver {
     public ImportLPTSort(Context context, boolean validateExt,
             boolean copyFile, boolean importInPlace) {
         super(".lpt", FileSystemUtils.OVERLAYS_DIRECTORY, validateExt,
-                copyFile, importInPlace, context.getString(R.string.lpt_file));
+                copyFile, importInPlace, context.getString(R.string.lpt_file),
+                context.getDrawable(
+                        R.drawable.ic_geojson_file_notification_icon));
     }
 
     @Override

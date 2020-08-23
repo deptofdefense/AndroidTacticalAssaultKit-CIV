@@ -8,6 +8,7 @@ import android.net.Uri;
 
 import com.atakmap.android.importexport.AbstractMarshal;
 import com.atakmap.android.importexport.Marshal;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 
 public class WFSMarshal extends AbstractMarshal {
 
@@ -24,7 +25,7 @@ public class WFSMarshal extends AbstractMarshal {
         int read = inputStream.read(buf, 0, Math.min(buf.length, probeSize));
         if (read < buf.length)
             return null;
-        String s = new String(buf);
+        String s = new String(buf, FileSystemUtils.UTF8_CHARSET);
         if ("<takWfsConfig>".equals(s))
             return WFSImporter.MIME_XML;
         return null;

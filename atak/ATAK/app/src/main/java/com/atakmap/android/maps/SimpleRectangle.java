@@ -60,6 +60,10 @@ public class SimpleRectangle extends Polyline {
         rectFillTypeChangedListenerList.remove(l);
     }
 
+    /**
+     * The center point of the simple rectangle
+     * @param newCenter the center point
+     */
     public void setCenter(GeoPointMetaData newCenter) {
 
         if (center != null && center.equals(newCenter))
@@ -71,6 +75,10 @@ public class SimpleRectangle extends Polyline {
         OnRectPropertiesChanged(1);
     }
 
+    /**
+     * Set the angle of rotation in degrees from true north.
+     * @param newAngle the angle of rotation in degrees
+     */
     public void setAngle(double newAngle) {
 
         if (Double.compare(angle, newAngle) == 0)
@@ -81,10 +89,18 @@ public class SimpleRectangle extends Polyline {
         OnRectPropertiesChanged(2);
     }
 
+    /**
+     * Returns the angle of rotation of the rectangle based on true north in degrees
+     * @return the angle of rotation in degrees
+     */
     public double getAngle() {
         return angle;
     }
 
+    /**
+     * Set the height of the rectangle in meters
+     * @param newH the height of the rectangle in meters
+     */
     public void setHeight(double newH) {
 
         if (Double.compare(newH, height) == 0)
@@ -95,10 +111,18 @@ public class SimpleRectangle extends Polyline {
         OnRectPropertiesChanged(4);
     }
 
+    /**
+     * Returns the height of the rectangle in meters
+     * @return the height of the rectangle in meters.
+     */
     public double getHeight() {
         return height;
     }
 
+    /**
+     * Set the width of the rectangle in meters
+     * @param newW the width of the rectangle in meters
+     */
     public void setWidth(double newW) {
 
         if (Double.compare(newW, width) == 0)
@@ -109,10 +133,20 @@ public class SimpleRectangle extends Polyline {
         OnRectPropertiesChanged(8);
     }
 
+    /**
+     * Returns the width of the rectangle in meters
+     * @return the width of the rectangle in meters.
+     */
     public double getWidth() {
         return width;
     }
 
+    /**
+     * Set the center, width and height of the rectangle more efficiently than one at a time.
+     * @param newCenter the new center point for the rectangle
+     * @param newH the height of the rectangle in meters
+     * @param newW the width of the rectangle in meters
+     */
     public void setCenterHeightWidth(GeoPointMetaData newCenter, double newH,
             double newW) {
 
@@ -130,6 +164,13 @@ public class SimpleRectangle extends Polyline {
         OnRectPropertiesChanged(13);
     }
 
+    /**
+     * Set the center, width and height of the rectangle more efficiently than one at a time.
+     * @param newCenter the new center point for the rectangle
+     * @param newH the height of the rectangle in meters
+     * @param newW the width of the rectangle in meters
+     * @param newAngle the angle of the rectangle in degrees offset from true north.
+     */
     public void setCenterHeightWidthAngle(GeoPointMetaData newCenter,
             double newH,
             double newW, double newAngle) {
@@ -157,6 +198,10 @@ public class SimpleRectangle extends Polyline {
         }
     }
 
+    /**
+     * Returns the fill style for this ellipse.
+     * @return fill style which can be either 1 for filled or 0 for unfilled.
+     */
     public int getFillStyle() {
         return fill;
     }
@@ -167,6 +212,10 @@ public class SimpleRectangle extends Polyline {
         }
     }
 
+    /**
+     * Sets the fill style
+     * @param newFill the fill style one 1 for filled or 0 for unfilled.
+     */
     public void setFillStyle(int newFill) {
         if (newFill != fill) {
             fill = newFill;

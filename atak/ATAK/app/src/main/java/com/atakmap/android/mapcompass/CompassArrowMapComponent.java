@@ -192,7 +192,7 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
                     break;
             }
 
-            // record the desired state of the human toggling the the compass
+            // record the desired state of the human toggling the compass
 
             _prefs.edit().putString("status_mapmode_heading_value",
                     Double.toString(lockedHeadingValue)).apply();
@@ -801,6 +801,11 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
 
     @Override
     protected void onDestroyImpl(Context context, MapView view) {
+
+        // Restore tilt to zero if we were in free look mode w/out 3D mode
+        // explicitly toggled on
+        if (mapTouch.isFreeForm3DEnabled() && !_prefs.getBoolean("status_3d_enabled", false))
+            view.getMapController().tiltTo(0, false);
 
         // record the heading value at the time the app is being shut down.
         _prefs.edit().putString("status_mapmode_heading_value",

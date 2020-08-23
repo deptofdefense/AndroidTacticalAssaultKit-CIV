@@ -3,6 +3,7 @@ package com.atakmap.android.importfiles.sort;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 
 import com.atakmap.android.routes.RouteMapReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -19,10 +20,18 @@ public class ImportGPXRouteSort extends ImportGPXSort {
 
     private static final String TAG = "ImportGPXRouteSort";
 
+    private final Context _context;
+
     public ImportGPXRouteSort(Context context, boolean validateExt,
             boolean copyFile, boolean importInPlace) {
         super(validateExt, copyFile, importInPlace, context
                 .getString(R.string.gpx_route_file));
+        _context = context;
+    }
+
+    @Override
+    public Drawable getIcon() {
+        return _context.getDrawable(R.drawable.ic_route);
     }
 
     @Override

@@ -156,13 +156,16 @@ public class MathUtils {
         if (FileSystemUtils.isEmpty(timestamp))
             return null;
 
-        long subTime;
+        long subTime = -1;
         try {
-            subTime = KMLUtil.KMLDateTimeFormatterMillis.get().parse(timestamp)
-                    .getTime();
+            SimpleDateFormat sdf = KMLUtil.KMLDateTimeFormatterMillis.get();
+            if (sdf != null) {
+                Date d = sdf.parse(timestamp);
+                if (d != null)
+                    subTime = d.getTime();
+            }
         } catch (ParseException e) {
             Log.w(TAG, "Failed to parse time: " + timestamp, e);
-            subTime = -1;
         }
         if (subTime > 0) {
             long millisNow = (new CoordinatedTime()).getMilliseconds();
@@ -206,5 +209,34 @@ public class MathUtils {
      */
     public static double log2(final double v) {
         return Math.log(v) / MathUtils.LOG2;
+    }
+
+    /**
+     * Convert a string to a double (exceptions caught)
+     *
+     * @param value String value
+     * @param defaultVal Default value if conversion fails
+     * @return Converted value or default value if conversion failed
+     */
+    public static double parseDouble(String value, double defaultVal) {
+        try {
+            return Double.parseDouble(value.trim());
+        } catch (Exception e) {
+            return defaultVal;
+        }
+    }
+
+    /**
+     * Convert a string to an integer (exceptions caught)
+     * @param value String value
+     * @param defaultVal Default value if conversion fails
+     * @return Converted value or default if failed
+     */
+    public static int parseInt(String value, int defaultVal) {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (Exception e) {
+            return defaultVal;
+        }
     }
 }

@@ -53,12 +53,21 @@ void atakmap::core::AtakMapController::panZoomRotateTo(const GeoPoint *point, co
     if (!point || ::isnan(point->latitude) ||  ::isnan(point->longitude) || ::isnan (scale))
         return;
 
+#ifdef  __ANDROID__
+    // XXX - hack carried over from Android, need to blame through to author
+    // and resolve original cause
+    if(mapView->getMapTilt() != 0.0) {
+        atakmap::math::Point<float> p = getFocusPointInternal ();
+        panByScaleRotate(p.x-defaultFocusPoint.x, p.y-defaultFocusPoint.y, scale, rotation, animate);
+        return;
+    }
+#endif
     mapView->updateView (*point,
                          scale,
                          rotation,
                          mapView->getMapTilt(),
-                         mapView->focusAltitude,
-                         mapView->focusAltTerminalSlant,
+                         mapView->focus_altitude_,
+                         mapView->focus_alt_terminal_slant_,
                          animate);
 }
 
@@ -77,40 +86,55 @@ void atakmap::core::AtakMapController::panTo(const GeoPoint *point, const float 
 
 void atakmap::core::AtakMapController::panByAtScale(const float tx, const float ty, const double scale, const bool animate)
 {
-    panBy (tx * mapView->getMapScale () / scale,
-           ty * mapView->getMapScale () / scale,
+    panBy (static_cast<float>(tx * mapView->getMapScale () / scale),
+           static_cast<float>(ty * mapView->getMapScale () / scale),
            animate);
 }
 
 void atakmap::core::AtakMapController::panBy(const float tx, const float ty, const bool animate)
 {
-    atakmap::math::Point<float> p;
-    GeoPoint tgt;
+    panByScaleRotate(tx, ty, mapView->getMapScale(), mapView->getMapRotation(), animate);
+}
 
-    getFocusPoint(&p);
+void atakmap::core::AtakMapController::panByScaleRotate(const float x, const float y, const double scale, const double rotation, const bool animate)
+{
+    atakmap::math::Point<float> focusPoint = getFocusPointInternal ();
 
-    p.x += tx;
-    p.y += ty;
+    atakmap::core::GeoPoint focusGeo;
+    mapView->getPoint(&focusGeo);
+    TAK::Engine::Core::GeoPoint2 focusGeo2;
+    atakmap::core::GeoPoint_adapt(&focusGeo2, focusGeo);
+    TAK::Engine::Core::MapSceneModel2 sm(mapView->getDisplayDpi(),
+                                         static_cast<std::size_t>(mapView->getWidth()),
+                                         static_cast<std::size_t>(mapView->getHeight()),
+                                         mapView->getProjection(),
+                                         focusGeo2,
+                                         focusPoint.x,
+                                         focusPoint.y,
+                                         mapView->getMapRotation(),
+                                         mapView->getMapTilt(),
+                                         mapView->getMapResolution());
 
-    mapView->inverse (&p, &tgt);
+    TAK::Engine::Core::GeoPoint2 tgt;
+    sm.inverse(&tgt, TAK::Engine::Math::Point2<float>(focusPoint.x + x, focusPoint.y + y));
 
-    if (::isnan(tgt.latitude) || ::isnan(tgt.longitude))
+    if(mapView->isContinuousScrollEnabled()) {
+        if(tgt.longitude < -180.0)
+            tgt.longitude = tgt.longitude+360.0;
+        else if(tgt.longitude > 180.0)
+            tgt.longitude = tgt.longitude-360.0;
+    }
+
+    if (::isnan(tgt.latitude) && ::isnan(tgt.longitude))
         return;
 
-    //Enable this upon switching to GLMapView2, GLMapView lack the boolean to check.
-    //if (mapView->continuousScrollEnabled) {
-    //    if (tgt.longitude < -180.0)
-    //        tgt.set(tgt.latitude, tgt.longitude + 360.0);
-    //    else if (tgt.longitude > 180.0)
-    //        tgt.set(tgt.latitude, tgt.longitude - 360.0);
-    //}
-    mapView->updateView (tgt,
-                         mapView->getMapScale (),
-                         mapView->getMapRotation (),
+    mapView->updateView (atakmap::core::GeoPoint(tgt),
+                         scale, rotation,
                          mapView->getMapTilt(),
-                         mapView->focusAltitude,
-                         mapView->focusAltTerminalSlant,
+                         mapView->focus_altitude_,
+                         mapView->focus_alt_terminal_slant_,
                          animate);
+
 }
 
 void atakmap::core::AtakMapController::rotateBy(double theta,
@@ -146,8 +170,8 @@ void atakmap::core::AtakMapController::rotateTo(double theta,
 
     // construct model to 'point' at surface with no rotate/no tilt
     MapSceneModel2 nadirSurface(mapView->getDisplayDpi(),
-                                mapView->getWidth(),
-                                mapView->getHeight(),
+                                static_cast<int>(mapView->getWidth()),
+                                static_cast<int>(mapView->getHeight()),
                                 mapView->getProjection(),
                                 GeoPoint2(point2.latitude, point2.longitude),
                                 focusPoint.x,
@@ -173,8 +197,8 @@ void atakmap::core::AtakMapController::rotateTo(double theta,
 
     // construct model to 'point' at altitude with scaled resolution with rotate/tilt
     MapSceneModel2 scene(mapView->getDisplayDpi(),
-                          mapView->getWidth(),
-                          mapView->getHeight(),
+                          static_cast<int>(mapView->getWidth()),
+                          static_cast<int>(mapView->getHeight()),
                           mapView->getProjection(),
                           point2,
                           focusPoint.x,
@@ -225,8 +249,8 @@ void atakmap::core::AtakMapController::zoomTo(const double scale, const bool ani
                          scale,
                          mapView->getMapRotation (),
                          mapView->getMapTilt(),
-                         mapView->focusAltitude,
-                         mapView->focusAltTerminalSlant,
+                         mapView->focus_altitude_,
+                         mapView->focus_alt_terminal_slant_,
                          animate);
 }
 
@@ -248,6 +272,11 @@ void atakmap::core::AtakMapController::zoomBy(const double scaleFactor, const fl
                    animate);
 }
 
+void atakmap::core::AtakMapController::rotateBy(double theta, const atakmap::core::GeoPoint &point, bool animate)
+{
+    rotateTo(mapView->getMapRotation()+theta, point, animate);
+}
+
 void atakmap::core::AtakMapController::rotateTo(const double rotation, const bool animate)
 {
     GeoPoint mapCenter;
@@ -256,8 +285,8 @@ void atakmap::core::AtakMapController::rotateTo(const double rotation, const boo
                          mapView->getMapScale (),
                          rotation,
                          mapView->getMapTilt(),
-                         mapView->focusAltitude,
-                         mapView->focusAltTerminalSlant,
+                         mapView->focus_altitude_,
+                         mapView->focus_alt_terminal_slant_,
                          animate);
 }
 
@@ -269,8 +298,21 @@ void atakmap::core::AtakMapController::tiltTo(const double tilt, const bool anim
                         mapView->getMapScale(),
                         mapView->getMapRotation(),
                         tilt,
-                        mapView->focusAltitude,
-                        mapView->focusAltTerminalSlant,
+                        mapView->focus_altitude_,
+                        mapView->focus_alt_terminal_slant_,
+                        animate);
+}
+
+void atakmap::core::AtakMapController::tiltTo(const double tilt, const double rotation, const bool animate)
+{
+    GeoPoint mapCenter;
+    mapView->getPoint(&mapCenter);
+    mapView->updateView(mapCenter,
+                        mapView->getMapScale(),
+                        rotation,
+                        tilt,
+                        mapView->focus_altitude_,
+                        mapView->focus_alt_terminal_slant_,
                         animate);
 }
 
@@ -284,6 +326,11 @@ void atakmap::core::AtakMapController::tiltBy(const double tilt, const float xpo
                    newTilt,
                    xpos, ypos,
                    animate);
+}
+
+void atakmap::core::AtakMapController::tiltBy(const double tilt, const atakmap::core::GeoPoint &point, const bool animate)
+{
+    tiltTo(mapView->getMapTilt()+tilt, point, animate);
 }
 
 void atakmap::core::AtakMapController::tiltTo(double theta,
@@ -305,8 +352,8 @@ void atakmap::core::AtakMapController::tiltTo(double theta,
 
     // construct model to 'point' at surface with no rotate/no tilt
     MapSceneModel2 nadirSurface(mapView->getDisplayDpi(),
-                                mapView->getWidth(),
-                                mapView->getHeight(),
+                                static_cast<int>(mapView->getWidth()),
+                                static_cast<int>(mapView->getHeight()),
                                 mapView->getProjection(),
                                 GeoPoint2(point2.latitude, point2.longitude),
                                 focusPoint.x,
@@ -332,8 +379,8 @@ void atakmap::core::AtakMapController::tiltTo(double theta,
 
     // construct model to 'point' at altitude with scaled resolution with rotate/tilt
     MapSceneModel2 scene(mapView->getDisplayDpi(),
-                          mapView->getWidth(),
-                          mapView->getHeight(),
+                          static_cast<int>(mapView->getWidth()),
+                          static_cast<int>(mapView->getHeight()),
                           mapView->getProjection(),
                           point2,
                           focusPoint.x,
@@ -369,6 +416,14 @@ void atakmap::core::AtakMapController::tiltTo(double theta,
                         animate);
 }
 
+void atakmap::core::AtakMapController::updateBy(const double scale, const double rotation, const double tilt, const atakmap::core::GeoPoint &point2, const bool animate)
+{
+    atakmap::math::Point<float> pos;
+    atakmap::core::GeoPoint point(point2);
+    mapView->forward(&point, &pos);
+    updateBy(scale, rotation, tilt, pos.x, pos.y, animate);
+}
+
 void atakmap::core::AtakMapController::updateBy(const double scale, const double rotation, const double tilt, const float xpos, const float ypos, const bool animate)
 {
     GeoPoint mapCenter;
@@ -384,38 +439,55 @@ void atakmap::core::AtakMapController::updateBy(const double scale, const double
 
     atakmap::math::Point<float> holderPoint2(xpos, ypos);
     sm.inverse(&holderPoint2, &focusLatLng2, true);
+
+    if(mapView->isContinuousScrollEnabled()) {
+        if(focusLatLng.longitude > 180.0)
+            focusLatLng.longitude -= 360.0;
+        else if(focusLatLng.longitude < -180.0)
+            focusLatLng.longitude += 360.0;
+
+        if(focusLatLng2.longitude > 180.0)
+            focusLatLng2.longitude -= 360.0;
+        else if(focusLatLng2.longitude < -180.0)
+            focusLatLng2.longitude += 360.0;
+    }
+
     if (focusLatLng.isValid() && focusLatLng2.isValid())
     {
         double latDiff = focusLatLng2.latitude - focusLatLng.latitude;
         double lonDiff = focusLatLng2.longitude - focusLatLng.longitude;
-        mapView->updateView(GeoPoint(mapCenter.latitude - latDiff, mapCenter.longitude - lonDiff),
+        GeoPoint newFocus(mapCenter.latitude - latDiff, mapCenter.longitude - lonDiff);
+        if(mapView->isContinuousScrollEnabled()) {
+            if (newFocus.longitude > 180.0)
+                newFocus.longitude -= 360.0;
+            else if (newFocus.longitude < -180.0)
+                newFocus.longitude += 360.0;
+        }
+        mapView->updateView(newFocus,
                             scale,
                             rotation,
                             tilt,
-                            mapView->focusAltitude,
-                            mapView->focusAltTerminalSlant,
+                            mapView->focus_altitude_,
+                            mapView->focus_alt_terminal_slant_,
                             animate);
     }
 }
 
 void atakmap::core::AtakMapController::addFocusPointChangedListener(MapControllerFocusPointChangedListener *listener)
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, controllerMutex);
+    Lock lock(controllerMutex);
     focusChangedListeners.insert(listener);
 }
 
 void atakmap::core::AtakMapController::removeFocusPointChangedListener(MapControllerFocusPointChangedListener *listener)
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, controllerMutex);
+    Lock lock(controllerMutex);
     focusChangedListeners.erase(listener);
 }
 
 void atakmap::core::AtakMapController::setDefaultFocusPoint(const atakmap::math::Point<float> *defaultFocus)
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, controllerMutex);
+    Lock lock(controllerMutex);
 
     defaultFocusPoint.x = (float)defaultFocus->x;
     defaultFocusPoint.y = (float)defaultFocus->y;
@@ -426,8 +498,7 @@ void atakmap::core::AtakMapController::setDefaultFocusPoint(const atakmap::math:
 
 void atakmap::core::AtakMapController::setFocusPoint(const atakmap::math::Point<float> *focus)
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, controllerMutex);
+    Lock lock(controllerMutex);
 
     focusPointQueue.push(atakmap::math::Point<float>((float)focus->x, (float)focus->y));
     dispatchFocusPointChanged();
@@ -435,8 +506,7 @@ void atakmap::core::AtakMapController::setFocusPoint(const atakmap::math::Point<
 
 void atakmap::core::AtakMapController::popFocusPoint()
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, controllerMutex);
+    Lock lock(controllerMutex);
 
     if(!focusPointQueue.empty()) {
         focusPointQueue.pop();
@@ -446,8 +516,7 @@ void atakmap::core::AtakMapController::popFocusPoint()
 
 void atakmap::core::AtakMapController::resetFocusPoint()
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, controllerMutex);
+    Lock lock(controllerMutex);
 
     while(!focusPointQueue.empty()) {
         focusPointQueue.pop();
@@ -457,8 +526,7 @@ void atakmap::core::AtakMapController::resetFocusPoint()
 
 void atakmap::core::AtakMapController::getFocusPoint(atakmap::math::Point<float> *focus)
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, controllerMutex);
+    Lock lock(controllerMutex);
 
     atakmap::math::Point<float> internal = getFocusPointInternal();
     focus->x = internal.x;
@@ -488,8 +556,7 @@ atakmap::math::Point<float> atakmap::core::AtakMapController::getFocusPointInter
 
 void atakmap::core::AtakMapController::setFocusPointOffset(const atakmap::math::Point<float> *focusOffset)
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, controllerMutex);
+    Lock lock(controllerMutex);
 
     focusPointOffset = *focusOffset;
     dispatchFocusPointChanged();

@@ -201,12 +201,8 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
 
         line.setPoints(scratch);
 
-        // Don't wrap longitude lines
-        MutableGeoBounds mgb = (MutableGeoBounds) glline.getBounds();
-        mgb.set(start, end);
-        mgb.setWrap180(false);
-
-        glline.draw(view);
+        // zones have no elevation, just render them as part of the SURFACE pass.
+        glline.draw(view, GLMapView.RENDER_PASS_SURFACE);
     }
 
     /** Rounds the lat/lng to the nearest factor of the draw resolution step
@@ -311,8 +307,8 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
     }
 
     protected void drawLinesImpl(GLMapView map) {
-        final double drawZoom = convertMapScaleToLegacyZoom(map.getSurface()
-                .getMapView(),
+        final double drawZoom = convertMapScaleToLegacyZoom(
+                map.getRenderSurface(),
                 map.drawMapScale);
 
         float alpha = (float) Math.max(Math.min(drawZoom / 15d, 1d), 0d);

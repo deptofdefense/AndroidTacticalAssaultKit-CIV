@@ -268,10 +268,10 @@ public class Quadtree<T> {
         final Quadtree<T> node = this.root.objectToNode.remove(object);
         if(node == null)
             return false;
-        return node.removeImpl(object);
+        return node.removeImpl(object, true);
     }
 
-    private boolean removeImpl(T object) {
+    private boolean removeImpl(T object, boolean cullable) {
         if(!this.objects.remove(object))
             return false;
         if(this.parent == null)
@@ -284,7 +284,7 @@ public class Quadtree<T> {
         }
 
         // remove node from parent on empty
-        if(this.numChildren == 0 && this.objects.isEmpty()) {
+        if(cullable && this.numChildren == 0 && this.objects.isEmpty()) {
             for(int i = 0; i < 4; i++) {
                 if(this.parent.children[i] == this) {
                     this.parent.children[i] = null;
@@ -316,24 +316,26 @@ public class Quadtree<T> {
     }
 
     public boolean refresh(T object) {
+        // clear the reference to the owning node, as that may change
         Quadtree<T> node = this.root.objectToNode.remove(object);
         if(node == null)
-            return false;
-        if(!node.removeImpl(object))
             return false;
 
         PointD objMin = new PointD(0, 0);
         PointD objMax = new PointD(0, 0);
         this.function.getBounds(object, objMin, objMax);
-        if(node.minX <= objMin.x &&
-           node.minY <= objMin.y &&
-           node.maxX >= objMax.x &&
-           node.maxY >= objMax.y) {
+        final boolean inNode = (node.minX <= objMin.x &&
+                                node.minY <= objMin.y &&
+                                node.maxX >= objMax.x &&
+                                node.maxY >= objMax.y);
 
+        if(!node.removeImpl(object, !inNode))
+            return false;
+
+        if(inNode)
             node.add(object, objMin.x, objMin.y, objMax.x, objMax.y);
-        } else {
+        else
             this.root.add(object, objMin.x, objMin.y, objMax.x, objMax.y);
-        }
         return true;
     }
     

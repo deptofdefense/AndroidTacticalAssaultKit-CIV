@@ -48,11 +48,10 @@ class MobileOutlinesDataStore extends OutlinesFeatureDataStore {
                         .<Class<? extends Geometry>> singleton(
                                 GeometryCollection.class);
                 result = this.queryFeatures(params);
-            }
-
-            // if we aren't supposed to union, that's it
-            if (!doUnion)
+            } else {
+                // if we aren't supposed to union, that's it
                 return;
+            }
 
             unions = new HashMap<>();
 

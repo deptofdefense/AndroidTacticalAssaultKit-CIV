@@ -15,6 +15,7 @@ public class ShaderHelper {
             final String shaderSource) {
         int shaderHandle = GLES30.glCreateShader(shaderType);
 
+        String error = "Failed to create shader";
         if (shaderHandle != 0) {
             GLES30.glShaderSource(shaderHandle, shaderSource); //pass in the shader source
             GLES30.glCompileShader(shaderHandle); //compile the shader
@@ -26,13 +27,15 @@ public class ShaderHelper {
 
             //delete shader if compilation failed
             if (compileStatus[0] == 0) {
+                error = GLES30.glGetShaderInfoLog(shaderHandle);
                 GLES30.glDeleteShader(shaderHandle);
                 shaderHandle = 0;
             }
         }
 
-        if (shaderHandle == 0)
-            throw new RuntimeException("Error creating shader.");
+        if (shaderHandle == 0) {
+            throw new RuntimeException("Error creating shader: " + error);
+        }
 
         return shaderHandle;
     }

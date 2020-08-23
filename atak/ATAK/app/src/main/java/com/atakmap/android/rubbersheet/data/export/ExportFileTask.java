@@ -204,7 +204,7 @@ public abstract class ExportFileTask extends ProgressTask {
     protected static boolean writeToFile(File file, String... lines) {
         PrintWriter pw = null;
         try {
-            pw = new PrintWriter(file, FileSystemUtils.UTF8_CHARSET);
+            pw = new PrintWriter(file, FileSystemUtils.UTF8_CHARSET.name());
             for (String s : lines)
                 pw.println(s);
             return true;

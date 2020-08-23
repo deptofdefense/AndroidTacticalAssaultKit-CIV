@@ -183,11 +183,11 @@ public class CotDetail implements Parcelable {
      * Set an attribute. There is no need to do any special escaping of the value. When an XML
      * string is built, escaping of illegal characters is done automatically.
      * 
-     * @throws IllegalArgumentException if the attribute name is not a legal XML name.
      * @param name the attribute name
      * @param value the value
      */
     public void setAttribute(String name, String value) {
+        //XXX-- contract violation (does not check for name being legal XML
         if (value != null)
             _attrs.put(name, value);
     }

@@ -8,8 +8,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * A MapItem with a GeoPoint
- *
- *
  */
 public abstract class PointMapItem extends MapItem {
 
@@ -84,9 +82,6 @@ public abstract class PointMapItem extends MapItem {
     public void addOnPointChangedListener(OnPointChangedListener listener) {
         if (!_onPointChanged.contains(listener))
             _onPointChanged.add(listener);
-        //else 
-        //    Log.d("SHB", "dupe listener: " + 
-        //                            listener.getClass(), new Exception()); 
     }
 
     /**
@@ -109,14 +104,14 @@ public abstract class PointMapItem extends MapItem {
     }
 
     /**
-     * @return
+     * @return the height in meters
      */
     public double getVolumeHeight() {
         return _height;
     }
 
     /**
-     *
+     * The radius in meters
      */
     public double getVolumeRadius() {
         return _radius;
@@ -163,12 +158,17 @@ public abstract class PointMapItem extends MapItem {
     /**
      * Convenience method for retrieving the metadata enhanced GeoPoint for
      * a specific PointMapItem.
-     * @return
+     * @return a copy of the Point with metadata.
      */
     public GeoPointMetaData getGeoPointMetaData() {
         return new GeoPointMetaData(gpm);
     }
 
+    /**
+     * Sets both the radius and the height as one call.
+     * @param radius the radius in meters
+     * @param height the height in meters
+     */
     public void setVolume(double radius, double height) {
         if (_radius != radius || _height != height) {
             _radius = radius;

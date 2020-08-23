@@ -16,15 +16,15 @@ import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbar.widgets.TextContainer;
 import com.atakmap.android.toolbars.RangeAndBearingMapItem;
 import com.atakmap.android.user.PlacePointTool;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
-import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -37,7 +37,8 @@ public class VehicleRotationTool extends ButtonTool
     public static final String TAG = "VehicleRotationTool";
     public static final String TOOL_NAME = "vehicle_rotation_tool";
 
-    private VehicleShape _shape;
+    private VehicleMapItem _vehicle;
+    private MapItem _item;
     private Marker _anchor;
     private RangeAndBearingMapItem _rab;
     private TextContainer _cont;
@@ -45,41 +46,40 @@ public class VehicleRotationTool extends ButtonTool
     public VehicleRotationTool(MapView mapView, ImageButton button) {
         super(mapView, button, TOOL_NAME);
         _cont = TextContainer.getInstance();
-
-        ToolManagerBroadcastReceiver.getInstance()
-                .registerTool(TOOL_NAME, this);
+        ToolManagerBroadcastReceiver.getInstance().registerTool(TOOL_NAME,
+                this);
     }
 
     @Override
     public boolean onToolBegin(Bundle extras) {
-        Log.d(TAG, "BEGIN ROTATION TOOL");
 
-        if (extras.containsKey("uid")) {
-            List<MapItem> items = _mapView.getRootGroup()
-                    .deepFindItems("uid", extras.getString("uid"));
-            Log.d(TAG, "UID: " + extras.getString("uid"));
-            for (MapItem item : items) {
-                Log.d(TAG, "ITEM: " + item);
-                if (item instanceof VehicleShape) {
-                    _shape = (VehicleShape) item;
-                    break;
-                } else if (item.hasMetaValue("shapeUID")) {
-                    _shape = (VehicleShape) _mapView.getRootGroup()
-                            .deepFindUID(item.getMetaString("shapeUID", ""));
-                }
-            }
+        String uid = extras.getString("uid");
+        if (FileSystemUtils.isEmpty(uid))
+            return false;
+
+        _item = _mapView.getRootGroup().deepFindUID(uid);
+        if (_item instanceof VehicleMapItem)
+            _vehicle = (VehicleMapItem) _item;
+
+        _item = _mapView.getRootGroup().deepFindUID(uid);
+        if (!(_item instanceof VehicleMapItem)) {
+            _item = ATAKUtilities.findAssocShape(_item);
+            if (!(_item instanceof VehicleMapItem))
+                return false;
         }
-        if (_shape != null) {
-            _cont.displayPrompt(_mapView.getContext().getString(
-                    R.string.point_dropper_text57));
-            // Take control of all map events
-            _mapView.getMapEventDispatcher()
-                    .addMapItemEventListener(createAnchor(), this);
-            _mapView.getMapTouchController().setToolActive(true);
-            _shape.addOnGroupChangedListener(this);
-            return true;
-        }
-        return false;
+        _vehicle = (VehicleMapItem) _item;
+
+        if (_item == null || _vehicle == null)
+            return false;
+
+        _cont.displayPrompt(_mapView.getContext().getString(
+                R.string.point_dropper_text57));
+        // Take control of all map events
+        _mapView.getMapEventDispatcher()
+                .addMapItemEventListener(createAnchor(), this);
+        _mapView.getMapTouchController().setToolActive(true);
+        _item.addOnGroupChangedListener(this);
+        return true;
     }
 
     @Override
@@ -88,25 +88,26 @@ public class VehicleRotationTool extends ButtonTool
     }
 
     private void unregisterListeners() {
-        if (_shape != null) {
+        if (_item != null) {
             _mapView.getMapTouchController().setToolActive(false);
             _mapView.getMapEventDispatcher().removeMapItemEventListener(
                     _anchor, this);
             _cont.closePrompt();
-            _shape.removeOnGroupChangedListener(this);
-            _shape = null;
+            _item.removeOnGroupChangedListener(this);
         }
+        _item = null;
+        _vehicle = null;
         removeAnchor();
     }
 
     private Marker createAnchor() {
-        if (_anchor == null && _shape != null) {
-            double len = 1.2d * Math.max(_shape.getMetaDouble("length", 0), 10);
+        if (_anchor == null && _vehicle != null) {
+            double len = 1.2d * Math.max(_vehicle.getLength(), 10);
 
-            GeoPointMetaData center = _shape.getCenter();
+            GeoPointMetaData center = _vehicle.getCenter();
             GeoPoint anchorPos = DistanceCalculations
                     .computeDestinationPoint(center.get(),
-                            _shape.getAzimuth(NorthReference.TRUE), len);
+                            _vehicle.getAzimuth(NorthReference.TRUE), len, 0);
 
             PlacePointTool.MarkerCreator mc = new PlacePointTool.MarkerCreator(
                     anchorPos);
@@ -116,11 +117,12 @@ public class VehicleRotationTool extends ButtonTool
             mc.setType("u-r-b-o-endpoint");
             mc.setCallsign("Rotation Anchor");
             _anchor = mc.placePoint();
+            _anchor.setShowLabel(false);
             _anchor.setMetaBoolean("ignoreMenu", true);
             _anchor.setMetaBoolean("drag", true);
             _anchor.setMetaDouble("minRenderScale", Double.MAX_VALUE);
             _rab = RangeAndBearingMapItem.createOrUpdateRABLine(
-                    UUID.randomUUID().toString(), _shape.getAnchorItem(),
+                    UUID.randomUUID().toString(), _vehicle.getAnchorItem(),
                     _anchor, false);
             _rab.setClickable(false);
             _anchor.getGroup().addItem(_rab);
@@ -128,9 +130,8 @@ public class VehicleRotationTool extends ButtonTool
             _rab.setDisplaySlantRange(false);
 
             Icon anchorIcon = new Icon.Builder()
-                    .setImageUri(0, "android.resource://"
-                            + _mapView.getContext().getPackageName()
-                            + "/" + R.drawable.open_circle_small)
+                    .setImageUri(0, ATAKUtilities.getResourceUri(
+                            R.drawable.open_circle_small))
                     .build();
             _anchor.setIcon(anchorIcon);
         }
@@ -147,7 +148,7 @@ public class VehicleRotationTool extends ButtonTool
 
     @Override
     public void onMapItemMapEvent(MapItem item, MapEvent event) {
-        if (_shape == null || _shape.getGroup() == null || _anchor != item)
+        if (_item == null || _item.getGroup() == null || _anchor != item)
             return;
         String type = event.getType();
         if (type.equals(MapEvent.ITEM_DRAG_STARTED)
@@ -159,17 +160,19 @@ public class VehicleRotationTool extends ButtonTool
             GeoPoint gp = _mapView.inverse(pt.x, pt.y).get();
             if (!gp.isValid())
                 return;
-            double ang = _shape.getCenter().get().bearingTo(gp);
+            double ang = _vehicle.getCenter().get().bearingTo(gp);
 
-            _shape.setAzimuth(ang, NorthReference.TRUE);
+            _vehicle.setAzimuth(ang, NorthReference.TRUE);
 
             GeoPoint offset = DistanceCalculations.computeDestinationPoint(
-                    _shape.getCenter().get(), ang, 1.2d * Math.max(
-                            _shape.getMetaDouble("length", 0), 10));
+                    _vehicle.getCenter().get(), ang, 1.2d * Math.max(
+                            _vehicle.getLength(), 10),
+                    0);
             _anchor.setPoint(offset);
 
             if (type.equals(MapEvent.ITEM_DRAG_DROPPED)) {
-                _shape.save();
+                _item.persist(_mapView.getMapEventDispatcher(), null,
+                        getClass());
                 requestEndTool();
                 unregisterListeners();
             }
@@ -182,7 +185,7 @@ public class VehicleRotationTool extends ButtonTool
 
     @Override
     public void onItemRemoved(MapItem item, MapGroup group) {
-        if (_shape == item) {
+        if (_vehicle == item) {
             requestEndTool();
             unregisterListeners();
         }

@@ -18,9 +18,9 @@ namespace TAK
                 Sphere2(const Point2<double> &center, double radius);
                 virtual ~Sphere2();
             public:
-                virtual bool intersect(Point2<double> *isectPoint, const Ray2<double> &ray) const;
-                virtual GeometryModel2::GeometryClass getGeomClass() const;
-                virtual void clone(std::unique_ptr<GeometryModel2, void(*)(const GeometryModel2 *)> &value) const;
+                virtual bool intersect(Point2<double> *isectPoint, const Ray2<double> &ray) const override;
+                virtual GeometryModel2::GeometryClass getGeomClass() const override;
+                virtual void clone(std::unique_ptr<GeometryModel2, void(*)(const GeometryModel2 *)> &value) const override;
             public:
                 Point2<double> center;
                 double radius;

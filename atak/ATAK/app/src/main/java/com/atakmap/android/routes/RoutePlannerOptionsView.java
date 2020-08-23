@@ -23,5 +23,4 @@ public class RoutePlannerOptionsView extends LinearLayout {
             int defStyle) {
         super(context, attrs, defStyle);
     }
-
 }

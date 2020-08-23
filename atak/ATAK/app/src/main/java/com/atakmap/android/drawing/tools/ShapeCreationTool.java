@@ -35,12 +35,19 @@ import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import java.util.Stack;
 import java.util.UUID;
 
+/**
+ * Tool for the creation of a (possibly incomplete) polygonal map region.
+ *
+ * Once the user has finished creating a shape with the tool, returns the uid
+ * of the newly created Shape in an intent specified by the user by setting
+ * the "callback" parcelable when starting the tool.   This is an
+ * intent to fire when the tool is completed.
+ */
 public class ShapeCreationTool extends Tool {
 
     protected final Stack<EditAction> undoStack = new Stack<>();
 
     public static final String TAG = "ShapeCreationTool";
-    private static final String TYPE = "shape";
     protected final MapGroup _drawingGroup;
     private DrawingShape _shape;
     private String _shapeTitle;
@@ -53,6 +60,8 @@ public class ShapeCreationTool extends Tool {
 
     // The first marker clicked - for closing the shape when we tap that marker
     private PointMapItem _firstClicked;
+
+    private Intent _callback;
 
     private final DrawingToolsToolbar _drawingToolsToolbar;
     private final TextContainer _container;
@@ -69,7 +78,7 @@ public class ShapeCreationTool extends Tool {
             DrawingToolsToolbar drawingToolsToolbar,
             Button undoButton,
             Button doneButton,
-            Context context) {
+            Context ignored) {
         super(mapView, TOOL_IDENTIFIER);
 
         _mapView = mapView;
@@ -96,8 +105,10 @@ public class ShapeCreationTool extends Tool {
     @Override
     public boolean onToolBegin(Bundle extras) {
         super.onToolBegin(extras);
+        _callback = extras.getParcelable("callback");
 
         Intent intent = new Intent();
+
         intent.setAction(CamLockerReceiver.UNLOCK_CAM);
         AtakBroadcast.getInstance().sendBroadcast(intent);
 
@@ -170,6 +181,7 @@ public class ShapeCreationTool extends Tool {
 
         _shape.setEditable(false);
         _shape.setMetaString("entry", "user");
+        _shape.setMetaBoolean("creating", true);
         _drawingGroup.addItem(_shape);
     }
 
@@ -272,9 +284,16 @@ public class ShapeCreationTool extends Tool {
                         true);
                 intent.putExtra("uid", _shape.getUID());
                 AtakBroadcast.getInstance().sendBroadcast(intent);
+                _shape.removeMetaData("creating");
                 _shape.persist(_mapView.getMapEventDispatcher(), null,
                         this.getClass());
 
+                // Broadcast that the tool has completed its action
+                if (_callback != null) {
+                    Intent i = new Intent(_callback);
+                    i.putExtra("uid", _shape.getUID());
+                    AtakBroadcast.getInstance().sendBroadcast(i);
+                }
             }
             _shape = null;
         }
@@ -364,21 +383,22 @@ public class ShapeCreationTool extends Tool {
     }
 
     protected void initButton() {
+        if (_shapeButton != null) {
+            _shapeButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    requestBeginTool();
+                }
+            });
+            _shapeButton.setOnLongClickListener(onLongClickListener);
 
-        _shapeButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                requestBeginTool();
-            }
-        });
-        _shapeButton.setOnLongClickListener(onLongClickListener);
-
-        _doneButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                requestEndTool();
-            }
-        });
+            _doneButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    requestEndTool();
+                }
+            });
+        }
     }
 
     View.OnLongClickListener onLongClickListener = new View.OnLongClickListener() {

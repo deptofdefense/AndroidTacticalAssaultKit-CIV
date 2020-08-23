@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Contacts implements MapEventDispatcher.MapEventDispatchListener {
 
@@ -45,7 +46,7 @@ public class Contacts implements MapEventDispatcher.MapEventDispatchListener {
 
     private final Map<String, Contact> uidmap = new HashMap<>();
 
-    private static final List<OnContactsChangedListener> contactsChangedListeners = new ArrayList<>();
+    private static final ConcurrentLinkedQueue<OnContactsChangedListener> contactsChangedListeners = new ConcurrentLinkedQueue<>();
 
     private static Contacts instance;
 
@@ -368,18 +369,34 @@ public class Contacts implements MapEventDispatcher.MapEventDispatchListener {
     }
 
     /*
-     *  Listener and associated methods below
+     *  Used when properties are changed on a Contact in the Contracts list.
      */
     public interface OnContactsChangedListener {
+        /**
+         * Fired when the contact list changes size
+         * @param contacts the contact list
+         */
         void onContactsSizeChange(Contacts contacts);
 
+        /**
+         * Fired when a contact changes such as name or if the contact is stale
+         * @param uuid the uuid for the contact that changed
+         */
         void onContactChanged(String uuid);
     }
 
+    /**
+     * Adds a listener for when the Contact list or a specific contact is changed
+     * @param listener the listener for the event.
+     */
     public void addListener(OnContactsChangedListener listener) {
         contactsChangedListeners.add(listener);
     }
 
+    /**
+     * Removes the listener for when the Contact list or a specific contact is changed
+     * @param listener the listener for the event.
+     */
     public void removeListener(OnContactsChangedListener listener) {
         contactsChangedListeners.remove(listener);
     }

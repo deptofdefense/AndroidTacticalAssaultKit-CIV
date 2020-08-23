@@ -63,7 +63,7 @@ namespace TAK {
                     float *pointer;
                 };
             public :
-                enum ENGINE_API Hints
+                enum Hints
                 {
                     Untextured          = 0x00000001,
                     SoftwareTransforms  = 0x00000002,

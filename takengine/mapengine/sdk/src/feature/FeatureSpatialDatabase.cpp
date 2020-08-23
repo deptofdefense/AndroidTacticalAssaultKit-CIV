@@ -28,15 +28,15 @@ namespace
     {
     public :
         LocalBindings(Bindable &stmt) NOTHROWS;
-        ~LocalBindings() NOTHROWS;
+        ~LocalBindings() NOTHROWS override;
     public :
-        virtual TAKErr bindBlob(const std::size_t idx, const uint8_t *blob, const std::size_t size) NOTHROWS;
-        virtual TAKErr bindInt(const std::size_t idx, const int32_t value) NOTHROWS;
-        virtual TAKErr bindLong(const std::size_t idx, const int64_t value) NOTHROWS;
-        virtual TAKErr bindDouble(const std::size_t idx, const double value) NOTHROWS;
-        virtual TAKErr bindString(const std::size_t idx, const char *value) NOTHROWS;
-        virtual TAKErr bindNull(const std::size_t idx) NOTHROWS;
-        virtual TAKErr clearBindings() NOTHROWS;
+        TAKErr bindBlob(const std::size_t idx, const uint8_t *blob, const std::size_t size) NOTHROWS override;
+        TAKErr bindInt(const std::size_t idx, const int32_t value) NOTHROWS override;
+        TAKErr bindLong(const std::size_t idx, const int64_t value) NOTHROWS override;
+        TAKErr bindDouble(const std::size_t idx, const double value) NOTHROWS override;
+        TAKErr bindString(const std::size_t idx, const char *value) NOTHROWS override;
+        TAKErr bindNull(const std::size_t idx) NOTHROWS override;
+        TAKErr clearBindings() NOTHROWS override;
     private :
         Bindable &stmt;
     };
@@ -44,10 +44,10 @@ namespace
 
 FeatureSpatialDatabase::FeatureSpatialDatabase(CatalogCurrencyRegistry2 &r) NOTHROWS :
     CatalogDatabase2(r),
-    insertFeatureBlobStatement(NULL, NULL),
-    insertFeatureWktStatement(NULL, NULL),
-    insertFeatureWkbStatement(NULL, NULL),
-    insertStyleStatement(NULL, NULL)
+    insertFeatureBlobStatement(nullptr, nullptr),
+    insertFeatureWktStatement(nullptr, nullptr),
+    insertFeatureWkbStatement(nullptr, nullptr),
+    insertStyleStatement(nullptr, nullptr)
 {}
 
 Database2 *FeatureSpatialDatabase::getDatabase() NOTHROWS
@@ -58,11 +58,11 @@ Database2 *FeatureSpatialDatabase::getDatabase() NOTHROWS
 TAKErr FeatureSpatialDatabase::insertGroup(int64_t *rowId, const int64_t catalogId, const char *provider, const char *type, const char *groupName, const int minLod, const int maxLod) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
     code = this->database
         ->compileStatement(stmt, "INSERT INTO groups (file_id,  name, provider, type, visible, visible_version, visible_check, min_lod, max_lod) VALUES(?, ?, ?, ?, 1, 0, 0, ?, ?)");
@@ -90,15 +90,15 @@ TAKErr FeatureSpatialDatabase::insertGroup(int64_t *rowId, const int64_t catalog
 TAKErr FeatureSpatialDatabase::insertStyle(int64_t *rowId, const int64_t catalogId, const char *styleRep) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     int64_t styleId;
     code = Databases_getNextAutoincrementID(&styleId, *this->database, "Style");
     TE_CHECKRETURN_CODE(code);
 
-    if (this->insertStyleStatement.get() == NULL) {
+    if (this->insertStyleStatement.get() == nullptr) {
         code = this->database
             ->compileStatement(this->insertStyleStatement, "INSERT INTO Style (file_id, style_rep) VALUES (?, ?)");
         TE_CHECKRETURN_CODE(code);
@@ -154,11 +154,11 @@ TAKErr FeatureSpatialDatabase::insertFeature(const int64_t catalogId, const int6
 TAKErr FeatureSpatialDatabase::insertFeatureBlob(const int64_t catalogId, const int64_t groupId, const char *name, const uint8_t *blob, const std::size_t blobLen, const int64_t styleId, const int minLod, const int maxLod) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    if (this->insertFeatureBlobStatement.get() == NULL) {
+    if (this->insertFeatureBlobStatement.get() == nullptr) {
         code = this->database
             ->compileStatement(this->insertFeatureBlobStatement, "INSERT INTO Geometry (file_id, group_id, name, geom, style_id, min_lod, max_lod, visible, group_visible_version) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0)");
         TE_CHECKRETURN_CODE(code);
@@ -199,11 +199,11 @@ TAKErr FeatureSpatialDatabase::insertFeatureBlob(const int64_t catalogId, const 
 TAKErr FeatureSpatialDatabase::insertFeatureWkt(int64_t catalogId, int64_t groupId, const char *name, const char *wkt, int64_t styleId, int minLod, int maxLod) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    if (this->insertFeatureWktStatement.get() == NULL) {
+    if (this->insertFeatureWktStatement.get() == nullptr) {
         code = this->database
             ->compileStatement(this->insertFeatureWktStatement, "INSERT INTO Geometry (file_id, group_id, name, geom, style_id, min_lod, max_lod, visible, group_visible_version) VALUES (?, ?, ?, GeomFromText(?, 4326), ?, ?, ?, 1, 0)");
         TE_CHECKRETURN_CODE(code);
@@ -242,11 +242,11 @@ TAKErr FeatureSpatialDatabase::insertFeatureWkt(int64_t catalogId, int64_t group
 TAKErr FeatureSpatialDatabase::insertFeatureWkb(const int64_t catalogId, const int64_t groupId, const char *name, const uint8_t *wkb, const std::size_t wkbLen, const int64_t styleId, const int minLod, const int maxLod) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    if (this->insertFeatureWkbStatement.get() == NULL) {
+    if (this->insertFeatureWkbStatement.get() == nullptr) {
         code = this->database
             ->compileStatement(this->insertFeatureWkbStatement, "INSERT INTO Geometry (file_id, group_id, name, geom, style_id, min_lod, max_lod, visible, group_visible_version) VALUES (?, ?, ?, GeomFromWkb(?, 4326), ?, ?, ?, 1, 0)");
         TE_CHECKRETURN_CODE(code);
@@ -291,23 +291,23 @@ TAKErr FeatureSpatialDatabase::createIndicesNoSync() NOTHROWS
     code = this->database
         ->execute(
         "CREATE INDEX IF NOT EXISTS IdxGeometryLevelOfDetail ON Geometry(min_lod, max_lod)",
-        NULL, 0);
+        nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
     //
     // Is IdxGeometryFileId really necessary given the index below on group_id & name?
     //
     code = this->database->execute("CREATE INDEX IF NOT EXISTS IdxGeometryFileId ON Geometry(file_id)",
-        NULL, 0);
+        nullptr, 0);
     TE_CHECKRETURN_CODE(code);
     code = this->database->execute(
         "CREATE INDEX IF NOT EXISTS IdxGeometryGroupIdName ON Geometry(group_id, name)",
-        NULL, 0);
+        nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute("CREATE INDEX IF NOT EXISTS IdxGroupName ON groups(name)", NULL, 0);
+    code = this->database->execute("CREATE INDEX IF NOT EXISTS IdxGroupName ON groups(name)", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
-    QueryPtr result(NULL, NULL);
+    QueryPtr result(nullptr, nullptr);
     code = this->database->query(result, "SELECT CreateSpatialIndex(\'Geometry\', \'geom\')");
     TE_CHECKRETURN_CODE(code);
     code = result->moveToNext();
@@ -321,17 +321,17 @@ TAKErr FeatureSpatialDatabase::dropIndicesNoSync() NOTHROWS
 {
     TAKErr code;
 
-    code = this->database->execute("DROP INDEX IF EXISTS IdxGeometryLevelOfDetail", NULL, 0);
+    code = this->database->execute("DROP INDEX IF EXISTS IdxGeometryLevelOfDetail", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute("DROP INDEX IF EXISTS IdxGeometryGroupIdName", NULL, 0);
+    code = this->database->execute("DROP INDEX IF EXISTS IdxGeometryGroupIdName", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
     //
     // Is IdxGeometryFileId really necessary?
     //
-    code = this->database->execute("DROP INDEX IF EXISTS IdxGeometryFileId", NULL, 0);
+    code = this->database->execute("DROP INDEX IF EXISTS IdxGeometryFileId", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute("DROP INDEX IF EXISTS IdxGroupName", NULL, 0);
+    code = this->database->execute("DROP INDEX IF EXISTS IdxGroupName", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
     Port::STLVectorAdapter<Port::String> tableNames;
@@ -343,14 +343,14 @@ TAKErr FeatureSpatialDatabase::dropIndicesNoSync() NOTHROWS
     code = tableNames.contains(&haveGeomIdx, idxGeometryGeom);
     TE_CHECKRETURN_CODE(code);
     if (haveGeomIdx) {
-        QueryPtr result(NULL, NULL);
+        QueryPtr result(nullptr, nullptr);
         code = this->database->query(result, "SELECT DisableSpatialIndex(\'Geometry\', \'geom\')");
         TE_CHECKRETURN_CODE(code);
         code = result->moveToNext();
         TE_CHECKRETURN_CODE(code);
         result.reset();
 
-        code = this->database->execute("DROP TABLE idx_Geometry_geom", NULL, 0);
+        code = this->database->execute("DROP TABLE idx_Geometry_geom", nullptr, 0);
         TE_CHECKRETURN_CODE(code);
     }
 
@@ -364,12 +364,12 @@ TAKErr FeatureSpatialDatabase::createTriggersNoSync() NOTHROWS
         "BEGIN "
         "UPDATE groups SET visible_check = 1 WHERE id = OLD.group_id; "
         "UPDATE Geometry SET group_visible_version = (SELECT visible_version FROM groups WHERE id = OLD.group_id) WHERE id = OLD.id; "
-        "END;", NULL, 0);
+        "END;", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
     code = this->database->execute("CREATE TRIGGER IF NOT EXISTS groups_visible_update AFTER UPDATE OF visible ON groups "
         "BEGIN "
         "UPDATE groups SET visible_version = (OLD.visible_version+1), visible_check = 0 WHERE id = OLD.id; "
-        "END;", NULL, 0);
+        "END;", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
     return code;
@@ -379,9 +379,9 @@ TAKErr FeatureSpatialDatabase::dropTriggersNoSync() NOTHROWS
 {
     TAKErr code;
 
-    code = this->database->execute("DROP TRIGGER IF EXISTS Geometry_visible_update", NULL, 0);
+    code = this->database->execute("DROP TRIGGER IF EXISTS Geometry_visible_update", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute("DROP TRIGGER IF EXISTS groups_visible_update", NULL, 0);
+    code = this->database->execute("DROP TRIGGER IF EXISTS groups_visible_update", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
     return code;
@@ -414,7 +414,7 @@ TAKErr FeatureSpatialDatabase::dropTables() NOTHROWS
     // it will be much quicker to simply delete the database if we need to
     // drop the tables. attempt to delete it; if this fails, perform a
     // legacy-style table drop
-    TAK::Engine::Port::String dbPath(NULL);
+    TAK::Engine::Port::String dbPath(nullptr);
     code = Databases_getDatabaseFilePath(dbPath, *this->database);
     TE_CHECKRETURN_CODE(code);
 
@@ -452,8 +452,8 @@ TAKErr FeatureSpatialDatabase::dropTablesLegacy() NOTHROWS
     Port::String geomStr("geom");
     code = geometryColumns.contains(&haveGeomColumn, geomStr);
     TE_CHECKRETURN_CODE(code);
-    if (code) {
-        QueryPtr result(NULL, NULL);
+    if (haveGeomColumn) {
+        QueryPtr result(nullptr, nullptr);
         code = this->database->query(result,
             "SELECT DiscardGeometryColumn(\'Geometry\', \'geom\')");
         TE_CHECKRETURN_CODE(code);
@@ -462,13 +462,13 @@ TAKErr FeatureSpatialDatabase::dropTablesLegacy() NOTHROWS
         result.reset();
     }
 
-    code = this->database->execute("DROP TABLE IF EXISTS File", NULL, 0);
+    code = this->database->execute("DROP TABLE IF EXISTS File", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute("DROP TABLE IF EXISTS Geometry", NULL, 0);
+    code = this->database->execute("DROP TABLE IF EXISTS Geometry", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute("DROP TABLE IF EXISTS Style", NULL, 0);
+    code = this->database->execute("DROP TABLE IF EXISTS Style", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    code = this->database->execute("DROP TABLE IF EXISTS groups", NULL, 0);
+    code = this->database->execute("DROP TABLE IF EXISTS groups", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
     return CatalogDatabase2::dropTables();
@@ -477,7 +477,7 @@ TAKErr FeatureSpatialDatabase::dropTablesLegacy() NOTHROWS
 TAKErr FeatureSpatialDatabase::buildTables() NOTHROWS
 {
     TAKErr code;
-    QueryPtr result(NULL, NULL);
+    QueryPtr result(nullptr, nullptr);
 
     int major;
     int minor;
@@ -506,7 +506,7 @@ TAKErr FeatureSpatialDatabase::buildTables() NOTHROWS
     code = this->database
         ->execute(
         "CREATE TABLE Geometry (id INTEGER PRIMARY KEY AUTOINCREMENT, file_id INTEGER, group_id INTEGER, name TEXT COLLATE NOCASE, style_id INTEGER, min_lod INTEGER, max_lod INTEGER, visible INTEGER, group_visible_version INTEGER)",
-        NULL, 0);
+        nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
     result.reset();
@@ -520,13 +520,13 @@ TAKErr FeatureSpatialDatabase::buildTables() NOTHROWS
     code = this->database
         ->execute(
         "CREATE TABLE Style (id INTEGER PRIMARY KEY AUTOINCREMENT, style_name TEXT, file_id INTEGER, style_rep TEXT)",
-        NULL, 0);
+        nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
     code = this->database
         ->execute(
         "CREATE TABLE groups (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT COLLATE NOCASE, file_id INTEGER, provider TEXT, type TEXT, visible INTEGER, visible_version INTEGER, visible_check INTEGER, min_lod INTEGER, max_lod INTEGER)",
-        NULL, 0);
+        nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
     code = this->createIndicesNoSync();
@@ -542,7 +542,7 @@ TAKErr FeatureSpatialDatabase::onCatalogEntryRemoved(int64_t catalogId, bool aut
     TAKErr code;
 
     if (catalogId > 0) {
-        StatementPtr stmt(NULL, NULL);
+        StatementPtr stmt(nullptr, nullptr);
 
         stmt.reset();
         code = this->database->compileStatement(stmt, "DELETE FROM Style WHERE file_id = ?");
@@ -572,7 +572,7 @@ TAKErr FeatureSpatialDatabase::onCatalogEntryRemoved(int64_t catalogId, bool aut
         stmt.reset();
     }
     else {
-        StatementPtr stmt(NULL, NULL);
+        StatementPtr stmt(nullptr, nullptr);
 
         std::ostringstream strm;
 
@@ -648,18 +648,18 @@ int FeatureSpatialDatabase::databaseVersion() NOTHROWS
 
 TAKErr FeatureSpatialDatabase::getSpatialiteMajorVersion(int *value, Database2 &db) NOTHROWS
 {
-    return getSpatialiteVersion(value, NULL, db);
+    return getSpatialiteVersion(value, nullptr, db);
 }
 
 TAKErr FeatureSpatialDatabase::getSpatialiteMinorVersion(int *value, Database2 &db) NOTHROWS
 {
-    return getSpatialiteVersion(NULL, value, db);
+    return getSpatialiteVersion(nullptr, value, db);
 }
 
 TAKErr FeatureSpatialDatabase::getSpatialiteVersion(int *major, int *minor, Database2 &db) NOTHROWS
 {
     TAKErr code;
-    QueryPtr cursor(NULL, NULL);
+    QueryPtr cursor(nullptr, nullptr);
     code = db.query(cursor, "SELECT spatialite_version()");
 
     code = cursor->moveToNext();

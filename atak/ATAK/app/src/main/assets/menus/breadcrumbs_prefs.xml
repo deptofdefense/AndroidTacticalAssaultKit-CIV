@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<menu buttonRadius='65' buttonSpan='40' buttonWidth='60' buttonBg='bgs/button.xml'>
+
+    <button icon='icons/color_wheel.png'
+            prefValue='0'
+            onClick='actions/breadcrumb_color.xml' />
+</menu>

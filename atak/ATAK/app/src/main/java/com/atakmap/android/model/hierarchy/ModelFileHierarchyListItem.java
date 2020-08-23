@@ -367,15 +367,19 @@ public class ModelFileHierarchyListItem extends AbstractHierarchyListItem2
 
     @Override
     public boolean delete() {
-        File modelFile = new File(this.featureSet.getName());
+        String uri = this.featureSet.getName();
+        if (!uri.startsWith("http:") && !uri.startsWith("https:")) {
+            uri = Uri.fromFile(new File(uri)).toString();
+        }
+
+        File modelFile = new File(uri);
         Intent i = new Intent(
                 ImportExportMapComponent.ACTION_DELETE_DATA);
         i.putExtra(ImportReceiver.EXTRA_CONTENT,
                 ModelImporter.CONTENT_TYPE);
         i.putExtra(ImportReceiver.EXTRA_MIME_TYPE,
                 "application/octet-stream");
-        i.putExtra(ImportReceiver.EXTRA_URI, Uri.fromFile(modelFile)
-                .toString());
+        i.putExtra(ImportReceiver.EXTRA_URI, uri);
         AtakBroadcast.getInstance().sendBroadcast(i);
         return true;
     }

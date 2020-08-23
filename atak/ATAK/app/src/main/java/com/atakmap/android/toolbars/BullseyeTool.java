@@ -229,12 +229,13 @@ public class BullseyeTool extends ButtonTool implements
                 return null;
         }
 
+        int numBullseye = getNumBullseye();
+        String title = "Bullseye " + numBullseye;
         String bullseyeUID = UUID.randomUUID().toString();
         centerMarker.setMetaString("bullseyeUID", bullseyeUID);
 
-        int numBullseye = getNumBullseye();
         if (centerMarker.getType().contentEquals(BULLSEYE_COT_TYPE)) {
-            centerMarker.setMetaString("callsign", "Bullseye" + numBullseye);
+            centerMarker.setTitle(title);
         } else {
             centerMarker.setMetaBoolean("bullseyeOverlay", true);
         }
@@ -245,7 +246,7 @@ public class BullseyeTool extends ButtonTool implements
         aos.setSimpleSpokeView(true);
         aos.setVisible(centerMarker.getVisible());
         aos.setProjectionProportion(true);
-        aos.setTitle("Bullseye " + numBullseye);
+        aos.setTitle(title);
         aos.setMetaString("iconUri", ATAKUtilities.getResourceUri(
                 R.drawable.bullseye));
 

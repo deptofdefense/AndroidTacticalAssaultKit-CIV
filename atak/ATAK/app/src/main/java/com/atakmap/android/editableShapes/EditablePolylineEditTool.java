@@ -162,9 +162,11 @@ public class EditablePolylineEditTool extends ButtonTool
         persistExtras.putBoolean("doNotRecreate", true);
         persistExtras.putBoolean("internal", true);
 
-        if (_poly.getGroup() != null)
+        if (_poly.getGroup() != null) {
+            _poly.removeMetaData("creating");
             _poly.persist(_mapView.getMapEventDispatcher(), persistExtras,
                     this.getClass());
+        }
     }
 
     @Override

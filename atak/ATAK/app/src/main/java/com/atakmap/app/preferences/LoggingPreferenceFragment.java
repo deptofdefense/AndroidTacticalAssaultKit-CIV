@@ -11,7 +11,7 @@ import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference;
 import android.preference.PreferenceManager;
-import android.support.v4.app.NavUtils;
+import androidx.core.app.NavUtils;
 
 import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.ipc.AtakBroadcast;

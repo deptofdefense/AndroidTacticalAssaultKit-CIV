@@ -54,31 +54,31 @@ namespace
     {
     public :
         explicit
-        SpatiaLiteDB(const char* filePath = NULL)  // Defaults to temporary DB.
+        SpatiaLiteDB(const char* filePath = nullptr)  // Defaults to temporary DB.
             throw (DB_Error);
 
         SpatiaLiteDB(const char* filePath,
         bool readOnly)
             throw (DB_Error);
     public:
-        virtual ~SpatiaLiteDB();
+        ~SpatiaLiteDB() override;
     public:
-        virtual TAK::Engine::Util::TAKErr execute(const char *sql, const char **args, const std::size_t len) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr query(QueryPtr &cursor, const char *sql) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr compileStatement(StatementPtr &stmt, const char *sql) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr compileQuery(QueryPtr &query, const char *sql) NOTHROWS;
+        TAK::Engine::Util::TAKErr execute(const char *sql, const char **args, const std::size_t len) NOTHROWS override;
+        TAK::Engine::Util::TAKErr query(QueryPtr &cursor, const char *sql) NOTHROWS override;
+        TAK::Engine::Util::TAKErr compileStatement(StatementPtr &stmt, const char *sql) NOTHROWS override;
+        TAK::Engine::Util::TAKErr compileQuery(QueryPtr &query, const char *sql) NOTHROWS override;
 
-        virtual TAK::Engine::Util::TAKErr isReadOnly(bool *value) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getVersion(int *value) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr setVersion(const int version) NOTHROWS;
+        TAK::Engine::Util::TAKErr isReadOnly(bool *value) NOTHROWS override;
+        TAK::Engine::Util::TAKErr getVersion(int *value) NOTHROWS override;
+        TAK::Engine::Util::TAKErr setVersion(const int version) NOTHROWS override;
 
-        virtual TAK::Engine::Util::TAKErr beginTransaction() NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr setTransactionSuccessful() NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr endTransaction() NOTHROWS;
+        TAK::Engine::Util::TAKErr beginTransaction() NOTHROWS override;
+        TAK::Engine::Util::TAKErr setTransactionSuccessful() NOTHROWS override;
+        TAK::Engine::Util::TAKErr endTransaction() NOTHROWS override;
 
-        virtual TAK::Engine::Util::TAKErr inTransaction(bool *value) NOTHROWS;
+        TAK::Engine::Util::TAKErr inTransaction(bool *value) NOTHROWS override;
 
-        virtual TAK::Engine::Util::TAKErr getErrorMessage(TAK::Engine::Port::String &value) NOTHROWS;
+        TAK::Engine::Util::TAKErr getErrorMessage(TAK::Engine::Port::String &value) NOTHROWS override;
     private :
         void closeConnection() NOTHROWS;
     private :
@@ -95,17 +95,17 @@ namespace
     public:
         StatementImpl(sqlite3_stmt* stmt) NOTHROWS; // Must not be NULL.
     public :
-        ~StatementImpl() NOTHROWS;
+        ~StatementImpl() NOTHROWS override;
     public :
-        virtual TAK::Engine::Util::TAKErr execute() NOTHROWS;
+        TAK::Engine::Util::TAKErr execute() NOTHROWS override;
     public :
-        virtual TAK::Engine::Util::TAKErr bindBlob(const std::size_t idx, const uint8_t *blob, const std::size_t size) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr bindInt(const std::size_t idx, const int32_t value) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr bindLong(const std::size_t idx, const int64_t value) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr bindDouble(const std::size_t idx, const double value) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr bindString(const std::size_t idx, const char *value) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr bindNull(const std::size_t idx) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr clearBindings() NOTHROWS;
+        TAK::Engine::Util::TAKErr bindBlob(const std::size_t idx, const uint8_t *blob, const std::size_t size) NOTHROWS override;
+        TAK::Engine::Util::TAKErr bindInt(const std::size_t idx, const int32_t value) NOTHROWS override;
+        TAK::Engine::Util::TAKErr bindLong(const std::size_t idx, const int64_t value) NOTHROWS override;
+        TAK::Engine::Util::TAKErr bindDouble(const std::size_t idx, const double value) NOTHROWS override;
+        TAK::Engine::Util::TAKErr bindString(const std::size_t idx, const char *value) NOTHROWS override;
+        TAK::Engine::Util::TAKErr bindNull(const std::size_t idx) NOTHROWS override;
+        TAK::Engine::Util::TAKErr clearBindings() NOTHROWS override;
     private:
         sqlite3_stmt* impl;
     };
@@ -115,33 +115,33 @@ namespace
     public:
         QueryImpl(sqlite3_stmt* stmt) NOTHROWS; // Must not be NULL.
     public :
-        ~QueryImpl() NOTHROWS;
+        ~QueryImpl() NOTHROWS override;
 #if 0
     public :
         virtual TAK::Engine::Util::TAKErr reset() NOTHROWS;
 #endif
     public :
-        virtual TAK::Engine::Util::TAKErr moveToNext() NOTHROWS;
+        TAK::Engine::Util::TAKErr moveToNext() NOTHROWS override;
     public:
-        virtual TAK::Engine::Util::TAKErr getColumnIndex(std::size_t *value, const char *columnName) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getColumnName(const char **value, const std::size_t columnIndex) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getColumnCount(std::size_t *value) NOTHROWS;
+        TAK::Engine::Util::TAKErr getColumnIndex(std::size_t *value, const char *columnName) NOTHROWS override;
+        TAK::Engine::Util::TAKErr getColumnName(const char **value, const std::size_t columnIndex) NOTHROWS override;
+        TAK::Engine::Util::TAKErr getColumnCount(std::size_t *value) NOTHROWS override;
 
-        virtual TAK::Engine::Util::TAKErr getBlob(const uint8_t **value, std::size_t *len, const std::size_t columnIndex) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getString(const char **value, const std::size_t columnIndex) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getInt(int32_t *value, const std::size_t columnIndex) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getLong(int64_t *value, const std::size_t columnIndex) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getDouble(double *value, const std::size_t columnIndex) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getType(FieldType *value, const std::size_t columnIndex) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr isNull(bool *value, const std::size_t columnIndex) NOTHROWS;
+        TAK::Engine::Util::TAKErr getBlob(const uint8_t **value, std::size_t *len, const std::size_t columnIndex) NOTHROWS override;
+        TAK::Engine::Util::TAKErr getString(const char **value, const std::size_t columnIndex) NOTHROWS override;
+        TAK::Engine::Util::TAKErr getInt(int32_t *value, const std::size_t columnIndex) NOTHROWS override;
+        TAK::Engine::Util::TAKErr getLong(int64_t *value, const std::size_t columnIndex) NOTHROWS override;
+        TAK::Engine::Util::TAKErr getDouble(double *value, const std::size_t columnIndex) NOTHROWS override;
+        TAK::Engine::Util::TAKErr getType(FieldType *value, const std::size_t columnIndex) NOTHROWS override;
+        TAK::Engine::Util::TAKErr isNull(bool *value, const std::size_t columnIndex) NOTHROWS override;
     public:
-        virtual TAK::Engine::Util::TAKErr bindBlob(const std::size_t idx, const uint8_t *blob, const std::size_t size) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr bindInt(const std::size_t idx, const int32_t value) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr bindLong(const std::size_t idx, const int64_t value) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr bindDouble(const std::size_t idx, const double value) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr bindString(const std::size_t idx, const char *value) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr bindNull(const std::size_t idx) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr clearBindings() NOTHROWS;
+        TAK::Engine::Util::TAKErr bindBlob(const std::size_t idx, const uint8_t *blob, const std::size_t size) NOTHROWS override;
+        TAK::Engine::Util::TAKErr bindInt(const std::size_t idx, const int32_t value) NOTHROWS override;
+        TAK::Engine::Util::TAKErr bindLong(const std::size_t idx, const int64_t value) NOTHROWS override;
+        TAK::Engine::Util::TAKErr bindDouble(const std::size_t idx, const double value) NOTHROWS override;
+        TAK::Engine::Util::TAKErr bindString(const std::size_t idx, const char *value) NOTHROWS override;
+        TAK::Engine::Util::TAKErr bindNull(const std::size_t idx) NOTHROWS override;
+        TAK::Engine::Util::TAKErr clearBindings() NOTHROWS override;
     private:
         TAK::Engine::Util::TAKErr fillColumnNames() const NOTHROWS;
         TAK::Engine::Util::TAKErr validate() const NOTHROWS;
@@ -188,7 +188,7 @@ TAK::Engine::Util::TAKErr TAK::Engine::DB::Databases_getColumnNames(TAK::Engine:
 	code = StringBuilder_combine(queryStr, "PRAGMA table_info(", tableName, ")");
 	CHECKRETURN_CODE(code);
 
-    QueryPtr colResult(NULL, NULL);
+    QueryPtr colResult(nullptr, nullptr);
     code = db.compileQuery(colResult, queryStr.c_str());
     CHECKRETURN_CODE(code);
 
@@ -214,7 +214,7 @@ TAK::Engine::Util::TAKErr TAK::Engine::DB::Databases_getColumnNames(TAK::Engine:
 TAK::Engine::Util::TAKErr TAK::Engine::DB::Databases_getDatabaseFilePath(TAK::Engine::Port::String &value, Database2 &db) NOTHROWS
 {
     TAK::Engine::Util::TAKErr code;
-    QueryPtr dbResult(NULL, NULL);
+    QueryPtr dbResult(nullptr, nullptr);
     code = db.query(dbResult, "PRAGMA database_list");
     CHECKRETURN_CODE(code);
 
@@ -229,7 +229,7 @@ TAK::Engine::Util::TAKErr TAK::Engine::DB::Databases_getDatabaseFilePath(TAK::En
             break;
         if(!String_strcasecmp(result, "main"))
         {
-            result = NULL;
+            result = nullptr;
             code = dbResult->getString(&result, 2);
             if (code != TE_Ok)
                 break;
@@ -247,7 +247,7 @@ TAK::Engine::Util::TAKErr TAK::Engine::DB::Databases_getNextAutoincrementID(int6
 {
     TAK::Engine::Util::TAKErr code;
 
-    QueryPtr dbResult(NULL, NULL);
+    QueryPtr dbResult(nullptr, nullptr);
     code = db.compileQuery(dbResult, AUTOINCREMENT_QUERY);
     CHECKRETURN_CODE(code);
 
@@ -267,7 +267,7 @@ TAK::Engine::Util::TAKErr TAK::Engine::DB::Databases_getNextAutoincrementID(int6
 TAK::Engine::Util::TAKErr TAK::Engine::DB::Databases_getTableNames(TAK::Engine::Port::Collection<TAK::Engine::Port::String> &value, Database2 &db) NOTHROWS
 {
     TAK::Engine::Util::TAKErr code;
-    QueryPtr tableResult(NULL, NULL);
+    QueryPtr tableResult(nullptr, nullptr);
     code = db.query(tableResult, TABLE_NAME_QUERY);
     CHECKRETURN_CODE(code);
 
@@ -288,7 +288,7 @@ TAK::Engine::Util::TAKErr TAK::Engine::DB::Databases_getTableNames(TAK::Engine::
 TAK::Engine::Util::TAKErr TAK::Engine::DB::Databases_lastChangeCount(unsigned long *value, Database2 &db) NOTHROWS
 {
     TAK::Engine::Util::TAKErr code;
-    QueryPtr qResult(NULL, NULL);
+    QueryPtr qResult(nullptr, nullptr);
     code = db.query(qResult, "SELECT changes()");
     CHECKRETURN_CODE(code);
 
@@ -307,7 +307,7 @@ TAK::Engine::Util::TAKErr TAK::Engine::DB::Databases_lastChangeCount(unsigned lo
 TAK::Engine::Util::TAKErr TAK::Engine::DB::Databases_lastInsertRowID(int64_t *value, Database2 &db) NOTHROWS
 {
     TAK::Engine::Util::TAKErr code;
-    QueryPtr qResult(NULL, NULL);
+    QueryPtr qResult(nullptr, nullptr);
     code = db.query(qResult, "SELECT last_insert_rowid()");
     CHECKRETURN_CODE(code);
 
@@ -343,8 +343,8 @@ namespace
 
     SpatiaLiteDB::SpatiaLiteDB(const char* filePath, const bool ro) throw (DB_Error) :
         mutex(TEMT_Recursive),
-        connection(NULL),
-        cache(NULL),
+        connection(nullptr),
+        cache(nullptr),
         inTrans(false),
         successfulTrans(false),
         readOnly(ro)
@@ -358,7 +358,7 @@ namespace
                 &connection,
                 (readOnly ? SQLITE_OPEN_READONLY :
                 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE),
-                NULL));
+                nullptr));
 
             if (response != SQLITE_OK)
             {
@@ -393,21 +393,21 @@ namespace
     {
         TAKErr code(TE_Ok);
 
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
+        Lock lock(mutex);
+        code = lock.status;
         if (code == TE_Ok) {
             if (connection)
             {
                 int response(sqlite3_close_v2(connection));
 
-                connection = NULL;
+                connection = nullptr;
                 if (response != SQLITE_OK)
                 {
                     Logger::log(Logger::Error, MEM_FN("closeConnection")
                         "Error (%s) closing connection", sqlite3_errstr(response));
                 }
                 spatialite_cleanup_ex(cache);
-                cache = NULL;
+                cache = nullptr;
             }
         } else {
             Logger::log(Logger::Error, MEM_FN("closeConnection") "Error on lock");
@@ -417,16 +417,16 @@ namespace
             //
 
             sqlite3_close_v2(connection);
-            connection = NULL;
+            connection = nullptr;
             spatialite_cleanup_ex(cache);
-            cache = NULL;
+            cache = nullptr;
         }
     }
 
     TAK::Engine::Util::TAKErr SpatiaLiteDB::execute(const char *sql, const char **args, const std::size_t len) NOTHROWS
     {
         TAK::Engine::Util::TAKErr code;
-        StatementPtr stmt(NULL, NULL);
+        StatementPtr stmt(nullptr, nullptr);
         code = compileStatement(stmt, sql);
         CHECKRETURN_CODE(code);
 
@@ -443,7 +443,7 @@ namespace
     TAK::Engine::Util::TAKErr SpatiaLiteDB::query(QueryPtr &result, const char *sql) NOTHROWS
     {
         TAK::Engine::Util::TAKErr code;
-        QueryPtr retval(NULL, NULL);
+        QueryPtr retval(nullptr, nullptr);
         code = compileQuery(retval, sql);
         CHECKRETURN_CODE(code);
 
@@ -456,11 +456,11 @@ namespace
         TAKErr code(TE_Ok);
         if (dbdbg) Logger::log(Logger::Info, "SpatiaLiteDB::compileStatement(%s)", sql);
 
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
+        Lock lock(mutex);
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
 
-        sqlite3_stmt *stmt(NULL);
+        sqlite3_stmt *stmt(nullptr);
 
         code = prepareStatement(&stmt, sql, connection);
         CHECKRETURN_CODE(code);
@@ -474,11 +474,11 @@ namespace
         TAKErr code(TE_Ok);
         if (dbdbg) Logger::log(Logger::Info, "SpatiaLiteDB::compileQuery(%s)", sql);
 
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
+        Lock lock(mutex);
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
 
-        sqlite3_stmt *stmt(NULL);
+        sqlite3_stmt *stmt(nullptr);
 
         code = prepareStatement(&stmt, sql, connection);
         CHECKRETURN_CODE(code);
@@ -496,7 +496,7 @@ namespace
     TAK::Engine::Util::TAKErr SpatiaLiteDB::getVersion(int *value) NOTHROWS
     {
         TAK::Engine::Util::TAKErr code;
-        QueryPtr cursor(NULL, NULL);
+        QueryPtr cursor(nullptr, nullptr);
         code = query(cursor, "PRAGMA user_version");
         CHECKRETURN_CODE(code);
 
@@ -513,7 +513,7 @@ namespace
     TAK::Engine::Util::TAKErr SpatiaLiteDB::setVersion(const int version) NOTHROWS
     {
         TAK::Engine::Util::TAKErr code;
-        StatementPtr stmt(NULL, NULL);
+        StatementPtr stmt(nullptr, nullptr);
 
 		StringBuilder stmtStr;
 		code = StringBuilder_combine(stmtStr, "PRAGMA user_version = ", version);
@@ -529,8 +529,8 @@ namespace
     {
         TAKErr code(TE_Ok);
 
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
+        Lock lock(mutex);
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
 
         if (inTrans)
@@ -538,7 +538,7 @@ namespace
             Logger::log(Logger::Error, MEM_FN("beginTranscaction") "Already in a transaction");
             return TE_Err;
         }
-        code = execute("BEGIN EXCLUSIVE", NULL, 0);
+        code = execute("BEGIN EXCLUSIVE", nullptr, 0);
         if (code == TE_Ok)
             inTrans = true;
         return code;
@@ -548,8 +548,8 @@ namespace
     {
         TAKErr code(TE_Ok);
 
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
+        Lock lock(mutex);
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
 
 
@@ -568,8 +568,8 @@ namespace
     {
         TAKErr code(TE_Ok);
 
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
+        Lock lock(mutex);
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
 
         if (!inTrans)
@@ -610,7 +610,7 @@ namespace
             }
         }
 #endif
-        execute(successfulTrans ? "COMMIT" : "ROLLBACK", NULL, 0);
+        execute(successfulTrans ? "COMMIT" : "ROLLBACK", nullptr, 0);
         inTrans = successfulTrans = false;
         return code;
     }
@@ -707,7 +707,7 @@ namespace
         CHECKRETURN_CODE(code);
 
         *value = columnNames.empty()
-            ? sqlite3_column_name(impl, columnIndex)
+            ? sqlite3_column_name(impl, static_cast<int>(columnIndex))
             : static_cast<const char*> (columnNames[columnIndex]);
         return code;
     }
@@ -724,8 +724,8 @@ namespace
         CHECKRETURN_CODE(code);
 
         *value =
-            (static_cast<const unsigned char*> (sqlite3_column_blob(impl, columnIndex)));
-        *len = sqlite3_column_bytes(impl, columnIndex);
+            (static_cast<const unsigned char*> (sqlite3_column_blob(impl, static_cast<int>(columnIndex))));
+        *len = sqlite3_column_bytes(impl, static_cast<int>(columnIndex));
         return code;
     }
     TAK::Engine::Util::TAKErr QueryImpl::getString(const char **value, const std::size_t columnIndex) NOTHROWS
@@ -733,28 +733,28 @@ namespace
         TAK::Engine::Util::TAKErr code;
         code = validate(columnIndex);
         CHECKRETURN_CODE(code);
-        *value = reinterpret_cast<const char*> (sqlite3_column_text(impl, columnIndex));
+        *value = reinterpret_cast<const char *>(sqlite3_column_text(impl, static_cast<int>(columnIndex)));
         return code;
     }
     TAK::Engine::Util::TAKErr QueryImpl::getInt(int32_t *value, const std::size_t columnIndex) NOTHROWS
     {
         TAK::Engine::Util::TAKErr code = validate(columnIndex);
         CHECKRETURN_CODE(code);
-        *value = sqlite3_column_int(impl, columnIndex);
+        *value = sqlite3_column_int(impl, static_cast<int>(columnIndex));
         return code;
     }
     TAK::Engine::Util::TAKErr QueryImpl::getLong(int64_t *value, const std::size_t columnIndex) NOTHROWS
     {
         TAK::Engine::Util::TAKErr code = validate(columnIndex);
         CHECKRETURN_CODE(code);
-        *value = sqlite3_column_int64(impl, columnIndex);
+        *value = sqlite3_column_int64(impl, static_cast<int>(columnIndex));
         return code;
     }
     TAK::Engine::Util::TAKErr QueryImpl::getDouble(double *value, const std::size_t columnIndex) NOTHROWS
     {
         TAK::Engine::Util::TAKErr code = validate(columnIndex);
         CHECKRETURN_CODE(code);
-        *value = sqlite3_column_double(impl, columnIndex);
+        *value = sqlite3_column_double(impl, static_cast<int>(columnIndex));
         return code;
     }
     TAK::Engine::Util::TAKErr QueryImpl::getType(FieldType *value, const std::size_t columnIndex) NOTHROWS
@@ -765,7 +765,7 @@ namespace
 
         FieldType type(TEFT_Null);
 
-        switch (sqlite3_column_type(impl, columnIndex))
+        switch (sqlite3_column_type(impl, static_cast<int>(columnIndex)))
         {
         case SQLITE_INTEGER:      type = TEFT_Integer;   break;
         case SQLITE_FLOAT:        type = TEFT_Float;     break;
@@ -787,14 +787,14 @@ namespace
         TAK::Engine::Util::TAKErr code;
         code = validateIndex(columnIndex);
         CHECKRETURN_CODE(code);
-        *value = (sqlite3_column_type(impl, columnIndex) == SQLITE_NULL);
+        *value = (sqlite3_column_type(impl, static_cast<int>(columnIndex)) == SQLITE_NULL);
         return code;
     }
 
     TAK::Engine::Util::TAKErr QueryImpl::fillColumnNames() const NOTHROWS
     {
         columnNames.reserve(colCount);
-        for (std::size_t i(0); i < colCount; ++i)
+        for (int i(0); i < static_cast<int>(colCount); ++i)
         {
             columnNames.push_back(sqlite3_column_name(impl, i));
         }
@@ -857,8 +857,8 @@ namespace
     TAK::Engine::Util::TAKErr StatementImpl::bindString(const std::size_t index, const char* value) NOTHROWS
     {
         if (dbdbg) Logger::log(Logger::Info, "StatementImpl::bindString(%d, %s)", index, value);
-        int response(sqlite3_bind_text(impl, index, value,
-            value ? std::strlen(value) : 0,
+        int response(sqlite3_bind_text(impl, static_cast<int>(index), value,
+            value ? static_cast<int>(std::strlen(value)) : 0,
             SQLITE_TRANSIENT));
 
         if (response != SQLITE_OK)
@@ -879,7 +879,7 @@ namespace
     {
         if (dbdbg) Logger::log(Logger::Info, "StatementImpl::bindDouble(%d, %lf)", index, value);
 
-        int response(sqlite3_bind_double(impl, index, value));
+        int response(sqlite3_bind_double(impl, static_cast<int>(index), value));
 
         if (response != SQLITE_OK)
         {
@@ -897,7 +897,7 @@ namespace
     TAK::Engine::Util::TAKErr StatementImpl::bindInt(const std::size_t index, const int32_t value) NOTHROWS
     {
         if (dbdbg) Logger::log(Logger::Info, "StatementImpl::bindInt(%d, %d)", index, value);
-        int response(sqlite3_bind_int(impl, index, value));
+        int response(sqlite3_bind_int(impl, static_cast<int>(index), value));
 
         if (response != SQLITE_OK)
         {
@@ -915,7 +915,7 @@ namespace
     TAK::Engine::Util::TAKErr StatementImpl::bindLong(const std::size_t index, const int64_t value) NOTHROWS
     {
         if (dbdbg) Logger::log(Logger::Info, "StatementImpl::bindDouble(%d, %.0lf)", index, (double)value);
-        int response(sqlite3_bind_int64(impl, index, value));
+        int response(sqlite3_bind_int64(impl, static_cast<int>(index), value));
 
         if (response != SQLITE_OK)
         {
@@ -933,8 +933,8 @@ namespace
     TAK::Engine::Util::TAKErr StatementImpl::bindBlob(const std::size_t index, const uint8_t *value, const std::size_t len) NOTHROWS
     {
         if (dbdbg) Logger::log(Logger::Info, "StatementImpl::bindBlob(%d, %p, %d)", index, value, len);
-        int response(sqlite3_bind_blob(impl, index, value,
-            len,
+        int response(sqlite3_bind_blob(impl, static_cast<int>(index), value,
+            static_cast<int>(len),
             SQLITE_TRANSIENT));
 
         if (response != SQLITE_OK)
@@ -952,7 +952,7 @@ namespace
     TAK::Engine::Util::TAKErr StatementImpl::bindNull(const std::size_t index) NOTHROWS
     {
         if (dbdbg) Logger::log(Logger::Info, "StatementImpl::bindNull(%d)", index);
-        int response(sqlite3_bind_null(impl, index));
+        int response(sqlite3_bind_null(impl, static_cast<int>(index)));
 
         if (response != SQLITE_OK)
         {
@@ -1027,8 +1027,8 @@ namespace
     TAK::Engine::Util::TAKErr QueryImpl::bindString(const std::size_t index, const char* value) NOTHROWS
     {
         if (dbdbg) Logger::log(Logger::Info, "QueryImpl::bindString(%d, %s)", index, value);
-        int response(sqlite3_bind_text(impl, index, value,
-        value ? std::strlen(value) : 0,
+        int response(sqlite3_bind_text(impl, static_cast<int>(index), value,
+        static_cast<int>(value ? std::strlen(value) : 0),
         SQLITE_TRANSIENT));
 
         if (response != SQLITE_OK)
@@ -1047,7 +1047,7 @@ namespace
     TAK::Engine::Util::TAKErr QueryImpl::bindDouble(const std::size_t index, const double value) NOTHROWS
     {
         if (dbdbg) Logger::log(Logger::Info, "QueryImpl::bindDouble(%d, %lf)", index, value);
-        int response(sqlite3_bind_double(impl, index, value));
+        int response(sqlite3_bind_double(impl, static_cast<int>(index), value));
 
         if (response != SQLITE_OK)
         {
@@ -1065,7 +1065,7 @@ namespace
     TAK::Engine::Util::TAKErr QueryImpl::bindInt(const std::size_t index, const int32_t value) NOTHROWS
     {
         if (dbdbg) Logger::log(Logger::Info, "QueryImpl::bindInt(%d, %d)", index, value);
-        int response(sqlite3_bind_int(impl, index, value));
+        int response(sqlite3_bind_int(impl, static_cast<int>(index), value));
 
         if (response != SQLITE_OK)
         {
@@ -1083,7 +1083,7 @@ namespace
     TAK::Engine::Util::TAKErr QueryImpl::bindLong(const std::size_t index, const int64_t value) NOTHROWS
     {
         if (dbdbg) Logger::log(Logger::Info, "QueryImpl::bindLong(%d, %.0lf)", index, (double)value);
-        int response(sqlite3_bind_int64(impl, index, value));
+        int response(sqlite3_bind_int64(impl, static_cast<int>(index), value));
 
         if (response != SQLITE_OK)
         {
@@ -1101,8 +1101,8 @@ namespace
     TAK::Engine::Util::TAKErr QueryImpl::bindBlob(const std::size_t index, const uint8_t *value, const std::size_t len) NOTHROWS
     {
         if (dbdbg) Logger::log(Logger::Info, "QueryImpl::bindBlob(%d, %p, %d)", index, value, len);
-        int response(sqlite3_bind_blob(impl, index, value,
-        len,
+        int response(sqlite3_bind_blob(impl, static_cast<int>(index), value,
+        static_cast<int>(len),
         SQLITE_TRANSIENT));
 
         if (response != SQLITE_OK)
@@ -1120,7 +1120,7 @@ namespace
     TAK::Engine::Util::TAKErr QueryImpl::bindNull(const std::size_t index) NOTHROWS
     {
         if (dbdbg) Logger::log(Logger::Info, "StatementImpl::bindNull(%d)", index);
-        int response(sqlite3_bind_null(impl, index));
+        int response(sqlite3_bind_null(impl, static_cast<int>(index)));
 
         if (response != SQLITE_OK)
         {
@@ -1211,14 +1211,13 @@ namespace
             return TE_InvalidArg;
         }
 
-        sqlite3_stmt* statement(NULL);
+        sqlite3_stmt* statement(nullptr);
         int response(sqlite3_prepare_v2(connection,
-            sql, std::strlen(sql) + 1,
-            &statement, NULL));
+            sql, static_cast<int>(std::strlen(sql) + 1),
+            &statement, nullptr));
 
         if (response != SQLITE_OK || !statement)
         {
-                    const char *error = sqlite3_errmsg(connection);
             sqlite3_finalize(statement);   // Statement should be NULL anyways.
             logDB_Error(response, MEM_FN("prepareStatement"),
                 catStrings("preparing statement: ",

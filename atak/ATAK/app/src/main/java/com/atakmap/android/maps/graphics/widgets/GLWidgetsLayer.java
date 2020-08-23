@@ -4,6 +4,7 @@ package com.atakmap.android.maps.graphics.widgets;
 import android.util.Pair;
 
 import com.atakmap.android.widgets.WidgetsLayer;
+import com.atakmap.map.LegacyAdapters;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.opengl.GLLayer3;
@@ -88,8 +89,9 @@ public class GLWidgetsLayer implements GLLayer3 {
             GLES20FixedPipeline.glDepthFunc(GLES20FixedPipeline.GL_ALWAYS);
             GLES20FixedPipeline.glPushMatrix();
             GLES20FixedPipeline.glTranslatef(0,
-                    ((GLMapView) this.renderContext)
-                            .getSurface().getHeight() - 1,
+                    LegacyAdapters.getRenderContext(this.renderContext)
+                            .getRenderSurface()
+                            .getHeight() - 1,
                     0f);
             this.impl.drawWidget();
             GLES20FixedPipeline.glPopMatrix();

@@ -1,8 +1,12 @@
 package com.atakmap.map.layer.model;
 
 import com.atakmap.interop.DataType;
+import com.atakmap.interop.NativePeerManager;
+import com.atakmap.interop.Pointer;
+import com.atakmap.lang.ref.Cleaner;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.math.MathUtils;
+import com.atakmap.util.Disposable;
 import com.atakmap.util.ReadWriteLock;
 
 import java.nio.Buffer;
@@ -10,10 +14,18 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 
-public final class MeshBuilder {
-    private final ReadWriteLock rwlock = new ReadWriteLock();
+public final class MeshBuilder implements Disposable {
+    final static NativePeerManager.Cleaner CLEANER = new NativePeerManager.Cleaner() {
+        @Override
+        protected void run(Pointer pointer, Object opaque) {
+            ModelBuilder.destruct(pointer);
+        }
+    };
 
-    private long pointer;
+    private final ReadWriteLock rwlock = new ReadWriteLock();
+    private final Cleaner cleaner;
+
+    private Pointer pointer;
 
     MeshBuilder(ByteBuffer vertexData, int vertexAttr, Envelope aabb, Model.DrawMode drawMode) {
         throw new UnsupportedOperationException();
@@ -41,6 +53,8 @@ public final class MeshBuilder {
         } else {
             this.pointer = ModelBuilder.create(tedm, cattrs);
         }
+
+        cleaner = NativePeerManager.register(this, pointer, rwlock, null, CLEANER);
     }
 
     public MeshBuilder(int vertexAttr, Class<?> indexType, Model.DrawMode drawMode) {
@@ -64,6 +78,8 @@ public final class MeshBuilder {
         } else {
             this.pointer = ModelBuilder.create(tedm, cattrs);
         }
+
+        cleaner = NativePeerManager.register(this, pointer, rwlock, null, CLEANER);
     }
 
     public MeshBuilder(VertexDataLayout layout, Class<?> indexType, Model.DrawMode drawMode) {
@@ -100,14 +116,16 @@ public final class MeshBuilder {
                     layout.color.dataType != null ? DataType.convert(layout.color.dataType, false) : DataType.TEDT_Float32, layout.color.offset, layout.color.stride,
                     layout.interleaved);
         }
+
+        cleaner = NativePeerManager.register(this, pointer, rwlock, null, CLEANER);
     }
 
     public void reserveVertices(int count) {
         this.rwlock.acquireRead();
         try {
-            if(this.pointer == 0L)
+            if(this.pointer.raw == 0L)
                 throw new IllegalStateException();
-            ModelBuilder.reserveVertices(this.pointer, count);
+            ModelBuilder.reserveVertices(this.pointer.raw, count);
         } finally {
             this.rwlock.releaseRead();
         }
@@ -115,9 +133,9 @@ public final class MeshBuilder {
     public void reserveIndices(int count) {
         this.rwlock.acquireRead();
         try {
-            if(this.pointer == 0L)
+            if(this.pointer.raw == 0L)
                 throw new IllegalStateException();
-            ModelBuilder.reserveIndices(this.pointer, count);
+            ModelBuilder.reserveIndices(this.pointer.raw, count);
         } finally {
             this.rwlock.releaseRead();
         }
@@ -125,17 +143,17 @@ public final class MeshBuilder {
     public void setWindingOrder(Model.WindingOrder windingOrder) {
         this.rwlock.acquireRead();
         try {
-            if (this.pointer == 0L)
+            if (this.pointer.raw == 0L)
                 throw new IllegalStateException();
             switch (windingOrder) {
                 case Clockwise:
-                    ModelBuilder.setWindingOrder(this.pointer, NativeMesh.getTEWO_Clockwise());
+                    ModelBuilder.setWindingOrder(this.pointer.raw, NativeMesh.getTEWO_Clockwise());
                     break;
                 case CounterClockwise:
-                    ModelBuilder.setWindingOrder(this.pointer, NativeMesh.getTEWO_CounterClockwise());
+                    ModelBuilder.setWindingOrder(this.pointer.raw, NativeMesh.getTEWO_CounterClockwise());
                     break;
                 case Undefined:
-                    ModelBuilder.setWindingOrder(this.pointer, NativeMesh.getTEWO_Undefined());
+                    ModelBuilder.setWindingOrder(this.pointer.raw, NativeMesh.getTEWO_Undefined());
                     break;
                 default:
                     throw new IllegalArgumentException();
@@ -148,9 +166,9 @@ public final class MeshBuilder {
     public void addMaterial(Material material) {
         this.rwlock.acquireRead();
         try {
-            if(this.pointer == 0L)
+            if(this.pointer.raw == 0L)
                 throw new IllegalStateException();
-            ModelBuilder.addMaterial(this.pointer, material.getTextureUri(), material.getColor());
+            ModelBuilder.addMaterial(this.pointer.raw, material.getTextureUri(), material.getColor());
         } finally {
             this.rwlock.releaseRead();
         }
@@ -163,10 +181,10 @@ public final class MeshBuilder {
 
         this.rwlock.acquireRead();
         try {
-            if(this.pointer == 0L)
+            if(this.pointer.raw == 0L)
                 throw new IllegalStateException();
             ModelBuilder.addVertex(
-                    this.pointer,
+                    this.pointer.raw,
                     posx, posy, posz,
                     texu, texv,
                     nx, ny, nz,
@@ -183,10 +201,10 @@ public final class MeshBuilder {
 
         this.rwlock.acquireRead();
         try {
-            if(this.pointer == 0L)
+            if(this.pointer.raw == 0L)
                 throw new IllegalStateException();
             ModelBuilder.addVertex(
-                    this.pointer,
+                    this.pointer.raw,
                     posx, posy, posz,
                     texuv,
                     nx, ny, nz,
@@ -205,9 +223,9 @@ public final class MeshBuilder {
     public void addIndex(int index) {
         this.rwlock.acquireRead();
         try {
-            if(this.pointer == 0L)
+            if(this.pointer.raw == 0L)
                 throw new IllegalStateException();
-            ModelBuilder.addIndex(this.pointer, index);
+            ModelBuilder.addIndex(this.pointer.raw, index);
         } finally {
             this.rwlock.releaseRead();
         }
@@ -247,11 +265,10 @@ public final class MeshBuilder {
     public Mesh build() {
         this.rwlock.acquireWrite();
         try {
-            if(this.pointer == 0L)
+            if(this.pointer.raw == 0L)
                 throw new IllegalStateException();
-            final Mesh retval = new NativeMesh(ModelBuilder.build(this.pointer));
+            final Mesh retval = new NativeMesh(ModelBuilder.build(this.pointer.raw));
             ModelBuilder.destruct(this.pointer);
-            this.pointer = 0L;
             return retval;
         } finally {
             this.rwlock.releaseWrite();
@@ -259,16 +276,9 @@ public final class MeshBuilder {
     }
 
     @Override
-    public void finalize() {
-        this.rwlock.acquireWrite();
-        try {
-            if(this.pointer == 0L)
-                return;
-            ModelBuilder.destruct(this.pointer);
-            this.pointer = 0L;
-        } finally {
-            this.rwlock.releaseWrite();
-        }
+    public void dispose() {
+        if(cleaner != null)
+            cleaner.clean();
     }
 
     public static Mesh build(Mesh.DrawMode drawMode, Mesh.WindingOrder winding, VertexDataLayout layout, Material[] materials, Envelope aabb, int numVertices, Buffer data) {

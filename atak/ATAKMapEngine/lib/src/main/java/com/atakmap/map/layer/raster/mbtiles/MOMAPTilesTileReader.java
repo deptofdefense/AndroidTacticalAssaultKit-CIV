@@ -8,7 +8,6 @@ import com.atakmap.map.layer.raster.tilereader.TileReaderSpi;
 /**
  * This class provides the Tile Reader SPI for handling the MOMAP data type
  *
- * @author CSRA
  */
 public final class MOMAPTilesTileReader
 {

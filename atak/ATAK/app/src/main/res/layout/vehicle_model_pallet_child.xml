@@ -1,0 +1,30 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="1dp"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="1dp"
+    android:background="@color/dark_gray"
+    android:descendantFocusability="blocksDescendants">
+ 
+    <ImageView
+        android:id="@+id/icon"
+        android:layout_width="@dimen/vehicle_icon_size"
+        android:layout_height="@dimen/vehicle_icon_size"
+        android:layout_gravity="center"
+        android:src="@drawable/obj_c_130"/>
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="@dimen/vehicle_icon_size"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textColor="#FFF"
+        android:textSize="@dimen/vehicle_text_size"
+        android:text="@string/c_130"/>
+ 
+</LinearLayout>

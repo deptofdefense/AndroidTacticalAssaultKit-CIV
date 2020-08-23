@@ -5,7 +5,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.view.View;
 
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
+import com.atakmap.android.coordoverlay.CoordOverlayMapReceiver;
 import com.atakmap.android.hierarchy.HierarchyListItem;
 import com.atakmap.android.hierarchy.action.Action;
 import com.atakmap.android.hierarchy.action.Delete;
@@ -15,16 +15,21 @@ import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.Location;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.overlay.MapOverlay;
-import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.android.user.FocusBroadcastReceiver;
 import com.atakmap.app.R;
 
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.layer.feature.Adapters;
+import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureDataStore;
+import com.atakmap.map.layer.feature.FeatureDataStore2;
+import com.atakmap.map.layer.feature.Utils;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Point;
 import com.atakmap.map.layer.feature.style.BasicFillStyle;
@@ -41,7 +46,7 @@ public class FeatureHierarchyListItem extends
         AbstractHierarchyListItem implements GoTo,
         Visibility, Location, Delete {
 
-    private final FeatureDataStore spatialDb;
+    private final FeatureDataStore2 spatialDb;
     private final long fid;
     private final String name;
     private final GeoBounds bounds;
@@ -56,6 +61,13 @@ public class FeatureHierarchyListItem extends
 
     public FeatureHierarchyListItem(
             FeatureDataStore spatialDb,
+            Feature feature) {
+        this(Adapters.adapt(spatialDb), feature);
+
+    }
+
+    public FeatureHierarchyListItem(
+            FeatureDataStore2 spatialDb,
             Feature feature) {
 
         this(
@@ -72,7 +84,7 @@ public class FeatureHierarchyListItem extends
     }
 
     public FeatureHierarchyListItem(
-            FeatureDataStore spatialDb,
+            FeatureDataStore2 spatialDb,
             long fid,
             String name,
             String iconUri,
@@ -98,23 +110,31 @@ public class FeatureHierarchyListItem extends
         // XXX - icon
 
         this.actions = new HashSet<>();
-        if ((spatialDb.getVisibilitySettingsFlags()
-                & FeatureDataStore.VISIBILITY_SETTINGS_FEATURE) == FeatureDataStore.VISIBILITY_SETTINGS_FEATURE)
+        if ((spatialDb.getVisibilityFlags()
+                & FeatureDataStore2.VISIBILITY_SETTINGS_FEATURE) == FeatureDataStore2.VISIBILITY_SETTINGS_FEATURE)
             this.actions.add(Visibility.class);
         if ((spatialDb.getModificationFlags()
-                & FeatureDataStore.MODIFY_FEATURESET_FEATURE_DELETE) == FeatureDataStore.MODIFY_FEATURESET_FEATURE_DELETE)
+                & FeatureDataStore2.MODIFY_FEATURESET_FEATURE_DELETE) == FeatureDataStore2.MODIFY_FEATURESET_FEATURE_DELETE)
             this.actions.add(Delete.class);
 
-        // XXX - do bounds check here?  not sure how bounds is ever null...
         this.actions.add(GoTo.class);
 
-        if (isPoint) {
-            GeoPoint center = this.bounds.getCenter(null);
-            altitude = Dt2ElevationModel.getInstance().queryPoint(
-                    center.getLatitude(), center.getLongitude());
-        } else {
-            altitude = new GeoPointMetaData();
+        GeoPointMetaData alt;
+        try {
+            Feature f = Utils.getFeature(spatialDb, fid);
+            if (f.getGeometry() instanceof Point) {
+                alt = FeatureHierarchyUtils
+                        .getAltitude(((Point) f.getGeometry()),
+                                f.getAltitudeMode());
+            } else {
+                GeoPoint center = this.bounds.getCenter(null);
+                alt = new GeoPointMetaData(center);
+            }
+        } catch (DataStoreException dse) {
+            alt = new GeoPointMetaData();
         }
+        altitude = alt;
+
     }
 
     public static String iconUriFromStyle(Style style) {
@@ -265,14 +285,21 @@ public class FeatureHierarchyListItem extends
 
     @Override
     public boolean setVisible(boolean visible) {
-        this.spatialDb.setFeatureVisible(this.fid, visible);
-
+        try {
+            this.spatialDb.setFeatureVisible(this.fid, visible);
+        } catch (DataStoreException dse) {
+            return true;
+        }
         return true;
     }
 
     @Override
     public boolean isVisible() {
-        return this.spatialDb.isFeatureVisible(this.fid);
+        try {
+            return Utils.isFeatureVisible(this.spatialDb, this.fid);
+        } catch (DataStoreException dse) {
+            return false;
+        }
     }
 
     /**************************************************************************/
@@ -283,25 +310,12 @@ public class FeatureHierarchyListItem extends
         if (this.bounds == null)
             return false;
 
-        MapView mv = MapView.getMapView();
-        if (mv != null) {
-            GeoPoint[] p;
-            if (this.isPoint) {
-                p = new GeoPoint[] {
-                        bounds.getCenter(null)
-                };
-            } else {
-                p = new GeoPoint[] {
-                        new GeoPoint(bounds.getNorth(), bounds.getWest()),
-                        new GeoPoint(bounds.getSouth(), bounds.getEast())
-                };
-            }
-            ATAKUtilities.scaleToFit(mv, p, mv.getWidth(), mv.getHeight());
-        }
-        ArrayList<Intent> intents = new ArrayList<>(2);
-        intents.add(new Intent("com.atakmap.android.maps.SHOW_MENU")
+        ArrayList<Intent> intents = new ArrayList<>(3);
+        intents.add(new Intent(FocusBroadcastReceiver.FOCUS)
+                .putExtra("uid", uid).putExtra("useTightZoom", true));
+        intents.add(new Intent(MapMenuReceiver.SHOW_MENU)
                 .putExtra("uid", uid));
-        intents.add(new Intent("com.atakmap.android.maps.SHOW_DETAILS")
+        intents.add(new Intent(CoordOverlayMapReceiver.SHOW_DETAILS)
                 .putExtra("uid", uid));
         AtakBroadcast.getInstance().sendIntents(intents);
         return true;
@@ -312,7 +326,10 @@ public class FeatureHierarchyListItem extends
 
     @Override
     public boolean delete() {
-        this.spatialDb.deleteFeature(this.fid);
+        try {
+            this.spatialDb.deleteFeature(this.fid);
+        } catch (DataStoreException dse) {
+        }
         return true;
     }
 

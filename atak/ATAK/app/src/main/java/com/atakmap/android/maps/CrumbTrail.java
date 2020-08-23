@@ -174,6 +174,14 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
                 this.crumbItemChangedListener);
     }
 
+    public void setColor(int color) {
+        Crumb c = first;
+        while (c != null) {
+            c.setColor(color);
+            c = c.next;
+        }
+    }
+
     private class CrumbItemChangedListener implements
             MapGroup.OnItemListChangedListener {
         @Override
@@ -271,18 +279,20 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
             }
             if (rab[0] < threshM)
                 return;
-        } else if (theTarget.getType().equals("self") && Double.compare(
-                newP.getAltitude(), 0.0) == 0) {
+        } else if (theTarget.getType().equals("self") && !newP.isAltitudeValid()) {
             // Bandaid fix for ATAK-8373
             // First GPS point has an altitude of zero for some reason
+            // Now a few releases later the altitude is NaN (ATAK-12958)
             Log.w(TAG, "Ignoring invalid altitude on first GPS point: " + newP);
             return;
         }
 
         Crumb crumb;
-        int color = 0xFF0000FF;
+        int color = Color.BLUE;
 
-        if (theTarget instanceof Marker) {
+        if (theTarget.hasMetaValue("crumbColor")) {
+            color = theTarget.getMetaInteger("crumbColor", Color.BLUE);
+        } else if (theTarget instanceof Marker) {
             Marker t = (Marker) theTarget;
             if (t.getMetaString("team", null) != null
                     && t.getIcon() != null) {

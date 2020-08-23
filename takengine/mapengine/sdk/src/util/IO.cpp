@@ -70,7 +70,7 @@ size_t DataInput::readFully(uint8_t *buf, size_t len)
 size_t DataInput::skip(size_t n)
     throw (IO_Error)
 {
-    uint8_t *discardBuf = new uint8_t[n];
+    auto *discardBuf = new uint8_t[n];
     size_t result = 0;
 
     try {
@@ -175,7 +175,7 @@ void DataInput::setSourceEndian(Endian e)
 }
 
 
-FileInput::FileInput() : f(NULL)
+FileInput::FileInput() : f(nullptr)
 {
 
 }
@@ -204,7 +204,7 @@ void FileInput::close()
     if (fclose(f) != 0)
         throw IO_Error("Error closing file");
     else
-        f = NULL;
+        f = nullptr;
 }
 
 uint8_t FileInput::readByte()
@@ -276,7 +276,7 @@ int64_t FileInput::tell()
 
 
 
-MemoryInput::MemoryInput() : bytes(NULL), curOffset(0), totalLen(0)
+MemoryInput::MemoryInput() : bytes(nullptr), curOffset(0), totalLen(0)
 {
 
 }
@@ -296,7 +296,7 @@ void MemoryInput::open(const uint8_t *buffer, size_t len)
 void MemoryInput::close()
     throw (IO_Error)
 {
-    bytes = NULL;
+    bytes = nullptr;
 }
 
 uint8_t MemoryInput::readByte()
@@ -346,7 +346,7 @@ ByteBufferInput::ByteBufferInput(atakmap::util::MemBufferT<uint8_t> *buffer)
 ByteBufferInput::~ByteBufferInput() { }
 
 void ByteBufferInput::close() throw (IO_Error) {
-    this->buffer = NULL;
+    this->buffer = nullptr;
 }
 
 size_t ByteBufferInput::read(uint8_t *buf, size_t len) throw (IO_Error) {
@@ -422,8 +422,7 @@ atakmap::util::createTempDir(const char* parentPath,
     // P_tmpdir doesn't exist.  Use TMP environment variable.
     static const char* P_tmpdir(std::getenv("TMP"));
 #endif
-    TAK::Engine::Thread::LockPtr lock(NULL, NULL);
-    TAK::Engine::Thread::Lock_create(lock, mtx);
+    TAK::Engine::Thread::Lock lock(mtx);
     for (int i = 0; i < 20; i++) {
 		typedef std::unique_ptr<char[]> mutable_buffer;
         std::ostringstream tmpStrm;
@@ -462,7 +461,7 @@ atakmap::util::createTempDir(const char* parentPath,
 
         return tmpPath.release();
     }
-    return NULL;
+    return nullptr;
 }
 
 std::string atakmap::util::trimASCII(const std::string &src)
@@ -486,7 +485,7 @@ std::string atakmap::util::trimASCII(const std::string &src)
 
 int atakmap::util::parseASCIIInt(const char *src) throw (std::out_of_range)
 {
-    char *end = NULL;
+    char *end = nullptr;
     const char *start = src;
     long v = strtol(start, &end, 10);
     if (((v == LONG_MAX || v == LONG_MIN) && errno == ERANGE) || v > INT_MAX || v < INT_MIN)
@@ -500,7 +499,7 @@ int atakmap::util::parseASCIIInt(const char *src) throw (std::out_of_range)
 double atakmap::util::parseASCIIDouble(const char *src) throw (std::out_of_range)
 {
     std::string trimmed = trimASCII(src);
-    char *end = NULL;
+    char *end = nullptr;
     const char *start = trimmed.c_str();
     errno = 0;
     double v = strtod(start, &end);

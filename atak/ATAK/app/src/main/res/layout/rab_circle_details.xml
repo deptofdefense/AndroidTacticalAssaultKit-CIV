@@ -164,7 +164,7 @@
                         android:textSize="@dimen/draper_verylarge_font"/>
 
                     <Spinner
-                        android:id="@+id/radiusUnitsSpinner" 
+                        android:id="@+id/radiusUnitsSpinner"
                         style="@style/darkButton"
                         android:maxLines="1"
                         android:layout_width="wrap_content"
@@ -230,6 +230,14 @@
                 android:id="@+id/remarksLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
+
+                <!-- This is where extra views go from tools or plugins -->
+                <com.atakmap.android.cotdetails.extras.ExtraDetailsLayout
+                    android:id="@+id/extrasLayout"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"/>
+
         </LinearLayout>
     </ScrollView>
 

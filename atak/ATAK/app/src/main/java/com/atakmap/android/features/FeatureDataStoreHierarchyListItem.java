@@ -27,14 +27,20 @@ import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.action.Visibility;
 import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem2;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.map.layer.feature.Adapters;
+import com.atakmap.map.layer.feature.AttributeSet;
 import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
+import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.FeatureCursor;
 import com.atakmap.map.layer.feature.FeatureDataStore;
+import com.atakmap.map.layer.feature.FeatureDataStore2;
+import com.atakmap.map.layer.feature.FeatureDefinition2;
 import com.atakmap.map.layer.feature.FeatureLayer;
 import com.atakmap.map.layer.feature.FeatureSet;
-import com.atakmap.map.layer.feature.FeatureDataStore.FeatureQueryParameters;
-import com.atakmap.map.layer.feature.FeatureDataStore.FeatureSetCursor;
-import com.atakmap.map.layer.feature.FeatureDataStore.FeatureSetQueryParameters;
+import com.atakmap.map.layer.feature.FeatureSetCursor;
+import com.atakmap.map.layer.feature.Utils;
+import com.atakmap.map.layer.feature.geometry.Geometry;
+import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.math.MathUtils;
 
 public class FeatureDataStoreHierarchyListItem extends
@@ -43,7 +49,7 @@ public class FeatureDataStoreHierarchyListItem extends
     private static final String TAG = "FeatureDataStoreHierarchyListItem";
 
     protected final Context context;
-    protected final FeatureDataStore spatialDb;
+    protected final FeatureDataStore2 spatialDb;
     private boolean rootsValid;
     private boolean validating = false;
     protected final String typeFilter;
@@ -63,13 +69,14 @@ public class FeatureDataStoreHierarchyListItem extends
     public FeatureDataStoreHierarchyListItem(FeatureDataStore spatialDb,
             String title, String iconUri, Context context,
             BaseAdapter listener, HierarchyListFilter filter) {
-        this(spatialDb, title, iconUri, null, null, context, listener, filter);
+        this(Adapters.adapt(spatialDb), title, iconUri, null, null, context,
+                listener, filter);
     }
 
     public FeatureDataStoreHierarchyListItem(FeatureLayer layer,
             String iconUri, Context context, BaseAdapter listener,
             HierarchyListFilter filter) {
-        this(layer.getDataStore(),
+        this(Adapters.adapt(layer.getDataStore()),
                 layer.getName(),
                 iconUri,
                 null,
@@ -79,7 +86,7 @@ public class FeatureDataStoreHierarchyListItem extends
                 filter);
     }
 
-    public FeatureDataStoreHierarchyListItem(FeatureDataStore spatialDb,
+    public FeatureDataStoreHierarchyListItem(FeatureDataStore2 spatialDb,
             String title,
             String iconUri,
             String typeFilter,
@@ -101,11 +108,11 @@ public class FeatureDataStoreHierarchyListItem extends
         this.supportedActions = new HashSet<>();
         this.supportedActions.add(Search.class);
         if (MathUtils.hasBits(this.spatialDb.getModificationFlags(),
-                FeatureDataStore.MODIFY_FEATURESET_DELETE) &&
+                FeatureDataStore2.MODIFY_FEATURESET_DELETE) &&
                 (this.spatialDb instanceof DataSourceFeatureDataStore))
             this.supportedActions.add(Delete.class);
-        if (MathUtils.hasBits(this.spatialDb.getVisibilitySettingsFlags(),
-                FeatureDataStore.VISIBILITY_SETTINGS_FEATURESET))
+        if (MathUtils.hasBits(this.spatialDb.getVisibilityFlags(),
+                FeatureDataStore2.VISIBILITY_SETTINGS_FEATURESET))
             this.supportedActions.add(Visibility.class);
 
         this.descendantCount = -1;
@@ -187,13 +194,14 @@ public class FeatureDataStoreHierarchyListItem extends
 
         //beginTimeMeasure(getTitle() + " rescanRoots()");
         List<PathEntry> roots = new ArrayList<>();
-        FeatureDataStore.FeatureSetCursor result = null;
+        FeatureSetCursor result = null;
         try {
             FeatureDataStore.FeatureSetQueryParameters params = new FeatureDataStore.FeatureSetQueryParameters();
             if (this.typeFilter != null)
                 params.types = Collections.singleton(this.typeFilter);
 
-            result = this.spatialDb.queryFeatureSets(params);
+            result = this.spatialDb
+                    .queryFeatureSets(Adapters.adapt(params, null));
 
             Map<File, PathEntry> fileToRoot = new HashMap<>();
 
@@ -229,6 +237,8 @@ public class FeatureDataStoreHierarchyListItem extends
                     return lhs.folder.compareToIgnoreCase(rhs.folder);
                 }
             });
+        } catch (DataStoreException dse) {
+            return true;
         } finally {
             if (result != null)
                 result.close();
@@ -266,13 +276,18 @@ public class FeatureDataStoreHierarchyListItem extends
     private int queryDescendants() {
         //beginTimeMeasure(getTitle() + " getDescendantCount()");
         try {
-            FeatureQueryParameters params = buildQueryParams();
+            FeatureDataStore.FeatureQueryParameters params = buildQueryParams();
             if (this.typeFilter != null)
                 params.types = Collections.singleton(this.typeFilter);
-            return this.spatialDb.queryFeaturesCount(params);
+            return this.spatialDb
+                    .queryFeaturesCount(Adapters.adapt(params, null));
+        } catch (DataStoreException dse) {
+            Log.e(TAG,
+                    "error occurred querying datastore: " + spatialDb.getUri());
         } finally {
             //endTimeMeasure(getTitle() + " getDescendantCount()");
         }
+        return 0;
     }
 
     private int queryVisible() {
@@ -283,10 +298,15 @@ public class FeatureDataStoreHierarchyListItem extends
                 params.types = Collections.singleton(this.typeFilter);
             params.visibleOnly = true;
             params.limit = 1;
-            return this.spatialDb.queryFeatureSetsCount(params);
+            return this.spatialDb
+                    .queryFeatureSetsCount(Adapters.adapt(params, null));
+        } catch (DataStoreException dse) {
+            Log.e(TAG,
+                    "error occurred querying datastore: " + spatialDb.getUri());
         } finally {
             //endTimeMeasure(getTitle() + " isVisible()");
         }
+        return 0;
     }
 
     @Override
@@ -335,7 +355,14 @@ public class FeatureDataStoreHierarchyListItem extends
         if (this.typeFilter != null)
             params.types = Collections.singleton(this.typeFilter);
 
-        this.spatialDb.setFeatureSetsVisible(params, visible);
+        try {
+            this.spatialDb.setFeatureSetsVisible(Adapters.adapt(params, null),
+                    visible);
+        } catch (DataStoreException dse) {
+            Log.e(TAG,
+                    "error occurred querying datastore: " + spatialDb.getUri());
+            return true;
+        }
         this.vizCount = visible ? 1 : 0;
         refresh(this.filter);
         return true;
@@ -354,7 +381,7 @@ public class FeatureDataStoreHierarchyListItem extends
 
     @Override
     public Set<HierarchyListItem> find(String terms) {
-        FeatureQueryParameters params = buildQueryParams();
+        FeatureDataStore.FeatureQueryParameters params = buildQueryParams();
         if (terms.length() >= 2)
             terms = "%" + terms + "%";
         else
@@ -364,7 +391,7 @@ public class FeatureDataStoreHierarchyListItem extends
         if (this.typeFilter != null)
             params.types = Collections.singleton(this.typeFilter);
 
-        params.ignoredFields = FeatureQueryParameters.FIELD_ATTRIBUTES;
+        params.ignoredFields = FeatureDataStore.FeatureQueryParameters.FIELD_ATTRIBUTES;
 
         params.order = new LinkedList<>();
         params.order
@@ -377,12 +404,15 @@ public class FeatureDataStoreHierarchyListItem extends
         Set<HierarchyListItem> retval = new HashSet<>();
         FeatureCursor result = null;
         try {
-            result = this.spatialDb.queryFeatures(params);
+            result = this.spatialDb.queryFeatures(Adapters.adapt(params, null));
             while (result.moveToNext()) {
                 retval.add(new FeatureHierarchyListItem(
                         this.spatialDb,
                         result.get()));
             }
+        } catch (DataStoreException dse) {
+            Log.e(TAG,
+                    "error occurred querying datastore: " + spatialDb.getUri());
         } finally {
             if (result != null)
                 result.close();
@@ -396,36 +426,51 @@ public class FeatureDataStoreHierarchyListItem extends
     @Override
     public boolean delete() {
         if (this.typeFilter != null) {
-            this.spatialDb.deleteAllFeatureSets();
+            try {
+                Utils.deleteAllFeatureSets(spatialDb);
+            } catch (DataStoreException dse) {
+                Log.e(TAG, "error deleting all featuresets from the datastore: "
+                        + spatialDb.getUri());
+            }
         } else {
             Set<Long> fsids = new HashSet<>();
 
             FeatureSetCursor result = null;
             try {
-                FeatureSetQueryParameters params = new FeatureSetQueryParameters();
+                FeatureDataStore.FeatureSetQueryParameters params = new FeatureDataStore.FeatureSetQueryParameters();
                 params.types = Collections.singleton(this.typeFilter);
 
-                result = this.spatialDb.queryFeatureSets(params);
+                result = this.spatialDb
+                        .queryFeatureSets(Adapters.adapt(params, null));
                 while (result.moveToNext())
                     fsids.add(result.get().getId());
+            } catch (DataStoreException dse) {
+                Log.e(TAG, "error deleting a featureset from the datastore: "
+                        + spatialDb.getUri());
             } finally {
                 if (result != null)
                     result.close();
             }
 
-            for (Long fsid : fsids)
-                this.spatialDb.deleteFeatureSet(fsid);
+            for (Long fsid : fsids) {
+                try {
+                    this.spatialDb.deleteFeatureSet(fsid);
+                } catch (DataStoreException dse) {
+                    Log.e(TAG, "error occurred querying datastore: "
+                            + spatialDb.getUri());
+                }
+            }
         }
         return true;
     }
 
-    public FeatureQueryParameters buildQueryParams() {
+    public FeatureDataStore.FeatureQueryParameters buildQueryParams() {
         return buildQueryParams(this.filter);
     }
 
     /**************************************************************************/
 
-    static boolean isEmpty(FeatureDataStore spatialDb,
+    static boolean isEmpty(FeatureDataStore2 spatialDb,
             FeatureDataStorePathUtils.PathEntry entry,
             HierarchyListFilter filter) {
         FeatureDataStore.FeatureQueryParameters params = buildQueryParams(
@@ -444,13 +489,18 @@ public class FeatureDataStoreHierarchyListItem extends
             }
         }
         params.limit = 1;
-        return spatialDb.queryFeaturesCount(params) <= 0;
+        try {
+            return spatialDb
+                    .queryFeaturesCount(Adapters.adapt(params, null)) <= 0;
+        } catch (DataStoreException e) {
+            return true;
+        }
     }
 
     /**************************************************************************/
 
     private static class ContentChangedHandler implements
-            FeatureDataStore.OnDataStoreContentChangedListener {
+            FeatureDataStore2.OnDataStoreContentChangedListener {
         private final WeakReference<FeatureDataStoreHierarchyListItem> ref;
         private final String refUID;
 
@@ -461,8 +511,32 @@ public class FeatureDataStoreHierarchyListItem extends
         }
 
         @Override
+        public void onFeatureInserted(FeatureDataStore2 dataStore, long fid,
+                FeatureDefinition2 def, long version) {
+
+        }
+
+        @Override
+        public void onFeatureUpdated(FeatureDataStore2 dataStore, long fid,
+                int modificationMask, String name, Geometry geom, Style style,
+                AttributeSet attribs, int attribsUpdateType) {
+
+        }
+
+        @Override
+        public void onFeatureDeleted(FeatureDataStore2 dataStore, long fid) {
+
+        }
+
+        @Override
+        public void onFeatureVisibilityChanged(FeatureDataStore2 dataStore,
+                long fid, boolean visible) {
+
+        }
+
+        @Override
         public void onDataStoreContentChanged(
-                final FeatureDataStore dataStore) {
+                final FeatureDataStore2 dataStore) {
             final FeatureDataStoreHierarchyListItem item = this.ref.get();
 
             rootsCache.remove(this.refUID);

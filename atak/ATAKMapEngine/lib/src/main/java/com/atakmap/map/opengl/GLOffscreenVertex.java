@@ -11,7 +11,6 @@ import com.atakmap.math.Statistics;
  * This is a simple structure used by the {@link GLMapView} to represent a vertex in the offscreen
  * surface for rendering
  *
- * @author CSRA
  */
 public class GLOffscreenVertex
 {

@@ -13,7 +13,7 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
-import android.support.media.ExifInterface;
+import androidx.exifinterface.media.ExifInterface;
 import android.preference.PreferenceManager;
 import android.util.DisplayMetrics;
 import android.view.GestureDetector;
@@ -496,7 +496,7 @@ public abstract class ImageContainer implements OnTouchListener,
             return;
         final HashtagEditText caption = layout.findViewById(R.id.image_caption);
         File dir = bmpFile.getParentFile();
-        String name = bmpFile.getName().toLowerCase();
+        String name = bmpFile.getName().toLowerCase(LocaleUtil.getCurrent());
         if (JPEG_FilenameFilter.accept(dir, name))
             populateEXIFData(layout, ExifHelper.getExifMetadata(bmpFile));
         else if (NITF_FilenameFilter.accept(dir, name))

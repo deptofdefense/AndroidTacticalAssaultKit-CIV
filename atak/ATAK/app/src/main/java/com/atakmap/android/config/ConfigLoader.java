@@ -2,6 +2,7 @@
 package com.atakmap.android.config;
 
 import android.net.Uri;
+import android.util.Base64;
 
 import com.atakmap.android.maps.assets.MapAssets;
 
@@ -9,8 +10,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
 import javax.xml.XMLConstants;
@@ -18,6 +21,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.xml.XMLUtils;
 
 /**
  * Loads complex objects of a given type by delegating to registered ConfigFactory objects.
@@ -44,23 +48,33 @@ public class ConfigLoader<T> {
 
     }
 
+    public T loadFromConfigResource(String resource,
+            ConfigEnvironment configEnvironment)
+            throws IOException, ParserConfigurationException, SAXException {
+        if (resource.endsWith(".xml")) {
+            return loadFromConfigUri(Uri.parse(resource), configEnvironment);
+        } else if (resource.startsWith("base64:/")) {
+            resource = resource.substring(8);
+            if (resource.startsWith("/")) {
+                resource = resource.substring(1);
+            }
+            final byte[] a = Base64.decode(resource, Base64.URL_SAFE
+                    | Base64.NO_WRAP);
+            return loadFromConfig(new ByteArrayInputStream(a),
+                    configEnvironment);
+        } else {
+            return loadFromConfig(new ByteArrayInputStream(
+                    resource.getBytes(StandardCharsets.UTF_8)),
+                    configEnvironment);
+        }
+    }
+
     public T loadFromConfig(InputStream in,
             ConfigEnvironment configEnvironment)
             throws IOException, ParserConfigurationException, SAXException {
         T t = null;
         try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            try {
-                dbf.setFeature(
-                        "http://apache.org/xml/features/disallow-doctype-decl",
-                        true);
-            } catch (Exception ignore) {
-                Log.d(TAG, "exception occured setting property on factory");
-            }
-            try {
-                dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            } catch (Exception ignored) {
-            }
+            DocumentBuilderFactory dbf = XMLUtils.getDocumenBuilderFactory();
 
             final DocumentBuilder db = dbf.newDocumentBuilder();
             if (in != null) {

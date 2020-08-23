@@ -2,6 +2,9 @@
 
 #include "common.h"
 #include "interop/Pointer.h"
+#include "interop/InterfaceMarshalContext.h"
+#include "interop/core/ManagedLayer.h"
+#include "interop/core/ManagedVisibilityListener.h"
 
 using namespace TAK::Engine::Core;
 using namespace TAK::Engine::Util;
@@ -35,10 +38,36 @@ namespace
         jmethodID ctor;
     } NativeProjection_class;
 
+    struct
+    {
+        jclass id;
+        jfieldID pointer;
+        jmethodID ctor;
+    } MapSceneModel_class;
+    struct
+    {
+        jclass id;
+        jfieldID pointer;
+        jmethodID ctor;
+    } NativeLayer_class;
+
+    struct
+    {
+        jclass id;
+        jfieldID pointer;
+        jmethodID ctor;
+    } NativeLayer_NativeOnLayerVisibilityChangedListener_class;
+
+    InterfaceMarshalContext<atakmap::core::Layer> Layer_interop;
+    InterfaceMarshalContext<atakmap::core::Layer::VisibilityListener> Layer_VisibilityListener_interop;
+
     void GeoPoint_interop_entry(JNIEnv *env) NOTHROWS;
     bool GeoPoint_class_init(JNIEnv *env) NOTHROWS;
     void NativeProjection_interop_entry(JNIEnv *env) NOTHROWS;
     bool NativeProjection_class_init(JNIEnv *env) NOTHROWS;
+
+    bool checkInit(JNIEnv &env) NOTHROWS;
+    bool Interop_class_init(JNIEnv &env) NOTHROWS;
 }
 
 TAKErr TAKEngineJNI::Interop::Core::Interop_copy(jobject value, JNIEnv *env, const GeoPoint2 &p) NOTHROWS
@@ -140,7 +169,121 @@ jobject TAKEngineJNI::Interop::Core::Interop_wrap(JNIEnv *env, const std::shared
     NativeProjection_interop_entry(env);
     return env->NewObject(NativeProjection_class.id, NativeProjection_class.ctor, mpointer);
 }
-            
+
+// MapSceneModel interop
+TAKErr TAKEngineJNI::Interop::Core::Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const MapSceneModel2 &cmodel) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    MapSceneModel2Ptr retval(new MapSceneModel2(cmodel), Memory_deleter_const<MapSceneModel2>);
+    Java::JNILocalRef mpointer(env, NewPointer(&env, std::move(retval)));
+    value = Java::JNILocalRef(env, env.NewObject(MapSceneModel_class.id, MapSceneModel_class.ctor, mpointer.release(), NULL));
+    return TE_Ok;
+}
+TAKErr TAKEngineJNI::Interop::Core::Interop_marshal(std::shared_ptr<TAK::Engine::Core::MapSceneModel2> &value, JNIEnv &env, jobject mmodel) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    if(!mmodel)
+        return TE_InvalidArg;
+
+    return Pointer_get<MapSceneModel2>(value, env, env.GetObjectField(mmodel, MapSceneModel_class.pointer));
+}
+
+// Layer interop
+TAKErr TAKEngineJNI::Interop::Core::Interop_marshal(std::shared_ptr<atakmap::core::Layer> &value, JNIEnv &env, jobject mlayer) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    return Layer_interop.marshal<ManagedLayer>(value, env, mlayer);
+}
+TAKErr TAKEngineJNI::Interop::Core::Interop_marshal(atakmap::core::LayerPtr &value, JNIEnv &env, jobject mlayer) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    return Layer_interop.marshal<ManagedLayer>(value, env, mlayer);
+}
+TAKErr TAKEngineJNI::Interop::Core::Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const std::shared_ptr<atakmap::core::Layer> &clayer) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    return Layer_interop.marshal<ManagedLayer>(value, env, clayer);
+}
+TAKErr TAKEngineJNI::Interop::Core::Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, atakmap::core::LayerPtr &&clayer) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    return Layer_interop.marshal<ManagedLayer>(value, env, std::move(clayer));
+}
+TAKErr TAKEngineJNI::Interop::Core::Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const atakmap::core::Layer &clayer) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    return Layer_interop.marshal<ManagedLayer>(value, env, clayer);
+}
+template<>
+TAKErr TAKEngineJNI::Interop::Core::Interop_isWrapper<atakmap::core::Layer>(bool *value, JNIEnv &env, jobject mlayer) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    *value = Layer_interop.isWrapper(env, mlayer);
+    return TE_Ok;
+}
+TAKErr TAKEngineJNI::Interop::Core::Interop_isWrapper(bool *value, JNIEnv &env, const atakmap::core::Layer &clayer) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    *value = Layer_interop.isWrapper<ManagedLayer>(clayer);
+    return TE_Ok;
+}
+
+// Layer::VisibilityListener interop
+TAKErr TAKEngineJNI::Interop::Core::Interop_marshal(std::shared_ptr<atakmap::core::Layer::VisibilityListener> &value, JNIEnv &env, jobject mlistener) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    return Layer_VisibilityListener_interop.marshal<ManagedVisibilityListener>(value, env, mlistener);
+}
+TAKErr TAKEngineJNI::Interop::Core::Interop_marshal(std::unique_ptr<atakmap::core::Layer::VisibilityListener, void(*)(const atakmap::core::Layer::VisibilityListener *)> &value, JNIEnv &env, jobject mlistener) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    return Layer_VisibilityListener_interop.marshal<ManagedVisibilityListener>(value, env, mlistener);
+}
+TAKErr TAKEngineJNI::Interop::Core::Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const std::shared_ptr<atakmap::core::Layer::VisibilityListener> &clistener) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    return Layer_VisibilityListener_interop.marshal<ManagedVisibilityListener>(value, env, clistener);
+}
+TAKErr TAKEngineJNI::Interop::Core::Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, std::unique_ptr<atakmap::core::Layer::VisibilityListener, void(*)(const atakmap::core::Layer::VisibilityListener *)> &&clistener) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    return Layer_VisibilityListener_interop.marshal<ManagedVisibilityListener>(value, env, std::move(clistener));
+}
+TAKErr TAKEngineJNI::Interop::Core::Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const atakmap::core::Layer::VisibilityListener &clistener) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    return Layer_VisibilityListener_interop.marshal<ManagedVisibilityListener>(value, env, clistener);
+}
+template<>
+TAKErr TAKEngineJNI::Interop::Core::Interop_isWrapper<atakmap::core::Layer::VisibilityListener>(bool *value, JNIEnv &env, jobject mlistener) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    *value = Layer_VisibilityListener_interop.isWrapper(env, mlistener);
+    return TE_Ok;
+}
+TAKErr TAKEngineJNI::Interop::Core::Interop_isWrapper(bool *value, JNIEnv &env, const atakmap::core::Layer::VisibilityListener &clistener) NOTHROWS
+{
+    if(!checkInit(env))
+        return TE_IllegalState;
+    *value = Layer_VisibilityListener_interop.isWrapper<ManagedVisibilityListener>(clistener);
+    return TE_Ok;
+}
+
 namespace
 {
     void GeoPoint_interop_entry(JNIEnv *env) NOTHROWS
@@ -174,6 +317,35 @@ namespace
     {
         NativeProjection_class.id = ATAKMapEngineJNI_findClass(env, "com/atakmap/map/projection/NativeProjection");
         NativeProjection_class.ctor = env->GetMethodID(NativeProjection_class.id, "<init>", "(Lcom/atakmap/interop/Pointer;)V");
+
+        return true;
+    }
+
+    bool checkInit(JNIEnv &env) NOTHROWS
+    {
+        static bool clinit = Interop_class_init(env);
+        return clinit;
+    }
+    bool Interop_class_init(JNIEnv &env) NOTHROWS
+    {
+#define SET_METHOD_DEFINITION(c, m, sig) \
+    c.m = env->GetMethodID(c.id, #m, sig)
+
+        MapSceneModel_class.id = ATAKMapEngineJNI_findClass(&env, "com/atakmap/map/MapSceneModel");
+        MapSceneModel_class.pointer = env.GetFieldID(MapSceneModel_class.id, "pointer", "Lcom/atakmap/interop/Pointer;");
+        MapSceneModel_class.ctor = env.GetMethodID(MapSceneModel_class.id, "<init>", "(Lcom/atakmap/interop/Pointer;Ljava/lang/Object;)V");
+
+        NativeLayer_class.id = ATAKMapEngineJNI_findClass(&env, "com/atakmap/map/layer/NativeLayer");
+        NativeLayer_class.pointer = env.GetFieldID(NativeLayer_class.id, "pointer", "Lcom/atakmap/interop/Pointer;");
+        NativeLayer_class.ctor = env.GetMethodID(NativeLayer_class.id, "<init>", "(Lcom/atakmap/interop/Pointer;Ljava/lang/Object;)V");
+
+        Layer_interop.init(env, NativeLayer_class.id, NativeLayer_class.pointer, NativeLayer_class.ctor);
+
+        NativeLayer_NativeOnLayerVisibilityChangedListener_class.id = ATAKMapEngineJNI_findClass(&env, "com/atakmap/map/layer/NativeLayer$NativeOnLayerVisibilityChangedListener");
+        NativeLayer_NativeOnLayerVisibilityChangedListener_class.pointer = env.GetFieldID(NativeLayer_NativeOnLayerVisibilityChangedListener_class.id, "pointer", "Lcom/atakmap/interop/Pointer;");
+        NativeLayer_NativeOnLayerVisibilityChangedListener_class.ctor = env.GetMethodID(NativeLayer_NativeOnLayerVisibilityChangedListener_class.id, "<init>", "(Lcom/atakmap/interop/Pointer;Ljava/lang/Object;)V");
+
+        Layer_VisibilityListener_interop.init(env, NativeLayer_NativeOnLayerVisibilityChangedListener_class.id, NativeLayer_NativeOnLayerVisibilityChangedListener_class.pointer, NativeLayer_NativeOnLayerVisibilityChangedListener_class.ctor);
 
         return true;
     }

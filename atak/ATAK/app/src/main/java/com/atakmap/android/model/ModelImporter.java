@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 
 import com.atakmap.android.importexport.ImportExportMapComponent;
+import com.atakmap.android.model.opengl.GLModelLayer;
 import com.atakmap.app.R;
 import com.atakmap.android.importexport.AbstractImporter;
 import com.atakmap.android.util.NotificationUtil;
@@ -16,6 +17,7 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.feature.AttributeSet;
 import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.Feature;
+import com.atakmap.map.layer.feature.FeatureCursor;
 import com.atakmap.map.layer.feature.FeatureDataStore;
 import com.atakmap.map.layer.feature.FeatureDataStore2;
 import com.atakmap.map.layer.feature.FeatureDataStore2.FeatureSetQueryParameters;
@@ -95,7 +97,9 @@ public final class ModelImporter extends AbstractImporter {
                 .reserveNotifyId();
 
         try {
-            final String path = uri.getPath();
+            final String path = (new File(uri.getPath())).exists()
+                    ? uri.getPath()
+                    : uri.toString();
             FeatureSetQueryParameters params = new FeatureSetQueryParameters();
             params.names = Collections.singleton(path);
             params.limit = 1;
@@ -272,8 +276,10 @@ public final class ModelImporter extends AbstractImporter {
         String path;
         if (uri.toString().equals(URI_ALL_MODELS))
             path = "*";
-        else
+        else if (uri.getScheme() == null || uri.getScheme().equals("file"))
             path = uri.getPath();
+        else
+            path = uri.toString();
         if (FileSystemUtils.isEmpty(path))
             return false;
 
@@ -287,14 +293,36 @@ public final class ModelImporter extends AbstractImporter {
 
         List<File> removedFiles = new ArrayList<>();
         try {
-            FeatureSetCursor c = this.modelDataStore.queryFeatureSets(params);
-            while (c.moveToNext()) {
-                // Delete associated files
-                FeatureSet fs = c.get();
-                if (fs == null)
-                    continue;
-                FileSystemUtils.delete(fs.getName());
-                removedFiles.add(new File(fs.getName()));
+            FeatureSetCursor c = null;
+            try {
+                c = this.modelDataStore.queryFeatureSets(params);
+                while (c.moveToNext()) {
+                    // Delete associated files
+                    FeatureSet fs = c.get();
+                    if (fs == null)
+                        continue;
+                    // clean up the cache dir
+                    FeatureCursor features = null;
+                    try {
+                        FeatureDataStore2.FeatureQueryParameters fparams = new FeatureDataStore2.FeatureQueryParameters();
+                        fparams.featureSetFilter = new FeatureSetQueryParameters();
+                        fparams.featureSetFilter.ids = Collections
+                                .singleton(fs.getId());
+                        features = this.modelDataStore.queryFeatures(fparams);
+                        while (features.moveToNext())
+                            FileSystemUtils.delete(
+                                    GLModelLayer.getCacheDir(features.get()));
+                    } finally {
+                        if (features == null)
+                            features.close();
+                    }
+                    FileSystemUtils.delete(fs.getName());
+
+                    removedFiles.add(new File(fs.getName()));
+                }
+            } finally {
+                if (c != null)
+                    c.close();
             }
             // Delete entry from database
             this.modelDataStore.deleteFeatureSets(params);

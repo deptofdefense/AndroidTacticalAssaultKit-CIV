@@ -1,17 +1,31 @@
 package com.atakmap.map.layer.feature;
 
+import com.atakmap.coremap.log.Log;
+import com.atakmap.interop.InteropCleaner;
+import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
+import com.atakmap.lang.ref.Cleaner;
+import com.atakmap.util.Disposable;
 import com.atakmap.util.ReadWriteLock;
 
 import java.io.File;
 import java.io.IOException;
 
-public class NativeFeatureDataSource implements FeatureDataSource {
+public class NativeFeatureDataSource implements FeatureDataSource, Disposable {
+
+    final static NativePeerManager.Cleaner CLEANER = new NativePeerManager.Cleaner() {
+        @Override
+        protected void run(Pointer pointer, Object opaque) {
+            FeatureDataSource_destruct(pointer);
+        }
+    };
 
     final ReadWriteLock rwlock = new ReadWriteLock();
+    private final Cleaner cleaner;
     Pointer pointer;
 
     protected NativeFeatureDataSource(Pointer pointer) {
+        cleaner = NativePeerManager.register(this, pointer, rwlock, null, CLEANER);
         this.pointer = pointer;
     }
 
@@ -54,25 +68,28 @@ public class NativeFeatureDataSource implements FeatureDataSource {
     }
 
     @Override
-    public final void finalize() {
-        this.rwlock.acquireWrite();
-        try {
-            if(this.pointer.raw != 0L)
-                FeatureDataSource_destruct(this.pointer);
-        } finally {
-            this.rwlock.releaseWrite();
-        }
-        try {
-            super.finalize();
-        } catch(Throwable ignored) {}
+    public final void dispose() {
+        if(cleaner != null)
+            cleaner.clean();
     }
 
     final static class NativeContent implements FeatureDataSource.Content {
+        final static String TAG = "NativeContent";
+
+        final static NativePeerManager.Cleaner CLEANER = new NativePeerManager.Cleaner() {
+            @Override
+            protected void run(Pointer pointer, Object opaque) {
+                Content_destruct(pointer);
+            }
+        };
 
         final ReadWriteLock rwlock = new ReadWriteLock();
         Pointer pointer;
+        Cleaner cleaner;
 
         NativeContent(Pointer pointer) {
+            cleaner = NativePeerManager.register(this, pointer, rwlock, null, CLEANER);
+
             this.pointer = pointer;
         }
 
@@ -193,21 +210,14 @@ public class NativeFeatureDataSource implements FeatureDataSource {
 
         @Override
         public void close() {
-            this.finalize();
+            if(cleaner != null)
+                cleaner.clean();
         }
 
         @Override
         public void finalize() {
-            this.rwlock.acquireWrite();
-            try {
-                if(this.pointer.raw != 0L)
-                    Content_destruct(this.pointer);
-            } finally {
-                this.rwlock.releaseWrite();
-            }
-            try {
-                super.finalize();
-            } catch(Throwable ignored) {}
+            if(this.pointer.raw != 0L)
+                Log.w(TAG, "Native FeatureDataSource.Content leaked");
         }
     }
 

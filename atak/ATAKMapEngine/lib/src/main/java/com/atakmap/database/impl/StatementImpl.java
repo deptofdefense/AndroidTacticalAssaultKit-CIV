@@ -124,16 +124,9 @@ final class StatementImpl implements StatementIface {
     }
 
     @Override
-    protected void finalize() throws Throwable {
-        this.rwlock.acquireRead();
-        try {
-            if(this.pointer.raw != 0L)
-                Log.w("StatementImpl", "Statement leaked");
-        } finally {
-            this.rwlock.releaseRead();
-        }
-
-        super.finalize();
+    protected final void finalize() {
+        if(this.pointer.raw != 0L)
+            Log.w("StatementImpl", "Statement leaked");
     }
 
     static native void destruct(Pointer pointer);

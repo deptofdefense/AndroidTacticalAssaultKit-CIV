@@ -24,6 +24,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.atakmap.android.contact.ContactPresenceDropdown;
+import com.atakmap.android.cotdetails.extras.ExtraDetailsLayout;
 import com.atakmap.android.drawing.details.GenericDetailsView;
 import com.atakmap.android.dropdown.DropDown.OnStateListener;
 import com.atakmap.android.dropdown.DropDownReceiver;
@@ -92,6 +93,8 @@ public class RangeAndBearingDropDown extends DropDownReceiver implements
     private TextView _etaTitle;
     private TextView _etaText;
     private boolean _showEta;
+
+    private ExtraDetailsLayout _extrasLayout;
 
     private int _paddingValue;
 
@@ -286,6 +289,8 @@ public class RangeAndBearingDropDown extends DropDownReceiver implements
         _paddingValue = _startPointButton.getPaddingLeft();
 
         rabtable = new RangeAndBearingTableHandler(_dropDownView);
+
+        _extrasLayout = _dropDownView.findViewById(R.id.extrasLayout);
     }
 
     @Override
@@ -415,6 +420,8 @@ public class RangeAndBearingDropDown extends DropDownReceiver implements
         } else {
             _etaParent.setVisibility(View.GONE);
         }
+
+        _extrasLayout.setItem(_rabItem);
     }
 
     private void populateLocationWidgets() {

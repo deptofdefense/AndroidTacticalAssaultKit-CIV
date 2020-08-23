@@ -405,7 +405,7 @@
                 android:textSize="@dimen/draper_title_font"
                 android:contentDescription="@string/summary"/>
 
-            <!-- Extended info for plugins and tools -->
+            <!-- Extended info for plugins and tools (legacy; only supported by marker details) -->
             <LinearLayout
                 android:id="@+id/extendedCotInfo"
                 android:layout_width="fill_parent"
@@ -413,6 +413,13 @@
                 android:padding="6dp"
                 android:orientation="vertical"/>
 
+            <!-- This is where extra views go from tools or plugins -->
+            <com.atakmap.android.cotdetails.extras.ExtraDetailsLayout
+                android:id="@+id/extrasLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/auto_space_big"
+                android:orientation="vertical"/>
             
             <!-- Last seen -->
             <TextView
@@ -423,7 +430,6 @@
                 android:text="@string/last_report"
                 android:textColor="#FFF"
                 android:textSize="@dimen/draper_font"/>
-            
             
         </LinearLayout>
     </ScrollView>

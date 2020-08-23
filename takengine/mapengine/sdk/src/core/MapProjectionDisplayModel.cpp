@@ -54,8 +54,8 @@ TAKErr TAK::Engine::Core::MapProjectionDisplayModel_registerModel(const std::sha
 {
     if (!model.get())
         return TE_InvalidArg;
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, mutex());
+    Lock lock(mutex());
+    TE_CHECKRETURN_CODE(lock.status);
     registry()[model->srid] = model;
     return TE_Ok;
 }
@@ -63,8 +63,8 @@ TAKErr TAK::Engine::Core::MapProjectionDisplayModel_registerModel(const std::sha
 
 TAKErr TAK::Engine::Core::MapProjectionDisplayModel_unregisterModel(MapProjectionDisplayModel &model) NOTHROWS
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, mutex());
+    Lock lock(mutex());
+    TE_CHECKRETURN_CODE(lock.status);
     std::map<int, std::shared_ptr<MapProjectionDisplayModel>> &reg = registry();
     std::map<int, std::shared_ptr<MapProjectionDisplayModel>>::iterator entry;
     entry = reg.find(model.srid);
@@ -77,8 +77,8 @@ TAKErr TAK::Engine::Core::MapProjectionDisplayModel_unregisterModel(MapProjectio
 
 TAKErr TAK::Engine::Core::MapProjectionDisplayModel_getModel(std::shared_ptr<MapProjectionDisplayModel> &value, const int srid) NOTHROWS
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, mutex());
+    Lock lock(mutex());
+    TE_CHECKRETURN_CODE(lock.status);
     std::map<int, std::shared_ptr<MapProjectionDisplayModel>> &reg = registry();
     std::map<int, std::shared_ptr<MapProjectionDisplayModel>>::iterator it;
     it = reg.find(srid);

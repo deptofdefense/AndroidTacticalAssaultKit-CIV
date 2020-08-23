@@ -24,18 +24,18 @@ namespace
 
 MeshTransformOptions::MeshTransformOptions() NOTHROWS :
     srid(-1),
-    localFrame(NULL, NULL),
-    layout(NULL, NULL)
+    localFrame(nullptr, nullptr),
+    layout(nullptr, nullptr)
 {}
 MeshTransformOptions::MeshTransformOptions(const int srid_) NOTHROWS :
     srid(srid_),
-    localFrame(NULL, NULL),
-    layout(NULL, NULL)
+    localFrame(nullptr, nullptr),
+    layout(nullptr, nullptr)
 {}
 MeshTransformOptions::MeshTransformOptions(const int srid_, const Matrix2 &localFrame_) NOTHROWS :
     srid(srid_),
     localFrame(new Matrix2(localFrame_), Memory_deleter_const<Matrix2>),
-    layout(NULL, NULL)
+    layout(nullptr, nullptr)
 {}
 MeshTransformOptions::MeshTransformOptions(const int srid_, const Matrix2 &localFrame_, const VertexDataLayout &layout_) :
     srid(-1),
@@ -44,18 +44,18 @@ MeshTransformOptions::MeshTransformOptions(const int srid_, const Matrix2 &local
 {}
 MeshTransformOptions::MeshTransformOptions(const int srid_, const VertexDataLayout &layout_) NOTHROWS :
     srid(srid_),
-    localFrame(NULL, NULL),
+    localFrame(nullptr, nullptr),
     layout(new VertexDataLayout(layout_), Memory_deleter_const<VertexDataLayout>)
 {}
 MeshTransformOptions::MeshTransformOptions(const VertexDataLayout &layout_) NOTHROWS :
     srid(-1),
-    localFrame(NULL, NULL),
+    localFrame(nullptr, nullptr),
     layout(new VertexDataLayout(layout_), Memory_deleter_const<VertexDataLayout>)
 {}
 MeshTransformOptions::MeshTransformOptions(const Matrix2 &localFrame_) NOTHROWS :
     srid(-1),
     localFrame(new Matrix2(localFrame_), Memory_deleter_const<Matrix2>),
-    layout(NULL, NULL)
+    layout(nullptr, nullptr)
 {}
 MeshTransformOptions::MeshTransformOptions(const Matrix2 &localFrame_, const VertexDataLayout &layout_) :
     srid(-1),
@@ -64,8 +64,8 @@ MeshTransformOptions::MeshTransformOptions(const Matrix2 &localFrame_, const Ver
 {}
 MeshTransformOptions::MeshTransformOptions(const MeshTransformOptions &other) NOTHROWS :
     srid(other.srid),
-    localFrame(other.localFrame.get() ? new Matrix2(*other.localFrame) : NULL, Memory_deleter_const<Matrix2>),
-    layout(other.layout.get() ? new VertexDataLayout(*other.layout) : NULL, Memory_deleter_const<VertexDataLayout>)
+    localFrame(other.localFrame.get() ? new Matrix2(*other.localFrame) : nullptr, Memory_deleter_const<Matrix2>),
+    layout(other.layout.get() ? new VertexDataLayout(*other.layout) : nullptr, Memory_deleter_const<VertexDataLayout>)
 {}
 MeshTransformOptions::~MeshTransformOptions() NOTHROWS
 {}
@@ -85,8 +85,8 @@ TAKErr TAK::Engine::Model::Mesh_transform(MeshPtr &value, MeshTransformOptions *
     else
         valueOpts->srid = dstOpts.srid;
 
-    Projection2Ptr srcProj(NULL, NULL);
-    Projection2Ptr dstProj(NULL, NULL);
+    Projection2Ptr srcProj(nullptr, nullptr);
+    Projection2Ptr dstProj(nullptr, nullptr);
     if (srcOpts.srid != valueOpts->srid) {
         code = ProjectionFactory3_create(srcProj, srcOpts.srid);
         TE_CHECKRETURN_CODE(code);
@@ -163,7 +163,7 @@ TAKErr TAK::Engine::Model::Mesh_transform(MeshPtr &value, MeshTransformOptions *
                 srcLocalCenter.y - scratch.y,
                 srcLocalCenter.z - scratch.z);
         }
-    } else {
+    } else if(dstOpts.localFrame.get()) {
         valueOpts->localFrame = Matrix2Ptr(new Matrix2(*dstOpts.localFrame), Memory_deleter_const<Matrix2>);
     }
 
@@ -208,14 +208,14 @@ TAKErr TAK::Engine::Model::Mesh_transform(MeshPtr &value, MeshTransformOptions *
         TE_CHECKRETURN_CODE(code);
     }
 
-    std:size_t updateInterval = std::max(src.getNumVertices() / 200u, (size_t)1u);
+    size_t updateInterval = std::max(src.getNumVertices() / 200u, (size_t)1u);
 
     Point2<double> pos;
     array_ptr<float> uv(new float[16]);
     
     Point2<float> dir;
     unsigned int color = -1;
-    for (int i = 0; i < src.getNumVertices(); i++) {
+    for (std::size_t i = 0; i < src.getNumVertices(); i++) {
         if (ProcessingCallback_isCanceled(callback))
             return TE_Canceled;
 
@@ -229,11 +229,11 @@ TAKErr TAK::Engine::Model::Mesh_transform(MeshPtr &value, MeshTransformOptions *
         }
 #define FETCH_UV(teva) \
     if (ATTRS_HAS_BITS(srcAttrs, teva)) { \
-        Point2<float> uv; \
-        code = src.getTextureCoordinate(&uv, teva, i); \
+        Point2<float> uv##teva; \
+        code = src.getTextureCoordinate(&uv##teva, teva, i); \
         TE_CHECKBREAK_CODE(code); \
-        *texuv++ = uv.x; \
-        *texuv++ = uv.y; \
+        *texuv++ = uv##teva.x; \
+        *texuv++ = uv##teva.y; \
     }
         FETCH_UV(TEVA_TexCoord0);
         FETCH_UV(TEVA_TexCoord1);
@@ -286,13 +286,13 @@ TAKErr TAK::Engine::Model::Mesh_transform(MeshPtr &value, MeshTransformOptions *
         if ((i % updateInterval) == 0 && callback && callback->progress) {
             code = callback->progress(callback->opaque, (unsigned int)(((double)i / (double)src.getNumVertices()) * 100.0), 100);
             if (code == TE_Done)
-                callback = NULL;
+                callback = nullptr;
             code = TE_Ok;
         }
     }
     TE_CHECKRETURN_CODE(code);
     if (src.isIndexed()) {
-        const int numIndices = src.getNumIndices();
+        const size_t numIndices = src.getNumIndices();
         for (std::size_t i = 0; i < numIndices; i++) {
             std::size_t idx;
             code = src.getIndex(&idx, i);
@@ -333,11 +333,11 @@ TAKErr TAK::Engine::Model::Mesh_transform(Envelope2 *dstAABB, const Envelope2 &s
         TE_CHECKRETURN_CODE(code);
     }
     if(srcInfo.srid != dstInfo.srid) {
-        Projection2Ptr srcProj(NULL, NULL);
+        Projection2Ptr srcProj(nullptr, nullptr);
         code = ProjectionFactory3_create(srcProj, srcInfo.srid);
         TE_CHECKRETURN_CODE(code);
 
-        Projection2Ptr dstProj(NULL, NULL);
+        Projection2Ptr dstProj(nullptr, nullptr);
         code = ProjectionFactory3_create(dstProj, dstInfo.srid);
         TE_CHECKRETURN_CODE(code);
 

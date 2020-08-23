@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -59,7 +60,7 @@ public abstract class DatasetDescriptor {
     private final static int TYPE_IMAGE = 0;
     private final static int TYPE_MOSAIC = 1;
 
-    public final static String URI_CHARACTER_ENCODING = FileSystemUtils.UTF8_CHARSET;
+    public final static Charset URI_CHARACTER_ENCODING = FileSystemUtils.UTF8_CHARSET;
 
     /** the layer name */
     private final String _name;

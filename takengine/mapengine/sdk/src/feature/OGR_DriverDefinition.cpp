@@ -74,16 +74,16 @@ class DriverAdapter : public TAK::Engine::Feature::OGRDriverDefinition2
 {
 public:
     DriverAdapter(const char *filePath, const atakmap::feature::OGR_DriverDefinition *impl) NOTHROWS;
-    virtual ~DriverAdapter() NOTHROWS;
+    ~DriverAdapter() NOTHROWS override;
 public: // driver definition
-    virtual const char* getDriverName() const NOTHROWS;
-    virtual atakmap::feature::FeatureDataSource::FeatureDefinition::Encoding getFeatureEncoding() const NOTHROWS;
-    virtual TAK::Engine::Util::TAKErr getStyle(TAK::Engine::Port::String &value, const OGRFeature&, const OGRGeometry&) NOTHROWS;
-    virtual const char* getType() const NOTHROWS;
-    virtual unsigned int parseVersion() const NOTHROWS;
-    virtual TAK::Engine::Util::TAKErr skipFeature(bool *value, const OGRFeature&) NOTHROWS;
-    virtual TAK::Engine::Util::TAKErr skipLayer(bool *value, const OGRLayer&) NOTHROWS;
-    virtual bool layerNameIsPath() const NOTHROWS;
+    const char* getDriverName() const NOTHROWS override;
+    atakmap::feature::FeatureDataSource::FeatureDefinition::Encoding getFeatureEncoding() const NOTHROWS override;
+    TAK::Engine::Util::TAKErr getStyle(TAK::Engine::Port::String &value, const OGRFeature&, const OGRGeometry&) NOTHROWS override;
+    const char* getType() const NOTHROWS override;
+    unsigned int parseVersion() const NOTHROWS override;
+    TAK::Engine::Util::TAKErr skipFeature(bool *value, const OGRFeature&) NOTHROWS override;
+    TAK::Engine::Util::TAKErr skipLayer(bool *value, const OGRLayer&) NOTHROWS override;
+    bool layerNameIsPath() const NOTHROWS override;
 private :
     TAK::Engine::Port::String filePath;
     const atakmap::feature::OGR_DriverDefinition * const impl;
@@ -94,8 +94,8 @@ class DriverAdapterSpi : public TAK::Engine::Feature::OGRDriverDefinition2Spi
 public:
     DriverAdapterSpi(const atakmap::feature::OGR_DriverDefinition *impl) NOTHROWS;
 public:
-    virtual TAK::Engine::Util::TAKErr create(TAK::Engine::Feature::OGRDriverDefinition2Ptr &value, const char *path) NOTHROWS;
-    virtual const char* getType() const NOTHROWS;
+    TAK::Engine::Util::TAKErr create(TAK::Engine::Feature::OGRDriverDefinition2Ptr &value, const char *path) NOTHROWS override;
+    const char* getType() const NOTHROWS override;
 public:
     const atakmap::feature::OGR_DriverDefinition * const impl;
 };
@@ -195,14 +195,13 @@ OGR_DriverDefinition::getDriver (const char* driverName)
                                      "Received NULL driverName");
       }
 
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, mutex());
+    Lock lock(mutex());
     DriverMap& driverMap (getDriverMap ());
 
     DriverMap::const_iterator iter (driverMap.find (driverName));
 
     if (iter == driverMap.end())
-        return NULL;
+        return nullptr;
 
     return iter->second->impl;
   }
@@ -213,8 +212,7 @@ OGR_DriverDefinition::registerDriver (const OGR_DriverDefinition* driver)
   {
     if (driver && driver->getDriverName ())
       {
-        LockPtr lock(NULL, NULL);
-        Lock_create(lock, mutex());
+        Lock lock(mutex());
         DriverMap& driverMap(getDriverMap());
 
         DriverMap::const_iterator iter(driverMap.find(driver->getDriverName()));
@@ -239,8 +237,7 @@ OGR_DriverDefinition::unregisterDriver (const OGR_DriverDefinition* driver)
   {
     if (driver && driver->getDriverName ())
       {
-        LockPtr lock(NULL, NULL);
-        Lock_create(lock, mutex());
+        Lock lock(mutex());
         DriverMap& driverMap(getDriverMap());
 
         driverMap.erase (driver->getDriverName ());
@@ -285,10 +282,9 @@ namespace                               // Open unnamed namespace.
     TAK::Engine::Util::TAKErr DriverAdapter::getStyle(TAK::Engine::Port::String &value, const OGRFeature &f, const OGRGeometry &g) NOTHROWS
     {
         try {
-            const char *cstr = impl->getStyle(filePath, f, g);
-            if (cstr) {
-                value = cstr;
-                delete[] cstr;
+            auto style = impl->getStyle(filePath, f, g);
+            if (style) {
+                value = style;
             }
             return TAK::Engine::Util::TE_Ok;
         } catch (...) {

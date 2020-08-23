@@ -6,8 +6,8 @@
 namespace atakmap {
 namespace core {
 
-class ENGINE_API Projection;
-class ENGINE_API ProjectionSpi;
+class Projection;
+class ProjectionSpi;
 
 class ENGINE_API ProjectionFactory {
 private :

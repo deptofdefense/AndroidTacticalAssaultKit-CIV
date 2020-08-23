@@ -15,6 +15,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.atakmap.android.hierarchy.items.AbstractChildlessListItem;
+import com.atakmap.android.image.GalleryFileItem;
+import com.atakmap.android.image.GalleryItem;
 import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.android.attachment.export.AttachmentExportWrapper;
 import com.atakmap.android.cotdetails.CoTInfoMapComponent;
@@ -536,14 +538,19 @@ public class AttachmentMapOverlay extends AbstractMapOverlay2 {
 
         @Override
         public void onClick(View v) {
-            List<MapItemAttachment> attachments = new ArrayList<>();
+            List<GalleryItem> items = new ArrayList<>();
             List<HierarchyListItem> children = getChildren();
             for (HierarchyListItem item : children) {
-                if (item instanceof AttachmentListItem)
-                    attachments.add(((AttachmentListItem) item)
-                            .getAttachment());
+                if (item instanceof AttachmentListItem) {
+                    MapItemAttachment att = ((AttachmentListItem) item)
+                            .getAttachment();
+                    if (att != null)
+                        items.add(new GalleryFileItem(_view,
+                                att.getAttachment(), att.getMapItem()));
+                }
             }
-            displayGallery(attachments, _view.getContext());
+            ImageGalleryReceiver.displayGallery(_view.getContext()
+                    .getString(R.string.attachments), items);
         }
 
         @Override
@@ -960,87 +967,6 @@ public class AttachmentMapOverlay extends AbstractMapOverlay2 {
 
             return ret;
         }
-    }
-
-    /**
-     * Very similar to AttachmentMapOverlay.refresh()
-     * UI thread only as it may toast
-     */
-    static void displayGallery(final MapView mapView) {
-        //get list of markers which have attachments
-        List<MapItem> items = AttachmentManager.findAttachmentItems(
-                mapView.getRootGroup());
-
-        //now gather list of attachments for each marker
-        final long s = SystemClock.elapsedRealtime();
-        ArrayList<MapItemAttachment> attachments = new ArrayList<>();
-        for (MapItem m : items) {
-            List<File> files = AttachmentManager.getAttachments(m.getUID());
-            if (FileSystemUtils.isEmpty(files))
-                continue;
-            for (File attachment : files) {
-                //skip child directories
-                if (!FileSystemUtils.isFile(attachment)
-                        || attachment.isDirectory())
-                    continue;
-                attachments.add(new MapItemAttachment(m, attachment));
-            }
-        }
-
-        Collections.sort(attachments,
-                new ItemDistanceComparator(mapView.getCenterPoint().get()));
-
-        final long e = SystemClock.elapsedRealtime();
-        Log.d(TAG, "Added: " + attachments.size() + " attachments in "
-                + (e - s) + "ms");
-
-        if (FileSystemUtils.isEmpty(attachments)) {
-            Log.d(TAG, "No attachments to display");
-            Toast.makeText(mapView.getContext(),
-                    mapView.getContext().getString(R.string.gallery_no_items),
-                    Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        displayGallery(attachments, mapView.getContext());
-    }
-
-    private static void displayGallery(List<MapItemAttachment> attachments,
-            Context context) {
-        List<String> files = new ArrayList<>();
-        List<String> uids = new ArrayList<>();
-        for (MapItemAttachment att : attachments) {
-            if (att == null || !att.isValid()
-                    || !FileSystemUtils.isFile(att.getAttachment())) {
-                Log.w(TAG, "Skipping attachment");
-                continue;
-            }
-
-            files.add(att.getAttachment().getAbsolutePath());
-            if (att.getMapItem() != null) {
-                uids.add(att.getMapItem().getUID());
-            }
-        }
-
-        if (FileSystemUtils.isEmpty(files)) {
-            Log.w(TAG, "No valid attachments");
-            return;
-        }
-        String[] sa = files.toArray(new String[0]);
-
-        //send UIDs if we have one for each file
-        String[] ua = null;
-        if (!FileSystemUtils.isEmpty(uids)) {
-            if (uids.size() == sa.length) {
-                ua = uids.toArray(new String[0]);
-            }
-        }
-
-        AtakBroadcast.getInstance().sendBroadcast(
-                new Intent(ImageGalleryReceiver.IMAGE_GALLERY)
-                        .putExtra("title", context.getString(R.string.media))
-                        .putExtra("files", sa)
-                        .putExtra("uids", ua));
     }
 
     /**

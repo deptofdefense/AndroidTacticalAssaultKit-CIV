@@ -38,7 +38,7 @@ namespace TAK
 			template class ENGINE_API Ray2<double>;
 #endif
         }
-    };
-};
+    }
+}
 
 #endif // ATAKMAP_MATH_RAY2_H_INCLUDED

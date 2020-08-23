@@ -22,29 +22,41 @@ Feature2::Feature2(const Feature2 &other) NOTHROWS :
     setId(other.setId),
     version(other.version),
     name(other.name),
-    geometry(other.geometry.get() ? other.geometry.get()->clone() : NULL, atakmap::feature::destructGeometry),
-    style(other.style.get() ? other.style.get()->clone() : NULL, atakmap::feature::Style::destructStyle),
-    attributes(other.attributes.get() ? new atakmap::util::AttributeSet(*other.attributes) : NULL, deleter<const atakmap::util::AttributeSet>)
+    geometry(other.geometry.get() ? other.geometry.get()->clone() : nullptr, atakmap::feature::destructGeometry),
+    altitudeMode(other.altitudeMode),
+    extrude(other.extrude),
+    style(other.style.get() ? other.style.get()->clone() : nullptr, atakmap::feature::Style::destructStyle),
+    attributes(other.attributes.get() ? new atakmap::util::AttributeSet(*other.attributes) : nullptr, deleter<const atakmap::util::AttributeSet>),
+    timestamp(other.timestamp)
 {}
 
-Feature2::Feature2(const int64_t fid_, const int64_t fsid_, const char *name_, const atakmap::feature::Geometry &geom_, const atakmap::feature::Style &style_, const atakmap::util::AttributeSet &attributes_, const int64_t version_) NOTHROWS :
+Feature2::Feature2(const int64_t fid_, const int64_t fsid_, const char *name_, const atakmap::feature::Geometry &geom_,
+                   const TAK::Engine::Feature::AltitudeMode altitudeMode_, const double extrude_, const atakmap::feature::Style &style_,
+                   const atakmap::util::AttributeSet &attributes_, const int64_t version_) NOTHROWS
+    :
     id(fid_),
     setId(fsid_),
     version(version_),
     name(name_),
     geometry(geom_.clone(), atakmap::feature::destructGeometry),
+    altitudeMode(altitudeMode_),
+    extrude(extrude_),
     style(style_.clone(), atakmap::feature::Style::destructStyle),
     attributes(new atakmap::util::AttributeSet(attributes_), deleter<const atakmap::util::AttributeSet>)
 {}
 
-Feature2::Feature2(const int64_t fid_, const int64_t fsid_, const char *name_, GeometryPtr &&geom_, StylePtr &&style_, AttributeSetPtr &&attributes_, const int64_t version_) NOTHROWS :
+Feature2::Feature2(const int64_t fid_, const int64_t fsid_, const char *name_, GeometryPtr &&geom_,
+                   const TAK::Engine::Feature::AltitudeMode altitudeMode_, const double extrude_, StylePtr &&style_, AttributeSetPtr &&attributes_,
+                   const int64_t version_) NOTHROWS :
     id(fid_),
     setId(fsid_),
     version(version_),
     name(name_),
-    geometry(NULL, NULL),
-    style(NULL, NULL),
-    attributes(NULL, NULL)
+    geometry(nullptr, nullptr),
+    altitudeMode(altitudeMode_),
+    extrude(extrude_),
+    style(nullptr, nullptr),
+    attributes(nullptr, nullptr)
 {
     geometry = GeometryPtr_const(geom_.get(), geom_.get_deleter());
     geom_.release();
@@ -54,23 +66,31 @@ Feature2::Feature2(const int64_t fid_, const int64_t fsid_, const char *name_, G
     attributes_.release();
 }
 
-Feature2::Feature2(const int64_t fid_, const int64_t fsid_, const char *name_, GeometryPtr_const &&geom_, StylePtr_const &&style_, AttributeSetPtr_const &&attributes_, const int64_t version_) NOTHROWS :
+Feature2::Feature2(const int64_t fid_, const int64_t fsid_, const char *name_, GeometryPtr_const &&geom_,
+                   const TAK::Engine::Feature::AltitudeMode altitudeMode_, const double extrude_, StylePtr_const &&style_, AttributeSetPtr_const &&attributes_,
+                   const int64_t version_) NOTHROWS :
     id(fid_),
     setId(fsid_),
     version(version_),
     name(name_),
     geometry(std::move(geom_)),
+    altitudeMode(altitudeMode_),
+    extrude(extrude_),
     style(std::move(style_)),
     attributes(std::move(attributes_))
 {
 }
 
-Feature2::Feature2(const int64_t fid_, const int64_t fsid_, const char *name_, GeometryPtr_const &&geom_, StylePtr_const &&style_, AttributeSetPtr_const &&attributes_, const int64_t timestamp_, const int64_t version_) NOTHROWS :
+Feature2::Feature2(const int64_t fid_, const int64_t fsid_, const char *name_, GeometryPtr_const &&geom_,
+                   const TAK::Engine::Feature::AltitudeMode altitudeMode_, const double extrude_, StylePtr_const &&style_, AttributeSetPtr_const &&attributes_,
+                   const int64_t timestamp_, const int64_t version_) NOTHROWS :
     id(fid_),
     setId(fsid_),
     version(version_),
     name(name_),
     geometry(std::move(geom_)),
+    altitudeMode(altitudeMode_),
+    extrude(extrude_),
     style(std::move(style_)),
     attributes(std::move(attributes_)),
     timestamp(timestamp_)
@@ -105,6 +125,16 @@ const atakmap::feature::Geometry *Feature2::getGeometry() const NOTHROWS
     return this->geometry.get();
 }
 
+const TAK::Engine::Feature::AltitudeMode Feature2::getAltitudeMode() const NOTHROWS 
+{ 
+    return this->altitudeMode;
+}
+
+const double Feature2::getExtrude() const NOTHROWS 
+{ 
+    return this->extrude;
+}
+
 const atakmap::feature::Style *Feature2::getStyle() const NOTHROWS
 {
     return this->style.get();
@@ -128,7 +158,7 @@ TAKErr TAK::Engine::Feature::Feature_create(FeaturePtr_const &feature, FeatureDe
     code = def.getRawGeometry(&raw);
     TE_CHECKRETURN_CODE(code);
 
-    GeometryPtr_const geom(NULL, NULL);
+    GeometryPtr_const geom(nullptr, nullptr);
     switch (def.getGeomCoding()) {
     case FeatureDefinition2::GeomBlob:
     {
@@ -169,7 +199,7 @@ TAKErr TAK::Engine::Feature::Feature_create(FeaturePtr_const &feature, FeatureDe
     {
         if (raw.object) {
             try {
-                const atakmap::feature::Geometry *defGeom = (const atakmap::feature::Geometry *)raw.object;
+                const auto *defGeom = (const atakmap::feature::Geometry *)raw.object;
                 geom = GeometryPtr_const(defGeom->clone(), atakmap::feature::destructGeometry);
             } catch (...) {
                 return TE_Err;
@@ -181,10 +211,13 @@ TAKErr TAK::Engine::Feature::Feature_create(FeaturePtr_const &feature, FeatureDe
         return TE_IllegalState;
     }
 
+    TAK::Engine::Feature::AltitudeMode altitudeMode = def.getAltitudeMode();
+    double extrude = def.getExtrude();
+
     code = def.getRawStyle(&raw);
     TE_CHECKRETURN_CODE(code);
 
-    StylePtr_const style(NULL, NULL);
+    StylePtr_const style(nullptr, nullptr);
     switch (def.getStyleCoding()) {
     case FeatureDefinition2::StyleOgr:
     {
@@ -201,7 +234,7 @@ TAKErr TAK::Engine::Feature::Feature_create(FeaturePtr_const &feature, FeatureDe
     {
         if (raw.object) {
             try {
-                const atakmap::feature::Style *defStyle = (const atakmap::feature::Style *)raw.object;
+                const auto *defStyle = (const atakmap::feature::Style *)raw.object;
                 style = StylePtr_const(defStyle->clone(), atakmap::feature::Style::destructStyle);
             } catch (...) {
                 return TE_Err;
@@ -217,7 +250,7 @@ TAKErr TAK::Engine::Feature::Feature_create(FeaturePtr_const &feature, FeatureDe
     code = def.getAttributes(&defAttributes);
     TE_CHECKRETURN_CODE(code);
 
-    AttributeSetPtr_const attributes(defAttributes ? new atakmap::util::AttributeSet(*defAttributes) : NULL, deleter<const atakmap::util::AttributeSet>);
+    AttributeSetPtr_const attributes(defAttributes ? new atakmap::util::AttributeSet(*defAttributes) : nullptr, deleter<const atakmap::util::AttributeSet>);
 
     const char *defName;
     code = def.getName(&defName);
@@ -227,6 +260,8 @@ TAKErr TAK::Engine::Feature::Feature_create(FeaturePtr_const &feature, FeatureDe
                                             FeatureDataStore2::FEATURESET_ID_NONE,
                                             defName,
                                             std::move(geom),
+                                            altitudeMode,
+                                            extrude,
                                             std::move(style),
                                             std::move(attributes),
                                             FeatureDataStore2::FEATURE_VERSION_NONE),
@@ -243,7 +278,7 @@ TAKErr TAK::Engine::Feature::Feature_create(FeaturePtr_const &feature, const int
     code = def.getRawGeometry(&raw);
     TE_CHECKRETURN_CODE(code);
 
-    GeometryPtr_const geom(NULL, NULL);
+    GeometryPtr_const geom(nullptr, nullptr);
     switch (def.getGeomCoding()) {
     case FeatureDefinition2::GeomBlob:
     {
@@ -284,7 +319,7 @@ TAKErr TAK::Engine::Feature::Feature_create(FeaturePtr_const &feature, const int
     {
         if (raw.object) {
             try {
-                const atakmap::feature::Geometry *defGeom = (const atakmap::feature::Geometry *)raw.object;
+                const auto *defGeom = (const atakmap::feature::Geometry *)raw.object;
                 geom = GeometryPtr_const(defGeom->clone(), atakmap::feature::destructGeometry);
             } catch (...) {
                 return TE_Err;
@@ -296,10 +331,13 @@ TAKErr TAK::Engine::Feature::Feature_create(FeaturePtr_const &feature, const int
         return TE_IllegalState;
     }
 
+    TAK::Engine::Feature::AltitudeMode altitudeMode = def.getAltitudeMode();
+    double extrude = def.getExtrude();
+
     code = def.getRawStyle(&raw);
     TE_CHECKRETURN_CODE(code);
 
-    StylePtr_const style(NULL, NULL);
+    StylePtr_const style(nullptr, nullptr);
     switch (def.getStyleCoding()) {
     case FeatureDefinition2::StyleOgr:
     {
@@ -308,7 +346,7 @@ TAKErr TAK::Engine::Feature::Feature_create(FeaturePtr_const &feature, const int
                 style = StylePtr_const(atakmap::feature::Style::parseStyle(raw.text), atakmap::feature::Style::destructStyle);
             } catch (...) {
                 // XXX - encountering KML with style "links", just return NULL
-                style = StylePtr_const(NULL, atakmap::feature::Style::destructStyle);
+                style = StylePtr_const(nullptr, atakmap::feature::Style::destructStyle);
                 //return TE_Err;
             }
         }
@@ -318,7 +356,7 @@ TAKErr TAK::Engine::Feature::Feature_create(FeaturePtr_const &feature, const int
     {
         if (raw.object) {
             try {
-                const atakmap::feature::Style *defStyle = (const atakmap::feature::Style *)raw.object;
+                const auto *defStyle = (const atakmap::feature::Style *)raw.object;
                 style = StylePtr_const(defStyle->clone(), atakmap::feature::Style::destructStyle);
             } catch (...) {
                 return TE_Err;
@@ -334,7 +372,7 @@ TAKErr TAK::Engine::Feature::Feature_create(FeaturePtr_const &feature, const int
     code = def.getAttributes(&defAttributes);
     TE_CHECKRETURN_CODE(code);
 
-    AttributeSetPtr_const attributes(defAttributes ? new atakmap::util::AttributeSet(*defAttributes) : NULL, deleter<const atakmap::util::AttributeSet>);
+    AttributeSetPtr_const attributes(defAttributes ? new atakmap::util::AttributeSet(*defAttributes) : nullptr, deleter<const atakmap::util::AttributeSet>);
 
     const char *defName;
     code = def.getName(&defName);
@@ -344,6 +382,8 @@ TAKErr TAK::Engine::Feature::Feature_create(FeaturePtr_const &feature, const int
                                             fsid,
                                             defName,
                                             std::move(geom),
+                                            altitudeMode,
+                                            extrude,
                                             std::move(style),
                                             std::move(attributes),
                                             version),

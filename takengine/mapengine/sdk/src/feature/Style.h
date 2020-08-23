@@ -16,7 +16,7 @@ namespace atakmap                       // Open atakmap namespace.
 
         class ENGINE_API Style;
 
-        enum ENGINE_API StyleClass
+        enum StyleClass
         {
             TESC_BasicPointStyle,
             TESC_LabelPointStyle,
@@ -79,8 +79,8 @@ namespace atakmap                       // Open atakmap namespace.
             unsigned int getColor () const throw ()
             { return color; }
         public : // Style INTERFACE
-            TAK::Engine::Util::TAKErr toOGR(TAK::Engine::Port::String &value) const NOTHROWS;
-            virtual Style *clone() const;
+            TAK::Engine::Util::TAKErr toOGR(TAK::Engine::Port::String &value) const NOTHROWS override;
+            virtual Style *clone() const override;
         private:
             unsigned int color;
         };
@@ -108,8 +108,8 @@ namespace atakmap                       // Open atakmap namespace.
             float getSize () const throw ()
               { return size; }
         public ://  Style INTERFACE
-            Style * clone() const;
-            TAK::Engine::Util::TAKErr toOGR(TAK::Engine::Port::String &value) const NOTHROWS;
+            Style * clone() const override;
+            TAK::Engine::Util::TAKErr toOGR(TAK::Engine::Port::String &value) const NOTHROWS override;
         private:
             unsigned int color;
             float size;
@@ -133,8 +133,8 @@ namespace atakmap                       // Open atakmap namespace.
             float getStrokeWidth () const throw ()
             { return width; }
         public : //  Style INTERFACE
-            TAK::Engine::Util::TAKErr toOGR(TAK::Engine::Port::String &value) const NOTHROWS;
-            virtual Style *clone() const;
+            TAK::Engine::Util::TAKErr toOGR(TAK::Engine::Port::String &value) const NOTHROWS override;
+            virtual Style *clone() const override;
         private:
             unsigned int color;
             float width;
@@ -174,7 +174,7 @@ namespace atakmap                       // Open atakmap namespace.
             { }
         public :
             const StyleVector& components () const throw ()
-            { return styles; }
+            { return styles_; }
 
             template <class StyleType>
             StylePtr findStyle () const throw ();
@@ -184,13 +184,13 @@ namespace atakmap                       // Open atakmap namespace.
             const Style& getStyle (std::size_t index) const throw (std::range_error);
 
             std::size_t getStyleCount () const throw ()
-            { return styles.size (); }
+            { return styles_.size (); }
 
         public : //  Style INTERFACE
-            TAK::Engine::Util::TAKErr toOGR(TAK::Engine::Port::String &value) const NOTHROWS;
-            virtual Style *clone() const;
+            TAK::Engine::Util::TAKErr toOGR(TAK::Engine::Port::String &value) const NOTHROWS override;
+            virtual Style *clone() const override;
         private:
-            StyleVector styles;
+            StyleVector styles_;
         };
 
         /**
@@ -338,8 +338,8 @@ namespace atakmap                       // Open atakmap namespace.
             bool isRotationAbsolute ()  const throw ()
               { return absoluteRotation; }
         public ://  Style INTERFACE
-            TAK::Engine::Util::TAKErr toOGR(TAK::Engine::Port::String &value) const NOTHROWS;
-            virtual Style *clone() const;
+            TAK::Engine::Util::TAKErr toOGR(TAK::Engine::Port::String &value) const NOTHROWS override;
+            virtual Style *clone() const override;
         private:
             unsigned int color;
             TAK::Engine::Port::String iconURI;
@@ -407,7 +407,8 @@ namespace atakmap                       // Open atakmap namespace.
                          float rotation = 0.0,      // 0 degrees of rotation.
                          bool absoluteRotation = false, // Relative to screen.
                          float paddingX = 0.0, // offset from alignment position
-                         float paddingY = 0.0);
+                         float paddingY = 0.0,
+                         double labelMinRenderResolution = 13.0);
 
         ~LabelPointStyle () throw ()
           { }
@@ -450,9 +451,12 @@ namespace atakmap                       // Open atakmap namespace.
             bool isRotationAbsolute () const throw ()
               { return absoluteRotation; }
 
+            double getLabelMinRenderResolution() const throw () 
+              { return labelMinRenderResolution; }
+
         public : //  Style INTERFACE
-            TAK::Engine::Util::TAKErr toOGR(TAK::Engine::Port::String &value) const NOTHROWS;
-            virtual Style *clone() const;
+            TAK::Engine::Util::TAKErr toOGR(TAK::Engine::Port::String &value) const NOTHROWS override;
+            virtual Style *clone() const override;
         private:
             TAK::Engine::Port::String text;
             unsigned int foreColor;
@@ -465,6 +469,7 @@ namespace atakmap                       // Open atakmap namespace.
             float paddingX;
             float paddingY;
             bool absoluteRotation;
+            double labelMinRenderResolution; 
         };
 
         class ENGINE_API PatternStrokeStyle : public Style
@@ -489,14 +494,50 @@ namespace atakmap                       // Open atakmap namespace.
             unsigned int getColor () const throw ();
             float getStrokeWidth() const throw ();
         public : //  Style INTERFACE
-            TAK::Engine::Util::TAKErr toOGR(TAK::Engine::Port::String &value) const NOTHROWS;
-            virtual Style *clone() const;
+            TAK::Engine::Util::TAKErr toOGR(TAK::Engine::Port::String &value) const NOTHROWS override;
+            virtual Style *clone() const override;
         private:
             uint64_t pattern;
             std::size_t patternLen;
             unsigned int color;
             float width;
         };
+
+        ENGINE_API TAK::Engine::Util::TAKErr BasicFillStyle_create(StylePtr &value, const unsigned int color) NOTHROWS;
+        ENGINE_API TAK::Engine::Util::TAKErr BasicPointStyle_create(StylePtr &value, const unsigned int color, const float size) NOTHROWS;
+        ENGINE_API TAK::Engine::Util::TAKErr BasicStrokeStyle_create(StylePtr &value, const unsigned int color, const float width) NOTHROWS;
+        ENGINE_API TAK::Engine::Util::TAKErr CompositeStyle_create(StylePtr &value, const Style **styles, const std::size_t count) NOTHROWS;
+        ENGINE_API TAK::Engine::Util::TAKErr IconPointStyle_create(StylePtr &value, unsigned int color,
+                                                                                    const char* iconURI,
+                                                                                    float scaleFactor = 1.0,
+                                                                                    IconPointStyle::HorizontalAlignment hAlign = IconPointStyle::H_CENTER,
+                                                                                    IconPointStyle::VerticalAlignment vAlign = IconPointStyle::V_CENTER,
+                                                                                    float rotation = 0.0,
+                                                                                    bool absoluteRotation = false) NOTHROWS;
+        ENGINE_API TAK::Engine::Util::TAKErr IconPointStyle_create(StylePtr &value, unsigned int color,
+                                                                                    const char* iconURI,
+                                                                                    float width,
+                                                                                    float height,
+                                                                                    IconPointStyle::HorizontalAlignment hAlign = IconPointStyle::H_CENTER,
+                                                                                    IconPointStyle::VerticalAlignment vAlign = IconPointStyle::V_CENTER,
+                                                                                    float rotation = 0.0,
+                                                                                    bool absoluteRotation = false) NOTHROWS;
+        ENGINE_API TAK::Engine::Util::TAKErr LabelPointStyle_create(StylePtr &value, const char* text,
+                                                                                     unsigned int textColor,    // 0xAARRGGBB
+                                                                                     unsigned int backColor,    // 0xAARRGGBB
+                                                                                     LabelPointStyle::ScrollMode mode,
+                                                                                     float textSize = 0.0,      // Use system default size.
+                                                                                     LabelPointStyle::HorizontalAlignment hAlign = LabelPointStyle::H_CENTER,
+                                                                                     LabelPointStyle::VerticalAlignment vAlign = LabelPointStyle::V_CENTER,
+                                                                                     float rotation = 0.0,      // 0 degrees of rotation.
+                                                                                     bool absoluteRotation = false, // Relative to screen.
+                                                                                     float paddingX = 0.0, // offset from alignment position
+                                                                                     float paddingY = 0.0,
+                                                                                     double labelMinRenderResolution = 13.0) NOTHROWS;
+        ENGINE_API TAK::Engine::Util::TAKErr PatternStrokeStyle_create(StylePtr &value, const uint64_t pattern,
+                                                                                        const std::size_t patternLen,
+                                                                                        const unsigned int color,
+                                                                                        const float strokeWidth) NOTHROWS;
     }
 }
 
@@ -507,17 +548,17 @@ namespace atakmap {
         inline CompositeStyle::StylePtr CompositeStyle::findStyle () const throw ()
         {
             StylePtr result;
-            const StyleVector::const_iterator end (styles.end ());
+            const StyleVector::const_iterator end (styles_.end ());
 
-            for (StyleVector::const_iterator iter (styles.begin ());
+            for (StyleVector::const_iterator iter (styles_.begin ());
                  !result && iter != end;
                  ++iter) {
 
-                const CompositeStyle* composite (NULL);
+                const CompositeStyle *composite(nullptr);
 
                 if (dynamic_cast<const StyleType*> (iter->get ())) {
                     result = *iter;
-                } else if ((composite = dynamic_cast<const CompositeStyle*> (iter->get ()))) {
+                } else if ((composite = dynamic_cast<const CompositeStyle*> (iter->get ())), composite != nullptr) {
                     result = composite->findStyle<StyleType> ();
                 }
             }

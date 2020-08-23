@@ -5,6 +5,7 @@
 
 #include "feature/FeatureDataSource.h"
 #include "feature/LegacyAdapters.h"
+#include "feature/Style.h"
 #include "thread/RWMutex.h"
 #include "util/Memory.h"
 
@@ -30,8 +31,8 @@ FeatureDataSource2::Content::~Content() NOTHROWS
 TAKErr TAK::Engine::Feature::FeatureDataSourceFactory_parse(FeatureDataSource2::ContentPtr &content, const char *path, const char *hint) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    ReadLockPtr lock(NULL, NULL);
-    code = ReadLock_create(lock, providerMapMutex());
+    ReadLock lock(providerMapMutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
     // return ContentPtr for current FeatureDataSource implemenations
     FeatureDataSourceMap featureDataSourceMap(getProviderMap());
@@ -51,7 +52,7 @@ TAKErr TAK::Engine::Feature::FeatureDataSourceFactory_parse(FeatureDataSource2::
         // iterate all available providers. choose the first that supports
         for (it = featureDataSourceMap.begin(); it != featureDataSourceMap.end(); it++)
         {
-            TAKErr code = it->second->parse(content, path);
+            code = it->second->parse(content, path);
             if (code == TE_Ok)
                 return code;
         }
@@ -60,7 +61,7 @@ TAKErr TAK::Engine::Feature::FeatureDataSourceFactory_parse(FeatureDataSource2::
     // fall-through to legacy
 
     // return ContentPtr for legacy FeatureDataSource implemenations
-    std::unique_ptr<atakmap::feature::FeatureDataSource::Content, void(*)(const atakmap::feature::FeatureDataSource::Content *)> parsed(NULL, NULL);
+    std::unique_ptr<atakmap::feature::FeatureDataSource::Content, void(*)(const atakmap::feature::FeatureDataSource::Content *)> parsed(nullptr, nullptr);
     try {
         parsed = std::unique_ptr<atakmap::feature::FeatureDataSource::Content, void(*)(const atakmap::feature::FeatureDataSource::Content *)>(atakmap::feature::FeatureDataSource::parse(path, hint), Memory_deleter_const<atakmap::feature::FeatureDataSource::Content>);
     } catch (...) {}
@@ -75,13 +76,13 @@ TAKErr TAK::Engine::Feature::FeatureDataSourceFactory_getProvider(std::shared_pt
         return TE_InvalidArg;
 
     TAKErr code(TE_Ok);
-    ReadLockPtr lock(NULL, NULL);
-    code = ReadLock_create(lock, providerMapMutex());
+    ReadLock map_lock(providerMapMutex());
+    code = map_lock.status;
     TE_CHECKRETURN_CODE(code);
 
     // check if feature data source can found amongst current implementations
     FeatureDataSourceMap featureDataSourceMap(getProviderMap());
-    FeatureDataSourceMap::iterator it = featureDataSourceMap.find(hint);
+    auto it = featureDataSourceMap.find(hint);
     if (it != featureDataSourceMap.end())
     {
         spi = it->second;
@@ -96,9 +97,8 @@ TAKErr TAK::Engine::Feature::FeatureDataSourceFactory_getProvider(std::shared_pt
         if (!legacy)
             return TE_InvalidArg;
 
-        TAKErr code(TE_Ok);
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
+        Lock lock(mutex);
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
 
         std::map<const atakmap::feature::FeatureDataSource *, std::shared_ptr<FeatureDataSource2>>::iterator entry;
@@ -108,7 +108,7 @@ TAKErr TAK::Engine::Feature::FeatureDataSourceFactory_getProvider(std::shared_pt
             return TE_Ok;
         }
 
-        FeatureDataSourcePtr adapter(NULL, NULL);
+        FeatureDataSourcePtr adapter(nullptr, nullptr);
         code = LegacyAdapters_adapt(adapter, *legacy);
         TE_CHECKRETURN_CODE(code);
 
@@ -130,8 +130,8 @@ TAKErr TAK::Engine::Feature::FeatureDataSourceFactory_registerProvider(const std
         return TE_InvalidArg;
 
     TAKErr code(TE_Ok);
-    WriteLockPtr lock(NULL, NULL);
-    code = WriteLock_create(lock, providerMapMutex());
+    WriteLock lock(providerMapMutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     FeatureDataSourceMap &featureDataSourceMap = getProviderMap();
@@ -143,8 +143,8 @@ TAKErr TAK::Engine::Feature::FeatureDataSourceFactory_registerProvider(const std
 TAKErr TAK::Engine::Feature::FeatureDataSourceFactory_unregisterProvider(const FeatureDataSource2 &provider) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    WriteLockPtr lock(NULL, NULL);
-    code = WriteLock_create(lock, providerMapMutex());
+    WriteLock lock(providerMapMutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     FeatureDataSourceMap &featureDataSourceMap = getProviderMap();

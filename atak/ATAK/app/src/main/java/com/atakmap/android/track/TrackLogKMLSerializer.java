@@ -135,8 +135,8 @@ public class TrackLogKMLSerializer {
             baos = new ByteArrayOutputStream();
 
             final XmlSerializer xmlSerializer = Xml.newSerializer();
-            xmlSerializer.setOutput(baos, FileSystemUtils.UTF8_CHARSET);
-            xmlSerializer.startDocument(FileSystemUtils.UTF8_CHARSET,
+            xmlSerializer.setOutput(baos, FileSystemUtils.UTF8_CHARSET.name());
+            xmlSerializer.startDocument(FileSystemUtils.UTF8_CHARSET.name(),
                     Boolean.TRUE);
 
             final String xmlpull = context
@@ -264,7 +264,8 @@ public class TrackLogKMLSerializer {
 
             //fixup gx namespace
             //TODO anyway to have the XmlSerializer do this?
-            String tempKml = new String(baos.toByteArray());
+            String tempKml = new String(baos.toByteArray(),
+                    FileSystemUtils.UTF8_CHARSET);
             String opengis = context
                     .getString(R.string.TrackLogKMLSerializier_opengis);
             String google = context

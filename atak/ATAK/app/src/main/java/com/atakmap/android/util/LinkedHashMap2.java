@@ -1,7 +1,7 @@
 
 package com.atakmap.android.util;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.atakmap.lang.Objects;
 import com.atakmap.util.AbstractDeque;

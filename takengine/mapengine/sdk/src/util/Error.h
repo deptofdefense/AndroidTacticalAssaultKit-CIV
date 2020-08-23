@@ -68,6 +68,7 @@ namespace TAK {
                 TE_Canceled,
                 TE_EOF,
                 TE_TimedOut,
+                TE_NotAuthorized
             };
 
 

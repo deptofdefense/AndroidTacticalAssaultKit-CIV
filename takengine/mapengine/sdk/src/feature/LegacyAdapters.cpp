@@ -29,9 +29,9 @@ namespace
     public:
         FeatureDataSourceAdapter(const FeatureDataSource_Legacy &impl) NOTHROWS;
     public :
-        virtual TAKErr parse(ContentPtr &content, const char *file) NOTHROWS;
-        virtual const char *getName() const NOTHROWS;
-        virtual int parseVersion() const NOTHROWS;
+        TAKErr parse(ContentPtr &content, const char *file) NOTHROWS override;
+        const char *getName() const NOTHROWS override;
+        int parseVersion() const NOTHROWS override;
     private :
         const FeatureDataSource_Legacy &impl;
     };
@@ -43,16 +43,16 @@ namespace
     public :
         ContentAdapter(LegacyPtr &&impl) NOTHROWS;
     public:
-        virtual const char *getType() const NOTHROWS;
-        virtual const char *getProvider() const NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr moveToNextFeature() NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr moveToNextFeatureSet() NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr get(FeatureDefinition2 **feature) const NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getFeatureSetName(TAK::Engine::Port::String &name) const NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getFeatureSetVisible(bool *visible) const NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getMinResolution(double *value) const NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getMaxResolution(double *value) const NOTHROWS;
-		virtual TAK::Engine::Util::TAKErr getVisible(bool *visible) const NOTHROWS;
+        const char *getType() const NOTHROWS override;
+        const char *getProvider() const NOTHROWS override;
+        TAK::Engine::Util::TAKErr moveToNextFeature() NOTHROWS override;
+        TAK::Engine::Util::TAKErr moveToNextFeatureSet() NOTHROWS override;
+        TAK::Engine::Util::TAKErr get(FeatureDefinition2 **feature) const NOTHROWS override;
+        TAK::Engine::Util::TAKErr getFeatureSetName(TAK::Engine::Port::String &name) const NOTHROWS override;
+        TAK::Engine::Util::TAKErr getFeatureSetVisible(bool *visible) const NOTHROWS override;
+        TAK::Engine::Util::TAKErr getMinResolution(double *value) const NOTHROWS override;
+        TAK::Engine::Util::TAKErr getMaxResolution(double *value) const NOTHROWS override;
+		TAK::Engine::Util::TAKErr getVisible(bool *visible) const NOTHROWS override;
     private :
         LegacyPtr impl;
         std::unique_ptr<FeatureDefinition2, void(*)(const FeatureDefinition2 *)> rowData;
@@ -68,13 +68,15 @@ namespace
     public :
         void reset(LegacyPtr &&impl) NOTHROWS;
     public:
-        virtual TAK::Engine::Util::TAKErr getRawGeometry(RawData *value) NOTHROWS;
-        virtual GeometryEncoding getGeomCoding() NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getName(const char **value) NOTHROWS;
-        virtual StyleEncoding getStyleCoding() NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getRawStyle(RawData *value) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr getAttributes(const atakmap::util::AttributeSet **value) NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr get(const Feature2 **feature) NOTHROWS;
+        TAK::Engine::Util::TAKErr getRawGeometry(RawData *value) NOTHROWS override;
+        GeometryEncoding getGeomCoding() NOTHROWS override;
+        AltitudeMode getAltitudeMode() NOTHROWS override;
+        double getExtrude() NOTHROWS override;
+        TAK::Engine::Util::TAKErr getName(const char **value) NOTHROWS override;
+        StyleEncoding getStyleCoding() NOTHROWS override;
+        TAK::Engine::Util::TAKErr getRawStyle(RawData *value) NOTHROWS override;
+        TAK::Engine::Util::TAKErr getAttributes(const atakmap::util::AttributeSet **value) NOTHROWS override;
+        TAK::Engine::Util::TAKErr get(const Feature2 **feature) NOTHROWS override;
     private :
         LegacyPtr impl;
         FeaturePtr_const rowData;
@@ -103,12 +105,13 @@ namespace
 
 TAKErr TAK::Engine::Feature::LegacyAdapters_create(FeaturePtr_const &value, const Feature_Legacy &legacy) NOTHROWS
 {
-    value = FeaturePtr_const(new Feature2(legacy.getID(),
-                                          legacy.getFeatureSetID(),
-                                          legacy.getName(),
+    value = FeaturePtr_const(new Feature2(legacy.getID(), legacy.getFeatureSetID(), legacy.getName(),
                                           std::move(GeometryPtr_const(legacy.getGeometry().clone(), atakmap::feature::destructGeometry)),
-                                          std::move(StylePtr_const(legacy.getStyle() ? legacy.getStyle()->clone() : NULL, atakmap::feature::Style::destructStyle)),
-                                          std::move(AttributeSetPtr_const(new atakmap::util::AttributeSet(legacy.getAttributes()), Memory_deleter_const<atakmap::util::AttributeSet>)),
+                                          AltitudeMode::TEAM_ClampToGround, 0.0,
+                                          std::move(StylePtr_const(legacy.getStyle() ? legacy.getStyle()->clone() : nullptr,
+                                                                   atakmap::feature::Style::destructStyle)),
+                                          std::move(AttributeSetPtr_const(new atakmap::util::AttributeSet(legacy.getAttributes()),
+                                                                          Memory_deleter_const<atakmap::util::AttributeSet>)),
                                           legacy.getVersion()),
                              Memory_deleter_const<Feature2>);
     return TE_Ok;
@@ -166,7 +169,7 @@ TAKErr TAK::Engine::Feature::LegacyAdapters_adapt(Geometry2Ptr &value, const ata
 TAKErr TAK::Engine::Feature::LegacyAdapters_adapt(Geometry2Ptr_const &value_const, const atakmap::feature::Geometry &legacy) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    Geometry2Ptr value(NULL, NULL);
+    Geometry2Ptr value(nullptr, nullptr);
     code = LegacyAdapters_adapt(value, legacy);
     TE_CHECKRETURN_CODE(code);
 
@@ -200,7 +203,7 @@ TAKErr TAK::Engine::Feature::LegacyAdapters_adapt(GeometryPtr &value, const TAK:
 TAKErr TAK::Engine::Feature::LegacyAdapters_adapt(GeometryPtr_const &value_const, const TAK::Engine::Feature::Geometry2 &geom) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    GeometryPtr value(NULL, NULL);
+    GeometryPtr value(nullptr, nullptr);
     code = LegacyAdapters_adapt(value, geom);
     TE_CHECKRETURN_CODE(code);
 
@@ -267,7 +270,7 @@ namespace
                 return TE_Err;
             content = FeatureDataSource2::ContentPtr(new ContentAdapter(std::move(contentImpl)), Memory_deleter_const<FeatureDataSource2::Content, ContentAdapter>);
             return TE_Ok;
-        } catch(std::invalid_argument &e) {
+        } catch(std::invalid_argument &) {
             return TE_InvalidArg;
         } catch(...) {
             return TE_Err;
@@ -287,7 +290,7 @@ namespace
 
     ContentAdapter::ContentAdapter(ContentAdapter::LegacyPtr &&impl_) NOTHROWS :
         impl(std::move(impl_)),
-        rowData(NULL, NULL)
+        rowData(nullptr, nullptr)
     {}
 
     const char *ContentAdapter::getType() const NOTHROWS
@@ -302,7 +305,6 @@ namespace
 
     TAKErr ContentAdapter::moveToNextFeature() NOTHROWS
     {
-        TAKErr code;
         rowData.reset();
         if (!impl->moveToNextFeature())
             return TE_Done;
@@ -361,13 +363,13 @@ namespace
 	}
 
     FeatureDefinitionAdapter::FeatureDefinitionAdapter() NOTHROWS :
-        impl(NULL, NULL),
-        rowData(NULL, NULL)
+        impl(nullptr, nullptr),
+        rowData(nullptr, nullptr)
     {}
 
     FeatureDefinitionAdapter::FeatureDefinitionAdapter(FeatureDefinitionAdapter::LegacyPtr &&impl_) NOTHROWS :
         impl(std::move(impl_)),
-        rowData(NULL, NULL)
+        rowData(nullptr, nullptr)
     {}
 
     void FeatureDefinitionAdapter::reset(FeatureDefinitionAdapter::LegacyPtr &&impl_) NOTHROWS
@@ -425,6 +427,27 @@ namespace
         default :
             return FeatureDefinition2::GeomGeometry;
         }
+    }
+
+    AltitudeMode FeatureDefinitionAdapter::getAltitudeMode() NOTHROWS 
+    {
+        int altMode = impl->getAltitudeMode();
+        switch (altMode)
+        {
+            case 0:
+                return TEAM_ClampToGround;
+            case 1:
+                return TEAM_Relative;
+            case 2:
+                return TEAM_Absolute;
+            default:
+                return TEAM_ClampToGround;
+        }
+    }
+
+    double FeatureDefinitionAdapter::getExtrude() NOTHROWS 
+    {
+        return impl->getExtrude();
     }
 
     TAKErr FeatureDefinitionAdapter::getName(const char **value) NOTHROWS
@@ -503,7 +526,8 @@ namespace
         std::unique_ptr<Point2> retval(new Point2(legacy.x, legacy.y));
         try {
             if (legacy.getDimension() == atakmap::feature::Geometry::_3D) {
-                retval->setDimension(3u);
+                code = retval->setDimension(3u);
+                TE_CHECKRETURN_CODE(code);
                 retval->z = legacy.z;
             }
         } catch (...) {
@@ -551,7 +575,7 @@ namespace
     TAKErr adaptPolygon(Geometry2Ptr &value, const atakmap::feature::Polygon &legacy) NOTHROWS
     {
         TAKErr code(TE_Ok);
-        Geometry2Ptr exteriorRing(NULL, NULL);
+        Geometry2Ptr exteriorRing(nullptr, nullptr);
         try {
             code = adaptLineString(exteriorRing, legacy.getExteriorRing());
             TE_CHECKRETURN_CODE(code);
@@ -567,7 +591,7 @@ namespace
 
             std::vector<atakmap::feature::LineString>::const_iterator it;
             for (it = extRings.first; it != extRings.second; it++) {
-                Geometry2Ptr ring(NULL, NULL);
+                Geometry2Ptr ring(nullptr, nullptr);
                 code = adaptLineString(ring, *it);
                 TE_CHECKBREAK_CODE(code);
                 code = retval->addInteriorRing(static_cast<LineString2 &>(*ring));
@@ -606,7 +630,7 @@ namespace
 
             std::vector<atakmap::feature::Geometry *>::const_iterator it;
             for (it = children.first; it != children.second; it++) {
-                Geometry2Ptr child(NULL, NULL);
+                Geometry2Ptr child(nullptr, nullptr);
                 code = LegacyAdapters_adapt(child, *(*it));
                 TE_CHECKBREAK_CODE(code);
                 code = retval->addGeometry(std::move(child));
@@ -664,7 +688,7 @@ namespace
             code = linestring.get(&pt, i);
             TE_CHECKBREAK_CODE(code);
 
-            atakmap::feature::UniqueGeometryPtr legacyPt(NULL, NULL);
+            atakmap::feature::UniqueGeometryPtr legacyPt(nullptr, nullptr);
             code = adaptPoint(legacyPt, pt);
             TE_CHECKBREAK_CODE(code);
             try {
@@ -702,7 +726,7 @@ namespace
         }
 
         std::shared_ptr<LineString2> ring;
-        atakmap::feature::UniqueGeometryPtr legacyRing(NULL, NULL);
+        atakmap::feature::UniqueGeometryPtr legacyRing(nullptr, nullptr);
 
         code = polygon.getExteriorRing(ring);
         TE_CHECKRETURN_CODE(code);
@@ -761,7 +785,7 @@ namespace
 
         for (std::size_t i = 0u; i < collection.getNumGeometries(); i++) {
             std::shared_ptr<Geometry2> child;
-            atakmap::feature::UniqueGeometryPtr legacyChild(NULL, NULL);
+            atakmap::feature::UniqueGeometryPtr legacyChild(nullptr, nullptr);
 
             code = collection.getGeometry(child, i);
             TE_CHECKBREAK_CODE(code);

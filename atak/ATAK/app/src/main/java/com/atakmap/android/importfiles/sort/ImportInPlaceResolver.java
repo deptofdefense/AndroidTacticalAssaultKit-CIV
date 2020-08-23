@@ -2,6 +2,7 @@
 package com.atakmap.android.importfiles.sort;
 
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.util.Pair;
 
@@ -42,10 +43,17 @@ public abstract class ImportInPlaceResolver extends ImportInternalSDResolver {
      * @param importInPlace true to import from source location, false to copy/move into atak data dir
      */
     public ImportInPlaceResolver(String ext, String folderName,
-            boolean validateExt,
-            boolean copyFile, boolean importInPlace, String displayName) {
-        super(ext, folderName, validateExt, copyFile, displayName);
+            boolean validateExt, boolean copyFile, boolean importInPlace,
+            String displayName, Drawable icon) {
+        super(ext, folderName, validateExt, copyFile, displayName, icon);
         _bImportInPlace = importInPlace;
+    }
+
+    public ImportInPlaceResolver(String ext, String folderName,
+            boolean validateExt, boolean copyFile, boolean importInPlace,
+            String displayName) {
+        this(ext, folderName, validateExt, copyFile, importInPlace, displayName,
+                null);
     }
 
     /**
@@ -96,9 +104,9 @@ public abstract class ImportInPlaceResolver extends ImportInternalSDResolver {
         AtakBroadcast.getInstance().sendBroadcast(i);
     }
 
-    public static ImportResolver fromMarshal(final Marshal m) {
+    public static ImportResolver fromMarshal(final Marshal m, Drawable icon) {
         return new ImportInPlaceResolver(null, null, false, false, true,
-                m.getContentType()) {
+                m.getContentType(), icon) {
             @Override
             public boolean match(File f) {
                 try {
@@ -141,5 +149,9 @@ public abstract class ImportInPlaceResolver extends ImportInternalSDResolver {
                         ResourceFile.UNKNOWN_MIME_TYPE);
             }
         };
+    }
+
+    public static ImportResolver fromMarshal(Marshal m) {
+        return fromMarshal(m, null);
     }
 }

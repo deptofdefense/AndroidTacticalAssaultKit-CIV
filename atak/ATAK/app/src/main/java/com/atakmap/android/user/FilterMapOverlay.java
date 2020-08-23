@@ -32,6 +32,7 @@ import com.atakmap.android.maps.MapEventDispatcher.MapEventDispatchListener;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.maps.Marker;
 import com.atakmap.android.missionpackage.export.MissionPackageExportWrapper;
 import com.atakmap.android.overlay.AbstractMapOverlay2;
 import com.atakmap.android.routes.RouteListModel;
@@ -59,7 +60,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -774,15 +774,17 @@ public class FilterMapOverlay extends AbstractMapOverlay2
             return false;
         }
 
-        String iconsetPath = item.getMetaString(UserIcon.IconsetPath, null);
-        if (!FileSystemUtils.isEmpty(iconsetPath) &&
-                !(iconsetPath.startsWith(Icon2525bPallet.COT_MAPPING_2525B) ||
-                        iconsetPath.startsWith(
-                                SpotMapPallet.COT_MAPPING_SPOTMAP))) {
-            //this is a user icon, lets skip it here and void the expense of
-            //filter matching since it may very well match on CoT type
-            //Log.d(TAG + toString(), toString() + " not accepting usericon");
-            return false;
+        if (item instanceof Marker) {
+            String iconsetPath = item.getMetaString(UserIcon.IconsetPath, null);
+            if (!FileSystemUtils.isEmpty(iconsetPath) &&
+                    !(iconsetPath.startsWith(Icon2525bPallet.COT_MAPPING_2525B)
+                            || iconsetPath.startsWith(
+                                    SpotMapPallet.COT_MAPPING_SPOTMAP))) {
+                //this is a user icon, lets skip it here and void the expense of
+                //filter matching since it may very well match on CoT type
+                //Log.d(TAG + toString(), toString() + " not accepting usericon");
+                return false;
+            }
         }
 
         //run litmus test prior to self/child filters
@@ -1064,7 +1066,7 @@ public class FilterMapOverlay extends AbstractMapOverlay2
 
         @Override
         public boolean onItemFunction(MapItem item) {
-            if (!item.hasMetaValue(UserIcon.IconsetPath))
+            if (!(item instanceof Marker) || !item.hasMetaValue(UserIcon.IconsetPath))
                 return false;
 
             return UserIcon.IsValidIconsetPath(

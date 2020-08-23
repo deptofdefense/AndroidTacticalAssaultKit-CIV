@@ -139,8 +139,8 @@ extractValue (const char* value,
     std::streampos bytesExtracted (strm.tellg ());
 
     return bytesExtracted >= 0
-        ? value + bytesExtracted
-        : NULL;
+        ? value + static_cast<std::size_t>(bytesExtracted)
+        : nullptr;
   }
 
 
@@ -231,7 +231,7 @@ extractValue (const char* value,
 
 float extractFontSize(const char *value) {
     char *end = nullptr;
-    float result = static_cast<float>(strtod(value, &end));
+    auto result = static_cast<float>(strtod(value, &end));
     convertUnits(end, result);
     return result;
 }
@@ -446,7 +446,7 @@ DrawingTool::parseOGR_Tool (const char* styleString,
                                      "Received NULL style string");
       }
 
-    std::auto_ptr<DrawingTool> result;
+    std::unique_ptr<DrawingTool> result;
     const char* end (styleString + std::strlen (styleString));
     const char* cursor (styleString);
     State state (TOOL_NAME);
@@ -483,7 +483,7 @@ DrawingTool::parseOGR_Tool (const char* styleString,
                   }
                 else if (!std::strcmp (toolName, "SYMBOL"))
                   {
-                      Symbol *sym = new Symbol();
+                      auto *sym = new Symbol();
                       sym->scaling = 0.0; // this defaults to 1 so size never works
                     result.reset (sym);
                   }
@@ -873,7 +873,7 @@ Symbol::setParam (const char* key,
     else if (!std::strcmp (key, SYMBOL_SIZE))
       {
           std::string valueString(value);
-          const char *units = NULL;
+          const char *units = nullptr;
           if(valueString.length() > 2 && valueString.compare(valueString.size() - 2, 2, "px") == 0)
           {
               valueString = valueString.substr(0, valueString.length()-2);

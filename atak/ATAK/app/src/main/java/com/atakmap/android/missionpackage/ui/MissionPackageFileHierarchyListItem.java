@@ -39,6 +39,8 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.missionpackage.MissionPackageUtils;
+import com.atakmap.android.missionpackage.file.MissionPackageContent;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -63,6 +65,7 @@ class MissionPackageFileHierarchyListItem extends AbstractChildlessListItem
     private final MissionPackageListFileItem _fileItem;
     private final File _file;
     private final URIContentHandler _handler;
+    private final Drawable _icon;
 
     MissionPackageFileHierarchyListItem(MissionPackageMapOverlay overlay,
             MapView mapView, BaseAdapter listener,
@@ -74,14 +77,35 @@ class MissionPackageFileHierarchyListItem extends AbstractChildlessListItem
         _context = mapView.getContext();
         _group = group;
         _fileItem = manifest;
+
+        // Get the local file
         _file = manifest != null && manifest.getPath() != null
                 ? new File(FileSystemUtils
                         .sanitizeWithSpacesAndSlashes(manifest.getPath()))
                 : null;
+
+        // Get the file handler
         if (_file != null)
             _handler = URIContentManager.getInstance().getHandler(_file);
         else
             _handler = null;
+
+        // Get the icon
+        Drawable icon = null;
+        if (_handler != null)
+            icon = _handler.getIcon();
+
+        if (icon == null) {
+            String contentType = _fileItem.getContent().getParameterValue(
+                    MissionPackageContent.PARAMETER_CONTENT_TYPE);
+            if (!FileSystemUtils.isEmpty(contentType))
+                icon = ATAKUtilities.getContentIcon(contentType);
+            else
+                icon = ATAKUtilities.getFileIcon(_file);
+        }
+
+        _icon = icon;
+
         this.asyncRefresh = true;
     }
 
@@ -104,25 +128,8 @@ class MissionPackageFileHierarchyListItem extends AbstractChildlessListItem
     }
 
     @Override
-    public String getIconUri() {
-        if (_fileItem == null) {
-            Log.w(TAG, "Skipping invalid icon");
-            return null;
-        }
-
-        ResourceFile.MIMEType t = _file != null ? ResourceFile
-                .getMIMETypeForFile(_file.getAbsolutePath()) : null;
-        if (t == null) {
-            Log.w(TAG, "Skipping invalid icon type");
-            return "asset://icons/generic_doc.png";
-        }
-
-        return t.ICON_URI;
-    }
-
-    @Override
     public Drawable getIconDrawable() {
-        return _handler != null ? _handler.getIcon() : null;
+        return _icon;
     }
 
     @Override
@@ -253,7 +260,7 @@ class MissionPackageFileHierarchyListItem extends AbstractChildlessListItem
                 _context, true, false, true, false);
         for (ImportResolver res : resolvers) {
             if (res.match(_file)) {
-                _overlay.importFile(_file);
+                _overlay.importFile(_group, _file, false);
                 return false;
             }
         }
@@ -361,7 +368,8 @@ class MissionPackageFileHierarchyListItem extends AbstractChildlessListItem
         // be able to override any actions from within this class
         if ((clazz.equals(Visibility.class) || clazz.equals(Visibility2.class))
                 && clazz.isInstance(_handler)
-                && _handler.isActionSupported(clazz))
+                && _handler.isActionSupported(clazz)
+                && FileSystemUtils.isFile(_file))
             return clazz.cast(_handler);
         return super.getAction(clazz);
     }

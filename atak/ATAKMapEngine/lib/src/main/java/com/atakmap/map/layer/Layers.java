@@ -1,5 +1,6 @@
 package com.atakmap.map.layer;
 
+import com.atakmap.map.layer.feature.opengl.GLBatchGeometryFeatureDataStoreRenderer;
 import com.atakmap.map.layer.feature.opengl.GLFeatureLayer;
 import com.atakmap.map.layer.feature.opengl.PersistentDataSourceFeatureDataStoreGLLayerSpi2;
 import com.atakmap.map.layer.feature.style.opengl.GLBasicFillStyle;
@@ -62,8 +63,8 @@ public final class Layers {
         GLLayerFactory.register(GLNativeImageryRasterLayer2.SPI);
         GLLayerFactory.register(GLMobileImageryRasterLayer2.SPI);
         
-        // specialized FeatureLayer renderers
-        GLLayerFactory.register(PersistentDataSourceFeatureDataStoreGLLayerSpi2.INSTANCE);
+        // batch based FeatureLayer renderers
+        GLLayerFactory.register(GLBatchGeometryFeatureDataStoreRenderer.SPI);
 
         // generic FeatureLayer renderer
         GLStyleFactory.register(GLBasicStrokeStyle.SPI);
@@ -72,8 +73,6 @@ public final class Layers {
         GLStyleFactory.register(GLLabelPointStyle.SPI);
         GLStyleFactory.register(GLLabeledIconStyle.SPI);
         GLStyleFactory.register(GLCompositeStyle.SPI);
-
-        GLLayerFactory.register(GLFeatureLayer.SPI2);
 
         TileReaderFactory.registerSpi(GdalTileReader.SPI);
         TileReaderFactory.registerSpi(MobacTileReader.SPI);

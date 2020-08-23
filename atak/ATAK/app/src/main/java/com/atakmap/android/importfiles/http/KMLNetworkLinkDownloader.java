@@ -42,18 +42,21 @@ import org.simpleframework.xml.core.Persister;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * HTTP download support for remote KML import. Supports nested NetworkLinks Leverages Android
  * Service to offload async HTTP requests
- * 
- * 
+ *
  */
 public class KMLNetworkLinkDownloader implements RequestListener {
 
     protected static final String TAG = "KMLNetworkLinkDownloader";
+
+    private final Set<String> downloading = new HashSet<>();
 
     private int curNotificationId = 84000;
 
@@ -72,7 +75,8 @@ public class KMLNetworkLinkDownloader implements RequestListener {
     /**
      * ctor
      * 
-     * @param context
+     * @param context the context to be used for downloading kml network links.  Must be an
+     *                activity context.
      */
     public KMLNetworkLinkDownloader(Context context) {
         if (!(context instanceof Activity)) {
@@ -201,11 +205,17 @@ public class KMLNetworkLinkDownloader implements RequestListener {
         ndl(request);
     }
 
-    public void ndl(final RemoteResourcesRequest requests) {
+    public boolean isDownloading(String url) {
+        return downloading.contains(url);
+    }
+
+    private void ndl(final RemoteResourcesRequest requests) {
         Thread t = new Thread(TAG) {
             @Override
             public void run() {
-                Log.d(TAG, "start download... ");
+                final String resourceUrl = requests.getResource().getUrl();
+                downloading.add(resourceUrl);
+                Log.d(TAG, "start download: " + resourceUrl);
                 try {
                     for (GetFileRequest r : requests.getRequests()) {
                         GetFileRequest request = r;
@@ -263,8 +273,10 @@ public class KMLNetworkLinkDownloader implements RequestListener {
                             new RequestManager.ConnectionError(-1,
                                     "unable to download network source"));
 
+                } finally {
+                    Log.d(TAG, "end download: " + resourceUrl);
+                    downloading.remove(resourceUrl);
                 }
-                Log.d(TAG, "end download... ");
             }
         };
         t.start();
@@ -299,26 +311,32 @@ public class KMLNetworkLinkDownloader implements RequestListener {
             if (redirect) {
 
                 // get redirect url from "location" header field
-                String newUrl = conn.getHeaderField("Location");
+                final String newUrl = conn.getHeaderField("Location");
 
                 // get the cookie if need, for login
                 //String cookies = conn
                 //        .getHeaderField("Set-Cookie");
 
                 // open the new connnection again
-                boolean useCaches = conn.getUseCaches();
-                String userAgent = conn.getRequestProperty("User-Agent");
-                int connectionTimeout = conn.getConnectTimeout();
-                int readTimeout = conn.getReadTimeout();
-                retval = new URL(newUrl)
-                        .openConnection();
-                retval.setRequestProperty("User-Agent", userAgent);
-                retval.setUseCaches(useCaches);
-                retval.setConnectTimeout(connectionTimeout);
-                retval.setReadTimeout(readTimeout);
-                setAcceptAllVerifier(retval);
-                Log.d(TAG, "Redirect to URL : " + newUrl);
 
+                if (newUrl != null &&
+                        (newUrl.startsWith("http://")
+                                || newUrl.startsWith("https://"))) {
+                    boolean useCaches = conn.getUseCaches();
+                    String userAgent = conn.getRequestProperty("User-Agent");
+                    int connectionTimeout = conn.getConnectTimeout();
+                    int readTimeout = conn.getReadTimeout();
+                    retval = new URL(newUrl)
+                            .openConnection();
+                    retval.setRequestProperty("User-Agent", userAgent);
+                    retval.setUseCaches(useCaches);
+                    retval.setConnectTimeout(connectionTimeout);
+                    retval.setReadTimeout(readTimeout);
+                    setAcceptAllVerifier(retval);
+                    Log.d(TAG, "Redirect to URL : " + newUrl);
+                } else {
+                    Log.e(TAG, "invalid redirect (not allowing): " + newUrl);
+                }
             }
         }
 
@@ -353,8 +371,6 @@ public class KMLNetworkLinkDownloader implements RequestListener {
         setAcceptAllVerifier(retval);
         return retval;
     }
-
-    int count = 0;
 
     @Override
     public void onRequestFinished(Request request, Bundle resultData) {

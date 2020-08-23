@@ -1,12 +1,17 @@
 package com.atakmap.map.projection;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.interop.InteropCleaner;
+import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
+import com.atakmap.map.Interop;
 import com.atakmap.map.MapSceneModel;
 import com.atakmap.math.PointD;
 import com.atakmap.util.ReadWriteLock;
 
 final class NativeProjection extends AbstractProjection {
+    final static NativePeerManager.Cleaner CLEANER = new InteropCleaner(Projection.class);
+
     final ReadWriteLock rwlock = new ReadWriteLock();
     Pointer pointer;
     Object owner;
@@ -17,6 +22,8 @@ final class NativeProjection extends AbstractProjection {
 
     NativeProjection(Pointer pointer, Object owner) {
         super(getSrid(pointer.raw), is3D(pointer.raw));
+
+        NativePeerManager.register(this, pointer, this.rwlock, null, CLEANER);
 
         this.pointer = pointer;
         this.owner = owner;
@@ -94,21 +101,6 @@ final class NativeProjection extends AbstractProjection {
         } finally {
             this.rwlock.releaseRead();
         }
-    }
-
-    @Override
-    public void finalize() {
-        this.rwlock.acquireWrite();
-        try {
-            if(this.pointer.raw != 0L)
-                destruct(this.pointer);
-        } finally {
-            this.rwlock.releaseWrite();
-        }
-
-        try {
-            super.finalize();
-        } catch(Throwable ignored) {}
     }
 
     // Interop<Projection>

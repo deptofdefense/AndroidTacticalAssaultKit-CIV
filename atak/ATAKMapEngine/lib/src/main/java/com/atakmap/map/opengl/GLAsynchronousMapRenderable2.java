@@ -503,8 +503,7 @@ public abstract class GLAsynchronousMapRenderable2<Pending>
          */
         public void set(GLMapView view) {
             this.drawMapScale = view.drawMapScale;
-            this.drawMapResolution = view.getSurface().getMapView()
-                    .getMapResolution(this.drawMapScale);
+            this.drawMapResolution = view.drawMapResolution;
             this.drawLat = view.drawLat;
             this.drawLng = view.drawLng;
             this.drawRotation = view.drawRotation;
@@ -520,6 +519,7 @@ public abstract class GLAsynchronousMapRenderable2<Pending>
             this.upperRight.set(view.upperRight.getLatitude(), view.upperRight.getLongitude());
             this.lowerRight.set(view.lowerRight.getLatitude(), view.lowerRight.getLongitude());
             this.lowerLeft.set(view.lowerLeft.getLatitude(), view.lowerLeft.getLongitude());
+            this._top = view._top;
             this._left = view._left;
             this._right = view._right;
             this._bottom = view._bottom;
@@ -556,6 +556,7 @@ public abstract class GLAsynchronousMapRenderable2<Pending>
             this.upperRight.set(view.upperRight.getLatitude(), view.upperRight.getLongitude());
             this.lowerRight.set(view.lowerRight.getLatitude(), view.lowerRight.getLongitude());
             this.lowerLeft.set(view.lowerLeft.getLatitude(), view.lowerLeft.getLongitude());
+            this._top = view._top;
             this._left = view._left;
             this._right = view._right;
             this._bottom = view._bottom;

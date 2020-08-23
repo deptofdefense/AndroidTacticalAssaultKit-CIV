@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.metrics.activity.MetricActivity;
 import com.atakmap.android.update.AppMgmtUtils;
 import com.atakmap.app.ATAKActivity;
 import com.atakmap.app.R;
@@ -35,7 +36,7 @@ import java.io.InputStream;
  *
  * 
  */
-public class ImportFileActivity extends Activity {
+public class ImportFileActivity extends MetricActivity {
 
     public static final String TAG = "ImportFileActivity";
 
@@ -95,12 +96,16 @@ public class ImportFileActivity extends Activity {
                 InputStream input = null;
                 FileOutputStream fos = null;
                 try {
-                    input = resolver.openInputStream(uri);
-                    if (input != null) {
-                        destFile = new File(destDir,
-                                FileSystemUtils.validityScan(name));
-                        FileSystemUtils.copy(input, fos = new FileOutputStream(
-                                destFile));
+                    if (uri != null) {
+                        input = resolver.openInputStream(uri);
+
+                        if (input != null) {
+                            destFile = new File(destDir,
+                                    FileSystemUtils.validityScan(name));
+                            FileSystemUtils.copy(input,
+                                    fos = new FileOutputStream(
+                                            destFile));
+                        }
                     }
                 } catch (IOException e) {
                     Log.w(TAG,
@@ -126,41 +131,47 @@ public class ImportFileActivity extends Activity {
             } else if (FileSystemUtils.isEquals(scheme,
                     ContentResolver.SCHEME_FILE)) {
                 Uri uri = intent.getData();
-                final String name = FileSystemUtils.sanitizeFilename(uri
-                        .getLastPathSegment());
-                ((TextView) findViewById(R.id.revision)).setText("Importing "
-                        + name + "...");
 
-                Log.v(TAG,
-                        "File intent detected: " + action + " : "
-                                + intent.getDataString() + " : "
-                                + intent.getType() + " : " + name);
+                if (uri != null) {
+                    final String name = FileSystemUtils.sanitizeFilename(uri
+                            .getLastPathSegment());
+                    ((TextView) findViewById(R.id.revision))
+                            .setText("Importing "
+                                    + name + "...");
 
-                InputStream input = null;
-                FileOutputStream fos = null;
-                try {
-                    input = resolver.openInputStream(uri);
-                    if (input != null) {
-                        destFile = new File(destDir, name);
-                        FileSystemUtils.copy(input, fos = new FileOutputStream(
-                                destFile));
-                    }
-                } catch (IOException e) {
-                    Log.w(TAG, "Failed to open scheme file: " + uri.toString(),
-                            e);
-                    FileSystemUtils.deleteFile(destFile);
-                } finally {
-                    if (fos != null) {
-                        try {
-                            fos.close();
-                        } catch (Exception ignore) {
+                    Log.v(TAG,
+                            "File intent detected: " + action + " : "
+                                    + intent.getDataString() + " : "
+                                    + intent.getType() + " : " + name);
+
+                    InputStream input = null;
+                    FileOutputStream fos = null;
+                    try {
+                        input = resolver.openInputStream(uri);
+                        if (input != null && name != null) {
+                            destFile = new File(destDir, name);
+                            FileSystemUtils.copy(input,
+                                    fos = new FileOutputStream(
+                                            destFile));
                         }
-                    }
+                    } catch (IOException e) {
+                        Log.w(TAG,
+                                "Failed to open scheme file: " + uri.toString(),
+                                e);
+                        FileSystemUtils.deleteFile(destFile);
+                    } finally {
+                        if (fos != null) {
+                            try {
+                                fos.close();
+                            } catch (Exception ignore) {
+                            }
+                        }
 
-                    if (input != null) {
-                        try {
-                            input.close();
-                        } catch (Exception ignore) {
+                        if (input != null) {
+                            try {
+                                input.close();
+                            } catch (Exception ignore) {
+                            }
                         }
                     }
                 }

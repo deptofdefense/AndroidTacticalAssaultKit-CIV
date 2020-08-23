@@ -41,9 +41,10 @@ namespace TAK {
             public :
                 Util::TAKErr open(const char *db) NOTHROWS;
             protected :
-                Util::TAKErr open(const char *db, bool buildIndices) NOTHROWS;
+                Util::TAKErr open(const char *db, int* dbVersion, bool buildIndices) NOTHROWS;
             private :
                 Util::TAKErr buildTables(bool indices) NOTHROWS;
+                Util::TAKErr upgradeTables(int *dbVersion) NOTHROWS;
                 Util::TAKErr createIndicesNoSync() NOTHROWS;
                 Util::TAKErr dropIndicesNoSync() NOTHROWS;
                 Util::TAKErr createTriggersNoSync() NOTHROWS;
@@ -58,146 +59,114 @@ namespace TAK {
                 virtual Util::TAKErr isCompatible(bool *value, const FeatureSetQueryParameters *params) NOTHROWS;
                 virtual Util::TAKErr isCompatible(bool *value, const FeatureQueryParameters *params) NOTHROWS;
             public :
-                //public Feature getFeature(int64_t fid) {
                 virtual Util::TAKErr getFeature(FeaturePtr_const &value, const int64_t fid) NOTHROWS override;
 
-                //public FeatureCursor queryFeatures(FeatureQueryParameters params) {
-                virtual Util::TAKErr queryFeatures(FeatureCursorPtr &result) NOTHROWS;
-                virtual Util::TAKErr queryFeatures(FeatureCursorPtr &result, const FeatureQueryParameters &params) NOTHROWS;
+                virtual Util::TAKErr queryFeatures(FeatureCursorPtr &result) NOTHROWS override;
+                virtual Util::TAKErr queryFeatures(FeatureCursorPtr &result, const FeatureQueryParameters &params) NOTHROWS override;
 
-                //public int queryFeaturesCount(FeatureQueryParameters params) {
-                virtual Util::TAKErr queryFeaturesCount(int *value) NOTHROWS;
-                virtual Util::TAKErr queryFeaturesCount(int *value, const FeatureQueryParameters &params) NOTHROWS;
+                virtual Util::TAKErr queryFeaturesCount(int *value) NOTHROWS override;
+                virtual Util::TAKErr queryFeaturesCount(int *value, const FeatureQueryParameters &params) NOTHROWS override;
                 
-                //public synchronized FeatureSet getFeatureSet(int64_t fsid)
                 virtual Util::TAKErr getFeatureSet(FeatureSetPtr_const &value, const int64_t fsid) NOTHROWS override;
             private :
                 Util::TAKErr getFeatureSetImpl(FeatureSetPtr_const &value, const FeatureSetDefn &defn) NOTHROWS;
             protected :
-                //protected Collection<FeatureSetDefn> filterNoSync(FeatureSetQueryParameters params, boolean softVisibilityCheck) {
                 virtual Util::TAKErr filterNoSync(std::set<std::shared_ptr<const FeatureSetDefn>> &result, const FeatureSetQueryParameters *params, const bool softVisibilityCheck) NOTHROWS;
-                //protected Collection<FeatureSetDefn> filterNoSync(FeatureQueryParameters params, boolean softChecks) {
                 virtual Util::TAKErr filterNoSync(std::set<std::shared_ptr<const FeatureSetDefn>> &result, const FeatureQueryParameters *params, const bool softVisibilityCheck) NOTHROWS;
             public :
-                //public synchronized FeatureSetCursor queryFeatureSets(FeatureSetQueryParameters params) {
-                virtual Util::TAKErr queryFeatureSets(FeatureSetCursorPtr &result) NOTHROWS;
-                virtual Util::TAKErr queryFeatureSets(FeatureSetCursorPtr &result, const FeatureSetQueryParameters &params) NOTHROWS;
+                virtual Util::TAKErr queryFeatureSets(FeatureSetCursorPtr &result) NOTHROWS override;
+                virtual Util::TAKErr queryFeatureSets(FeatureSetCursorPtr &result, const FeatureSetQueryParameters &params) NOTHROWS override;
 
-                //public synchronized int queryFeatureSetsCount(FeatureSetQueryParameters params) {
-                virtual Util::TAKErr queryFeatureSetsCount(int *value) NOTHROWS;
-                virtual Util::TAKErr queryFeatureSetsCount(int *value, const FeatureSetQueryParameters &params) NOTHROWS;
+                virtual Util::TAKErr queryFeatureSetsCount(int *value) NOTHROWS override;
+                virtual Util::TAKErr queryFeatureSetsCount(int *value, const FeatureSetQueryParameters &params) NOTHROWS override;
 
-                //public synchronized boolean isFeatureVisible(int64_t fid) {
-                virtual Util::TAKErr isFeatureVisible(bool *value, const int64_t fid) NOTHROWS;
+                virtual Util::TAKErr isFeatureVisible(bool *value, const int64_t fid) NOTHROWS override;
 
-                //public synchronized boolean isFeatureSetVisible(int64_t fsid) {
-                virtual Util::TAKErr isFeatureSetVisible(bool *value, const int64_t fsid) NOTHROWS;
+                virtual Util::TAKErr isFeatureSetVisible(bool *value, const int64_t fsid) NOTHROWS override;
 
-                //public synchronized boolean isAvailable() {
-                virtual Util::TAKErr isAvailable(bool *value) NOTHROWS;
+                virtual Util::TAKErr isFeatureSetReadOnly(bool *value, const int64_t fsid) NOTHROWS override;
+                virtual Util::TAKErr isFeatureReadOnly(bool *value, const int64_t fid) NOTHROWS override;
 
-                //public synchronized void refresh() {
-                virtual Util::TAKErr refresh() NOTHROWS;
+                virtual Util::TAKErr isAvailable(bool *value) NOTHROWS override;
+
+                virtual Util::TAKErr refresh() NOTHROWS override;
                 
-                //public String getUri() {
-                virtual Util::TAKErr getUri(Port::String &value) NOTHROWS;
+                virtual Util::TAKErr getUri(Port::String &value) NOTHROWS override;
 
-                virtual Util::TAKErr close() NOTHROWS;
+                virtual Util::TAKErr close() NOTHROWS override;
             private :
                 Util::TAKErr closeImpl() NOTHROWS;
-            protected :
-                //protected boolean setFeatureVisibleImpl(int64_t fid, boolean visible) {
-                virtual Util::TAKErr setFeatureVisibleImpl(const int64_t fid, const bool visible) NOTHROWS;
 
-                //protected boolean setFeaturesVisibleImpl(FeatureQueryParameters params, boolean visible) {
-                virtual Util::TAKErr setFeaturesVisibleImpl(const FeatureQueryParameters &params, const bool visible) NOTHROWS;
+            protected:
+                virtual Util::TAKErr setFeatureSetReadOnlyImpl(const int64_t fsid, const bool readOnly) NOTHROWS override;
+                virtual Util::TAKErr setFeatureSetsReadOnlyImpl(const FeatureSetQueryParameters &paramsRef, const bool readOnly) NOTHROWS override;
+
+                virtual Util::TAKErr setFeatureVisibleImpl(const int64_t fid, const bool visible) NOTHROWS override;
+
+                virtual Util::TAKErr setFeaturesVisibleImpl(const FeatureQueryParameters &params, const bool visible) NOTHROWS override;
                 
-                //protected boolean setFeatureSetVisibleImpl(int64_t fsid, boolean visible)
-                virtual Util::TAKErr setFeatureSetVisibleImpl(const int64_t fsid, const bool visible) NOTHROWS;
+                virtual Util::TAKErr setFeatureSetVisibleImpl(const int64_t fsid, const bool visible) NOTHROWS override;
 
-                //protected boolean setFeatureSetsVisibleImpl(FeatureSetQueryParameters params, boolean visible)
-                virtual Util::TAKErr setFeatureSetsVisibleImpl(const FeatureSetQueryParameters &params, const bool visible) NOTHROWS;
+                virtual Util::TAKErr setFeatureSetsVisibleImpl(const FeatureSetQueryParameters &params, const bool visible) NOTHROWS override;
 
                 virtual Util::TAKErr setFeatureVersionImpl(const int64_t fid, const int64_t version) NOTHROWS;
 
-                //protected void beginBulkModificationImpl()
-                virtual Util::TAKErr beginBulkModificationImpl() NOTHROWS;
+                virtual Util::TAKErr beginBulkModificationImpl() NOTHROWS override;
 
-                //protected boolean endBulkModificationImpl(boolean successful)
-                virtual Util::TAKErr endBulkModificationImpl(const bool successful) NOTHROWS;
+                virtual Util::TAKErr endBulkModificationImpl(const bool successful) NOTHROWS override;
 
-                //protected final boolean insertFeatureSetImpl(String provider, String type, String name, double minResolution, double maxResolution, FeatureSet[] returnRef)
                 virtual Util::TAKErr insertFeatureSetImpl(FeatureSetPtr_const *ref, const char *provider, const char *type, const char *name, const double minResolution, const double maxResolution) NOTHROWS override;
 
             private :
-                //private void insertFeatureSetImpl(int64_t fsid, String provider, String type, String name, double minResolution, double maxResolution)
                 virtual Util::TAKErr insertFeatureSetImpl(const int64_t fsid, const char *provider, const char *type, const char *name, const double minResolution, const double maxResolution) NOTHROWS;
             protected :
-                    //protected boolean updateFeatureSetImpl(int64_t fsid, String name)
-                virtual Util::TAKErr updateFeatureSetImpl(const int64_t fsid, const char *name) NOTHROWS;
+                virtual Util::TAKErr updateFeatureSetImpl(const int64_t fsid, const char *name) NOTHROWS override;
 
-                    //protected boolean updateFeatureSetImpl(int64_t fsid, double minResolution, double maxResolution)
-                virtual Util::TAKErr updateFeatureSetImpl(const int64_t fsid, const double minResolution, const double maxResolution) NOTHROWS;
+                virtual Util::TAKErr updateFeatureSetImpl(const int64_t fsid, const double minResolution, const double maxResolution) NOTHROWS override;
 
-                    //protected boolean updateFeatureSetImpl(int64_t fsid, String name, double minResolution, double maxResolution)
-                virtual Util::TAKErr updateFeatureSetImpl(const int64_t fsid, const char *name, const double minResolution, const double maxResolution) NOTHROWS;
+                virtual Util::TAKErr updateFeatureSetImpl(const int64_t fsid, const char *name, const double minResolution, const double maxResolution) NOTHROWS override;
                 
                 virtual Util::TAKErr updateFeatureSetImpl(const int64_t fsid, const char *name, const char *type, const double minResolution, const double maxResolution) NOTHROWS;
 
-                    //protected boolean deleteFeatureSetImpl(int64_t fsid)
-                virtual Util::TAKErr deleteFeatureSetImpl(const int64_t fsid) NOTHROWS;
+                virtual Util::TAKErr deleteFeatureSetImpl(const int64_t fsid) NOTHROWS override;
 
-                    //protected boolean deleteAllFeatureSetsImpl()
-                virtual Util::TAKErr deleteAllFeatureSetsImpl() NOTHROWS;
+                virtual Util::TAKErr deleteAllFeatureSetsImpl() NOTHROWS override;
 
-                    //protected boolean insertFeatureImpl(int64_t fsid, String name, Geometry geom, Style style, AttributeSet attributes, Feature[] returnRef)
-                virtual Util::TAKErr insertFeatureImpl(FeaturePtr_const *ref, const int64_t fsid, const char *name, const atakmap::feature::Geometry &geom, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attributes) NOTHROWS;
+                virtual Util::TAKErr insertFeatureImpl(FeaturePtr_const *ref, const int64_t fsid, const char *name, const atakmap::feature::Geometry &geom, const AltitudeMode altitudeMode, const double extrude, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attributes) NOTHROWS override;
 
-                    //protected boolean insertFeatureImpl(int64_t fsid, FeatureDefinition def, Feature[] returnRef)
                 virtual Util::TAKErr insertFeatureImpl(FeaturePtr_const *ref, int64_t* fid, const int64_t fsid, FeatureDefinition2 &def) NOTHROWS;
             private :
-                //int64_t insertFeatureImpl(InsertContext ctx, int64_t fsid, FeatureDefinition def)
                 Util::TAKErr insertFeatureImpl(int64_t *fid, InsertContext &ctx, const int64_t fsid, FeatureDefinition2 &def) NOTHROWS;
             protected :
-                    //protected boolean updateFeatureImpl(int64_t fid, String name)
-                virtual Util::TAKErr updateFeatureImpl(const int64_t fid, const char *name) NOTHROWS;
+                virtual Util::TAKErr updateFeatureImpl(const int64_t fid, const char *name) NOTHROWS override;
 
-                    //protected boolean updateFeatureImpl(int64_t fid, Geometry geom)
-                virtual Util::TAKErr updateFeatureImpl(const int64_t fid, const atakmap::feature::Geometry &geom) NOTHROWS;
+                virtual Util::TAKErr updateFeatureImpl(const int64_t fid, const atakmap::feature::Geometry &geom) NOTHROWS override;
 
-                    //protected boolean updateFeatureImpl(int64_t fid, Style style)
-                virtual Util::TAKErr updateFeatureImpl(const int64_t fid, const atakmap::feature::Style *style) NOTHROWS;
+                virtual Util::TAKErr updateFeatureImpl(const int64_t fid, const TAK::Engine::Feature::AltitudeMode altitudeMode, const double extrude) NOTHROWS override;
 
-                    //protected boolean updateFeatureImpl(int64_t fid, AttributeSet attributes)
-                virtual Util::TAKErr updateFeatureImpl(const int64_t fid, const atakmap::util::AttributeSet &attributes) NOTHROWS;
+                virtual Util::TAKErr updateFeatureImpl(const int64_t fid, const atakmap::feature::Style *style) NOTHROWS override;
 
-                    //protected boolean updateFeatureImpl(int64_t fid, String name, Geometry geom, Style style, AttributeSet attributes)
-                virtual Util::TAKErr updateFeatureImpl(const int64_t fid, const char *name, const atakmap::feature::Geometry &geom, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attributes) NOTHROWS;
+                virtual Util::TAKErr updateFeatureImpl(const int64_t fid, const atakmap::util::AttributeSet &attributes) NOTHROWS override;
 
-                    //protected boolean deleteFeatureImpl(int64_t fid)
-                virtual Util::TAKErr deleteFeatureImpl(const int64_t fid) NOTHROWS;
+                virtual Util::TAKErr updateFeatureImpl(const int64_t fid, const char *name, const atakmap::feature::Geometry &geom, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attributes) NOTHROWS override;
 
-                    //protected boolean deleteAllFeaturesImpl(int64_t fsid)
-                virtual Util::TAKErr deleteAllFeaturesImpl(const int64_t fsid) NOTHROWS;
+                virtual Util::TAKErr deleteFeatureImpl(const int64_t fid) NOTHROWS override;
+
+                virtual Util::TAKErr deleteAllFeaturesImpl(const int64_t fsid) NOTHROWS override;
 
 
                 /**************************************************************************/
             private :
-                //private boolean buildParamsWhereClauseNoCheck(FeatureQueryParameters params, Collection<FeatureSetDefn> fs, WhereClauseBuilder whereClause)
                 Util::TAKErr buildParamsWhereClauseNoCheck(bool *emptyResults, const FeatureQueryParameters &params, Port::Collection<std::shared_ptr<const FeatureSetDefn>> &fs, DB::WhereClauseBuilder2 &whereClause) NOTHROWS;
-                //private boolean buildParamsWhereClauseCheck(FeatureQueryParameters params, FeatureSetDefn defn, WhereClauseBuilder whereClause)
                 Util::TAKErr buildParamsWhereClauseCheck(bool *emptyResults, const FeatureQueryParameters &params, const FeatureSetDefn &fs, DB::WhereClauseBuilder2 &whereClause) NOTHROWS;
 
                 Util::TAKErr getMaxFeatureVersion(const int64_t fsid, int64_t *version) NOTHROWS;
                 /**************************************************************************/
             protected :
-                //protected static void encodeAttributes(FDB impl, InsertContext ctx, AttributeSet metadata)
                 static Util::TAKErr encodeAttributes(FDB &impl, InsertContext &ctx, const atakmap::util::AttributeSet &metadata) NOTHROWS;
 
             private :
-                //private static AttributeSet decodeAttributes(byte[] attribsBlob, Map<Long, AttributeSpec> schema)
                 static Util::TAKErr decodeAttributes(AttributeSetPtr_const &result, const uint8_t *blob, const std::size_t blobLen, IdAttrSchemaMap &schema) NOTHROWS;
-                //private static AttributeSet decodeAttributesImpl(DataInputStream dis, Map<Long, AttributeSpec> schema)
                 static Util::TAKErr decodeAttributesImpl(AttributeSetPtr_const &result, Util::DataInput2 &dis, IdAttrSchemaMap &schema) NOTHROWS;
 
                 static Util::TAKErr insertAttrSchema(std::shared_ptr<AttributeSpec> &retval, InsertContext &ctx, DB::Database2 &database, const char *key, const atakmap::util::AttributeSet &metadata) NOTHROWS;
@@ -206,24 +175,25 @@ namespace TAK {
 
 
             private :
-                Port::String databaseFile;
+                Port::String database_file_;
 
-                bool spatialIndexEnabled;
+                bool spatial_index_enabled_;
 
-                DB::DatabasePtr database;
+                DB::DatabasePtr database_;
 
-                std::map<int64_t, std::shared_ptr<FeatureSetDefn>> featureSets;
+                std::map<int64_t, std::shared_ptr<FeatureSetDefn>> feature_sets_;
                 
-                bool infoDirty;
-                bool visible;
-                bool visibleCheck;
-                int minLod;
-                int maxLod;
-                bool lodCheck;
+                bool info_dirty_;
+                bool visible_;
+                bool visible_check_;
+                int min_lod_;
+                int max_lod_;
+                bool lod_check_;
+                bool read_only_;
 
-                IdAttrSchemaMap idToAttrSchema;
-                KeyAttrSchemaMap keyToAttrSchema;
-                bool attrSchemaDirty;
+                IdAttrSchemaMap id_to_attr_schema_;
+                KeyAttrSchemaMap key_to_attr_schema_;
+                bool attr_schema_dirty_;
 
                 friend class FeatureSetDatabase;
                 friend class PersistentDataSourceFeatureDataStore2;
@@ -243,6 +213,7 @@ namespace TAK {
                 Port::String name;
                 Port::String type;
                 Port::String provider;
+                bool readOnly;
             };
 
             struct FDB::AttributeCoder
@@ -307,7 +278,7 @@ namespace TAK {
                 Util::TAKErr insertFeatureSet(int64_t *fsid, const char *provider, const char *type, const char *name, const double minResolution, const double maxResolution) NOTHROWS;
                 Util::TAKErr insertFeatureSet(const int64_t fsid, const char *provider, const char *type, const char *name) NOTHROWS;
                 Util::TAKErr insertFeature(int64_t* fid, const int64_t fsid, FeatureDefinition2 &def) NOTHROWS;
-                Util::TAKErr insertFeature(const int64_t fsid, const char *name, const atakmap::feature::Geometry &geometry, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attribs) NOTHROWS;
+                Util::TAKErr insertFeature(const int64_t fsid, const char *name, const atakmap::feature::Geometry &geometry, const AltitudeMode altitudeMode, const double extrude, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attribs) NOTHROWS;
                 Util::TAKErr setFeatureSetVisible(const int64_t fsid, const bool& visible) NOTHROWS;
                 Util::TAKErr setFeatureVisible(const int64_t fid, const bool& visible) NOTHROWS;
                 Util::TAKErr setFeatureVersion(const int64_t fid, const int64_t version) NOTHROWS;
@@ -325,21 +296,23 @@ namespace TAK {
                                            public FeatureCursor2
             {
             public :
-                FeatureCursorImpl(FDB &owner, DB::QueryPtr &&filter, const int idCol, const int fsidCol, const int versionCol, const int nameCol, const int geomCol, const int styleCol, const int attribsCol) NOTHROWS;
+                FeatureCursorImpl(FDB &owner, DB::QueryPtr &&filter, const int idCol, const int fsidCol, const int versionCol, const int nameCol, const int geomCol, const int styleCol, const int attribsCol, const int altitudeModeCol, const int extrudeCol) NOTHROWS;
             public: // FeatureCursor2
-                virtual TAK::Engine::Util::TAKErr getId(int64_t *value) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr getVersion(int64_t *value) NOTHROWS;
+                virtual TAK::Engine::Util::TAKErr getId(int64_t *value) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr getVersion(int64_t *value) NOTHROWS override;
             public: // FeatureDefinition2
-                virtual TAK::Engine::Util::TAKErr getRawGeometry(RawData *value) NOTHROWS;
-                virtual GeometryEncoding getGeomCoding() NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr getName(const char **value) NOTHROWS;
-                virtual StyleEncoding getStyleCoding() NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr getRawStyle(RawData *value) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr getAttributes(const atakmap::util::AttributeSet **value) NOTHROWS;
-                virtual TAK::Engine::Util::TAKErr get(const Feature2 **feature) NOTHROWS;
-                virtual Util::TAKErr getFeatureSetId(int64_t *value) NOTHROWS;
+                virtual TAK::Engine::Util::TAKErr getRawGeometry(RawData *value) NOTHROWS override;
+                virtual GeometryEncoding getGeomCoding() NOTHROWS override;
+                virtual AltitudeMode getAltitudeMode() NOTHROWS override;
+                virtual double getExtrude() NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr getName(const char **value) NOTHROWS override;
+                virtual StyleEncoding getStyleCoding() NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr getRawStyle(RawData *value) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr getAttributes(const atakmap::util::AttributeSet **value) NOTHROWS override;
+                virtual TAK::Engine::Util::TAKErr get(const Feature2 **feature) NOTHROWS override;
+                virtual Util::TAKErr getFeatureSetId(int64_t *value) NOTHROWS override;
             public : // RowIterator
-                virtual TAK::Engine::Util::TAKErr moveToNext() NOTHROWS;
+                virtual TAK::Engine::Util::TAKErr moveToNext() NOTHROWS override;
             private :
                 FDB &owner;
                 const int idCol;
@@ -349,6 +322,8 @@ namespace TAK {
                 const int styleCol;
                 const int attribsCol;
                 const int versionCol;
+                const int altitudeModeCol;
+                const int extrudeCol;
 
                 FeaturePtr_const rowFeature;
                 AttributeSetPtr_const rowAttribs;

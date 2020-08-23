@@ -13,9 +13,18 @@ import android.graphics.PointF;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+
+import com.atakmap.android.data.URIContentHandler;
+import com.atakmap.android.data.URIContentManager;
+import com.atakmap.android.filesystem.ResourceFile;
+import com.atakmap.android.image.ImageDropDownReceiver;
+import com.atakmap.android.importexport.ImportExportMapComponent;
+import com.atakmap.android.importfiles.sort.ImportResolver;
+import com.atakmap.android.importfiles.task.ImportFilesTask;
 import com.atakmap.coremap.maps.conversion.GeomagneticField;
 import android.net.Uri;
 import android.util.Base64;
+import android.util.Pair;
 import android.util.SparseArray;
 import android.view.View;
 import android.widget.ImageView;
@@ -31,7 +40,6 @@ import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.toolbars.BullseyeTool;
 import com.atakmap.android.user.icon.SpotMapPalletFragment;
-import com.atakmap.android.vehicle.overhead.OverheadMarker;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -58,8 +66,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -240,12 +250,6 @@ public class ATAKUtilities {
             if (i instanceof Shape) {
                 Collections.addAll(pointList,
                         ((Shape) i).getPoints());
-            } else if (i instanceof OverheadMarker) {
-                GeoBounds gb = ((OverheadMarker) i).getBounds();
-                pointList.add(new GeoPoint(gb.getNorth(), gb.getWest()));
-                pointList.add(new GeoPoint(gb.getNorth(), gb.getEast()));
-                pointList.add(new GeoPoint(gb.getSouth(), gb.getWest()));
-                pointList.add(new GeoPoint(gb.getSouth(), gb.getEast()));
             } else if (i instanceof PointMapItem) {
                 pointList.add(((PointMapItem) i).getPoint());
             } else if (i instanceof AnchoredMapItem) {
@@ -801,7 +805,7 @@ public class ATAKUtilities {
      *  Use self icon if item is 'self'
      *  Use specified default
      *
-     * @param view the mapView to use to find the the online users.
+     * @param view the mapView to use to find the online users.
      * @param icon the view to set with the found default icon.
      * @param uid the uid of the user.
      * @param defaultResource if the user is not online or on the map, use the defaultResource to represent the user.
@@ -1269,5 +1273,92 @@ public class ATAKUtilities {
             Toast.makeText(c, R.string.copied_to_clipboard_generic,
                     Toast.LENGTH_SHORT)
                     .show();
+    }
+
+    // Content type -> drawable icon based on import resolver
+    private static final Map<String, Drawable> contentIcons = new HashMap<>();
+
+    /**
+     * Get an icon for a given file content type
+     * @param contentType Content type
+     * @return Icon or null if N/A
+     */
+    public static Drawable getContentIcon(String contentType) {
+        if (contentType == null)
+            return null;
+
+        // Import resolver icons
+        // To avoid calling this method excessively, cache results where possible
+        synchronized (contentIcons) {
+            // Cached icon
+            Drawable icon = contentIcons.get(contentType);
+            if (icon != null)
+                return icon;
+
+            Collection<ImportResolver> resolvers = null;
+
+            if (contentIcons.isEmpty()) {
+                // Build icons for default resolvers
+                MapView mv = MapView.getMapView();
+                if (mv != null)
+                    resolvers = ImportFilesTask.GetSorters(mv.getContext(),
+                            false, false, false, false);
+            } else {
+                // New resolver icons that may have been registered since
+                ImportExportMapComponent iemc = ImportExportMapComponent
+                        .getInstance();
+                if (iemc != null)
+                    resolvers = iemc.getImporterResolvers();
+            }
+
+            if (resolvers == null || resolvers.isEmpty())
+                return null;
+
+            // Read icons from resolvers
+            for (ImportResolver res : resolvers) {
+                icon = res.getIcon();
+                if (icon == null)
+                    continue;
+                Pair<String, String> p = res.getContentMIME();
+                if (p == null || p.first == null)
+                    continue;
+                contentIcons.put(p.first, icon);
+            }
+
+            // Last attempt to read from cached icons
+            return contentIcons.get(contentType);
+        }
+    }
+
+    /**
+     * Get an icon for a file
+     * Note: If the file does not exist it's recommended to use
+     * {@link #getContentIcon(String)} provided you have the content type
+     * @param f File
+     * @return File icon or null if N/A
+     */
+    public static Drawable getFileIcon(File f) {
+        if (f == null)
+            return null;
+
+        MapView mv = MapView.getMapView();
+        Context ctx = mv != null ? mv.getContext() : null;
+
+        // Content handler icon
+        URIContentHandler handler = URIContentManager.getInstance()
+                .getHandler(f);
+        if (handler != null)
+            return handler.getIcon();
+
+        // Images
+        if (ImageDropDownReceiver.ImageFileFilter.accept(null, f.getName()))
+            return ctx != null ? ctx.getDrawable(R.drawable.camera) : null;
+
+        ResourceFile.MIMEType mime = ResourceFile
+                .getMIMETypeForFile(f.getName());
+        return (mime != null && ctx != null)
+                ? new BitmapDrawable(ctx.getResources(),
+                        getUriBitmap(mime.ICON_URI))
+                : null;
     }
 }

@@ -236,5 +236,14 @@
                  android:key="imagery_tab_name"
                  android:defaultValue="Imagery" />
 
+             <ListPreference
+                 android:title="@string/preferences_text172"
+                 android:entryValues="@array/frame_limit_values"
+                 android:entries="@array/frame_limit_names"
+                 android:summary="@string/preferences_text173"
+                 android:key="frame_limit"
+                 android:defaultValue="0" />
+
+
         </PreferenceCategory>
 </PreferenceScreen>

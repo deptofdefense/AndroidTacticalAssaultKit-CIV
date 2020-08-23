@@ -100,6 +100,7 @@
     </overlay>
     <overlay id='vehicles' parent='markerroot' title='Vehicles' icon='asset://icons/aircraft.png' order='5'  litmusFilter="u-d-v">
         <filter type='u-d-v'/>
+        <filter type='u-d-v-m'/>
     </overlay>
     <overlay id='nav' title='Navigation' icon='asset://icons/green_flag.png' order='5' litmusFilter="b-m-">
         <overlay id='routes' title='Routes' icon='asset://icons/routes.png' order='0'>

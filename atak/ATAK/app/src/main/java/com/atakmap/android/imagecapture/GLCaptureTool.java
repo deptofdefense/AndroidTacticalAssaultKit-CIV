@@ -306,7 +306,7 @@ public class GLCaptureTool extends GLMapView implements GLLayer2,
                 // or else the imagery isn't captured correctly
                 if (!_initialBaseRender) {
                     // Sync the capture layer position with the map layer
-                    animator.startAnimating(_mapView.getLatitude(),
+                    this.startAnimating(_mapView.getLatitude(),
                             _mapView.getLongitude(), _mapView.getMapScale(),
                             _mapView.getMapRotation(), _mapView.getMapTilt(),
                             1d);
@@ -529,6 +529,11 @@ public class GLCaptureTool extends GLMapView implements GLLayer2,
             toolbar.putExtra("toolbar", _toolbarId);
             AtakBroadcast.getInstance().sendBroadcast(toolbar);
         }
+    }
+
+    @Override
+    public void onMapMoved(AtakMapView view, boolean animate) {
+        super.onMapMoved(view, animate);
     }
 
     private static class MapState {

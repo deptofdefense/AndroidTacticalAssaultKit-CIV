@@ -42,13 +42,18 @@ public class MultiCollection<T> implements Collection<T> {
 
     @Override
     public boolean containsAll(Collection<?> arg0) {
-        // TODO Auto-generated method stub
-        return false;
+        for(Object o : arg0)
+            if(!this.contains(o))
+                return false;
+        return true;
     }
 
     @Override
     public boolean isEmpty() {
-        return (this.size() > 0);
+        for(Collection<? extends T> c : this.collections)
+            if(!c.isEmpty())
+                return false;
+        return true;
     }
 
     @Override
@@ -76,8 +81,10 @@ public class MultiCollection<T> implements Collection<T> {
 
     @Override
     public boolean retainAll(Collection<?> arg0) {
-        // TODO Auto-generated method stub
-        return false;
+        boolean retval = false;
+        for(Collection<? extends T> c : this.collections)
+            retval |= c.retainAll(arg0);
+        return retval;
     }
 
     @Override

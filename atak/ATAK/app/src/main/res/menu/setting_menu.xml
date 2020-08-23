@@ -1,15 +1,16 @@
-<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android" >
     <item
         android:title="@string/settings"
         android:id="@+id/action_home_settings"
         android:icon="@drawable/home_settings"
         android:orderInCategory="100"
-        android:showAsAction="always"/>
+        android:showAsAction="ifRoom" />
     <item
         android:title="@string/search"
         android:id="@+id/action_home_search"
         android:icon="@drawable/ic_action_search"
         android:orderInCategory="100"
         android:visible="false"
-        android:showAsAction="always"/> 
+        android:showAsAction="ifRoom" />
 </menu>

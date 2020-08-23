@@ -4,6 +4,7 @@ package com.atakmap.android.importfiles.sort;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.util.Pair;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
@@ -29,6 +30,8 @@ import static android.content.Context.MODE_PRIVATE;
 public class ImportCertSort extends ImportInternalSDResolver {
 
     private static final String TAG = "ImportCertSort";
+    private static final String CONTENT_TYPE = "P12 Certificate";
+
     private final Context _context;
     private int beginServerCount = 0;
 
@@ -37,7 +40,8 @@ public class ImportCertSort extends ImportInternalSDResolver {
         // Since we do not do any extra validation yet in match(), set validateExt to
         // true other wise this sorter will match everything when validateExt is passed
         // as false.
-        super(".p12", "cert", true, copyFile, "P12 Certificate");
+        super(".p12", "cert", true, copyFile, CONTENT_TYPE,
+                context.getDrawable(R.drawable.ic_server_success));
         _context = context;
 
         SharedPreferences streamingPrefs = _context.getSharedPreferences(
@@ -207,5 +211,10 @@ public class ImportCertSort extends ImportInternalSDResolver {
         }
 
         CertificateManager.getInstance().refresh();
+    }
+
+    @Override
+    public Pair<String, String> getContentMIME() {
+        return new Pair<>(CONTENT_TYPE, "application/x-pkcs12");
     }
 }

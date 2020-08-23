@@ -16,7 +16,7 @@ namespace TAK {
             }
 
             /** Thread priorities */
-            enum ENGINE_API ThreadPriority
+            enum ThreadPriority
             {
                 TETP_Lowest,
                 TETP_Low,

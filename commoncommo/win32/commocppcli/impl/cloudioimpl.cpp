@@ -58,6 +58,9 @@ CloudIOOperation impl::CloudIOImpl::nativeToCLI(atakmap::commoncommo::CloudIOOpe
     case atakmap::commoncommo::CloudIOOperation::CLOUDIO_OP_MOVE:
         ret = CloudIOOperation::Move;
         break;
+    case atakmap::commoncommo::CloudIOOperation::CLOUDIO_OP_DELETE:
+        ret = CloudIOOperation::Delete;
+        break;
     case atakmap::commoncommo::CloudIOOperation::CLOUDIO_OP_PUT:
         ret = CloudIOOperation::Put;
         break;

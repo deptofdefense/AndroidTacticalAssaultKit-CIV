@@ -67,12 +67,16 @@ public class MovePointTool extends Tool implements OnVisibleChangedListener {
         final MapItem item = _mapView.getRootGroup().deepFindUID(uid);
         if (item == null) {
             return false;
-        } else if (item instanceof MultiPolyline) {
+        } else if (item instanceof MultiPolyline
+                && ((MultiPolyline) item).getMovable()) {
             itemMP = (MultiPolyline) item;
             listenForTouchMP();
             return true;
         }
         if (!(item instanceof PointMapItem))
+            return false;
+
+        if (!item.getMetaBoolean("movable", true))
             return false;
 
         itemToMove = (PointMapItem) item;

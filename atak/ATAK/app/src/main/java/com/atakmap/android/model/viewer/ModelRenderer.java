@@ -6,7 +6,7 @@ import android.content.Context;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.atakmap.android.model.viewer.processing.ShaderHelper;
 import com.atakmap.android.model.viewer.processing.TextureHelper;

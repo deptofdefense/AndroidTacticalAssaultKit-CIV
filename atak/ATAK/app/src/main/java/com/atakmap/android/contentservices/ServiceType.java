@@ -5,4 +5,5 @@ public enum ServiceType {
     Imagery,
     Feature,
     Terrain,
+    SurfaceMesh,
 }

@@ -289,7 +289,7 @@ public abstract class TiledElevationSource extends ElevationSource {
         public void remove() {}
     }
 
-    private class CursorImpl implements Cursor {
+    protected class CursorImpl implements Cursor {
 
         ArrayList<TileMatrix.ZoomLevel> levels;
         Iterator<TileMatrix.ZoomLevel> levelIter;
@@ -298,7 +298,7 @@ public abstract class TiledElevationSource extends ElevationSource {
         Iterator<Point> tileIter;
         QueryParameters filter;
 
-        CursorImpl(QueryParameters filter) {
+        protected CursorImpl(QueryParameters filter) {
             this.levelIter = null;
             this.zoomLevel = -1;
             this.tile = null;

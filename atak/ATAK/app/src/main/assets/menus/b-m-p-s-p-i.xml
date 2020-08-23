@@ -1,7 +1,9 @@
-<menu buttonRadius='65' buttonSpan='40' buttonWidth='90' buttonBg='bgs/button.xml'>
+<menu buttonRadius='65' buttonSpan='36' buttonWidth='90' buttonBg='bgs/button.xml'>
 
-    <button angle='-90'
-            icon='icons/camlock.xml'
+    <button angle='-90' icon='icons/delete.png'
+            onClick='actions/remove.xml' />
+
+    <button icon='icons/camlock.xml'
             selectable='true'
             onClick='actions/lockcam.xml'
             selected='${camLocked}' />
@@ -28,8 +30,10 @@
     <button icon='icons/breadcrumbs.xml'
             selectable='true'
             onClick='actions/toggle_crumb.xml'
-            selected='${tracks_on}'/>
-
+            selected='${tracks_on}'
+            submenu='menus/breadcrumbs_prefs.xml'
+            disableSwap='true'
+            disableIconSwap='true'/>
 
     <button icon='icons/blast_rings.png'
             dependsOnCapability='capability.weapons'

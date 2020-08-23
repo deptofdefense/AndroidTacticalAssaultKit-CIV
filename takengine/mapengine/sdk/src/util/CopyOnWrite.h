@@ -37,6 +37,7 @@ namespace TAK {
             private:
                 mutable TAK::Engine::Thread::Mutex mutex;
                 std::shared_ptr<const T> item;
+                std::shared_ptr<const T> empty;
             };
 
             //
@@ -94,7 +95,7 @@ namespace TAK {
                     TAK::Engine::Thread::MutexGuard guard(mutex);
                     return item;
                 }
-                return nullptr;
+                return empty;
             }
         }
     }

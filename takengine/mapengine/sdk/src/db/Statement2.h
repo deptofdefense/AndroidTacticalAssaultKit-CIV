@@ -14,9 +14,9 @@ namespace TAK {
                                private TAK::Engine::Util::NonCopyable
             {
             protected:
-                Statement2() NOTHROWS;
+                Statement2() NOTHROWS = default;
             protected:
-                virtual ~Statement2() NOTHROWS = 0;
+                virtual ~Statement2() NOTHROWS = default;
             public:
                 /**
                 * Executes the statement.

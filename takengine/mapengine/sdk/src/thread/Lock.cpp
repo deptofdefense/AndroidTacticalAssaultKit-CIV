@@ -9,24 +9,21 @@ using namespace TAK::Engine::Thread::Impl;
 using namespace TAK::Engine::Util;
 
 
-Lock::Lock(std::unique_ptr<Impl::LockImpl, void(*)(const Impl::LockImpl *)> &&impl_) NOTHROWS :
-    impl(std::move(impl_))
+Lock::Lock(Mutex &mutex_) NOTHROWS :
+    status(mutex_.lock()),
+    mutex(mutex_)
 {}
 
 Lock::~Lock() NOTHROWS
-{}
-
-ENGINE_API TAKErr TAK::Engine::Thread::Lock_create(LockPtr &value, Mutex &mutex) NOTHROWS
 {
-    TAKErr code(TE_Ok);
+    if(status == TE_Ok)
+        mutex.unlock();
+}
 
-    if (!mutex.impl.get())
-        return TE_InvalidArg;
-
-    LockImplPtr impl(NULL, NULL);
-    code = LockImpl_create(impl, *mutex.impl);
-    TE_CHECKRETURN_CODE(code);
-
-    value = LockPtr(new Lock(std::move(impl)), Memory_deleter_const<Lock>);
-    return code;
+TAKErr TAK::Engine::Thread::Lock_create(LockPtr &value, Mutex &mutex) NOTHROWS
+{
+    value = LockPtr(new(std::nothrow) Lock(mutex), Memory_deleter_const<Lock>);
+    if (!value.get())
+        return TE_OutOfMemory;
+    return value->status;
 }

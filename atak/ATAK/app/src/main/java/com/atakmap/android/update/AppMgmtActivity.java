@@ -34,6 +34,7 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.math.MathUtils;
+import com.atakmap.android.metrics.activity.MetricActivity;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.tools.menu.AtakActionBarListData;
 import com.atakmap.android.tools.menu.AtakActionBarMenuData;
@@ -55,7 +56,7 @@ import java.util.List;
  *
  * 
  */
-public class AppMgmtActivity extends Activity {
+public class AppMgmtActivity extends MetricActivity {
 
     protected static final String TAG = "AppMgmtActivity";
 

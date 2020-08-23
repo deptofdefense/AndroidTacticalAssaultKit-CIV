@@ -35,9 +35,9 @@ namespace TAK {
                 static bool isWildcard(const char *arg) NOTHROWS;
                 static bool isWildcard(const BindArgument &arg) NOTHROWS;
             private :
-                std::ostringstream selection;
-                std::list<BindArgument> args;
-                Port::String sql;
+                std::ostringstream selection_;
+                std::list<BindArgument> args_;
+                Port::String sql_;
             };
         }
     }

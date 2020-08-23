@@ -3,8 +3,10 @@ package com.atakmap.android.data;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -20,6 +22,7 @@ public class URIContentManager {
     private final Set<URIContentListener> _listeners = new HashSet<>();
     private final List<URIContentProvider> _providers = new ArrayList<>();
     private final List<URIContentSender> _senders = new ArrayList<>();
+    private final Map<String, URIContentHandler> _handlers = new HashMap<>();
 
     void dispose() {
         synchronized (_resolvers) {
@@ -129,6 +132,9 @@ public class URIContentManager {
      * @param handler URI content handler
      */
     public void notifyContentImported(URIContentHandler handler) {
+        synchronized (_handlers) {
+            _handlers.put(handler.getURI(), handler);
+        }
         for (URIContentListener l : getListeners())
             l.onContentImported(handler);
     }
@@ -138,6 +144,11 @@ public class URIContentManager {
      * @param handler URI content handler
      */
     public void notifyContentDeleted(URIContentHandler handler) {
+        synchronized (_handlers) {
+            URIContentHandler h = _handlers.get(handler.getURI());
+            if (h == handler)
+                _handlers.remove(h.getURI());
+        }
         for (URIContentListener l : getListeners())
             l.onContentDeleted(handler);
     }
@@ -147,8 +158,21 @@ public class URIContentManager {
      * @param handler URI content handler
      */
     public void notifyContentChanged(URIContentHandler handler) {
+        synchronized (_handlers) {
+            _handlers.put(handler.getURI(), handler);
+        }
         for (URIContentListener l : getListeners())
             l.onContentChanged(handler);
+    }
+
+    /**
+     * Get a list of all registered content handlers
+     * @return List of handlers
+     */
+    public List<URIContentHandler> getRegisteredHandlers() {
+        synchronized (_handlers) {
+            return new ArrayList<>(_handlers.values());
+        }
     }
 
     private List<URIContentListener> getListeners() {

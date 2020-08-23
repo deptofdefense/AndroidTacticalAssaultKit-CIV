@@ -106,6 +106,11 @@ public class MBTilesTileReader extends AbstractTilePyramidTileReader {
 
     @Override
     protected Bitmap getTileImpl(int level, long tileColumn, long tileRow, ReadResult[] code) {
+        return getTileImpl(level, tileColumn, tileRow, null, code);
+    }
+
+    @Override
+    protected Bitmap getTileImpl(int level, long tileColumn, long tileRow, BitmapFactory.Options opts, ReadResult[] code) {
         tileRow = this.getNumTilesY(level)-tileRow-1;
 
         QueryIface stmt = null;
@@ -123,7 +128,7 @@ public class MBTilesTileReader extends AbstractTilePyramidTileReader {
             final byte[] compressed = stmt.getBlob(0);
             code[0] = ReadResult.SUCCESS;
 
-            Bitmap tileData = BitmapFactory.decodeByteArray(compressed, 0, compressed.length);
+            Bitmap tileData = BitmapFactory.decodeByteArray(compressed, 0, compressed.length, opts);
             if(!this.hasAlpha)
                 return tileData;
             

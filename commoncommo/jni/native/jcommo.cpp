@@ -2042,6 +2042,60 @@ Java_com_atakmap_commoncommo_Commo_setMPLocalPortNative
 
 
 JNIEXPORT void JNICALL
+Java_com_atakmap_commoncommo_Commo_setMPLocalHttpsParamsNative
+    (JNIEnv *env, jclass selfCls, jlong nativePtr, jint jlocalPort,
+     jbyteArray jcert, jint certLen, jstring jcertPass)
+{
+    CommoJNI *c = JLONG_TO_PTR(CommoJNI, nativePtr);
+    jbyte *cert = NULL;
+    const char *certPass = NULL;
+    
+    if (certLen > 0) {
+        cert = env->GetByteArrayElements(jcert, NULL);
+        if (!cert)
+            return;
+    }
+    if (jcertPass) {
+        certPass = env->GetStringUTFChars(jcertPass, NULL);
+        if (!certPass) {
+            if (cert)
+                env->ReleaseByteArrayElements(jcert, cert, JNI_ABORT);
+            return;
+        }
+    }
+    
+    CommoResult r = c->commo->setMissionPackageLocalHttpsParams(jlocalPort,
+            (uint8_t *)cert, certLen, certPass);
+    
+    if (cert)
+        env->ReleaseByteArrayElements(jcert, cert, JNI_ABORT);
+    if (certPass)
+        env->ReleaseStringUTFChars(jcertPass, certPass);
+
+    const char *err = NULL;
+
+    switch (r) {
+    case COMMO_SUCCESS:
+        break;
+    case COMMO_ILLEGAL_ARGUMENT:
+        err = "MPIO not configured, https port taken, or missing certificate or password";
+        break;
+    case COMMO_INVALID_CERT:
+        err = "Https certificate is invalid";
+        break;
+    case COMMO_INVALID_CERT_PASSWORD:
+        err = "Https certificate password does not match certificate";
+        break;
+    default:
+        err = "Unknown error";
+        break;
+    }
+    if (err)
+        env->ThrowNew(CommoJNI::jclass_commoexception, err);
+}
+
+
+JNIEXPORT void JNICALL
 Java_com_atakmap_commoncommo_Commo_setMPViaServerEnabledNative
     (JNIEnv *env, jclass selfCls, jlong nativePtr, jboolean en)
 {
@@ -3276,6 +3330,34 @@ JNIEXPORT jstring JNICALL Java_com_atakmap_commoncommo_Commo_generateCSRNative
     return jresult;
 }
 
+
+JNIEXPORT jbyteArray JNICALL Java_com_atakmap_commoncommo_Commo_generateSelfSignedCertNative
+  (JNIEnv *env, jclass selfCls, jlong nativePtr, jstring jpw)
+{
+    CommoJNI *c = JLONG_TO_PTR(CommoJNI, nativePtr);
+
+    const char *pw = env->GetStringUTFChars(jpw, NULL);
+    if (!pw)
+        return NULL;
+    
+    uint8_t *cert = NULL;
+    size_t n = c->commo->generateSelfSignedCert(&cert, pw);
+    env->ReleaseStringUTFChars(jpw, pw);
+    if (n == 0)
+        return NULL;
+    
+    jbyteArray jresult = env->NewByteArray(n);
+    if (!jresult) {
+        c->commo->freeSelfSignedCert(cert);
+        return NULL;
+    }
+
+    env->SetByteArrayRegion(jresult, 0, n, (const jbyte *)cert);    
+    c->commo->freeSelfSignedCert(cert);
+    
+    return jresult;
+
+}
 
 JNIEXPORT jstring JNICALL Java_com_atakmap_commoncommo_Commo_generateKeystoreNative
   (JNIEnv *env, jclass selfCls, jlong nativePtr, jstring jcertPem,

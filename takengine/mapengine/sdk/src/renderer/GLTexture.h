@@ -26,10 +26,10 @@ namespace atakmap
             int getMagFilter();
             int getMinFilter();
 
-            void setWrapS(int wrapS);
-            void setWrapT(int wrapT);
-            void setMinFilter(int minFilter);
-            void setMagFilter(int magFilter);
+            void setWrapS(int wrap_s);
+            void setWrapT(int wrap_t);
+            void setMinFilter(int min_filter);
+            void setMagFilter(int mag_filter);
 
             void init();
 
@@ -39,7 +39,7 @@ namespace atakmap
 
             void release();
 
-            void draw(int numCoords, int type, void *textureCoordinates, void *vertexCoordinates);
+            void draw(int numCoords, int tex_type, void *textureCoordinates, void *vertexCoordinates);
             void draw(int numCoords, int texType, void *textureCoordinates, int vertType,
                       void *vertexCoordinates);
 
@@ -63,6 +63,10 @@ namespace atakmap
 
             static void draw(int texId, int mode, int numCoords, int texSize, int texType,
                              void *textureCoordinates, int vertSize, int vertType, void *vertexCoordinates);
+
+            static void draw(int texId, int mode, int numCoords, int texSize, int texType,
+                             void *textureCoordinates, int vertSize, int vertType, void *vertexCoordinates, float alpha);
+
             static void draw(int texId, int mode, int numCoords, int texType,
                              void *textureCoordinates, int vertType, void *vertexCoordinates, int idxType,
                              void *indices);
@@ -70,6 +74,10 @@ namespace atakmap
             static void draw(int texId, int mode, int numCoords, int texSize, int texType,
                              void *textureCoordinates, int vertSize, int vertType, void *vertexCoordinates, int idxType,
                              void *indices);
+
+            static void draw(int texId, int mode, int numCoords, int texSize, int texType,
+                             void *textureCoordinates, int vertSize, int vertType, void *vertexCoordinates, int idxType,
+                             void *indices, float alpha);
 
             static int getNumQuadMeshVertices(int numCellsX, int numCellsY);
             static void createQuadMeshTexCoords(math::Point<float> upperLeft, math::Point<float> upperRight,

@@ -13,7 +13,7 @@ import java.io.File;
 import java.io.FileFilter;
 
 /**
- * Originally developed by BBN, extended by byoung Observe changes to directory and reflect changes
+ * Observe changes to directory and reflect changes
  * in a db, and optionally notify a callback listener
  */
 public class DirectoryWatcher extends FileObserver {

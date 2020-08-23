@@ -19,8 +19,8 @@ public :
     Sphere(std::unique_ptr<TAK::Engine::Math::Sphere2, void(*)(const TAK::Engine::Math::Sphere2 *)> &&impl);
     virtual ~Sphere();
 public :
-    virtual bool intersect(const Ray<double> *ray, Point<double> *isectPoint) const;
-    virtual GeometryModel::GeometryClass getGeomClass() const;
+    virtual bool intersect(const Ray<double> *ray, Point<double> *isectPoint) const override;
+    virtual GeometryModel::GeometryClass getGeomClass() const override;
 public :
     const Point<double> center;
     const double radius;

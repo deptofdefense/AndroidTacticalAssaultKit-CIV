@@ -8,7 +8,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
-import android.support.v4.app.NavUtils;
+import androidx.core.app.NavUtils;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -23,6 +23,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.atakmap.android.metrics.activity.MetricActivity;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.app.R;
 import com.atakmap.comms.CotService;
@@ -40,8 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 
-public abstract class CotPortListActivity
-        extends Activity {
+public abstract class CotPortListActivity extends MetricActivity {
 
     public static final String TAG = "CotPortListActivity";
 

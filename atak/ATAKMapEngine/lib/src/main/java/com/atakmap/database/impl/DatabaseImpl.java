@@ -205,9 +205,9 @@ public final class DatabaseImpl implements DatabaseIface {
     }
 
     @Override
-    protected void finalize() throws Throwable {
-        this.close();
-        super.finalize();
+    protected final void finalize() {
+        if(this.pointer.raw != 0L)
+            Log.w("DatabaseImpl", "Cursor leaked");
     }
 
     public static DatabaseIface open(String path, boolean readOnly) {

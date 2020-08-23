@@ -13,7 +13,6 @@ import java.nio.Buffer;
  * This object will store all the tile texture draw commands in a batch so they can be done all
  * at once instead of drawing textures individually
  *
- * @author CSRA
  */
 public class GLBatchTileTextureDrawer
 {

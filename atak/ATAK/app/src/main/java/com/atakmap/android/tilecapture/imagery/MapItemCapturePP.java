@@ -46,8 +46,11 @@ public class MapItemCapturePP extends ImageryCapturePP {
     protected final CustomGrid _grid;
     protected final Map<String, Bundle> _pointData = new HashMap<>();
     protected final Map<String, Bitmap> _bitmapCache = new HashMap<>();
-    protected final List<MapItem> _items;
+    protected List<MapItem> _items;
     protected FOVFilter _fovFilter;
+
+    // Maximum number of features to query
+    protected int _featureQueryLimit = 0;
 
     public MapItemCapturePP(MapView mapView, TileCapture tc,
             ImageryCaptureParams cp) {
@@ -55,6 +58,10 @@ public class MapItemCapturePP extends ImageryCapturePP {
 
         _fovFilter = new FOVFilter(_bounds);
         _grid = GridLinesMapComponent.getCustomGrid();
+        init();
+    }
+
+    public void init() {
         _items = getItems(_bounds);
         Collections.sort(_items, MAP_ITEM_COMP);
         calcForwardPositions();
@@ -208,6 +215,8 @@ public class MapItemCapturePP extends ImageryCapturePP {
         if (fo instanceof MapOverlayParent) {
             Map<String, String> metadata = new HashMap<>();
             metadata.put("visibleOnly", "true");
+            if (_featureQueryLimit > 0)
+                metadata.put("limit", String.valueOf(_featureQueryLimit));
             for (MapOverlay ov : ((MapOverlayParent) fo).getOverlays()) {
                 DeepMapItemQuery query = ov.getQueryFunction();
                 if (query == null)

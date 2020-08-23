@@ -1,5 +1,7 @@
 package com.atakmap.map.layer.model.contextcapture;
 
+import android.opengl.GLSurfaceView;
+
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.io.ZipVirtualFile;
@@ -17,6 +19,7 @@ import com.atakmap.map.layer.model.assimp.AssimpModelSpi;
 import com.atakmap.map.layer.model.opengl.GLMaterial;
 import com.atakmap.map.layer.model.opengl.GLMesh;
 import com.atakmap.map.layer.model.opengl.MaterialManager;
+import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
@@ -541,7 +544,7 @@ final class GLContextCaptureTile implements GLTileNode, Controls {
                 meshes.locks++;
             }
 
-            final MapSceneModel sm = ctx.getSurface().getMapView().getSceneModel();
+            final MapSceneModel sm = ((GLMapSurface)ctx.getRenderContext()).getMapView().getSceneModel();
             boolean retval = false;
             for (GLMesh mesh : meshes.data) {
                 // XXX - need to find closest hit

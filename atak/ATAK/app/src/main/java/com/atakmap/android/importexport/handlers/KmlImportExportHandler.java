@@ -68,7 +68,7 @@ public class KmlImportExportHandler {
             Uri uri = intent.getData();
             String group = intent.getStringExtra("group");
             String subGroup = intent.getStringExtra("subGroup");
-            MapGroup thisGroup = null;
+            MapGroup thisGroup;
             MapGroup parent = mapView.getRootGroup().findMapGroup(group);
             if (parent != null && subGroup != null) {
                 thisGroup = parent.findMapGroup(subGroup);

@@ -32,12 +32,11 @@ DefaultDatasetProjection::DefaultDatasetProjection(int srid, int width, int heig
     math::Point<double> projLL;
     this->mapProjection->forward(&ll, &projLL);
     
-    math::Matrix::mapQuads(&imgUL, &imgUR, &imgLR, &imgLL,
-                     &projUL, &projUR, &projLR, &projLL, &this->img2proj);
-    
     try {
+        math::Matrix::mapQuads(&imgUL, &imgUR, &imgLR, &imgLL, &projUL, &projUR, &projLR, &projLL, &this->img2proj);
+
         this->img2proj.createInverse(&proj2img);
-    } catch(const std::exception &e) {
+    } catch(const std::exception &) {
         //TODO--System.out.println("Failed to invert img2proj, trying manual matrix construction");
         
         math::Matrix::mapQuads(&projUL, &projUR, &projLR, &projLL,

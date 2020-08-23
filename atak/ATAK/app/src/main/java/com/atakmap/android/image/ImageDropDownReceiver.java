@@ -166,7 +166,8 @@ public class ImageDropDownReceiver
             final String dirPath = FileSystemUtils.getItem("attachments")
                     .getPath()
                     + File.separator
-                    + URLEncoder.encode(uid, FileSystemUtils.UTF8_CHARSET);
+                    + URLEncoder.encode(uid,
+                            FileSystemUtils.UTF8_CHARSET.name());
             final File dir = new File(dirPath);
 
             Log.d(TAG, "creating an attachment directory: " + dirPath);

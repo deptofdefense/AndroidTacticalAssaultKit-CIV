@@ -36,7 +36,7 @@ public class BluetoothASCIIClientConnection extends BluetoothClientConnection {
         if (bufferedreader == null) {
             bufferedreader = new BufferedReader(new InputStreamReader(
                     socket.getInputStream(),
-                    Charset.forName(FileSystemUtils.UTF8_CHARSET)));
+                    FileSystemUtils.UTF8_CHARSET));
         }
 
         try {

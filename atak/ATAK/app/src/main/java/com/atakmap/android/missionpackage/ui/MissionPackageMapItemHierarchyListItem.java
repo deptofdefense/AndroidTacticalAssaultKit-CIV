@@ -4,6 +4,7 @@ package com.atakmap.android.missionpackage.ui;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.drawable.Drawable;
 import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -74,6 +75,8 @@ class MissionPackageMapItemHierarchyListItem extends
     private final MissionPackageListMapItem _mapListItem;
     private final MapItem _item;
     private final Shape _shape;
+    private Drawable _icon;
+    private Integer _iconColor;
 
     private CoordinateFormat _coordFmt;
 
@@ -99,11 +102,11 @@ class MissionPackageMapItemHierarchyListItem extends
         // Extract CoT for callsign, icon, and point
         // Performed within the refresh thread so don't need to worry about
         // performance too much
+        // TODO: Store CoT type and other details in the Data Package manifest
+        //  instead of having to reach down into the CoT event after the fact
         String callsign = _mapListItem.getname();
         String uid = _mapListItem.getUID();
-        if (_item == null && (_mapListItem.geticon() == null
-                || FileSystemUtils.isEquals(uid, _mapListItem.getname()))) {
-            _mapListItem.setname("");
+        if (_item == null) {
             String cotXml = MissionPackageExtractor.ExtractCoT(_context,
                     new File(FileSystemUtils.sanitizeWithSpacesAndSlashes(
                             group.getManifest().getPath())),
@@ -117,9 +120,8 @@ class MissionPackageMapItemHierarchyListItem extends
                 CotPoint point = event.getCotPoint();
                 if (point != null)
                     _mapListItem.point = point.toGeoPoint();
-                String iconUri = MissionPackageUtils.getIconURI(event);
-                int iconColor = MissionPackageUtils.getColor(event);
-                _mapListItem.seticon(iconUri, iconColor);
+                _icon = MissionPackageUtils.getIconDrawable(event);
+                _iconColor = MissionPackageUtils.getColor(event);
             }
             if (FileSystemUtils.isEquals(callsign, uid))
                 callsign = _context
@@ -167,20 +169,26 @@ class MissionPackageMapItemHierarchyListItem extends
     }
 
     @Override
-    public String getIconUri() {
-        if (this._mapListItem == null)
-            return null;
+    public Drawable getIconDrawable() {
 
         // Get shape icon instead of center marker
         if (_shape != null)
-            return ATAKUtilities.getIconUri(_shape);
+            return _shape.getIconDrawable();
 
+        // Use actual map item icon
+        if (_item != null)
+            return _item.getIconDrawable();
+
+        // Default icon drawable
+        return _icon;
+    }
+
+    @Override
+    public String getIconUri() {
+        // Legacy icon URI
+        if (this._mapListItem == null)
+            return null;
         Icon ico = _mapListItem.geticon();
-
-        // Attempt to use map item icon
-        if (ico == null && _item != null)
-            return ATAKUtilities.getIconUri(_item);
-
         return ico != null ? ico.getImageUri(Icon.STATE_DEFAULT) : null;
     }
 
@@ -190,6 +198,8 @@ class MissionPackageMapItemHierarchyListItem extends
             return ATAKUtilities.getIconColor(_shape);
         if (_item != null)
             return ATAKUtilities.getIconColor(_item);
+        if (_iconColor != null)
+            return _iconColor;
 
         if (this._mapListItem == null || _mapListItem.geticon() == null) {
             Log.w(TAG, "Skipping invalid icon color");

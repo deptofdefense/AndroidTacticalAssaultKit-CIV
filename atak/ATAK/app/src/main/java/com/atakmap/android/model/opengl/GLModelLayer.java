@@ -1,6 +1,8 @@
 
 package com.atakmap.android.model.opengl;
 
+import android.opengl.GLES30;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -9,7 +11,6 @@ import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.control.ColorControl;
 import com.atakmap.map.layer.control.Controls;
 import com.atakmap.map.layer.control.RendererRefreshControl;
-import com.atakmap.map.layer.feature.AbstractFeatureDataStore3;
 import com.atakmap.map.layer.feature.AttributeSet;
 import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.Feature;
@@ -17,6 +18,7 @@ import com.atakmap.map.layer.feature.FeatureCursor;
 import com.atakmap.map.layer.feature.FeatureDataStore2;
 import com.atakmap.map.layer.feature.FeatureDefinition2;
 import com.atakmap.map.layer.feature.FeatureLayer3;
+import com.atakmap.map.layer.feature.Utils;
 import com.atakmap.map.layer.feature.geometry.GeometryCollection;
 import com.atakmap.map.layer.feature.geometry.Point;
 import com.atakmap.map.layer.feature.style.Style;
@@ -116,6 +118,28 @@ public final class GLModelLayer
                 this.modelHitTestControl);
         this.dataStore.removeOnDataStoreContentChangedListener(this);
         super.stop();
+    }
+
+    @Override
+    public void draw(GLMapView view, int renderPass)  {
+        final boolean enabled = GLES30.glIsEnabled(GLES30.GL_DEPTH_TEST);
+        final boolean[] mask = new boolean[1];
+        GLES30.glGetBooleanv(GLES30.GL_DEPTH_WRITEMASK, mask, 0);
+        final int[] func = new int[1];
+        GLES30.glGetIntegerv(GLES30.GL_DEPTH_FUNC, func, 0);
+        if(!enabled)
+            GLES30.glEnable(GLES30.GL_DEPTH_TEST);
+        if(!mask[0])
+            GLES30.glDepthMask(true);
+        if(func[0] != GLES30.GL_LEQUAL)
+            GLES30.glDepthFunc(GLES30.GL_LEQUAL);
+        super.draw(view, renderPass);
+        if(!enabled)
+            GLES30.glDisable(GLES30.GL_DEPTH_TEST);
+        if(!mask[0])
+            GLES30.glDepthMask(mask[0]);
+        if(func[0] != GLES30.GL_LEQUAL)
+            GLES30.glDepthFunc(func[0]);
     }
 
     @Override
@@ -367,6 +391,12 @@ public final class GLModelLayer
         }
     }
 
+    public static File getCacheDir(Feature feature) {
+        return FileSystemUtils
+                .getItem("Databases/models.db/resources/"
+                        + feature.getId());
+    }
+
     class SceneRenderer
             implements SceneObjectControl.OnBoundsChangedListener, Disposable {
         GLMapRenderable2 value;
@@ -383,9 +413,7 @@ public final class GLModelLayer
             final long fsid = feature.getFeatureSetId();
 
             info = getModelInfo(feature);
-            cacheDir = FileSystemUtils
-                    .getItem("Databases/models.db/resources/"
-                            + feature.getId());
+            cacheDir = getCacheDir(feature);
             value = GLSceneFactory.create(renderContext, info,
                     cacheDir.getAbsolutePath());
             if (value == null) {
@@ -519,7 +547,7 @@ public final class GLModelLayer
                 dataStore.updateFeature(fid,
                         FeatureDataStore2.PROPERTY_FEATURE_GEOMETRY, null,
                         xformed, null, null, 0);
-                final Feature update = AbstractFeatureDataStore3.getFeature(
+                final Feature update = Utils.getFeature(
                         dataStore,
                         fid);
                 if (update != null)

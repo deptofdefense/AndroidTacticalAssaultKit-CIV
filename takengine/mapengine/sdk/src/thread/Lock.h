@@ -13,25 +13,23 @@ namespace TAK {
             
             class CondVar;
 
-            namespace Impl {
-                class LockImpl;
-            }
-
             /**
              * RAII Mutex lock construct.
              */
             class ENGINE_API Lock
             {
+            public :
+                Lock(Mutex &mutex) NOTHROWS;
             private :
-                Lock(std::unique_ptr<Impl::LockImpl, void(*)(const Impl::LockImpl *)> &&impl) NOTHROWS;
                 Lock(const Lock &) NOTHROWS;
             public :
                 ~Lock() NOTHROWS;
+            public :
+                const Util::TAKErr status;
             private :
-                std::unique_ptr<Impl::LockImpl, void(*)(const Impl::LockImpl *)> impl;
+                Mutex &mutex;
 
                 friend class CondVar;
-                friend Util::TAKErr Lock_create(std::unique_ptr<Lock, void(*)(const Lock *)> &value, Mutex &mutex) NOTHROWS;
             };
 
             typedef std::unique_ptr<Lock, void(*)(const Lock *)> LockPtr;
@@ -44,7 +42,7 @@ namespace TAK {
              *
              * @return  TE_Ok on success, various codes on failure
              */
-            Util::TAKErr Lock_create(LockPtr &value, Mutex &mutex) NOTHROWS;
+            ENGINE_API Util::TAKErr Lock_create(LockPtr &value, Mutex &mutex) NOTHROWS;
         }
     }
 }

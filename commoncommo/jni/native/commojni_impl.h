@@ -200,7 +200,7 @@ namespace commoncommo {
 
         static const int NUM_ENT_TYPES = 2;
         static jglobalobjectref nativeEntryTypesToJava[NUM_ENT_TYPES];
-        static const int NUM_CLOUD_OPS = 6;
+        static const int NUM_CLOUD_OPS = 7;
         static jglobalobjectref nativeCloudOpsToJava[NUM_CLOUD_OPS];
     };
 

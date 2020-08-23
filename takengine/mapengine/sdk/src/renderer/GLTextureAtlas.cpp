@@ -10,9 +10,9 @@ struct ScopeLocalBitmap
     ScopeLocalBitmap() :
         release(false)
     {
-        bitmap.data = NULL;
-        bitmap.getScaledInstance = NULL;
-        bitmap.releaseData = NULL;
+        bitmap.data = nullptr;
+        bitmap.getScaledInstance = nullptr;
+        bitmap.releaseData = nullptr;
     }
     ~ScopeLocalBitmap()
     {
@@ -90,7 +90,7 @@ namespace atakmap {
             for (iter = uriToKey.begin(); iter != uriToKey.end(); ) {
                 key = iter->second;
                 if (getTexId(key) == textureId) {
-                    std::map<std::string, int64_t>::iterator tmp = iter;
+                    auto tmp = iter;
                     tmp++;
                     uriToKey.erase(iter);
                     iter = tmp;
@@ -140,7 +140,7 @@ namespace atakmap {
 
         math::Rectangle<float> *GLTextureAtlas::getImageRect(int64_t key, bool normalized, math::Rectangle<float> *rect)
         {
-            if (rect == NULL)
+            if (rect == nullptr)
                 rect = new math::Rectangle<float>(0, 0, 0, 0);
 
             if (fixedIconSize) {
@@ -159,7 +159,7 @@ namespace atakmap {
                     rect->height = (float)r.height;
                 } catch (std::out_of_range) {
                     delete rect;
-                    return NULL;
+                    return nullptr;
                 }
             }
 
@@ -271,7 +271,7 @@ namespace atakmap {
                     currentTexId = 0;
             } else {
                 Rect bound(0, 0, icon.width, icon.height, splitFreeHorizontal);
-                std::set<Rect, GLTextureAtlasRectComp>::iterator iter = freeList.lower_bound(bound);
+                auto iter = freeList.lower_bound(bound);
                 bool haveFree = false;
                 while (iter != freeList.end()) {
                     Rect r = *iter;
@@ -300,7 +300,7 @@ namespace atakmap {
                 glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
                                              texSize, texSize, 0,
-                                             GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+                                             GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
                 freeIndex = 0;
                 if (!fixedIconSize)
@@ -320,12 +320,12 @@ namespace atakmap {
                                 icon.format, icon.dataType, icon.data);
             } else {
                 Rect iconR(0, 0, icon.width, icon.height, splitFreeHorizontal);
-                std::set<Rect, GLTextureAtlasRectComp>::iterator iter = freeList.lower_bound(iconR);
+                auto iter = freeList.lower_bound(iconR);
                 Rect free(0, 0, 0, 0, false);
                 bool gotit = false;
                 while (iter != freeList.end()) {
                     free = *iter;
-                    std::set<Rect, GLTextureAtlasRectComp>::iterator freeIter = iter;
+                    auto freeIter = iter;
                     iter++;
                     if (free.width >= icon.width && free.height >= icon.height) {
                         freeList.erase(freeIter);

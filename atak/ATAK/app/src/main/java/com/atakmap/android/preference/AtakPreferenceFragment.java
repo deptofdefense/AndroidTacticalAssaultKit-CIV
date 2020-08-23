@@ -55,8 +55,7 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
      * ATAK owned Activity and not the context owned by the plugin.
      */
     public static void setContext(Context c) {
-        if (appContext == null)
-            appContext = c;
+        appContext = c;
     }
 
     /**

@@ -11,7 +11,7 @@ import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.support.v4.app.NavUtils;
+import androidx.core.app.NavUtils;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.Spanned;
@@ -25,6 +25,7 @@ import android.widget.EditText;
 import android.widget.GridView;
 import android.widget.Toast;
 
+import com.atakmap.android.metrics.activity.MetricActivity;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.tools.menu.ActionBroadcastExtraStringData;
 import com.atakmap.android.tools.menu.ActionClickData;
@@ -59,7 +60,7 @@ import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 /**
  * 
  */
-public class AllToolsActivity extends Activity implements
+public class AllToolsActivity extends MetricActivity implements
         ActionBar.OnNavigationListener {
 
     protected static final String TAG = "AllToolsActivity";
@@ -90,7 +91,7 @@ public class AllToolsActivity extends Activity implements
         DocumentedIntentFilter filter = new DocumentedIntentFilter();
         filter.addAction(
                 "com.atakmap.app.QUITAPP",
-                "Intent to start the quiting process, if the boolean extra FORCE_QUIT is set, the the application will not prompt the user before quitting");
+                "Intent to start the quiting process, if the boolean extra FORCE_QUIT is set, the application will not prompt the user before quitting");
 
         if (MapView.getMapView() != null)
             AtakBroadcast.getInstance().registerReceiver(_quitReceiver, filter);
@@ -167,31 +168,7 @@ public class AllToolsActivity extends Activity implements
 
         final EditText editName = new EditText(this);
         editName.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-
-        //set the max length for the input
-        int maxLength = 10;
-
-        //Filter to check label for letters, digits, periods and underscores in english and arabic
-        InputFilter charFilter = new InputFilter() {
-            @Override
-            public CharSequence filter(CharSequence source, int start, int end,
-                    Spanned dest, int dstart, int dend) {
-                for (int i = start; i < end; i++) {
-                    if (Character.toString(source.charAt(i))
-                            .matches("[^A-Za-z0-9-_.\u0600-\u06FF]")) {
-                        Toast.makeText(AllToolsActivity.this,
-                                R.string.invalid_input, Toast.LENGTH_SHORT)
-                                .show();
-                        return "";
-                    }
-                }
-                return null;
-            }
-        };
-        editName.setFilters(new InputFilter[] {
-                new InputFilter.LengthFilter(maxLength),
-                charFilter
-        });
+        editName.setFilters(AllToolsConfigMenuActivity.getNameFilters(this));
 
         AlertDialog.Builder ab = new AlertDialog.Builder(this);
         ab.setTitle(R.string.export_to_missionpackage_name)
@@ -381,31 +358,7 @@ public class AllToolsActivity extends Activity implements
 
         final EditText editName = new EditText(this);
         editName.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
-
-        //set the max length for the input
-        int maxLength = 10;
-
-        //Filter to check label for letters, digits, periods and underscores in english and arabic
-        InputFilter charFilter = new InputFilter() {
-            @Override
-            public CharSequence filter(CharSequence source, int start, int end,
-                    Spanned dest, int dstart, int dend) {
-                for (int i = start; i < end; i++) {
-                    if (Character.toString(source.charAt(i))
-                            .matches("[^A-Za-z0-9-_.\u0600-\u06FF]")) {
-                        Toast.makeText(AllToolsActivity.this,
-                                R.string.invalid_input, Toast.LENGTH_SHORT)
-                                .show();
-                        return "";
-                    }
-                }
-                return null;
-            }
-        };
-        editName.setFilters(new InputFilter[] {
-                new InputFilter.LengthFilter(maxLength),
-                charFilter
-        });
+        editName.setFilters(AllToolsConfigMenuActivity.getNameFilters(this));
 
         new AlertDialog.Builder(this)
                 .setTitle(R.string.tool_text17)

@@ -14,6 +14,15 @@ public class Rectangle {
         Height = h;
     }
 
+    public boolean contains(double x, double y) {
+        return contains(X, Y, X + Width, Y + Height, x, y);
+    }
+
+    @Override
+    public String toString() {
+        return X + ", " + Y + ", " + Width + ", " + Height;
+    }
+
     /**
      * Tests two rectangles, <code>a</code> and <code>b</code> for intersection.
      * 

@@ -90,7 +90,7 @@ class DefaultSchemaDefinition
     StringVector
     getNameFields (const char* filePath,
                    const OGRFeatureDefn&)
-        const;
+        const override;
 
     //
     // Returns true.
@@ -100,7 +100,7 @@ class DefaultSchemaDefinition
     bool
     matches (const char* filePath,
              const OGRFeatureDefn&)
-        const;
+        const override;
 
 
                                         //====================================//

@@ -279,7 +279,7 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
 
             if (FileSystemUtils.isEmpty(uids)) {
                 toast(R.string.mission_package_no_map_item_selected);
-                showMissionPackageView();
+                showMissionPackageView(groupId);
                 return;
             }
 
@@ -293,7 +293,9 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
                         exports.add(new MapItemHierarchyListItem(_mapView, mi));
                 }
                 try {
-                    new MissionPackageExportMarshal(_context).execute(exports);
+                    new MissionPackageExportMarshal(_context,
+                            _userState.isIncludeAttachments())
+                            .execute(exports);
                 } catch (Exception e) {
                     Log.e(TAG, "Failed to export map items to MP", e);
                     toast(R.string.failed_export);
@@ -1081,6 +1083,12 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
                 WebServer.DEFAULT_SERVER_PORT);
     }
 
+    public int getSecureWebServerPort() {
+        return MissionPackagePreferenceListener.getInt(_prefs,
+                WebServer.SECURE_SERVER_PORT_KEY,
+                WebServer.DEFAULT_SECURE_SERVER_PORT);
+    }
+
     public long getLowThresholdInBytes() {
         return (long) ((float) getNogoThresholdInBytes() * (1F / 3F));
     }
@@ -1346,7 +1354,8 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
             if (android.os.Build.VERSION.SDK_INT < 26) {
                 builder = new Notification.Builder(_context);
             } else {
-                builder = new Notification.Builder(_context, "com.atakmap.app.def");
+                builder = new Notification.Builder(_context,
+                        "com.atakmap.app.def");
             }
             builder.setContentTitle(
                     _context.getString(R.string.mission_package_download))

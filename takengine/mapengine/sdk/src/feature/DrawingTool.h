@@ -198,7 +198,7 @@ class Brush
 
     void
     setParam (const char* key,
-              const char* value);
+              const char* value) override;
 
 
     //==================================
@@ -308,7 +308,7 @@ class Label
 
     void
     setParam (const char* key,
-              const char* value);
+              const char* value) override;
 
 
     //==================================
@@ -404,7 +404,7 @@ class Pen
 
     void
     setParam (const char* key,
-              const char* value);
+              const char* value) override;
 
 
     //==================================
@@ -471,7 +471,7 @@ class Symbol
 
     void
     setParam (const char* key,
-              const char* value);
+              const char* value) override;
 
 
     //==================================

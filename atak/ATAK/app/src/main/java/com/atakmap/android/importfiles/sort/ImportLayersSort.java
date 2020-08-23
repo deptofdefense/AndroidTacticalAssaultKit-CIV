@@ -13,8 +13,9 @@ import java.io.File;
 public class ImportLayersSort extends ImportInPlaceResolver {
 
     public ImportLayersSort(Context context) {
-        super(null, null, false, false, true, context
-                .getString(R.string.imagery));
+        super(null, null, false, false, true,
+                context.getString(R.string.imagery),
+                context.getDrawable(R.drawable.ic_menu_maps));
     }
 
     @Override

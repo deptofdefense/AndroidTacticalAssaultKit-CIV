@@ -7,15 +7,14 @@ import android.content.DialogInterface;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.Spanned;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.atakmap.android.features.FeatureSetHierarchyListItem;
+import com.atakmap.android.gui.TileButtonDialog;
 import com.atakmap.android.hierarchy.HierarchyListItem;
 import com.atakmap.android.hierarchy.action.Export;
 import com.atakmap.android.importexport.ExportMarshal;
@@ -53,9 +52,8 @@ public class MissionPackageExportMarshal extends ExportMarshal {
     protected final List<String> mapItemUIDs;
     protected final List<String> filepaths;
     protected final Context context;
-    private AlertDialog listDialog;
     private boolean newPackage;
-    private boolean incAtt = true;
+    private Boolean incAtt;
 
     /**
      * White list of group names to export
@@ -136,11 +134,16 @@ public class MissionPackageExportMarshal extends ExportMarshal {
         parentGroupNamesToAllow.remove(groupName);
     }
 
-    public MissionPackageExportMarshal(Context context) {
+    public MissionPackageExportMarshal(Context context, Boolean incAtt) {
         mapItemUIDs = new ArrayList<>();
         filepaths = new ArrayList<>();
         this.context = context;
         this.newPackage = false;
+        this.incAtt = incAtt;
+    }
+
+    public MissionPackageExportMarshal(Context context) {
+        this(context, null);
     }
 
     public void setMissionPackageUID(String uid) {
@@ -161,49 +164,35 @@ public class MissionPackageExportMarshal extends ExportMarshal {
             return;
         }
 
-        View v = LayoutInflater.from(context).inflate(
-                R.layout.missionpackage_export_dialog, null);
+        MapView mv = MapView.getMapView();
+        if (mv == null)
+            return;
 
-        TextView newPkg = v.findViewById(R.id.tv24);
-        TextView exiPkg = v.findViewById(R.id.tv25);
-        final CheckBox attCb = v
-                .findViewById(R.id.include_attachments);
+        final CheckBox attCb = new CheckBox(context);
+        attCb.setText(R.string.include_attachments);
+        attCb.setChecked(incAtt == Boolean.TRUE);
 
-        newPkg.setText(context.getString(R.string.create_new_mission_package,
-                context.getString(R.string.mission_package_name)));
-        newPkg.setOnClickListener(new OnClickListener() {
+        TileButtonDialog d = new TileButtonDialog(mv);
+        d.setTitle(R.string.choose_new_or_existing_mission_package,
+                context.getString(R.string.mission_package_name));
+        d.setIcon(R.drawable.ic_menu_missionpackage);
+
+        if (incAtt == null)
+            d.setCustomView(attCb);
+
+        d.addButton(R.drawable.ic_menu_missionpackage, R.string.new_text);
+        d.addButton(R.drawable.ic_missionpackage_modified, R.string.existing);
+        d.setOnClickListener(new DialogInterface.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void onClick(DialogInterface d, int w) {
+                if (w < 0)
+                    return;
                 incAtt = attCb.isChecked();
-                newPackage = true;
-                listDialog.dismiss();
+                newPackage = w == 0;
                 beginMarshal(context, exports);
             }
         });
-
-        exiPkg.setText(context.getString(R.string.existing_mission_package,
-                context.getString(R.string.mission_package_name)));
-        exiPkg.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                incAtt = attCb.isChecked();
-                newPackage = false;
-                listDialog.dismiss();
-                beginMarshal(context, exports);
-            }
-        });
-        attCb.setChecked(this.incAtt);
-
-        AlertDialog.Builder b = new AlertDialog.Builder(context);
-        b.setTitle(context.getString(
-                R.string.choose_new_or_existing_mission_package,
-                context.getString(R.string.mission_package_name)));
-        b.setIcon(R.drawable.ic_menu_missionpackage);
-        b.setView(v);
-        b.setCancelable(true);
-        b.setNegativeButton(R.string.cancel, null);
-        listDialog = b.create();
-        listDialog.show();
+        d.show(true);
     }
 
     /**
@@ -509,7 +498,7 @@ public class MissionPackageExportMarshal extends ExportMarshal {
             return false;
         if (mapItemUIDArray.length > 0) {
             manifest.addMapItems(mapItemUIDArray);
-            if (this.incAtt) {
+            if (this.incAtt == Boolean.TRUE) {
                 for (String mapIemUID : mapItemUIDArray) {
                     // send all attachments
                     List<File> attachments = AttachmentManager

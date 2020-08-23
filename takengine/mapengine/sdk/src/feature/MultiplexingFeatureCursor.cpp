@@ -23,20 +23,20 @@ namespace
 }
 
 MultiplexingFeatureCursor::MultiplexingFeatureCursor() NOTHROWS :
-    comp(NULL),
-    current(NULL)
+    comp(nullptr),
+    current(nullptr)
 {}
 
 MultiplexingFeatureCursor::MultiplexingFeatureCursor(Collection<FeatureDataStore2::FeatureQueryParameters::Order> &order_) NOTHROWS :
-    comp(NULL),
-    current(NULL)
+    comp(nullptr),
+    current(nullptr)
 {
     if (order_.size() > 1) {
         comp = CascadingComparator;
     } else if (order_.size() == 1) {
         FeatureDataStore2::FeatureQueryParameters::Order first;
 
-        Collection<FeatureDataStore2::FeatureQueryParameters::Order>::IteratorPtr iter(NULL, NULL);
+        Collection<FeatureDataStore2::FeatureQueryParameters::Order>::IteratorPtr iter(nullptr, nullptr);
         if (TE_Ok == order_.iterator(iter) && TE_Ok == iter->get(first)) {
             switch (first.type) {
                 case FeatureDataStore2::FeatureQueryParameters::Order::FeatureId:
@@ -100,6 +100,20 @@ FeatureDefinition2::GeometryEncoding MultiplexingFeatureCursor::getGeomCoding() 
     if (!current)
         return FeatureDefinition2::GeomGeometry;
     return current->getGeomCoding();
+}
+
+TAK::Engine::Feature::AltitudeMode MultiplexingFeatureCursor::getAltitudeMode() NOTHROWS 
+{
+    if (!current) 
+        return TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround;
+    return current->getAltitudeMode();
+}
+
+double MultiplexingFeatureCursor::getExtrude() NOTHROWS 
+{
+    if (!current) 
+        return 0.0;
+    return current->getExtrude();
 }
 
 TAKErr MultiplexingFeatureCursor::getName(const char **value) NOTHROWS

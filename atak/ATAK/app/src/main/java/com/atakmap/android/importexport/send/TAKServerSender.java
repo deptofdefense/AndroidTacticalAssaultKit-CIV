@@ -55,12 +55,20 @@ public class TAKServerSender extends MissionPackageSender {
 
     @Override
     public boolean isSupported(String contentURI) {
+
+        if (contentURI == null)
+            return false;
+
         return super.isSupported(contentURI)
                 || contentURI.startsWith(URIScheme.VIDEO);
     }
 
     @Override
     public boolean sendContent(String contentURI, Callback callback) {
+
+        if (contentURI == null)
+            return false;
+
         if (contentURI.startsWith(URIScheme.VIDEO)) {
             ConnectionEntry entry = URIHelper.getVideoAlias(contentURI);
             if (entry != null) {

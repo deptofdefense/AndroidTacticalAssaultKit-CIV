@@ -2,10 +2,12 @@
 package com.atakmap.android.importfiles.sort;
 
 import android.content.Context;
+import android.util.Pair;
 
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.PreferenceControl;
 import com.atakmap.app.preferences.json.JSONPreferenceControl;
+import com.atakmap.comms.http.HttpUtil;
 import com.atakmap.coremap.log.Log;
 
 import java.io.BufferedReader;
@@ -26,7 +28,8 @@ public class ImportJSONPrefSort extends ImportInternalSDResolver {
     public ImportJSONPrefSort(Context context, boolean validateExt,
             boolean copyFile) {
         super(".pref", PreferenceControl.DIRNAME, validateExt, copyFile,
-                context.getString(R.string.preference_file));
+                context.getString(R.string.preference_file),
+                context.getDrawable(R.drawable.ic_menu_settings));
     }
 
     @Override
@@ -79,5 +82,10 @@ public class ImportJSONPrefSort extends ImportInternalSDResolver {
         } catch (Exception e) {
             Log.e(TAG, "exception in onFileSorted!", e);
         }
+    }
+
+    @Override
+    public Pair<String, String> getContentMIME() {
+        return new Pair<>(ImportPrefSort.CONTENT_TYPE, HttpUtil.MIME_JSON);
     }
 }

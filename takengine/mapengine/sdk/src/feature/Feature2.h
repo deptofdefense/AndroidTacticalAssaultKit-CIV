@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 
+#include "feature/AltitudeMode.h"
 //#include "feature/Geometry.h"
 //#include "feature/Style.h"
 #include "port/Platform.h"
@@ -24,7 +25,7 @@ namespace atakmap {
 namespace TAK {
     namespace Engine {
         namespace Feature {
-            class ENGINE_API FeatureDefinition2;
+            class FeatureDefinition2;
 
             typedef std::unique_ptr<atakmap::feature::Geometry, void(*)(const atakmap::feature::Geometry *)> GeometryPtr;
             typedef std::unique_ptr<const atakmap::feature::Geometry, void(*)(const atakmap::feature::Geometry *)> GeometryPtr_const;
@@ -44,10 +45,18 @@ namespace TAK {
             {
             public :
                 Feature2(const Feature2 &other) NOTHROWS;
-                Feature2(const int64_t fid, const int64_t fsid, const char *name, const atakmap::feature::Geometry &geom, const atakmap::feature::Style &style, const atakmap::util::AttributeSet &attributes, const int64_t version) NOTHROWS;
-                Feature2(const int64_t fid, const int64_t fsid, const char *name, GeometryPtr &&geom, StylePtr &&style, AttributeSetPtr &&attributes, const int64_t version) NOTHROWS;
-                Feature2(const int64_t fid, const int64_t fsid, const char *name, GeometryPtr_const &&geom, StylePtr_const &&style, AttributeSetPtr_const &&attributes, const int64_t version) NOTHROWS;
-                Feature2(const int64_t fid, const int64_t fsid, const char *name, GeometryPtr_const &&geom, StylePtr_const &&style, AttributeSetPtr_const &&attributes, const int64_t timestamp, const int64_t version) NOTHROWS;
+                Feature2(const int64_t fid, const int64_t fsid, const char *name, const atakmap::feature::Geometry &geom,
+                         const TAK::Engine::Feature::AltitudeMode altitudeMode, double extrude, const atakmap::feature::Style &style,
+                         const atakmap::util::AttributeSet &attributes, const int64_t version) NOTHROWS;
+                Feature2(const int64_t fid, const int64_t fsid, const char *name, GeometryPtr &&geom,
+                         const TAK::Engine::Feature::AltitudeMode altitudeMode, double extrude, StylePtr &&style,
+                         AttributeSetPtr &&attributes, const int64_t version) NOTHROWS;
+                Feature2(const int64_t fid, const int64_t fsid, const char *name, GeometryPtr_const &&geom,
+                         const TAK::Engine::Feature::AltitudeMode altitudeMode, double extrude, StylePtr_const &&style,
+                         AttributeSetPtr_const &&attributes, const int64_t version) NOTHROWS;
+                Feature2(const int64_t fid, const int64_t fsid, const char *name, GeometryPtr_const &&geom,
+                         const TAK::Engine::Feature::AltitudeMode altitudeMode, double extrude, StylePtr_const &&style,
+                         AttributeSetPtr_const &&attributes, const int64_t timestamp, const int64_t version) NOTHROWS;
             public :
                 ~Feature2() NOTHROWS;
 
@@ -85,6 +94,21 @@ namespace TAK {
                 */
                 const atakmap::feature::Geometry *getGeometry() const NOTHROWS;
                 /**
+                 * The altitude mode of the feature.
+                 *
+                 * @return  The altitude mode of the feature.
+                 */
+                const TAK::Engine::Feature::AltitudeMode getAltitudeMode() const NOTHROWS;
+                /**
+                 * Returns the extrusion value. If 0.0, no extrusion occurs. If less than one, the
+                 * geometry is extruded down to the terrain surface. If greater than one, the value
+                 * is interpreted as the height of the geometry, in meters, and the geometry is
+                 * extruded away from the surface of the earth by the specified number of meters.
+                 *
+                 * @return  The extrusion of the feature.
+                 */
+                const double getExtrude() const NOTHROWS;
+                /**
                 * Returns the style of the feature.
                 *
                 * @return  The style of the feature.
@@ -108,6 +132,8 @@ namespace TAK {
                 int64_t version;
                 TAK::Engine::Port::String name;
                 GeometryPtr_const geometry;
+                TAK::Engine::Feature::AltitudeMode altitudeMode;
+                double extrude;
                 StylePtr_const style;
                 AttributeSetPtr_const attributes;
                 int64_t timestamp;

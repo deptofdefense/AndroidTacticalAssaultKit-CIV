@@ -15,6 +15,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 
 import com.atakmap.android.location.LocationMapComponent;
+import com.atakmap.android.metrics.activity.MetricActivity;
 import com.atakmap.net.AtakAuthenticationDatabase;
 import com.atakmap.net.AtakCertificateDatabase;
 
@@ -48,7 +49,7 @@ import javax.xml.xpath.XPathFactory;
  * against an external * entity passing in something other than a Uri.   Continue to evaluate 
  * each release and see if Android is able to prevent this type of attack at a lower level.
  */
-public class ImageAcceptActivity extends Activity {
+public class ImageAcceptActivity extends MetricActivity {
 
     public static final String TAG = "ImageAcceptActivity";
 
@@ -174,7 +175,8 @@ public class ImageAcceptActivity extends Activity {
         String[] projection = {
                 MediaStore.Images.Media.DATA
         };
-        Cursor cursor = managedQuery(uri, projection, null, null, null);
+        Cursor cursor = getContentResolver().query(uri, projection, null, null,
+                null);
 
         if (cursor != null) {
 
@@ -185,6 +187,11 @@ public class ImageAcceptActivity extends Activity {
                 selectedImagePath = cursor.getString(column_index);
             } catch (IllegalArgumentException iae) {
                 return null;
+            } finally {
+                try {
+                    cursor.close();
+                } catch (Exception e) {
+                }
             }
         }
 

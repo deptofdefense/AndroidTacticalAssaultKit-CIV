@@ -5,8 +5,10 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseErrorHandler;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Pair;
 
 import com.atakmap.android.icons.UserIconDatabase;
+import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
@@ -73,7 +75,7 @@ public class ImportSQLiteSort extends ImportInternalSDResolver {
     public ImportSQLiteSort(Context context, boolean validateExt,
             boolean copyFile) {
         super(".sqlite", null, validateExt, copyFile,
-                "SQLite Database");
+                "SQLite Database", context.getDrawable(R.drawable.ic_database));
 
     }
 
@@ -222,5 +224,10 @@ public class ImportSQLiteSort extends ImportInternalSDResolver {
     @Override
     protected void onFileSorted(File src, File dst, Set<SortFlags> flags) {
         super.onFileSorted(src, dst, flags);
+    }
+
+    @Override
+    public Pair<String, String> getContentMIME() {
+        return new Pair<>("SQLite Database", "application/x-sqlite3");
     }
 }

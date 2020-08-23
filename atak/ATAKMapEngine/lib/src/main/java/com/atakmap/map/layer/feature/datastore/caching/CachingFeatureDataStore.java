@@ -28,11 +28,11 @@ import com.atakmap.map.layer.feature.FeatureDataStore2;
 import com.atakmap.map.layer.feature.FeatureDefinition2;
 import com.atakmap.map.layer.feature.FeatureSet;
 import com.atakmap.map.layer.feature.FeatureSetCursor;
+import com.atakmap.map.layer.feature.Utils;
 import com.atakmap.map.layer.feature.cursor.FeatureCursorWrapper;
 import com.atakmap.map.layer.feature.cursor.MultiplexingFeatureCursor;
 import com.atakmap.map.layer.feature.datastore.AbstractReadOnlyFeatureDataStore2;
 import com.atakmap.map.layer.feature.datastore.FeatureSetDatabase2;
-import com.atakmap.map.layer.feature.datastore.caching.CacheFile;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.GeometryFactory;
 import com.atakmap.map.layer.raster.tilematrix.TileMatrix;
@@ -548,7 +548,7 @@ public class CachingFeatureDataStore extends AbstractReadOnlyFeatureDataStore2 i
     @Override
     public int queryFeaturesCount(FeatureQueryParameters params) throws DataStoreException {
         // XXX - better implementation
-        return queryFeaturesCount(this, params);
+        return Utils.queryFeaturesCount(this, params);
     }
 
     @Override

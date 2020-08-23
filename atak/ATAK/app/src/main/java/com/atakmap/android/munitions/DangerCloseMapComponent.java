@@ -103,6 +103,17 @@ public class DangerCloseMapComponent extends AbstractMapComponent {
                                 "Either \"fiveline\", \"nineline\", or null",
                                 true, String.class)
                 });
+        f.addAction(DangerCloseReceiver.REMOVE_WEAPON,
+                "Remove a range ring AND the weapon entry from the target",
+                new DocumentedExtra[] {
+                        new DocumentedExtra("targetUID", "Hostile marker UID",
+                                false, String.class),
+                        new DocumentedExtra("weaponName", "Weapon name",
+                                false, String.class),
+                        new DocumentedExtra("fromLine",
+                                "Either \"fiveline\", \"nineline\", or null",
+                                true, String.class)
+                });
         f.addAction(DangerCloseReceiver.REMOVE_ALL,
                 "Remove a specific weapon from all targets",
                 new DocumentedExtra[] {

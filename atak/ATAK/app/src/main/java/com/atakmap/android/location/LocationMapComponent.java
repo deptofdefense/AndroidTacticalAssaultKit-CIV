@@ -69,6 +69,7 @@ import com.atakmap.map.AtakMapController;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import com.atakmap.coremap.locale.LocaleUtil;
 import java.util.Timer;
@@ -191,9 +192,12 @@ public class LocationMapComponent extends AbstractMapComponent implements
 
     // private static long SENSOR_RATE = SensorManager.SENSOR_DELAY_GAME;
     private BroadcastReceiver selflocrec;
+    private BroadcastReceiver snapselfrec;
 
     private boolean _gpserrorenabled = true;
     private boolean recvInitialTimestamp = false;
+
+    private OnNmeaMessageListener newerNmeaListener;
 
     // used only in conjunction with the LocationListener and only guaranteed to be valid
     // if the Location.hasAltitude() is true.
@@ -684,7 +688,7 @@ public class LocationMapComponent extends AbstractMapComponent implements
         snapToSelfLocationSpecifiedFilter
                 .addAction("com.atakmap.android.maps.SNAP_TO_SELF");
         AtakBroadcast.getInstance().registerReceiver(
-                selflocrec = new BroadcastReceiver() {
+                snapselfrec = new BroadcastReceiver() {
 
                     @Override
                     public void onReceive(Context context, Intent intent) {
@@ -802,6 +806,7 @@ public class LocationMapComponent extends AbstractMapComponent implements
                         - _lastMarkerRefresh;
                 if (deltaRefresh > REFRESH_RATE) {
                     _lastMarkerRefresh = SystemClock.elapsedRealtime();
+
                     _mapView.post(updateRefreshLocationMarker);
 
                     long end = (SystemClock.elapsedRealtime() - startTime);
@@ -821,6 +826,11 @@ public class LocationMapComponent extends AbstractMapComponent implements
     private final Runnable updateRefreshLocationMarker = new Runnable() {
         @Override
         public void run() {
+
+            // The location manager has been disposed, just return
+            if (_headingRefreshTimer == null)
+                return;
+
             String prefix = _getUpdatedPrefix();
 
             _updateLocationMarker(prefix);
@@ -1137,15 +1147,16 @@ public class LocationMapComponent extends AbstractMapComponent implements
                     locMgr.addGpsStatusListener(this);
 
                     if (Build.VERSION.SDK_INT >= 24) {
-                        locMgr.addNmeaListener(new OnNmeaMessageListener() {
-                            @Override
-                            public void onNmeaMessage(String message,
-                                    long timestamp) {
-                                onNmeaReceived(timestamp, message);
-                            }
-                        });
+                        locMgr.addNmeaListener(
+                                newerNmeaListener = new OnNmeaMessageListener() {
+                                    @Override
+                                    public void onNmeaMessage(String message,
+                                            long timestamp) {
+                                        onNmeaReceived(timestamp, message);
+                                    }
+                                });
                     } else {
-                        locMgr.addNmeaListener(this);
+                        addNmeaListener(locMgr, this);
                     }
                 } else {
                     throw new IllegalArgumentException("no location manager");
@@ -1172,8 +1183,69 @@ public class LocationMapComponent extends AbstractMapComponent implements
         if (locMgr != null) {
             locMgr.removeUpdates(this);
             _removeLocationMapData(_mapView.getMapData());
-            locMgr.removeNmeaListener(this);
-            locMgr = null;
+            removeNmeaListener(locMgr, this);
+
+            if (Build.VERSION.SDK_INT >= 24) {
+                try {
+                    if (newerNmeaListener != null)
+                        locMgr.removeNmeaListener(newerNmeaListener);
+                } catch (Exception e) {
+                    Log.d(TAG, "error removing the newer nmea listener");
+                }
+                locMgr = null;
+            }
+        }
+    }
+
+    /**
+     * Reflective calling of addNmeaLIstener(GpsStatus.NmeaListener) for compilation using Android 29
+     * but for systems that need it (Android 21, 22, 23).
+     * @param locMgr the location manager to use
+     * @param listener the listener to register
+     */
+    private void addNmeaListener(final LocationManager locMgr,
+            final GpsStatus.NmeaListener listener) {
+        Log.d(TAG, "adding the GpsStatus.NmeaListener listener "
+                + listener.getClass());
+        try {
+            final Class c = locMgr.getClass();
+            Method addNmeaListener = c.getMethod("addNmeaListener",
+                    GpsStatus.NmeaListener.class);
+            if (addNmeaListener != null)
+                addNmeaListener.invoke(locMgr, listener);
+            else
+                Log.e(TAG,
+                        "error occurred trying to find the addNmeaListener method");
+        } catch (Exception e) {
+            Log.e(TAG,
+                    "error occurred trying to reflectively add GpsStatus.NmeaListener",
+                    e);
+        }
+    }
+
+    /**
+     * Reflective calling of addNmeaLIstener(GpsStatus.NmeaListener) for compilation using Android 29
+     * but for systems that need it (Android 21, 22, 23).
+     * @param locMgr the location manager to use
+     * @param listener the listener to register
+     */
+    private void removeNmeaListener(final LocationManager locMgr,
+            final GpsStatus.NmeaListener listener) {
+        Log.d(TAG, "removing the GpsStatus.NmeaListener listener "
+                + listener.getClass());
+        try {
+            final Class c = locMgr.getClass();
+            Method removeNmeaListener = c.getMethod("removeNmeaListener",
+                    GpsStatus.NmeaListener.class);
+            if (removeNmeaListener != null)
+                removeNmeaListener.invoke(locMgr, listener);
+            else
+                Log.e(TAG,
+                        "error occurred trying to find the removeNmeaListener method");
+        } catch (Exception e) {
+            Log.e(TAG,
+                    "error occurred trying to reflectively remove GpsStatus.NmeaListener",
+                    e);
         }
     }
 
@@ -1215,6 +1287,9 @@ public class LocationMapComponent extends AbstractMapComponent implements
         }
         if (selflocrec != null) {
             AtakBroadcast.getInstance().unregisterReceiver(selflocrec);
+        }
+        if (snapselfrec != null) {
+            AtakBroadcast.getInstance().unregisterReceiver(snapselfrec);
         }
 
         locationPrefs

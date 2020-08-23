@@ -135,6 +135,11 @@ public class DropDownManager extends BroadcastReceiver {
 
         //Left Side is not Stack Managed, right side is.
         if (dd.getSide() == DropDown.DropDownSide.LEFT_SIDE) {
+
+            // Remove the drop-down if it exists in the right-side stack
+            if (rightSideStack.contains(ddr))
+                closeDropDown(ddr.getDropDown());
+
             Log.d(TAG, "unhide any existing dropdown");
             unHidePane();
             Log.d(TAG, "calling show on (left side): " + ddr);
@@ -184,30 +189,6 @@ public class DropDownManager extends BroadcastReceiver {
                         + rightSide.getDropDown().ignoreBackButton());
                 Log.d(TAG, "incoming right side ignoreBackButton: "
                         + ddr.getDropDown().ignoreBackButton());
-
-                if (ddr.getDropDown().ignoreBackButton()) {
-
-                    // circumvents an issue where a switchable dropdown can exist in the right side, 
-                    // but can be called up for the left side later on screwing things up.
-
-                    List<DropDown> l = new ArrayList<>();
-                    if (rightSide.getDropDown().isSwitchable())
-                        l.add(rightSide.getDropDown());
-
-                    for (int i = 0; i < rightSideStack.size(); ++i) {
-                        DropDown r = rightSideStack.get(i).getDropDown();
-                        if (r.isSwitchable()) {
-                            l.add(r);
-                        }
-                    }
-                    for (int i = l.size(); i > 0; i--) {
-                        Log.d(TAG,
-                                "remove drop down (because it is switchable): "
-                                        + l.get(i - 1));
-                        closeDropDown(l.get(i - 1));
-                    }
-
-                }
 
                 // retain 
                 if ((rightSide != null)

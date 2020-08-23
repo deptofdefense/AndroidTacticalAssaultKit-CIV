@@ -43,7 +43,8 @@ public class TrackHistoryComponent extends AbstractMapComponent {
             public void run() {
                 breadRec = new BreadcrumbReceiver(view, trackGroup);
                 DocumentedIntentFilter breadFilter = new DocumentedIntentFilter();
-                breadFilter.addAction("com.atakmap.android.bread.TOGGLE_BREAD");
+                breadFilter.addAction(BreadcrumbReceiver.TOGGLE_BREAD);
+                breadFilter.addAction(BreadcrumbReceiver.COLOR_CRUMB);
                 breadFilter.addAction(
                         "com.atakmap.android.location.LOCATION_INIT");
                 breadFilter.addAction("com.atakmap.android.bread.DELETE_TRACK");

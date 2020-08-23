@@ -3,10 +3,10 @@
 using namespace TAK::Engine::Util;
 
 ProcessingCallback::ProcessingCallback() NOTHROWS :
-    opaque(NULL),
-    progress(NULL),
-    error(NULL),
-    cancelToken(NULL)
+    opaque(nullptr),
+    progress(nullptr),
+    error(nullptr),
+    cancelToken(nullptr)
 {}
 
 bool TAK::Engine::Util::ProcessingCallback_isCanceled(ProcessingCallback *callback) NOTHROWS

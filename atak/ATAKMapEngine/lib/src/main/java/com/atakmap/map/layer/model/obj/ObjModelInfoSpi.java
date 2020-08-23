@@ -37,7 +37,7 @@ public final class ObjModelInfoSpi implements ModelInfoSpi {
             return null;
         ModelInfo retval = new ModelInfo();
         retval.uri = f[0].getAbsolutePath();
-        retval.name = f[0].getName();
+        retval.name = (new File(object)).getName();
         retval.type = TYPE;
 
         return Collections.<ModelInfo>singleton(retval);

@@ -5,26 +5,18 @@ import com.atakmap.interop.Pointer;
 import com.atakmap.map.layer.feature.AttributeSet;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureCursor;
-import com.atakmap.map.layer.feature.FeatureDefinition2;
+import com.atakmap.map.layer.feature.FeatureDefinition3;
 import com.atakmap.util.ReadWriteLock;
 
-public class NativeFeatureCursor implements FeatureCursor, FeatureDefinition2 {
+public class NativeFeatureCursor implements FeatureCursor, FeatureDefinition3 {
     private final static String TAG = "NativeFeatureCursor";
 
     final ReadWriteLock rwlock = new ReadWriteLock();
     Pointer pointer;
     Object owner;
 
-    Exception allocStack;
-
     NativeFeatureCursor(Pointer pointer, Object owner) {
         this.pointer = pointer;
-
-        try {
-            throw new Exception();
-        } catch(Exception e) {
-            allocStack = e;
-        }
     }
 
     @Override
@@ -125,6 +117,8 @@ public class NativeFeatureCursor implements FeatureCursor, FeatureDefinition2 {
                     Feature.getGeometry(this),
                     Feature.getStyle(this),
                     this.getAttributes(),
+                    getAltitudeMode(),
+                    getExtrude(),
                     getTimestamp(this.pointer.raw),
                     getVersion(this.pointer.raw));
         } finally {
@@ -214,9 +208,34 @@ public class NativeFeatureCursor implements FeatureCursor, FeatureDefinition2 {
     }
 
     @Override
-    protected void finalize() throws Throwable {
+    public Feature.AltitudeMode getAltitudeMode() {
+        this.rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                throw new IllegalStateException();
+            int val =  getAltitudeMode(this.pointer.raw);
+            return Feature.AltitudeMode.from(val);
+        } finally {
+            this.rwlock.releaseRead();
+        }
+    }
+
+    @Override
+    public double getExtrude() {
+        this.rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                throw new IllegalStateException();
+            return getExtrude(this.pointer.raw);
+        } finally {
+            this.rwlock.releaseRead();
+        }
+    }
+
+    @Override
+    protected void finalize() {
         if(this.pointer.raw != 0L)
-            Log.w(TAG, "Native FeatureCursor leaked", allocStack);
+            Log.w(TAG, "Native FeatureCursor leaked");
     }
 
     static native void destruct(Pointer pointer);
@@ -231,4 +250,6 @@ public class NativeFeatureCursor implements FeatureCursor, FeatureDefinition2 {
     static native long getFsid(long ptr);
     static native boolean moveToNext(long ptr);
     static native long getTimestamp(long ptr);
+    static native int getAltitudeMode(long ptr);
+    static native double getExtrude(long ptr);
 }

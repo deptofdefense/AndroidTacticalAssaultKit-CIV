@@ -131,10 +131,10 @@ class DatabaseWrapper
            const std::vector<const char*>& columns,
            const char* where,
            const std::vector<const char*>& whereArgs,
-           const char* groupBy = NULL,
-           const char* having = NULL,
-           const char* orderBy = NULL,
-           const char* limit = NULL);
+           const char* groupBy = nullptr,
+           const char* having = nullptr,
+           const char* orderBy = nullptr,
+           const char* limit = nullptr);
 
 
                                         //====================================//

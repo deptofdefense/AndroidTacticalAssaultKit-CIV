@@ -1,24 +1,24 @@
 package com.atakmap.map.projection;
 
-import android.util.Pair;
-
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.atakmap.coremap.log.Log;
+import com.atakmap.interop.InteropCleaner;
+import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
 import com.atakmap.map.Interop;
 import com.atakmap.math.GeometryModel;
 import com.atakmap.math.Plane;
 import com.atakmap.math.PointD;
 import com.atakmap.math.Vector3D;
+import com.atakmap.util.ReadWriteLock;
 
 public final class MapProjectionDisplayModel {
 
-    static Interop<GeometryModel> GeometryModel_interop = Interop.findInterop(GeometryModel.class);
+    final static NativePeerManager.Cleaner CLEANER = new InteropCleaner(MapProjectionDisplayModel.class);
+
+    final static Interop<GeometryModel> GeometryModel_interop = Interop.findInterop(GeometryModel.class);
 
     private final static Map<Long, WeakReference<MapProjectionDisplayModel>> registry = new HashMap<>();
 
@@ -44,6 +44,8 @@ public final class MapProjectionDisplayModel {
     public final double projectionYToNominalMeters;
     public final double projectionZToNominalMeters;
 
+    final ReadWriteLock rwlock = new ReadWriteLock();
+
     Pointer pointer;
     Object owner;
 
@@ -60,6 +62,7 @@ public final class MapProjectionDisplayModel {
         } else {
             this.pointer = wrap(srid, earth, projectionXToNominalMeters, projectionYToNominalMeters, projectionZToNominalMeters, zIsHeight);
         }
+        NativePeerManager.register(this, this.pointer, rwlock, null, CLEANER);
 
         this.srid = srid;
         this.earth = earth;
@@ -70,6 +73,8 @@ public final class MapProjectionDisplayModel {
     }
 
     MapProjectionDisplayModel(Pointer pointer, Object owner) {
+        NativePeerManager.register(this, pointer, rwlock, null, CLEANER);
+
         this.pointer = pointer;
         this.owner = owner;
 
@@ -81,15 +86,6 @@ public final class MapProjectionDisplayModel {
         this.zIsHeight = getZIsHeight(this.pointer.raw);
     }
 
-    @Override
-    public synchronized void finalize() {
-        if(this.pointer.raw != 0L)
-            destruct(this.pointer);
-        try {
-            super.finalize();
-        } catch(Throwable ignored) {}
-    }
-    
     /**************************************************************************/
 
     static synchronized void registerModel(MapProjectionDisplayModel model) {

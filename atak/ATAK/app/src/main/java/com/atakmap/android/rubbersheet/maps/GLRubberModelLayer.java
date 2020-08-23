@@ -22,7 +22,7 @@ import java.util.List;
 /**
  * Render layer for rubber models
  */
-public final class GLRubberModelLayer extends
+public class GLRubberModelLayer extends
         GLAsynchronousLayer2<Collection<GLMapRenderable2>>
         implements MapGroup.OnItemListChangedListener,
         GLMapItem2.OnVisibleChangedListener,
@@ -31,14 +31,14 @@ public final class GLRubberModelLayer extends
     private final static String TAG = "GLRubberModelLayer";
 
     private final RubberModelLayer _modelLayer;
-    private final RubberSheetMapGroup _group;
+    private final MapGroup _group;
     private final LongSparseArray<GLRubberModel> _modelList = new LongSparseArray<>();
     private final List<GLMapRenderable2> _drawList = new ArrayList<>();
     private final MutableGeoBounds _scratchBounds = new MutableGeoBounds(0, 0,
             0, 0);
 
     public GLRubberModelLayer(MapRenderer surface, RubberModelLayer subject,
-            RubberSheetMapGroup group) {
+            MapGroup group) {
         super(surface, subject);
         _modelLayer = subject;
         _group = group;
@@ -121,17 +121,18 @@ public final class GLRubberModelLayer extends
         return GLMapView.RENDER_PASS_SCENES;
     }
 
-    private void register(RubberModel mdl) {
+    protected void register(RubberModel mdl) {
         long id = mdl.getSerialId();
         if (_modelList.get(id) == null) {
-            GLRubberModel glMDL = new GLRubberModel(renderContext, mdl);
+            GLRubberModel glMDL = createGLModel(mdl);
             glMDL.addVisibleListener(this);
             glMDL.addBoundsListener(this);
             _modelList.put(id, glMDL);
         }
+        invalidate();
     }
 
-    private void unregister(RubberModel mdl) {
+    protected void unregister(RubberModel mdl) {
         long id = mdl.getSerialId();
         GLRubberModel glMDL = _modelList.get(id);
         if (glMDL != null) {
@@ -140,9 +141,16 @@ public final class GLRubberModelLayer extends
             glMDL.removeBoundsListener(this);
             glMDL.release();
         }
-        Model model = mdl.getModel();
-        if (model != null)
-            model.dispose();
+        if (!mdl.isSharedModel()) {
+            Model model = mdl.getModel();
+            if (model != null)
+                model.dispose();
+        }
+        invalidate();
+    }
+
+    protected GLRubberModel createGLModel(RubberModel mdl) {
+        return new GLRubberModel(renderContext, mdl);
     }
 
     @Override

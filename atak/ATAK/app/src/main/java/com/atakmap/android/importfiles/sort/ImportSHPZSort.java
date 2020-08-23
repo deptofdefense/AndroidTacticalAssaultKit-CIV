@@ -31,7 +31,8 @@ public class ImportSHPZSort extends ImportInPlaceResolver {
             boolean copyFile, boolean importInPlace) {
         super(".zip", FileSystemUtils.OVERLAYS_DIRECTORY, validateExt,
                 copyFile, importInPlace,
-                context.getString(R.string.zipped_shapefile));
+                context.getString(R.string.zipped_shapefile),
+                context.getDrawable(R.drawable.ic_shapefile));
         _context = context;
     }
 

@@ -7,6 +7,7 @@ import android.os.SystemClock;
 
 import com.atakmap.android.drawing.mapItems.DrawingRectangle;
 import com.atakmap.android.editableShapes.EditablePolyline;
+import com.atakmap.android.hashtags.util.HashtagUtils;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.ui.MissionPackageListMapItem;
@@ -23,6 +24,7 @@ import org.simpleframework.xml.core.Persister;
 import java.io.File;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import com.atakmap.coremap.locale.LocaleUtil;
 
@@ -721,6 +723,10 @@ public class MissionPackageManifest implements Parcelable {
             return _path;
         else
             return null;
+    }
+
+    public Collection<String> getHashtags() {
+        return HashtagUtils.extractTags(getRemarks());
     }
 
     /**

@@ -10,18 +10,21 @@ import android.graphics.BitmapFactory;
 import android.graphics.BitmapRegionDecoder;
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.opengl.GLSurfaceView;
 
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.Ellipsoid;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import com.atakmap.R;
+import com.atakmap.map.RenderContext;
 import com.atakmap.map.layer.raster.DatasetProjection2;
 import com.atakmap.map.layer.raster.DefaultDatasetProjection2;
 import com.atakmap.map.layer.raster.ImageInfo;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReaderFactory;
 import com.atakmap.map.layer.raster.tilereader.opengl.GLQuadTileNode2;
+import com.atakmap.map.layer.raster.tilereader.opengl.GLQuadTileNode3;
 import com.atakmap.map.layer.raster.tilereader.opengl.PrefetchedInitializer;
 import com.atakmap.map.projection.Projection;
 import com.atakmap.math.MathUtils;
@@ -51,7 +54,7 @@ public final class GLBaseMap implements GLMapRenderable {
         this.implSrid = -1;
     }
     
-    private GLMapRenderable createRenderer(Projection proj) {
+    private GLMapRenderable createRenderer(RenderContext ctx, Projection proj) {
         // obtain the bounds of the projection
         GeoPoint ul = GeoPoint.createMutable().set(proj.getMaxLatitude(), proj.getMinLongitude());
         GeoPoint ur = GeoPoint.createMutable().set(proj.getMaxLatitude(), proj.getMaxLongitude());
@@ -159,12 +162,13 @@ public final class GLBaseMap implements GLMapRenderable {
         TileReaderFactory.Options readerOpts = null;
         GLQuadTileNode2.Options opts = null;
 
-        return new GLQuadTileNode2(info, readerOpts, opts, init);
+        return new GLQuadTileNode3(ctx, info, readerOpts, opts, init);
     }
 
     private void initSource(GLMapView view) {
         try {
-            this.srcReader = new BitmapTileReader(view.getSurface().getContext(), R.drawable.worldmap_4326, 128, 128, null, TileReader.getMasterIOThread());
+            // XXX -
+            this.srcReader = new BitmapTileReader(((GLMapSurface)view.getRenderContext()).getContext(), R.drawable.worldmap_4326, 128, 128, null, TileReader.getMasterIOThread());
         
             this.srcInfo = new ImageInfo(
                     this.srcReader.getUri(),
@@ -213,7 +217,7 @@ public final class GLBaseMap implements GLMapRenderable {
             }
 
             if(this.srcReader != null) {
-                this.impl = createRenderer(view.scene.mapProjection);
+                this.impl = createRenderer(view.getRenderContext(), view.scene.mapProjection);
                 this.implSrid = view.scene.mapProjection.getSpatialReferenceID();
             }
         }

@@ -7,6 +7,8 @@
 #include <spatialite.h>
 
 #include <android/log.h>
+#include <interop/JNIStringUTF.h>
+#include <interop/java/JNILocalRef.h>
 
 #include "thread/Lock.h"
 #include "thread/Mutex.h"
@@ -22,38 +24,48 @@ using namespace TAKEngineJNI::Interop;
 
 namespace {
 
-class LogcatLogger : public Logger2
-{
-public :
-    /** returns 0 on success, non-zero on error */
-    virtual int print(const LogLevel lvl, const char *fmt, va_list arg) NOTHROWS;
-};
+    class LogcatLogger : public Logger2
+    {
+    public :
+        /** returns 0 on success, non-zero on error */
+        virtual int print(const LogLevel lvl, const char *fmt, va_list arg) NOTHROWS;
+    };
+
+    struct
+    {
+        jclass id;
+        jmethodID loadClass;
+        jobject runtime;
+        jobject library;
+
+        // XXX - need additional instances for Android and library?
+    } ClassLoader_class;
 
 #define PGSC_ENV_SET_METHOD_FN_DECL(type) \
-    void envSetReturns ## type (JNIEnv *env, jobject object, jmethodID methodID, ...);
+        void envSetReturns ## type (JNIEnv *env, jobject object, jmethodID methodID, ...);
 
-PGSC_ENV_SET_METHOD_FN_DECL(Void);
-PGSC_ENV_SET_METHOD_FN_DECL(Byte);
-PGSC_ENV_SET_METHOD_FN_DECL(Boolean);
-PGSC_ENV_SET_METHOD_FN_DECL(Char);
-PGSC_ENV_SET_METHOD_FN_DECL(Short);
-PGSC_ENV_SET_METHOD_FN_DECL(Int);
-PGSC_ENV_SET_METHOD_FN_DECL(Long);
-PGSC_ENV_SET_METHOD_FN_DECL(Float);
-PGSC_ENV_SET_METHOD_FN_DECL(Double);
-PGSC_ENV_SET_METHOD_FN_DECL(Object);
+    PGSC_ENV_SET_METHOD_FN_DECL(Void);
+    PGSC_ENV_SET_METHOD_FN_DECL(Byte);
+    PGSC_ENV_SET_METHOD_FN_DECL(Boolean);
+    PGSC_ENV_SET_METHOD_FN_DECL(Char);
+    PGSC_ENV_SET_METHOD_FN_DECL(Short);
+    PGSC_ENV_SET_METHOD_FN_DECL(Int);
+    PGSC_ENV_SET_METHOD_FN_DECL(Long);
+    PGSC_ENV_SET_METHOD_FN_DECL(Float);
+    PGSC_ENV_SET_METHOD_FN_DECL(Double);
+    PGSC_ENV_SET_METHOD_FN_DECL(Object);
 
 #undef PGSC_ENV_SET_METHOD_FN_DECL
 
-int indexOf(const char *str, const char c, const int from);
+    int indexOf(const char *str, const char c, const int from);
 
-std::map<std::string, jclass> &classRefMap();
-Logger2 &getAndroidLogger();
-Mutex &mutex();
+    std::map<std::string, jclass> &classRefMap();
+    Logger2 &getAndroidLogger();
+    Mutex &mutex();
 
-void sqliteLogCallback(void *pArg, int iErrCode, const char *zMsg);
+    void sqliteLogCallback(void *pArg, int iErrCode, const char *zMsg);
 
-JavaVM *vm;
+    JavaVM *vm;
 
 } // unnamed namespace
 
@@ -96,6 +108,26 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm_, void *reserved)
 
     env = (JNIEnv *)env_vp;
 
+    // Configure classloader
+    {
+        ClassLoader_class.id = NULL;
+        ClassLoader_class.loadClass = NULL;
+        ClassLoader_class.runtime = NULL;
+
+        ClassLoader_class.id = ATAKMapEngineJNI_findClass(env, "java/lang/ClassLoader");
+        ClassLoader_class.loadClass = env->GetMethodID(ClassLoader_class.id, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
+
+        Java::JNILocalRef Class_class(*env, env->FindClass("java/lang/Class"));
+        jmethodID Class_getClassLoader = env->GetMethodID(Class_class, "getClassLoader", "()Ljava/lang/ClassLoader;");
+
+        ClassLoader_class.runtime = env->NewGlobalRef(env->CallObjectMethod(Class_class, Class_getClassLoader));
+
+        Java::JNILocalRef EngineLibrary_class(*env, env->FindClass("com/atakmap/map/EngineLibrary"));
+        ClassLoader_class.library = env->NewGlobalRef(env->CallObjectMethod(EngineLibrary_class, Class_getClassLoader));
+    }
+
+
+    // Load externed classes/methods
     nioBufferClass = ATAKMapEngineJNI_findClass(env, "java/nio/Buffer");
     if (!nioBufferClass)
         return JNI_ERR;
@@ -149,8 +181,8 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm_, void *reserved)
     Pointer_class.id = ATAKMapEngineJNI_findClass(env, "com/atakmap/interop/Pointer");
     if(!Pointer_class.id)
         return JNI_ERR;
-    Pointer_class.ctor__JJI = env->GetMethodID(Pointer_class.id, "<init>", "(JJI)V");
-    if(!Pointer_class.ctor__JJI)
+    Pointer_class.ctor__JJIJ = env->GetMethodID(Pointer_class.id, "<init>", "(JJIJ)V");
+    if(!Pointer_class.ctor__JJIJ)
         return JNI_ERR;
     Pointer_class.value = env->GetFieldID(Pointer_class.id, "value", "J");
     if(!Pointer_class.value)
@@ -160,6 +192,9 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm_, void *reserved)
         return JNI_ERR;
     Pointer_class.type = env->GetFieldID(Pointer_class.id, "type", "I");
     if(!Pointer_class.type)
+        return JNI_ERR;
+    Pointer_class.deleter = env->GetFieldID(Pointer_class.id, "deleter", "J");
+    if(!Pointer_class.deleter)
         return JNI_ERR;
 
     ProgressCallback_class = ATAKMapEngineJNI_findClass(env, "com/atakmap/interop/ProgressCallback");
@@ -366,7 +401,11 @@ LocalJNIEnv::LocalJNIEnv() NOTHROWS :
     if(vm) {
         int code = vm->GetEnv((void **)&env, JNI_VERSION_1_6);
         if(code == JNI_EDETACHED) {
-            if(vm->AttachCurrentThread(&env, NULL) == 0) {
+            JavaVMAttachArgs args;
+            args.version = JNI_VERSION_1_6;
+            args.group = NULL;
+            args.name = NULL;
+            if(vm->AttachCurrentThread(&env, &args) == 0) {
                 detach = true;
             } else {
                 env = NULL;
@@ -467,13 +506,42 @@ jclass ATAKMapEngineJNI_findClass(JNIEnv *env, const char *name) NOTHROWS
         return entry->second;
     if(!env)
         return NULL;
-    jclass localClassRef = env->FindClass(name);
+    Java::JNILocalRef localClassRef(*env, NULL);
+    do {
+        // load from JNIEnv
+        localClassRef = Java::JNILocalRef(*env, env->FindClass(name));
+        if(env->ExceptionCheck())
+            env->ExceptionClear();
+        if(localClassRef)
+            break;
+
+        // load from ClassLoader
+        Java::JNILocalRef mname(*env, env->NewStringUTF(name));
+        if(ClassLoader_class.library) {
+            localClassRef = Java::JNILocalRef(*env, env->CallObjectMethod(ClassLoader_class.library,
+                                                                          ClassLoader_class.loadClass,
+                                                                          (jstring) mname));
+            if (env->ExceptionCheck())
+                env->ExceptionClear();
+            if (localClassRef)
+                break;
+        }
+
+        if(ClassLoader_class.runtime) {
+            localClassRef = Java::JNILocalRef(*env, env->CallObjectMethod(ClassLoader_class.runtime,
+                                                                          ClassLoader_class.loadClass,
+                                                                          (jstring) mname));
+            if (env->ExceptionCheck())
+                env->ExceptionClear();
+            if (localClassRef)
+                break;
+        }
+    } while(false);
     if(!localClassRef) {
         Logger_log(TELL_Warning, "ATAKMapEngineJNI_findClass: failed to find %s", name);
         return NULL;
     }
     jclass clazz = (jclass)env->NewGlobalRef(localClassRef);
-    env->DeleteLocalRef(localClassRef);
     classMap[name] = clazz;
     return clazz;
 }
@@ -513,6 +581,26 @@ TAKErr ProgressCallback_dispatchError(jobject jcallback, const char *value) NOTH
         return TE_Err;
     env->CallVoidMethod(jcallback, ProgressCallback_error, value ? env->NewStringUTF(value) : NULL);
     return env->ExceptionCheck() ? TE_Err : TE_Ok;
+}
+
+void Thread_dumpStack() NOTHROWS
+{
+    LocalJNIEnv env;
+    jclass Thread_class = ATAKMapEngineJNI_findClass(env, "java/lang/Thread");
+    jmethodID dumpStack = env->GetStaticMethodID(Thread_class, "dumpStack", "()V");
+    env->CallStaticVoidMethod(Thread_class, dumpStack);
+}
+TAK::Engine::Port::String Object_toString(jobject obj) NOTHROWS
+{
+    if(!obj)
+        return nullptr;
+    LocalJNIEnv env;
+    jclass Object_class = ATAKMapEngineJNI_findClass(env, "java/lang/Object");
+    jmethodID toString = env->GetMethodID(Object_class, "toString", "()Ljava/lang/String;");
+    Java::JNILocalRef mstr(*env, env->CallObjectMethod(obj, toString));
+    TAK::Engine::Port::String cstr;
+    JNIStringUTF_get(cstr, *env, mstr);
+    return cstr;
 }
 
 namespace {

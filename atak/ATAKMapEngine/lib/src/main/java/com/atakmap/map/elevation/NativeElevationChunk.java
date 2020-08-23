@@ -1,6 +1,9 @@
 package com.atakmap.map.elevation;
 
+import com.atakmap.interop.InteropCleaner;
+import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
+import com.atakmap.lang.ref.Cleaner;
 import com.atakmap.map.Interop;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.geometry.Polygon;
@@ -9,16 +12,21 @@ import com.atakmap.map.layer.model.ModelBuilder;
 import com.atakmap.math.Matrix;
 import com.atakmap.util.ReadWriteLock;
 
-class NativeElevationChunk implements ElevationChunk {
+final class NativeElevationChunk implements ElevationChunk {
+    final static NativePeerManager.Cleaner CLEANER = new InteropCleaner(ElevationChunk.class);
+
     final static Interop<Geometry> Geometry_interop = Interop.findInterop(Geometry.class);
     final static Interop<Mesh> Mesh_interop = Interop.findInterop(Mesh.class);
     final static Interop<Matrix> Matrix_interop = Interop.findInterop(Matrix.class);
 
     final ReadWriteLock rwlock = new ReadWriteLock();
+    private final Cleaner cleaner;
     Pointer pointer;
     Object owner;
 
     private NativeElevationChunk(Pointer pointer, Object owner) {
+        this.cleaner = NativePeerManager.register(this, pointer, rwlock, null, CLEANER);
+
         this.pointer = pointer;
         this.owner = owner;
     }
@@ -162,20 +170,10 @@ class NativeElevationChunk implements ElevationChunk {
 
     @Override
     public void dispose() {
-        this.finalize();
+        if(this.cleaner != null)
+            this.cleaner.clean();
     }
-
-    @Override
-    public void finalize() {
-        this.rwlock.acquireWrite();
-        try {
-            if(this.pointer.raw != 0L)
-                destruct(this.pointer);
-        } finally {
-            this.rwlock.releaseWrite();
-        }
-    }
-
+    
     static ElevationChunk create(Pointer pointer, Object owner) {
         return new NativeElevationChunk(pointer, owner);
     }

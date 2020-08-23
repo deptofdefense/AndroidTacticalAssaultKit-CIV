@@ -76,7 +76,7 @@ namespace util
 {
 
 
-class ENGINE_API IO_Error;
+struct IO_Error;
 
 
 }                                       // Close util namespace.
@@ -199,7 +199,7 @@ class ENGINE_API DatasetDescriptor
     operator== (const DatasetDescriptor& rhs)
         const
         throw ()
-      { return URI == rhs.URI; }
+      { return uri_ == rhs.uri_; }
 
     bool
     operator!= (const DatasetDescriptor& rhs)
@@ -249,8 +249,8 @@ class ENGINE_API DatasetDescriptor
     DescriptorSet*
     create (const char* filePath,
             const char* workingDir,
-            const char* typeHint = NULL,
-            CreationCallback* = NULL);
+            const char* typeHint = nullptr,
+            CreationCallback* = nullptr);
 
     //
     // Creates a simple Polygon from four coordinates.
@@ -296,7 +296,7 @@ class ENGINE_API DatasetDescriptor
     // subsequent decode of the stream contents will have the specified ID.
     //
     void
-    encode (int64_t layerID,
+    encode (int64_t layer_id,
             std::ostream&)
         throw (util::IO_Error);
 
@@ -332,7 +332,7 @@ class ENGINE_API DatasetDescriptor
     // must not be deleted.
     //
     const feature::Geometry*
-    getCoverage (const char* imageryType = NULL) // Defaults to all types.
+    getCoverage (const char* imageryType = nullptr) // Defaults to all types.
         const
         throw ();
 
@@ -346,7 +346,7 @@ class ENGINE_API DatasetDescriptor
     getDatasetType ()
         const
         throw ()
-      { return datasetType; }
+      { return dataset_type_; }
 
     //
     // Returns the (possibly NULL) extra data associated with the specified key.
@@ -385,7 +385,7 @@ class ENGINE_API DatasetDescriptor
     getImageryTypes ()
         const
         throw ()
-      { return imageryTypes; }
+      { return imagery_types_; }
 
     //
     // Returns the ID assigned by the data store that the dataset descriptor
@@ -396,7 +396,7 @@ class ENGINE_API DatasetDescriptor
     getLayerID ()
         const
         throw ()
-      { return layerID; }
+      { return layer_id_; }
 
     //
     // Returns the (possibly NULL) local data value for the supplied key.  Local
@@ -424,7 +424,7 @@ class ENGINE_API DatasetDescriptor
     // resolution is greater than the returned value.
     //
     double
-    getMaxResolution (const char* imageryType = NULL)
+    getMaxResolution (const char* imageryType = nullptr)
         const
         throw ();
 
@@ -435,7 +435,7 @@ class ENGINE_API DatasetDescriptor
     getMinimumBoundingBox ()
         const
         throw ()
-      { return minimumBoundingBox; }
+      { return minimum_bounding_box_; }
 
     //
     // Returns the minimum resolution, in meters-per-pixel, for the supplied
@@ -446,7 +446,7 @@ class ENGINE_API DatasetDescriptor
     // resolution is lower than the returned value.
     //
     double
-    getMinResolution (const char* imageryType = NULL)
+    getMinResolution (const char* imageryType = nullptr)
         const
         throw ();
 
@@ -457,7 +457,7 @@ class ENGINE_API DatasetDescriptor
     getName ()
         const
         throw ()
-      { return name; }
+      { return name_; }
 
     //
     // Returns the name of the service provider that was responsible for
@@ -467,7 +467,7 @@ class ENGINE_API DatasetDescriptor
     getProvider ()
         const
         throw ()
-      { return provider; }
+      { return provider_; }
 
     //
     // Returns the spatial reference ID for the dataset, or -1 if the spatial
@@ -477,7 +477,7 @@ class ENGINE_API DatasetDescriptor
     getSpatialReferenceID ()
         const
         throw ()
-      { return spatialReferenceID; }
+      { return spatial_reference_id_; }
 
     //
     // Returns the URI for the dataset.
@@ -486,7 +486,7 @@ class ENGINE_API DatasetDescriptor
     getURI ()
         const
         throw ()
-      { return URI; }
+      { return uri_; }
 
     //
     // Returns the (possibly NULL) working directory for the dataset.
@@ -497,7 +497,7 @@ class ENGINE_API DatasetDescriptor
     getWorkingDirectory ()
         const
         throw ()
-     { return workingDirectory; }
+     { return working_directory_; }
 
     //
     // Returns true if the dataset is remote, false if the dataset resides on
@@ -507,7 +507,7 @@ class ENGINE_API DatasetDescriptor
     isRemote ()
         const
         throw ()
-      { return !isLocal; }
+      { return !is_local_; }
       
     
     //
@@ -618,18 +618,18 @@ class ENGINE_API DatasetDescriptor
     // NULL.
     //
     DatasetDescriptor (Type type,
-                       int64_t layerID,
+                       int64_t layer_id,
                        const char* name,
-                       const char* URI,
+                       const char* uri,
                        const char* provider,
-                       const char* datasetType,
+                       const char* dataset_type,
                        const StringVector& imageryTypes,
                        const ResolutionMap& resolutions,
                        const CoverageMap& coverages,
-                       int referenceID,
-                       bool isRemote,
-                       const char* workingDir,
-                       const StringMap& extraData);
+                       int reference_id,
+                       bool is_remote,
+                       const char* working_dir,
+                       const StringMap& extra_data);
 
     DatasetDescriptor (const DatasetDescriptor&);
 
@@ -681,21 +681,21 @@ class ENGINE_API DatasetDescriptor
     //==================================
 
 
-    Type type;
-    int64_t layerID;
-    int spatialReferenceID;
-    TAK::Engine::Port::String name;
-    TAK::Engine::Port::String URI;
-    TAK::Engine::Port::String provider;
-    TAK::Engine::Port::String datasetType;
-    TAK::Engine::Port::String workingDirectory;
-    StringVector imageryTypes;
-    CoverageMap coverages;
-    ResolutionMap resolutions;
-    StringMap extraData;
-    feature::Envelope minimumBoundingBox;
-    bool isLocal;                       // On local file system.
-    std::map<std::string, const void*> localData;
+    Type type_;
+    int64_t layer_id_;
+    int spatial_reference_id_;
+    TAK::Engine::Port::String name_;
+    TAK::Engine::Port::String uri_;
+    TAK::Engine::Port::String provider_;
+    TAK::Engine::Port::String dataset_type_;
+    TAK::Engine::Port::String working_directory_;
+    StringVector imagery_types_;
+    CoverageMap coverages_;
+    ResolutionMap resolutions_;
+    StringMap extra_data_;
+    feature::Envelope minimum_bounding_box_;
+    bool is_local_;                       // On local file system.
+    std::map<std::string, const void*> local_data_;
   };
 
 
@@ -750,7 +750,7 @@ class ENGINE_API DatasetDescriptor::Factory
     create (const FactoryArgs&,
             const char* strategy,
             CreationCallback*)
-        const;
+        const override;
 
 
     //==================================
@@ -761,8 +761,8 @@ class ENGINE_API DatasetDescriptor::Factory
     unsigned int
     getPriority ()
         const
-        throw ()
-      { return priority; }
+        throw () override
+      { return priority_; }
 
 
     //==================================
@@ -773,14 +773,14 @@ class ENGINE_API DatasetDescriptor::Factory
     DescriptorSet*
     create (const FactoryArgs& args,
             const char* strategy)
-        const
+        const override
       { return create (args, strategy, NULL); }
 
     const char*
     getStrategy ()
         const
-        throw ()
-      { return strategy; }
+        throw () override
+      { return strategy_; }
 
 
                                         //====================================//
@@ -831,8 +831,8 @@ class ENGINE_API DatasetDescriptor::Factory
     //==================================
 
 
-    const char* strategy;
-    unsigned int priority;
+    const char* strategy_;
+    unsigned int priority_;
   };
 
 

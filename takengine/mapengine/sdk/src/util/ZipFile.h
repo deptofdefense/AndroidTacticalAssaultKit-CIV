@@ -26,7 +26,7 @@ namespace TAK {
 
                 ~ZipFile() NOTHROWS;
 
-                TAKErr listEntries(Port::Collection<Port::String> &value, const char *path, bool(*filter)(const char *file) = NULL) const NOTHROWS;
+                TAKErr listEntries(Port::Collection<Port::String> &value, const char *path, bool(*filter)(const char *file) = nullptr) const NOTHROWS;
 
                 TAKErr openEntry(DataInput2Ptr &dataInputPtr, const char *entryPath) const NOTHROWS;
 
@@ -64,8 +64,8 @@ namespace TAK {
                 virtual int64_t length() const NOTHROWS;
             private:
                 ZipFileDataInput2(ZipFilePtr &&zipPtr, const int64_t len) NOTHROWS;
-                ZipFilePtr zipPtr;
-                int64_t len;
+                ZipFilePtr zip_ptr_;
+                int64_t len_;
             };
         }
     }

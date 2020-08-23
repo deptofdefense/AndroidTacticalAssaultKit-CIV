@@ -30,6 +30,7 @@ import com.atakmap.map.layer.model.Models;
 import com.atakmap.map.layer.model.SceneObjectControl;
 import com.atakmap.map.layer.model.opengl.GLSceneSpi;
 import com.atakmap.map.opengl.GLMapRenderable2;
+import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
@@ -599,7 +600,7 @@ ebi = System.currentTimeMillis();
             if(t == null)
                 return false;
 
-            final MapSceneModel sm = ((GLMapView)context).getSurface().getMapView().getSceneModel();
+            final MapSceneModel sm = ((GLMapSurface)((GLMapView)context).getRenderContext()).getMapView().getSceneModel();
 
             boolean retval = false;
             GeoPoint isect_geo = GeoPoint.createMutable();

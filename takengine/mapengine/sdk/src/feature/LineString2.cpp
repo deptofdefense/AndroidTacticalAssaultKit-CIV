@@ -10,7 +10,7 @@ LineString2::LineString2() NOTHROWS :
     Geometry2(TEGC_LineString),
     dimension(2u),
     numPoints(0u),
-    points(NULL),
+    points(nullptr),
     pointsLength(0u)
 {}
 
@@ -18,7 +18,7 @@ LineString2::LineString2(const LineString2 &other_) NOTHROWS :
     Geometry2(TEGC_LineString),
     dimension(other_.dimension),
     numPoints(other_.numPoints),
-    points(NULL),
+    points(nullptr),
     pointsLength(other_.dimension*other_.numPoints)
 {
     if (pointsLength) {
@@ -254,8 +254,6 @@ TAKErr LineString2::isClosed(bool *value) const NOTHROWS
     default:
         return TE_IllegalState;
     }
-
-    return TE_Ok;
 }
 std::size_t LineString2::getDimension() const NOTHROWS
 {
@@ -330,7 +328,6 @@ TAKErr LineString2::setDimensionImpl(const std::size_t dimension_) NOTHROWS
     if (dimension_ != 2 && dimension_ != 3)
         return TE_InvalidArg;
 
-    TAKErr code(TE_Ok);
     array_ptr<double> redim(new double[this->numPoints*dimension_]);
     if(dimension_ == 2u && this->dimension == 3u) {
         for (std::size_t i = 0u; i < this->numPoints; i++) {
@@ -354,7 +351,7 @@ TAKErr LineString2::setDimensionImpl(const std::size_t dimension_) NOTHROWS
 
 bool LineString2::equalsImpl(const Geometry2 &o) NOTHROWS
 {
-    const LineString2 &other = static_cast<const LineString2 &>(o);
+    const auto &other = static_cast<const LineString2 &>(o);
     if(this->numPoints != other.numPoints)
         return false;
 

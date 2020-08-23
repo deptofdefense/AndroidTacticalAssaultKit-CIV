@@ -2,13 +2,17 @@
 package com.atakmap.android.maps;
 
 import com.atakmap.android.hashtags.HashtagMapComponent;
+import com.atakmap.android.metrics.activity.MetricFragmentActivity;
 import com.atakmap.android.rubbersheet.RubberSheetMapComponent;
+import com.atakmap.android.vehicle.VehicleMapComponent;
 import com.atakmap.app.BuildConfig;
+
+import android.annotation.SuppressLint;
 import android.os.SystemClock;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
+import androidx.fragment.app.FragmentActivity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 
@@ -21,7 +25,6 @@ import com.atakmap.android.maps.assets.MapAssets;
 import com.atakmap.android.maps.graphics.GLMapComponent;
 import com.atakmap.android.network.ContentResolverURIStreamHandler;
 import com.atakmap.android.network.URIStreamHandlerFactory;
-import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.preferences.json.JSONPreferenceControl;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.Layer;
@@ -40,7 +43,7 @@ import javax.xml.parsers.ParserConfigurationException;
  * 
  * 
  */
-public abstract class MapActivity extends FragmentActivity {
+public abstract class MapActivity extends MetricFragmentActivity {
 
     public static final String TAG = "MapActivity";
 
@@ -55,7 +58,7 @@ public abstract class MapActivity extends FragmentActivity {
         try {
             super.onCreate(savedInstanceState);
         } catch (Exception e) {
-            Log.d(TAG, "error restoring activity", e);
+            //Log.d(TAG, "error restoring activity", e);
         }
 
         _isActive = false;
@@ -231,6 +234,7 @@ public abstract class MapActivity extends FragmentActivity {
         }
     }
 
+    @SuppressLint("RestrictedApi")
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         try {
@@ -468,10 +472,6 @@ public abstract class MapActivity extends FragmentActivity {
         registerMapComponent(
                 new com.atakmap.android.metricreport.MetricReportMapComponent());
 
-        // Vehicle shapes and overhead markers
-        registerMapComponent(
-                new com.atakmap.android.vehicle.VehicleMapComponent());
-
         // Fire up the state saver last for the internal components.
 
         registerMapComponent(new com.atakmap.android.statesaver.StateSaver());
@@ -481,6 +481,9 @@ public abstract class MapActivity extends FragmentActivity {
         registerMapComponent(new com.atakmap.android.model.ModelMapComponent());
         registerMapComponent(new RubberSheetMapComponent());
         registerMapComponent(new HashtagMapComponent());
+
+        // Vehicle shapes and overhead markers
+        registerMapComponent(new VehicleMapComponent());
 
         // Load up all of the external components, when this is complete it will trigger the
         // state saver to unroll all of the map components.

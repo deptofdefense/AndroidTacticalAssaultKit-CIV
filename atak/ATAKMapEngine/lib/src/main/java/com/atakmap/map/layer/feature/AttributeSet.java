@@ -1,7 +1,10 @@
 package com.atakmap.map.layer.feature;
 
+import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
 import com.atakmap.lang.Objects;
+import com.atakmap.lang.ref.Cleaner;
+import com.atakmap.util.Disposable;
 import com.atakmap.util.ReadWriteLock;
 
 import java.util.Arrays;
@@ -15,9 +18,17 @@ import java.util.Set;
  * 
  * @author Developer
  */
-public final class AttributeSet {
+public final class AttributeSet implements Disposable {
+
+    final static NativePeerManager.Cleaner CLEANER = new NativePeerManager.Cleaner() {
+        @Override
+        protected void run(Pointer pointer, Object opaque) {
+            destruct(pointer);
+        }
+    };
 
     static Types types = null;
+    private final Cleaner cleaner;
 
     Pointer pointer;
     final ReadWriteLock rwlock = new ReadWriteLock();
@@ -32,6 +43,8 @@ public final class AttributeSet {
     }
 
     AttributeSet(Pointer pointer, Object owner) {
+        cleaner = NativePeerManager.register(this, pointer, rwlock, null, CLEANER);
+
         this.pointer = pointer;
         this.owner = owner;
     }
@@ -558,6 +571,12 @@ public final class AttributeSet {
             this.rwlock.releaseRead();
         }
     }
+    
+    @Override
+    public void dispose() {
+        if(cleaner != null)
+            cleaner.clean();
+    }
 
     @Override
     public int hashCode() {
@@ -686,23 +705,6 @@ public final class AttributeSet {
 
         return true;
     }
-
-    @Override
-    public void finalize() {
-        this.rwlock.acquireWrite();
-        try {
-            if(this.pointer.value != 0)
-                destruct(this.pointer);
-        } finally {
-            this.rwlock.releaseWrite();
-        }
-
-        try {
-            super.finalize();
-        } catch(Throwable t) {}
-    }
-
-
 
     static class Types {
         int INT;

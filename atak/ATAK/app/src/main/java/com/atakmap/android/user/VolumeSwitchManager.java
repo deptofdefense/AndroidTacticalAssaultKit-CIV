@@ -32,7 +32,7 @@ public class VolumeSwitchManager implements OnKeyListener {
     private LayerCycleVolumeAction lcva;
 
     /**
-     *  If the volume switch is actively being intercepted by ATAK, the the following method will be
+     *  If the volume switch is actively being intercepted by ATAK, the following method will be
      *  called when the direction is UP or DOWN
      */
 

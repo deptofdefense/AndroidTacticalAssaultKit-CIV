@@ -110,18 +110,25 @@ public:
                                const char *name, const char *val);
     // true if replacement succeeds, else false
     static bool urlReplaceHost(std::string *url, const char *newHost);
+    // true if replacement succeeds, else false
+    static bool urlReplacePort(std::string *url, int port);
 
     static bool computeSha256Hash(std::string *hashOut, const char *filename);
     static uint64_t computeFileSize(const char *filename) COMMO_THROW (std::invalid_argument);
 
-    // Reads cert and populates *cert and *privKey with cert and private key.
-    // On successful return, caller must free cert and privKey using
-    // X509_free() and EVP_PKEY_free(), respectively, when no longer needed.
+    // Reads certData and populates *cert, *privKey, and ca with 
+    // main cert, private key, and supporting certs respectively.
+    // On successful return, caller must free cert, privKey, and caCerts using
+    // X509_free(), EVP_PKEY_free(), and sk_X509_pop_free(caCerts, X509_free)
+    // respectively, when no longer needed.
+    // Reading ca is optional; pass NULL if not needed.
     // Can throw ILLEGAL_ARGUMENT, INVALID_CERT_PASSWORD, and INVALID_CERT
     static void readCert(const uint8_t *certData, size_t certLen,
                          const char *certPassword,
                          X509 **cert,
-                         EVP_PKEY **privKey) COMMO_THROW (SSLArgException);
+                         EVP_PKEY **privKey,
+                         STACK_OF(X509) **caCerts = NULL,
+                         int *nCaCerts = NULL) COMMO_THROW (SSLArgException);
 
     // Reads caCert and populates *caCerts and *nCaCerts with the chain
     // of ca certs and quantity of ca certs read in.

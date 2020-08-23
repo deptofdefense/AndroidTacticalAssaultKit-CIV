@@ -2,6 +2,7 @@
 package com.atakmap.android.importfiles.sort;
 
 import android.content.Context;
+import android.util.Pair;
 
 import com.atakmap.android.update.AppMgmtUtils;
 import com.atakmap.app.R;
@@ -28,7 +29,8 @@ public class ImportAPKSort extends ImportInternalSDResolver {
                 FileSystemUtils.getItem(FileSystemUtils.TMP_DIRECTORY)
                         .getAbsolutePath(),
                 validateExt, true,
-                context.getString(R.string.android_apk_file));
+                context.getString(R.string.android_apk_file),
+                context.getDrawable(R.drawable.ic_android_display_settings));
         this._context = context;
     }
 
@@ -51,6 +53,12 @@ public class ImportAPKSort extends ImportInternalSDResolver {
         //kick off install
         //TODO add to FileSystemProductProvider?
         AppMgmtUtils.install(_context, dst);
+    }
+
+    @Override
+    public Pair<String, String> getContentMIME() {
+        return new Pair<>("Android App",
+                "application/vnd.android.package-archive");
     }
 
     /**

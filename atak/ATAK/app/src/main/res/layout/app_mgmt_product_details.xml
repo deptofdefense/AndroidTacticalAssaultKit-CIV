@@ -58,7 +58,7 @@
             android:layout_height="wrap_content"
             android:textColor="@color/heading_yellow"
             android:textSize="@dimen/draper_font"
-            android:text="Install Date"/>
+            android:text="@string/install_date"/>
         <TextView
             android:id="@+id/app_mgmt_product_installdate"
             android:layout_width="match_parent"
@@ -71,7 +71,7 @@
             android:layout_height="wrap_content"
             android:textColor="@color/heading_yellow"
             android:textSize="@dimen/draper_font"
-            android:text="Update Date"/>
+            android:text="@string/update_date"/>
         <TextView
             android:id="@+id/app_mgmt_product_updatedate"
             android:layout_width="match_parent"
@@ -85,7 +85,7 @@
             android:layout_gravity="center_horizontal"
             style="@style/darkButton"
             android:visibility="gone"
-            android:text="Certificate"/>
+            android:text="@string/certificate"/>
 
 
         <View

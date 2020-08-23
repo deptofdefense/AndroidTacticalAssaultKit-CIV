@@ -452,7 +452,8 @@ public class ATAKDatabaseHelper {
             try {
                 fis = new FileInputStream(dbFile);
                 final int bytesRead = fis.read(b);
-                if (bytesRead == s.length() && s.equals(new String(b))) {
+                if (bytesRead == s.length() && s
+                        .equals(new String(b, FileSystemUtils.UTF8_CHARSET))) {
                     return false;
                 }
             } catch (Exception ignored) {

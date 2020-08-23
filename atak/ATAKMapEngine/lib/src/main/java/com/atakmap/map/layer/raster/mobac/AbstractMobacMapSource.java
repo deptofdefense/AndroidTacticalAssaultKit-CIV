@@ -77,7 +77,7 @@ public abstract class AbstractMobacMapSource implements MobacMapSource {
         AtakAuthenticationHandlerHTTP.Connection connection = null;
         try {
             connection = AtakAuthenticationHandlerHTTP.makeAuthenticatedConnection(
-                    (java.net.HttpURLConnection) conn, 3);
+                    (java.net.HttpURLConnection) conn, 5);
             // XXX: Can't rely on content-length HTTP header being set.
             final int contentLength = conn.getContentLength();
             byte[] buffer = new byte[Math.max(contentLength, BUFFER_SIZE)];

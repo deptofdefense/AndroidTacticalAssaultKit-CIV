@@ -1,18 +1,16 @@
 
 package com.atakmap.android.nightvision;
 
-import android.app.Notification;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.support.v4.app.NotificationCompat;
+
+import androidx.annotation.RequiresApi;
+import androidx.core.app.NotificationCompat;
 
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 
@@ -28,50 +26,16 @@ import com.atakmap.coremap.log.Log;
 
 public class NightVisionNotification extends BroadcastReceiver {
 
-    private Notification notification;
-    private MapView mapView;
-
     private final static String ON_TEXT = "Click to disable Night Vision";
     private final static String OFF_TEXT = "Click to enable Night Vision";
-
-    private NotificationManager notificationManager;
-    private final static int NOTIFICATION_ID = 223419;
-
     private final static String TAG = "NightVisionNotification";
 
     public static final String NOTIFICATION_CONTROL = "control_notification_night_vision";
-    public static final int P_REQUEST_CODE = 47312;
+    private int NotificationId = 99123;
 
     public NightVisionNotification() {
         //empty constructor because we assigned this receiver in the manifest
         //so the pending intent will find this receiver and the intents
-    }
-
-    public NightVisionNotification(MapView mapView) {
-        this.mapView = mapView;
-        createNotification();
-        notificationManager = (NotificationManager) mapView.getContext()
-                .getSystemService(
-                        Context.NOTIFICATION_SERVICE);
-
-    }
-
-    private Bitmap getNotificationIcon() {
-        //the large icon with the android dimensions provided by specific device
-
-        return Bitmap
-                .createScaledBitmap(
-                        BitmapFactory.decodeResource(mapView.getContext()
-                                .getResources(), R.drawable.nightvision),
-                        mapView.getContext()
-                                .getResources()
-                                .getDimensionPixelSize(
-                                        android.R.dimen.notification_large_icon_width),
-                        mapView.getContext()
-                                .getResources()
-                                .getDimensionPixelSize(
-                                        android.R.dimen.notification_large_icon_height),
-                        true);
     }
 
     /**called when a user clicks the notification from the system tray
@@ -83,42 +47,7 @@ public class NightVisionNotification extends BroadcastReceiver {
         AtakBroadcast.getInstance().sendSystemBroadcast(
                 new Intent("nightvision.com.atak.NVG_MODE"));
 
-        //delay the posting of the new notification so the intent to handle the
-        //night vision enable/disable in the external app can have a chance to run
-        //if we dont there is a chance that the notification will create before the service is handled
-        //and that can create problems with the checking of the current state of Night Vision Service running
-        MapView.getMapView().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                dispatchNotification();
-            }
-        }, 99);
-    }
-
-    public void createNotification() {
-        mapView = MapView.getMapView(); //get static version not local
-        if (mapView == null)
-            return;
-        final Context c = mapView.getContext().getApplicationContext();
-
-        //wrap the broadcast to invoke when the notification is selected from the system tray
-        Intent intent = new Intent(NOTIFICATION_CONTROL);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(c,
-                P_REQUEST_CODE, intent,
-                PendingIntent.FLAG_CANCEL_CURRENT);
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(c);
-        builder.setContentTitle("Night Vision Mode");
-        builder.setContentText(NightVisionPreferenceFragment
-                .isServiceRunning(c) ? ON_TEXT : OFF_TEXT);
-        builder.setContentIntent(pendingIntent);
-        builder.setSmallIcon(R.drawable.nightvision);
-        builder.setLargeIcon(getNotificationIcon());
-        builder.setAutoCancel(false);
-        builder.setOngoing(true);
-        builder.setPriority(Notification.PRIORITY_MAX);
-
-        notification = builder.build();
+        dispatchNotification();
     }
 
     /**Sends the notification created to the android notification system
@@ -126,22 +55,25 @@ public class NightVisionNotification extends BroadcastReceiver {
      * the new notification created will not overlap with same IDs
      */
     public void dispatchNotification() {
-        createNotification();
-        if (notificationManager == null) {
-            notificationManager = (NotificationManager) mapView.getContext()
-                    .getSystemService(Context.NOTIFICATION_SERVICE);
-        }
-        notificationManager.notify(NOTIFICATION_ID, notification);
+        //delay the updating of notification so we can give the external app service a change to update itself
+        MapView.getMapView().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                String text = (NightVisionPreferenceFragment.isServiceRunning(
+                        MapView.getMapView().getContext()) ? ON_TEXT
+                                : OFF_TEXT);
+                Intent intent = new Intent(NOTIFICATION_CONTROL);
+                NotificationUtil.getInstance().postNotification(NotificationId,
+                        R.drawable.nightvision,
+                        "Night Vision", "", text, intent, true, false, false,
+                        false);
+            }
+        }, 3000);
     }
 
     public void cancelNotification() {
         Log.d(TAG, "cancelling notification");
-        notificationManager.cancel(NOTIFICATION_ID);
-        if (notification != null) {
-            if (notification.largeIcon != null)
-                notification.largeIcon.recycle();
-            notification = null;
-        }
+        NotificationUtil.getInstance().clearNotification(NotificationId);
     }
 
     /**
@@ -152,7 +84,6 @@ public class NightVisionNotification extends BroadcastReceiver {
     public void onReceive(Context ignored, Intent intent) {
         Log.d(TAG, intent.getAction());
         String action = intent.getAction();
-
         if (action != null && action.equals(NOTIFICATION_CONTROL)) {
             updateNotification();
         }

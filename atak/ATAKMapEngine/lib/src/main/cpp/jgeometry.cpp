@@ -62,6 +62,7 @@ JNIEXPORT jboolean JNICALL Java_com_atakmap_map_layer_feature_geometry_Geometry_
         return false;
     if(a->getClass() != b->getClass())
         return false;
+    return *a == *b;
 }
 
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_geometry_Geometry_clone
@@ -100,84 +101,6 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_geometry_Geometry_getE
     mbb[4] = envelope.maxY;
     mbb[5] = envelope.maxZ;
     env->ReleaseDoubleArrayElements(jmbb, mbb, 0);
-}
-JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_geometry_Geometry_computeWkbSize
-  (JNIEnv *env, jclass clazz, jobject jpointer)
-{
-    Geometry2 *geom = Pointer_get<Geometry2>(env, jpointer);
-    if(!geom) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
-        return 0;
-    }
-
-    TAKErr code(TE_Ok);
-    GeometryPtr legacy(NULL, NULL);
-    code = LegacyAdapters_adapt(legacy, *geom);
-    if(ATAKMapEngineJNI_checkOrThrow(env, code))
-        return -1;
-
-    try {
-        return legacy->computeWKB_Size();
-    } catch(...) {
-        return -1;
-    }
-}
-JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_geometry_Geometry_toWkb__Lcom_atakmap_interop_Pointer_2ZJI
-  (JNIEnv *env, jclass clazz, jobject jpointer, jboolean littleEndian, jlong dstPtr, jint lim)
-{
-    Geometry2 *geom = Pointer_get<Geometry2>(env, jpointer);
-    if(!geom) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
-        return 0;
-    }
-
-    TAKErr code(TE_Ok);
-    MemoryOutput2 wkb;
-    code = wkb.open(JLONG_TO_INTPTR(unsigned char, dstPtr), lim);
-    if(ATAKMapEngineJNI_checkOrThrow(env, code))
-        return 0;
-
-    code = GeometryFactory_toWkb(wkb, *geom, littleEndian ? TE_LittleEndian : TE_BigEndian);
-    if(ATAKMapEngineJNI_checkOrThrow(env, code))
-        return 0;
-
-    std::size_t remaining;
-    code = wkb.remaining(&remaining);
-    if(ATAKMapEngineJNI_checkOrThrow(env, code))
-        return 0;
-
-    return lim-remaining;
-}
-JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_geometry_Geometry_toWkb__Lcom_atakmap_interop_Pointer_2Z_3BII
-  (JNIEnv *env, jclass clazz, jobject jpointer, jboolean littleEndian, jbyteArray jbuffer, jint off, jint lim)
-{
-    Geometry2 *geom = Pointer_get<Geometry2>(env, jpointer);
-    if(!geom) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
-        return 0;
-    }
-
-    JNIByteArray buffer(*env, jbuffer, 0);
-    jbyte *dst = buffer;
-
-    const std::size_t length = (std::size_t)(lim-off);
-
-    TAKErr code(TE_Ok);
-    MemoryOutput2 wkb;
-    code = wkb.open(reinterpret_cast<uint8_t *>(dst) + off, length);
-    if(ATAKMapEngineJNI_checkOrThrow(env, code))
-        return 0;
-
-    code = GeometryFactory_toWkb(wkb, *geom, littleEndian ? TE_LittleEndian : TE_BigEndian);
-    if(ATAKMapEngineJNI_checkOrThrow(env, code))
-        return 0;
-
-    std::size_t remaining;
-    code = wkb.remaining(&remaining);
-    if(ATAKMapEngineJNI_checkOrThrow(env, code))
-        return 0;
-
-    return length-remaining;
 }
 JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_geometry_Geometry_getDimension
   (JNIEnv *env, jclass clazz, jobject jpointer)

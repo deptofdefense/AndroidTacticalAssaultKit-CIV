@@ -18,16 +18,16 @@ namespace TAK {
             {
             public:
                 MapSceneModel2() NOTHROWS;
-                MapSceneModel2(double displayDPI, int width, int height, int srid, const GeoPoint2& focusGeo, float focusX,
+                MapSceneModel2(double displayDPI, std::size_t width, std::size_t height, int srid, const GeoPoint2 &focusGeo, float focusX,
                     float focusY, double rotation, double tilt, double resolution) NOTHROWS;
                 MapSceneModel2(const MapSceneModel2 &other) NOTHROWS;
             public:
                 ~MapSceneModel2();
             private:
-                Util::TAKErr init(double displayDPI, int width, int height, int srid, const GeoPoint2& focusGeo, float focusX,
-                    float focusY, double rotation, double tilt, double resolution) NOTHROWS;
+                Util::TAKErr init(double display_dpi, std::size_t map_width, std::size_t map_height, int srid, const GeoPoint2 &focusGeo, float focus_x,
+                    float focus_y, double rotation, double tilt, double resolution) NOTHROWS;
             public:
-                Util::TAKErr set(const double displayDpi, const std::size_t width, const std::size_t height, const int srid, const GeoPoint2 &focusGeo, const float focusX, const float focusY, const double rotation, const double tilt, const double resolution) NOTHROWS;
+                Util::TAKErr set(const double display_dpi, const std::size_t map_width, const std::size_t map_height, const int srid, const GeoPoint2 &focus_geo, const float focus_x, const float focus_y, const double rotation, const double tilt, const double resolution) NOTHROWS;
             public:
                 Util::TAKErr forward(TAK::Engine::Math::Point2<float>* point, const GeoPoint2& geo) const NOTHROWS;
                 Util::TAKErr forward(TAK::Engine::Math::Point2<double> *point, const GeoPoint2& geo) const NOTHROWS;
@@ -47,8 +47,9 @@ namespace TAK {
                 Math::Matrix2 forwardTransform;
                 Math::Matrix2 inverseTransform;
 
-                int width;
-                int height;
+                double displayDpi;
+                std::size_t width;
+                std::size_t height;
                 float focusX;
                 float focusY;
                 double gsd;

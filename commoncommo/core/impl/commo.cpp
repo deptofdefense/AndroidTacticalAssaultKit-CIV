@@ -8,6 +8,7 @@
 #include "contactmanager.h"
 #include "threadedhandler.h"
 #include "missionpackagemanager.h"
+#include "httpsproxy.h"
 #include "simplefileiomanager.h"
 #include "cloudiomanager.h"
 #include "cryptoutil.h"
@@ -307,6 +308,7 @@ struct CommoImpl
                 contactMgmt(NULL), listenerMgmt(NULL),
                 mpMutex(),
                 missionPkgMgmt(NULL),
+                httpsProxy(NULL),
                 simpleIOMgmt(NULL),
                 crypto(NULL),
                 urlMgmt(NULL),
@@ -355,6 +357,7 @@ struct CommoImpl
         delete simpleIOMgmt;
         delete cloudMgmt;
         delete urlMgmt;
+        delete httpsProxy;
         delete missionPkgMgmt;
         delete contactMgmt;
         delete dgMgmt;
@@ -378,6 +381,7 @@ struct CommoImpl
         dgMgmt->addDatagramReceiver(missionPkgMgmt);
         tcpMgmt->addMessageReceiver(missionPkgMgmt);
         missionPkgMgmt->setMPTransferSettings(mpSettings);
+        httpsProxy = new HttpsProxy(logger);
     }
 
     void enableSimpleIO(SimpleFileIO *simpleIO) COMMO_THROW (std::invalid_argument) {
@@ -399,8 +403,14 @@ struct CommoImpl
     void copyMPSettings() {
         PGSC::Thread::LockPtr lock(NULL, NULL);
         PGSC::Thread::Lock_create(lock, mpMutex);
-        if (missionPkgMgmt)
+        if (missionPkgMgmt) {
             missionPkgMgmt->setMPTransferSettings(mpSettings);
+            try {
+                httpsProxy->setConnTimeoutSec(mpSettings.getConnTimeoutSec());
+            } catch (std::invalid_argument &) {
+                // Cannot happen as timeout is checked in mpsettings
+            }
+        }
     }
 
 
@@ -416,6 +426,7 @@ struct CommoImpl
     CoTListenerManagement *listenerMgmt;
     PGSC::Thread::Mutex mpMutex;
     MissionPackageManager *missionPkgMgmt;
+    HttpsProxy *httpsProxy;
     SimpleFileIOManager *simpleIOMgmt;
     MPTransferSettings mpSettings;
     CryptoUtil *crypto;
@@ -632,6 +643,7 @@ CommoResult Commo::setMissionPackageLocalPort(int localWebPort)
 
     try {
         impl->missionPkgMgmt->setLocalPort(localWebPort);
+        impl->httpsProxy->setLocalHttpPort(localWebPort);
         return COMMO_SUCCESS;
     } catch (std::invalid_argument &) {
         return COMMO_ILLEGAL_ARGUMENT;
@@ -686,6 +698,29 @@ CommoResult Commo::setMissionPackageTransferTimeout(int seconds)
     } catch (std::invalid_argument &) {
         return COMMO_ILLEGAL_ARGUMENT;
     }
+}
+
+
+CommoResult Commo::setMissionPackageLocalHttpsParams(int port,
+                           const uint8_t *cert,
+                           size_t certLen, const char *certPass)
+{
+    {
+        PGSC::Thread::LockPtr lock(NULL, NULL);
+        PGSC::Thread::Lock_create(lock, impl->mpMutex);
+
+        if (!impl->missionPkgMgmt)
+            return COMMO_ILLEGAL_ARGUMENT;
+    }
+    
+    CommoResult ret = impl->httpsProxy->setServerParams(port, cert, 
+                                                        certLen, certPass);
+    if (ret == COMMO_SUCCESS)
+        impl->missionPkgMgmt->setLocalHttpsPort(port);
+    else
+        impl->missionPkgMgmt->setLocalHttpsPort(MP_LOCAL_PORT_DISABLE);
+
+    return ret;
 }
 
 
@@ -1048,6 +1083,19 @@ void Commo::freeCryptoString(char *cryptoString)
 {
     impl->crypto->freeCryptoString(cryptoString);
 }
+
+size_t Commo::generateSelfSignedCert(uint8_t **cert, const char *password)
+{
+    return impl->crypto->generateSelfSignedCert(cert, password);
+}
+
+void Commo::freeSelfSignedCert(uint8_t *cert)
+{
+    impl->crypto->freeSelfSignedCert(cert);
+}
+
+
+
 
 CommoResult Commo::cotXmlToTakproto(char **protodata, size_t *dataLen,
                                     const char *cotXml, int desiredVersion)

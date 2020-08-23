@@ -15,6 +15,11 @@
         android:textColor="#FFF"
         android:textSize="16sp"/>
 
+    <FrameLayout
+        android:id="@+id/custom_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
     <LinearLayout
         android:id="@+id/container"
         android:layout_width="wrap_content"

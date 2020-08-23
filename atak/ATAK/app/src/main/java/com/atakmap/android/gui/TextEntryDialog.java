@@ -5,8 +5,8 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Resources;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
@@ -18,7 +18,6 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.android.internal.util.Predicate;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 
@@ -40,6 +39,24 @@ import com.atakmap.app.R;
  * 
  */
 public class TextEntryDialog {
+
+    /**
+     * A Predicate can determine a true or false value for any input of its
+     * parameterized type. For example, a {@code RegexPredicate} might implement
+     * {@code Predicate<String>}, and return true for any String that matches its
+     * given regular expression.
+     * <p/>
+     * <p/>
+     * Implementors of Predicate which may cause side effects upon evaluation are
+     * strongly encouraged to state this fact clearly in their API documentation.
+     *
+     * @deprecated Use {@code java.util.function.Predicate} instead.
+     *             This must not be used outside frameworks/base/test-runner.
+     */
+    @Deprecated
+    public interface Predicate<T> {
+        boolean apply(T t);
+    }
 
     public interface TextEntryEventListener {
         void onEvent(TextEntryEvent event);

@@ -90,6 +90,25 @@ namespace TAK
                 *value = sqrt(src.x*src.x + src.y*src.y + src.z*src.z);
                 return Util::TE_Ok;
             }
+            template<class T>
+            bool Vector2_polygonContainsPoint(const Point2<T> &point, const Point2<T> *polygon, size_t polygonLen) NOTHROWS
+            {
+                size_t i, j;
+                bool result = false;
+                if (polygonLen <= 0)
+                    return false;
+                for (i = 0, j = polygonLen - 1; i < polygonLen; j = i++) {
+                    if ((polygon[i].y > point.y) != (polygon[j].y > point.y)
+                        &&
+                        (point.x < (polygon[j].x - polygon[i].x)
+                            * (point.y - polygon[i].y)
+                            / (polygon[j].y - polygon[i].y) + polygon[i].x)) {
+                        result = !result;
+                    }
+                }
+                return result;
+            }
+
 
             template<class T>
             class Vector4

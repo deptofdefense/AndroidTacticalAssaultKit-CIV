@@ -156,7 +156,7 @@ double TAK::Engine::Core::GeoPoint2_slantAngle(const GeoPoint2 &a, const GeoPoin
     else
     {
         TAKErr code(TE_Ok);
-        Projection2Ptr ecef(NULL, NULL);
+        Projection2Ptr ecef(nullptr, nullptr);
         code = ProjectionFactory3_create(ecef, 4978);
         if (code != TE_Ok)
             return NAN;
@@ -190,7 +190,7 @@ double TAK::Engine::Core::GeoPoint2_slantAngle(const GeoPoint2 &a, const GeoPoin
 double TAK::Engine::Core::GeoPoint2_slantDistance(const GeoPoint2 &a, const GeoPoint2 &b) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    Projection2Ptr ecef(NULL, NULL);
+    Projection2Ptr ecef(nullptr, nullptr);
     code = ProjectionFactory3_create(ecef, 4978);
     if(code != TE_Ok)
       return NAN;
@@ -205,7 +205,7 @@ GeoPoint2 TAK::Engine::Core::GeoPoint2_slantMidpoint(const GeoPoint2 &a, const G
 {
     TAKErr code(TE_Ok);
     do {
-        Projection2Ptr ecef(NULL, NULL);
+        Projection2Ptr ecef(nullptr, nullptr);
         code = ProjectionFactory3_create(ecef, 4978);
         TE_CHECKBREAK_CODE(code);
 

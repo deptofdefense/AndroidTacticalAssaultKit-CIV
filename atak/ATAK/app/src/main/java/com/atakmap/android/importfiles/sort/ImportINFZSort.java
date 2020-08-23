@@ -2,6 +2,7 @@
 package com.atakmap.android.importfiles.sort;
 
 import android.content.Context;
+import android.util.Pair;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.update.ApkUpdateComponent;
@@ -30,7 +31,8 @@ public class ImportINFZSort extends ImportInternalSDResolver {
         super(".infz",
                 FileSystemProductProvider.LOCAL_REPO_PATH,
                 validateExt, false,
-                context.getString(R.string.app_mgmt_product_repo));
+                context.getString(R.string.app_mgmt_product_repo),
+                context.getDrawable(R.drawable.ic_menu_plugins));
     }
 
     @Override
@@ -80,6 +82,11 @@ public class ImportINFZSort extends ImportInternalSDResolver {
                 }
             });
         }
+    }
+
+    @Override
+    public Pair<String, String> getContentMIME() {
+        return new Pair<>("Product Repo Cache", "application/zip");
     }
 
     /**

@@ -68,7 +68,7 @@ TAKErr EGM96::getHeight(double *value, const GeoPoint2 &location) NOTHROWS
     if(location.latitude > 90.0 || location.latitude < -90.0)
         return TE_InvalidArg;
 
-    std::size_t topRow = (std::size_t) ((90.0 - location.latitude) / INTERVAL);
+    auto topRow = (std::size_t) ((90.0 - location.latitude) / INTERVAL);
     if (location.latitude <= -90)
         topRow = NUM_ROWS - 2u;
     std::size_t bottomRow = topRow + 1u;
@@ -78,7 +78,7 @@ TAKErr EGM96::getHeight(double *value, const GeoPoint2 &location) NOTHROWS
     // column to 0 for any longitude that's less than one interval from 360,
     // and force the left column to the
     // last column of the grid.
-    std::size_t leftCol = (std::size_t) (lon / INTERVAL);
+    auto leftCol = (std::size_t) (lon / INTERVAL);
     std::size_t rightCol = leftCol + 1u;
     if (lon >= 360 - INTERVAL) {
         leftCol = NUM_ROWS - 1u;

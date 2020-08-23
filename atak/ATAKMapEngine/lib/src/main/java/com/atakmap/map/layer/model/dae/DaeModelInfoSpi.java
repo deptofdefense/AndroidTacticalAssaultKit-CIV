@@ -1,6 +1,7 @@
 package com.atakmap.map.layer.model.dae;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -42,7 +43,7 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
 
     public static final String TAG = "DaeModelInfoSpi";
 
-    public static DaeModelInfoSpi INSTANCE = new DaeModelInfoSpi();
+    public static final DaeModelInfoSpi INSTANCE = new DaeModelInfoSpi();
 
     @Override
     public String getName() {
@@ -151,7 +152,10 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
             final File kmlFile = entry.kmlFile;
 
             ModelInfo info = new ModelInfo();
-            info.name = name;
+            if(models.size() > 1)
+                info.name = name;
+            else
+                info.name = kmlFile.getParentFile().getName();
 
             String altMode = getTextContent(model, new String[]{"altitudeMode"});
             info.altitudeMode = parseAltMode(altMode);
@@ -324,7 +328,7 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
     public Set<ModelInfo> create(String path) {
         try {
             File file = new File(path);
-            String lowerName = file.getName().toLowerCase();
+            String lowerName = file.getName().toLowerCase(LocaleUtil.getCurrent());
             if (lowerName.endsWith(".kmz")) {
                 // Geospatial DAE (requires doc.kml)
                 ZipVirtualFile zf = new ZipVirtualFile(path);

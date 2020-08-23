@@ -8,40 +8,35 @@ using namespace atakmap::util;
 
 using namespace TAK::Engine::Thread;
 
-SharedState::SharedState()
-: state(Initial) { }
+SharedState::SharedState() : state_(Initial) {}
 
-SharedState::SharedState(int state)
-: state(state) { }
+SharedState::SharedState(int state) : state_(state) {}
 
 SharedState::~SharedState() throw()
 { }
 
 int SharedState::getState() const {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, mutex);
-    return this->state;
+    Lock lock(mutex_);
+    return this->state_;
 }
 
 bool SharedState::setState(int state) {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, mutex);
+    Lock lock(mutex_);
     bool result;
-    if ((result = this->supportsStateNoSync(state))) {
-        this->state = state;
-        changeCV.broadcast(*lock);
+    if ((result = this->supportsStateNoSync(state)), result) {
+        this->state_ = state;
+        change_cv_.broadcast(lock);
     }
     return result;
 }
 
 bool SharedState::supportsState(int state) const {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, mutex);
+    Lock lock(mutex_);
     return this->supportsStateNoSync(state);
 }
 
 bool SharedState::supportsStateNoSync(int state) const {
-    switch (this->state) {
+    switch (this->state_) {
         case Initial: return state == Processing || state == Canceled;
         case Processing: return state != Initial && state != Processing;
     }
@@ -52,10 +47,9 @@ int SharedState::awaitAny(const int *states, int count) {
     const int *end = states + count;
     const int *result;
     {
-        LockPtr lock(NULL, NULL);
-        Lock_create(lock, mutex);
-        while ((result = std::find(states, end, this->state)) == end) {
-            changeCV.wait(*lock);
+        Lock lock(mutex_);
+        while ((result = std::find(states, end, this->state_)) == end) {
+            change_cv_.wait(lock);
         }
     }
     return *result;

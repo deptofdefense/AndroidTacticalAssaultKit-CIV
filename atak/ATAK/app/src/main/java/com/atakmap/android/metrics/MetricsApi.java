@@ -3,7 +3,7 @@ package com.atakmap.android.metrics;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 // used just for registering local broadcast reciever
 import android.content.BroadcastReceiver;

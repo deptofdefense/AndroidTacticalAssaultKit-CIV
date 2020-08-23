@@ -27,6 +27,7 @@
             android:id="@+id/attachment_overlay_list_item_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:maxWidth="100dp"
             android:text="@string/dashdashdash"
             android:textSize="11sp"
             android:textColor="#FFF"

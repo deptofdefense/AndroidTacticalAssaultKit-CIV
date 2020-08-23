@@ -1,7 +1,7 @@
 
 package com.atakmap.android.user.icon;
 
-import android.support.v4.app.Fragment;
+import androidx.fragment.app.Fragment;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;

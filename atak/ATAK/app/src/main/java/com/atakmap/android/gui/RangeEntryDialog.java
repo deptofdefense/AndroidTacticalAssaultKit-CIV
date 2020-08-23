@@ -4,20 +4,19 @@ package com.atakmap.android.gui;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
-import android.graphics.Color;
-
-import com.atakmap.android.util.SimpleItemSelectedListener;
 
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.util.SimpleItemSelectedListener;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
@@ -25,6 +24,9 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
 
 import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Dialog which allows user to hand-jam a range value in a variety of units
@@ -57,10 +59,22 @@ public class RangeEntryDialog implements DialogInterface.OnDismissListener {
      * @param title Dialog title
      * @param valueM The initial range value in meters
      * @param unit The initial unit
+     * @param cb Callback when OK is selected
+     */
+    public void show(String title, double valueM, Span unit, Callback cb) {
+        show(title, valueM, unit, cb, Span.values());
+    }
+
+    /**
+     * Open the range entry dialog
+     * @param title Dialog title
+     * @param valueM The initial range value in meters
+     * @param unit The initial unit
      * @param callback Callback when OK is selected
+     * @param acceptableValues is the array of acceptable values for consideration when modifying the range.
      */
     public void show(String title, double valueM, Span unit,
-            Callback callback) {
+            Callback callback, Span[] acceptableValues) {
         dismiss();
         _view = _inflater.inflate(R.layout.drawing_distance_input,
                 _mapView, false);
@@ -78,11 +92,11 @@ public class RangeEntryDialog implements DialogInterface.OnDismissListener {
                 R.id.drawingDistanceUnits);
 
         final ArrayAdapter<Span> adapter = new ArrayAdapter<>(_context,
-                android.R.layout.simple_spinner_item, Span.values());
+                android.R.layout.simple_spinner_item, acceptableValues);
         adapter.setDropDownViewResource(
                 android.R.layout.simple_spinner_dropdown_item);
         units.setAdapter(adapter);
-        units.setSelection(unit.getValue());
+        units.setSelection(Arrays.binarySearch(acceptableValues, unit));
         units.setOnItemSelectedListener(new SimpleItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View v,
@@ -142,6 +156,12 @@ public class RangeEntryDialog implements DialogInterface.OnDismissListener {
     public void show(int titleId, double valueM, Span unit,
             Callback callback) {
         show(_context.getString(titleId), valueM, unit, callback);
+    }
+
+    public void show(int titleId, double valueM, Span unit,
+            Callback callback, Span[] acceptableValues) {
+        show(_context.getString(titleId), valueM, unit, callback,
+                acceptableValues);
     }
 
     public void dismiss() {

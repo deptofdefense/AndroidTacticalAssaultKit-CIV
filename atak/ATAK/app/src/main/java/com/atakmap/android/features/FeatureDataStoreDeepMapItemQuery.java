@@ -36,10 +36,12 @@ import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureCursor;
 import com.atakmap.map.layer.feature.FeatureDataStore;
 import com.atakmap.map.layer.feature.FeatureDataStore2;
+import com.atakmap.map.layer.feature.FeatureDataStore3;
 import com.atakmap.map.layer.feature.FeatureLayer;
 import com.atakmap.map.layer.feature.FeatureLayer2;
 import com.atakmap.map.layer.feature.FeatureLayer3;
 import com.atakmap.map.layer.feature.FeatureSet;
+import com.atakmap.map.layer.feature.Utils;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.FeatureSetCursor;
 import com.atakmap.map.layer.feature.FeatureDataStore2.FeatureQueryParameters;
@@ -85,6 +87,7 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
         SUPPORTED_METADATA.add("uid");
         SUPPORTED_METADATA.add("featureId");
         SUPPORTED_METADATA.add("visibleOnly");
+        SUPPORTED_METADATA.add("limit");
     }
 
     private final static Set<String> ATTRIBUTE_METADATA_KEYS = new HashSet<>();
@@ -160,6 +163,8 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
             final long fid = getFeatureId(metadata);
             if (fid != 0L)
                 fids = Collections.singleton(fid);
+            if (limit == 0 && metadata.containsKey("limit"))
+                limit = Integer.parseInt(metadata.get("limit"));
             if (metadata.containsKey("visibleOnly"))
                 visibleOnly = metadata.get("visibleOnly").equals("true");
             else if (fid == 0L)
@@ -214,6 +219,7 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
     public Collection<MapItem> deepFindItems(
             GeoBounds bounds, Map<String, String> metadata) {
 
+        int limit = 0;
         Set<Long> fids = null;
         boolean visibleOnly = false;
         if (metadata != null) {
@@ -224,6 +230,8 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
             final long fid = getFeatureId(metadata);
             if (fid != 0L)
                 fids = Collections.singleton(fid);
+            if (metadata.containsKey("limit"))
+                limit = Integer.parseInt(metadata.get("limit"));
             if (metadata.containsKey("visibleOnly"))
                 visibleOnly = metadata.get("visibleOnly").equals("true");
             else if (fid == 0L)
@@ -235,7 +243,7 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
         qb.bounds = bounds;
         qb.orderByDistance = false;
         qb.visibleOnly = visibleOnly;
-        qb.limit = 0;
+        qb.limit = limit;
 
         List<MapItem> retval = new LinkedList<>();
         this.deepFindItemsImpl(retval, qb);
@@ -257,6 +265,8 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
             final long fid = getFeatureId(metadata);
             if (fid != 0L)
                 fids = Collections.singleton(fid);
+            if (limit == 0 && metadata.containsKey("limit"))
+                limit = Integer.parseInt(metadata.get("limit"));
             if (metadata.containsKey("visibleOnly"))
                 visibleOnly = metadata.get("visibleOnly").equals("true");
             else if (fid == 0L)
@@ -294,8 +304,10 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
 
         if (geom instanceof Point) {
             final Point p = (Point) geom;
-            GeoPointMetaData gpm = Dt2ElevationModel.getInstance()
-                    .queryPoint(p.getY(), p.getX());
+
+            GeoPointMetaData gpm = FeatureHierarchyUtils.getAltitude(p,
+                    feature.getAltitudeMode());
+
             Marker m = new Marker(MapItem.createSerialId(),
                     new DeferredFeatureMetadata(this.spatialDb, id),
                     uid);
@@ -480,33 +492,9 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
             item.setMetaDouble("minMapGsd", featureSet.getMinResolution());
             item.setMetaString("featureSet", featureSet.getName());
             item.setMetaLong("fsid", featureSet.getId());
-
-
-            if (this.spatialDb instanceof DataSourceFeatureDataStore) {
-                File f = ((DataSourceFeatureDataStore) this.spatialDb)
-                        .getFile(featureSet);
-                if (f != null)
-                    item.setMetaString("file", f.getAbsolutePath());
-            } else {
-                Class c = spatialDb.getClass();
-                try {
-                    Field field = c.getDeclaredField("impl");
-                    if (field != null) {
-                        field.setAccessible(true);
-                        final Object object = field.get(this.spatialDb);
-                        if (object instanceof DataSourceFeatureDataStore) {
-                            File f = ((DataSourceFeatureDataStore) object)
-                                    .getFile(featureSet);
-                            if (f != null)
-                                item.setMetaString("file", f.getAbsolutePath());
-                        }
-                    }
-                } catch (Exception e) {
-                    Log.e(TAG, "error reflecting value: " + e);
-                }
-
-
-            }
+            File f = Utils.getSourceFile(this.spatialDb, featureSet);
+            if (f != null)
+                item.setMetaString("file", f.getAbsolutePath());
         }
         return item;
     }
@@ -878,6 +866,8 @@ public class FeatureDataStoreDeepMapItemQuery implements DeepMapItemQuery {
                 params.ids = Collections.singleton(this.fid);
                 params.ignoredFeatureProperties = FeatureDataStore2.PROPERTY_FEATURE_GEOMETRY
                         |
+                        FeatureDataStore3.PROPERTY_FEATURE_ALTITUDE_MODE |
+                        FeatureDataStore3.PROPERTY_FEATURE_EXTRUDE |
                         FeatureDataStore2.PROPERTY_FEATURE_NAME |
                         FeatureDataStore2.PROPERTY_FEATURE_STYLE;
                 params.limit = 1;

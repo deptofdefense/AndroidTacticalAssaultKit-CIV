@@ -29,6 +29,11 @@ public class RadialButtonWidget extends AbstractButtonWidget {
     private final ConcurrentLinkedQueue<OnOrientationChangedListener> _onOrientationChanged = new ConcurrentLinkedQueue<>();
 
     public RadialButtonWidget() {
+        // defaults which are also reflected in DataParser fallbacks
+        _angle = 0f;
+        _radius = 100f;
+        _span = 360f / 8f;
+        _width = 100f;
     }
 
     public static class Factory extends AbstractButtonWidget.Factory {

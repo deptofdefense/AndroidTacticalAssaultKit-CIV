@@ -176,18 +176,15 @@ public class HttpUtil {
         String basic = String.format("%s:%s", user, password);
         if (FileSystemUtils.isEmpty(basic) || basic.length() < 2)
             throw new AuthenticationException("Credential length insufficient");
-        try {
-            // set Basic Auth header
-            request.setHeader(
-                    "Authorization",
-                    "Basic "
-                            + Base64.encodeToString(basic
-                                    .getBytes(FileSystemUtils.UTF8_CHARSET),
-                                    Base64.NO_WRAP));
-        } catch (UnsupportedEncodingException e) {
-            throw new AuthenticationException(
-                    "Unable to transmit the Credentials");
-        }
+
+        // set Basic Auth header
+        request.setHeader(
+                "Authorization",
+                "Basic "
+                        + Base64.encodeToString(basic
+                                .getBytes(FileSystemUtils.UTF8_CHARSET),
+                                Base64.NO_WRAP));
+
     }
 
     /**

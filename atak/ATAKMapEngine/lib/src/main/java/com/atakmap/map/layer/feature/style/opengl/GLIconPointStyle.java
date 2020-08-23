@@ -14,6 +14,7 @@ import android.util.Pair;
 
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.AtakMapView;
+import com.atakmap.map.RenderContext;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.geometry.GeometryCollection;
@@ -111,7 +112,7 @@ public abstract class GLIconPointStyle extends GLStyle {
     
     void drawAt(GLMapView view, float xpos, float ypos, StyleRenderContext ctx) {
         IconStyleRenderContext context = (IconStyleRenderContext)ctx;
-        if(context.checkIcon(view.getSurface(), true) == 0L)
+        if(context.checkIcon(view.getRenderContext(), true) == 0L)
             return;
 
         GLES20FixedPipeline.glPushMatrix();
@@ -144,7 +145,7 @@ public abstract class GLIconPointStyle extends GLStyle {
 
     void batchAt(GLMapView view, GLRenderBatch batch, float xpos, float ypos, StyleRenderContext ctx) {
         IconStyleRenderContext context = (IconStyleRenderContext)ctx;
-        if(context.checkIcon(view.getSurface(), false) == 0L)
+        if(context.checkIcon(view.getRenderContext(), false) == 0L)
             return;
         
         final float textureSize = ICON_ATLAS.getTextureSize();
@@ -212,7 +213,7 @@ public abstract class GLIconPointStyle extends GLStyle {
 
     /**************************************************************************/
 
-    synchronized static void getOrFetchIcon(GLMapSurface surface, IconStyleRenderContext point) {
+    synchronized static void getOrFetchIcon(RenderContext surface, IconStyleRenderContext point) {
         do {
             if (point.iconUri == null)
                 return;
@@ -245,7 +246,7 @@ public abstract class GLIconPointStyle extends GLStyle {
                         if (point.iconUri.equals(defaultIconUri))
                             throw new IllegalStateException("Failed to load default icon");
 
-                        // the icon failed to load, switch the the default icon
+                        // the icon failed to load, switch the default icon
                         point.iconLoader = null;
                         dereferenceIconLoaderNoSync(point.iconUri);
                         point.iconUri = defaultIconUri;
@@ -338,7 +339,7 @@ public abstract class GLIconPointStyle extends GLStyle {
             this.iconUri = style.getIconUri();
         }
 
-        long checkIcon(GLMapSurface surface, boolean draw) {
+        long checkIcon(RenderContext surface, boolean draw) {
             if (this.textureKey == 0L)
                 getOrFetchIcon(surface, this);
 

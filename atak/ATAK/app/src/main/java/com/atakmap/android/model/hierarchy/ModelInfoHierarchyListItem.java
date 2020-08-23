@@ -57,8 +57,7 @@ public class ModelInfoHierarchyListItem extends AbstractChildlessListItem
 
     @Override
     public String getTitle() {
-        return this.parent.hasSingleChild() ? this.parent.getTitle()
-                : feature.getName();
+        return feature.getName();
     }
 
     @Override

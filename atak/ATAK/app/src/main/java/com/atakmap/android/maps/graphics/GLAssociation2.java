@@ -27,6 +27,7 @@ import com.atakmap.map.layer.feature.style.PatternStrokeStyle;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
+import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
@@ -266,10 +267,10 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
 
     @Override
     public void draw(GLMapView ortho, int renderPass) {
-        if (renderPass == GLMapView.RENDER_PASS_SPRITES && _clampToGround)
-            return;
-        else if (renderPass == GLMapView.RENDER_PASS_SURFACE && !_clampToGround)
-            return;
+        boolean sprites = MathUtils.hasBits(renderPass,
+                GLMapView.RENDER_PASS_SPRITES);
+        boolean surface = MathUtils.hasBits(renderPass,
+                GLMapView.RENDER_PASS_SURFACE);
 
         this.bounds.setWrap180(ortho.continuousScrollEnabled);
         _unwrap = ortho.idlHelper.getUnwrap(this.bounds);
@@ -279,9 +280,11 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
                 _link != Association.LINK_NONE) {
 
             // delegate drawing of the link to GLPolyline
-            impl.draw(ortho);
+            if (surface && _clampToGround || sprites && !_clampToGround)
+                impl.draw(ortho);
 
-            _drawText(ortho);
+            if (sprites)
+                _drawText(ortho);
         }
     }
 

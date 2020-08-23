@@ -30,6 +30,7 @@ import com.atakmap.android.metrics.MetricsApi;
 import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.FixedQueue;
+import com.atakmap.app.ATAKActivity;
 import com.atakmap.app.ATAKApplication;
 import com.atakmap.app.CrashListener;
 import com.atakmap.app.R;
@@ -284,13 +285,17 @@ public class MetricReportMapComponent extends AbstractMapComponent
             }
         }, 0, PERIODIC_METRIC);
 
-        HintDialogHelper
-                .showHint(
-                        view.getContext(),
-                        pluginContext.getString(R.string.metric_plugin_hint),
-                        pluginContext
-                                .getString(R.string.metric_plugin_hint_message),
-                        "tak.hint.logging.metric");
+        // Only show hint if we're in the main activity
+        // Workaround for displaying this hint properly when the preference is
+        // modified within the settings activity
+        Context ctx = view.getContext();
+        if (ctx instanceof ATAKActivity && ((ATAKActivity) ctx).isActive()) {
+            HintDialogHelper.showHint(ctx,
+                    pluginContext.getString(R.string.metric_plugin_hint),
+                    pluginContext
+                            .getString(R.string.metric_plugin_hint_message),
+                    "tak.hint.logging.metric");
+        }
 
         CommsMapComponent.getInstance()
                 .registerCommsLogger(commslogger = new CommsLogger() {

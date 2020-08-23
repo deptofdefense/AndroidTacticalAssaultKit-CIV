@@ -104,7 +104,7 @@ namespace feature                       // Open feature namespace.
 const DefaultSchemaDefinition*
 DefaultSchemaDefinition::get ()
   {
-    static std::auto_ptr<DefaultSchemaDefinition> instance
+    static std::unique_ptr<DefaultSchemaDefinition> instance
         (new DefaultSchemaDefinition);
 
     return instance.get ();
@@ -117,10 +117,10 @@ DefaultSchemaDefinition::getNameFields (const char* filePath,
     const
   {
     StringVector result;
-    std::size_t fieldCount
+    int fieldCount
         (const_cast<OGRFeatureDefn&> (featureDef).GetFieldCount ());
 
-    for (std::size_t i (0); i < fieldCount; ++i)
+    for (int i (0); i < fieldCount; ++i)
       {
         OGRFieldDefn* fieldDef
             (const_cast<OGRFeatureDefn&> (featureDef).GetFieldDefn (i));
@@ -131,8 +131,8 @@ DefaultSchemaDefinition::getNameFields (const char* filePath,
             if(TAK::Engine::Port::String_trim(fieldName, fieldDef->GetNameRef())) {
                // convert to lower
                const std::size_t len = strlen(fieldName);
-               for(std::size_t i = 0u; i < len; i++)
-                 fieldName[(int)i] = tolower(fieldName[(int)i]);
+               for(std::size_t j = 0u; j < len; j++)
+                 fieldName[(int)j] = tolower(fieldName[(int)j]);
             }
 
             if (fieldName && std::strstr (fieldName, "name"))

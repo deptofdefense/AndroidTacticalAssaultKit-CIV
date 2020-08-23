@@ -172,7 +172,7 @@ private:
     // MOVE only
     std::string srcPath;
     
-    // MOVE, MAKE_COLLECTION only
+    // MOVE, DELETE, MAKE_COLLECTION only
     std::string destPath;
     
     void parseEntry();
@@ -244,6 +244,8 @@ struct OwncloudClient : public InternalCloudClient
     virtual CommoResult moveResourceInit(int *cloudIOid,
                                          const char *fromPath,
                                          const char *toPath);
+    virtual CommoResult deleteResourceInit(int *cloudIOid,
+                                    const char *remotePath);
     virtual CommoResult createCollectionInit(int *cloudIOid,
                                              const char *path);
 
@@ -294,6 +296,8 @@ struct FTPCloudClient : public InternalCloudClient
     virtual CommoResult moveResourceInit(int *cloudIOid,
                                          const char *fromPath,
                                          const char *toPath);
+    virtual CommoResult deleteResourceInit(int *cloudIOid,
+                                    const char *remotePath);
     virtual CommoResult createCollectionInit(int *cloudIOid,
                                              const char *path);
 

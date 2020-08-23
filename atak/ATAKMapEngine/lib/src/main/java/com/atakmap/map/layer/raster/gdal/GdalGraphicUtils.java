@@ -87,8 +87,8 @@ public class GdalGraphicUtils {
         }
     }
 
-    private static int getBufferSize(int glTexFormat, int glTexType, int width,
-            int height) {
+    public static int getBufferSize(int glTexFormat, int glTexType, int width,
+                                    int height) {
         int bytesPerPixel;
         if (glTexFormat == GLES20FixedPipeline.GL_LUMINANCE) {
             bytesPerPixel = 1;

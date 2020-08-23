@@ -67,6 +67,8 @@ public class AddEditAlias {
     private TextView portSep = null;
     private TextView file = null;
     private TextView fileSep = null;
+    private TextView passphraseLabel = null;
+    private TextView passphrase = null;
 
     private CheckBox rtspReliable = null;
 
@@ -90,6 +92,7 @@ public class AddEditAlias {
     private boolean initialIgnoreKLV = false;
     private String initialPath = "";
     private String initialTimeout = "";
+    private String initialPassphrase = "";
     private boolean initialBuffered = false;
     private String initialBufferTime = "";
     private String preferredMacAddress = "";
@@ -166,7 +169,8 @@ public class AddEditAlias {
                 } else if (p == Protocol.UDP ||
                         p == Protocol.RTSP ||
                         p == Protocol.TCP ||
-                        p == Protocol.RTP)
+                        p == Protocol.RTP ||
+                        p == Protocol.SRT)
                     portVal = port.getText().toString();
                 else if (p == Protocol.HTTP ||
                         p == Protocol.RTMP ||
@@ -210,6 +214,8 @@ public class AddEditAlias {
                 ce.setPath(path);
                 ce.setProtocol(p);
                 ce.setRtspReliable(rtspReliable.isChecked() ? 1 : 0);
+                if (p == Protocol.SRT)
+                    ce.setPassphrase(passphrase.getText().toString());
                 ce.setIgnoreEmbeddedKLV(ignoreKLVCB.isChecked());
                 if (!FileSystemUtils.isEmpty(preferredMacAddress))
                     ce.setMacAddress(preferredMacAddress);
@@ -358,6 +364,8 @@ public class AddEditAlias {
             }
         });
 
+        passphraseLabel = view.findViewById(R.id.video_passphrase_label);
+        passphrase = view.findViewById(R.id.video_passphrase);
         rtspReliable = view.findViewById(R.id.rtsp_reliable);
 
         preferredNetwork = view
@@ -468,7 +476,8 @@ public class AddEditAlias {
             } else if (!currentCE.getProtocol().equals(Protocol.RTSP) &&
                     !currentCE.getProtocol().equals(Protocol.UDP) &&
                     !currentCE.getProtocol().equals(Protocol.TCP) &&
-                    !currentCE.getProtocol().equals(Protocol.RTP)) {
+                    !currentCE.getProtocol().equals(Protocol.RTP) &&
+                    !currentCE.getProtocol().equals(Protocol.SRT)) {
                 if (currentCE.getPort() != -1) {
                     urlString = urlString + ":" + currentCE.getPort();
                 }
@@ -521,6 +530,7 @@ public class AddEditAlias {
                         .valueOf(currentCE.getBufferTime() / 1000);
             }
 
+            passphrase.setText(currentCE.getPassphrase());
             rtspReliable.setChecked((currentCE.getRtspReliable() == 1));
 
             networkTimeout
@@ -528,6 +538,7 @@ public class AddEditAlias {
                             .valueOf(currentCE.getNetworkTimeout() / 1000));
             initialTimeout = String
                     .valueOf(currentCE.getNetworkTimeout() / 1000);
+            initialPassphrase = currentCE.getPassphrase();
 
             _isUpdate = true;
         }
@@ -591,6 +602,26 @@ public class AddEditAlias {
             file.setFocusableInTouchMode(true);
             rtspReliable.setVisibility(View.VISIBLE);
 
+        } else if (p == Protocol.SRT) {
+            // show the port field
+            url.setLayoutParams(new android.widget.LinearLayout.LayoutParams(
+                    LayoutParams.WRAP_CONTENT, url.getLayoutParams().height));
+            portSep.setVisibility(View.VISIBLE);
+            port.setVisibility(View.VISIBLE);
+            port.setFocusable(true);
+            port.setFocusableInTouchMode(true);
+            fileSep.setVisibility(View.VISIBLE);
+            fileSep.setVisibility(View.GONE);
+            file.setVisibility(View.GONE);
+            file.setFocusable(false);
+
+
+            passphraseLabel.setVisibility(View.VISIBLE);
+            passphrase.setVisibility(View.VISIBLE);
+            passphrase.setFocusable(true);
+            passphrase.setEnabled(true);
+            passphrase.setFocusableInTouchMode(true);
+
         }
     }
 
@@ -650,10 +681,15 @@ public class AddEditAlias {
             if (!file.getText().toString().contentEquals(initialPath))
                 return true;
         }
+        if (ce.getProtocol() == Protocol.SRT) {
+            if (!passphrase.getText().toString().contentEquals(initialPassphrase))
+                return true;
+        }
 
         if (ce.getProtocol() == Protocol.UDP ||
                 ce.getProtocol() == Protocol.TCP ||
-                ce.getProtocol() == Protocol.RTP)
+                ce.getProtocol() == Protocol.RTP ||
+                ce.getProtocol() == Protocol.SRT)
 
             if (!port.getText().toString().contentEquals(initialPort))
                 return true;
@@ -714,12 +750,20 @@ public class AddEditAlias {
                 }
             }
 
+        } else if (protocol == Protocol.SRT) {
+            if (ip == null || ip.length() == 0) {
+                url.requestFocus();
+                Toast.makeText(context, R.string.video_text38_host,
+                        Toast.LENGTH_LONG).show();
+                return false;
+            }
         }
 
         if (protocol == Protocol.UDP ||
                 protocol == Protocol.RTSP ||
                 protocol == Protocol.TCP ||
-                protocol == Protocol.RTP) {
+                protocol == Protocol.RTP ||
+                protocol == Protocol.SRT) {
 
             if (!ensurePort(protocol.toString(), port))
                 return false;

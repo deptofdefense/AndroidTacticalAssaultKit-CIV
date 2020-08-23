@@ -82,8 +82,14 @@ public class MenuMapAdapter {
             }
 
             final Map<String, Object> metadata = new HashMap<>();
-            item.getMetaData(metadata);
-
+            try {
+                item.getMetaData(metadata);
+            } catch (Exception e) {
+                Log.e(_TAG,
+                        "error looking up the specific menu, show the generic one for: "
+                                + item.getType());
+                metadata.put("type", item.getType());
+            }
             if ((filter = _filters.lookupFilter(metadata)) != null) {
 
                 if (item instanceof Marker) {

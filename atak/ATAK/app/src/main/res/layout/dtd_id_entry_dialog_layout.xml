@@ -24,7 +24,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="0.25"
             android:layout_gravity="top|start"
-            android:text="Start With: "/>
+            android:text="@string/start_with"/>
 
         <com.atakmap.android.gui.EditText
             android:id="@+id/prefix_entry"
@@ -33,7 +33,7 @@
             android:layout_weight="1"
             android:layout_marginStart="@dimen/auto_space_big"
             android:inputType="number"
-            android:hint="Prefix (Numeric)"/>
+            android:hint="@string/prefix_numeric"/>
 
     </LinearLayout>
 
@@ -50,7 +50,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="0.25"
             android:layout_gravity="top|start"
-            android:text="Append: "/>
+            android:text="@string/append"/>
 
         <com.atakmap.android.gui.EditText
             android:id="@+id/suffix_entry"
@@ -59,7 +59,7 @@
             android:layout_weight="1"
             android:layout_marginStart="@dimen/auto_space_big"
             android:inputType="textCapCharacters"
-            android:hint="Suffix (Alphabet Only)" />
+            android:hint="@string/suffix_alphabet_only" />
 
     </LinearLayout>
 

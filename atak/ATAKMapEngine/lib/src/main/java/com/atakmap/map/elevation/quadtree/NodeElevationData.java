@@ -13,7 +13,6 @@ import java.util.List;
 /**
  * This object is used to store the elevation data for a given quad tree node
  *
- * @author CSRA
  */
 public class NodeElevationData
 {

@@ -20,19 +20,20 @@ import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
+import com.atakmap.android.cotdetails.extras.ExtraDetailsLayout;
 import com.atakmap.android.drawing.details.GenericDetailsView;
 import com.atakmap.android.dropdown.DropDown;
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.gui.ColorPalette;
 import com.atakmap.android.gui.CoordDialogView;
-import com.atakmap.android.maps.MapGroup;
-import com.atakmap.android.maps.MapItem;
+import com.atakmap.android.hashtags.view.RemarksLayout;
+import com.atakmap.android.maps.MapEvent;
+import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.rubbersheet.maps.AbstractSheet;
-import com.atakmap.android.rubbersheet.maps.RubberSheetMapGroup;
 import com.atakmap.android.rubbersheet.tool.RubberSheetEditTool;
 import com.atakmap.android.toolbar.Tool;
 import com.atakmap.android.toolbar.ToolListener;
@@ -53,9 +54,9 @@ import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 public abstract class AbstractSheetDropDown extends DropDownReceiver
         implements DropDown.OnStateListener,
         SharedPreferences.OnSharedPreferenceChangeListener,
+        MapEventDispatcher.MapEventDispatchListener,
         CompoundButton.OnCheckedChangeListener,
         PointMapItem.OnPointChangedListener,
-        MapGroup.OnItemListChangedListener,
         SeekBar.OnSeekBarChangeListener,
         Shape.OnPointsChangedListener,
         View.OnClickListener,
@@ -67,7 +68,6 @@ public abstract class AbstractSheetDropDown extends DropDownReceiver
     protected final MapView _mapView;
     protected final Context _context;
     protected final SharedPreferences _prefs;
-    protected final RubberSheetMapGroup _group;
     protected RubberSheetEditTool _editTool;
 
     protected AbstractSheet _item;
@@ -75,7 +75,8 @@ public abstract class AbstractSheetDropDown extends DropDownReceiver
     protected int _rangeSys = Span.METRIC;
 
     protected ViewGroup _root;
-    protected EditText _nameTxt, _remarksTxt;
+    protected EditText _nameTxt;
+    protected RemarksLayout _remarksLayout;
     protected TextView _areaTxt;
     protected Button _centerBtn;
     protected ImageButton _colorBtn;
@@ -84,16 +85,17 @@ public abstract class AbstractSheetDropDown extends DropDownReceiver
     protected View _defaultActions, _editActions;
     protected Button _editBtn, _undoBtn, _endBtn;
     protected ViewGroup _extraLayout;
+    protected ExtraDetailsLayout _extraDetails;
 
-    public AbstractSheetDropDown(MapView mapView, RubberSheetMapGroup group) {
+    public AbstractSheetDropDown(MapView mapView) {
         super(mapView);
         _mapView = mapView;
         _context = mapView.getContext();
-        _group = group;
-        _group.addOnItemListChangedListener(this);
         _prefs = PreferenceManager.getDefaultSharedPreferences(_context);
         _prefs.registerOnSharedPreferenceChangeListener(this);
         ToolManagerBroadcastReceiver.getInstance().registerListener(this);
+        _mapView.getMapEventDispatcher().addMapEventListener(
+                MapEvent.ITEM_REMOVED, this);
     }
 
     @Override
@@ -105,9 +107,10 @@ public abstract class AbstractSheetDropDown extends DropDownReceiver
     public void disposeImpl() {
         if (_editTool != null)
             _editTool.dispose();
-        _group.removeOnItemListChangedListener(this);
         _prefs.unregisterOnSharedPreferenceChangeListener(this);
         ToolManagerBroadcastReceiver.getInstance().unregisterListener(this);
+        _mapView.getMapEventDispatcher().removeMapEventListener(
+                MapEvent.ITEM_REMOVED, this);
     }
 
     public boolean show(final AbstractSheet item, final boolean edit) {
@@ -158,13 +161,14 @@ public abstract class AbstractSheetDropDown extends DropDownReceiver
         _colorBtn = _root.findViewById(R.id.sheetColor);
         _alphaBar = _root.findViewById(R.id.sheetAlpha);
         _thicknessBar = _root.findViewById(R.id.sheetThickness);
-        _remarksTxt = _root.findViewById(R.id.sheetRemarks);
+        _remarksLayout = _root.findViewById(R.id.remarksLayout);
         _defaultActions = _root.findViewById(R.id.sheetActionsDefault);
         _editActions = _root.findViewById(R.id.sheetActionsEdit);
         _editBtn = _root.findViewById(R.id.sheetEdit);
         _undoBtn = _root.findViewById(R.id.sheetEditUndo);
         _endBtn = _root.findViewById(R.id.sheetEditEnd);
         _extraLayout = _root.findViewById(R.id.sheetExtraLayout);
+        _extraDetails = _root.findViewById(R.id.extrasLayout);
 
         _centerBtn.setOnClickListener(this);
         _showLabels.setOnCheckedChangeListener(this);
@@ -181,7 +185,7 @@ public abstract class AbstractSheetDropDown extends DropDownReceiver
                     _item.setName(et.toString());
             }
         });
-        _remarksTxt.addTextChangedListener(new AfterTextChangedWatcher() {
+        _remarksLayout.addTextChangedListener(new AfterTextChangedWatcher() {
             @Override
             public void afterTextChanged(Editable et) {
                 if (_item != null)
@@ -208,7 +212,7 @@ public abstract class AbstractSheetDropDown extends DropDownReceiver
         _thicknessBar.setProgress((int) (_item.getStrokeWeight() * 10) - 10);
 
         String remarks = _item.getMetaString("remarks", null);
-        _remarksTxt.setText(remarks != null ? remarks : "");
+        _remarksLayout.setText(remarks != null ? remarks : "");
 
         Tool tool = getActiveTool();
         if (tool != null) {
@@ -221,6 +225,8 @@ public abstract class AbstractSheetDropDown extends DropDownReceiver
             _editActions.setVisibility(View.GONE);
             _defaultActions.setVisibility(View.VISIBLE);
         }
+
+        _extraDetails.setItem(_item);
     }
 
     protected void refreshCenter() {
@@ -266,12 +272,9 @@ public abstract class AbstractSheetDropDown extends DropDownReceiver
     }
 
     @Override
-    public void onItemAdded(MapItem item, MapGroup group) {
-    }
-
-    @Override
-    public void onItemRemoved(MapItem item, MapGroup group) {
-        if (item == _item && !isClosed())
+    public void onMapEvent(MapEvent event) {
+        if (event.getType().equals(MapEvent.ITEM_REMOVED)
+                && event.getItem() == _item && !isClosed())
             closeDropDown();
     }
 

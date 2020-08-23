@@ -11,4 +11,4 @@
 -dontwarn **
 -dontpreverify
 -dontshrink
--keepattributes LocalVariableTable
+-keepattributes *

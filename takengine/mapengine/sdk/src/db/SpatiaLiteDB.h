@@ -93,7 +93,7 @@ class SpatiaLiteDB
 
 
     explicit
-    SpatiaLiteDB (const char* filePath = NULL)  // Defaults to temporary DB.
+    SpatiaLiteDB (const char* filePath = nullptr)  // Defaults to temporary DB.
         throw (DB_Error);
 
     SpatiaLiteDB(const char* filePath,
@@ -194,7 +194,7 @@ class SpatiaLiteDB
 
     void
     closeConnection ()
-        throw ();
+        throw (DB_Error);
 
     void
     init (const char *filePath)

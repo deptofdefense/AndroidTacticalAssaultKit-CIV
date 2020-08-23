@@ -114,7 +114,7 @@ class CursorImpl
       { }
 
     ~CursorImpl ()
-        throw ();
+        throw () override;
 
     //
     // The compiler is unable to generate a copy constructor or assignment
@@ -133,60 +133,60 @@ class CursorImpl
     Blob
     getBlob (std::size_t column)
         const
-        throw (CursorError);
+        throw (CursorError) override;
 
     std::size_t
     getColumnCount ()
-        const
+        const override
       { return colCount; }
 
     std::size_t
     getColumnIndex (const char* columnName)
         const
-        throw (CursorError);
+        throw (CursorError) override;
 
     const char*
     getColumnName (std::size_t column)
         const
-        throw (CursorError);
+        throw (CursorError) override;
 
     std::vector<const char*>
     getColumnNames ()
-        const;
+        const override;
 
     double
     getDouble (std::size_t column)
         const
-        throw (CursorError);
+        throw (CursorError) override;
 
     int
     getInt (std::size_t column)
         const
-        throw (CursorError);
+        throw (CursorError) override;
 
     int64_t
     getLong (std::size_t column)
         const
-        throw (CursorError);
+        throw (CursorError) override;
 
     const char*
     getString (std::size_t column)
         const
-        throw (CursorError);
+        throw (CursorError) override;
 
     FieldType
     getType (std::size_t column)
         const
-        throw (CursorError);
+        throw (CursorError) override;
 
     bool
     isNull (std::size_t column)
         const
-        throw (CursorError);
+        throw (CursorError) override;
 
     bool
     moveToNext ()
-        throw (CursorError);
+        throw (CursorError) override;
 
 
                                         //====================================//
@@ -199,7 +199,7 @@ class CursorImpl
         const
       {
         columnNames.reserve (colCount);
-        for (std::size_t i (0); i < colCount; ++i)
+        for (int i(0); i < static_cast<int>(colCount); ++i)
           {
             columnNames.push_back (sqlite3_column_name (impl, i));
           }
@@ -309,7 +309,7 @@ class StatementImpl
       { }
 
     ~StatementImpl ()
-        throw ();
+        throw () override;
 
     //
     // The compiler is unable to generate a copy constructor or assignment
@@ -325,39 +325,39 @@ class StatementImpl
     void
     bind (std::size_t index,
           const char* value)
-        throw (db::DB_Error);
+        throw (db::DB_Error) override;
 
     void
     bind (std::size_t index,
           double value)
-        throw (db::DB_Error);
+        throw (db::DB_Error) override;
 
     void
     bind (std::size_t index,
           int value)
-        throw (db::DB_Error);
+        throw (db::DB_Error) override;
 
     void
     bind (std::size_t index,
           int64_t value)
-        throw (db::DB_Error);
+        throw (db::DB_Error) override;
 
     void
     bind (std::size_t index,
           const Blob& value)
-        throw (db::DB_Error);
+        throw (db::DB_Error) override;
 
     void
     bindNULL (std::size_t index)
-        throw (db::DB_Error);
+        throw (db::DB_Error) override;
 
     void
     clearBindings ()
-        throw (db::DB_Error);
+        throw (db::DB_Error) override;
 
     void
     execute ()
-        throw (db::DB_Error);
+        throw (db::DB_Error) override;
 
 
                                         //====================================//
@@ -453,10 +453,10 @@ prepareStatement (const char* sql,
                             "Received NULL SQL string");
       }
 
-    sqlite3_stmt* statement (NULL);
+    sqlite3_stmt* statement (nullptr);
     int response (sqlite3_prepare_v2 (connection,
-                                      sql, std::strlen (sql) + 1,
-                                      &statement, NULL));
+                                      sql, static_cast<int>(std::strlen (sql) + 1),
+                                      &statement, nullptr));
 
     if (response != SQLITE_OK || !statement)
       {
@@ -556,8 +556,8 @@ CursorImpl::bindArgs (const std::vector<const char*>& args)
     for (std::size_t index = 0; index < args.size (); ++index)
       {
         const char* value (args[index]);
-        int response (sqlite3_bind_text (impl, index+1, value,
-                                         value ? std::strlen (value) : 0,
+        int response (sqlite3_bind_text (impl, static_cast<int>(index + 1), value,
+                                         value ? static_cast<int>(std::strlen (value)) : 0,
                                          SQLITE_TRANSIENT));
 
         if (response != SQLITE_OK)
@@ -581,10 +581,10 @@ CursorImpl::getBlob (std::size_t column)
   {
     validate (column);
 
-    const unsigned char* result
-        (static_cast<const unsigned char*> (sqlite3_column_blob (impl, column)));
+    const auto* result
+        (static_cast<const unsigned char*> (sqlite3_column_blob (impl, static_cast<int>(column))));
 
-    return std::make_pair (result, result + sqlite3_column_bytes (impl, column));
+    return std::make_pair(result, result + sqlite3_column_bytes(impl, static_cast<int>(column)));
   }
 
 
@@ -629,7 +629,7 @@ CursorImpl::getColumnName (std::size_t column)
   {
     validateIndex (column);
     return columnNames.empty ()
-        ? sqlite3_column_name (impl, column)
+        ? sqlite3_column_name (impl, static_cast<int>(column))
         : static_cast<const char*> (columnNames[column]);
   }
 
@@ -653,7 +653,7 @@ CursorImpl::getDouble (std::size_t column)
     throw (CursorError)
   {
     validate (column);
-    return sqlite3_column_double (impl, column);
+    return sqlite3_column_double(impl, static_cast<int>(column));
   }
 
 
@@ -663,7 +663,7 @@ CursorImpl::getInt (std::size_t column)
     throw (CursorError)
   {
     validate (column);
-    return sqlite3_column_int (impl, column);
+    return sqlite3_column_int(impl, static_cast<int>(column));
   }
 
 
@@ -673,7 +673,7 @@ CursorImpl::getLong (std::size_t column)
     throw (CursorError)
   {
     validate (column);
-    return sqlite3_column_int64 (impl, column);
+    return sqlite3_column_int64(impl, static_cast<int>(column));
   }
 
 
@@ -683,7 +683,7 @@ CursorImpl::getString (std::size_t column)
     throw (CursorError)
   {
     validate (column);
-    return reinterpret_cast<const char*> (sqlite3_column_text (impl, column));
+    return reinterpret_cast<const char*>(sqlite3_column_text(impl, static_cast<int>(column)));
   }
 
 
@@ -696,7 +696,7 @@ CursorImpl::getType (std::size_t column)
 
     FieldType type (NULL_FIELD);
 
-    switch (sqlite3_column_type (impl, column))
+    switch (sqlite3_column_type(impl, static_cast<int>(column)))
       {
       case SQLITE_INTEGER:      type = INTEGER_FIELD;   break;
       case SQLITE_FLOAT:        type = FLOAT_FIELD;     break;
@@ -719,7 +719,7 @@ CursorImpl::isNull (std::size_t column)
     throw (CursorError)
   {
     validateIndex (column);
-    return sqlite3_column_type (impl, column) == SQLITE_NULL;
+    return sqlite3_column_type (impl, static_cast<int>(column)) == SQLITE_NULL;
   }
 
 
@@ -768,8 +768,8 @@ StatementImpl::bind (std::size_t index,
                      const char* value)
     throw (db::DB_Error)
   {
-    int response (sqlite3_bind_text (impl, index, value,
-                                     value ? std::strlen (value) : 0,
+    int response (sqlite3_bind_text (impl, static_cast<int>(index), value,
+                                     value ? static_cast<int>(std::strlen (value)) : 0,
                                      SQLITE_TRANSIENT));
 
     if (response != SQLITE_OK)
@@ -790,7 +790,7 @@ StatementImpl::bind (std::size_t index,
                      double value)
     throw (db::DB_Error)
   {
-    int response (sqlite3_bind_double (impl, index, value));
+    int response (sqlite3_bind_double (impl, static_cast<int>(index), value));
 
     if (response != SQLITE_OK)
       {
@@ -809,7 +809,7 @@ StatementImpl::bind (std::size_t index,
                      int value)
     throw (db::DB_Error)
   {
-    int response (sqlite3_bind_int (impl, index, value));
+    int response (sqlite3_bind_int (impl, static_cast<int>(index), value));
 
     if (response != SQLITE_OK)
       {
@@ -828,7 +828,7 @@ StatementImpl::bind (std::size_t index,
                      int64_t value)
     throw (db::DB_Error)
   {
-    int response (sqlite3_bind_int64 (impl, index, value));
+    int response (sqlite3_bind_int64 (impl, static_cast<int>(index), value));
 
     if (response != SQLITE_OK)
       {
@@ -847,8 +847,8 @@ StatementImpl::bind (std::size_t index,
                      const Blob& value)
     throw (db::DB_Error)
   {
-    int response (sqlite3_bind_blob (impl, index, value.first,
-                                     value.second - value.first,
+    int response (sqlite3_bind_blob (impl, static_cast<int>(index), value.first,
+                                     static_cast<int>(value.second - value.first),
                                      SQLITE_TRANSIENT));
 
     if (response != SQLITE_OK)
@@ -866,7 +866,7 @@ void
 StatementImpl::bindNULL (std::size_t index)
     throw (db::DB_Error)
   {
-    int response (sqlite3_bind_null (impl, index));
+    int response (sqlite3_bind_null (impl, static_cast<int>(index)));
 
     if (response != SQLITE_OK)
       {
@@ -970,8 +970,8 @@ namespace db                            // Open db namespace.
 SpatiaLiteDB::SpatiaLiteDB(const char* filePath)
     throw (DB_Error)
     : mutex(TEMT_Recursive),
-    connection(NULL),
-    cache(NULL),
+    connection(nullptr),
+    cache(nullptr),
     inTrans(false),
     successfulTrans(false),
     readOnly(false)
@@ -987,8 +987,8 @@ SpatiaLiteDB::SpatiaLiteDB(const char* filePath)
 SpatiaLiteDB::SpatiaLiteDB(const char* filePath, const bool ro)
     throw (DB_Error)
   : mutex(TEMT_Recursive),
-    connection(NULL),
-    cache(NULL),
+    connection(nullptr),
+    cache(nullptr),
     inTrans(false),
     successfulTrans(false),
     readOnly(ro)
@@ -1011,7 +1011,7 @@ void SpatiaLiteDB::init(const char *filePath) throw (DB_Error)
               &connection,
               (readOnly ? SQLITE_OPEN_READONLY :
               SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE),
-              NULL));
+              nullptr));
 
           if (response != SQLITE_OK)
           {
@@ -1093,8 +1093,8 @@ void
 SpatiaLiteDB::beginTransaction ()
     throw (DB_Error)
   {
-    LockPtr lock(NULL, NULL);
-    if (Lock_create(lock, mutex) != TE_Ok)
+    Lock lock(mutex);
+    if (lock.status != TE_Ok)
         throw db::DB_Error("Failed to acquire lock");
 
     if (inTrans)
@@ -1111,8 +1111,8 @@ db::Statement*
 SpatiaLiteDB::compileStatement (const char* sql)
     throw (DB_Error)
   {
-    LockPtr lock(NULL, NULL);
-    if (Lock_create(lock, mutex) != TE_Ok)
+    Lock lock(mutex);
+    if (lock.status != TE_Ok)
         throw db::DB_Error("Failed to acquire lock");
 
     return new StatementImpl (prepareStatement (sql, connection));
@@ -1123,8 +1123,8 @@ void
 SpatiaLiteDB::endTransaction ()
     throw (DB_Error)
   {
-    LockPtr lock(NULL, NULL);
-    if (Lock_create(lock, mutex) != TE_Ok)
+    Lock lock(mutex);
+    if (lock.status != TE_Ok)
         throw db::DB_Error("Failed to acquire lock");
 
     if (!inTrans)
@@ -1136,7 +1136,7 @@ SpatiaLiteDB::endTransaction ()
     // Must reset any busy statements before committing or rolling back.
     //
 
-    for (sqlite3_stmt* next (sqlite3_next_stmt (connection, NULL));
+    for (sqlite3_stmt* next (sqlite3_next_stmt (connection, nullptr));
             next;
             next = sqlite3_next_stmt (connection, next))
         {
@@ -1164,8 +1164,8 @@ void
 SpatiaLiteDB::execute (const char* sql)
     throw (DB_Error)
   {
-    LockPtr lock(NULL, NULL);
-    if (Lock_create(lock, mutex) != TE_Ok)
+    Lock lock(mutex);
+    if (lock.status != TE_Ok)
         throw db::DB_Error("Failed to acquire lock");
 
     if (!sql)
@@ -1173,7 +1173,7 @@ SpatiaLiteDB::execute (const char* sql)
         throw DB_Error (MEM_FN ("execute") "Received NULL SQL string");
         }
 
-    int response (sqlite3_exec (connection, sql, NULL, NULL, NULL));
+    int response (sqlite3_exec (connection, sql, nullptr, nullptr, nullptr));
 
     if (response != SQLITE_OK)
         {
@@ -1196,7 +1196,7 @@ SpatiaLiteDB::execute (const char* sql,
       }
     else
       {
-        std::auto_ptr<db::Statement> stmt (compileStatement (sql));
+        std::unique_ptr<db::Statement> stmt (compileStatement (sql));
 
         for (std::size_t i (0); i < args.size (); ++i)
           {
@@ -1211,10 +1211,10 @@ const char*
 SpatiaLiteDB::getFilePath ()
     const throw (DB_Error)
   {
-    const char* result (NULL);
+    const char* result (nullptr);
 
-    LockPtr lock(NULL, NULL);
-    if (Lock_create(lock, mutex) != TE_Ok)
+    Lock lock(mutex);
+    if (lock.status != TE_Ok)
         throw db::DB_Error("Failed to acquire lock");
 
     result = sqlite3_db_filename (connection, "main");
@@ -1227,14 +1227,14 @@ unsigned long
 SpatiaLiteDB::getVersion ()
     throw (DB_Error)
   {
-    std::auto_ptr<db::Cursor> cursor (query ("PRAGMA user_version"));
+    std::unique_ptr<db::Cursor> cursor (query ("PRAGMA user_version"));
 
     if (!cursor->moveToNext ())
       {
         throw DB_Error (MEM_FN ("getVersion") "No version set");
       }
 
-    return cursor->getLong (0);
+    return static_cast<unsigned long>(cursor->getLong (0));
   }
 
 
@@ -1242,8 +1242,8 @@ void
 SpatiaLiteDB::interrupt ()
     throw (DB_Error)
   {
-    LockPtr lock(NULL, NULL);
-    if (Lock_create(lock, mutex) != TE_Ok)
+    Lock lock(mutex);
+    if (lock.status != TE_Ok)
         throw db::DB_Error("Failed to acquire lock");
 
 #if DB_ASYNC_INTERRUPT
@@ -1265,8 +1265,8 @@ db::Cursor*
 SpatiaLiteDB::query (const char* sql)
     throw (DB_Error)
   {
-    LockPtr lock(NULL, NULL);
-    if (Lock_create(lock, mutex) != TE_Ok)
+    Lock lock(mutex);
+    if (lock.status != TE_Ok)
         throw db::DB_Error("Failed to acquire lock");
 
     return new CursorImpl (prepareStatement (sql, connection));
@@ -1278,10 +1278,10 @@ SpatiaLiteDB::query (const char* sql,
                      const std::vector<const char*>& args)
     throw (DB_Error)
   {
-    std::auto_ptr<CursorImpl> result;
+    std::unique_ptr<CursorImpl> result;
 
-    LockPtr lock(NULL, NULL);
-    if (Lock_create(lock, mutex) != TE_Ok)
+    Lock lock(mutex);
+    if (lock.status != TE_Ok)
         throw db::DB_Error("Failed to acquire lock");
 
     result.reset (new CursorImpl (prepareStatement (sql, connection)));
@@ -1295,8 +1295,8 @@ void
 SpatiaLiteDB::setTransactionSuccessful ()
     throw (DB_Error)
   {
-    LockPtr lock(NULL, NULL);
-    if (Lock_create(lock, mutex) != TE_Ok)
+    Lock lock(mutex);
+    if (lock.status != TE_Ok)
         throw db::DB_Error("Failed to acquire lock");
 
     if (!inTrans)
@@ -1352,10 +1352,10 @@ namespace db                            // Open db namespace.
 
 void
 SpatiaLiteDB::closeConnection ()
-    throw ()
+    throw (DB_Error)
   {
-    LockPtr lock(NULL, NULL);
-    if (Lock_create(lock, mutex) != TE_Ok)
+    Lock lock(mutex);
+    if (lock.status != TE_Ok)
         throw db::DB_Error("Failed to acquire lock");
 
     if (connection)
@@ -1369,7 +1369,7 @@ SpatiaLiteDB::closeConnection ()
 
         int response (sqlite3_close_v2 (connection));
 
-        connection = NULL;
+        connection = nullptr;
         if (response != SQLITE_OK)
             {
             std::cerr << "\n" << MEM_FN ("closeConnection")
@@ -1377,7 +1377,7 @@ SpatiaLiteDB::closeConnection ()
                         << ") closing connection";
             }
         spatialite_cleanup_ex (cache);
-        cache = NULL;
+        cache = nullptr;
 #if DB_ASYNC_INTERRUPT
         interruptCV.broadcast (*lock);       // Alert interruptor thread.
         while (!finished)

@@ -31,6 +31,7 @@ public class MissionPackageContent extends MissionPackageConfiguration {
     public final static String PARAMETER_NAME = "name";
     public final static String PARAMETER_LOCALPATH = "localpath";
     public final static String PARAMETER_LOCALISCOT = "isCoT";
+    public final static String PARAMETER_CONTENT_TYPE = "contentType";
 
     /**
      * Allows a content parameter to reference another content/entry

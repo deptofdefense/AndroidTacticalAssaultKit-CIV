@@ -1,4 +1,4 @@
-#include "josrutils.h"
+#include "jglmapview.h"
 #include "ogr_spatialref.h"
 #include "ogr_api.h"
 #include "ogr_core.h"

@@ -106,7 +106,7 @@ namespace atakmap
         void GLMatrix::rotate(float *dst, const float *src, const float degrees, const float axisX, const float axisY, const float axisZ)
         {
 #if 1
-            const float theta = degrees * M_PI / 180.0;
+            const auto theta = static_cast<float>(degrees * M_PI / 180.0f);
             const float sinTheta = sin(theta);
             const float cosTheta = cos(theta);
 

@@ -44,7 +44,7 @@ public class CredentialsDialog {
      * @param usernameString Username string stored in prefs (if available)
      * @param passwordString Password string stored in prefs (if available)
      * @param cacheCreds
-     * @param context  the context used to display the the alert dialog.
+     * @param context  the context used to display the alert dialog.
      * @param callback the callback for when the credential dialog is dismissed.
      */
     public static void createCredentialDialog(final String desc,

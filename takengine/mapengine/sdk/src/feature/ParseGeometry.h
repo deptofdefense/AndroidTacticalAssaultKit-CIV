@@ -61,7 +61,7 @@ namespace util
 {
 
 
-class ENGINE_API IO_Error;
+struct IO_Error;
 
 
 }

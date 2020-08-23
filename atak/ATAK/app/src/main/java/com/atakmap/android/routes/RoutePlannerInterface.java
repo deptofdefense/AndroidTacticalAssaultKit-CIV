@@ -19,7 +19,7 @@ public interface RoutePlannerInterface {
     boolean isNetworkRequired();
 
     /**
-     * Gets the RouteGenerationTask for this planner.
+     * Gets the RouteGenerationTask for this planner that is run when initially generating a route.
      * @param routeGenerationEventListener The listener that should be associated with this task.
      * @return A RouteGenerationTask for this planner.
      */
@@ -43,4 +43,9 @@ public interface RoutePlannerInterface {
      * Gets whether or not the planner is capable of supporting re-routing.
      */
     boolean isRerouteCapable();
+
+    /**
+     * Gets whether or not the planner is capable of supporting routing around regions.
+     */
+    boolean canRouteAroundRegions();
 }

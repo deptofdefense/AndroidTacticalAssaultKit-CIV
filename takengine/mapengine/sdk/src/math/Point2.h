@@ -35,6 +35,20 @@ namespace TAK
             template <class T>
             inline Point2<T>::~Point2() {}
 
+            template <class T>
+            inline bool operator==(const Point2<T>& a, const Point2<T>& b) NOTHROWS {
+                return a.x == b.x &&
+                    a.y == b.y &&
+                    a.z == b.z;
+            }
+
+            template <class T>
+            inline bool operator!=(const Point2<T>& a, const Point2<T>& b) NOTHROWS {
+                return a.x != b.x ||
+                    a.y != b.y ||
+                    a.z != b.z;
+            }
+
 #ifdef MSVC
 			template class ENGINE_API Point2<double>;
 #endif

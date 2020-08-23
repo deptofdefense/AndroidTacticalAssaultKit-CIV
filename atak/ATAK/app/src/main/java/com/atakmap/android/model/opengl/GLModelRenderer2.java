@@ -20,11 +20,11 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapSceneModel;
-import com.atakmap.map.layer.feature.AbstractFeatureDataStore3;
 import com.atakmap.map.layer.feature.AttributeSet;
 import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureDataStore2;
+import com.atakmap.map.layer.feature.Utils;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.geometry.GeometryCollection;
@@ -127,16 +127,20 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
                     return;
 
                 // query feature
-                this.feature = AbstractFeatureDataStore3
+                this.feature = Utils
                         .getFeature(this.dataStore, this.feature.getId());
 
                 if (this.feature == null)
                     return;
 
+                AttributeSet attrs = this.feature.getAttributes();
+                if (attrs == null)
+                    return;
+
                 this.featureBounds = this.feature.getGeometry().getEnvelope();
                 // load model info
                 sourceInfo = GLModelLayer
-                        .getModelInfo(this.feature.getAttributes()
+                        .getModelInfo(attrs
                                 .getAttributeSetAttribute("TAK.ModelInfo"));
                 sourceInfo.name = this.feature.getName();
                 // wrap/update GL point
@@ -410,6 +414,7 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
             // show error icon
             glpoint.setStyle(new IconPointStyle(-1,
                     "resource://" + R.drawable.ic_3d_map_error));
+            renderContext.requestRefresh();
             return false;
         }
 
@@ -496,7 +501,7 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
                 this.dataStore.updateFeature(feature.getId(),
                         FeatureDataStore2.PROPERTY_FEATURE_GEOMETRY, null,
                         xformed, null, null, 0);
-                feature = AbstractFeatureDataStore3.getFeature(dataStore,
+                feature = Utils.getFeature(dataStore,
                         feature.getId());
                 if (feature != null)
                     featureBounds = feature.getGeometry().getEnvelope();
@@ -528,6 +533,15 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
                     });
             m.dispose();
             m = xformed;
+            if (m == null) {
+                glpoint.init(glpoint.featureId, feature.getName()
+                        + " [Error]");
+                // show error icon
+                glpoint.setStyle(new IconPointStyle(-1,
+                        "resource://" + R.drawable.ic_3d_map_error));
+                renderContext.requestRefresh();
+                return false;
+            }
         }
 
         PointD anchor = Models.findAnchorPoint(m);
@@ -592,7 +606,7 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
                         FeatureDataStore2.PROPERTY_FEATURE_ATTRIBUTES, null,
                         null, null, attrs,
                         FeatureDataStore2.UPDATE_ATTRIBUTES_SET);
-                feature = AbstractFeatureDataStore3.getFeature(dataStore,
+                feature = Utils.getFeature(dataStore,
                         feature.getId());
                 if (feature != null)
                     featureBounds = feature.getGeometry().getEnvelope();

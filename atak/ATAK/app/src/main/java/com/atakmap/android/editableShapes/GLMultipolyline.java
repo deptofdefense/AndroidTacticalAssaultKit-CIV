@@ -70,10 +70,10 @@ public class GLMultipolyline extends GLEditablePolyline {
      * @param ortho a GLMapView
      */
     @Override
-    public void draw(GLMapView ortho) {
+    public void draw(GLMapView ortho, int renderPass) {
         this.update();
         for (GLEditablePolyline glep : _glLines) {
-            glep.draw(ortho);
+            glep.draw(ortho, renderPass);
         }
     }
 
@@ -94,7 +94,7 @@ public class GLMultipolyline extends GLEditablePolyline {
             if (el.getSubject() != ds) {
                 // Line instance has been changed
                 el.stopObserving();
-                el = new GLEditablePolyline(this.renderContext, ds);
+                el = new GLEditablePolyline(this.context, ds);
                 el.startObserving();
                 _glLines.set(i, el);
             }
@@ -104,7 +104,7 @@ public class GLMultipolyline extends GLEditablePolyline {
         while (startSize < totalSize) {
             //Create a new GL Line for the new line
             GLEditablePolyline glep = new GLEditablePolyline(
-                    this.renderContext, lines.get(startSize));
+                    this.context, lines.get(startSize));
             glep.startObserving();
             _glLines.add(glep);
 

@@ -1,6 +1,10 @@
 package com.atakmap.map.layer.feature.style;
 
+import com.atakmap.interop.InteropCleaner;
+import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
+import com.atakmap.lang.ref.Cleaner;
+import com.atakmap.util.Disposable;
 import com.atakmap.util.ReadWriteLock;
 
 /**
@@ -9,31 +13,26 @@ import com.atakmap.util.ReadWriteLock;
  * 
  * @author Developer
  */
-public abstract class Style {
+public abstract class Style implements Disposable {
+    final static NativePeerManager.Cleaner CLEANER = new InteropCleaner(Style.class);
+
     static StyleClasses styleClasses = null;
 
     final ReadWriteLock rwlock = new ReadWriteLock();
+    private final Cleaner cleaner;
     Pointer pointer;
     Object owner;
 
     Style(Pointer pointer, Object owner) {
+        cleaner = NativePeerManager.register(this, pointer, rwlock, null, CLEANER);
         this.pointer = pointer;
         this.owner = owner;
     }
 
     @Override
-    public void finalize() {
-        this.rwlock.acquireWrite();
-        try {
-            if(this.pointer.value != 0L)
-                destruct(this.pointer);
-        } finally {
-            this.rwlock.releaseWrite();
-        }
-
-        try {
-            super.finalize();
-        } catch(Throwable ignored) {}
+    public void dispose() {
+        if(cleaner != null)
+            cleaner.clean();
     }
 
     @Override
@@ -71,6 +70,9 @@ public abstract class Style {
         } else {
             return null;
         }
+    }
+    static long getPointer(Style style) {
+        return style.pointer.raw;
     }
 
     static class StyleClasses {
@@ -124,7 +126,7 @@ public abstract class Style {
     static native int getIconPointStyle_VerticalAlignment_V_CENTER();
     static native int getIconPointStyle_VerticalAlignment_BELOW();
 
-    static native Pointer LabelPointStyle_create(String text, int textColor, int bgColor, int scrollMode, float textSize, int halign, int valign, float rotation, boolean isRotationAbsolute);
+    static native Pointer LabelPointStyle_create(String text, int textColor, int bgColor, int scrollMode, float textSize, int halign, int valign, float rotation, boolean isRotationAbsolute, double labelMinRenderResolution);
     static native String LabelPointStyle_getText(long ptr);
     static native int LabelPointStyle_getTextColor(long ptr);
     static native int LabelPointStyle_getBackgroundColor(long ptr);
@@ -134,6 +136,8 @@ public abstract class Style {
     static native int LabelPointStyle_getVerticalAlignment(long ptr);
     static native float LabelPointStyle_getRotation(long ptr);
     static native boolean LabelPointStyle_isRotationAbsolute(long ptr);
+    static native double LabelPointStyle_getLabelMinRenderResolution(long ptr);
+
     static native int getLabelPointStyle_HorizontalAlignment_LEFT();
     static native int getLabelPointStyle_HorizontalAlignment_H_CENTER();
     static native int getLabelPointStyle_HorizontalAlignment_RIGHT();

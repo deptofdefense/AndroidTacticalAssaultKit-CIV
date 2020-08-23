@@ -173,6 +173,23 @@ public class MissionPackageConfiguration implements Parcelable {
         return null;
     }
 
+    /**
+     * Get a parameter's value and auto-cast to the provided return type
+     * @param name Parameter name
+     * @param <T> Return type
+     * @return Parameter value or null if not found
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getParameterValue(String name) {
+        try {
+            NameValuePair nvp = getParameter(name);
+            return nvp != null ? (T) nvp.getValue() : null;
+        } catch (Exception e) {
+            // In the event the value does not match the return type, just null
+            return null;
+        }
+    }
+
     public List<NameValuePair> getParameters() {
         return _parameters;
     }
@@ -196,6 +213,10 @@ public class MissionPackageConfiguration implements Parcelable {
         }
 
         _parameters.add(parameter);
+    }
+
+    public void setParameter(String name, String value) {
+        setParameter(new NameValuePair(name, value));
     }
 
     public void removeParameter(String name) {

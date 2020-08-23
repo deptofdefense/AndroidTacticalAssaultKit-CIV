@@ -12,6 +12,7 @@ import android.util.Pair;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
+import com.atakmap.map.LegacyAdapters;
 import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.control.ColorControl;
@@ -31,21 +32,24 @@ import com.atakmap.map.layer.raster.opengl.GLMapLayerSpi3;
 import com.atakmap.map.layer.raster.service.RasterDataAccessControl;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReaderFactory;
+import com.atakmap.map.opengl.GLMapRenderable2;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.map.opengl.GLResolvableMapRenderable;
 import com.atakmap.opengl.GLES20FixedPipeline;
+import com.atakmap.opengl.GLResolvable;
 import com.atakmap.opengl.GLTexture;
 import com.atakmap.util.ConfigOptions;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
 import com.atakmap.math.RectD;
 import com.atakmap.math.Rectangle;
+import com.atakmap.util.Disposable;
 
 import org.gdal.gdal.Dataset;
 
-public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable {
+public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable, GLMapRenderable2 {
 
     public final static GLMapLayerSpi3 SPI = new GLMapLayerSpi3() {
         @Override
@@ -79,7 +83,10 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable 
 
     protected final MapRenderer surface;
     protected final DatasetDescriptor info;
+    /** @deprecated use {@link #renderable}*/
+    @Deprecated
     protected GLQuadTileNode2 quadTree;
+    protected GLMapRenderable2 renderable;
     protected TileReader tileReader;
     protected final TileReader.AsynchronousIO asyncio;
     
@@ -128,7 +135,7 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable 
     }
 
     /**
-     * Initializes {@link #quadTree}.
+     * Initializes {@link #renderable}.
      */
     protected void init() {
         try {
@@ -166,7 +173,7 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable 
                     }
                 }
                                 
-                GLQuadTileNode2.Options opts = new GLQuadTileNode2.Options();
+                GLQuadTileNode3.Options opts = new GLQuadTileNode3.Options();
                 opts.childTextureCopyResolvesParent = !this.info.isRemote();
                 opts.levelTransitionAdjustment = 0.5d - ConfigOptions.getOption("imagery.relative-scale", 0d);
                 opts.progressiveLoad = (ConfigOptions.getOption("imagery.progressive-load-enabled", 1) != 0);
@@ -175,8 +182,9 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable 
                 if(this.textureCacheEnabled)
                     opts.textureCache = GLRenderGlobals.get(this.surface).getTextureCache();
 
-                this.quadTree = 
-                        new GLQuadTileNode2(new ImageInfo(img.getUri(),
+                GLQuadTileNode3 quadTree =
+                        new GLQuadTileNode3(LegacyAdapters.getRenderContext(this.surface),
+                                            new ImageInfo(img.getUri(),
                                                           img.getImageryType(),
                                                           img.isPrecisionImagery(),
                                                           img.getUpperLeft(),
@@ -193,7 +201,9 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable 
                                                                       imprecise,
                                                                       precise,
                                                                       false));
-                this.quadTree.setColor(this.colorCtrl.getColor());
+                quadTree.setColor(this.colorCtrl.getColor());
+                renderable = quadTree;
+                //this.quadTree = quadTree;
                 
                 if(this.tileClientCtrl != null)
                     ((TileClientControlImpl)this.tileClientCtrl).apply();
@@ -205,12 +215,25 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable 
 
     @Override
     public void draw(GLMapView view) {
+        draw(view, GLMapView.RENDER_PASS_SURFACE);
+    }
+
+    @Override
+    public void draw(GLMapView view, int renderPass) {
+        if(!MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SURFACE))
+            return;
+
         if (!this.initialized) {
             this.init();
             this.initialized = true;
         }
 
-        if (this.quadTree != null) {
+        if(this.renderable != null) {
+            if(this.tileClientCtrl != null)
+                ((TileClientControlImpl)this.tileClientCtrl).apply();
+            this.renderable.draw(view, renderPass);
+        }
+        else if (this.quadTree != null) {
             if(this.tileClientCtrl != null)
                 ((TileClientControlImpl)this.tileClientCtrl).apply();
             this.quadTree.draw(view);
@@ -227,7 +250,13 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable 
 
     @Override
     public void release() {
-        if (this.quadTree != null) {
+        if(this.renderable != null) {
+            this.renderable.release();
+            if(this.renderable instanceof Disposable)
+                ((Disposable)this.renderable).dispose();
+            this.renderable = null;
+        }
+        else if (this.quadTree != null) {
             this.quadTree.release();
             this.quadTree.dispose();
             this.quadTree = null;
@@ -247,8 +276,15 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable 
     }
 
     @Override
+    public int getRenderPass() {
+        return GLMapView.RENDER_PASS_SURFACE;
+    }
+
+    @Override
     public State getState() {
-        if (this.quadTree != null)
+        if(this.renderable instanceof GLResolvable)
+            return ((GLResolvable)this.renderable).getState();
+        else if (this.quadTree != null)
             return this.quadTree.getState();
         return State.RESOLVED;
     }
@@ -297,14 +333,18 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable 
         public void setColor(final int color) {
             if(GLMapSurface.isGLThread()) {
                 this.color = color;
-                if(GLTiledMapLayer2.this.quadTree != null)
+                if(GLTiledMapLayer2.this.renderable instanceof GLQuadTileNode3)
+                    ((GLQuadTileNode3)GLTiledMapLayer2.this.renderable).setColor(this.color);
+                else if(GLTiledMapLayer2.this.quadTree != null)
                     GLTiledMapLayer2.this.quadTree.setColor(this.color);
             } else {
                 GLTiledMapLayer2.this.surface.queueEvent(new Runnable() {
                     @Override
                     public void run() {
                         ColorControlImpl.this.color = color;
-                        if(GLTiledMapLayer2.this.quadTree != null)
+                        if(GLTiledMapLayer2.this.renderable instanceof GLQuadTileNode3)
+                            ((GLQuadTileNode3)GLTiledMapLayer2.this.renderable).setColor(ColorControlImpl.this.color);
+                        else if(GLTiledMapLayer2.this.quadTree != null)
                             GLTiledMapLayer2.this.quadTree.setColor(ColorControlImpl.this.color);
                     }
                 });
@@ -333,6 +373,8 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable 
             }
 
             // XXX - should check resolution???
+            if(GLTiledMapLayer2.this.renderable instanceof RasterDataAccess2)
+                return (RasterDataAccess2)GLTiledMapLayer2.this.renderable;
             return GLTiledMapLayer2.this.quadTree;
         }
     }

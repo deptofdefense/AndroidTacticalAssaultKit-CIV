@@ -3,6 +3,7 @@ package com.atakmap.android.gpkg;
 
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -21,6 +22,7 @@ import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.android.overlay.MapOverlayParent;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.android.util.NotificationUtil.GeneralIcon;
+import com.atakmap.app.R;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.content.CatalogCurrency;
 import com.atakmap.content.CatalogCurrencyRegistry;
@@ -415,6 +417,13 @@ public class GeoPackageImporter implements Importer {
         //==============================
         //  ImportResolver INTERFACE
         //==============================
+
+        @Override
+        public Drawable getIcon() {
+            MapView mv = MapView.getMapView();
+            return mv != null ? mv.getContext().getDrawable(R.drawable.gpkg)
+                    : null;
+        }
 
         @Override
         public boolean match(File file) {

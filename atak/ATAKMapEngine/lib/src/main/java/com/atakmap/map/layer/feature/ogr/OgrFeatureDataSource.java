@@ -1,39 +1,14 @@
 
 package com.atakmap.map.layer.feature.ogr;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import com.atakmap.coremap.locale.LocaleUtil;
-import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.gdal.ogr.Driver;
-import org.gdal.ogr.DataSource;
-import org.gdal.ogr.Feature;
-import org.gdal.ogr.FeatureDefn;
 import org.gdal.ogr.FieldDefn;
-import org.gdal.ogr.Geometry;
-import org.gdal.ogr.Layer;
-import org.gdal.ogr.ogr;
 import org.gdal.ogr.ogrConstants;
-import org.gdal.osr.CoordinateTransformation;
-import org.gdal.osr.SpatialReference;
-
-import com.atakmap.coremap.log.Log;
-import android.util.Pair;
 
 import com.atakmap.interop.Pointer;
-import com.atakmap.io.ZipVirtualFile;
-import com.atakmap.map.AtakMapView;
-import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.feature.AttributeSet;
-import com.atakmap.map.layer.feature.FeatureDataSource;
 import com.atakmap.map.layer.feature.NativeFeatureDataSource;
-import com.atakmap.map.layer.raster.osm.OSMUtils;
-import com.atakmap.math.MathUtils;
 
 /**
  * Support ingesting ESRI Shapefiles

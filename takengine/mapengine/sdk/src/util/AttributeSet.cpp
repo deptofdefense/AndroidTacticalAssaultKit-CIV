@@ -336,7 +336,7 @@ const
 
     const AttrItem &value = *iter->second;
     if(value.isNull())
-        return NULL;
+        return nullptr;
     else
         return static_cast<const BasicAttrItem<std::string, STRING> &>(value).get().c_str();
 }
@@ -580,7 +580,7 @@ AttributeSet::StringArrayAttrItem::StringArrayAttrItem(const char * const *begin
                 strs.push_back(*begin);
                 ptrs.push_back(strs.back().c_str());
             } else {
-                ptrs.push_back(NULL);
+                ptrs.push_back(nullptr);
             }
             ++begin;
         }
@@ -611,7 +611,7 @@ AttributeSet::BlobArrayAttrItem::BlobArrayAttrItem(const Blob *begin, const Blob
                 blobs.push_back(std::move(blob));
                 ptrs.push_back(std::make_pair(blobs.back().data(), blobs.back().data() + size));
             } else {
-                ptrs.push_back(std::make_pair((const unsigned char *)NULL, (const unsigned char *)NULL));
+                ptrs.push_back(std::make_pair((const unsigned char *)nullptr, (const unsigned char *)nullptr));
             }
             ++begin;
         }

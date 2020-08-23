@@ -19,9 +19,9 @@ namespace TAK
                 Ellipsoid2(const Point2<double> &center, const double radiusX, const double radiusY, const double radiusZ);
                 virtual ~Ellipsoid2();
             public: // GeometryModel interface
-                virtual bool intersect(Point2<double> *isectPoint, const Ray2<double> &ray) const;
-                virtual GeometryModel2::GeometryClass getGeomClass() const;
-                virtual void clone(std::unique_ptr<GeometryModel2, void(*)(const GeometryModel2 *)> &value) const;
+                virtual bool intersect(Point2<double> *isectPoint, const Ray2<double> &ray) const override;
+                virtual GeometryModel2::GeometryClass getGeomClass() const override;
+                virtual void clone(std::unique_ptr<GeometryModel2, void (*)(const GeometryModel2 *)> &value) const override;
             public:
                 const Point2<double> center;
                 const double radiusX;

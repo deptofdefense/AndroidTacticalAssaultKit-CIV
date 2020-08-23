@@ -15,7 +15,6 @@ import java.util.Set;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.impl.DatabaseImpl;
-import com.atakmap.interop.Pointer;
 import com.atakmap.util.Collections2;
 
 import android.database.Cursor;
@@ -72,7 +71,7 @@ public final class Databases {
 
             /**
              * ATAK-7984 Security - sanitize SQL table name.
-             * Chris Lawrence - The table name is implicitly whitelisted in the 
+             * The table name is implicitly whitelisted in the 
              * referenced code as it is derived directly from sqlite_master and 
              * not provided by the client.  We could explore an empty set query, 
              * but I'm leaning towards asking this to be waived given the current 

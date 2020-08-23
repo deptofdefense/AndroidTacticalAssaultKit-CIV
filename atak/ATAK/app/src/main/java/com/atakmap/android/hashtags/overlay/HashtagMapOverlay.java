@@ -46,6 +46,7 @@ import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.android.util.AttachmentWatcher;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.locale.LocaleUtil;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -337,7 +338,8 @@ public class HashtagMapOverlay extends AbstractMapOverlay2 implements
         public Set<HierarchyListItem> find(String terms) {
             Set<HierarchyListItem> ret = new HashSet<>();
             for (HierarchyListItem item : getChildren()) {
-                if (item.getTitle().toLowerCase().contains(terms))
+                if (item.getTitle().toLowerCase(LocaleUtil.getCurrent())
+                        .contains(terms))
                     ret.add(item);
             }
             return ret;

@@ -39,8 +39,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_PersistentDataSourc
     PersistentDataSourceFeatureDataStore2 *impl = JLONG_TO_INTPTR(PersistentDataSourceFeatureDataStore2, ptr);
     if(!impl)
         return NULL;
-    FeatureDataStore2Ptr base(impl, Memory_leaker_const<FeatureDataStore2>);
-    return NewPointer(env, std::move(base));
+    return NewPointer(env, impl, true);
 }
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_layer_feature_PersistentDataSourceFeatureDataStore2_contains
   (JNIEnv *env, jclass clazz, jlong ptr, jstring jpath)

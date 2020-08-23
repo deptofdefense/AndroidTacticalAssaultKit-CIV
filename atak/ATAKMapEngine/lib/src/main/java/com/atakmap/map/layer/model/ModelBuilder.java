@@ -9,7 +9,6 @@ import com.atakmap.math.PointD;
 import java.nio.Buffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,7 +17,6 @@ import java.util.Map;
 public final class ModelBuilder {
     private static final String TAG = "ModelBuilder";
     private MeshBuilder mesh;
-    //private Map<Integer, List<MeshReference>> meshList = new LinkedHashMap<>();
     private List<MeshReference> meshes = new LinkedList<>();
     private Map<Integer, MeshReference> instancedMeshData = new LinkedHashMap<>();
 
@@ -423,7 +421,7 @@ public final class ModelBuilder {
             return false;
         }
         public void dispose() {
-            this.builder.finalize();
+            this.builder.dispose();
         }
     }
 
@@ -484,16 +482,16 @@ public final class ModelBuilder {
 
     /*************************************************************************/
 
-    static native long create(int drawMode, int attrs);
-    static native long create(int drawMode, int attrs, int indexType);
-    static native long create(int drawMode,
+    static native Pointer create(int drawMode, int attrs);
+    static native Pointer create(int drawMode, int attrs, int indexType);
+    static native Pointer create(int drawMode,
                               int attrs,
                               int posType, int posOff, int posStride,
                               int texCoordType, int texCoordOff, int texCoordStride,
                               int normalType, int normalOff, int normalStride,
                               int colorType, int colorOff, int colorStride,
                               boolean interleaved);
-    static native long create(int drawMode,
+    static native Pointer create(int drawMode,
                               int attrs,
                               int posType, int posOff, int posStride,
                               int texCoordType, int texCoordOff, int texCoordStride,
@@ -517,7 +515,7 @@ public final class ModelBuilder {
                                  float r, float g, float b, float a);
     static native void addIndex(long pointer, int index);
     static native Pointer build(long pointer);
-    static native void destruct(long pointer);
+    static native void destruct(Pointer pointer);
 
     static native Pointer build(int tedm, int tewo,
                                 int attrs,

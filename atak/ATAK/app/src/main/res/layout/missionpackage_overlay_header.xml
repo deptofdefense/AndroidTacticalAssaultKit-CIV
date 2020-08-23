@@ -15,20 +15,20 @@
         android:background="@drawable/overlay_title_background"/>
 
     <ImageButton
-        android:id="@+id/edit"
-        android:layout_width="@dimen/dropdown_bottom_bar_height"
-        android:layout_height="@dimen/dropdown_bottom_bar_height"
-        android:padding="5dp"
-        android:src="@drawable/edit"
-        android:scaleType="fitXY"
-        android:background="@drawable/overlay_title_background"/>
-
-    <ImageButton
         android:id="@+id/create"
         android:layout_width="@dimen/dropdown_bottom_bar_height"
         android:layout_height="@dimen/dropdown_bottom_bar_height"
         android:padding="5dp"
         android:src="@drawable/ic_menu_plus"
+        android:scaleType="fitXY"
+        android:background="@drawable/overlay_title_background"/>
+
+    <ImageButton
+        android:id="@+id/edit"
+        android:layout_width="@dimen/dropdown_bottom_bar_height"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:padding="@dimen/auto_space_big"
+        android:src="@drawable/ic_edit"
         android:scaleType="fitXY"
         android:background="@drawable/overlay_title_background"/>
 
@@ -46,7 +46,7 @@
         android:layout_width="@dimen/dropdown_bottom_bar_height"
         android:layout_height="@dimen/dropdown_bottom_bar_height"
         android:padding="5dp"
-        android:src="@drawable/details"
+        android:src="@drawable/ic_details"
         android:scaleType="fitXY"
         android:background="@drawable/overlay_title_background"/>
 

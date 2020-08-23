@@ -155,6 +155,46 @@ public class VideoMapComponent extends DropDownMapComponent {
      * @param alias the alias or common name for the stream
      * @param port the port to be used to open the video
      * @param rtspReliable if it should be using rtsp reliable 0 == no / 1 == yes
+     * @param passphrase is the pasphrase required for the connection
+     * @param path the path
+     * @param protocol the protocol
+     * @param networkTimeout the network timeout
+     * @param bufferTime the buffering timeout
+     */
+    public static void addVideoAlias(final String address,
+            final String uid,
+            final String alias,
+            final int port,
+            final int rtspReliable,
+            final String passphrase,
+            final String path,
+            final String protocol,
+            final int networkTimeout,
+            final int bufferTime) {
+        try {
+            final ConnectionEntry ce = new ConnectionEntry(alias, address, null,
+                    port, -1,
+                    path, ConnectionEntry.Protocol.fromString(protocol),
+                    networkTimeout,
+                    bufferTime, rtspReliable, passphrase,
+                    ConnectionEntry.Source.LOCAL_STORAGE);
+            ce.setUID(uid);
+
+            VideoManager.getInstance().addEntry(ce);
+        } catch (Exception e) {
+            Log.e(TAG, "error adding a new or updating an existing alias", e);
+        }
+    }
+
+
+    /**
+     * Given a set of parameters, this will construct a video connection entry and add it to the
+     * video managemement system.
+     * @param address the address of the video
+     * @param uid the uid for the video
+     * @param alias the alias or common name for the stream
+     * @param port the port to be used to open the video
+     * @param rtspReliable if it should be using rtsp reliable 0 == no / 1 == yes
      * @param path the path
      * @param protocol the protocol
      * @param networkTimeout the network timeout
@@ -174,7 +214,7 @@ public class VideoMapComponent extends DropDownMapComponent {
                     port, -1,
                     path, ConnectionEntry.Protocol.fromString(protocol),
                     networkTimeout,
-                    bufferTime, rtspReliable,
+                    bufferTime, rtspReliable, "",
                     ConnectionEntry.Source.LOCAL_STORAGE);
             ce.setUID(uid);
 
@@ -183,5 +223,6 @@ public class VideoMapComponent extends DropDownMapComponent {
             Log.e(TAG, "error adding a new or updating an existing alias", e);
         }
     }
+
 
 }

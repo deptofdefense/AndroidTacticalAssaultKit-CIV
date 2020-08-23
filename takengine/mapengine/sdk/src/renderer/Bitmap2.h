@@ -14,7 +14,7 @@ namespace TAK {
             public :
                 typedef std::unique_ptr<uint8_t, void(*)(const uint8_t *)> DataPtr;
             public :
-                enum ENGINE_API Format
+                enum Format
                 {
                     ARGB32,
                     RGBA32,

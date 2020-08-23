@@ -3,6 +3,8 @@ package com.atakmap.android.importfiles.sort;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.drawable.Drawable;
+import android.util.Pair;
 
 import com.atakmap.app.R;
 
@@ -167,6 +169,16 @@ public class ImportCotSort extends ImportResolver {
     @Override
     public String getDisplayableName() {
         return _context.getString(R.string.cot_event);
+    }
+
+    @Override
+    public Drawable getIcon() {
+        return _context.getDrawable(R.drawable.unknown);
+    }
+
+    @Override
+    public Pair<String, String> getContentMIME() {
+        return new Pair<>("CoT Event", "application/cot+xml");
     }
 
     @Override

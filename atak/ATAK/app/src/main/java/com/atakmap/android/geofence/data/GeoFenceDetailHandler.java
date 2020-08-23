@@ -168,6 +168,7 @@ public class GeoFenceDetailHandler extends CotDetailHandler {
 
         if (gf != null) {
             Log.d(TAG, "dispatching fence from item: " + item);
+            item.setMetaBoolean(GeoFenceConstants.GEO_FENCE_IMPORTED, true);
             GeoFenceComponent.getInstance().dispatch(gf, item);
             return ImportResult.SUCCESS;
         } else {

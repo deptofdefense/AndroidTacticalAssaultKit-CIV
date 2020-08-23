@@ -19,7 +19,7 @@ GLTextureAtlas2::Rect::Rect() :
     splitFreeHorizontal(false)
 {}
 
-GLTextureAtlas2::Rect::Rect(const int x, const int y, const int width, const int height, const bool splitFreeHorizontal) :
+GLTextureAtlas2::Rect::Rect(const int x, const int y, const size_t width, const size_t height, const bool splitFreeHorizontal) :
     x(x),
     y(y),
     width(width),
@@ -30,57 +30,57 @@ GLTextureAtlas2::Rect::Rect(const int x, const int y, const int width, const int
     instance = nextInstance++;
 }
 
-GLTextureAtlas2::SheetRects::SheetRects(const int texid_) NOTHROWS :
-    texid(texid_),
+GLTextureAtlas2::SheetRects::SheetRects(const int tex_id) NOTHROWS :
+    texid(tex_id),
     limit(RECT_SHEET_SIZE),
     rectPtr(new GLTextureAtlas2::Rect[limit]),
     rect(rectPtr.get()),
     numRects(0)
 {}
 
-const GLTextureAtlas2::SheetRects *GLTextureAtlas2::SheetRects::find(const int texid) const NOTHROWS
+const GLTextureAtlas2::SheetRects *GLTextureAtlas2::SheetRects::find(const int tex_id) const NOTHROWS
 {
     const SheetRects *iter = this;
     while (iter)
     {
-        if (iter->texid == texid)
+        if (iter->texid == tex_id)
         {
             return iter;
         }
 
         iter = iter->next.get();
     }
-    return NULL;
+    return nullptr;
 }
 
 GLTextureAtlas2::GLTextureAtlas2(const std::size_t texSize_) NOTHROWS :
     iconSize(0),
-    texSize(1 << (int)ceil(log(texSize_) / log(2))),
+    texSize(((std::size_t)1) << (int)ceil(log(texSize_) / log(2))),
     fixedIconSize(false),
     freeIndex(0),
     currentTexId(0),
     splitFreeHorizontal(false),
-    currentSheetRects(NULL)
+    currentSheetRects(nullptr)
 {}
 
 GLTextureAtlas2::GLTextureAtlas2(const std::size_t texSize_, const bool splitHorizontal_) NOTHROWS :
     iconSize(0),
-    texSize(1 << (int)ceil(log(texSize_) / log(2))),
+    texSize(((std::size_t)1) << (int)ceil(log(texSize_) / log(2))),
     fixedIconSize(false),
     freeIndex(0),
     currentTexId(0),
     splitFreeHorizontal(splitHorizontal_),
-    currentSheetRects(NULL)
+    currentSheetRects(nullptr)
 {}
 
 GLTextureAtlas2::GLTextureAtlas2(const std::size_t texSize_, const std::size_t iconSize_) NOTHROWS :
     iconSize(iconSize_),
-    texSize(1 << (int)ceil(log(texSize_) / log(2))),
+    texSize(((std::size_t)1) << (int)ceil(log(texSize_) / log(2))),
     fixedIconSize(iconSize_ > 0),
     freeIndex(0),
     currentTexId(0),
     splitFreeHorizontal(false),
-    currentSheetRects(NULL)
+    currentSheetRects(nullptr)
 {}
 
 GLTextureAtlas2::~GLTextureAtlas2() NOTHROWS
@@ -99,7 +99,7 @@ TAKErr GLTextureAtlas2::release() NOTHROWS
     uriToKey.clear();
     keyToIconRectOverflow.clear();
     sheetRects.reset();
-    currentSheetRects = NULL;
+    currentSheetRects = nullptr;
 
     std::set<int>::iterator siter;
     for (siter = texIds.begin(); siter != texIds.end(); ++siter)
@@ -178,7 +178,7 @@ TAKErr GLTextureAtlas2::getImageRect(atakmap::math::Rectangle<float> *value, con
         code = getIndex(&index, key);
         TE_CHECKRETURN_CODE(code);
 
-        int numIconCols = (texSize / iconSize);
+        size_t numIconCols = (texSize / iconSize);
         value->y = (float)((index / numIconCols) * iconSize);
         value->x = (float)((index % numIconCols) * iconSize);
         value->height = (float)iconSize;
@@ -192,7 +192,7 @@ TAKErr GLTextureAtlas2::getImageRect(atakmap::math::Rectangle<float> *value, con
         TE_CHECKRETURN_CODE(code);
 
         // find the sheet
-        const SheetRects *rects = NULL;
+        const SheetRects *rects = nullptr;
         if (currentSheetRects && currentSheetRects->texid == texid) {
             // check if it's the current sheet
             rects = currentSheetRects;
@@ -296,7 +296,6 @@ TAKErr GLTextureAtlas2::getImageTextureOffsetX(std::size_t *value, const int64_t
         *value = (index % numIconCols) * iconSize;
         return code;
     } else {
-        TAKErr code(TE_Ok);
         atakmap::math::Rectangle<float> r;
         code = getImageRect(&r, key, false);
         TE_CHECKRETURN_CODE(code);
@@ -320,7 +319,6 @@ TAKErr GLTextureAtlas2::getImageTextureOffsetY(std::size_t *value, const int64_t
         *value = (index / numIconCols) * iconSize;
         return code;
     } else {
-        TAKErr code(TE_Ok);
         atakmap::math::Rectangle<float> r;
         code = getImageRect(&r, key, false);
         TE_CHECKRETURN_CODE(code);
@@ -350,12 +348,12 @@ TAKErr GLTextureAtlas2::addImage(int64_t *value, const char *uri, const Bitmap2 
 
     // allocate a new texture if the current is filled
     if (fixedIconSize) {
-        int numIcons = (texSize / iconSize);
+        size_t numIcons = (texSize / iconSize);
         if (freeIndex == (numIcons * numIcons))
             currentTexId = 0;
     } else {
         Rect bound(0, 0, bitmap->getWidth(), bitmap->getHeight(), splitFreeHorizontal);
-        std::set<Rect, GLTextureAtlasRectComp>::iterator iter = freeList.lower_bound(bound);
+        auto iter = freeList.lower_bound(bound);
         bool haveFree = false;
         while (iter != freeList.end()) {
             Rect r = *iter;
@@ -385,8 +383,8 @@ TAKErr GLTextureAtlas2::addImage(int64_t *value, const char *uri, const Bitmap2 
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-            texSize, texSize, 0,
-            GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+            static_cast<GLsizei>(texSize), static_cast<GLsizei>(texSize), 0,
+            GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
         freeIndex = 0;
         if (!fixedIconSize) {
@@ -408,21 +406,21 @@ TAKErr GLTextureAtlas2::addImage(int64_t *value, const char *uri, const Bitmap2 
     int64_t retval = ((int64_t)currentTexId << 32L)
         | ((int64_t)freeIndex & 0xFFFFFFFFL);
     if (fixedIconSize) {
-        int numIconCols = (texSize / iconSize);
-        int x = (freeIndex % numIconCols) * iconSize;
-        int y = (freeIndex / numIconCols) * iconSize;
+        size_t numIconCols = (texSize / iconSize);
+        int x = static_cast<int>((freeIndex % numIconCols) * iconSize);
+        int y = static_cast<int>((freeIndex / numIconCols) * iconSize);
 
-        glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, bitmap->getWidth(), bitmap->getHeight(),
+        glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, static_cast<GLsizei>(bitmap->getWidth()), static_cast<GLsizei>(bitmap->getHeight()),
             bitmapGLFormat, bitmapGLType, bitmap->getData());
     }
     else {
         Rect iconR(0, 0, bitmap->getWidth(), bitmap->getHeight(), splitFreeHorizontal);
-        std::set<Rect, GLTextureAtlasRectComp>::iterator iter = freeList.lower_bound(iconR);
+        auto iter = freeList.lower_bound(iconR);
         Rect free(0, 0, 0, 0, false);
         bool gotit = false;
         while (iter != freeList.end()) {
             free = *iter;
-            std::set<Rect, GLTextureAtlasRectComp>::iterator freeIter = iter;
+            auto freeIter = iter;
             iter++;
             if (free.width >= bitmap->getWidth() && free.height >= bitmap->getHeight()) {
                 freeList.erase(freeIter);
@@ -443,30 +441,30 @@ TAKErr GLTextureAtlas2::addImage(int64_t *value, const char *uri, const Bitmap2 
         // split
         if (splitFreeHorizontal) {
             if (free.width > bitmap->getWidth())
-                freeList.insert(Rect(free.x + bitmap->getWidth(), free.y,
+                freeList.insert(Rect(free.x + static_cast<int>(bitmap->getWidth()), free.y,
                 free.width - bitmap->getWidth(),
                 free.height,
                 splitFreeHorizontal));
             if (free.height > bitmap->getHeight())
-                freeList.insert(Rect(free.x, free.y + bitmap->getHeight(),
+                freeList.insert(Rect(free.x, free.y + static_cast<int>(bitmap->getHeight()),
                 bitmap->getWidth(),
                 free.height - bitmap->getHeight(),
                 splitFreeHorizontal));
         }
         else {
             if (free.height > bitmap->getHeight())
-                freeList.insert(Rect(free.x, free.y + bitmap->getHeight(),
+                freeList.insert(Rect(free.x, free.y + static_cast<int>(bitmap->getHeight()),
                 free.width,
                 free.height - bitmap->getHeight(),
                 splitFreeHorizontal));
             if (free.width > bitmap->getWidth())
-                freeList.insert(Rect(free.x + bitmap->getWidth(), free.y,
+                freeList.insert(Rect(free.x + static_cast<int>(bitmap->getWidth()), free.y,
                 free.width - bitmap->getWidth(),
                 bitmap->getHeight(), splitFreeHorizontal));
         }
 
-        glTexSubImage2D(GL_TEXTURE_2D, 0, iconR.x, iconR.y, bitmap->getWidth(),
-            bitmap->getHeight(), bitmapGLFormat, bitmapGLType, bitmap->getData());
+        glTexSubImage2D(GL_TEXTURE_2D, 0, iconR.x, iconR.y, static_cast<GLsizei>(bitmap->getWidth()),
+            static_cast<GLsizei>(bitmap->getHeight()), bitmapGLFormat, bitmapGLType, bitmap->getData());
 
         if (currentSheetRects->numRects < currentSheetRects->limit && freeIndex == currentSheetRects->numRects)
         {
@@ -493,10 +491,10 @@ bool GLTextureAtlas2::GLTextureAtlasRectComp::operator() (const GLTextureAtlas2:
 {
     int retval;
     if (x.splitFreeHorizontal) {
-        retval = x.height - y.height;
+        retval = static_cast<int>(x.height) - static_cast<int>(y.height);
     }
     else {
-        retval = x.width - y.width;
+        retval = static_cast<int>(x.width) - static_cast<int>(y.width);
     }
     if (retval == 0)
         retval = (x.instance - y.instance);

@@ -44,7 +44,7 @@ MultiplexingElevationChunkCursor::MultiplexingElevationChunkCursor(Collection<st
         this->order.push_back(ElevationSource_resolutionDesc);
 
         if (!cursors_.empty()) {
-            Collection<std::shared_ptr<ElevationChunkCursor>>::IteratorPtr iter(NULL, NULL);
+            Collection<std::shared_ptr<ElevationChunkCursor>>::IteratorPtr iter(nullptr, nullptr);
             code = cursors_.iterator(iter);
             TE_CHECKBREAK_CODE(code);
 
@@ -81,7 +81,7 @@ MultiplexingElevationChunkCursor::MultiplexingElevationChunkCursor(Collection<st
 
 
         if (!cursors_.empty()) {
-            Collection<std::shared_ptr<ElevationChunkCursor>>::IteratorPtr iter(NULL, NULL);
+            Collection<std::shared_ptr<ElevationChunkCursor>>::IteratorPtr iter(nullptr, nullptr);
             code = cursors_.iterator(iter);
             TE_CHECKBREAK_CODE(code);
 
@@ -113,7 +113,7 @@ MultiplexingElevationChunkCursor::MultiplexingElevationChunkCursor(Collection<st
         if (order_.empty()) {
             this->order.push_back(ElevationSource_resolutionDesc);
         } else {
-            Collection<bool(*)(ElevationChunkCursor &, ElevationChunkCursor &)>::IteratorPtr iter(NULL, NULL);
+            Collection<bool(*)(ElevationChunkCursor &, ElevationChunkCursor &)>::IteratorPtr iter(nullptr, nullptr);
             code = order_.iterator(iter);
             TE_CHECKBREAK_CODE(code);
 
@@ -132,7 +132,7 @@ MultiplexingElevationChunkCursor::MultiplexingElevationChunkCursor(Collection<st
 
 
         if (!cursors_.empty()) {
-            Collection<std::shared_ptr<ElevationChunkCursor>>::IteratorPtr iter(NULL, NULL);
+            Collection<std::shared_ptr<ElevationChunkCursor>>::IteratorPtr iter(nullptr, nullptr);
             code = cursors_.iterator(iter);
             TE_CHECKBREAK_CODE(code);
 

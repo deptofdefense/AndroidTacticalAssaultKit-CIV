@@ -14,8 +14,11 @@ import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.app.NavUtils;
+import androidx.core.app.NavUtils;
+
+import android.text.InputFilter;
 import android.text.InputType;
+import android.text.Spanned;
 import android.util.DisplayMetrics;
 import android.view.DragEvent;
 import android.view.Menu;
@@ -41,6 +44,7 @@ import android.content.BroadcastReceiver;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.metrics.activity.MetricActivity;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.tools.menu.ActionMenuData;
 import com.atakmap.android.tools.menu.ActionMenuData.PreferredMenu;
@@ -60,11 +64,12 @@ import java.util.List;
 /**
  * 
  */
-public class AllToolsConfigMenuActivity extends Activity {
+public class AllToolsConfigMenuActivity extends MetricActivity {
 
     protected static final String TAG = "AllToolsConfigMenuActivity";
 
-    private static final int MAX_MENU_NAMELENGTH = 10;
+    public static final int MAX_NAME_LENGTH = 10;
+    public static final String NAME_REGEX = "[^A-Za-z0-9-_.\u0600-\u06FF]";
 
     private GridView _gridviewActionBar;
     private GridView _gridviewHidden;
@@ -246,7 +251,7 @@ public class AllToolsConfigMenuActivity extends Activity {
         DocumentedIntentFilter filter = new DocumentedIntentFilter();
         filter.addAction(
                 "com.atakmap.app.QUITAPP",
-                "Intent to start the quiting process, if the boolean extra FORCE_QUIT is set, the the application will not prompt the user before quitting");
+                "Intent to start the quiting process, if the boolean extra FORCE_QUIT is set, the application will not prompt the user before quitting");
 
         if (MapView.getMapView() != null)
             AtakBroadcast.getInstance().registerReceiver(_quitReceiver, filter);
@@ -497,6 +502,7 @@ public class AllToolsConfigMenuActivity extends Activity {
         } else if (id == R.id.allToolsConfigSave) {
             final EditText editName = new EditText(this);
             editName.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+            editName.setFilters(getNameFilters(this));
             AlertDialog.Builder b = new AlertDialog.Builder(this);
             b.setTitle(R.string.tool_text7);
             b.setView(editName);
@@ -723,10 +729,10 @@ public class AllToolsConfigMenuActivity extends Activity {
             return s;
 
         // set max name length
-        if (s.length() > MAX_MENU_NAMELENGTH)
-            s = s.substring(0, MAX_MENU_NAMELENGTH);
+        if (s.length() > MAX_NAME_LENGTH)
+            s = s.substring(0, MAX_NAME_LENGTH);
 
-        String retval = s.trim().replaceAll("[^A-Za-z0-9-_.\u0600-\u06FF]", "");
+        String retval = s.trim().replaceAll(NAME_REGEX, "");
         Log.d(TAG, "sanitized text: " + retval);
         return retval;
     }
@@ -1408,5 +1414,26 @@ public class AllToolsConfigMenuActivity extends Activity {
         public String getDescription() {
             return _description;
         }
+    }
+
+    public static InputFilter[] getNameFilters(final Activity act) {
+        return new InputFilter[] {
+                new InputFilter.LengthFilter(MAX_NAME_LENGTH),
+                new InputFilter() {
+                    @Override
+                    public CharSequence filter(CharSequence source,
+                            int s, int e, Spanned dest, int dstart, int dend) {
+                        for (int i = s; i < e; i++) {
+                            if (Character.toString(source.charAt(i))
+                                    .matches(NAME_REGEX)) {
+                                Toast.makeText(act, R.string.invalid_input,
+                                        Toast.LENGTH_SHORT).show();
+                                return "";
+                            }
+                        }
+                        return null;
+                    }
+                }
+        };
     }
 }

@@ -373,7 +373,7 @@ public class ImageryCapturePP extends CapturePP {
                 + "</kml>";
         try {
             PrintWriter out = new PrintWriter(docKml,
-                    FileSystemUtils.UTF8_CHARSET);
+                    FileSystemUtils.UTF8_CHARSET.name());
             out.println(docSkel);
             out.close();
         } catch (IOException ioe) {

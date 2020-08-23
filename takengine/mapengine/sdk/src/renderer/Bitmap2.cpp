@@ -90,7 +90,7 @@ Bitmap2::Bitmap2() NOTHROWS :
     height(0),
     format(ARGB32),
     stride(0),
-    dataPtr(NULL, NULL)
+    dataPtr(nullptr, nullptr)
 {}
 
 Bitmap2::Bitmap2(const std::size_t width_, const std::size_t height_, const Format format_) NOTHROWS :
@@ -98,7 +98,7 @@ Bitmap2::Bitmap2(const std::size_t width_, const std::size_t height_, const Form
     height(height_),
     format(format_),
     stride(width_*formatSize[format_]),
-    dataPtr(NULL, NULL)
+    dataPtr(nullptr, nullptr)
 {
     Bitmap2_createBuffer(dataPtr, width, height, format);
 }
@@ -124,7 +124,7 @@ Bitmap2::Bitmap2(const Bitmap2 &other) NOTHROWS :
     height(other.height),
     format(other.format),
     stride(other.width*formatSize[other.format]),
-    dataPtr(NULL, NULL)
+    dataPtr(nullptr, nullptr)
 {
     Bitmap2_createBuffer(dataPtr, width, height, format);
 
@@ -136,7 +136,7 @@ Bitmap2::Bitmap2(const Bitmap2 &other, const std::size_t width_, const std::size
     height(height_),
     format(other.format),
     stride(width_*formatSize[other.format]),
-    dataPtr(NULL, NULL)
+    dataPtr(nullptr, nullptr)
 {
     Bitmap2_createBuffer(dataPtr, width, height, format);
 
@@ -157,7 +157,7 @@ Bitmap2::Bitmap2(const Bitmap2 &other, const std::size_t width_, const std::size
     height(height_),
     format(format_),
     stride(width_*formatSize[format_]),
-    dataPtr(NULL, NULL)
+    dataPtr(nullptr, nullptr)
 {
     Bitmap2_createBuffer(dataPtr, width, height, format);
 
@@ -173,7 +173,7 @@ Bitmap2::Bitmap2(const Bitmap2 &other, const Format format_) NOTHROWS :
     height(other.height),
     format(format_),
     stride(other.width*formatSize[format_]),
-    dataPtr(NULL, NULL)
+    dataPtr(nullptr, nullptr)
 {
     Bitmap2_createBuffer(dataPtr, width, height, format);
 
@@ -193,7 +193,7 @@ TAKErr Bitmap2::subimage(BitmapPtr &value, const std::size_t x, const std::size_
         DataPtr subdata(this->dataPtr.get() + off, Memory_leaker_const<uint8_t>);
         value = BitmapPtr(new Bitmap2(std::move(subdata), w, h, this->stride, this->format), Memory_deleter_const<Bitmap2>);
     } else {
-        DataPtr subdata(NULL, NULL);
+        DataPtr subdata(nullptr, nullptr);
         Bitmap2_createBuffer(subdata, w, h, this->format);
 
         const std::size_t dstStride = w*formatSize[this->format];
@@ -281,7 +281,7 @@ Bitmap2 &Bitmap2::operator=(const Bitmap2 &other)
 TAKErr TAK::Engine::Renderer::Bitmap2_createBuffer(Bitmap2::DataPtr &value, std::size_t width, std::size_t height, Bitmap2::Format format)
 {
     if (width == 0 && height == 0) {
-        value = Bitmap2::DataPtr(NULL, NULL);
+        value = Bitmap2::DataPtr(nullptr, nullptr);
         return TE_Ok;
     } else if (width == 0 || height == 0) {
         return TE_InvalidArg;
@@ -298,6 +298,11 @@ TAKErr TAK::Engine::Renderer::Bitmap2_formatPixelSize(std::size_t *value, const 
     *value = formatSize[format];
     return TE_Ok;
 }
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4101)
+#endif
 
 namespace
 {
@@ -434,20 +439,20 @@ CONVERSION_FN_DEFNS(BGR24,
     void resize(uint8_t *dst, const std::size_t dstW, const std::size_t dstH, const std::size_t dstStride, const uint8_t *src, const std::size_t srcW, const std::size_t srcH, const std::size_t srcStride, const std::size_t pixelBytes) NOTHROWS
     {
         uint8_t *pDst;
-        int srcX;
-        int srcY;
+        std::size_t srcX;
+        std::size_t srcY;
         for (std::size_t dstY = 0; dstY < dstH; dstY++) {
             pDst = dst + (dstY*dstStride);
 
             // compute srcY
-            srcY = (int)(((double)dstY / (double)dstH) * (double)srcH + 0.5);
+            srcY = static_cast<std::size_t>((((double)dstY / (double)dstH) * (double)srcH + 0.5));
             //srcY = dstY;
             if (srcY < 0) srcY = 0;
             else if (srcY >= srcH) srcY = srcH - 1;
 
             for (std::size_t dstX = 0; dstX < dstW; dstX++) {
                 // compute srcX
-                srcX = (int)(((double)dstX / (double)dstW) * (double)srcW + 0.5);
+                srcX = static_cast<std::size_t>((((double)dstX / (double)dstW) * (double)srcW + 0.5));
                 //srcX = dstX;
                 if (srcX < 0) srcX = 0;
                 else if (srcX >= srcW) srcX = srcW - 1;
@@ -458,3 +463,7 @@ CONVERSION_FN_DEFNS(BGR24,
         }
     }
 }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

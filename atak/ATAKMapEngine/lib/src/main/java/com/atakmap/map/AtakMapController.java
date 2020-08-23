@@ -1,40 +1,31 @@
 
 package com.atakmap.map;
 
-import java.util.Stack;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import android.graphics.Point;
 import android.graphics.PointF;
 
-import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.coremap.maps.coords.GeoCalculations;
-
-import com.atakmap.map.projection.Projection;
-import com.atakmap.math.MathUtils;
-import com.atakmap.math.PointD;
 
 /**
  * Control object for moving the ortho-graphic map around the MapView
+ *
  */
 public class AtakMapController {
 
     public static final String TAG = "MapController";
 
-
-
-
     /**************************************************************************/
 
     private AtakMapView _mapView;
-    private ConcurrentLinkedQueue<OnFocusPointChangedListener> _focusListeners = new ConcurrentLinkedQueue<OnFocusPointChangedListener>();
+    private ConcurrentLinkedQueue<OnFocusPointChangedListener> _focusListeners = new ConcurrentLinkedQueue<>();
     private ConcurrentLinkedQueue<OnPanRequestedListener> _panListeners = new ConcurrentLinkedQueue<OnPanRequestedListener>();
-    private Stack<Point> _focusPointQueue = new Stack<Point>();
-    private Point _defaultFocusPoint = new Point(0, 0);
+
 
     /**
      * Listener for map control implementations
+     *
      */
     public static interface OnFocusPointChangedListener {
 
@@ -43,6 +34,7 @@ public class AtakMapController {
 
     /**
      * Listener for map pan implementations
+     *
      */
     public static interface OnPanRequestedListener {
 
@@ -52,6 +44,16 @@ public class AtakMapController {
 
     AtakMapController(AtakMapView view) {
         _mapView = view;
+
+        _mapView.globe.addOnFocusPointChangedListener(new Globe.OnFocusPointChangedListener() {
+            @Override
+            public void onFocusPointChanged(Globe view, float focusx, float focusy) {
+                _mapView.tMapSceneModel = _mapView.renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
+                for(OnFocusPointChangedListener l : _focusListeners)
+                    l.onFocusPointChanged(focusx, focusy);
+            }
+        });
+
     }
 
     /**
@@ -61,10 +63,7 @@ public class AtakMapController {
      */
     public void addOnFocusPointChangedListener(OnFocusPointChangedListener l) {
         _focusListeners.add(l);
-
-        Point focusPoint = getFocusPointInternal ();
-
-        l.onFocusPointChanged (focusPoint.x, focusPoint.y);
+        l.onFocusPointChanged (getFocusX(), getFocusY());
     }
 
     /**
@@ -233,10 +232,8 @@ public class AtakMapController {
         if (!point.isValid ())
             return;
 
-        Point focusPoint = getFocusPointInternal ();
-
         panTo (point, animate);
-        panBy (focusPoint.x - viewx, viewy - focusPoint.y, animate);
+        panBy (getFocusX() - viewx, viewy - getFocusY(), animate);
     }
 
     /**
@@ -281,46 +278,19 @@ public class AtakMapController {
      * @param notify    If true, notify pan listeners
      */
     public void panBy(float x, float y, boolean animate, boolean notify) {
-        panByScaleRotate(x, y, _mapView.getMapScale(),
-                _mapView.getMapRotation(), animate, notify);
-    }
+        if(notify)
+            dispatchOnPanRequested();
 
-    private void panByScaleRotate(float x, float y, double scale,
-                                  double rotation, boolean animate) {
-        panByScaleRotate(x, y, scale, rotation, animate, true);
+        Globe.panBy(_mapView.globe, x, y, animate);
     }
 
     private void panByScaleRotate(float x, float y, double scale,
                                   double rotation, boolean animate, boolean notify) {
-        Point focusPoint = getFocusPointInternal ();
-
-        MapSceneModel sm = new MapSceneModel(_mapView,
-                _mapView.getProjection(), _mapView.getPoint().get(),
-                focusPoint.x, focusPoint.y,
-                _mapView.getMapRotation(), _mapView.getMapTilt(),
-                _mapView.getMapScale(),
-                _mapView.isContinuousScrollEnabled());
-        GeoPoint tgt = GeoPoint.createMutable();
-        sm.inverse (new PointF(focusPoint.x + x, focusPoint.y + y), tgt);
-
-        if(_mapView.isContinuousScrollEnabled()) {
-            if(tgt.getLongitude() < -180d)
-                tgt.set(tgt.getLatitude(), tgt.getLongitude()+360d, tgt.getAltitude(), tgt.getAltitudeReference(), tgt.getCE(), tgt.getLE());
-            else if(tgt.getLongitude() > 180d)
-                tgt.set(tgt.getLatitude(), tgt.getLongitude()-360d, tgt.getAltitude(), tgt.getAltitudeReference(), tgt.getCE(), tgt.getLE());
-        }
-
-        if (!tgt.isValid())
-            return;
 
         if(notify)
             dispatchOnPanRequested();
 
-        _mapView.updateView (tgt.getLatitude (),
-                tgt.getLongitude (),
-                scale, rotation,
-                _mapView.getMapTilt(),
-                animate);
+        Globe.panByScaleRotate(_mapView.globe, x, y, scale, rotation, animate);
     }
 
     /**
@@ -335,28 +305,7 @@ public class AtakMapController {
         if (Double.isNaN(scale))
             return;
 
-        _mapView.updateView (_mapView.getLatitude (),
-                             _mapView.getLongitude (),
-                             scale,
-                             _mapView.getMapRotation (),
-                             _mapView.getMapTilt(),
-                             animate);
-    }
-
-    void setDefaultFocusPoint(int offx, int offy) {
-        final boolean needToDispatchFocus;
-        synchronized (_focusPointQueue) {
-            if(_defaultFocusPoint.x != offx || _defaultFocusPoint.y != offy) {
-                _defaultFocusPoint.x = offx;
-                _defaultFocusPoint.y = offy;
-                Log.d(TAG, "*** set default focus: " + offx + "," + offy);
-                needToDispatchFocus = (_focusPointQueue.size() < 1);
-            } else {
-                needToDispatchFocus = false;
-            }
-        }
-        if (needToDispatchFocus)
-            dispatchOnFocusPointChanged(offx, offy);
+        Globe.zoomTo(_mapView.globe, scale, animate);
     }
 
     /**
@@ -365,7 +314,18 @@ public class AtakMapController {
      * @return The current focus point of the map.
      */
     public Point getFocusPoint() {
-        return new Point (getFocusPointInternal ());
+        final float focusX;
+        final float focusY;
+        _mapView.globe.rwlock.acquireRead();
+        try {
+            if(_mapView.globe.pointer.raw == 0L)
+                return new Point(0, 0);
+            focusX = Globe.getFocusPointX(_mapView.globe.pointer.raw);
+            focusY = Globe.getFocusPointY(_mapView.globe.pointer.raw);
+        } finally {
+            _mapView.globe.rwlock.releaseRead();
+        }
+        return new Point ((int)focusX, (int)focusY);
     }
 
     /**
@@ -374,7 +334,14 @@ public class AtakMapController {
      * @return The x-coordinate of the current focus.
      */
     public float getFocusX() {
-        return getFocusPointInternal ().x;
+        _mapView.globe.rwlock.acquireRead();
+        try {
+            if(_mapView.globe.pointer.raw == 0L)
+                return 0f;
+            return Globe.getFocusPointX(_mapView.globe.pointer.raw);
+        } finally {
+            _mapView.globe.rwlock.releaseRead();
+        }
     }
 
     /**
@@ -383,20 +350,15 @@ public class AtakMapController {
      * @return The y-coordinate of the current focus.
      */
     public float getFocusY() {
-        return getFocusPointInternal ().y;
+        _mapView.globe.rwlock.acquireRead();
+        try {
+            if(_mapView.globe.pointer.raw == 0L)
+                return 0f;
+            return Globe.getFocusPointY(_mapView.globe.pointer.raw);
+        } finally {
+            _mapView.globe.rwlock.releaseRead();
+        }
     }
-
-    private
-    Point
-    getFocusPointInternal ()
-      {
-        synchronized (_focusPointQueue)
-          {
-            return _focusPointQueue.isEmpty ()
-                ? _defaultFocusPoint
-                : _focusPointQueue.peek ();
-          }
-      }
 
     /**
      * Modifies the scale of the map and translates by the specified number of
@@ -412,22 +374,8 @@ public class AtakMapController {
                         float xpos,
                         float ypos,
                         boolean animate) {
-        
-        double newScale = _mapView.getMapScale () * scaleFactor;
-        
-        // Don't zoom to NaN
-        if (Double.isNaN (newScale))
-            return;
 
-        newScale = MathUtils.clamp(newScale,
-                                   _mapView.getMinMapScale (),
-                                   _mapView.getMaxMapScale ());
-
-        this.updateBy(newScale,
-                      _mapView.getMapRotation(),
-                      _mapView.getMapTilt(),
-                      xpos, ypos,
-                      animate);
+        Globe.zoomBy(_mapView.globe, scaleFactor, xpos, ypos, animate);
     }
     
     
@@ -440,12 +388,8 @@ public class AtakMapController {
      */
     public void rotateTo (double rotation,
                           boolean animate) {
-        _mapView.updateView (_mapView.getLatitude (),
-                             _mapView.getLongitude (),
-                             _mapView.getMapScale (),
-                             rotation,
-                             _mapView.getMapTilt(),
-                             animate);
+
+        Globe.rotateTo(_mapView.globe, rotation, animate);
     }
     
     public void rotateBy (double theta,
@@ -453,38 +397,27 @@ public class AtakMapController {
                           float ypos,
                           boolean animate) {
 
-        double newRotation = _mapView.getMapRotation () + theta;
-        
-        // Don't zoom to NaN
-        if (Double.isNaN (newRotation))
-            return;
-        
-        this.updateBy(_mapView.getMapScale(),
-                      newRotation,
-                      _mapView.getMapTilt(),
-                      xpos, ypos,
-                      animate);
+        Globe.rotateBy(_mapView.globe, theta, xpos, ypos, animate);
     }
 
     public void tiltTo(double tilt,
                        boolean animate) {
-        _mapView.updateView (_mapView.getLatitude (),
-                _mapView.getLongitude (),
-                _mapView.getMapScale (),
-                _mapView.getMapRotation(),
-                tilt,
-                animate);
+
+        Globe.tiltTo(_mapView.globe, tilt, animate);
     }
 
     public void tiltTo(double tilt,
                        double rotation,
                        boolean animate) {
-        _mapView.updateView (_mapView.getLatitude (),
-                             _mapView.getLongitude (),
-                             _mapView.getMapScale (),
-                             rotation,
-                             tilt,
-                             animate);
+
+        _mapView.globe.rwlock.acquireRead();
+        try {
+            if(_mapView.globe.pointer.raw == 0L)
+                return;
+            Globe.tiltTo(_mapView.globe.pointer.raw, tilt, rotation, animate);
+        } finally {
+            _mapView.globe.rwlock.releaseRead();
+        }
     }
     
     public void tiltBy(double tilt,
@@ -492,198 +425,21 @@ public class AtakMapController {
                        float ypos,
                        boolean animate) {
 
-        double newTilt = _mapView.getMapTilt () + tilt;
-        
-        // Don't zoom to NaN
-        if (Double.isNaN (newTilt))
-            return;
-        
-        this.updateBy(_mapView.getMapScale(),
-                      _mapView.getMapRotation(),
-                      newTilt,
-                      xpos, ypos,
-                      animate);
-
+        Globe.tiltBy(_mapView.globe, tilt, xpos, ypos, animate);
     }
 
     public void tiltBy(double tilt,
                        GeoPoint focus,
                        boolean animate) {
 
-        double newTilt = _mapView.getMapTilt () + tilt;
-
-        // Don't zoom to NaN
-        if (Double.isNaN (newTilt))
-            return;
-
-        Point focusPoint = getFocusPointInternal();
-
-        MapSceneModel nadirSurface = new MapSceneModel(AtakMapView.DENSITY*240f,
-                                                       _mapView.getWidth(), _mapView.getHeight(),
-                                                       _mapView.getProjection(),
-                                                       new GeoPoint(focus.getLatitude(), focus.getLongitude()),
-                                                       focusPoint.x, focusPoint.y,
-                                                       0d,
-                                                       0d,
-                                                       _mapView.getMapResolution(),
-                                                       _mapView.isContinuousScrollEnabled());
-
-        // compute cam->tgt range
-        double rangeSurface = MathUtils.distance(
-                nadirSurface.camera.location.x, nadirSurface.camera.location.y, nadirSurface.camera.location.z,
-                nadirSurface.camera.target.x, nadirSurface.camera.target.y, nadirSurface.camera.target.z
-        );
-
-
-        PointD point2Proj = nadirSurface.mapProjection.forward(focus, null);
-
-        double rangeElevated = MathUtils.distance(
-                nadirSurface.camera.location.x, nadirSurface.camera.location.y, nadirSurface.camera.location.z,
-                point2Proj.x, point2Proj.y, point2Proj.z
-        );
-
-        // scale resolution by cam->'point' distance
-        final double resolutionAtElevated = _mapView.getMapResolution() * (rangeSurface / rangeElevated);
-
-        // construct model to 'point' at altitude with scaled resolution with rotate/tilt
-        MapSceneModel scene = new MapSceneModel(AtakMapView.DENSITY*240,
-                _mapView.getWidth(),
-                _mapView.getHeight(),
-                _mapView.getProjection(),
-                focus,
-                focusPoint.x,
-                focusPoint.y,
-                _mapView.getMapRotation(),
-                newTilt,
-                resolutionAtElevated,
-                _mapView.isContinuousScrollEnabled()
-        );
-
-        // obtain new center
-        GeoPoint focusGeo2 =  scene.inverse(new PointF(focusPoint.x, focusPoint.y), null);
-        if(focusGeo2 == null) {
-            Log.w(TAG, "Unable to compute new tilt center: focus=" + focus + " new tilt=" + newTilt);
-            return;
-        }
-
-        // obtain new tilt
-        //double mapTilt = scene.camera.elevation + 90;
-        double mapTilt = newTilt;
-
-        // obtain new rotation
-        //double mapRotation = scene.camera.azimuth;
-        double mapRotation = _mapView.getMapRotation();
-
-        PointD focusGeo2Proj = scene.mapProjection.forward(focusGeo2, null);
-
-
-
-        //double terminalSlant = MathUtils.distance(
-        //        scene.camera.target.x, scene.camera.target.y, scene.camera.target.z,
-        //        focusGeo2Proj.x, focusGeo2Proj.y, focusGeo2Proj.z);
-      
-        _mapView.updateView(
-                focusGeo2.getLatitude(),
-                focusGeo2.getLongitude(),
-                _mapView.getMapScale(),
-                mapRotation,
-                mapTilt,
-                animate);
-
+        Globe.tiltBy(_mapView.globe, tilt, focus, animate);
     }
 
-    public void rotateBy(double tilt,
+    public void rotateBy(double theta,
                        GeoPoint focus,
                        boolean animate) {
 
-        double newRot = _mapView.getMapRotation () + tilt;
-
-        // Don't zoom to NaN
-        if (Double.isNaN (newRot))
-            return;
-
-        Point focusPoint = getFocusPointInternal();
-
-        MapSceneModel nadirSurface = new MapSceneModel(AtakMapView.DENSITY*240f,
-                _mapView.getWidth(), _mapView.getHeight(),
-                _mapView.getProjection(),
-                new GeoPoint(focus.getLatitude(), focus.getLongitude()),
-                focusPoint.x, focusPoint.y,
-                0d,
-                0d,
-                _mapView.getMapResolution(),
-                _mapView.isContinuousScrollEnabled());
-
-        // compute cam->tgt range
-        double rangeSurface = MathUtils.distance(
-                nadirSurface.camera.location.x, nadirSurface.camera.location.y, nadirSurface.camera.location.z,
-                nadirSurface.camera.target.x, nadirSurface.camera.target.y, nadirSurface.camera.target.z
-        );
-
-
-        PointD point2Proj = nadirSurface.mapProjection.forward(focus, null);
-
-        double rangeElevated = MathUtils.distance(
-                nadirSurface.camera.location.x, nadirSurface.camera.location.y, nadirSurface.camera.location.z,
-                point2Proj.x, point2Proj.y, point2Proj.z
-        );
-
-        // scale resolution by cam->'point' distance
-        final double resolutionAtElevated = _mapView.getMapResolution() * (rangeSurface / rangeElevated);
-
-        PointF focusBy = _mapView.forward(focus);
-
-        // construct model to 'point' at altitude with scaled resolution with rotate/tilt
-        MapSceneModel scene = new MapSceneModel(AtakMapView.DENSITY*240,
-                _mapView.getWidth(),
-                _mapView.getHeight(),
-                _mapView.getProjection(),
-                focus,
-                focusPoint.x,
-                focusPoint.y,
-                newRot,
-                _mapView.getMapTilt(),
-                resolutionAtElevated,
-                _mapView.isContinuousScrollEnabled()
-        );
-
-
-        // obtain new center
-        GeoPoint focusGeo2 =  scene.inverse(new PointF(focusPoint.x, focusPoint.y), null);
-        if(focusGeo2 == null) {
-            Log.w(TAG, "Unable to compute new rotation center: focus=" + focus + " new rotation=" + newRot);
-            return;
-        }
-/*
-        updateBy(_mapView.getMapScale(),
-                newRot,
-                _mapView.getMapTilt(),
-                focusGeo2,
-                animate);
-*/
-//        /*
-        // obtain new tilt
-        //double mapTilt = scene.camera.elevation + 90;
-        double mapTilt = _mapView.getMapTilt();
-
-        // obtain new rotation
-        //double mapRotation = scene.camera.azimuth;
-        double mapRotation = newRot;
-
-        PointD focusGeo2Proj = scene.mapProjection.forward(focusGeo2, null);
-
-        //double terminalSlant = MathUtils.distance(
-        //        scene.camera.target.x, scene.camera.target.y, scene.camera.target.z,
-        //        focusGeo2Proj.x, focusGeo2Proj.y, focusGeo2Proj.z);
-
-        _mapView.updateView(
-                focusGeo2.getLatitude(),
-                focusGeo2.getLongitude(),
-                _mapView.getMapScale(),
-                mapRotation,
-                mapTilt,
-                animate);
-// */
+        Globe.rotateBy(_mapView.globe, theta, focus, animate);
     }
 
     public void updateBy(double scale,
@@ -692,34 +448,14 @@ public class AtakMapController {
                          float xpos,
                          float ypos,
                          boolean animate) {
-        
-        GeoPoint mapCenter = _mapView.getPoint().get();
-        Point focusPoint = getFocusPointInternal ();
-        
-        final Projection proj = _mapView.getProjection();
-        
-        MapSceneModel sm = new MapSceneModel(_mapView,
-                proj, mapCenter,
-                focusPoint.x, focusPoint.y,
-                rotation, tilt,
-                scale, _mapView.isContinuousScrollEnabled());
-        
-        GeoPoint focusLatLng = _mapView.inverse (xpos, ypos,
-                AtakMapView.InverseMode.Model).get();
-        GeoPoint focusLatLng2 = sm.inverse(new PointF(xpos, ypos), null, true);
 
-        if (focusLatLng != null && focusLatLng2 != null) {
-            double focusLng2 = focusLatLng2.getLongitude();
-            if (_mapView.isContinuousScrollEnabled())
-                focusLng2 = GeoCalculations.wrapLongitude(focusLng2);
-            double latDiff = focusLatLng2.getLatitude() - focusLatLng.getLatitude();
-            double lonDiff = focusLng2 - focusLatLng.getLongitude();
-            double lng = mapCenter.getLongitude() - lonDiff;
-            if (_mapView.isContinuousScrollEnabled())
-                lng = GeoCalculations.wrapLongitude(lng);
-
-            _mapView.updateView (mapCenter.getLatitude() - latDiff,
-                    lng, scale, rotation, tilt, animate);
+        _mapView.globe.rwlock.acquireRead();
+        try {
+            if(_mapView.globe.pointer.raw == 0L)
+                return;
+            Globe.updateBy(_mapView.globe.pointer.raw, scale, rotation, tilt, xpos, ypos, animate);
+        } finally {
+            _mapView.globe.rwlock.releaseRead();
         }
     }
 
@@ -732,49 +468,22 @@ public class AtakMapController {
         if (pos == null) 
             return;
 
-        GeoPoint mapCenter = _mapView.getPoint().get();
-        Point focusPoint = getFocusPointInternal();
-
-        final Projection proj = _mapView.getProjection();
-
-        MapSceneModel sm = new MapSceneModel(_mapView,
-                proj, mapCenter,
-                focusPoint.x, focusPoint.y,
-                rotation, tilt,
-                scale, _mapView.isContinuousScrollEnabled());
-
-        GeoPoint focusLatLng = pos;
-        PointF xypos = _mapView.forward(focusLatLng);
-        GeoPoint focusLatLng2 = sm.inverse(xypos, null, true);
-
-        if (focusLatLng != null && focusLatLng2 != null) {
-            double focusLng2 = focusLatLng2.getLongitude();
-            if (_mapView.isContinuousScrollEnabled())
-                focusLng2 = GeoCalculations.wrapLongitude(focusLng2);
-            double latDiff = focusLatLng2.getLatitude() - focusLatLng.getLatitude();
-            double lonDiff = focusLng2 - focusLatLng.getLongitude();
-            double lng = mapCenter.getLongitude() - lonDiff;
-            if (_mapView.isContinuousScrollEnabled())
-                lng = GeoCalculations.wrapLongitude(lng);
-
-            _mapView.updateView (mapCenter.getLatitude() - latDiff,
-                    lng, scale, rotation, tilt, animate);
+        _mapView.globe.rwlock.acquireRead();
+        try {
+            if(_mapView.globe.pointer.raw == 0L)
+                return;
+            Globe.updateBy(_mapView.globe.pointer.raw, scale, rotation, tilt, pos.getLatitude(), pos.getLongitude(), pos.getAltitude(), Globe.isHae(pos), animate);
+        } finally {
+            _mapView.globe.rwlock.releaseRead();
         }
     }
 
     /**************************************************************************/
 
-    protected void dispatchOnFocusPointChanged(float x, float y) {
-        for (OnFocusPointChangedListener l : _focusListeners) {
-            l.onFocusPointChanged(x, y);
-        }
-    }
 
     protected void dispatchOnPanRequested() {
         for (OnPanRequestedListener l : _panListeners) {
             l.onPanRequested();
         }
     }
-
-
 }

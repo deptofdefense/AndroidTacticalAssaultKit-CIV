@@ -1247,7 +1247,7 @@ public class NetworkDeviceManager {
      */
     static String sanitizeAddress(final String s) {
         if (s == null)
-            return s;
+            return null;
 
         try {
             String[] a = s.split("\\.");

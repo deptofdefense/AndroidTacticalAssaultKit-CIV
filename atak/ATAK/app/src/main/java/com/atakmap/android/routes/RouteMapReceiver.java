@@ -226,7 +226,7 @@ public class RouteMapReceiver extends BroadcastReceiver {
      * Perform a non invasive test to see if the network is available for 
      * the purpose of Route Lookup.
      */
-    static boolean isNetworkAvailable() {
+    public static boolean isNetworkAvailable() {
         ConnectivityManager connectivityManager = (ConnectivityManager) MapView
                 .getMapView().getContext()
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -774,85 +774,9 @@ public class RouteMapReceiver extends BroadcastReceiver {
                     // Start up nav
                     startNewNav(context, navUID, routeToNav, startIndex);
 
-                    // If there are re-route capable route planning engines, then we will put up the
-                    // re-route button.
-                    MapComponent mc = ((MapActivity) context)
-                            .getMapComponent(RouteMapComponent.class);
-                    final RoutePlannerManager routePlannerManager = ((RouteMapComponent) mc)
-                            .getRoutePlannerManager();
-
-                    if (!routePlannerManager.getReroutePlanners().isEmpty()) {
-
-                        if (rerouteButton == null) {
-
-                            rerouteButton = new MarkerIconWidget();
-
-                            String activeIconImageUri = "android.resource://"
-                                    + _mapView.getContext().getPackageName()
-                                    + "/"
-                                    + R.drawable.reroute_icon_inactive;
-
-                            String inactiveIconImageUri = "android.resource://"
-                                    + _mapView.getContext().getPackageName()
-                                    + "/"
-                                    + R.drawable.reroute_icon_active;
-
-                            int width = 64;
-                            int height = 64;
-
-                            Icon.Builder builder = new Icon.Builder();
-                            builder.setAnchor(0, 0);
-                            builder.setColor(Icon.STATE_DEFAULT, Color.WHITE);
-                            builder.setSize(width, height);
-                            builder.setImageUri(Icon.STATE_DEFAULT,
-                                    activeIconImageUri);
-                            builder.setColor(Icon.STATE_DEFAULT,
-                                    Color.argb(216, 255, 255, 255));
-                            rerouteInactiveIcon = builder.build();
-
-                            rerouteButton.setIcon(rerouteInactiveIcon);
-                            rerouteButton.setPadding(20f);
-                            rerouteButton.setState(REROUTE_BUTTON_OFF);
-
-                            builder.setImageUri(Icon.STATE_DEFAULT,
-                                    inactiveIconImageUri);
-                            rerouteActiveIcon = builder.build();
-
-                            rerouteButton.addOnPressListener(
-                                    new MapWidget.OnPressListener() {
-                                        @Override
-                                        public void onMapWidgetPress(
-                                                MapWidget widget,
-                                                MotionEvent event) {
-
-                                            if (rerouteButton
-                                                    .getState() == REROUTE_BUTTON_OFF) {
-                                                showRerouteDialog(
-                                                        routePlannerManager);
-                                            } else if (rerouteButton
-                                                    .getState() == REROUTE_BUTTON_ON) {
-                                                rerouteButton.setIcon(
-                                                        rerouteInactiveIcon);
-                                                rerouteButton.setState(
-                                                        REROUTE_BUTTON_OFF);
-
-                                                // Turn off re-routing
-                                                _navPrefs.edit().putBoolean(
-                                                        RerouteDialog.PREF_IS_REROUTE_ACTIVE_KEY,
-                                                        false).apply();
-
-                                                Log.d(TAG,
-                                                        "re-route button off");
-                                            }
-                                        }
-                                    });
-
-                            if (!getRightLayoutWidget().getChildWidgets()
-                                    .contains(rerouteButton)) {
-                                getRightLayoutWidget().addWidget(rerouteButton);
-                            }
-                        }
-                    }
+                    // If there are re-route capable route planning engines,
+                    // then we will put up the re-route button.
+                    setupRerouteButton();
                 }
 
                 break;
@@ -866,14 +790,7 @@ public class RouteMapReceiver extends BroadcastReceiver {
                     }
                 }
 
-                if (rerouteButton != null) {
-                    getRightLayoutWidget().removeWidget(rerouteButton);
-                    rerouteButton = null;
-                }
-                _navPrefs.edit()
-                        .putBoolean(RerouteDialog.PREF_IS_REROUTE_ACTIVE_KEY,
-                                false)
-                        .apply();
+                removeRerouteButton();
 
                 _navigator.stopNavigating();
                 break;
@@ -1347,29 +1264,21 @@ public class RouteMapReceiver extends BroadcastReceiver {
     }
 
     private void importRoute() {
-
-        TileButtonDialog d = new TileButtonDialog(_mapView, _context, true);
-        d.addButton(_context.getDrawable(R.drawable.ic_menu_import_file),
-                "Import from file");
-        d.addButton(_context.getDrawable(R.drawable.survey_entry_button),
-                "Import from map");
+        TileButtonDialog d = new TileButtonDialog(_mapView);
+        d.addButton(R.drawable.ic_menu_import_file, R.string.file_select);
+        d.addButton(R.drawable.select_from_map, R.string.map_select);
         d.setOnClickListener(new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                if (which == TileButtonDialog.WHICH_CANCEL) {
-                    return;
-                } else if (which == 0) {
+                if (which == 0) {
                     importRouteFile();
                 } else if (which == 1) {
                     ToolManagerBroadcastReceiver.getInstance().startTool(
                             PolylineSelectTool.TOOL_IDENTIFIER, new Bundle());
                 }
-                dialog.dismiss();
             }
         });
-        d.show("Route Import",
-                "Choose the method for importing a route into the system.",
-                false, _context.getString(R.string.cancel));
+        d.show(R.string.route_import, R.string.route_import_msg, true);
 
     }
 
@@ -1875,6 +1784,96 @@ public class RouteMapReceiver extends BroadcastReceiver {
                 }
             }
         }
+    }
+
+    /**
+     * Add the reroute button to the screen
+     */
+    private void setupRerouteButton() {
+        MapComponent mc = ((MapActivity) _context).getMapComponent(
+                RouteMapComponent.class);
+        if (mc == null)
+            return;
+
+        final RoutePlannerManager routePlannerManager = ((RouteMapComponent) mc)
+                .getRoutePlannerManager();
+
+        // No route planners - remove button if it exists
+        if (routePlannerManager.getCount() == 0) {
+            removeRerouteButton();
+            return;
+        }
+
+        // Button is already setup
+        if (rerouteButton != null)
+            return;
+
+        rerouteButton = new MarkerIconWidget();
+
+        String activeIconImageUri = ATAKUtilities.getResourceUri(
+                R.drawable.reroute_icon_inactive);
+
+        String inactiveIconImageUri = ATAKUtilities.getResourceUri(
+                R.drawable.reroute_icon_active);
+
+        int width = 64;
+        int height = 64;
+
+        Icon.Builder builder = new Icon.Builder();
+        builder.setAnchor(0, 0);
+        builder.setColor(Icon.STATE_DEFAULT, Color.WHITE);
+        builder.setSize(width, height);
+        builder.setImageUri(Icon.STATE_DEFAULT, activeIconImageUri);
+        builder.setColor(Icon.STATE_DEFAULT, Color.argb(216, 255, 255, 255));
+        rerouteInactiveIcon = builder.build();
+
+        rerouteButton.setIcon(rerouteInactiveIcon);
+        rerouteButton.setPadding(20f);
+        rerouteButton.setState(REROUTE_BUTTON_OFF);
+
+        builder.setImageUri(Icon.STATE_DEFAULT, inactiveIconImageUri);
+        rerouteActiveIcon = builder.build();
+
+        rerouteButton.addOnPressListener(new MapWidget.OnPressListener() {
+            @Override
+            public void onMapWidgetPress(MapWidget widget, MotionEvent event) {
+
+                // Make sure there are route planners available
+                if (routePlannerManager.getCount() == 0) {
+                    // No route planners - hide the button
+                    // XXX - Ideally we'd hide the button when the last planner
+                    // is unregistered but there's no hook for this...
+                    removeRerouteButton();
+                    Toast.makeText(_context, R.string.bloodhound_no_planners,
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                if (rerouteButton.getState() == REROUTE_BUTTON_OFF) {
+                    showRerouteDialog(routePlannerManager);
+                } else if (rerouteButton.getState() == REROUTE_BUTTON_ON) {
+                    rerouteButton.setIcon(rerouteInactiveIcon);
+                    rerouteButton.setState(REROUTE_BUTTON_OFF);
+
+                    // Turn off re-routing
+                    _navPrefs.edit().putBoolean(
+                            RerouteDialog.PREF_IS_REROUTE_ACTIVE_KEY,
+                            false).apply();
+
+                    Log.d(TAG, "re-route button off");
+                }
+            }
+        });
+
+        getRightLayoutWidget().addWidget(rerouteButton);
+    }
+
+    private void removeRerouteButton() {
+        if (rerouteButton != null)
+            getRightLayoutWidget().removeWidget(rerouteButton);
+        rerouteButton = null;
+        _navPrefs.edit().putBoolean(RerouteDialog.PREF_IS_REROUTE_ACTIVE_KEY,
+                false).apply();
     }
 
     /**

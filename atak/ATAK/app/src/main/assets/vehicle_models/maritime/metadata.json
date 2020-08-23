@@ -1,0 +1,25 @@
+{
+  "category": "Maritime",
+  "vehicles": [
+    {
+      "name": "CCA",
+      "file": "cca.zip"
+    },
+    {
+      "name": "CCH",
+      "file": "cch.zip"
+    },
+    {
+      "name": "CCM",
+      "file": "ccm.zip"
+    },
+    {
+      "name": "CRRC",
+      "file": "crrc.zip"
+    },
+    {
+      "name": "RIB",
+      "file": "RIB.zip"
+    }
+  ]
+}

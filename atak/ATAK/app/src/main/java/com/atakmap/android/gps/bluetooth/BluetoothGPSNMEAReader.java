@@ -11,6 +11,8 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
+import java.nio.charset.StandardCharsets;
+
 import gnu.nmea.Packet;
 import gnu.nmea.PacketGGA;
 import gnu.nmea.PacketRMC;
@@ -49,7 +51,7 @@ public class BluetoothGPSNMEAReader extends BluetoothReader {
     @Override
     public void onRead(byte[] data) {
 
-        String ascii = new String(data);
+        String ascii = new String(data, StandardCharsets.UTF_8);
         try {
             if (FileSystemUtils.isEmpty(ascii)) {
                 Log.w(TAG, "Ignoring empty NMEA sentence");

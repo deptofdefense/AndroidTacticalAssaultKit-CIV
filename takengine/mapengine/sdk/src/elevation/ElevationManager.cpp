@@ -8,7 +8,10 @@
 #include "feature/Point2.h"
 #include "feature/Polygon2.h"
 #include "formats/egm/EGM96.h"
+#pragma warning(push)
+#pragma warning(disable : 4305 4838)
 #include "formats/wmm/EGM9615.h"
+#pragma warning(pop)
 #include "formats/wmm/GeomagnetismHeader.h"
 #include "raster/DatasetDescriptor.h"
 #include "port/Collections.h"
@@ -58,9 +61,8 @@ namespace
         return m;
     }
 
-    std::set<std::shared_ptr<TAK::Engine::Raster::Mosaic::MosaicDatabase2>> &sources()
-    {
-        static std::set<std::shared_ptr<TAK::Engine::Raster::Mosaic::MosaicDatabase2>> s;
+    std::map<std::shared_ptr<MosaicDatabase2>, std::shared_ptr<ElevationSource>> &sources() {
+        static std::map<std::shared_ptr<MosaicDatabase2>, std::shared_ptr<ElevationSource>> s;
         return s;
     }
 
@@ -69,7 +71,7 @@ namespace
     public :
         ElevationModelFilter(const int model) NOTHROWS;
     public :
-        virtual bool accept(Mosaic::MosaicDatabase2::Cursor &arg) NOTHROWS ;
+        bool accept(Mosaic::MosaicDatabase2::Cursor &arg) NOTHROWS override ;
     private :
         const int model;
     };
@@ -97,6 +99,18 @@ namespace
         Mutex mutex;
         bool dirty;
     } GeoidContext;
+
+    class MosaicDbStub : public ElevationSource
+    {
+    public:
+        MosaicDbStub() NOTHROWS;
+    public:
+        const char *getName() const NOTHROWS override;
+        TAKErr query(ElevationChunkCursorPtr &value, const QueryParameters &params) NOTHROWS override;
+        Feature::Envelope2 getBounds() const NOTHROWS override;
+        TAKErr addOnContentChangedListener(OnContentChangedListener *l) NOTHROWS override;
+        TAKErr removeOnContentChangedListener(OnContentChangedListener *l) NOTHROWS override;
+    };
 }
 
 //**************** ElevationManagerQueryParameters **/
@@ -105,8 +119,8 @@ ElevationManagerQueryParameters::ElevationManagerQueryParameters() NOTHROWS :
     minResolution(NAN),
     maxResolution(NAN),
     elevationModel(ElevationData::MODEL_SURFACE | ElevationData::MODEL_TERRAIN),
-    spatialFilter(NULL, NULL),
-    types(NULL, NULL),
+    spatialFilter(nullptr, nullptr),
+    types(nullptr, nullptr),
     preferSpeed(false),
     interpolate(false)
 {}
@@ -115,8 +129,8 @@ ElevationManagerQueryParameters::ElevationManagerQueryParameters(const Elevation
     minResolution(other.minResolution),
     maxResolution(other.maxResolution),
     elevationModel(other.elevationModel),
-    spatialFilter(NULL, NULL),
-    types(NULL, NULL),
+    spatialFilter(nullptr, nullptr),
+    types(nullptr, nullptr),
     preferSpeed(other.preferSpeed),
     interpolate(other.interpolate)
 {
@@ -138,11 +152,18 @@ Util::TAKErr TAK::Engine::Elevation::ElevationManager_registerElevationSource(st
 {
     if (!database.get())
         return Util::TE_InvalidArg;
-    Util::TAKErr code(Util::TE_Ok);
-    WriteLockPtr lock(NULL, NULL);
-    code = WriteLock_create(lock, sourceMutex());
-    TE_CHECKRETURN_CODE(code);
-    sources().insert(database);
+    WriteLock lock(sourceMutex());
+    TE_CHECKRETURN_CODE(lock.status);
+    std::map<std::shared_ptr<MosaicDatabase2>, std::shared_ptr<ElevationSource>> &src = sources();
+    for (auto it = src.begin(); it != src.end(); it++) {
+        if (it->first.get() == database.get())
+            return TE_Ok;
+    }
+    std::shared_ptr<ElevationSource> stub = std::move(std::unique_ptr<ElevationSource, void(*)(const ElevationSource *)>(new MosaicDbStub(), Memory_deleter_const<ElevationSource, MosaicDbStub>));
+
+    src[database] = stub;
+    ElevationSourceManager_attach(stub);
+
     return Util::TE_Ok;
 }
 
@@ -150,11 +171,17 @@ Util::TAKErr TAK::Engine::Elevation::ElevationManager_unregisterElevationSource(
 {
     if (!database.get())
         return Util::TE_InvalidArg;
-    Util::TAKErr code(Util::TE_Ok);
-    WriteLockPtr lock(NULL, NULL);
-    code = WriteLock_create(lock, sourceMutex());
-    TE_CHECKRETURN_CODE(code);
-    return sources().erase(database) ? Util::TE_Ok : Util::TE_InvalidArg;
+    WriteLock lock(sourceMutex());
+    TE_CHECKRETURN_CODE(lock.status);
+    std::map<std::shared_ptr<MosaicDatabase2>, std::shared_ptr<ElevationSource>> &src = sources();
+    for (auto it = src.begin(); it != src.end(); it++) {
+        if (it->first.get() == database.get()) {
+            ElevationSourceManager_detach(*it->second);
+            src.erase(it);
+            return TE_Ok;
+        }
+    }
+    return TE_InvalidArg;
 }
 
 TAKErr TAK::Engine::Elevation::ElevationManager_queryElevationData(MosaicDatabase2::CursorPtr &cursor, const ElevationManagerQueryParameters &params) NOTHROWS
@@ -176,7 +203,7 @@ TAKErr TAK::Engine::Elevation::ElevationManager_queryElevationData(MosaicDatabas
         Port::Collections_addAll(*mparams.types, *params.types);
     }
     if (params.elevationModel != (ElevationData::MODEL_SURFACE | ElevationData::MODEL_TERRAIN)) {
-        ElevationModelFilterPtr filter(NULL, NULL);
+        ElevationModelFilterPtr filter(nullptr, nullptr);
         switch (params.elevationModel) {
         case 0:
             isReject = true;
@@ -195,16 +222,15 @@ TAKErr TAK::Engine::Elevation::ElevationManager_queryElevationData(MosaicDatabas
     std::unique_ptr<MultiplexingMosaicDatabaseCursor2> mcursor(new MultiplexingMosaicDatabaseCursor2());
     if (!isReject)
     {
-        ReadLockPtr lock(NULL, NULL);
-        code = ReadLock_create(lock, sourceMutex());
+        ReadLock lock(sourceMutex());
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
 
-        std::set<std::shared_ptr<MosaicDatabase2>>::iterator entry;
-        for (entry = sources().begin(); entry != sources().end(); entry++)
+        for (auto entry = sources().begin(); entry != sources().end(); entry++)
         {
-            MosaicDatabase2::CursorPtr queryPtr(NULL, NULL);
+            MosaicDatabase2::CursorPtr queryPtr(nullptr, nullptr);
 
-            TAKErr success = (*entry)->query(queryPtr, mparams);
+            TAKErr success = entry->first->query(queryPtr, mparams);
 
             if (success == TE_Ok) {
                 mcursor->add(move(queryPtr));
@@ -217,8 +243,8 @@ TAKErr TAK::Engine::Elevation::ElevationManager_queryElevationData(MosaicDatabas
 
     if (!filters->empty())
     {
-        MosaicDatabase2::CursorPtr filtered(NULL, NULL);
-        TAKErr code = FilterMosaicDatabaseCursor2_filter(filtered, std::move(cursor), std::move(filters));
+        MosaicDatabase2::CursorPtr filtered(nullptr, nullptr);
+        code = FilterMosaicDatabaseCursor2_filter(filtered, std::move(cursor), std::move(filters));
         TE_CHECKRETURN_CODE(code);
         cursor = std::move(filtered);
     }
@@ -248,7 +274,7 @@ TAKErr TAK::Engine::Elevation::ElevationManager_queryElevationSources(ElevationC
 
     std::list<bool(*)(ElevationChunkCursor &, ElevationChunkCursor &) NOTHROWS> order;
     if(params.order.get() && !params.order->empty()) {
-        TAK::Engine::Port::Collection<ElevationSource::QueryParameters::Order >::IteratorPtr oit(NULL, NULL);
+        TAK::Engine::Port::Collection<ElevationSource::QueryParameters::Order >::IteratorPtr oit(nullptr, nullptr);
         code = params.order->iterator(oit);
         TE_CHECKRETURN_CODE(code);
         do {
@@ -319,7 +345,7 @@ TAKErr TAK::Engine::Elevation::ElevationManager_getElevation(double *value, Port
 
     params.spatialFilter = Feature::Geometry2Ptr(new Feature::Point2(longitude, latitude), Util::Memory_deleter_const<Feature::Geometry2>);
 
-    MosaicDatabase2::CursorPtr cursor(NULL, NULL);
+    MosaicDatabase2::CursorPtr cursor(nullptr, nullptr);
     code = ElevationManager_queryElevationData(cursor, params);
     TE_CHECKRETURN_CODE(code);
 
@@ -330,11 +356,11 @@ TAKErr TAK::Engine::Elevation::ElevationManager_getElevation(double *value, Port
         code = cursor->moveToNext();
         TE_CHECKBREAK_CODE(code);
 
-        MosaicDatabase2::FramePtr_const frame(NULL, NULL);
+        MosaicDatabase2::FramePtr_const frame(nullptr, nullptr);
         if (MosaicDatabase2::Frame::createFrame(frame, *cursor) != TE_Ok)
             continue;
 
-        ElevationDataPtr elptr(NULL, NULL);
+        ElevationDataPtr elptr(nullptr, nullptr);
         if(ElevationManager_create(elptr, *frame) != TE_Ok)
             continue;
 
@@ -464,7 +490,7 @@ Util::TAKErr TAK::Engine::Elevation::ElevationManager_getElevation(
         new Feature::Polygon2(ring),
         Util::Memory_deleter_const<Feature::Geometry2>);
 
-    Mosaic::MosaicDatabase2::CursorPtr cursor(NULL, NULL);
+    Mosaic::MosaicDatabase2::CursorPtr cursor(nullptr, nullptr);
 
     code = ElevationManager_queryElevationData(cursor, filterCopy);
     TE_CHECKRETURN_CODE(code);
@@ -474,9 +500,9 @@ Util::TAKErr TAK::Engine::Elevation::ElevationManager_getElevation(
         code = cursor->moveToNext();
         TE_CHECKBREAK_CODE(code);
 
-        ElevationDataPtr data(NULL, NULL);
+        ElevationDataPtr data(nullptr, nullptr);
 
-        TAK::Engine::Raster::Mosaic::MosaicDatabase2::FramePtr_const frame(NULL, NULL);
+        TAK::Engine::Raster::Mosaic::MosaicDatabase2::FramePtr_const frame(nullptr, nullptr);
         TAK::Engine::Raster::Mosaic::MosaicDatabase2::Frame::createFrame(frame, *cursor);
 
         code = ElevationManager_create(data, *frame);
@@ -485,7 +511,7 @@ Util::TAKErr TAK::Engine::Elevation::ElevationManager_getElevation(
         }
 
         Port::STLListAdapter<GeoPoint2> srcAdapter(src);
-        Port::Collection<GeoPoint2>::IteratorPtr iterator(NULL, NULL);
+        Port::Collection<GeoPoint2>::IteratorPtr iterator(nullptr, nullptr);
         code = srcAdapter.iterator(iterator);
         if (code != Util::TE_Ok) {
             continue;
@@ -589,13 +615,13 @@ TAKErr TAK::Engine::Elevation::ElevationManager_getElevation(double *value, cons
 Util::TAKErr TAK::Engine::Elevation::ElevationManager_create(ElevationDataPtr &value, const ImageInfo &info) NOTHROWS
 {
     Util::TAKErr code(Util::TE_Ok);
-    ReadLockPtr lock(NULL, NULL);
-    code = ReadLock_create(lock, spiMutex());
+    ReadLock lock(spiMutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
     std::set<std::shared_ptr<ElevationDataSpi>> &spis = dataSpiRegistry();
     std::set<std::shared_ptr<ElevationDataSpi>>::iterator spi;
     for (spi = spis.begin(); spi != spis.end(); spi++) {
-        Util::TAKErr code = (*spi)->create(value, info);
+        code = (*spi)->create(value, info);
         if (code == Util::TE_Ok)
             return code;
     }
@@ -609,8 +635,8 @@ Util::TAKErr TAK::Engine::Elevation::ElevationManager_registerDataSpi(std::share
         return Util::TE_InvalidArg;
 
     Util::TAKErr code(Util::TE_Ok);
-    WriteLockPtr lock(NULL, NULL);
-    code = WriteLock_create(lock, spiMutex());
+    WriteLock lock(spiMutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
     dataSpiRegistry().insert(spi);
     // XXX - invalid arg if already registered???
@@ -623,8 +649,8 @@ Util::TAKErr TAK::Engine::Elevation::ElevationManager_unregisterDataSpi(std::sha
         return Util::TE_InvalidArg;
 
     Util::TAKErr code(Util::TE_Ok);
-    WriteLockPtr lock(NULL, NULL);
-    code = WriteLock_create(lock, spiMutex());
+    WriteLock lock(spiMutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
     return dataSpiRegistry().erase(spi) ? Util::TE_Ok : Util::TE_InvalidArg;
 }
@@ -633,8 +659,8 @@ Util::TAKErr TAK::Engine::Elevation::ElevationManager_getGeoidHeight(double *hei
 {
     do {
         TAKErr code(TE_Ok);
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, GeoidContext.mutex);
+        Lock lock(GeoidContext.mutex);
+        code = lock.status;
         TE_CHECKBREAK_CODE(code);
         if(GeoidContext.dirty) {
             GeoidContext.dirty = false;
@@ -702,16 +728,42 @@ namespace
     {
         Util::TAKErr code(Util::TE_Ok);
 
-        Mosaic::MosaicDatabase2::FramePtr_const frame(NULL, NULL);
+        Mosaic::MosaicDatabase2::FramePtr_const frame(nullptr, nullptr);
         code = Mosaic::MosaicDatabase2::Frame::createFrame(frame, arg);
         if (code != Util::TE_Ok)
             return false;
 
-        ElevationDataPtr data(NULL, NULL);
+        ElevationDataPtr data(nullptr, nullptr);
         code = ElevationManager_create(data, *frame);
         if (code != Util::TE_Ok)
             return false;
 
         return ((data->getElevationModel()&this->model) != 0);
+    }
+
+    MosaicDbStub::MosaicDbStub() NOTHROWS
+    {}
+    const char *MosaicDbStub::getName() const NOTHROWS
+    {
+        return nullptr;
+    }
+    TAKErr MosaicDbStub::query(ElevationChunkCursorPtr &value, const QueryParameters &params) NOTHROWS
+    {
+        std::list<std::shared_ptr<ElevationChunkCursor>> empty;
+        TAK::Engine::Port::STLListAdapter<std::shared_ptr<ElevationChunkCursor>> empty_w(empty);
+        value = ElevationChunkCursorPtr(new MultiplexingElevationChunkCursor(empty_w), Memory_deleter_const<ElevationChunkCursor, MultiplexingElevationChunkCursor>);
+        return TE_Ok;
+    }
+    Feature::Envelope2 MosaicDbStub::getBounds() const NOTHROWS
+    {
+        return Feature::Envelope2(0.0, 0.0, 0.0, 0.0);
+    }
+    TAKErr MosaicDbStub::addOnContentChangedListener(OnContentChangedListener *l) NOTHROWS
+    {
+        return TE_Ok;
+    }
+    TAKErr MosaicDbStub::removeOnContentChangedListener(OnContentChangedListener *l) NOTHROWS
+    {
+        return TE_Ok;
     }
 }

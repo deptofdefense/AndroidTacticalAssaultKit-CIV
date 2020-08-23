@@ -23,8 +23,9 @@ namespace
 RWMutex AsyncBitmapLoader2::decoderHandlerMutex;
 std::map<std::string, AsyncBitmapLoader2::ProtocolHandlerEntry> AsyncBitmapLoader2::protoHandlers;
 
-AsyncBitmapLoader2::AsyncBitmapLoader2(const std::size_t threadCount) NOTHROWS :
+AsyncBitmapLoader2::AsyncBitmapLoader2(const std::size_t threadCount, bool notifyThreadsOnDestruct) NOTHROWS :
     threadCount(threadCount),
+    notifyThreadsOnDestruct(notifyThreadsOnDestruct),
     shouldTerminate(false)
 {
     registerProtocolHandler("file", &fileHandler, "LOCAL");
@@ -34,8 +35,7 @@ AsyncBitmapLoader2::AsyncBitmapLoader2(const std::size_t threadCount) NOTHROWS :
 
 AsyncBitmapLoader2::~AsyncBitmapLoader2() NOTHROWS
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, queuesMutex);
+    Lock lock(queuesMutex);
 
     // Firstly, mark as terminated so nothing new is accepted
     shouldTerminate = true;
@@ -55,8 +55,7 @@ TAKErr AsyncBitmapLoader2::loadBitmapUri(Task &task, const char *curi) NOTHROWS
     if (!curi)
         return TE_InvalidArg;
 
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, queuesMutex);
+    Lock lock(queuesMutex);
 
     std::string uri(curi);
 
@@ -89,10 +88,9 @@ TAKErr AsyncBitmapLoader2::loadBitmapUri(Task &task, const char *curi) NOTHROWS
     task.reset(new FutureTask<std::shared_ptr<Bitmap2>>(decodeUriFn, (void*)new std::string(uri)));
 
     Queue *queue = queues[handler->second.queueHint];
-    LockPtr queueLock(NULL, NULL);
-    Lock_create(queueLock, queue->jobMutex);
+    Lock queueLock(queue->jobMutex);
     queue->jobQueue.push_back(Task(task));
-    queue->jobCond.signal(*queueLock);
+    queue->jobCond.signal(queueLock);
     return TE_Ok;
 }
 
@@ -101,8 +99,7 @@ TAKErr AsyncBitmapLoader2::loadBitmapTask(const Task &task, const char *queueHin
     if (!task.get())
         return TE_InvalidArg;
 
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, queuesMutex);
+    Lock lock(queuesMutex);
 
     if (!ensureThread(queueHint)) {
         // Already in shutdown mode - don't allow the job
@@ -110,10 +107,9 @@ TAKErr AsyncBitmapLoader2::loadBitmapTask(const Task &task, const char *queueHin
     }
 
     Queue *queue = queues[std::string(queueHint ? queueHint : "")];
-    LockPtr queueLock(NULL, NULL);
-    Lock_create(queueLock, queue->jobMutex);
+    Lock queueLock(queue->jobMutex);
     queue->jobQueue.push_back(Task(task));
-    queue->jobCond.signal(*queueLock);
+    queue->jobCond.signal(queueLock);
     return TE_Ok;
 }
 
@@ -122,8 +118,7 @@ TAKErr AsyncBitmapLoader2::registerProtocolHandler(const char *scheme, ProtocolH
 {
     if (!scheme || !handler)
         return TE_InvalidArg;
-    WriteLockPtr lock(NULL, NULL);
-    WriteLock_create(lock, decoderHandlerMutex);
+    WriteLock lock(decoderHandlerMutex);
     protoHandlers[scheme] = ProtocolHandlerEntry{ handler, std::string(queueHint ? queueHint : "") };
     return TE_Ok;
 }
@@ -132,8 +127,7 @@ TAKErr AsyncBitmapLoader2::unregisterProtocolHandler(const char *scheme) NOTHROW
 {
     if (!scheme)
         return TE_InvalidArg;
-    WriteLockPtr lock(NULL, NULL);
-    WriteLock_create(lock, decoderHandlerMutex);
+    WriteLock lock(decoderHandlerMutex);
     if (protoHandlers.find(scheme) == protoHandlers.end())
         return TE_InvalidArg;
     protoHandlers.erase(scheme);
@@ -142,10 +136,9 @@ TAKErr AsyncBitmapLoader2::unregisterProtocolHandler(const char *scheme) NOTHROW
 TAKErr AsyncBitmapLoader2::unregisterProtocolHandler(const ProtocolHandler &handler) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    WriteLockPtr lock(NULL, NULL);
-    code = WriteLock_create(lock, decoderHandlerMutex);
+    WriteLock lock(decoderHandlerMutex);
     TE_CHECKRETURN_CODE(code);
-    std::map<std::string, ProtocolHandlerEntry>::iterator entry = protoHandlers.begin();
+    auto entry = protoHandlers.begin();
     code = TE_InvalidArg;
     while(entry != protoHandlers.end()) {
         if (entry->second.handler != &handler) {
@@ -169,13 +162,13 @@ bool AsyncBitmapLoader2::ensureThread(const char *queueHint)
     std::map<std::string, Queue *>::iterator entry;
     entry = queues.find(std::string(queueHint ? queueHint : ""));
     if (entry == queues.end()) {
-        std::auto_ptr<Queue> queuePtr(queue=new Queue(*this));
+        std::unique_ptr<Queue> queuePtr(queue=new Queue(*this));
         queues[std::string(queueHint ? queueHint : "")] = queuePtr.release();
     } else {
         queue = entry->second;
     }
 
-    if (queue->threadPool.get() == NULL) {
+    if (queue->threadPool.get() == nullptr) {
 
         // init threads
         return ( ThreadPool_create(queue->threadPool, threadCount, threadProcessEntry, queue) == TE_Ok );
@@ -186,9 +179,9 @@ bool AsyncBitmapLoader2::ensureThread(const char *queueHint)
 
 void *AsyncBitmapLoader2::threadProcessEntry(void *opaque)
 {
-    AsyncBitmapLoader2::Queue *obj = (Queue *)opaque;
+    auto *obj = (Queue *)opaque;
     obj->owner.threadProcess(*obj);
-    return NULL;
+    return nullptr;
 }
 
 void AsyncBitmapLoader2::threadProcess(Queue &queue)
@@ -196,13 +189,12 @@ void AsyncBitmapLoader2::threadProcess(Queue &queue)
     while (true) {
         Task job;
         {
-            LockPtr lock(NULL, NULL);
-            Lock_create(lock, queue.jobMutex);
+            Lock lock(queue.jobMutex);
             if (shouldTerminate)
                 break;
 
             if (queue.jobQueue.empty()) {
-                queue.jobCond.wait(*lock);
+                queue.jobCond.wait(lock);
                 continue;
             }
 
@@ -215,8 +207,7 @@ void AsyncBitmapLoader2::threadProcess(Queue &queue)
 
 void AsyncBitmapLoader2::threadTryDecode(const Task &job)
 {
-    ReadLockPtr lock(NULL, NULL);
-    ReadLock_create(lock, decoderHandlerMutex);
+    ReadLock lock(decoderHandlerMutex);
 
     if(job->valid()) {
         job->run();
@@ -228,7 +219,7 @@ std::shared_ptr<Bitmap2> AsyncBitmapLoader2::decodeUriFn(void *opaque)
 {
     TAKErr code;
 
-    std::auto_ptr<std::string> uri(static_cast<std::string *>(opaque));
+    std::unique_ptr<std::string> uri(static_cast<std::string *>(opaque));
 
     // First try to handle the protocol
     size_t cloc = uri->find_first_of(':');
@@ -242,13 +233,13 @@ std::shared_ptr<Bitmap2> AsyncBitmapLoader2::decodeUriFn(void *opaque)
     if (handler == protoHandlers.end())
         throw std::out_of_range("no protocol handler found");
 
-    DataInput2Ptr ctx(NULL, NULL);
+    DataInput2Ptr ctx(nullptr, nullptr);
     code = handler->second.handler->handleURI(ctx, uri->c_str());
     if (code != TE_Ok)
         throw new std::runtime_error("failed to handle URI");
 
-    BitmapPtr b(NULL, NULL);
-    code = BitmapFactory2_decode(b, *ctx, NULL);
+    BitmapPtr b(nullptr, nullptr);
+    code = BitmapFactory2_decode(b, *ctx, nullptr);
     const bool success = (code == TE_Ok && b.get());
     ctx.reset();
 
@@ -261,36 +252,43 @@ std::shared_ptr<Bitmap2> AsyncBitmapLoader2::decodeUriFn(void *opaque)
 AsyncBitmapLoader2::Queue::Queue(AsyncBitmapLoader2 &owner_) NOTHROWS :
     owner(owner_),
     shouldTerminate(false),
-    threadPool(NULL, NULL)
+    threadPool(nullptr, nullptr)
 {}
 
 AsyncBitmapLoader2::Queue::~Queue() NOTHROWS
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, jobMutex);
+    TAK::Engine::Thread::ThreadPoolPtr ltp(nullptr, nullptr);
+    {
+        Lock lock(jobMutex);
 
-    // Firstly, mark as terminated so nothing new is accepted
-    shouldTerminate = true;
+        // Firstly, mark as terminated so nothing new is accepted
+        shouldTerminate = true;
 
-    if (threadPool.get()) {
-        TAK::Engine::Thread::ThreadPoolPtr ltp = std::move(threadPool);
-        threadPool.reset();
+        if (threadPool.get()) {
+            ltp = std::move(threadPool);
+            threadPool.reset();
 
-        // kill threads first - release lock and join
-        // In-progress jobs may complete; unstarted jobs will linger in queue
-        jobCond.broadcast(*lock);
-        lock.reset();
-        ltp->joinAll();
-
-        Lock_create(lock, jobMutex);
-        ltp.reset();
+            // kill threads first - release lock and join
+            // In-progress jobs may complete; unstarted jobs will linger in queue
+            if (owner.notifyThreadsOnDestruct)
+                jobCond.broadcast(lock);           
+        }
     }
 
-    // Now look at remaining jobs and clean them out with callback indicating
-    // they are dead due to termination of the loader
-    while (!jobQueue.empty()) {
-        Task job = jobQueue.front();
-        job->getFuture().cancel();
-        jobQueue.pop_front();
+    // wait for threads to exit
+    if (owner.notifyThreadsOnDestruct && ltp.get())
+        ltp->joinAll();
+
+    {
+        Lock lock(jobMutex);
+        ltp.reset();
+
+        // Now look at remaining jobs and clean them out with callback indicating
+        // they are dead due to termination of the loader
+        while (!jobQueue.empty()) {
+            Task job = jobQueue.front();
+            job->getFuture().cancel();
+            jobQueue.pop_front();
+        }
     }
 }

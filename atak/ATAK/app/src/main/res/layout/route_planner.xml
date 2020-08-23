@@ -112,6 +112,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
+    <!-- This is where extra views go from tools or plugins -->
+    <com.atakmap.android.cotdetails.extras.ExtraDetailsLayout
+        android:id="@+id/extrasLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"/>
+
     <View
         android:layout_width="match_parent"
         android:layout_height="1px"

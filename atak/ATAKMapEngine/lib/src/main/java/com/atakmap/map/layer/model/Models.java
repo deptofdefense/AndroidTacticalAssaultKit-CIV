@@ -102,8 +102,15 @@ public final class Models {
         Mesh[] dstMeshes = new Mesh[srcData.getNumMeshes()];
         for(int i = 0; i < srcData.getNumMeshes(); i++) {
             dstMeshes[i] = transform(src, srcData.getMesh(i), dst, dstLayout, listener);
+            if(dstMeshes[i] == null)
+                return null;
         }
-        return ModelBuilder.build(dstMeshes);
+        try {
+            return ModelBuilder.build(dstMeshes);
+        } catch(Throwable t) {
+            Log.e("Models", "Failed to transform mesh", t);
+            return null;
+        }
     }
 
     public static Mesh transform(ModelInfo src, Mesh srcData, ModelInfo dst, VertexDataLayout dstLayout, final OnTransformProgressListener listener) {
@@ -181,7 +188,7 @@ public final class Models {
                 return transformImpl(adapted, dstLayout);
             } finally {
                 if(adapted != null)
-                    adapted.finalize();
+                    adapted.dispose();
             }
         }
     }

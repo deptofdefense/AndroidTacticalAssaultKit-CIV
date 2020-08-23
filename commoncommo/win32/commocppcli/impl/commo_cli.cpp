@@ -276,6 +276,22 @@ CommoResult Commo::SetMissionPackageLocalPort(int localWebPort)
     return impl::nativeToCLI(impl->commo->setMissionPackageLocalPort(localWebPort));
 }
 
+CommoResult Commo::SetMissionPackageLocalHttpsParams(int localWebPort,
+    array<System::Byte> ^certificate, System::String ^certPass)
+{
+    if (certPass == nullptr)
+        return CommoResult::CommoInvalidCertPassword;
+    msclr::interop::marshal_context mctx;
+    const char *certPassNative = mctx.marshal_as<const char *>(certPass);
+    pin_ptr<System::Byte> certificateNative = &certificate[0];
+    size_t len = certificate->Length;
+
+    return impl::nativeToCLI(
+        impl->commo->setMissionPackageLocalHttpsParams(localWebPort, 
+            certificateNative, len, certPassNative));
+}
+
+
 void Commo::SetMissionPackageViaServerEnabled(bool enabled)
 {
     impl->commo->setMissionPackageViaServerEnabled(enabled);
@@ -1214,3 +1230,20 @@ System::String ^Commo::GenerateKeystoreCryptoString(System::String ^certPem,
     return result;
 }
 
+
+array<System::Byte> ^Commo::GenerateSelfSignedCert(System::String ^password)
+{
+    if (password == nullptr)
+        return nullptr;
+
+    msclr::interop::marshal_context mctx;
+    const char *passwordNative = mctx.marshal_as<const char *>(password);
+
+    uint8_t *cert = NULL;
+    size_t len = impl->commo->generateSelfSignedCert(&cert, passwordNative);
+    array<System::Byte> ^ret = gcnew array<System::Byte>(len);
+    pin_ptr<System::Byte> pinRet = &ret[0];
+    memcpy(pinRet, cert, len);
+    impl->commo->freeSelfSignedCert(cert);
+    return ret;
+}

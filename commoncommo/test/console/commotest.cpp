@@ -221,7 +221,7 @@ void test::CommoTest::run(int argc, char *argv[])
         return;
     }
     
-    if (argc < 4 || ((argc - 3) % 2) == 0) {
+    if (argc < 4 || ((argc - 4) % 2) != 0) {
         fprintf(stderr, "Usage: %s <uid> <callsign> <output directory> { <wait-seconds> <command> } ... \n", argv[0]);
         fprintf(stderr, "       %s -h for full help listing\n", argv[0]);
         return;
@@ -243,6 +243,8 @@ void test::CommoTest::run(int argc, char *argv[])
         fprintf(stderr, "Could not open xml output file %s\n", xmlFn.c_str());
         return;
     }
+    
+
 
     ContactUID mycommouid((const uint8_t *)myUID.c_str(), myUID.length());
     commo = new Commo(this, &mycommouid, myCallsign.c_str());
@@ -253,11 +255,19 @@ void test::CommoTest::run(int argc, char *argv[])
     commo->addInterfaceStatusListener(this);
     commo->setupMissionPackageIO(this);
     commo->setMissionPackageLocalPort(8080);
+    
+    uint8_t *httpsCertBuf = NULL;
+    size_t httpsCertLen = commo->generateSelfSignedCert(&httpsCertBuf, "atak99123");
+    if (httpsCertLen == 0) {
+        fprintf(stderr, "Could not generate self signed cert- https will be disabled\n");
+    } else {
+        commo->setMissionPackageLocalHttpsParams(8443, httpsCertBuf, httpsCertLen, "atak99123");
+    }
     commo->enableSimpleFileIO(this);
     //commo->setMulticastLoopbackEnabled(true);
 
-    if (argc > 3) {
-        int n = atoi(argv[3]);
+    if (argc > 4) {
+        int n = atoi(argv[4]);
         nextCmdLineTime = time(NULL) + n;
     }
 
@@ -1112,7 +1122,7 @@ void test::CommoTest::cloudOperationUpdate(const CloudIOUpdate *update)
         for (size_t i = 0; i < update->numEntries; ++i)
             fprintf(logFile, "    %s (%s) %" PRIu64 "\n", update->entries[i]->path, update->entries[i]->type == CloudCollectionEntry::Type::TYPE_COLLECTION ? "folder" : "file", update->entries[i]->fileSize);
     }
-    fflush(stdout);
+    fflush(logFile);
 }
 
 

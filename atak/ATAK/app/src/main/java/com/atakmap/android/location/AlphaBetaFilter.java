@@ -78,10 +78,10 @@ public class AlphaBetaFilter {
             final double granularity) {
         final boolean ignore = (Double.isNaN(measurement) || Double
                 .isNaN(granularity));
-        if (ignore) {
-            Log.d(TAG, "ignoring update measurement " + measurement + " delta "
-                    + granularity);
-        }
+        //if (ignore) {
+        //    Log.d(TAG, "ignoring update measurement " + measurement + " delta "
+        //            + granularity);
+        //}
 
         _delta += delta;
         while (_delta > granularity) {

@@ -3,8 +3,10 @@ package com.atakmap.android.maps;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -235,15 +237,25 @@ public class DeconflictionAdapter extends ArrayAdapter<MapItem> {
         String callsign = ATAKUtilities.getDisplayName(item);
         holder.callsign.setText(callsign);
 
-        // Set icon w/ proper color
         MapItem shp = ATAKUtilities.findAssocShape(item);
         if (shp instanceof RangeAndBearingMapItem
                 && !(item instanceof RangeAndBearingEndpoint))
             // Don't use R&B icon for non-R&B markers
             shp = item;
-        String iconUri = ATAKUtilities.getIconUri(shp);
-        ATAKUtilities.SetIcon(mContext, holder.trackIcon, iconUri,
-                ATAKUtilities.getIconColor(shp));
+
+        // Set icon
+        Drawable icon = shp.getIconDrawable();
+        if (icon != null) {
+            // Drawable icons (much more versatile)
+            holder.trackIcon.setImageDrawable(icon);
+            holder.trackIcon.setColorFilter(shp.getIconColor(),
+                    PorterDuff.Mode.MULTIPLY);
+        } else {
+            // Legacy icon handling
+            String iconUri = ATAKUtilities.getIconUri(shp);
+            ATAKUtilities.SetIcon(mContext, holder.trackIcon, iconUri,
+                    ATAKUtilities.getIconColor(shp));
+        }
 
         holder.action.setOnClickListener(new OnClickListener() {
             @Override

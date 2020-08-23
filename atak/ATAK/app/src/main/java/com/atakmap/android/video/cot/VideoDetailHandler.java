@@ -97,6 +97,7 @@ public class VideoDetailHandler extends CotDetailHandler
                         parseInt(ce.getAttribute("networkTimeout"), 5000),
                         parseInt(ce.getAttribute("bufferTime"), -1),
                         parseInt(ce.getAttribute("rtspReliable"), 0),
+                        "",
                         ConnectionEntry.Source.EXTERNAL);
                 entry.setUID(uid);
                 ConnectionEntry existing = VideoManager.getInstance()

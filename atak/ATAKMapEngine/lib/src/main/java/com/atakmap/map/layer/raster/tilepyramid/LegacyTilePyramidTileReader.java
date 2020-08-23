@@ -250,9 +250,14 @@ public class LegacyTilePyramidTileReader extends AbstractTilePyramidTileReader {
         if(this.pending != null)
             this.pending.cancel(true);
     }
-    
+
     @Override
-    protected synchronized Bitmap getTileImpl(int level, long tileColumn, long tileRow, ReadResult[] code) {
+    protected Bitmap getTileImpl(int level, long tileColumn, long tileRow, ReadResult[] code) {
+        return getTileImpl(level, tileColumn, tileRow, null, code);
+    }
+
+    @Override
+    protected Bitmap getTileImpl(int level, long tileColumn, long tileRow, BitmapFactory.Options opts, ReadResult[] code) {
         if (level < 0)
             throw new IllegalArgumentException();
 
@@ -264,9 +269,9 @@ public class LegacyTilePyramidTileReader extends AbstractTilePyramidTileReader {
         final int latIndex = (int)tileRow + (this.gridOffsetY<<tsLevel);
         final int lngIndex = (int)tileColumn + (this.gridOffsetX<<tsLevel);
 
-        final BitmapFactory.Options opts = new BitmapFactory.Options();
-        opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
-        
+        if(opts.inPreferredConfig == null)
+            opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
+
         Future<Bitmap> bitmap = this.support.getTile(latIndex, lngIndex, tsLevel, opts);
         if(bitmap == null) {
             if(code != null) code[0] = ReadResult.ERROR;

@@ -41,7 +41,7 @@ class VideoIntent {
                             .getEntries();
 
                     for (ConnectionEntry ce : conns) {
-                        if (ConnectionEntry.getURL(ce).equals(url)) {
+                        if (ConnectionEntry.getURL(ce, false).equals(url)) {
                             recvEntry = ce;
                             break;
                         }

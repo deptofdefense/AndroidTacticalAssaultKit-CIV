@@ -19,9 +19,15 @@ JNILocalRef::~JNILocalRef() NOTHROWS
         obj = NULL;
     }
 }
-jobject &JNILocalRef::get() NOTHROWS
+jobject JNILocalRef::get() NOTHROWS
 {
     return obj;
+}
+jobject JNILocalRef::release() NOTHROWS
+{
+    jobject retval = obj;
+    obj = NULL;
+    return retval;
 }
 JNILocalRef::operator bool () const NOTHROWS
 {

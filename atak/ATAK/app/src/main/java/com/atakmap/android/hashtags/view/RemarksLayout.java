@@ -27,6 +27,7 @@ public class RemarksLayout extends LinearLayout {
     private static final int MAX_LENGTH = 5000;
 
     private final HashtagEditText _remarks;
+    private final ImageButton _editBtn;
     private String _rawText;
 
     public RemarksLayout(Context context) {
@@ -53,8 +54,8 @@ public class RemarksLayout extends LinearLayout {
         addView(ll);
 
         _remarks = findViewById(R.id.remarks);
-        ImageButton remarksBtn = findViewById(R.id.edit_remarks);
-        remarksBtn.setOnClickListener(new OnClickListener() {
+        _editBtn = findViewById(R.id.edit_remarks);
+        _editBtn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 promptEditText();
@@ -116,5 +117,13 @@ public class RemarksLayout extends LinearLayout {
                     WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE |
                             WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
         d.show();
+    }
+
+    @Override
+    public void setEnabled(boolean enabled) {
+        if (_remarks != null)
+            _remarks.setEnabled(enabled);
+        if (_editBtn != null)
+            _editBtn.setEnabled(enabled);
     }
 }

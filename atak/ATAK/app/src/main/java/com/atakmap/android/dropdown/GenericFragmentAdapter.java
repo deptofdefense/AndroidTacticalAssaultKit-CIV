@@ -2,7 +2,7 @@
 package com.atakmap.android.dropdown;
 
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
+import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -43,7 +43,7 @@ public class GenericFragmentAdapter extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         Log.d(TAG,
-                "saving the uid in case the the fragment has not been destroyed: "
+                "saving the uid in case the fragment has not been destroyed: "
                         + uid);
         outState.putString("viewuid", uid);
     }
@@ -53,7 +53,7 @@ public class GenericFragmentAdapter extends Fragment {
      */
     public void setView(final View v) {
         if (uid == null) {
-            // in the case the the Fragment has not been created
+            // in the case the Fragment has not been created
             uid = UUID.randomUUID().toString();
         }
 

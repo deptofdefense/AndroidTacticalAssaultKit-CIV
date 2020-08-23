@@ -133,7 +133,7 @@ public class Command {
         byte[] b = new byte[length];
         for (int i = 0; i < length; i++)
             b[i] = makeByte();
-        return new String(b, Charset.forName(FileSystemUtils.UTF8_CHARSET));
+        return new String(b, FileSystemUtils.UTF8_CHARSET);
     }
 
     private int getStringCount() {

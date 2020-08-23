@@ -205,7 +205,7 @@ class ServiceProviderCallback
     //
     virtual
     void
-    setProgress (std::size_t progess)
+    setProgress (int progess)
         = 0;
   };
 
@@ -324,7 +324,7 @@ class InteractiveServiceProvider
 
     ResultType*
     create (const InputType& input)
-        const
+        const override
       { return create (input, NULL, NULL); }
   };
 
@@ -639,7 +639,7 @@ class StrategyServiceProvider<ProviderT, StrategyT, void>
 
     ResultType*
     create (const InputType& input)
-        const
+        const override
       { return create (input, static_cast<StrategyConstPtr> (NULL)); }
   };
 

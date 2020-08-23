@@ -12,31 +12,27 @@ CatalogCurrencyRegistry2::CatalogCurrencyRegistry2()
 
 void CatalogCurrencyRegistry2::registerCurrency(CatalogCurrency2 *instance) NOTHROWS
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, mutex);
+    Lock lock(mutex);
     registeredInstances[instance->getName()] = instance;
 }
 
 void CatalogCurrencyRegistry2::deregisterCurrency(CatalogCurrency2 *instance) NOTHROWS
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, mutex);
+    Lock lock(mutex);
     registeredInstances.erase(instance->getName());
 }
 
 void CatalogCurrencyRegistry2::deregisterCurrency(const char *name) NOTHROWS
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, mutex);
+    Lock lock(mutex);
     registeredInstances.erase(name);
 }
 CatalogCurrency2 *CatalogCurrencyRegistry2::getCurrency(const char *name) NOTHROWS
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, mutex);
+    Lock lock(mutex);
     std::map<TAK::Engine::Port::String, CatalogCurrency2 *>::iterator entry;
     entry = registeredInstances.find(name);
     if (entry == registeredInstances.end())
-        return NULL;
+        return nullptr;
     return entry->second;
 }

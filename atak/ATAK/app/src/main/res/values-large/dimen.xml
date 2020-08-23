@@ -15,4 +15,7 @@
 
     <string name="dropdown_width">2.2</string>
 
+    <dimen name="vehicle_icon_size">64dp</dimen>
+    <dimen name="vehicle_text_size">12sp</dimen>
+
 </resources>

@@ -226,3 +226,36 @@ JNIEXPORT jlong JNICALL Java_com_atakmap_map_layer_feature_NativeFeatureCursor_g
 {
     return TE_TIMESTAMP_NONE;
 }
+
+JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_NativeFeatureCursor_getAltitudeMode
+  (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    FeatureCursor2 *result = JLONG_TO_INTPTR(FeatureCursor2, ptr);
+    if(!result) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return 0LL;
+    }
+
+    AltitudeMode altMode =  result->getAltitudeMode();
+    switch(altMode) {
+        case AltitudeMode::TEAM_Relative:
+            return 1;
+        case AltitudeMode::TEAM_Absolute:
+            return 2;
+        default:
+            return 0;
+    }
+}
+
+JNIEXPORT jdouble JNICALL Java_com_atakmap_map_layer_feature_NativeFeatureCursor_getExtrude
+  (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    FeatureCursor2 *result = JLONG_TO_INTPTR(FeatureCursor2, ptr);
+    if(!result) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return 0LL;
+    }
+
+    return result->getExtrude();
+}
+

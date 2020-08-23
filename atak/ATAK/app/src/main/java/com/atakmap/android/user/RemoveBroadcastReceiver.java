@@ -17,68 +17,69 @@ import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
 public class RemoveBroadcastReceiver extends BroadcastReceiver {
+
+    private final Context _context;
     private final MapGroup _removeGroup;
 
-    public RemoveBroadcastReceiver(MapGroup removeGroup) {
+    public RemoveBroadcastReceiver(MapView mapView, MapGroup removeGroup) {
+        _context = mapView.getContext();
         _removeGroup = removeGroup;
+    }
+
+    public RemoveBroadcastReceiver(MapGroup removeGroup) {
+        this(MapView.getMapView(), removeGroup);
+    }
+
+    public RemoveBroadcastReceiver(MapView mapView) {
+        this(mapView, mapView.getRootGroup());
     }
 
     @Override
     public void onReceive(final Context context, final Intent intent) {
         String uid = intent.getStringExtra("uid");
-        MapItem item = null;
+        if (FileSystemUtils.isEmpty(uid))
+            return;
 
-        if (uid != null
-                && null != (item = _removeGroup.deepFindUID(uid))) {
+        final MapItem item = _removeGroup.deepFindUID(uid);
+        String title = ATAKUtilities.getDisplayName(item);
 
-            // a few fallbacks just in case the callsign is not set, 
-            // check for the metastring title, then the metastring shapeName. 
-            String title = ATAKUtilities.getDisplayName(item);
-            if (FileSystemUtils.isEmpty(title))
-                title = "Untitled";
+        AlertDialog.Builder b = new AlertDialog.Builder(_context);
+        b.setTitle(R.string.confirmation_dialogue);
+        b.setMessage(_context.getString(R.string.confirmation_remove_details,
+                title));
+        b.setPositiveButton(R.string.yes, new OnClickListener() {
+            @Override
+            public void onClick(DialogInterface d, int w) {
+                if (item.getMetaBoolean("removable", true)) {
+                    // Remove from map group
+                    item.removeFromGroup();
+                } else if (item.hasMetaValue("deleteAction")) {
+                    // Special delete action
+                    Intent delete = new Intent(item
+                            .getMetaString("deleteAction", ""));
+                    delete.putExtra("targetUID", item.getUID());
+                    AtakBroadcast.getInstance().sendBroadcast(delete);
+                    return;
+                }
 
-            final MapGroup itemGroup = item.getGroup();
-            final MapItem finalItem = item;
-
-            AlertDialog.Builder b = new AlertDialog.Builder(MapView
-                    .getMapView().getContext());
-            b.setTitle(context.getString(R.string.confirmation_dialogue))
-                    .setMessage(
-                            MapView.getMapView().getContext()
-                                    .getString(R.string.remove)
-                                    + title
-                                    + MapView
-                                            .getMapView()
-                                            .getContext()
-                                            .getString(
-                                                    R.string.question_mark_symbol))
-                    .setPositiveButton(R.string.yes, new OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface arg0, int arg1) {
-                            if (itemGroup != null)
-                                itemGroup.removeItem(finalItem);
-
-                            //TODO remove SSE intent from baseline?
-                            if (intent.hasExtra("entity_id")
-                                    && intent.hasExtra("entity_type")) {
-                                Intent removeSseEntity = new Intent(
-                                        "com.atakmap.android.toolbars.REMOVE_ENTITY");
-                                removeSseEntity.putExtra("entity_id",
-                                        intent.getStringExtra("entity_id"));
-                                removeSseEntity.putExtra("entity_type",
-                                        intent.getStringExtra("entity_type"));
-                                removeSseEntity.putExtra("grg_uid",
-                                        intent.getStringExtra("grg_uid"));
-                                AtakBroadcast.getInstance().sendBroadcast(
-                                        removeSseEntity);
-                            }
-                        }
-                    })
-                    .setNegativeButton(R.string.cancel, null);
-
-            AlertDialog d = b.create();
-            d.show();
-        }
+                //TODO remove SSE intent from baseline?
+                //  See the deleteAction intent meta string above
+                if (intent.hasExtra("entity_id")
+                        && intent.hasExtra("entity_type")) {
+                    Intent removeSseEntity = new Intent(
+                            "com.atakmap.android.toolbars.REMOVE_ENTITY");
+                    removeSseEntity.putExtra("entity_id",
+                            intent.getStringExtra("entity_id"));
+                    removeSseEntity.putExtra("entity_type",
+                            intent.getStringExtra("entity_type"));
+                    removeSseEntity.putExtra("grg_uid",
+                            intent.getStringExtra("grg_uid"));
+                    AtakBroadcast.getInstance().sendBroadcast(
+                            removeSseEntity);
+                }
+            }
+        });
+        b.setNegativeButton(R.string.cancel, null);
+        b.show();
     }
-
 }

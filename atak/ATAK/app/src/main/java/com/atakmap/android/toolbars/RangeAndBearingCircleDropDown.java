@@ -1,6 +1,7 @@
 
 package com.atakmap.android.toolbars;
 
+import com.atakmap.android.cotdetails.extras.ExtraDetailsLayout;
 import com.atakmap.android.drawing.mapItems.DrawingCircle;
 import com.atakmap.android.editableShapes.CircleEditTool;
 import com.atakmap.android.hashtags.view.RemarksLayout;
@@ -103,6 +104,7 @@ public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
 
     private View _buttonLayout, _editLayout;
     private Button _editButton, _undoButton, _endButton;
+    private ExtraDetailsLayout _extrasLayout;
 
     public RangeAndBearingCircleDropDown(MapView mapView) {
 
@@ -268,6 +270,8 @@ public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
         _undoButton.setOnClickListener(this);
         _endButton = _root.findViewById(R.id.endButton);
         _endButton.setOnClickListener(this);
+
+        _extrasLayout = _root.findViewById(R.id.extrasLayout);
     }
 
     @Override
@@ -437,6 +441,7 @@ public class RangeAndBearingCircleDropDown extends DropDownReceiver implements
                     _buttonLayout.setVisibility(View.VISIBLE);
                     _editLayout.setVisibility(View.GONE);
                 }
+                _extrasLayout.setItem(_rabCircle);
             }
         });
 

@@ -27,7 +27,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-import static android.support.v4.app.ActivityCompat.invalidateOptionsMenu;
+import static androidx.core.app.ActivityCompat.invalidateOptionsMenu;
 import static android.view.View.OnLongClickListener;
 
 /**

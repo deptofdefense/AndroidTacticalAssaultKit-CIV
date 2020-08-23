@@ -7,6 +7,7 @@ import android.preference.PreferenceManager;
 import android.util.Base64;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.net.AtakAuthenticationDatabase;
 
@@ -69,7 +70,8 @@ public class SharedPreferencesSerializer implements JSONPreferenceSerializer {
                 // panic and crash when we try to cast an integer to a float...
                 Object v = e.getValue();
                 JSONObject jo = new JSONObject();
-                jo.put("type", v.getClass().getSimpleName().toLowerCase());
+                jo.put("type", v.getClass().getSimpleName()
+                        .toLowerCase(LocaleUtil.getCurrent()));
                 jo.put("value", v);
                 prefs.put(key, jo);
             }
@@ -105,16 +107,23 @@ public class SharedPreferencesSerializer implements JSONPreferenceSerializer {
 
                 String vs = String.valueOf(v.get("value"));
                 String type = v.getString("type");
-                if (type.equals("string"))
-                    e.putString(key, vs);
-                else if (type.equals("integer"))
-                    e.putInt(key, Integer.parseInt(vs));
-                else if (type.equals("long"))
-                    e.putLong(key, Long.parseLong(vs));
-                else if (type.equals("float"))
-                    e.putFloat(key, Float.parseFloat(vs));
-                else if (type.equals("boolean"))
-                    e.putBoolean(key, Boolean.parseBoolean(vs));
+                switch (type) {
+                    case "string":
+                        e.putString(key, vs);
+                        break;
+                    case "integer":
+                        e.putInt(key, Integer.parseInt(vs));
+                        break;
+                    case "long":
+                        e.putLong(key, Long.parseLong(vs));
+                        break;
+                    case "float":
+                        e.putFloat(key, Float.parseFloat(vs));
+                        break;
+                    case "boolean":
+                        e.putBoolean(key, Boolean.parseBoolean(vs));
+                        break;
+                }
             }
             e.apply();
         } catch (Exception e) {

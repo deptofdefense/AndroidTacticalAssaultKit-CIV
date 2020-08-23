@@ -117,6 +117,8 @@ public class PolylineSelectTool extends Tool implements
                     pts[i] = Route.createControlPoint(list[i]);
                 }
                 r.addMarkers(0, pts);
+                r.setRemarks(_item.getRemarks());
+                r.setMetaString("entry", "user");
                 final MapGroup _mapGroup = _mapView.getRootGroup()
                         .findMapGroup("Route");
                 _mapGroup.addItem(r);

@@ -6,27 +6,29 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
-import com.atakmap.android.ipc.AtakBroadcast;
-import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.rubbersheet.tool.RubberModelEditTool;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.util.ATAKUtilities;
-import com.atakmap.android.vehicle.overhead.OverheadRotationTool;
 
+/**
+ * Receiver for various vehicle-related intents
+ */
 public class VehicleMapReceiver extends BroadcastReceiver {
+
     public static final String TAG = "VehicleMapReceiver";
     public static final String ROTATE = "com.atakmap.android.maps.ROTATE";
+    public static final String EDIT = "com.atakmap.android.vehicle.model.EDIT";
     public static final String TOGGLE_LABEL = "com.atakmap.android.maps.TOGGLE_LABEL";
 
-    private VehicleRotationTool _vehTool;
-    private OverheadRotationTool _overheadTool;
     private final MapView _mapView;
-    private final MapGroup _overheadGroup;
 
     public VehicleMapReceiver(MapView mapView) {
         _mapView = mapView;
-        _overheadGroup = VehicleMapComponent.getOverheadGroup(_mapView);
+        new VehicleRotationTool(_mapView, null);
+        /*new VehicleModelEditTool(_mapView, VehicleMapComponent
+                .getVehicleGroup(_mapView));*/
     }
 
     @Override
@@ -39,33 +41,38 @@ public class VehicleMapReceiver extends BroadcastReceiver {
         if (uid == null)
             return;
 
-        if (action.equals(ROTATE)) {
-            if (_vehTool == null)
-                _vehTool = new VehicleRotationTool(_mapView, null);
-            if (_overheadTool == null)
-                _overheadTool = new OverheadRotationTool(_mapView, null);
-
-            String tool = VehicleRotationTool.TOOL_NAME;
-            if (_overheadGroup.deepFindUID(uid) != null)
-                tool = OverheadRotationTool.TOOL_NAME;
-            Intent myIntent = new Intent();
-            myIntent.setAction(ToolManagerBroadcastReceiver.BEGIN_TOOL);
-            myIntent.putExtra("tool", tool);
-            Bundle extras = intent.getExtras();
-            if (extras == null)
-                extras = new Bundle();
-            myIntent.putExtras(extras);
-            AtakBroadcast.getInstance().sendBroadcast(myIntent);
-        } else if (action.equals(TOGGLE_LABEL)) {
-            MapItem mi = _mapView.getRootGroup().deepFindUID(uid);
-            if (mi == null)
+        MapItem mi = _mapView.getRootGroup().deepFindUID(uid);
+        if (!(mi instanceof VehicleMapItem)) {
+            mi = ATAKUtilities.findAssocShape(mi);
+            if (!(mi instanceof VehicleMapItem))
                 return;
-            if (mi.getType().equals("shape_marker"))
-                mi = ATAKUtilities.findAssocShape(mi);
+        }
+
+        Bundle extras = intent.getExtras();
+        if (extras == null)
+            extras = new Bundle();
+
+        // Start vehicle rotation tool
+        if (action.equals(ROTATE)) {
+            ToolManagerBroadcastReceiver.getInstance().startTool(
+                    VehicleRotationTool.TOOL_NAME, extras);
+        }
+
+        // Edit vehicle model
+        else if (action.equals(EDIT)) {
+            ToolManagerBroadcastReceiver.getInstance().startTool(
+                    RubberModelEditTool.TOOL_NAME, extras);
+        }
+
+        // Toggle vehicle marker label
+        else if (action.equals(TOGGLE_LABEL)) {
             if (mi instanceof VehicleShape) {
                 VehicleShape veh = (VehicleShape) mi;
                 veh.setShowLabel(!veh.hasMetaValue("showLabel"));
                 veh.save();
+            } else {
+                mi.toggleMetaData("showLabel", !mi.hasMetaValue("showLabel"));
+                mi.persist(_mapView.getMapEventDispatcher(), null, getClass());
             }
         }
     }

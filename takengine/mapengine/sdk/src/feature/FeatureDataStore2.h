@@ -57,10 +57,11 @@ namespace TAK {
                     MODIFY_FEATURESET_FEATURE_DELETE =      0x000040,
                     MODIFY_FEATURESET_NAME =                0x000080,
                     MODIFY_FEATURESET_DISPLAY_THRESHOLDS =  0x000100,
-                    MODIFY_FEATURE_NAME =                   0x000200,
-                    MODIFY_FEATURE_GEOMETRY =               0x000400,
-                    MODIFY_FEATURE_STYLE =                  0x000800,
-                    MODIFY_FEATURE_ATTRIBUTES =             0x001000,
+                    MODIFY_FEATURESET_READONLY =            0X000200,
+                    MODIFY_FEATURE_NAME =                   0x000400,
+                    MODIFY_FEATURE_GEOMETRY =               0x000800,
+                    MODIFY_FEATURE_STYLE =                  0x001000,
+                    MODIFY_FEATURE_ATTRIBUTES =             0x002000,
 
                     UPDATE_ATTRIBUTESET_SET =               0,
                     UPDATE_ATTRIBUTESET_ADD_OR_REPLACE =    1,
@@ -101,9 +102,11 @@ namespace TAK {
                 virtual Util::TAKErr updateFeatureSet(const int64_t fsid, const char *name, const double minResolution, const double maxResolution) NOTHROWS = 0;
                 virtual Util::TAKErr deleteFeatureSet(const int64_t fsid) NOTHROWS = 0;
                 virtual Util::TAKErr deleteAllFeatureSets() NOTHROWS = 0;
-                virtual Util::TAKErr insertFeature(FeaturePtr_const *feature, const int64_t fsid, const char *name, const atakmap::feature::Geometry &geom, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attributes) NOTHROWS = 0;
+                virtual Util::TAKErr insertFeature(FeaturePtr_const *feature, const int64_t fsid, const char *name, const atakmap::feature::Geometry &geom, const AltitudeMode altitudeMode, const double extrude, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attributes) NOTHROWS = 0;
                 virtual Util::TAKErr updateFeature(const int64_t fid, const char *name) NOTHROWS = 0;
                 virtual Util::TAKErr updateFeature(const int64_t fid, const atakmap::feature::Geometry &geom) NOTHROWS = 0;
+                virtual Util::TAKErr updateFeature(const int64_t fid, const atakmap::feature::Geometry &geom, const TAK::Engine::Feature::AltitudeMode altitudeMode, const double extrude) NOTHROWS = 0;
+                virtual Util::TAKErr updateFeature(const int64_t fid, const TAK::Engine::Feature::AltitudeMode altitudeMode, const double extrude) NOTHROWS = 0;
                 virtual Util::TAKErr updateFeature(const int64_t fid, const atakmap::feature::Style *style) NOTHROWS = 0;
                 virtual Util::TAKErr updateFeature(const int64_t fid, const atakmap::util::AttributeSet &attributes) NOTHROWS = 0;
                 virtual Util::TAKErr updateFeature(const int64_t fid, const char *name, const atakmap::feature::Geometry &geom, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attributes) NOTHROWS = 0;
@@ -115,7 +118,11 @@ namespace TAK {
                 virtual Util::TAKErr isFeatureVisible(bool *value, const int64_t fid) NOTHROWS = 0;
                 virtual Util::TAKErr setFeatureSetVisible(const int64_t setId, const bool visible) NOTHROWS = 0;
                 virtual Util::TAKErr setFeatureSetsVisible(const FeatureSetQueryParameters &params, const bool visible) NOTHROWS = 0;
+                virtual Util::TAKErr setFeatureSetsReadOnly(const FeatureSetQueryParameters &paramsRef, const bool readOnly) NOTHROWS = 0;
                 virtual Util::TAKErr isFeatureSetVisible(bool *value, const int64_t setId) NOTHROWS = 0;
+                virtual Util::TAKErr setFeatureSetReadOnly(const int64_t fsid, const bool readOnly) NOTHROWS = 0;
+                virtual Util::TAKErr isFeatureSetReadOnly(bool *value, const int64_t fsid) NOTHROWS = 0;
+                virtual Util::TAKErr isFeatureReadOnly(bool *value, const int64_t fsid) NOTHROWS = 0;
                 virtual Util::TAKErr isAvailable(bool *value) NOTHROWS = 0;
                 virtual Util::TAKErr refresh() NOTHROWS = 0;
                 virtual Util::TAKErr getUri(Port::String &value) NOTHROWS = 0;
@@ -210,7 +217,7 @@ namespace TAK {
                     }
                 };
 
-                enum ENGINE_API IgnoreFields
+                enum IgnoreFields
                 {
                     GeometryField = 0x01,
                     StyleField = 0x02,

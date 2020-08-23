@@ -143,6 +143,12 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
             return;
         }
 
+        // This geo-fence is being imported from CoT event
+        boolean imported = item
+                .hasMetaValue(GeoFenceConstants.GEO_FENCE_IMPORTED);
+        if (imported)
+            item.removeMetaData(GeoFenceConstants.GEO_FENCE_IMPORTED);
+
         // Attempting to add geofence to a shape that hasn't been created
         // or added to the map yet
         String shapeUID = item.getMetaString("shapeUID", null);
@@ -173,7 +179,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
         addMonitor(monitor);
         boolean bGetLastState = monitor.getFence()
                 .getTrigger() == GeoFence.Trigger.Both;
-        new InitGeoFenceTask(this, bGetLastState).execute(monitor);
+        new InitGeoFenceTask(this, bGetLastState, imported).execute(monitor);
     }
 
     private void initialize() {
@@ -890,11 +896,13 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
         //protected ProgressDialog _progressDialog;
         protected GeoFenceMonitor _monitor;
         protected final GeoFenceManager _manager;
+        protected final boolean _imported;
 
-        InitGeoFenceBaseTask(GeoFenceManager manager) {
+        InitGeoFenceBaseTask(GeoFenceManager manager, boolean imported) {
             _manager = manager;
             _mapView = manager._view;
             _context = _mapView.getContext();
+            _imported = imported;
         }
 
         @Override
@@ -969,7 +977,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
             // if the state is preserved for the geofence monitor do not toast that no found everytime
             // the application is loaded.
 
-            _manager.beginMonitoring(found, _monitor);
+            _manager.beginMonitoring(found, _monitor, _imported);
 
             // this workflow confuses people 
 
@@ -991,8 +999,9 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
 
         private boolean _bGetLastState;
 
-        InitGeoFenceTask(GeoFenceManager manager, boolean bGetLastState) {
-            super(manager);
+        InitGeoFenceTask(GeoFenceManager manager, boolean bGetLastState,
+                boolean imported) {
+            super(manager, imported);
             _bGetLastState = bGetLastState;
         }
 
@@ -1054,7 +1063,8 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
                     public void onClick(DialogInterface d, int i) {
                         Log.d(TAG,
                                 "Begin monitoring with no matching map items");
-                        beginMonitoring(new ArrayList<PointMapItem>(), monitor);
+                        beginMonitoring(new ArrayList<PointMapItem>(), monitor,
+                                false);
                     }
                 });
         b.setNegativeButton(R.string.cancel,
@@ -1070,7 +1080,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
     }
 
     private void beginMonitoring(final List<PointMapItem> items,
-            GeoFenceMonitor monitor) {
+            GeoFenceMonitor monitor, boolean imported) {
         //all found items are sides fence
         if (monitor.getFence()
                 .getMonitoredTypes() == GeoFence.MonitoredTypes.Custom) {
@@ -1098,7 +1108,8 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
             monitor.getFence().setTracking(true);
             addMonitor(monitor);
             notifyMonitoring(items.size(), monitor);
-            monitor.persist();
+            if (!imported)
+                monitor.persist();
         }
     }
 

@@ -171,7 +171,7 @@ struct ZipFile::Impl {
         result = libkml_unzGetCurrentFileInfo(handle,
             nullptr,
             buffer.data(),
-            buffer.size() - 1,
+            static_cast<uLong>(buffer.size() - 1),
             nullptr,
             0,
             nullptr,
@@ -195,11 +195,11 @@ struct ZipFile::Impl {
 
         size_t left = byteCount;
         TAKErr code = TE_Ok;
-        uint8_t *pos = static_cast<uint8_t *>(dst);
+        auto *pos = static_cast<uint8_t *>(dst);
 
         while (left > 0) {
 
-            unsigned step = (unsigned)left;
+            auto step = (unsigned)left;
             int result = libkml_unzReadCurrentFile(handle, pos, step);
             
             // EOF
@@ -270,7 +270,7 @@ TAKErr ZipFile::getNumEntries(size_t &numEntries) NOTHROWS {
 	unz_global_info globInfo;
 	TAKErr code = impl->getGlobInfo(globInfo);
 	if (code == TE_Ok) {
-		numEntries = globInfo.number_entry;
+        numEntries = static_cast<std::size_t>(globInfo.number_entry);
 	}
 	return code;
 }
@@ -316,7 +316,7 @@ TAKErr ZipFile::closeCurrentEntry() NOTHROWS {
 //
 
 ZipFileDataInput2::ZipFileDataInput2(ZipFilePtr &&zipPtr, const int64_t len) NOTHROWS
-    : zipPtr(std::move(zipPtr)), len(len)
+    : zip_ptr_(std::move(zipPtr)), len_(len)
 { }
 
 ZipFileDataInput2::~ZipFileDataInput2() NOTHROWS 
@@ -344,17 +344,17 @@ TAKErr ZipFileDataInput2::open(DataInput2Ptr &outPtr, const char *zipFile, const
 }
 
 TAKErr ZipFileDataInput2::close() NOTHROWS {
-    zipPtr = nullptr;
+    zip_ptr_ = nullptr;
     return TE_Ok;
 }
 
 TAKErr ZipFileDataInput2::read(uint8_t *buf, std::size_t *numRead, const std::size_t len) NOTHROWS {
 
-    if (!zipPtr)
+    if (!zip_ptr_)
         return TE_IllegalState;
 
     size_t read = 0;
-    TAKErr code = zipPtr->read(buf, read, len);
+    TAKErr code = zip_ptr_->read(buf, read, len);
     if (numRead)
         *numRead = read;
 
@@ -371,5 +371,5 @@ TAKErr ZipFileDataInput2::skip(const std::size_t n) NOTHROWS {
 
 int64_t ZipFileDataInput2::length() const NOTHROWS
 {
-    return len;
+    return len_;
 }

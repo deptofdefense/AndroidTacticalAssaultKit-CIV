@@ -62,7 +62,7 @@ namespace atakmap {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
                 glTexImage2D(GL_TEXTURE_2D, 0, format,
                                                  width, height, 0,
-                                                 format, type, NULL);
+                                                 format, type, nullptr);
                 glBindTexture(GL_TEXTURE_2D, 0);
 
             }
@@ -126,25 +126,25 @@ namespace atakmap {
             return minFilter;
         }
 
-        void GLTexture::setWrapS(int wrapS)
+        void GLTexture::setWrapS(int wrap_s)
         {
-            this->wrapS = wrapS;
+            this->wrapS = wrap_s;
             needsApply = true;
         }
 
-        void GLTexture::setWrapT(int wrapT)
+        void GLTexture::setWrapT(int wrap_t)
         {
-            this->wrapT = wrapT;
+            this->wrapT = wrap_t;
             needsApply = true;
         }
 
-        void GLTexture::setMinFilter(int minFilter)
+        void GLTexture::setMinFilter(int min_filter)
         {
-            this->minFilter = minFilter;
+            this->minFilter = min_filter;
             needsApply = true;
         }
 
-        void GLTexture::setMagFilter(int magFilter)
+        void GLTexture::setMagFilter(int mag_filter)
         {
             this->magFilter = minFilter;
             needsApply = true;
@@ -181,10 +181,10 @@ namespace atakmap {
         /*************************************************************************/
         // Public API - Drawing
 
-        void GLTexture::draw(int numCoords, int type, void *textureCoordinates,
+        void GLTexture::draw(int numCoords, int tex_type, void *textureCoordinates,
                              void *vertexCoordinates)
         {
-            draw(numCoords, type, textureCoordinates, type, vertexCoordinates);
+            draw(numCoords, tex_type, textureCoordinates, tex_type, vertexCoordinates);
         }
         void GLTexture::draw(int numCoords, int texType, void *textureCoordinates,
                              int vertType, void *vertexCoordinates)
@@ -210,6 +210,11 @@ namespace atakmap {
         void GLTexture::draw(int texId, int mode, int numCoords, int texSize, int texType,
                              void *textureCoordinates, int vertSize, int vertType, void *vertexCoordinates)
         {
+            GLTexture::draw(texId, mode, numCoords, texSize, texType, textureCoordinates, vertSize, vertType, vertexCoordinates, 1.0f);
+        }
+
+        void GLTexture::draw(int texId, int mode, int numCoords, int texSize, int texType, void *textureCoordinates, int vertSize,
+                             int vertType, void *vertexCoordinates, float alpha) {
             if (texId == 0)
                 return;
 
@@ -225,7 +230,7 @@ namespace atakmap {
             fixedPipe->glTexCoordPointer(texSize, texType, 0, textureCoordinates);
             glBindTexture(GL_TEXTURE_2D, texId);
 
-            fixedPipe->glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+            fixedPipe->glColor4f(1.0f, 1.0f, 1.0f, alpha);
             fixedPipe->glDrawArrays(mode, 0, numCoords);
 
             fixedPipe->glDisableClientState(GLES20FixedPipeline::ClientState::CS_GL_VERTEX_ARRAY);
@@ -240,9 +245,14 @@ namespace atakmap {
             draw(texId, mode, numCoords, 2, texType, textureCoordinates, 2, vertType, vertexCoordinates, idxType, indices);
         }
 
+        void GLTexture::draw(int texId, int mode, int numCoords, int texSize, int texType, void *textureCoordinates, int vertSize,
+                             int vertType, void *vertexCoordinates, int idxType, void *indices) {
+            draw(texId, mode, numCoords, texSize, texType, textureCoordinates, vertSize, vertType, vertexCoordinates, idxType, indices, 1.0f);
+        }
+
         void GLTexture::draw(int texId, int mode, int numCoords, int texSize, int texType,
                              void *textureCoordinates, int vertSize, int vertType, void *vertexCoordinates, int idxType,
-                             void *indices)
+                             void *indices, float alpha)
         {
             if (texId == 0)
                 return;
@@ -259,7 +269,7 @@ namespace atakmap {
             fixedPipe->glTexCoordPointer(texSize, texType, 0, textureCoordinates);
             glBindTexture(GL_TEXTURE_2D, texId);
 
-            fixedPipe->glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+            fixedPipe->glColor4f(1.0f, 1.0f, 1.0f, alpha);
             fixedPipe->glDrawElements(mode, numCoords, idxType, indices);
             // GLES20FixedPipeline.glDrawArrays(mode, 0, numCoords);
 

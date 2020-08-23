@@ -38,17 +38,17 @@ public class RubberModel extends AbstractSheet implements ModelLoader.Callback {
     private final double[] _rotation = new double[3];
     private final double[] _dimensions = new double[3];
     private final Set<OnChangedListener> _changeListeners = new HashSet<>();
+    private boolean _sharedModel;
 
     // To be loaded
     private ModelInfo _info;
     private Model _model;
     private GLRubberModel _renderer;
 
-    private RubberModel(RubberModelData data) {
+    protected RubberModel(RubberModelData data) {
         super(data);
         _projection = data.projection;
         _subModelURI = data.subModel;
-        setMenu("menus/rubber_model_menu.xml");
         setMetaString("iconUri", ATAKUtilities.getResourceUri(
                 R.drawable.ic_model_building));
     }
@@ -204,6 +204,24 @@ public class RubberModel extends AbstractSheet implements ModelLoader.Callback {
             l.onAltitudeChanged(this, altitude, ref);
     }
 
+    /**
+     * Set whether the underling Model object is shared across different instances
+     * Determines if the model should be disposed on removal
+     * @param shared True if shared
+     */
+    public void setSharedModel(boolean shared) {
+        _sharedModel = shared;
+    }
+
+    public boolean isSharedModel() {
+        return _sharedModel;
+    }
+
+    @Override
+    protected String getMenuPath() {
+        return "menus/rubber_model_menu.xml";
+    }
+
     @Override
     protected void onPointsChanged() {
         // Make sure center still has a valid altitude
@@ -251,8 +269,9 @@ public class RubberModel extends AbstractSheet implements ModelLoader.Callback {
             return true;
 
         // Hit test on the model itself
-        if (getAlpha() <= 0)
+        if (!isModelVisible())
             return false;
+
         GeoPoint result = GeoPoint.createMutable();
         final GLRubberModel renderer = _renderer;
         if (renderer != null && renderer.hitTest(x, y, result, view)) {
@@ -261,6 +280,10 @@ public class RubberModel extends AbstractSheet implements ModelLoader.Callback {
             return true;
         }
         return false;
+    }
+
+    protected boolean isModelVisible() {
+        return getAlpha() > 0;
     }
 
     public void setRenderer(GLRubberModel renderer) {
@@ -275,7 +298,7 @@ public class RubberModel extends AbstractSheet implements ModelLoader.Callback {
         _changeListeners.remove(l);
     }
 
-    private synchronized List<OnChangedListener> getChangeListeners() {
+    protected synchronized List<OnChangedListener> getChangeListeners() {
         return new ArrayList<>(_changeListeners);
     }
 

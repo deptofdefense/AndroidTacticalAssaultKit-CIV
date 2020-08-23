@@ -20,6 +20,8 @@ public abstract class RouteGenerationTask extends
 
     private Exception backgroundException = null;
 
+    private boolean alertOnCreation = true;
+
     private final RouteGenerationEventListener listener;
 
     public RouteGenerationEventListener getListener() {
@@ -30,10 +32,16 @@ public abstract class RouteGenerationTask extends
         this.listener = listener;
     }
 
+    /** Sets whether or not a dialog box will be displayed when the route is calculated.
+     *  Default value is "true" */
+    public void setAlertOnCreation(boolean value) {
+        alertOnCreation = value;
+    }
+
     @Override
     protected void onPreExecute() {
         if (listener != null) {
-            listener.onBeforeRouteGenerated(this);
+            listener.onBeforeRouteGenerated(this, alertOnCreation);
         }
     }
 
@@ -118,8 +126,11 @@ public abstract class RouteGenerationTask extends
         /**
          * Fires before the task is executed (NOTE:  Will run on the UI thread)
          * @param task The associated task.
+         * @param displayDialog Specify whether or not to alert the user that
+         *                      a new route is being generated.
          */
-        void onBeforeRouteGenerated(RouteGenerationTask task);
+        void onBeforeRouteGenerated(RouteGenerationTask task,
+                boolean displayDialog);
 
         /**
          * Fires immediately after the route is generated (NOTE:  Will run on the BACKGROUND thread).

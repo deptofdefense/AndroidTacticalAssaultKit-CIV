@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import com.atakmap.coremap.locale.LocaleUtil;
+import com.atakmap.coremap.xml.XMLUtils;
+
 import java.util.Map;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -54,17 +56,7 @@ public class WidgetItemListParser {
             IOException {
         WidgetItemList list = null;
         try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            try {
-                dbf.setFeature(
-                        "http://apache.org/xml/features/disallow-doctype-decl",
-                        true);
-            } catch (Exception ignored) {
-            }
-            try {
-                dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            } catch (Exception ignored) {
-            }
+            DocumentBuilderFactory dbf = XMLUtils.getDocumenBuilderFactory();
 
             DocumentBuilder db = dbf.newDocumentBuilder();
             Document doc = db.parse(stream);
@@ -198,19 +190,8 @@ public class WidgetItemListParser {
 
             FileInputStream fis = new FileInputStream(_currentDirectory + path);
             try {
-                DocumentBuilderFactory dbf = DocumentBuilderFactory
-                        .newInstance();
-                try {
-                    dbf.setFeature(
-                            "http://apache.org/xml/features/disallow-doctype-decl",
-                            true);
-                } catch (Exception ignored) {
-                }
-                try {
-                    dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,
-                            true);
-                } catch (Exception ignored) {
-                }
+                DocumentBuilderFactory dbf = XMLUtils
+                        .getDocumenBuilderFactory();
 
                 DocumentBuilder db = dbf.newDocumentBuilder();
                 Document doc = db.parse(fis);

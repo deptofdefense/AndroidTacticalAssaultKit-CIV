@@ -1,4 +1,4 @@
-<menu buttonRadius='65' buttonSpan='72' buttonWidth='90' buttonBg='bgs/button.xml'>
+<menu buttonRadius='65' buttonSpan='60' buttonWidth='90' buttonBg='bgs/button.xml'>
 
     <button angle='-90'
             icon='icons/delete.png'
@@ -17,5 +17,9 @@
     <button icon='icons/label.png'
             onClick='actions/label_toggle.xml'
             selected='${labels_on}'/>
+
+    <button icon='icons/clamp.png'
+            onClick='actions/clamp_toggle.xml'
+            selected='!{${absolute}}'/>
 
 </menu>

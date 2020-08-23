@@ -303,6 +303,21 @@ public class MultiPolyline extends DrawingShape implements Exportable {
         }
     }
 
+    @Override
+    public void setMovable(boolean movable) {
+        super.setMovable(movable);
+
+        synchronized (lock) {
+            if (this._lines == null)
+                return;
+
+            //Loop through the iterator
+            for (DrawingShape ds : this._lines) {
+                ds.setMovable(movable);
+            }
+        }
+    }
+
     /**
      * A function that looks through all of the individual lines in this object
      * sees if the user touched it, and if so change that lines color

@@ -133,7 +133,7 @@ parseSpatiaLiteGeometry (std::istream& strm,
                          bool hasMeasure,
                          bool isCompressed)
   {
-    feature::Geometry* result (NULL);
+    feature::Geometry* result (nullptr);
 
     if ((strm.get () & 0xFF) != 0x69)
       {
@@ -184,7 +184,7 @@ parseSpatiaLiteLineString (std::istream& strm,
                            bool hasMeasure,
                            bool isCompressed)
   {
-    std::auto_ptr<feature::LineString> result (new feature::LineString (dim));
+    std::unique_ptr<feature::LineString> result (new feature::LineString (dim));
     std::size_t count (util::read<uint32_t> (strm, swapEndian));
 
     if (!isCompressed)
@@ -224,7 +224,7 @@ parseSpatiaLiteLineString (std::istream& strm,
 
                 for (size_t i (0); i < count; ++i)
                   {
-                    double x (util::read<double> (strm, swapEndian));
+                    auto x (util::read<double> (strm, swapEndian));
 
                     result->addPoint (x, util::read<double> (strm, swapEndian));
                     strm.ignore (8);
@@ -235,8 +235,8 @@ parseSpatiaLiteLineString (std::istream& strm,
 
                 for (size_t i (0); i < count; ++i)
                   {
-                    double x (util::read<double> (strm, swapEndian));
-                    double y (util::read<double> (strm, swapEndian));
+                    auto x (util::read<double> (strm, swapEndian));
+                    auto y (util::read<double> (strm, swapEndian));
 
                     result->addPoint (x, y, util::read<double> (strm, swapEndian));
                     strm.ignore (8);
@@ -253,8 +253,8 @@ parseSpatiaLiteLineString (std::istream& strm,
 
             if (!hasMeasure)            // isCompressed && !hasMeasure
               {
-                double x (util::read<double> (strm, swapEndian));
-                double y (util::read<double> (strm, swapEndian));
+                auto x (util::read<double> (strm, swapEndian));
+                auto y (util::read<double> (strm, swapEndian));
 
                 result->addPoint (x, y);
 
@@ -267,8 +267,8 @@ parseSpatiaLiteLineString (std::istream& strm,
               }
             else                        // isCompressed && hasMeasure
               {
-                double x (util::read<double> (strm, swapEndian));
-                double y (util::read<double> (strm, swapEndian));
+                auto x (util::read<double> (strm, swapEndian));
+                auto y (util::read<double> (strm, swapEndian));
 
                 result->addPoint (x, y);
                 strm.ignore (8);
@@ -287,9 +287,9 @@ parseSpatiaLiteLineString (std::istream& strm,
 
             if (!hasMeasure)            // isCompressed && !hasMeasure
               {
-                double x (util::read<double> (strm, swapEndian));
-                double y (util::read<double> (strm, swapEndian));
-                double z (util::read<double> (strm, swapEndian));
+                auto x (util::read<double> (strm, swapEndian));
+                auto y (util::read<double> (strm, swapEndian));
+                auto z (util::read<double> (strm, swapEndian));
 
                 result->addPoint (x, y, z);
 
@@ -303,9 +303,9 @@ parseSpatiaLiteLineString (std::istream& strm,
               }
             else
               {
-                double x (util::read<double> (strm, swapEndian));
-                double y (util::read<double> (strm, swapEndian));
-                double z (util::read<double> (strm, swapEndian));
+                auto x (util::read<double> (strm, swapEndian));
+                auto y (util::read<double> (strm, swapEndian));
+                auto z (util::read<double> (strm, swapEndian));
 
                 result->addPoint (x, y, z);
                 strm.ignore (8);
@@ -340,12 +340,12 @@ parseSpatiaLitePolygon (std::istream& strm,
                         bool hasMeasure,
                         bool isCompressed)
   {
-    std::auto_ptr<feature::Polygon> result (new feature::Polygon (dim));
+    std::unique_ptr<feature::Polygon> result (new feature::Polygon (dim));
     std::size_t count (util::read<uint32_t> (strm, swapEndian));
 
     for (std::size_t i (0); i < count; ++i)
       {
-        std::auto_ptr<feature::LineString> ring
+        std::unique_ptr<feature::LineString> ring
             (parseSpatiaLiteLineString (strm, swapEndian, dim,
                                         hasMeasure, isCompressed));
 
@@ -368,7 +368,7 @@ parseWKB_LineString (std::istream& strm,
                      feature::Geometry::Dimension dim,
                      bool hasMeasure)
   {
-    std::auto_ptr<feature::LineString> result (new feature::LineString (dim));
+    std::unique_ptr<feature::LineString> result (new feature::LineString (dim));
     std::size_t count (util::read<uint32_t> (strm, swapEndian));
 
     if (!hasMeasure)
@@ -406,7 +406,7 @@ parseWKB_LineString (std::istream& strm,
 
             for (size_t i (0); i < count; ++i)
               {
-                double x (util::read<double> (strm, swapEndian));
+                auto x (util::read<double> (strm, swapEndian));
 
                 result->addPoint (x, util::read<double> (strm, swapEndian));
                 strm.ignore (8);
@@ -417,8 +417,8 @@ parseWKB_LineString (std::istream& strm,
 
             for (size_t i (0); i < count; ++i)
               {
-                double x (util::read<double> (strm, swapEndian));
-                double y (util::read<double> (strm, swapEndian));
+                auto x (util::read<double> (strm, swapEndian));
+                auto y (util::read<double> (strm, swapEndian));
 
                 result->addPoint (x, y, util::read<double> (strm, swapEndian));
                 strm.ignore (8);
@@ -443,8 +443,8 @@ parseWKB_Point (std::istream& strm,
                 feature::Geometry::Dimension dim,
                 bool hasMeasure)
   {
-    double x (util::read<double> (strm, swapEndian));
-    double y (util::read<double> (strm, swapEndian));
+    auto x (util::read<double> (strm, swapEndian));
+    auto y (util::read<double> (strm, swapEndian));
     feature::Point* result
         (dim == feature::Geometry::_2D
              ? new feature::Point (x, y)
@@ -470,12 +470,12 @@ parseWKB_Polygon (std::istream& strm,
                   feature::Geometry::Dimension dim,
                   bool hasMeasure)
   {
-    std::auto_ptr<feature::Polygon> result (new feature::Polygon (dim));
+    std::unique_ptr<feature::Polygon> result (new feature::Polygon (dim));
     std::size_t count (util::read<uint32_t> (strm, swapEndian));
 
     for (std::size_t i (0); i < count; ++i)
       {
-        std::auto_ptr<feature::LineString> ring
+        std::unique_ptr<feature::LineString> ring
             (parseWKB_LineString (strm, swapEndian, dim, hasMeasure));
 
         result->addRing (*ring);
@@ -527,14 +527,14 @@ parseBlob (std::istream& strm)
   {
     using namespace util;
 
-    Geometry* result (NULL);
+    Geometry* result (nullptr);
 
     if ((strm.get() & 0xFF) != 0x00)
       {
         throw util::IO_Error(MEM_FN("parseBlob") "Bad BLOB_START byte");
       }
 
-    unsigned char byteOrder (static_cast<unsigned char> (strm.get ()));
+    auto byteOrder (static_cast<unsigned char> (strm.get ()));
 
     if (byteOrder > 1)
       {
@@ -547,7 +547,8 @@ parseBlob (std::istream& strm)
         throw util::IO_Error (MEM_FN ("parseBlob") "Bad MBR_END byte");
       }
 
-    std::size_t type (read<uint32_t> (strm, byteOrder));
+    bool swapEndian = byteOrder != 0;
+    std::size_t type(read<uint32_t>(strm, swapEndian));
     Geometry::Dimension dim (type / 1000 & 1 ? Geometry::_3D : Geometry::_2D);
     bool hasMeasure (type / 1000 % 1000 > 1);
     bool isCompressed (type / 1000000 == 1);
@@ -556,18 +557,18 @@ parseBlob (std::istream& strm)
       {
       case 1:                           // Point (SpatiaLite is same as WKB)
 
-        result = parseWKB_Point (strm, byteOrder, dim, hasMeasure);
+        result = parseWKB_Point(strm, swapEndian, dim, hasMeasure);
         break;
 
       case 2:                           // LineString
 
-        result = parseSpatiaLiteLineString (strm, byteOrder, dim,
+        result = parseSpatiaLiteLineString(strm, swapEndian, dim,
                                             hasMeasure, isCompressed);
         break;
 
       case 3:                           // Polygon
 
-        result = parseSpatiaLitePolygon (strm, byteOrder, dim,
+        result = parseSpatiaLitePolygon(strm, swapEndian, dim,
                                          hasMeasure, isCompressed);
         break;
 
@@ -575,14 +576,14 @@ parseBlob (std::istream& strm)
       case 5:                           // MultiLineString
       case 6:                           // MultiPolygon
           {
-            std::auto_ptr<GeometryCollection> collection
+            std::unique_ptr<GeometryCollection> collection
                 (new GeometryCollection (dim));
-            std::size_t count (read<uint32_t> (strm, byteOrder));
+            std::size_t count (read<uint32_t> (strm, swapEndian));
 
             for (std::size_t i (0); i < count; ++i)
               {
-                std::auto_ptr<Geometry> g
-                    (parseSpatiaLiteGeometry (strm, byteOrder, dim,
+                std::unique_ptr<Geometry> g
+                    (parseSpatiaLiteGeometry (strm, swapEndian, dim,
                                               (type % 1000) - 3,
                                               hasMeasure,
                                               isCompressed));
@@ -595,14 +596,14 @@ parseBlob (std::istream& strm)
 
       case 7:                           // GeometryCollection
           {
-            std::auto_ptr<GeometryCollection> collection
+            std::unique_ptr<GeometryCollection> collection
                 (new GeometryCollection (dim));
-            std::size_t count (read<uint32_t> (strm, byteOrder));
+            std::size_t count(read<uint32_t>(strm, swapEndian));
 
             for (std::size_t i (0); i < count; ++i)
               {
-                std::auto_ptr<Geometry> g
-                    (parseSpatiaLiteGeometry (strm, byteOrder, dim,
+                std::unique_ptr<Geometry> g
+                    (parseSpatiaLiteGeometry (strm, swapEndian, dim,
                                               0,    // unrestricted
                                               hasMeasure,
                                               isCompressed));
@@ -643,8 +644,8 @@ parseWKB (std::istream& strm)
   {
     using namespace util;
 
-    Geometry* result (NULL);
-    unsigned char byteOrder (static_cast<unsigned char> (strm.get ()));
+    Geometry* result (nullptr);
+    auto byteOrder (static_cast<unsigned char> (strm.get ()));
 
     if (byteOrder > 1)
       {
@@ -652,7 +653,8 @@ parseWKB (std::istream& strm)
       }
     byteOrder ^= ENDIAN_BYTE;           // True if endian swaps are needed.
 
-    std::size_t type (read<uint32_t> (strm, byteOrder));
+    bool swapEndian = byteOrder != 0;
+    std::size_t type(read<uint32_t>(strm, swapEndian));
     Geometry::Dimension dim (type / 1000 & 1 ? Geometry::_3D : Geometry::_2D);
     bool hasMeasure (type / 2000 > 0);
 
@@ -660,33 +662,33 @@ parseWKB (std::istream& strm)
       {
       case 1:                           // Point
 
-        result = parseWKB_Point (strm, byteOrder, dim, hasMeasure);
+        result = parseWKB_Point(strm, swapEndian, dim, hasMeasure);
         break;
 
       case 2:                           // LineString
       case 13:                          // Curve
 
-        result = parseWKB_LineString (strm, byteOrder, dim, hasMeasure);
+        result = parseWKB_LineString(strm, swapEndian, dim, hasMeasure);
         break;
 
       case 3:                           // Polygon
       case 14 :                         // Surface
       case 17:                          // Triangle
 
-        result = parseWKB_Polygon (strm, byteOrder, dim, hasMeasure);
+        result = parseWKB_Polygon(strm, swapEndian, dim, hasMeasure);
         break;
 
       case 4:                           // MultiPoint
           {
-            std::auto_ptr<GeometryCollection> collection
+            std::unique_ptr<GeometryCollection> collection
                 (new GeometryCollection (dim));
-            std::size_t count (read<uint32_t> (strm, byteOrder));
+            std::size_t count(read<uint32_t>(strm, swapEndian));
 
             for (std::size_t i (0); i < count; ++i)
               {
 #ifdef MSVC
-                std::auto_ptr<Geometry> g
-                    (parseWKB_Point (strm, byteOrder, dim, hasMeasure));
+                std::unique_ptr<Geometry> g
+                    (parseWKB_Point (strm, swapEndian, dim, hasMeasure));
 
                 collection->add (g.get ());
 #else
@@ -701,15 +703,15 @@ parseWKB (std::istream& strm)
       case 5:                           // MultiLineString
       case 11:                          // MultiCurve
           {
-            std::auto_ptr<GeometryCollection> collection
+            std::unique_ptr<GeometryCollection> collection
                 (new GeometryCollection (dim));
-            std::size_t count (read<uint32_t> (strm, byteOrder));
+            std::size_t count(read<uint32_t>(strm, swapEndian));
 
             for (std::size_t i (0); i < count; ++i)
               {
 #ifdef MSVC
-                std::auto_ptr<Geometry> g
-                    (parseWKB_LineString (strm, byteOrder, dim, hasMeasure));
+                std::unique_ptr<Geometry> g
+                    (parseWKB_LineString (strm, swapEndian, dim, hasMeasure));
 
                 collection->add (g.get ());
 #else
@@ -726,14 +728,14 @@ parseWKB (std::istream& strm)
       case 15:                          // PolyhedralSurface
       case 16:                          // TIN
           {
-            std::auto_ptr<GeometryCollection> collection
+            std::unique_ptr<GeometryCollection> collection
                 (new GeometryCollection (dim));
-            std::size_t count (read<uint32_t> (strm, byteOrder));
+            std::size_t count (read<uint32_t> (strm, swapEndian));
 
             for (std::size_t i (0); i < count; ++i)
               {
-                std::auto_ptr<Geometry> g
-                    (parseWKB_Polygon (strm, byteOrder, dim, hasMeasure));
+                std::unique_ptr<Geometry> g
+                    (parseWKB_Polygon (strm, swapEndian, dim, hasMeasure));
 
                 collection->add (g.get ());
               }
@@ -744,13 +746,13 @@ parseWKB (std::istream& strm)
       case 7:                           // GeometryCollection
       case 12:                         // MultiSurface
           {
-            std::auto_ptr<GeometryCollection> collection
+            std::unique_ptr<GeometryCollection> collection
                 (new GeometryCollection (dim));
-            std::size_t count (read<uint32_t> (strm, byteOrder));
+            std::size_t count(read<uint32_t>(strm, swapEndian));
 
             for (std::size_t i (0); i < count; ++i)
               {
-                std::auto_ptr<Geometry> g (parseWKB (strm));
+                std::unique_ptr<Geometry> g (parseWKB (strm));
 
                 collection->add (g.get ());
               }

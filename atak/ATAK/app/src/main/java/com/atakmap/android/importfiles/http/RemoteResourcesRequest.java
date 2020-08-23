@@ -12,8 +12,6 @@ import java.util.List;
 
 /**
  * Extends GetFilesRequest to include the RemoteResource
- * 
- * 
  */
 class RemoteResourcesRequest extends GetFilesRequest {
 

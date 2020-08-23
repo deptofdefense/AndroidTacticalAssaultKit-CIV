@@ -3,17 +3,22 @@ package com.atakmap.android.routes;
 
 import com.atakmap.android.cot.detail.CotDetailManager;
 import com.atakmap.android.cot.importer.CotImporterManager;
+import com.atakmap.android.data.DataMgmtReceiver;
 import com.atakmap.android.drawing.DrawingToolsMapReceiver;
 import com.atakmap.android.editableShapes.EditablePolylineReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.DefaultMapGroup;
 import com.atakmap.android.maps.DoghouseReceiver;
+import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.overlay.DefaultMapGroupOverlay;
 import com.atakmap.android.routes.elevation.RouteElevationBroadcastReceiver;
 import com.atakmap.android.routes.cot.RouteImporter;
 import com.atakmap.android.routes.nav.NavigationCueHandler;
+import com.atakmap.android.routes.routearound.RegionRemovalListener;
+import com.atakmap.android.routes.routearound.RouteAroundRegionManager;
+import com.atakmap.android.routes.routearound.RouteAroundRegionViewModel;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbar.ToolbarBroadcastReceiver;
 import com.atakmap.android.widgets.AbstractWidgetMapComponent;
@@ -22,9 +27,12 @@ import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.comms.CotServiceRemote;
 import com.atakmap.comms.CotServiceRemote.ConnectionListener;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
+
 import android.os.Bundle;
 
 /**
@@ -179,6 +187,20 @@ public class RouteMapComponent extends AbstractWidgetMapComponent implements
                         context.getResources().getDrawable(
                                 R.drawable.ic_menu_routes),
                         new RoutePreferenceFragment()));
+
+        RegionRemovalListener regionRemovalListener = new RegionRemovalListener(
+                new RouteAroundRegionViewModel(
+                        RouteAroundRegionManager.getInstance()));
+
+        view.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_REMOVED,
+                regionRemovalListener);
+
+        // Register our zero-ize receiver
+        AtakBroadcast.DocumentedIntentFilter i = new AtakBroadcast.DocumentedIntentFilter(
+                DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION,
+                "Respond to zeroize signal");
+        AtakBroadcast.getInstance().registerReceiver(routeAroundZeroizeReceiver,
+                i);
     }
 
     @Override
@@ -187,12 +209,27 @@ public class RouteMapComponent extends AbstractWidgetMapComponent implements
         CotDetailManager.getInstance().unregisterHandler(_cueHandler);
         AtakBroadcast.getInstance().unregisterReceiver(_routeReceiver);
         AtakBroadcast.getInstance().unregisterReceiver(_routeToolbarReceiver);
+        AtakBroadcast.getInstance()
+                .unregisterReceiver(routeAroundZeroizeReceiver);
+
         _editablePolylineReceiver.dispose();
         cotService_.disconnect();
         _routeReceiver.dispose();
         _doghouseReceiver.dispose();
         _goTo.dispose();
     }
+
+    private BroadcastReceiver routeAroundZeroizeReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION
+                    .equals(intent.getAction())) {
+                // Delete the serialization file for the route around region manager.
+                FileSystemUtils
+                        .delete(RouteAroundRegionViewModel.SERIALIZATION_FILE);
+            }
+        }
+    };
 
     public RouteMapReceiver getRouteMapReceiver() {
         return _routeReceiver;

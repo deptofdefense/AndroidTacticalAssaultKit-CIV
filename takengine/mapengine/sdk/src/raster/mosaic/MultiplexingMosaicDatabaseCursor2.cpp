@@ -113,7 +113,7 @@ TAKErr MultiplexingMosaicDatabaseCursor2::isPrecisionImagery(bool *value) NOTHRO
 /**************************************************************************/
 
 MultiplexingMosaicDatabaseCursor2::Impl::Impl() NOTHROWS :
-current(NULL)
+current(nullptr)
 {}
 
 TAKErr MultiplexingMosaicDatabaseCursor2::Impl::moveToNext() NOTHROWS
@@ -157,7 +157,7 @@ TAKErr MultiplexingMosaicDatabaseCursor2::Impl::moveToNext() NOTHROWS
 
 MultiplexingMosaicDatabaseCursor2::Entry::Entry(MosaicDatabase2::Cursor *cursor_) NOTHROWS :
     gsd(NAN),
-    path(NULL),
+    path(nullptr),
     cursor(cursor_)
 {
     TAKErr code(TE_Ok);

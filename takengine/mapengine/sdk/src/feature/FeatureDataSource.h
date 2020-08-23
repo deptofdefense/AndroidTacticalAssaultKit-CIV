@@ -421,11 +421,39 @@ class ENGINE_API FeatureDataSource::FeatureDefinition
         throw ()
       { return styling; }
 
+
+     double
+     getExtrude() const
+     {
+        return extrude;
+     }
+
+     int
+     getAltitudeMode() const
+     {
+        return altitudeMode;
+     }
+
     //
     // Set the attributes.
     //
     void
     setAttributes ();
+
+    //
+    // Sets the extrude value
+    //
+    void
+    setExtrude(double extrude);
+
+    //
+    // Sets the altitudeMode value
+    // 0 clampToGround
+    // 1 relativeToGround
+    // 2 absolute
+    //
+    void
+    setAltitudeMode(int altitudeMode);
 
     //
     // Sets the geometry to a copy of the supplied OGC WKT geometry
@@ -502,6 +530,9 @@ class ENGINE_API FeatureDataSource::FeatureDefinition
     const void* rawStyle;               // Feature's styling, per styling.
     const void* bufferTail;
     util::AttributeSet attributes;
+    double extrude = 0.0;
+    int altitudeMode = 0;
+
   };
 
 

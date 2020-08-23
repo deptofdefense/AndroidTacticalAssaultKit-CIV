@@ -125,6 +125,22 @@ CommoResult CloudClient::moveResourceInit(int %cloudOpId,
         return impl::nativeToCLI(r);
 }
 
+CommoResult CloudClient::deleteResourceInit(int %cloudOpId,
+    System::String ^remotePath)
+{
+    msclr::interop::marshal_context mctx;
+    const char *pathNative = mctx.marshal_as<const char *>(remotePath);
+
+    int id;
+    atakmap::commoncommo::CommoResult r = impl->deleteResourceInit(&id,
+        pathNative);
+    if (r == atakmap::commoncommo::COMMO_SUCCESS) {
+        cloudOpId = id;
+        return CommoResult::CommoSuccess;
+    } else
+        return impl::nativeToCLI(r);
+}
+
 CommoResult CloudClient::createCollectionInit(int %cloudOpId,
             System::String ^remotePath)
 {

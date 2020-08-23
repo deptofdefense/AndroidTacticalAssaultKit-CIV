@@ -2,6 +2,7 @@
 package com.atakmap.android.config;
 
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.xml.XMLUtils;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -125,17 +126,7 @@ public class FiltersConfig {
             IOException {
         FiltersConfig config = null;
         try {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            try {
-                dbf.setFeature(
-                        "http://apache.org/xml/features/disallow-doctype-decl",
-                        true);
-            } catch (Exception ignored) {
-            }
-            try {
-                dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            } catch (Exception ignored) {
-            }
+            DocumentBuilderFactory dbf = XMLUtils.getDocumenBuilderFactory();
             DocumentBuilder db = dbf.newDocumentBuilder();
             Document doc = db.parse(stream);
 

@@ -18,8 +18,8 @@ TAKErr ThreadPool::detachAll() NOTHROWS
 {
     TAKErr rc(TE_Ok);
 
-    LockPtr lock(NULL, NULL);
-    rc = Lock_create(lock, threadsMutex);
+    Lock lock(threadsMutex);
+    rc = lock.status;
     TE_CHECKRETURN_CODE(rc);
 
     std::set<ThreadPtr>::iterator i;
@@ -36,8 +36,8 @@ TAKErr ThreadPool::detachAll() NOTHROWS
 TAKErr ThreadPool::joinAll() NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, threadsMutex);
+    Lock lock(threadsMutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     std::set<ThreadPtr>::iterator i;
@@ -51,15 +51,15 @@ TAKErr ThreadPool::joinAll() NOTHROWS
 TAKErr ThreadPool::initPool(const std::size_t threadCount, void *(*entry)(void *), void* threadData) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, threadsMutex);
+    Lock lock(threadsMutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     if (!threads.empty())
         return TE_IllegalState;
 
     for (std::size_t i = 0u; i < threadCount; ++i){
-        ThreadPtr thread(NULL, NULL);
+        ThreadPtr thread(nullptr, nullptr);
         code = Thread_start(thread, entry, threadData);
         TE_CHECKBREAK_CODE(code);
         threads.insert(std::move(thread));

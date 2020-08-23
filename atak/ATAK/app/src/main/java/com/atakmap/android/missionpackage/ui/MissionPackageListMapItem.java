@@ -1,6 +1,8 @@
 
 package com.atakmap.android.missionpackage.ui;
 
+import com.atakmap.android.hashtags.HashtagContent;
+import com.atakmap.android.hierarchy.items.MapItemUser;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.file.MissionPackageContent;
@@ -11,12 +13,15 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
+import java.util.Collection;
+
 /**
  * UI convenience wrapper around MapItem MissionPackageContent
  * 
  * 
  */
-public class MissionPackageListMapItem extends MissionPackageListItem {
+public class MissionPackageListMapItem extends MissionPackageListItem
+        implements MapItemUser {
 
     private static final String TAG = "MissionPackageListMapItem";
 
@@ -46,12 +51,7 @@ public class MissionPackageListMapItem extends MissionPackageListItem {
 
     @Override
     public boolean exists(MapView mapView) {
-        String uid = getUID();
-        if (FileSystemUtils.isEmpty(uid))
-            return false;
-
-        MapItem item = mapView.getRootGroup().deepFindUID(uid);
-        return item != null;
+        return getMapItem() != null;
     }
 
     @Override
@@ -97,5 +97,32 @@ public class MissionPackageListMapItem extends MissionPackageListItem {
             return false;
 
         return super.equals(rhs);
+    }
+
+    @Override
+    public MapItem getMapItem() {
+        String uid = getUID();
+        if (FileSystemUtils.isEmpty(uid))
+            return null;
+
+        MapView mv = MapView.getMapView();
+        if (mv == null)
+            return null;
+
+        return mv.getRootGroup().deepFindUID(uid);
+    }
+
+    @Override
+    public void addHashtags(Collection<String> tags) {
+        if (tags.isEmpty())
+            return;
+
+        MapItem mi = getMapItem();
+        if (mi == null)
+            return;
+
+        Collection<String> itemTags = mi.getHashtags();
+        itemTags.addAll(tags);
+        mi.setHashtags(itemTags);
     }
 }

@@ -134,6 +134,7 @@ TAKErr TAK::Engine::Model::VertexDataLayout_requiredInterleavedDataSize(std::siz
     }
     return TE_Ok;
 }
+
 TAKErr TAK::Engine::Model::VertexDataLayout_getTexCoordArray(VertexArray *value, const VertexDataLayout &layout, const int index) NOTHROWS
 {
     if (!value)

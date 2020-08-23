@@ -35,8 +35,8 @@ ElevationSourcesChangedListener::~ElevationSourcesChangedListener() NOTHROWS
 TAKErr TAK::Engine::Elevation::ElevationSourceManager_addOnSourcesChangedListener(ElevationSourcesChangedListener *listener) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex());
+    Lock lock(mutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
     listeners().insert(listener);
     return code;
@@ -44,8 +44,8 @@ TAKErr TAK::Engine::Elevation::ElevationSourceManager_addOnSourcesChangedListene
 TAKErr TAK::Engine::Elevation::ElevationSourceManager_removeOnSourcesChangedListener(ElevationSourcesChangedListener *listener) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex());
+    Lock lock(mutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
     listeners().erase(listener);
     return code;
@@ -53,14 +53,14 @@ TAKErr TAK::Engine::Elevation::ElevationSourceManager_removeOnSourcesChangedList
 TAKErr TAK::Engine::Elevation::ElevationSourceManager_attach(const std::shared_ptr<ElevationSource> &source) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex());
+    Lock lock(mutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     sources().insert(source);
 
     std::set<ElevationSourcesChangedListener *> &l = listeners();
-    std::set<ElevationSourcesChangedListener *>::iterator it = l.begin();
+    auto it = l.begin();
     while (it != l.end()) {
         if ((*it)->onSourceAttached(source) == TE_Done)
             it = l.erase(it);
@@ -73,8 +73,8 @@ TAKErr TAK::Engine::Elevation::ElevationSourceManager_attach(const std::shared_p
 TAKErr TAK::Engine::Elevation::ElevationSourceManager_detach(const ElevationSource &source) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex());
+    Lock lock(mutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
     
     std::set<std::shared_ptr<ElevationSource>> &s = sources();
@@ -85,7 +85,7 @@ TAKErr TAK::Engine::Elevation::ElevationSourceManager_detach(const ElevationSour
             s.erase(sourceIter);
 
             std::set<ElevationSourcesChangedListener *> &l = listeners();
-            std::set<ElevationSourcesChangedListener *>::iterator it = l.begin();
+            auto it = l.begin();
             while (it != l.end()) {
                 if ((*it)->onSourceDetached(*detached) == TE_Done)
                     it = l.erase(it);
@@ -102,8 +102,8 @@ TAKErr TAK::Engine::Elevation::ElevationSourceManager_detach(const ElevationSour
 TAKErr TAK::Engine::Elevation::ElevationSourceManager_findSource(std::shared_ptr<ElevationSource> &value, const char *name) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex());
+    Lock lock(mutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     std::set<std::shared_ptr<ElevationSource>> &s = sources();
@@ -123,14 +123,31 @@ TAKErr TAK::Engine::Elevation::ElevationSourceManager_findSource(std::shared_ptr
 TAKErr TAK::Engine::Elevation::ElevationSourceManager_getSources(TAK::Engine::Port::Collection<std::shared_ptr<ElevationSource>> &value) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex());
+    Lock lock(mutex());
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     std::set<std::shared_ptr<ElevationSource>> &s = sources();
     std::set<std::shared_ptr<ElevationSource>>::iterator it;
     for (it = s.begin(); it != s.end(); it++) {
         code = value.add(*it);
+        TE_CHECKBREAK_CODE(code);
+    }
+    TE_CHECKRETURN_CODE(code);
+
+    return code;
+}
+TAKErr TAK::Engine::Elevation::ElevationSourceManager_visitSources(TAKErr(*visitor)(void *opaque, ElevationSource &src) NOTHROWS, void *opaque) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+    LockPtr lock(nullptr, nullptr);
+    code = Lock_create(lock, mutex());
+    TE_CHECKRETURN_CODE(code);
+
+    std::set<std::shared_ptr<ElevationSource>> &s = sources();
+    std::set<std::shared_ptr<ElevationSource>>::iterator it;
+    for (it = s.begin(); it != s.end(); it++) {
+        code = visitor(opaque, **it);
         TE_CHECKBREAK_CODE(code);
     }
     TE_CHECKRETURN_CODE(code);

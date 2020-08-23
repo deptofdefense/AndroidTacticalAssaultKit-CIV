@@ -45,7 +45,6 @@ import java.util.List;
  */
 public class RubberSheetReceiver extends BroadcastReceiver implements
         MapEventDispatcher.MapEventDispatchListener,
-        MapGroup.OnItemListChangedListener,
         PointMapItem.OnPointChangedListener {
 
     private static final String PACKAGE = "com.atakmap.android.rubbersheet.";
@@ -58,7 +57,7 @@ public class RubberSheetReceiver extends BroadcastReceiver implements
 
     private final MapView _mapView;
     private final Context _context;
-    private final RubberSheetMapGroup _group;
+    private final MapGroup _group;
     private final List<AbstractSheetDropDown> _dropDowns = new ArrayList<>();
 
     // Rubber sheet that is being focused on
@@ -67,10 +66,10 @@ public class RubberSheetReceiver extends BroadcastReceiver implements
     // Temporary marker used for fine-adjustments
     private Marker _tempMarker;
 
-    public RubberSheetReceiver(MapView mapView, RubberSheetMapGroup group) {
+    public RubberSheetReceiver(MapView mapView) {
         _mapView = mapView;
         _context = mapView.getContext();
-        _group = group;
+        _group = mapView.getRootGroup();
 
         DocumentedExtra uidExtra = new DocumentedExtra("uid",
                 "UID of the rubber image/model", false, String.class);
@@ -87,10 +86,11 @@ public class RubberSheetReceiver extends BroadcastReceiver implements
         AtakBroadcast.getInstance().registerReceiver(this, f);
         _mapView.getMapEventDispatcher().addMapEventListener(
                 MapEvent.MAP_CLICK, this);
-        _group.addOnItemListChangedListener(this);
+        _mapView.getMapEventDispatcher().addMapEventListener(
+                MapEvent.ITEM_REMOVED, this);
 
-        _dropDowns.add(new RubberImageDropDown(mapView, group));
-        _dropDowns.add(new RubberModelDropDown(mapView, group));
+        _dropDowns.add(new RubberImageDropDown(mapView, _group));
+        _dropDowns.add(new RubberModelDropDown(mapView, _group));
     }
 
     public void dispose() {
@@ -99,7 +99,8 @@ public class RubberSheetReceiver extends BroadcastReceiver implements
         AtakBroadcast.getInstance().unregisterReceiver(this);
         _mapView.getMapEventDispatcher().removeMapEventListener(
                 MapEvent.MAP_CLICK, this);
-        _group.removeOnItemListChangedListener(this);
+        _mapView.getMapEventDispatcher().removeMapEventListener(
+                MapEvent.ITEM_REMOVED, this);
         if (_tempMarker != null)
             _tempMarker.removeFromGroup();
     }
@@ -123,7 +124,7 @@ public class RubberSheetReceiver extends BroadcastReceiver implements
 
         // Find the sheet that was selected
         String uid = intent.getStringExtra("uid");
-        MapItem item = _group.deepFindUID(uid);
+        MapItem item = _mapView.getRootGroup().deepFindUID(uid);
         MapItem shape = ATAKUtilities.findAssocShape(item);
         if (!(shape instanceof AbstractSheet)) {
             Toast.makeText(_context, R.string.unable_to_find_sheet,
@@ -154,6 +155,9 @@ public class RubberSheetReceiver extends BroadcastReceiver implements
 
                 @Override
                 public void onControlDismissed() {
+                    if (sheet.hasMetaValue("archive"))
+                        sheet.persist(_mapView.getMapEventDispatcher(),
+                                null, RubberSheetReceiver.class);
                     _activeSheet = null;
                 }
             }, 5000L);
@@ -208,7 +212,9 @@ public class RubberSheetReceiver extends BroadcastReceiver implements
 
     @Override
     public void onMapEvent(MapEvent event) {
-        if (_activeSheet != null)
+        String type = event.getType();
+        if (_activeSheet != null && (type.equals(MapEvent.MAP_CLICK)
+                || event.getItem() == _activeSheet))
             SeekBarControl.dismiss();
     }
 
@@ -227,15 +233,5 @@ public class RubberSheetReceiver extends BroadcastReceiver implements
             _activeSheet.move(c, c2);
             _activeSheet = null;
         }
-    }
-
-    @Override
-    public void onItemAdded(MapItem item, MapGroup group) {
-    }
-
-    @Override
-    public void onItemRemoved(MapItem item, MapGroup group) {
-        if (item == _activeSheet)
-            SeekBarControl.dismiss();
     }
 }

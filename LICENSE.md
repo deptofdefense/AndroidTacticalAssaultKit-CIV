@@ -432,7 +432,7 @@ If you modify this Program, or any covered work, by linking or combining
 it with DataDroid (or a modified version of that library),
 containing parts covered by the terms of the Beerware License, the
 licensors of this Program grant you additional permission to convey the
-resulting work. Corresponding Source for a non-source form of such a
+resulting work. Corresponding Source for a non-source form of such a
 combination shall include the source code for the parts of DataDroid
 used as well as that of the covered work.
 
@@ -476,7 +476,7 @@ If you modify this Program, or any covered work, by linking or combining
 it with Sanselan (or a modified version of that library),
 containing parts covered by the terms of the Apache License v2.0, the
 licensors of this Program grant you additional permission to convey the
-resulting work. Corresponding Source for a non-source form of such a
+resulting work. Corresponding Source for a non-source form of such a
 combination shall include the source code for the parts of SimpleKML
 used as well as that of the covered work.
 
@@ -484,7 +484,7 @@ If you modify this Program, or any covered work, by linking or combining
 it with SimpleKML (or a modified version of that library),
 containing parts covered by the terms of the Apache License v2.0, the
 licensors of this Program grant you additional permission to convey the
-resulting work. Corresponding Source for a non-source form of such a
+resulting work. Corresponding Source for a non-source form of such a
 combination shall include the source code for the parts of SimpleKML
 used as well as that of the covered work.
 
@@ -492,7 +492,7 @@ If you modify this Program, or any covered work, by linking or combining
 it with SimpleXML (or a modified version of that library),
 containing parts covered by the terms of the Apache License v2.0, the
 licensors of this Program grant you additional permission to convey the
-resulting work Corresponding Source for a non-source form of such a
+resulting work Corresponding Source for a non-source form of such a
 combination shall include the source code for the parts of SimpleXML
 used as well as that of the covered work.
 
@@ -658,6 +658,46 @@ containing parts covered by the terms of the zlib License, the
 licensors of this Program grant you additional permission to convey the
 resulting work. Corresponding Source for a non-source form of such a
 combination shall include the source code for the parts of zlib
+used as well as that of the covered work.
+
+If you modify this Program, or any covered work, by linking or combining
+it with tinygltf (or a modified version of that library),
+containing parts covered by the terms of the MIT License, the
+licensors of this Program grant you additional permission to convey the
+resulting work. Corresponding Source for a non-source form of such a
+combination shall include the source code for the parts of tinygltf
+used as well as that of the covered work.
+
+If you modify this Program, or any covered work, by linking or combining
+it with tinygltfloader (or a modified version of that library),
+containing parts covered by the terms of the MIT License, the
+licensors of this Program grant you additional permission to convey the
+resulting work. Corresponding Source for a non-source form of such a
+combination shall include the source code for the parts of tinygltfloader
+used as well as that of the covered work.
+
+If you modify this Program, or any covered work, by linking or combining
+it with JSON For Modern C++ (or a modified version of that library),
+containing parts covered by the terms of the MIT License, the
+licensors of this Program grant you additional permission to convey the
+resulting work. Corresponding Source for a non-source form of such a
+combination shall include the source code for the parts of JSON For Modern C++
+used as well as that of the covered work.
+
+If you modify this Program, or any covered work, by linking or combining
+it with stb_image (or a modified version of that library),
+containing parts that are Public Domain software, the
+licensors of this Program grant you additional permission to convey the
+resulting work. Corresponding Source for a non-source form of such a
+combination shall include the source code for the parts of stb_image
+used as well as that of the covered work.
+
+If you modify this Program, or any covered work, by linking or combining
+it with stb_image_write (or a modified version of that library),
+containing parts that are Public Domain software, the
+licensors of this Program grant you additional permission to convey the
+resulting work. Corresponding Source for a non-source form of such a
+combination shall include the source code for the parts of stb_image_write
 used as well as that of the covered work.
 
 If you modify this Program, or any covered work, by linking or combining

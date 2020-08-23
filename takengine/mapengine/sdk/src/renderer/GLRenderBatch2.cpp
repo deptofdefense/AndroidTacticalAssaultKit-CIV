@@ -1,6 +1,6 @@
+#include "renderer/GL.h"
 #include "GLRenderBatch2.h"
 
-#include "renderer/GL.h"
 #include <sstream>
 
 #include <cmath>
@@ -442,10 +442,10 @@ TAKErr GLRenderBatch2::flush() NOTHROWS
 
         glVertexAttribPointer(
             program->aVertexCoordsHandle,
-            program->size,
+            static_cast<GLint>(program->size),
             GL_FLOAT,
             false,
-            vertexSize,
+            static_cast<GLsizei>(vertexSize),
             renderBuffer.get());
 
         if (program->aTextureCoordsHandle+1)
@@ -454,7 +454,7 @@ TAKErr GLRenderBatch2::flush() NOTHROWS
                 2,
                 GL_FLOAT,
                 false,
-                vertexSize,
+                static_cast<GLsizei>(vertexSize),
                 renderBuffer.get() + (program->size*4));
 
         glVertexAttribPointer(
@@ -462,7 +462,7 @@ TAKErr GLRenderBatch2::flush() NOTHROWS
             4,
             GL_UNSIGNED_BYTE,
             true,
-            vertexSize,
+            static_cast<GLsizei>(vertexSize),
             renderBuffer.get() + (program->size*4) + 8);
 
         if (program->aTexUnitHandle+1)
@@ -471,14 +471,14 @@ TAKErr GLRenderBatch2::flush() NOTHROWS
                 1,
                 GL_FLOAT,
                 false,
-                vertexSize,
+                static_cast<GLsizei>(vertexSize),
                 renderBuffer.get() + (program->size*4) + 12);
 
         glEnableVertexAttribArray(program->aVertexCoordsHandle);
         if (program->aTextureCoordsHandle+1)
             glEnableVertexAttribArray(program->aTextureCoordsHandle);
         glEnableVertexAttribArray(program->aColorHandle);
-        if (program->aTexUnitHandle)
+        if (program->aTexUnitHandle+1)
             glEnableVertexAttribArray(program->aTexUnitHandle);
 
         glDrawElements(GL_TRIANGLES,
@@ -947,7 +947,7 @@ TAKErr GLRenderBatch2::addLinesImpl(const std::size_t size, const float width, c
 
     this->validateMVP();
 
-    const uint8_t *linesPtr = reinterpret_cast<const uint8_t *>(lines);
+    const auto *linesPtr = reinterpret_cast<const uint8_t *>(lines);
     if(size == 2u && buffer2d) {
         float x0;
         float y0;
@@ -1084,8 +1084,8 @@ TAKErr GLRenderBatch2::addTrianglesImpl(const std::size_t size, const std::size_
     ((unsigned char *)&vertexConst)[3] = (unsigned char)(a*255.0f);
     (*(float *)(((unsigned char *)&vertexConst) + 4)) = (float)texUnitIdx;
 
-    const uint8_t *vertexCoordsPtr = reinterpret_cast<const uint8_t *>(vertexCoords);
-    const uint8_t *texCoordsPtr = reinterpret_cast<const uint8_t *>(texCoords);
+    const auto *vertexCoordsPtr = reinterpret_cast<const uint8_t *>(vertexCoords);
+    const auto *texCoordsPtr = reinterpret_cast<const uint8_t *>(texCoords);
 
     std::size_t numTriangles = count / (3u * size);
     for (std::size_t i = 0; i < numTriangles; i++) {
@@ -1170,11 +1170,11 @@ TAKErr GLRenderBatch2::addIndexedTrianglesImpl(const std::size_t size, const std
     ((unsigned char *)&vertexConst)[3] = (unsigned char)(a*255.0f);
     (*(float *)(((unsigned char *)&vertexConst) + 4)) = (float)texUnitIdx;
 
-    const uint8_t *vertexCoordsPtr = reinterpret_cast<const uint8_t *>(vertexCoords);
-    const uint8_t *texCoordsPtr = reinterpret_cast<const uint8_t *>(texCoords);
+    const auto *vertexCoordsPtr = reinterpret_cast<const uint8_t *>(vertexCoords);
+    const auto *texCoordsPtr = reinterpret_cast<const uint8_t *>(texCoords);
 
     const std::size_t numVerts = count / size;
-    for (int i = 0; i < numVerts; i++) {
+    for (std::size_t i = 0; i < numVerts; i++) {
         // vertex
         code = addVertex(renderBuffer,
             reinterpret_cast<const float *>(vertexCoordsPtr),
@@ -1228,8 +1228,8 @@ TAKErr GLRenderBatch2::addTriangleStripImpl(const std::size_t size, const std::s
 
     const std::size_t numTriangles = (count / size) - 2;
 
-    const uint8_t *vertexCoordsPtr = reinterpret_cast<const uint8_t *>(vertexCoords);
-    const uint8_t *texCoordsPtr = reinterpret_cast<const uint8_t *>(texCoords);
+    const auto *vertexCoordsPtr = reinterpret_cast<const uint8_t *>(vertexCoords);
+    const auto *texCoordsPtr = reinterpret_cast<const uint8_t *>(texCoords);
 
     vertexCoordsPtr += 2 * vStride;
     texCoordsPtr += 2 * tcStride;
@@ -1352,8 +1352,8 @@ TAKErr GLRenderBatch2::addIndexedTriangleStripImpl(const std::size_t size, const
     ((unsigned char *)&vertexConst)[3] = (unsigned char)(a*255.0f);
     (*(float *)(((unsigned char *)&vertexConst) + 4)) = (float)texUnitIdx;
 
-    const uint8_t *vertexCoordsPtr = reinterpret_cast<const uint8_t *>(vertexCoords);
-    const uint8_t *texCoordsPtr = reinterpret_cast<const uint8_t *>(texCoords);
+    const auto *vertexCoordsPtr = reinterpret_cast<const uint8_t *>(vertexCoords);
+    const auto *texCoordsPtr = reinterpret_cast<const uint8_t *>(texCoords);
 
     const std::size_t numVerts = count / size;
     for (std::size_t i = 0u; i < numVerts; i++) {
@@ -1373,7 +1373,7 @@ TAKErr GLRenderBatch2::addIndexedTriangleStripImpl(const std::size_t size, const
     indices += 2;
 
     const std::size_t numTriangles = indexCount - 2;
-    for (int i = 0; i < numTriangles; i++) {
+    for (std::size_t i = 0; i < numTriangles; i++) {
         if (isDegenerate1d(indices + i - 2, 1u)) {
             continue;
         }
@@ -1421,8 +1421,8 @@ TAKErr GLRenderBatch2::addTriangleFanImpl(const std::size_t size, const std::siz
     const float *vertexCoords0 = vertexCoords;
     const float *texCoords0 = texCoords;
 
-    const uint8_t *vertexCoordsPtr = reinterpret_cast<const uint8_t *>(vertexCoords);
-    const uint8_t *texCoordsPtr = reinterpret_cast<const uint8_t *>(texCoords);
+    const auto *vertexCoordsPtr = reinterpret_cast<const uint8_t *>(vertexCoords);
+    const auto *texCoordsPtr = reinterpret_cast<const uint8_t *>(texCoords);
 
     vertexCoordsPtr += 2 * vStride;
     texCoordsPtr += 2 * tcStride;
@@ -1537,11 +1537,11 @@ TAKErr GLRenderBatch2::addIndexedTriangleFanImpl(const std::size_t size, const s
     ((unsigned char *)&vertexConst)[3] = (unsigned char)(a*255.0f);
     (*(float *)(((unsigned char *)&vertexConst) + 4)) = (float)texUnitIdx;
 
-    const uint8_t *vertexCoordsPtr = reinterpret_cast<const uint8_t *>(vertexCoords);
-    const uint8_t *texCoordsPtr = reinterpret_cast<const uint8_t *>(texCoords);
+    const auto *vertexCoordsPtr = reinterpret_cast<const uint8_t *>(vertexCoords);
+    const auto *texCoordsPtr = reinterpret_cast<const uint8_t *>(texCoords);
 
     const std::size_t numVerts = count / size;
-    for (int i = 0u; i < numVerts; i++) {
+    for (std::size_t i = 0u; i < numVerts; i++) {
         // vertex
         code = addVertex(renderBuffer,
             reinterpret_cast<const float *>(vertexCoordsPtr),
@@ -1654,7 +1654,7 @@ TAKErr GLRenderBatch2::addLineLoop(const std::size_t size, const std::size_t vSt
 
         // last
         float x0, y0, z0;
-        const float *last = reinterpret_cast<const float *>(reinterpret_cast<const uint8_t *>(lineLoop + (numLines*vStride)));
+        const auto *last = reinterpret_cast<const float *>(reinterpret_cast<const uint8_t *>(lineLoop + (numLines*vStride)));
         x0 = last[0];
         y0 = last[1];
         if(size == 3u)
@@ -1705,7 +1705,7 @@ TAKErr GLRenderBatch2::addTriangles(const std::size_t size, const std::size_t vS
 {
     TAKErr code(TE_Ok);
 
-    code = addTrianglesImpl(size, vStride, vertexCoords, count, 0u, NULL, -1, r, g, b, a);
+    code = addTrianglesImpl(size, vStride, vertexCoords, count, 0u, nullptr, -1, r, g, b, a);
     TE_CHECKRETURN_CODE(code);
 
     return code;
@@ -1732,7 +1732,7 @@ TAKErr GLRenderBatch2::addTriangles(const std::size_t size, const std::size_t vS
         TE_CHECKRETURN_CODE(code);
     }
 
-    code = addIndexedTrianglesImpl(size, vStride, vertexCoords, count, indices, indexCount, 0u, NULL, -1, r, g, b, a);
+    code = addIndexedTrianglesImpl(size, vStride, vertexCoords, count, indices, indexCount, 0u, nullptr, -1, r, g, b, a);
     TE_CHECKRETURN_CODE(code);
 
     return code;
@@ -1740,12 +1740,12 @@ TAKErr GLRenderBatch2::addTriangles(const std::size_t size, const std::size_t vS
 
 TAKErr GLRenderBatch2::addTriangleStrip(const std::size_t size, const std::size_t vStride, const float *vertexCoords, std::size_t count, float r, float g, float b, float a) NOTHROWS
 {
-    return addTriangleStripImpl(size, vStride, vertexCoords, count, 0u, NULL, -1, r, g, b, a);
+    return addTriangleStripImpl(size, vStride, vertexCoords, count, 0u, nullptr, -1, r, g, b, a);
 }
 
 TAKErr GLRenderBatch2::addTriangleStrip(const std::size_t size, const std::size_t vStride, const float *vertexCoords, std::size_t count, const unsigned short *indices, std::size_t indexCount, float r, float g, float b, float a) NOTHROWS
 {
-    return addIndexedTriangleStripImpl(size, vStride, vertexCoords, count, indices, indexCount, 0u, NULL, -1, r, g, b, a);
+    return addIndexedTriangleStripImpl(size, vStride, vertexCoords, count, indices, indexCount, 0u, nullptr, -1, r, g, b, a);
 }
 
 TAKErr GLRenderBatch2::addTrianglesSprite(const std::size_t size, const std::size_t vStride, const float *vertexCoords,
@@ -1858,7 +1858,7 @@ TAKErr GLRenderBatch2::addTriangleStripSprite(const std::size_t size, const std:
 
 TAKErr GLRenderBatch2::addTriangleFan(const std::size_t size, const std::size_t vStride, const float *vertexCoords, const std::size_t count, const float r, const float g, const float b, float a) NOTHROWS
 {
-    return addTriangleFanImpl(size, vStride, vertexCoords, count, 0u, NULL, -1, r, g, b, a);
+    return addTriangleFanImpl(size, vStride, vertexCoords, count, 0u, nullptr, -1, r, g, b, a);
 }
 
 TAKErr GLRenderBatch2::addTriangleFan(const std::size_t size, const std::size_t vStride, const float *vertexCoords, const std::size_t count, const unsigned short *indices, std::size_t indexCount, float r, float g, float b, float a) NOTHROWS
@@ -1883,7 +1883,7 @@ TAKErr GLRenderBatch2::addTriangleFan(const std::size_t size, const std::size_t 
         TE_CHECKRETURN_CODE(code);
     }
 
-    code = addIndexedTriangleFanImpl(size, vStride, vertexCoords, count, indices, indexCount, 0u, NULL, -1, r, g, b, a);
+    code = addIndexedTriangleFanImpl(size, vStride, vertexCoords, count, indices, indexCount, 0u, nullptr, -1, r, g, b, a);
     TE_CHECKRETURN_CODE(code);
 
     return code;
@@ -1987,7 +1987,7 @@ TAKErr GLRenderBatch2::bindTexture(int *value, const int textureId) NOTHROWS
 
     int * const texUnitTexIds = texUnitIdxToTexId.get();
 
-    for (std::size_t i = numActiveTexUnits; i > 0u; i--) {
+    for (int i = numActiveTexUnits; i > 0u; i--) {
         if (texUnitTexIds[i-1u] == textureId) {
             *value = i-1u;
             return code;
@@ -1996,7 +1996,7 @@ TAKErr GLRenderBatch2::bindTexture(int *value, const int textureId) NOTHROWS
 
     // if all available texture units are bound we need to flush the batch
     // before we can bind the new texture
-    if (numActiveTexUnits >= GLRenderBatch2_getBatchTextureUnitLimit()) {
+    if (static_cast<std::size_t>(numActiveTexUnits) >= GLRenderBatch2_getBatchTextureUnitLimit()) {
         code = flush();
         TE_CHECKRETURN_CODE(code);
     }
@@ -2054,22 +2054,22 @@ void GLRenderBatch2::validateMVP() NOTHROWS
     const double tm33 = modelView.pointer[15];
 
     // XXX - concatenate
-    modelViewProjection[0] = m00*tm00 + m01*tm10 + m02*tm20 + m03*tm30;
-    modelViewProjection[1] = m10*tm00 + m11*tm10 + m12*tm20 + m13*tm30;
-    modelViewProjection[2] = m20*tm00 + m21*tm10 + m22*tm20 + m23*tm30;
-    modelViewProjection[3] = m30*tm00 + m31*tm10 + m32*tm20 + m33*tm30;
-    modelViewProjection[4] = m00*tm01 + m01*tm11 + m02*tm21 + m03*tm31;
-    modelViewProjection[5] = m10*tm01 + m11*tm11 + m12*tm21 + m13*tm31;
-    modelViewProjection[6] = m20*tm01 + m21*tm11 + m22*tm21 + m23*tm31;
-    modelViewProjection[7] = m30*tm01 + m31*tm11 + m32*tm21 + m33*tm31;
-    modelViewProjection[8] = m00*tm02 + m01*tm12 + m02*tm22 + m03*tm32;
-    modelViewProjection[9] = m10*tm02 + m11*tm12 + m12*tm22 + m13*tm32;
-    modelViewProjection[10] = m20*tm02 + m21*tm12 + m22*tm22 + m23*tm32;
-    modelViewProjection[11] = m30*tm02 + m31*tm12 + m32*tm22 + m33*tm32;
-    modelViewProjection[12] = m00*tm03 + m01*tm13 + m02*tm23 + m03*tm33;
-    modelViewProjection[13] = m10*tm03 + m11*tm13 + m12*tm23 + m13*tm33;
-    modelViewProjection[14] = m20*tm03 + m21*tm13 + m22*tm23 + m23*tm33;
-    modelViewProjection[15] = m30*tm03 + m31*tm13 + m32*tm23 + m33*tm33;
+    modelViewProjection[0] = static_cast<float>(m00*tm00 + m01*tm10 + m02*tm20 + m03*tm30);
+    modelViewProjection[1] = static_cast<float>(m10*tm00 + m11*tm10 + m12*tm20 + m13*tm30);
+    modelViewProjection[2] = static_cast<float>(m20*tm00 + m21*tm10 + m22*tm20 + m23*tm30);
+    modelViewProjection[3] = static_cast<float>(m30*tm00 + m31*tm10 + m32*tm20 + m33*tm30);
+    modelViewProjection[4] = static_cast<float>(m00*tm01 + m01*tm11 + m02*tm21 + m03*tm31);
+    modelViewProjection[5] = static_cast<float>(m10*tm01 + m11*tm11 + m12*tm21 + m13*tm31);
+    modelViewProjection[6] = static_cast<float>(m20*tm01 + m21*tm11 + m22*tm21 + m23*tm31);
+    modelViewProjection[7] = static_cast<float>(m30*tm01 + m31*tm11 + m32*tm21 + m33*tm31);
+    modelViewProjection[8] = static_cast<float>(m00*tm02 + m01*tm12 + m02*tm22 + m03*tm32);
+    modelViewProjection[9] = static_cast<float>(m10*tm02 + m11*tm12 + m12*tm22 + m13*tm32);
+    modelViewProjection[10] = static_cast<float>(m20*tm02 + m21*tm12 + m22*tm22 + m23*tm32);
+    modelViewProjection[11] = static_cast<float>(m30*tm02 + m31*tm12 + m32*tm22 + m33*tm32);
+    modelViewProjection[12] = static_cast<float>(m00*tm03 + m01*tm13 + m02*tm23 + m03*tm33);
+    modelViewProjection[13] = static_cast<float>(m10*tm03 + m11*tm13 + m12*tm23 + m13*tm33);
+    modelViewProjection[14] = static_cast<float>(m20*tm03 + m21*tm13 + m22*tm23 + m23*tm33);
+    modelViewProjection[15] = static_cast<float>(m30*tm03 + m31*tm13 + m32*tm23 + m33*tm33);
 
     mvpDirty = false;
 }
@@ -2170,7 +2170,7 @@ namespace
     template<typename T>
     bool isDegenerate1d(const T *triangle, const std::size_t stride)
     {
-        const uint8_t *trianglePtr = reinterpret_cast<const uint8_t *>(triangle);
+        const auto *trianglePtr = reinterpret_cast<const uint8_t *>(triangle);
         const T *a = triangle;
         const T *b = reinterpret_cast<const T *>(trianglePtr+stride);
         const T *c = reinterpret_cast<const T *>(trianglePtr+(2u*stride));
@@ -2183,7 +2183,7 @@ namespace
     template<typename T>
     bool isDegenerate2d(const T *triangle, const std::size_t stride) NOTHROWS
     {
-        const uint8_t *trianglePtr = reinterpret_cast<const uint8_t *>(triangle);
+        const auto *trianglePtr = reinterpret_cast<const uint8_t *>(triangle);
         const T *a = triangle;
         const T *b = reinterpret_cast<const T *>(trianglePtr + stride);
         const T *c = reinterpret_cast<const T *>(trianglePtr + (2u * stride));
@@ -2199,7 +2199,7 @@ namespace
     template<typename T>
     bool isDegenerate3d(const T *triangle, const std::size_t stride) NOTHROWS
     {
-        const uint8_t *trianglePtr = reinterpret_cast<const uint8_t *>(triangle);
+        const auto *trianglePtr = reinterpret_cast<const uint8_t *>(triangle);
         const T *a = triangle;
         const T *b = reinterpret_cast<const T *>(trianglePtr + stride);
         const T *c = reinterpret_cast<const T *>(trianglePtr + (2u * stride));
@@ -2248,7 +2248,7 @@ namespace
         const float dx = (x1 - x0);
         const float dy = (y1 - y0);
 
-        const float m = (float)sqrt(dx*dx + dy*dy);
+        const auto m = (float)sqrt(dx*dx + dy*dy);
 
         const float adjX = (dx / m)*normalizedWidthX;
         const float adjY = (dy / m)*normalizedWidthY;
@@ -2393,7 +2393,7 @@ namespace
         const float dx = (x1 - x0);
         const float dy = (y1 - y0);
 
-        const float m = (float)sqrt(dx*dx + dy*dy);
+        const auto m = (float)sqrt(dx*dx + dy*dy);
 
         const float adjX = (dx / m)*normalizedWidthX;
         const float adjY = (dy / m)*normalizedWidthY;

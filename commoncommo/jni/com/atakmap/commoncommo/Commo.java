@@ -404,6 +404,53 @@ public class Commo {
 
 
     /**
+     * Sets the local https web server paramerters to use with the local
+     * https server for outbound peer-to-peer
+     * mission package transfers, or disables this functionality.
+     * The local web port number must be a valid, free, local port
+     * for TCP listening or the constant MPIO_LOCAL_PORT_DISABLE. 
+     * The certificate data and password must be non-null except in
+     * the specific case that localWebPort is MPIO_LOCAL_PORT_DISABLE.
+     * Certificate data must be in pkcs#12 format and should represent
+     * the complete certificate, key, and supporting certificates that
+     * the server should use when negotiating with the client.
+     * On successful return, the https server will be configured to use the
+     * specified port and new outbound transfers (sendMissionPackage())
+     * will use this to host outbound transfers.
+     * Note that the https server also requires the http port to be enabled
+     * and configured on a different port as the https function utilizes
+     * the http server internally. If the http server is not enabled
+     * (see setMissionPackageLocalPort()) the https server will remain
+     * in a configured but disabled state until the http server is activated.
+     * If this call fails, transfers using the local https server will be
+     * disabled until a future call completes successfully (in other words,
+     * will act as if this had been called with MPIO_LOCAL_PORT_DISABLE).
+     *
+     * Note carefully: calling this to change the port or disable the local
+     * https web server will cause all in-progress mission package sends to
+     * be aborted.
+     *
+     * The default state is to have the local https web server disabled, as if
+     * this had been called with MPIO_LOCAL_PORT_DISABLE.
+     *
+     * @param localWebPort TCP port number to have the local https web server
+     *                     listen on, or MPIO_LOCAL_PORT_DISABLE.
+     *                     The port must be free at the time of invocation.
+     * @throw CommoException if the web port is not valid/available,
+     *     setupMissionPackageIO has not yet been successfully invoked,
+     *     or the given certificate or certPass is invalid.
+     */
+    public void setMissionPackageLocalHttpsParams(int localWebPort,
+            byte[] certificate, String certPass)
+                                           throws CommoException
+    {
+        setMPLocalHttpsParamsNative(nativePtr, localWebPort, certificate,
+                                   certificate == null ? 0 : certificate.length,
+                                   certPass);
+    }
+
+
+    /**
      * Controls if mission package sends via TAK servers may or may
      * not be used.  The default, once mission package IO has been setup
      * via setupMissionPackageIO(), is enabled.
@@ -1707,6 +1754,24 @@ public class Commo {
                                       pkeyPem, password, friendlyName);
     }
     
+    /**
+     * Generate a self-signed certificate with private key.
+     * Values in the cert are filled with nonsense data.
+     * Certificates from this cannot be used to interoperate with commerical
+     * tools due to lack of signature by trusted CAs.
+     * The returned data is in pkcs12 format protected by the supplied
+     * password, which cannot be null.
+     */
+    public byte[] generateSelfSignedCert(String certPass) throws CommoException
+    {
+        if (certPass == null)
+            throw new CommoException("Password cannot be null");
+        byte[] ret = generateSelfSignedCertNative(nativePtr, certPass);
+        if (ret == null)
+            throw new CommoException();
+        return ret;
+    }
+    
 
     /**
      * Convert cot in XML form to a specific version of the TAK protocol.
@@ -1786,6 +1851,10 @@ public class Commo {
     static native void setTcpConnTimeoutNative(long nativePtr, int sec);
     static native boolean setMPLocalPortNative(long nativePtr,
                                    int localWebPort);
+    static native void setMPLocalHttpsParamsNative(long nativePtr,
+                                   int localWebPort,
+                                   byte[] cert, int certLen,
+                                   String certPass) throws CommoException;
     static native void setMPViaServerEnabledNative(long nativePtr, 
                                    boolean enabled);
     static native boolean setMissionPackageHttpsPortNative(long nativePtr,
@@ -1929,6 +1998,8 @@ public class Commo {
                                               String pkeyPem,
                                               String password,
                                               String friendlyName);
+    static native byte[] generateSelfSignedCertNative(long nativePtr,
+                                              String certPass);
     static native byte[] cotXmlToTakprotoNative(long nativePtr, String cotXml,
                                               int desiredVersion);
     static native String takprotoToCotXmlNative(long nativePtr, 

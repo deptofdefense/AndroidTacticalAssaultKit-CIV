@@ -6,7 +6,11 @@ import android.content.DialogInterface;
 import android.content.Context;
 import android.content.Intent;
 
+import com.atakmap.android.cotdetails.extras.ExtraDetailsLayout;
 import com.atakmap.android.drawing.DrawingPreferences;
+import com.atakmap.android.cotdetails.extras.ExtraDetailsListener;
+import com.atakmap.android.cotdetails.extras.ExtraDetailsManager;
+import com.atakmap.android.cotdetails.extras.ExtraDetailsProvider;
 import com.atakmap.android.gui.RangeEntryDialog;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -29,6 +33,7 @@ import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -56,6 +61,8 @@ import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
+import java.util.List;
+
 /**
  * Generic details view for a map item
  */
@@ -74,6 +81,7 @@ public abstract class GenericDetailsView extends RelativeLayout implements
 
     protected EditText _nameEdit;
     protected RemarksLayout _remarksLayout;
+    protected ExtraDetailsLayout _extrasLayout;
     protected View _noGps;
     protected RangeAndBearingTableHandler rabtable;
     protected SeekBar _transSeek;
@@ -135,6 +143,8 @@ public abstract class GenericDetailsView extends RelativeLayout implements
                         }
                     });
         }
+
+        _extrasLayout = findViewById(R.id.extrasLayout);
     }
 
     @Override
@@ -223,6 +233,8 @@ public abstract class GenericDetailsView extends RelativeLayout implements
         _item = item;
         if (_showLabels != null)
             _showLabels.setChecked(_item.hasMetaValue("labels_on"));
+        if (_extrasLayout != null)
+            _extrasLayout.setItem(item);
         return item != null;
     }
 
@@ -233,13 +245,29 @@ public abstract class GenericDetailsView extends RelativeLayout implements
 
     protected abstract void _onColorSelected(int color, String label);
 
-    protected abstract void _onHeightSelected();
+    protected void _onHeightSelected() {
+        // Map item may not have a modifiable height
+    }
 
-    protected void createHeightDialog(final MapItem item, int titleId) {
+    /**
+     * Height has been selected
+     * @param heightM The new height in meters (internal value)
+     * @param unit The new height unit
+     * @param heightU The new height in preferred units (display value)
+     */
+    protected void heightSelected(double heightM, Span unit, double heightU) {
+        // Map item may not have a modifiable height
+    }
+
+    protected void createHeightDialog(final MapItem item, int titleId,
+            Span[] acceptableValues) {
         if (item == null)
             return;
         double heightM = item.getMetaDouble("height", 0);
         Span heightUnit = getUnitSpan(item);
+        if (acceptableValues == null) {
+            acceptableValues = Span.values();
+        }
         new RangeEntryDialog(dropDown.getMapView()).show(titleId, heightM,
                 heightUnit, new RangeEntryDialog.Callback() {
                     @Override
@@ -247,7 +275,7 @@ public abstract class GenericDetailsView extends RelativeLayout implements
                         heightSelected(valueM, unit, SpanUtilities.convert(
                                 valueM, Span.METER, unit));
                     }
-                });
+                }, acceptableValues);
     }
 
     /**
@@ -322,15 +350,6 @@ public abstract class GenericDetailsView extends RelativeLayout implements
         _unitPrefs.unregisterListener(this);
         ToolManagerBroadcastReceiver.getInstance().unregisterListener(this);
     }
-
-    /**
-     * Height has been selected
-     * @param heightM The new height in meters (internal value)
-     * @param unit The new height unit
-     * @param heightU The new height in preferred units (display value)
-     */
-    protected abstract void heightSelected(double heightM, Span unit,
-            double heightU);
 
     protected void sendSelected(final String uid) {
 

@@ -127,6 +127,11 @@
     <string name="bloodhoundPreferences">Preferencias de sabueso</string>
     <string name="bloodhoundSubPreferences">Ajustar la configuración de Bloodhound</string>
     <string name="bloodhoundETAPreferences">Preferencias de Bloodhound ETA</string>
+    <string name="bloodhoundRerouteTimer">Reroute timer frequency</string>
+    <string name="bloodhound_no_planners">No route planners available.</string>
+    <string name="bloodhoundRerouteDistance">Reroute distance</string>
+    <string name="bloodhoundRerouteTimerDescription">Specify how frequently bloodhound will check to see if a reroute needs to be calculated.</string>
+    <string name="bloodhoundRerouteDistanceDescription">Specify the distance away from the route a point has to move before calculating a reroute.</string>
     <string name="locationPreferences">Preferencias de ubicación</string>
     <string name="breadcrumbPreferences">Preferencias de pan rallado</string>
     <string name="notificationPreferences">Preferencias de notificación</string>
@@ -636,6 +641,8 @@
     <string name="preferences_text316">Cuando esté dentro de esta distancia a un punto de control, se lo considerará en el punto de control mientras navega</string>
     <string name="preferences_text317">Entrar burbuja en metros</string>
     <string name="preferences_route_off_route_bubble">Cuando esté fuera de esta distancia, se considerará fuera de la ruta mientras navega</string>
+    <string name="open_route_around">Open Route Around Region Manager</string>
+    <string name="manage_route_around_regions">Manage route around regions</string>
     <string name="preferences_text318">Perfil de elevación Altitudes interpoladas</string>
     <string name="preferences_text319">Habilite para interpolar altitudes de gráficos de perfil de elevación desde puntos de ruta cercanos. Inhabilite para usar altitudes DTED para puntos interpolados.</string>
     <string name="preferences_text320">Centro de perfil de elevación en buscador</string>
@@ -1173,6 +1180,7 @@
     <string name="routes_text32">Ruta actualizada</string>
     <string name="routes_text33">Vehículo</string>
     <string name="routes_text34">A pie</string>
+    <string name="configure_route_planner">Configure route planner</string>
     <string name="pull_from_dted">Tire de DTED</string>
     <string name="location">Ubicación \ u0020</string>
     <string name="route_start">Comienzo:</string>
@@ -3533,7 +3541,7 @@
     <string name="preferences_text701">Upload Debug Logs</string>
     <string name="preferences_text701s">If checked debug logs (Logcat and Network Traffic) will be uploaded to TAK Server</string>
     <string name="network_data_restriction">Warning: Network Data Restriction Enabled</string>
-    <string name="network_data_restriction_summary">Tap and enable \'Allow background data usage\' to allow the the app to access the network without restriction.</string>
+    <string name="network_data_restriction_summary">Tap and enable \'Allow background data usage\' to allow the app to access the network without restriction.</string>
     <string name="ps_restriction">Warning: Power Saving Restriction Enabled</string>
     <string name="ps_restriction_summary">With Power Savings enabled, the internal GPS may be disabled while the screen is off</string>
     <string name="tap_lock_item">Tap item for map lock.</string>
@@ -3600,10 +3608,54 @@
     <string name="invalid_input">Invalid Input</string>
     <string name="background_scanning">Scanning in background...</string>
     <string name="copied_to_clipboard_generic">Copied to clipboard...</string>
-    <string name="background_permission_warning">With Android 10, this application requires the the location permission to be set to \'Allow all of the time\'</string>
+    <string name="background_permission_warning">With Android 10, this application requires the location permission to be set to \'Allow all of the time\'</string>
     <string name="no_exporters_registered">No exporters registered</string>
 
     <string name="scanning_apps">Scanning available apps and plugins</string>
     <string name="scanning">Scanning...</string>
+    <string name="prefs_use_klv_elevation">Prefer KLV Frame Center Elevation</string>
+    <string name="prefs_use_klv_elevation_sum">Use Frame Center elevation data provided in KLV instead of local elevation data.</string>
+    <string name="pointDroppingBehavior">Point Dropping Behavior</string>
+    <string name="lockBehavior">Lock Behavior</string>
+    <string name="forceCenterMoving">Force Center while Moving</string>
+    <string name="forceCenterMovingSummary">Enabling this preference will result in the self marker remaining centered while moving in track up mode, This overrides the default behavior of floating the self icon to the bottom of the screen when moving to give the user a more 360 degree view.</string>
+
+    <string name="mission_package_remarks_hint">Enter description and #hashtags here</string>
+    <string name="install_date">Install Date</string>
+    <string name="update_date">Update Date</string>
+    <string name="certificate">Certificate</string>
+    <string name="start_with">Start With:</string>
+    <string name="prefix_numeric">Prefix (Numeric)</string>
+    <string name="append">Append:</string>
+    <string name="suffix_alphabet_only">Suffix (Alphabet Only)</string>
+    <string name="hashtag">#Hashtag</string>
+    <string name="intersection">Intersection:</string>
+    <string name="re_routing_options">Re-routing Options:</string>
+    <string name="pitch_button_text">P</string>
+    <string name="rollbuttontext">R</string>
+    <string name="no_available_options">No available options</string>
+    <string name="existing">Existing</string>
+    <string name="route_import">Route Import</string>
+    <string name="route_import_msg">Choose the method for importing a route into the system:</string>
+    <string name="vehicle_models">Vehicle Models</string>
+    <string name="vehicle_outlines">Vehicle Outlines</string>
+    <string name="show_outline">Show Outline</string>
+    <string name="outline_only">Outline Only</string>
+    <string name="breadcrumb_color">Breadcrumb Color</string>
+
+    <string name="preferences_text220a">Secure Server port</string>
+    <string name="preferences_text221a">Secure Port of the file sharing Server</string>
+
+    <string name="preferences_text172">Render Speed</string>
+    <string name="preferences_text173">Render at full speed or limit to save battery</string>
+
+    <string name="fssystem_fiveline">"FS System "</string>
+    <string name="login_to">Login to %s</string>
+    <string name="show_password">Show Password</string>
+    <string name="routes_prompt_2">Route creation</string>
+    <string name="video_text71">Passphrase</string>
+
+    <string name="http_401_message">The server has refused the connection because the username or password may not be correct.</string>
+    <string name="http_403_message">The server has refused the connection because the user may not have the appropriate permissions.</string>
 
 </resources>

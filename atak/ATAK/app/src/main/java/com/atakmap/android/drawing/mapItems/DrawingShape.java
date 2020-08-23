@@ -121,16 +121,22 @@ public class DrawingShape extends EditablePolyline implements ParentMapItem {
             m.setType(getMarkerPointType());
             m.setMetaBoolean("drag", false);
             m.setMetaBoolean("editable", true);
-            m.setMetaBoolean("addToObjList", false); // always hide these
-                                                     // types of
-                                                     // waypoints on the
-                                                     // objects list
+
+            // always hide these types of waypoints on the objects list
+            m.setMetaBoolean("addToObjList", false);
             m.setMetaString("how", "h-g-i-g-o"); // don't autostale it
 
             m.setMetaString("menu", getShapeMenu());
+            m.setColor(getStrokeColor());
             m.setMetaString(getUIDKey(), getUID());
-            getChildMapGroup().addItem(m);
             setShapeMarker(m);
+        }
+        if (closed) {
+            // if the item has already been added to the map, and the shape marker is created,
+            // then setClosed is called.
+            if (getGroup() != null && _shapeMarker != null
+                    && _shapeMarker.getGroup() == null)
+                childItemMapGroup.addItem(_shapeMarker);
         }
 
         if (getMarker() != null) {
@@ -147,6 +153,13 @@ public class DrawingShape extends EditablePolyline implements ParentMapItem {
             _shapeMarkerType = "shape_marker";
         }
         return _shapeMarkerType;
+    }
+
+    public void setMovable(boolean movable) {
+        super.setMovable(movable);
+        Marker sm = getShapeMarker();
+        if (sm != null)
+            sm.setMovable(movable);
     }
 
     public void setMarkerPointType(String type) {
@@ -214,6 +227,25 @@ public class DrawingShape extends EditablePolyline implements ParentMapItem {
         this.setMetaInteger("line_type", style);
         this.refresh(this.mapView.getMapEventDispatcher(), null,
                 this.getClass());
+    }
+
+    @Override
+    public void onItemAdded(MapItem item, MapGroup oldParent) {
+        if (childItemMapGroup != null) {
+            if (_shapeMarker != null)
+                childItemMapGroup.addItem(_shapeMarker);
+        }
+    }
+
+    @Override
+    public void onItemRemoved(MapItem item, MapGroup oldParent) {
+        super.onItemRemoved(item, oldParent);
+        // XXX - not quite sure why there are two child map groups
+        if (childItemMapGroup != null) {
+            final MapGroup parent = childItemMapGroup.getParentGroup();
+            if (parent != null)
+                parent.removeGroup(childItemMapGroup);
+        }
     }
 
     public static class KmlDrawingShapeImportFactory extends

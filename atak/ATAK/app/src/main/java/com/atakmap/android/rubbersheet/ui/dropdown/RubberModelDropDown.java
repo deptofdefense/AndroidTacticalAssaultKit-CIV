@@ -7,10 +7,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
 
+import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.rubbersheet.maps.AbstractSheet;
 import com.atakmap.android.rubbersheet.maps.RubberModel;
-import com.atakmap.android.rubbersheet.maps.RubberSheetMapGroup;
 import com.atakmap.android.rubbersheet.tool.RubberModelEditTool;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
@@ -34,8 +34,8 @@ public class RubberModelDropDown extends AbstractSheetDropDown implements
     private TextView _pitchTxt, _headingTxt, _rollTxt;
     private TextView _scaleTxt;
 
-    public RubberModelDropDown(MapView mapView, RubberSheetMapGroup group) {
-        super(mapView, group);
+    public RubberModelDropDown(MapView mapView, MapGroup group) {
+        super(mapView);
         _editTool = new RubberModelEditTool(mapView, group);
     }
 

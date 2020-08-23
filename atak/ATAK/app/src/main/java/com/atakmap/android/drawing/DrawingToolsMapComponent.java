@@ -10,6 +10,7 @@ import com.atakmap.android.cot.importer.CotImporterManager;
 import com.atakmap.android.cot.importer.MapItemImporter;
 import com.atakmap.android.cot.importer.MarkerImporter;
 import com.atakmap.android.drawing.details.TacticalOverlayDetailHandler;
+import com.atakmap.android.cotdetails.extras.ExtraDetailsManager;
 import com.atakmap.android.drawing.importer.DrawingCircleImporter;
 import com.atakmap.android.drawing.importer.DrawingShapeImporter;
 import com.atakmap.android.drawing.importer.MultiPolylineImporter;
@@ -49,6 +50,8 @@ public class DrawingToolsMapComponent extends AbstractWidgetMapComponent {
 
     @SuppressWarnings("unused")
     private DrawingToolsToolbar _drawingToolbarBroadcastReceiver;
+
+    private ExtraDetailsManager _detailsMgr;
 
     @Override
     protected void onCreateWidgets(Context context, Intent intent,
@@ -140,6 +143,8 @@ public class DrawingToolsMapComponent extends AbstractWidgetMapComponent {
             _drawingToolbarBroadcastReceiver = new DrawingToolsToolbar(view,
                     drawingGroup, context,
                     _drawingMapReceiver);
+
+            _detailsMgr = new ExtraDetailsManager();
 
         } catch (Exception ex) {
             Log.e(TAG, "error: ", ex);

@@ -615,10 +615,12 @@ public class ProductProviderManager extends BroadcastReceiver {
             if (android.os.Build.VERSION.SDK_INT < 26) {
                 _builder = new Notification.Builder(_manager._context);
             } else {
-                _builder = new Notification.Builder(_manager._context, "com.atakmap.app.def");
+                _builder = new Notification.Builder(_manager._context,
+                        "com.atakmap.app.def");
             }
-            
-            _builder.setContentTitle(_uiContext.getString(R.string.scanning_apps))
+
+            _builder.setContentTitle(
+                    _uiContext.getString(R.string.scanning_apps))
                     .setContentText(_uiContext.getString(R.string.scanning))
                     .setSmallIcon(
                             com.atakmap.android.util.ATAKConstants.getIconId());

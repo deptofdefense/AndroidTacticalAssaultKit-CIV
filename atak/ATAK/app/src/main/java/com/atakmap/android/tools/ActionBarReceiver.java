@@ -1318,9 +1318,18 @@ public class ActionBarReceiver extends BroadcastReceiver {
 
         if (height != 0 && icon instanceof BitmapDrawable) {
             Bitmap bitmap = ((BitmapDrawable) icon).getBitmap();
-            icon = new BitmapDrawable(context.getResources(),
-                    Bitmap.createScaledBitmap(bitmap, height,
-                            height, true));
+            Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, height,
+                    height, true);
+            BitmapDrawable bd = new BitmapDrawable(context.getResources(),
+                    scaledBitmap);
+
+            // TODO - figure out why the BitmapDrawable is currently trying to render at a
+            // targetDensity and ends up scaling up the bitmap which is only supposed to be
+            // 75-90x75-90
+            bd.setTargetDensity(scaledBitmap.getDensity());
+
+            icon = bd;
+
             // do not cache icons with badges
             if (cache && !(orig instanceof LayerDrawable)) {
                 regularIconCache.put(orig, icon);

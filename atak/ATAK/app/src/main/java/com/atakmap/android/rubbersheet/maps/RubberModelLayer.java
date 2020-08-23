@@ -3,6 +3,7 @@ package com.atakmap.android.rubbersheet.maps;
 
 import android.util.Pair;
 
+import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.AbstractLayer;
@@ -18,8 +19,8 @@ public class RubberModelLayer extends AbstractLayer {
 
     private static final String LAYER_NAME = "Rubber Models";
 
-    private final MapView _mapView;
-    private final RubberSheetMapGroup _group;
+    protected final MapView _mapView;
+    protected final MapGroup _group;
 
     private final GLLayerSpi2 SPI = new GLLayerSpi2() {
         @Override
@@ -37,17 +38,32 @@ public class RubberModelLayer extends AbstractLayer {
         }
     };
 
-    public RubberModelLayer(MapView mapView, RubberSheetMapGroup group) {
-        super(LAYER_NAME);
+    protected RubberModelLayer(MapView mapView, MapGroup group,
+            String layerName) {
+        super(layerName);
         _mapView = mapView;
         _group = group;
+        init();
+    }
 
-        GLLayerFactory.register(SPI);
-        _mapView.addLayer(MapView.RenderStack.VECTOR_OVERLAYS, this);
+    public RubberModelLayer(MapView mapView, MapGroup group) {
+        this(mapView, group, LAYER_NAME);
+    }
+
+    protected void init() {
+        GLLayerSpi2 spi = getSPI();
+        if (spi != null) {
+            GLLayerFactory.register(spi);
+            _mapView.addLayer(MapView.RenderStack.VECTOR_OVERLAYS, this);
+        }
     }
 
     public void dispose() {
-        GLLayerFactory.unregister(SPI);
+        GLLayerFactory.unregister(getSPI());
         _mapView.removeLayer(MapView.RenderStack.VECTOR_OVERLAYS, this);
+    }
+
+    protected GLLayerSpi2 getSPI() {
+        return SPI;
     }
 }

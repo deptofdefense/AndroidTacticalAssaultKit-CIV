@@ -97,8 +97,7 @@ public class GLImageOverlay extends GLMapItem {
             this.initialized = true;
         }
 
-        final double mapGsd = ortho.getSurface().getMapView()
-                .getMapResolution(ortho.drawMapScale);
+        final double mapGsd = ortho.drawMapResolution;
 
         // XXX - consider icon/label when we're zoomed out sufficient far
 

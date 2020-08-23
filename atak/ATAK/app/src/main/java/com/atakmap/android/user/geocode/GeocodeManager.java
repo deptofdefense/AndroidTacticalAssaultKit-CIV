@@ -21,6 +21,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.xml.XMLUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -326,20 +327,8 @@ public class GeocodeManager {
                     for (File file : files) {
                         Log.d(TAG, "loading: " + file);
 
-                        DocumentBuilderFactory dbf = DocumentBuilderFactory
-                                .newInstance();
-                        try {
-                            dbf.setFeature(
-                                    "http://apache.org/xml/features/disallow-doctype-decl",
-                                    true);
-                        } catch (Exception ignored) {
-                        }
-                        try {
-                            dbf.setFeature(
-                                    XMLConstants.FEATURE_SECURE_PROCESSING,
-                                    true);
-                        } catch (Exception ignored) {
-                        }
+                        DocumentBuilderFactory dbf = XMLUtils
+                                .getDocumenBuilderFactory();
 
                         DocumentBuilder db = dbf.newDocumentBuilder();
                         Document document = db.parse(file);

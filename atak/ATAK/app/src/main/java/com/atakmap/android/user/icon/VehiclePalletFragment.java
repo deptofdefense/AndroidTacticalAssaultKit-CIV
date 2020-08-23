@@ -11,7 +11,7 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.app.Fragment;
+import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +24,7 @@ import android.widget.TextView;
 import com.atakmap.android.gui.ColorPalette;
 import com.atakmap.android.gui.ColorPalette.OnColorSelectedListener;
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.toolbar.Tool;
@@ -193,7 +194,7 @@ public class VehiclePalletFragment extends Fragment implements
         AtakBroadcast.getInstance().sendBroadcast(intent);
     }
 
-    protected Marker getPointPlacedIntent(GeoPointMetaData gp, String uid) {
+    protected MapItem getPointPlacedIntent(GeoPointMetaData gp, String uid) {
         if (_selectedType == null)
             return null;
         VehicleShape vs = new VehicleShape(MapView.getMapView(), uid);
@@ -207,8 +208,7 @@ public class VehiclePalletFragment extends Fragment implements
         vs.setup(_selectedType, name, gp, 0, true);
         vs.setColor(color);
         vs.save();
-        Marker marker = vs.getMarker();
-        return marker;
+        return vs;
     }
 
     protected void clearSelection() {

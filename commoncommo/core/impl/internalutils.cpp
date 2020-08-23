@@ -214,6 +214,38 @@ bool InternalUtils::urlReplaceHost(std::string *url, const char *newHost)
     return true;
 }
 
+bool InternalUtils::urlReplacePort(std::string *url, int port)
+{
+    // Find ://
+    size_t colonSlashSlash = url->find("://");
+    if (colonSlashSlash == std::string::npos)
+        return false;
+    colonSlashSlash += 3;
+    
+    // Find /root/of/path
+    size_t rootSlash = url->find("/", colonSlashSlash);
+    if (rootSlash == std::string::npos)
+        rootSlash = url->size();
+    
+    // Look for any user:pass@ in the remainder - if there,
+    // move start position forward to it
+    size_t authAt = url->find("@", colonSlashSlash);
+    if (authAt != std::string::npos && authAt < rootSlash)
+        colonSlashSlash = authAt + 1;
+    
+    // Look for ':port'
+    size_t portColon = url->find(":", colonSlashSlash);
+    if (portColon != std::string::npos && portColon < rootSlash) {
+        // Port exists, replace it
+        portColon++;
+        url->replace(portColon, rootSlash - portColon, intToString(port));
+    } else {
+        // Port does not exist, add it
+        url->insert(rootSlash, intToString(port));
+    }
+    return true;
+}
+
 bool InternalUtils::computeSha256Hash(std::string *hashOut, const char *filename)
 {
     static const size_t bufSize = 512;
@@ -299,21 +331,26 @@ namespace {
 void InternalUtils::
 readCert(const uint8_t *certData, size_t certLen,
          const char *certPassword,
-         X509 **pcert, EVP_PKEY **pprivKey) COMMO_THROW (SSLArgException)
+         X509 **pcert, EVP_PKEY **pprivKey, 
+         STACK_OF(X509) **pcaCerts, int *pnCaCerts) COMMO_THROW (SSLArgException)
 {
+    const char *errMsg = NULL;
+    CommoResult errCode = COMMO_SUCCESS;
     PKCS12 *pkcs12 = pkcsRead(certData, certLen);
+    if (pcaCerts && !pnCaCerts)
+        throw SSLArgException(COMMO_ILLEGAL_ARGUMENT, "Improper request for CA certificates");
     if (!pkcs12)
         throw SSLArgException(COMMO_INVALID_CERT, "Unable to read client cert");
 
-    EVP_PKEY *privKey;
-    X509 *cert;
-    int ret = PKCS12_parse(pkcs12, certPassword, &privKey, &cert, NULL);
+    EVP_PKEY *privKey = NULL;
+    X509 *cert = NULL;
+    STACK_OF(X509) *caCerts = NULL;
+    int ret = PKCS12_parse(pkcs12, certPassword, &privKey, &cert,
+                           pcaCerts ? &caCerts : NULL);
     PKCS12_free(pkcs12);
     
     if (!ret) {
         unsigned long sslErr = ERR_get_error();
-        const char *errMsg;
-        CommoResult errCode;
         if (ERR_GET_LIB(sslErr) == ERR_LIB_PKCS12 && 
                      ERR_GET_REASON(sslErr) == PKCS12_R_MAC_VERIFY_FAILURE) {
             errMsg = "Incorrect password for client cert";
@@ -326,17 +363,34 @@ readCert(const uint8_t *certData, size_t certLen,
     }
 
     if (!cert) {
-        if (privKey)
-            EVP_PKEY_free(privKey);
-        throw SSLArgException(COMMO_INVALID_CERT, "No certificate in the pkcs#12 file");
+
+        errCode = COMMO_INVALID_CERT;
+        errMsg = "No certificate in the pkcs#12 file";
+        goto error;
     }
     if (!privKey) {
         X509_free(cert);
-        throw SSLArgException(COMMO_INVALID_CERT, "no private key in the pkcs#12 file");
+        errCode = COMMO_INVALID_CERT;
+        errMsg = "no private key in the pkcs#12 file";
+        goto error;
     }
     
     *pcert = cert;
     *pprivKey = privKey;
+    if (pcaCerts) {
+        *pcaCerts = caCerts;
+        *pnCaCerts = sk_X509_num(caCerts);
+    }
+    return;
+
+error:
+    if (cert)
+        X509_free(cert);
+    if (privKey)
+        EVP_PKEY_free(privKey);
+    if (pcaCerts && caCerts)
+        sk_X509_pop_free(caCerts, X509_free);
+    throw SSLArgException(errCode, errMsg);
 }
 
 void InternalUtils::

@@ -459,7 +459,9 @@ public class RectangleDetailsView extends GenericDetailsView implements
 
     @Override
     protected void _onHeightSelected() {
-        createHeightDialog(_rect, R.string.enter_rectangle_height);
+        createHeightDialog(_rect, R.string.enter_rectangle_height, new Span[] {
+                Span.METER, Span.YARD, Span.FOOT
+        });
     }
 
     @Override

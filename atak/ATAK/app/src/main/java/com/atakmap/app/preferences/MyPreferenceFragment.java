@@ -12,11 +12,8 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceManager;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.WindowManager;
-import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.Spinner;
@@ -317,6 +314,7 @@ public class MyPreferenceFragment extends AtakPreferenceFragment {
 
         String name = prefs.getString("locationCallsign", "");
         identityCallsign.setText(name);
+        identityCallsign.setSelection(name.length());
 
         String locationTeam = prefs.getString("locationTeam", "Cyan");
         String[] colors = context.getResources()
@@ -372,85 +370,27 @@ public class MyPreferenceFragment extends AtakPreferenceFragment {
                     }
                 });
 
+        DialogInterface.OnClickListener onClick = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String callsign = String.valueOf(identityCallsign.getText());
+                if (!callsign.isEmpty()) {
+                    prefs.edit().putString("locationCallsign", callsign)
+                            .apply();
+                }
+                if (which == DialogInterface.BUTTON_NEGATIVE)
+                    SettingsActivity.start(DevicePreferenceFragment.class);
+            }
+        };
+
         AlertDialog.Builder adb = new AlertDialog.Builder(context);
         adb.setTitle(R.string.identity_title);
         adb.setIcon(R.drawable.my_prefs_settings);
         adb.setView(view);
-        adb.setPositiveButton(R.string.done, null);
-        adb.setNegativeButton(R.string.more,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int i) {
-                        dialog.cancel();
-                        SettingsActivity.start(DevicePreferenceFragment.class);
-                    }
-                });
+        adb.setPositiveButton(R.string.done, onClick);
+        adb.setNegativeButton(R.string.more, onClick);
         adb.setCancelable(true);
-        final AlertDialog d = adb.show();
-
-        identityCallsign.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                d.cancel();
-                setCallsign(context, prefs);
-            }
-        });
-    }
-
-    private static void setCallsign(final Context context,
-            final SharedPreferences prefs) {
-        String name = prefs.getString("locationCallsign", "");
-
-        final EditText et = new com.atakmap.android.gui.EditText(context);
-        et.setSingleLine(true);
-        et.setText(name);
-        et.setSelection(name.length());
-        AlertDialog.Builder b = new AlertDialog.Builder(context);
-        b.setTitle(R.string.my_callsign);
-        b.setView(et);
-        b.setCancelable(false);
-        b.setPositiveButton(R.string.done,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface d, int w) {
-                        d.cancel();
-
-                        String name = et.getText().toString().trim();
-                        if (FileSystemUtils.isEmpty(name)) {
-                            return;
-                        } else {
-                            prefs.edit().putString("locationCallsign", name)
-                                    .apply();
-                        }
-
-                        promptIdentity(context);
-                    }
-                });
-        b.setNegativeButton(R.string.cancel,
-                new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface,
-                            int i) {
-                        promptIdentity(context);
-                    }
-                });
-        final AlertDialog d = b.create();
-        if (d.getWindow() != null) {
-            d.getWindow().setSoftInputMode(
-                    WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
-                            | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
-        }
-        d.show();
-        et.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId,
-                    KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_DONE)
-                    d.getButton(DialogInterface.BUTTON_POSITIVE)
-                            .performClick();
-                return false;
-            }
-        });
+        adb.show();
     }
 
     /**

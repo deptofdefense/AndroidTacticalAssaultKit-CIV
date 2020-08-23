@@ -14,9 +14,9 @@ namespace TAK {
                 Plane2(const Vector4<double> &normal, const Point2<double> &point);
                 virtual ~Plane2();
             public:
-                virtual bool intersect(Point2<double>* isectPoint, const Ray2<double>& ray) const;
-                virtual GeometryModel2::GeometryClass getGeomClass() const;
-                virtual void clone(std::unique_ptr<GeometryModel2, void(*)(const GeometryModel2 *)> &value) const;
+                virtual bool intersect(Point2<double>* isectPoint, const Ray2<double>& ray) const override;
+                virtual GeometryModel2::GeometryClass getGeomClass() const override;
+                virtual void clone(std::unique_ptr<GeometryModel2, void(*)(const GeometryModel2 *)> &value) const override;
             private:
                 Vector4<double> normal;
                 Point2<double> point;

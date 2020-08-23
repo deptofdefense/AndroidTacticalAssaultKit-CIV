@@ -8,6 +8,7 @@
 #include <feature/Style.h>
 #include <port/Platform.h>
 #include <util/Error.h>
+#include <interop/java/JNILocalRef.h>
 
 namespace TAKEngineJNI {
     namespace Interop {
@@ -37,6 +38,8 @@ namespace TAKEngineJNI {
             TAK::Engine::Util::TAKErr Interop_get(std::shared_ptr<const atakmap::util::AttributeSet> &value, JNIEnv *env, jobject jgeom) NOTHROWS;
 
             TAK::Engine::Util::TAKErr Interop_copy(TAK::Engine::Feature::Envelope2 *value, JNIEnv *env, jobject jenvelope) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(jobject value, JNIEnv &env, const TAK::Engine::Feature::Envelope2 &cenvelope) NOTHROWS;
+            TAK::Engine::Util::TAKErr Interop_marshal(Java::JNILocalRef &value, JNIEnv &env, const TAK::Engine::Feature::Envelope2 &cenvelope) NOTHROWS;
         }
     }
 }

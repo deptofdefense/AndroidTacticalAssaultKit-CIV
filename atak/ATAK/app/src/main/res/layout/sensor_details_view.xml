@@ -493,6 +493,14 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="@dimen/auto_space_big"/>
 
+            <!-- This is where extra views go from tools or plugins -->
+            <com.atakmap.android.cotdetails.extras.ExtraDetailsLayout
+                android:id="@+id/extrasLayout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/auto_space_big"
+                android:orientation="vertical"/>
+
             <Button
                 android:id="@+id/placeEndPointButton"
                 style="@style/darkButton" android:padding="6dp"

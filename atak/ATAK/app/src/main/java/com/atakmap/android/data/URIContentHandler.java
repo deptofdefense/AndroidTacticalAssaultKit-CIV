@@ -3,7 +3,7 @@ package com.atakmap.android.data;
 
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;

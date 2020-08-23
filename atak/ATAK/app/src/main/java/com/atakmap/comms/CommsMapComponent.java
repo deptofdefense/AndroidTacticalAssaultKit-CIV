@@ -1,7 +1,13 @@
 
 package com.atakmap.comms;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.net.*;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
+import java.security.cert.Certificate;
 import java.util.*;
 import java.io.File;
 import java.io.IOException;
@@ -54,6 +60,7 @@ import com.atakmap.android.filesharing.android.service.WebServer;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Pair;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import com.atakmap.commoncommo.*;
@@ -144,6 +151,11 @@ public class CommsMapComponent extends AbstractMapComponent implements
     private PreSendProcessor preSendProcessor;
     private String errStatus;
     private TAKServerListener takServerListener;
+    private File httpsCertFile;
+
+    // CoT messages received before the map components finished loading
+    private boolean componentsLoaded;
+    private final List<Pair<String, String>> deferredMessages = new ArrayList<>();
 
     // used for recording bi-directional communications to and from the system
     // should not be used for anything more than that.
@@ -245,6 +257,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
     private volatile boolean nonStreamsEnabled;
     private volatile boolean filesharingEnabled;
     private volatile int localWebServerPort;
+    private volatile int secureLocalWebServerPort;
 
     private static class Logger implements CommoLogger {
         private final String tag;
@@ -300,6 +313,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
 
     @Override
     public void onCreate(Context context, Intent intent, MapView view) {
+        httpsCertFile = new File(context.getFilesDir(), "httpscert.p12");
         if (!commoNativeInitComplete) {
             try {
                 com.atakmap.coremap.loader.NativeLoader
@@ -359,6 +373,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
             nonStreamsEnabled = true;
             filesharingEnabled = false;
             localWebServerPort = WebServer.DEFAULT_SERVER_PORT;
+            secureLocalWebServerPort = WebServer.DEFAULT_SECURE_SERVER_PORT;
 
             final String uid = view.getSelfMarker().getUID();
             final String callsign = view.getSelfMarker().getMetaString(
@@ -480,6 +495,11 @@ public class CommsMapComponent extends AbstractMapComponent implements
         filter.addAction(
                 NetworkConnectionPreferenceFragment.CERTIFICATE_UPDATED);
         this.registerReceiver(context, _credListener, filter);
+
+        // Listen for when all the other map components have finished loading
+        filter = new DocumentedIntentFilter(
+                "com.atakmap.app.COMPONENTS_CREATED");
+        registerReceiver(context, _componentsListener, filter);
 
         AtakBroadcast.getInstance().registerSystemReceiver(rescanReceiver,
                 new DocumentedIntentFilter(
@@ -607,19 +627,15 @@ public class CommsMapComponent extends AbstractMapComponent implements
         if (credentials != null
                 && !FileSystemUtils.isEmpty(credentials.password)
                 && credentials.password.length() == 64) {
+            byte[] akey = credentials.password.substring(0, 32)
+                    .getBytes(FileSystemUtils.UTF8_CHARSET);
+            byte[] ckey = credentials.password.substring(32, 64)
+                    .getBytes(FileSystemUtils.UTF8_CHARSET);
             try {
-                byte[] akey = credentials.password.substring(0, 32)
-                        .getBytes(FileSystemUtils.UTF8_CHARSET);
-                byte[] ckey = credentials.password.substring(32, 64)
-                        .getBytes(FileSystemUtils.UTF8_CHARSET);
-                try {
-                    //Log.d(TAG, "setting key");
-                    commo.setCryptoKeys(akey, ckey);
-                } catch (CommoException ce) {
-                    Log.e(TAG, "error during setkey with key");
-                }
-            } catch (java.io.UnsupportedEncodingException uee) {
-                Log.e(TAG, "error during setkey with key uue");
+                //Log.d(TAG, "setting key");
+                commo.setCryptoKeys(akey, ckey);
+            } catch (CommoException ce) {
+                Log.e(TAG, "error during setkey with key");
             }
         } else {
             try {
@@ -861,6 +877,11 @@ public class CommsMapComponent extends AbstractMapComponent implements
         if (_credListener != null) {
             this.unregisterReceiver(context, _credListener);
             _credListener = null;
+        }
+
+        if (_componentsListener != null) {
+            unregisterReceiver(context, _componentsListener);
+            _componentsListener = null;
         }
 
         AtakBroadcast.getInstance().unregisterSystemReceiver(rescanReceiver);
@@ -1782,6 +1803,18 @@ public class CommsMapComponent extends AbstractMapComponent implements
     @Override
     public void cotMessageReceived(final String message,
             final String rxEndpointId) {
+
+        // Check if the map components have finished loading before processing
+        if (!componentsLoaded) {
+            synchronized (deferredMessages) {
+                // Check again inside the sync block just in case it changed
+                if (!componentsLoaded) {
+                    deferredMessages.add(new Pair<>(message, rxEndpointId));
+                    return;
+                }
+            }
+        }
+
         CotEvent cotEvent = CotEvent.parse(message);
         Bundle extras = new Bundle();
         extras.putString("from", cotEvent.getUID());
@@ -1853,10 +1886,13 @@ public class CommsMapComponent extends AbstractMapComponent implements
         mpio.setRxInitiator(rxInit);
     }
 
-    public boolean setMissionPackageEnabled(boolean enabled, int localPort) {
+    public boolean setMissionPackageEnabled(boolean enabled, int localPort,
+            int secureLocalPort) {
         this.filesharingEnabled = enabled;
-        if (enabled)
+        if (enabled) {
             this.localWebServerPort = localPort;
+            this.secureLocalWebServerPort = secureLocalPort;
+        }
         return mpio.reconfigFileSharing();
     }
 
@@ -2216,6 +2252,41 @@ public class CommsMapComponent extends AbstractMapComponent implements
         }
     };
 
+    // Listen for map components finished loading and then process deferred events
+    private BroadcastReceiver _componentsListener = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            // Check if already loaded
+            if (componentsLoaded)
+                return;
+
+            // Get deferred messages
+            componentsLoaded = true;
+            final List<Pair<String, String>> msgs;
+            synchronized (deferredMessages) {
+                msgs = new ArrayList<>(deferredMessages);
+                deferredMessages.clear();
+            }
+
+            // Nothing to process
+            if (msgs.isEmpty())
+                return;
+
+            // Process on separate thread to avoid UI lockup
+            Thread thr = new Thread(TAG + " Deferred CoT") {
+                @Override
+                public void run() {
+                    Log.d(TAG, "Processing " + msgs.size()
+                            + " deferred CoT messages");
+                    for (Pair<String, String> msg : msgs)
+                        cotMessageReceived(msg.first, msg.second);
+                }
+            };
+            thr.setPriority(Thread.NORM_PRIORITY);
+            thr.start();
+        }
+    };
+
     private static class MPTransferInfo {
         final int xferId;
         // if null, then was xfer to server
@@ -2257,6 +2328,77 @@ public class CommsMapComponent extends AbstractMapComponent implements
             return ret;
         }
 
+        private byte[] getHttpsServerCert() throws CommoException {
+            if (httpsCertFile.exists()) {
+                FileInputStream fis = null;
+                try {
+                    Log.d(TAG, "HttpsCert examining existing cert file");
+                    KeyStore p12 = KeyStore.getInstance("pkcs12");
+                    fis = new FileInputStream(httpsCertFile);
+                    p12.load(fis, "atakatak".toCharArray());
+                    Enumeration<String> aliases = p12.aliases();
+                    int n = 0;
+                    String alias = null;
+                    while (aliases.hasMoreElements()) {
+                        alias = aliases.nextElement();
+                        n++;
+                        Log.d(TAG, "HttpsCert Alias is \"" + alias + "\"");
+                    }
+                    if (n != 1)
+                        throw new IllegalArgumentException(
+                                "Certificate contains " + n
+                                        + " aliases - we can only use files with one alias!");
+
+                    Certificate cert = p12.getCertificate(alias);
+                    X509Certificate xcert = (X509Certificate) cert;
+                    xcert.checkValidity();
+
+                    // All good
+                    fis.close();
+                    Log.d(TAG,
+                            "HttpsCert existing file looks valid, re-using it");
+                    fis = new FileInputStream(httpsCertFile);
+                    long len = httpsCertFile.length();
+                    if (len > Integer.MAX_VALUE)
+                        throw new IllegalArgumentException(
+                                "Existing cert is way too large!");
+                    byte[] ret = new byte[(int) len];
+                    len = 0;
+                    while (len < ret.length) {
+                        int r = fis.read(ret);
+                        if (r == -1)
+                            throw new IOException(
+                                    "Could not fully read cert file");
+                        len += r;
+                    }
+                    fis.close();
+                    return ret;
+                } catch (Exception ex) {
+                    Log.d(TAG,
+                            "HttpsCert problem with existing certificate file, generating new one",
+                            ex);
+                    if (fis != null)
+                        try {
+                            fis.close();
+                        } catch (IOException ioe) {
+                        }
+                }
+            }
+
+            // Generate new cert
+            byte[] cert = commo.generateSelfSignedCert("atakatak");
+            try {
+                FileOutputStream fos = new FileOutputStream(httpsCertFile);
+                fos.write(cert);
+                fos.close();
+                Log.d(TAG, "HttpsCert new cert stored for later use");
+            } catch (IOException ex) {
+                Log.e(TAG, "Could not write https certificate file", ex);
+            }
+            return cert;
+
+        }
+
         private boolean reconfigLocalWebServer() {
             if (filesharingEnabled) {
                 if (!nonStreamsEnabled) {
@@ -2266,6 +2408,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
                     try {
                         commo.setMissionPackageLocalPort(
                                 Commo.MPIO_LOCAL_PORT_DISABLE);
+                        commo.setMissionPackageLocalHttpsParams(
+                                Commo.MPIO_LOCAL_PORT_DISABLE, null, null);
                     } catch (CommoException ex) {
                         Log.e(TAG, "Error disabling local web server", ex);
                     }
@@ -2274,7 +2418,6 @@ public class CommsMapComponent extends AbstractMapComponent implements
 
                 try {
                     commo.setMissionPackageLocalPort(localWebServerPort);
-                    return true;
                 } catch (CommoException ex) {
                     Log.e(TAG, "Error setting local web server port "
                             + localWebServerPort
@@ -2282,6 +2425,21 @@ public class CommsMapComponent extends AbstractMapComponent implements
                             ex);
                     return false;
                 }
+
+                try {
+                    byte[] cert = getHttpsServerCert();
+                    commo.setMissionPackageLocalHttpsParams(
+                            secureLocalWebServerPort, cert, "atakatak");
+                } catch (CommoException ex) {
+                    Log.e(TAG, "Error setting local https server port "
+                            + secureLocalWebServerPort
+                            + " port may already be in use or certs are invalid.  Local https server is disabled.",
+                            ex);
+                    // Delete the https certificate in case it was invalid
+                    httpsCertFile.delete();
+                    // Not considering this fatal error for now - it will be in the future
+                }
+                return true;
 
             } else {
                 try {
@@ -2367,7 +2525,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
                 }
                 return f;
 
-            } catch (Exception e) {
+            } catch (IOException e) {
                 throw new MissionPackageTransferException(
                         MissionPackageTransferStatus.FINISHED_FAILED);
             }
@@ -2643,4 +2801,5 @@ public class CommsMapComponent extends AbstractMapComponent implements
                     e);
         }
     }
+
 }

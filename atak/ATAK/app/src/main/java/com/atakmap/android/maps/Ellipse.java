@@ -41,36 +41,62 @@ public class Ellipse extends Polyline {
         }
     }
 
+    /**
+     * Listen for property changes on the Ellipse.
+     */
     public interface OnEllipsePropertiesChangedListener {
         void onEllipsePropertiesChanged(Ellipse ellipse);
     }
 
+    /**
+     * Listen for property fill changes on the Ellipse.
+     */
     public interface OnEllipseFillTypeChangedListener {
         void onEllipseFillTypeChanged(Ellipse shape);
     }
 
+    /**
+     * Add a listener to know when any of the ellipse properties are changed.
+     * @param l the listener to add
+     */
     public void addOnEllipsePropChangedListener(
             OnEllipsePropertiesChangedListener l) {
         if (!ellipsePropChangedListenerList.contains(l))
             ellipsePropChangedListenerList.add(l);
     }
 
+    /**
+     * Remove a listener when any of the ellipse properties are changed.
+     * @param l the listener to remove
+     */
     public void removeOnEllipsePropChangedListener(
             OnEllipsePropertiesChangedListener l) {
         ellipsePropChangedListenerList.remove(l);
     }
 
+    /**
+     * Add a listener to know when the fill type for an ellipse is changed.
+     * @param l the listener to add
+     */
     public void addOnEllipseFillTypeChangedListener(
             OnEllipseFillTypeChangedListener l) {
         if (!ellipseFillTypeChangedListenerList.contains(l))
             ellipseFillTypeChangedListenerList.add(l);
     }
 
+    /**
+     * Remove a listener registered to listen when the fill type is changed.
+     * @param l the listener to add
+     */
     public void removeOnEllipseFillTypeChangedListener(
             OnEllipseFillTypeChangedListener l) {
         ellipseFillTypeChangedListenerList.remove(l);
     }
 
+    /**
+     * Set the new center point for the ellipse.
+     * @param newCenter the new centerpoint.
+     */
     public void setCenter(final GeoPointMetaData newCenter) {
         if (!same(center, newCenter)) {
             center = newCenter;
@@ -78,6 +104,10 @@ public class Ellipse extends Polyline {
         }
     }
 
+    /**
+     * Set the new angle of rotation for the ellipse
+     * @param newAngle the angle of rotation in degrees true north.
+     */
     public void setAngle(double newAngle) {
         if (angle != newAngle) {
             angle = newAngle;
@@ -85,10 +115,18 @@ public class Ellipse extends Polyline {
         }
     }
 
+    /**
+     * Returns the angle for the ellipse
+     * @return the angle for the ellipse in degrees true north.
+     */
     public double getAngle() {
         return angle;
     }
 
+    /**
+     * Sets the height of the ellipse.
+     * @param newH the height in meters.
+     */
     public void setHeight(double newH) {
         if (height != newH) {
             height = newH;
@@ -96,6 +134,10 @@ public class Ellipse extends Polyline {
         }
     }
 
+    /**
+     * Sets the width of the ellipse.
+     * @param newW the width in meters.
+     */
     public void setWidth(double newW) {
         if (width != newW) {
             width = newW;
@@ -136,6 +178,12 @@ public class Ellipse extends Polyline {
 
     }
 
+    /**
+     * Sets the height and width of the ellipse.   Calling this will reduce the number of full
+     * calculations performed when setting height and width separately.
+     * @param newW the width in meters.
+     * @param newH the height in meters.
+     */
     public void setHeightWidth(final double newH, final double newW) {
         if (height != newH || width != newW) {
             height = newH;
@@ -153,6 +201,13 @@ public class Ellipse extends Polyline {
                         s.get().getLongitude()) == 0;
     }
 
+    /**
+     * Sets the height, width and center point of the ellipse.   Calling this will reduce the number of full
+     * calculations performed when setting height and width and center separately.
+     * @param newCenter the center of the ellipse.
+     * @param newW the width in meters.
+     * @param newH the height in meters.
+     */
     public void setCenterHeightWidth(final GeoPointMetaData newCenter,
             final double newH,
             final double newW) {
@@ -164,6 +219,14 @@ public class Ellipse extends Polyline {
         }
     }
 
+    /**
+     * Sets the height, width and center point of the ellipse.   Calling this will reduce the number of full
+     * calculations performed when setting height, width, center and angle separately.
+     * @param newCenter the center of the ellipse.
+     * @param newW the width in meters.
+     * @param newH the height in meters.
+     * @param newAngle the angle in degrees
+     */
     public void setCenterHeightWidthAngle(GeoPointMetaData newCenter,
             double newH,
             double newW,
@@ -179,12 +242,12 @@ public class Ellipse extends Polyline {
         }
     }
 
+    /**
+     * Sets the fill style
+     * @param newFill the fill style one 1 for filled or 0 for unfilled.
+     */
     public void setFillStyle(int newFill) {
         if (newFill != fill) {
-
-            for (OnEllipseFillTypeChangedListener l : ellipseFillTypeChangedListenerList) {
-                l.onEllipseFillTypeChanged(this);
-            }
 
             fill = newFill;
 
@@ -197,10 +260,18 @@ public class Ellipse extends Polyline {
                 setStyle(getStyle() ^ Shape.STYLE_FILLED_MASK);
             }
 
+            for (OnEllipseFillTypeChangedListener l : ellipseFillTypeChangedListenerList) {
+                l.onEllipseFillTypeChanged(this);
+            }
+
         }
 
     }
 
+    /**
+     * Returns the fill style for this ellipse.
+     * @return fill style which can be either 1 for filled or 0 for unfilled.
+     */
     public int getFillStyle() {
         return fill;
     }
@@ -208,9 +279,6 @@ public class Ellipse extends Polyline {
     private void recomputePoly() {
         if (center != null && height >= 0d && width >= 0d) {
 
-            for (OnEllipsePropertiesChangedListener l : ellipsePropChangedListenerList) {
-                l.onEllipsePropertiesChanged(this);
-            }
             if (end < start) {
                 int nlen = (end + 360 - start) / 6;
                 if (coords.length != nlen) {
@@ -246,7 +314,7 @@ public class Ellipse extends Polyline {
 
             double width_div = width / 2d;
             double height_div = height / 2d;
-            double angRad = 0;
+            double angRad;
             double angRad_cos = 1;
             double angRad_sin = 0;
 
@@ -274,14 +342,26 @@ public class Ellipse extends Polyline {
 
             setPoints(GeoPointMetaData.wrap(coords));
 
+            for (OnEllipsePropertiesChangedListener l : ellipsePropChangedListenerList) {
+                l.onEllipsePropertiesChanged(this);
+            }
+
         }
 
     }
 
+    /**
+     * Returns the width of the ellipse in meters.
+     * @return the width in meters.
+     */
     public double getWidth() {
         return width;
     }
 
+    /**
+     * Returns the height of the ellipse in meters.
+     * @return the height in meters.
+     */
     public double getHeight() {
         return height;
     }
@@ -292,10 +372,8 @@ public class Ellipse extends Polyline {
     }
 
     /*
-     * We have to define this because polyline does not, and its parent MapItem always
-     * returns false.
+     * Returns true if the ellipse has been hit during a touch event.
      */
-
     @Override
     public boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
             MapView view) {

@@ -202,7 +202,7 @@ namespace
             value = strm.str().c_str();
             return TE_Ok;
         } else {
-            return atakmap::feature::BasicPointStyle(strokeColor, TAK::Engine::Renderer::Core::GLMapRenderGlobals_getNominalIconSize()).toOGR(value);
+            return atakmap::feature::BasicPointStyle(strokeColor, static_cast<float>(TAK::Engine::Renderer::Core::GLMapRenderGlobals_getNominalIconSize())).toOGR(value);
         }
     }
 

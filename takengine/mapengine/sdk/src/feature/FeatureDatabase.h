@@ -40,6 +40,7 @@
 #include "db/Cursor.h"
 #include "db/Database.h"
 #include "db/Database2.h"
+#include "db/Statement.h"
 #include "db/DatabaseWrapper.h"
 #include "feature/FeatureDataSource.h"
 #include "port/Platform.h"
@@ -54,18 +55,6 @@
 ////                                                                        ////
 ////========================================================================////
 
-
-namespace atakmap                       // Open atakmap namespace.
-{
-namespace db                            // Open db namespace.
-{
-
-
-class Statement;
-
-
-}                                       // Close db namespace.
-}                                       // Close atakmap namespace.
 
 namespace TAK
 {
@@ -449,10 +438,10 @@ class ENGINE_API FeatureDatabase
     //==================================
 
 
-    std::auto_ptr<db::Statement> insertBlobStmt;
-    std::auto_ptr<db::Statement> insertStyleStmt;
-    std::auto_ptr<db::Statement> insertWKB_Stmt;
-    std::auto_ptr<db::Statement> insertWKT_Stmt;
+    std::unique_ptr<db::Statement> insertBlobStmt;
+    std::unique_ptr<db::Statement> insertStyleStmt;
+    std::unique_ptr<db::Statement> insertWKB_Stmt;
+    std::unique_ptr<db::Statement> insertWKT_Stmt;
     std::size_t transCount;             // Depth of nested transactions.
     TAK::Engine::Thread::ThreadID transThread;              // Only valid when transCount > 0.
     bool transSuccess;                  // Final (i.e., outer) success.

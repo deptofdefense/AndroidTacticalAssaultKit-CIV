@@ -3,6 +3,8 @@ package com.atakmap.map.layer.raster.mobac;
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -17,11 +19,6 @@ import com.atakmap.util.ReferenceCount;
 
 public class MobacTileReader extends AbstractTilePyramidTileReader {
 
-    private final static BitmapFactory.Options DECODE_OPTS = new BitmapFactory.Options();
-    static {
-        DECODE_OPTS.inPreferredConfig = Bitmap.Config.ARGB_8888;
-    }
-    
     public final static TileReaderSpi SPI = new TileReaderSpi() {
         @Override
         public String getName() {
@@ -70,6 +67,7 @@ public class MobacTileReader extends AbstractTilePyramidTileReader {
     private MobacMapSource source;
     private MobacTileClientRef client;
     private final ConnectivityChecker connectivityChecker;
+    private final AtomicBoolean doConnectivityCheck = new AtomicBoolean(true);
     private final TileServerControlImpl tilesControl;
     private TileDownloader backgroundDownloader;
     
@@ -137,6 +135,11 @@ public class MobacTileReader extends AbstractTilePyramidTileReader {
 
     @Override
     protected Bitmap getTileImpl(int level, long tileColumn, long tileRow, ReadResult[] code) {
+        return getTileImpl(level, tileColumn, tileRow, null, code);
+    }
+
+    @Override
+    protected Bitmap getTileImpl(int level, long tileColumn, long tileRow, BitmapFactory.Options opts, ReadResult[] code) {
         if (level < 0)
             throw new IllegalArgumentException();
 
@@ -146,7 +149,8 @@ public class MobacTileReader extends AbstractTilePyramidTileReader {
 
         final Bitmap retval = this.backgroundDownloader.load(this.maxZoom-level,
                                                              tileColumn,
-                                                             tileRow);
+                                                             tileRow,
+                                                             opts);
 
         code[0] = (retval!=null) ? ReadResult.SUCCESS : ReadResult.ERROR;
         return retval;
@@ -157,8 +161,10 @@ public class MobacTileReader extends AbstractTilePyramidTileReader {
     public void start() {
         // before kicking off a bunch of tile readers, reset the connectivity
         // check in the map source to re-enable downloading if network
-        // connectivity was restored 
-        this.asyncRun(this.connectivityChecker);
+        // connectivity was restored
+        this.doConnectivityCheck.set(true);
+        //if(this.connectivityChecker.isQueued.compareAndSet(false, true))
+        //    this.asyncRun(this.connectivityChecker);
     }
 
     /*************************************************************************/
@@ -177,8 +183,10 @@ public class MobacTileReader extends AbstractTilePyramidTileReader {
     /*************************************************************************/
     
     private class ConnectivityChecker implements Runnable {
+        AtomicBoolean isQueued = new AtomicBoolean(false);
         @Override
         public void run() {
+            isQueued.set(false);
             MobacTileReader.this.source.checkConnectivity();
         }
     }
@@ -199,7 +207,7 @@ public class MobacTileReader extends AbstractTilePyramidTileReader {
         }
 
         /** caller holds lock on 'readLock' */
-        public Bitmap load(long level, long tilex, long tiley) {
+        public Bitmap load(long level, long tilex, long tiley, BitmapFactory.Options opts) {
             synchronized(this) {
                 TileLoader loader = new TileLoader();
                 loader.level = (int)level;
@@ -207,6 +215,7 @@ public class MobacTileReader extends AbstractTilePyramidTileReader {
                 loader.tileY = (int)tiley;
                 loader.canceled = false;
                 loader.bitmap = null;
+                loader.opts = opts;
 
                 this.queue.addLast(loader);
                 this.notifyAll();
@@ -270,16 +279,20 @@ public class MobacTileReader extends AbstractTilePyramidTileReader {
             }
         }
         
-        private class TileLoader implements Runnable {
-            private int level;
-            private int tileX;
-            private int tileY;
-            private Bitmap bitmap;
-            private boolean canceled;
-            private boolean done;
+        final class TileLoader implements Runnable {
+            BitmapFactory.Options opts;
+            int level;
+            int tileX;
+            int tileY;
+            Bitmap bitmap;
+            boolean canceled;
+            boolean done;
 
             @Override
             public void run() {
+                if(MobacTileReader.this.doConnectivityCheck.compareAndSet(true, false))
+                    MobacTileReader.this.source.checkConnectivity();
+
                 try {
                     final long currentTime = System.currentTimeMillis();
                     final long expiration = TileDownloader.this.client.value.checkTileExpiration(this.level, this.tileX, this.tileY);
@@ -296,11 +309,16 @@ public class MobacTileReader extends AbstractTilePyramidTileReader {
                                                                    null);
                     }
 
+                    if(opts == null)
+                        opts = DECODE_OPTS;
+                    else if(opts.inPreferredConfig == null)
+                        opts.inPreferredConfig = DECODE_OPTS.inPreferredConfig;
+
                     this.bitmap = TileDownloader.this.client.value.loadTile(
                                         this.level,
                                         this.tileX,
                                         this.tileY,
-                                        DECODE_OPTS,
+                                        opts,
                                         null);
                 } catch(Throwable t) {
                     Log.e("MobacTileReader", "Failed to load tile " + this.level + "," + this.tileX + "," + this.tileY, t );

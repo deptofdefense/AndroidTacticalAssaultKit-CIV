@@ -170,6 +170,23 @@ public:
     // if it is out of legitimate range.
     CommoResult setMissionPackageTransferTimeout(int seconds);
 
+    // Sets the local https web server parameters for peer-to-peer transfers,
+    // or disables the function if passed MP_LOCAL_PORT_DISABLE.
+    // Default state is as though this were passed MP_LOCAL_PORT_DISABLE.
+    // Cert must be non-zero length and non-null.
+    //
+    // Returns SUCCESS if the provided TCP port number is successfully
+    // opened and usable for the local web server (or if MP_LOCAL_PORT_DISABLE
+    // is passed), ILLEGAL_ARGUMENT if the passed port cannot be used
+    // or if setupMissionPackageIO() has not previously been invoked
+    // successfully, INVALID_CERT if certificate could not be read,
+    // or INVALID_CERT_PASSWORD if cert password is incorrect. 
+    // NOTE: on any failure, local web server is DISABLED.
+    // NOTE: Changing the port or disabling may cause in-progress sends
+    // of MPs to be aborted!
+    CommoResult setMissionPackageLocalHttpsParams(int port, const uint8_t *cert,
+                               size_t certLen, const char *certPass);
+
     // NULL on error
     PhysicalNetInterface *addBroadcastInterface(const HwAddress *hwAddress, const CoTMessageType *types, size_t nTypes, const char *mcastAddr, int destPort);
     PhysicalNetInterface *addBroadcastInterface(const CoTMessageType *types, size_t nTypes, const char *unicastAddr, int destPort);
@@ -435,6 +452,9 @@ public:
                            const char *password, 
                            const char *friendlyName);
     void freeCryptoString(char *cryptoString);
+    
+    size_t generateSelfSignedCert(uint8_t **cert, const char *password);
+    void freeSelfSignedCert(uint8_t *cert);
 
 
     

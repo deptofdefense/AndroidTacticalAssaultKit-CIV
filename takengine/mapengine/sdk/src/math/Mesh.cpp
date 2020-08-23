@@ -48,17 +48,17 @@ Mesh::Mesh(const double *vertices, const std::size_t numVertexColumns, const std
                 const double lly = vertices[llIdx + 1u];
                 const double llz = vertices[llIdx + 2u];
 
-                builder.addVertex(ulx, uly, ulz, 0, 0, 0, 0, 0, 0, 0, 0);
-                builder.addVertex(llx, lly, llz, 0, 0, 0, 0, 0, 0, 0, 0);
-                builder.addVertex(urx, ury, urz, 0, 0, 0, 0, 0, 0, 0, 0);
+                builder.addVertex(ulx, uly, ulz, nullptr, 0, 0, 0, 0, 0, 0, 0);
+                builder.addVertex(llx, lly, llz, nullptr, 0, 0, 0, 0, 0, 0, 0);
+                builder.addVertex(urx, ury, urz, nullptr, 0, 0, 0, 0, 0, 0, 0);
 
-                builder.addVertex(urx, ury, urz, 0, 0, 0, 0, 0, 0, 0, 0);
-                builder.addVertex(llx, lly, llz, 0, 0, 0, 0, 0, 0, 0, 0);
-                builder.addVertex(lrx, lry, lrz, 0, 0, 0, 0, 0, 0, 0, 0);
+                builder.addVertex(urx, ury, urz, nullptr, 0, 0, 0, 0, 0, 0, 0);
+                builder.addVertex(llx, lly, llz, nullptr, 0, 0, 0, 0, 0, 0, 0);
+                builder.addVertex(lrx, lry, lrz, nullptr, 0, 0, 0, 0, 0, 0, 0);
             }
         }
 
-        Model::MeshPtr model(NULL, NULL);
+        Model::MeshPtr model(nullptr, nullptr);
         builder.build(model);
 
         data = std::move(model);
@@ -67,21 +67,26 @@ Mesh::Mesh(const double *vertices, const std::size_t numVertexColumns, const std
 
 Mesh::Mesh(Model::MeshPtr_const &&data_, const Matrix2 *localFrame_) NOTHROWS :
     data(std::move(data_)),
-    localFrame(localFrame_ ? new Matrix2(*localFrame_) : NULL)
-{}
+    hasLocalFrame(!!localFrame_)
+{
+    if(hasLocalFrame)
+        localFrame.set(*localFrame_);
+}
 Mesh::Mesh(const std::shared_ptr<const Model::Mesh> &data_, const Matrix2 *localFrame_) NOTHROWS :
     data(data_),
-    localFrame(localFrame_ ? new Matrix2(*localFrame_) : NULL)
-{}
+    hasLocalFrame(!!localFrame_)
+{
+    if(hasLocalFrame)
+        localFrame.set(*localFrame_);
+}
 Mesh::Mesh(const Mesh &other) NOTHROWS
 {
-    Model::MeshPtr model(NULL, NULL);
+    Model::MeshPtr model(nullptr, nullptr);
     Model::Mesh_transform(model, *data, data->getVertexDataLayout());
 
     data = std::move(model);
-
-    if (other.localFrame.get())
-        localFrame.reset(new Matrix2(*other.localFrame));
+    localFrame.set(other.localFrame);
+    hasLocalFrame = other.hasLocalFrame;
 }
 
 Mesh::~Mesh() NOTHROWS
@@ -89,7 +94,8 @@ Mesh::~Mesh() NOTHROWS
 
 bool Mesh::intersect(Point2<double> *value, const Ray2<double> &ray) const NOTHROWS
 {
-    const Math::AABB aabb_wcs = aabb(*data, localFrame.get());
+    const Matrix2 *pLocalFrame = hasLocalFrame ? &localFrame : nullptr;
+    const Math::AABB aabb_wcs = aabb(*data, pLocalFrame);
     const bool aabb_isect = aabb_wcs.intersect(value, ray);
     const bool aabb_contains = (ray.origin.x >= aabb_wcs.minX && ray.origin.x <= aabb_wcs.maxX &&
                                 ray.origin.y >= aabb_wcs.minY && ray.origin.y <= aabb_wcs.maxY &&
@@ -106,13 +112,13 @@ bool Mesh::intersect(Point2<double> *value, const Ray2<double> &ray) const NOTHR
             DataType indexType; \
             data->getIndexType(&indexType); \
             switch(indexType) { \
-                case TEDT_UInt8 : return intersectImpl<vt, uint8_t>(value, ray, *data, localFrame.get()); \
-                case TEDT_UInt16 : return intersectImpl<vt, uint16_t>(value, ray, *data, localFrame.get()); \
-                case TEDT_UInt32 : return intersectImpl<vt, uint32_t>(value, ray, *data, localFrame.get()); \
+                case TEDT_UInt8 : return intersectImpl<vt, uint8_t>(value, ray, *data, pLocalFrame); \
+                case TEDT_UInt16 : return intersectImpl<vt, uint16_t>(value, ray, *data, pLocalFrame); \
+                case TEDT_UInt32 : return intersectImpl<vt, uint32_t>(value, ray, *data, pLocalFrame); \
                 default : break; \
             } \
         } else { \
-            return intersectImpl<vt, bool>(value, ray, *data, localFrame.get()); \
+            return intersectImpl<vt, bool>(value, ray, *data, pLocalFrame); \
         } \
         break;
 
@@ -126,7 +132,7 @@ bool Mesh::intersect(Point2<double> *value, const Ray2<double> &ray) const NOTHR
         VT_CASE(TEDT_Float64, double)
     }
 
-    return intersectGeneric(value, ray, *data, localFrame.get());
+    return intersectGeneric(value, ray, *data, pLocalFrame);
 }
 
 void Mesh::clone(std::unique_ptr<GeometryModel2, void(*)(const GeometryModel2 *)> &value) const NOTHROWS
@@ -237,6 +243,10 @@ bool intersectImpl(Point2<double> *value, const Ray2<double> &ray, const Model::
             aidx = indices[aidx];
             bidx = indices[bidx];
             cidx = indices[cidx];
+
+            // skip degenerates
+            if((aidx == bidx) || (aidx == cidx) || (bidx == cidx))
+                continue;
         }
 
         const V *pos;

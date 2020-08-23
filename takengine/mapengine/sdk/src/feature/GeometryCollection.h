@@ -161,29 +161,29 @@ class ENGINE_API GeometryCollection
 
     Geometry*
     clone ()
-        const
+        const override
       { return new GeometryCollection (*this); }        // Shallow copy.
 
     std::size_t
     computeWKB_Size ()
-        const;
+        const override;
 
     //
     // Throws std::length_error if contents().first == contents().second.
     //
     Envelope
     getEnvelope ()
-        const;
+        const override;
 
     void
     toBlob (std::ostream&,
             BlobFormat)                 // Defaults to GEOMETRY.
-        const;
+        const override;
 
     void
     toWKB (std::ostream&,
            bool includeHeader)          // Defaults to true.
-        const;
+        const override;
 
 	size_t
 	size ()
@@ -210,7 +210,7 @@ class ENGINE_API GeometryCollection
 
 
     void
-    changeDimension (Dimension);
+    changeDimension (Dimension) override;
 
 
     //==================================

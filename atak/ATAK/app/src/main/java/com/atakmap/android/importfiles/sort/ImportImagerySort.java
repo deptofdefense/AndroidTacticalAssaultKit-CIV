@@ -24,9 +24,9 @@ public class ImportImagerySort extends ImportInternalSDResolver {
     public ImportImagerySort(Context context, boolean validateExt,
             boolean copyFile) {
         // support multiple file extensions, and multiple destinations
-        super(null, null, validateExt, copyFile, context
-                .getString(R.string.native_imagery));
-
+        super(null, null, validateExt, copyFile,
+                context.getString(R.string.native_imagery),
+                context.getDrawable(R.drawable.ic_menu_maps));
     }
 
     /**

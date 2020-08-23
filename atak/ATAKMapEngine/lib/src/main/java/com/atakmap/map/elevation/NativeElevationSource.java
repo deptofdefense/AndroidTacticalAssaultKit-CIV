@@ -1,29 +1,52 @@
 package com.atakmap.map.elevation;
 
+import com.atakmap.interop.InteropCleaner;
+import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.NotifyCallback;
 import com.atakmap.interop.Pointer;
+import com.atakmap.lang.ref.Cleaner;
 import com.atakmap.map.Interop;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;
+import com.atakmap.util.Disposable;
 import com.atakmap.util.ReadWriteLock;
 
 import java.lang.ref.WeakReference;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
-final class NativeElevationSource extends ElevationSource {
+final class NativeElevationSource extends ElevationSource implements Disposable {
+
+    final static NativePeerManager.Cleaner CLEANER = new NativePeerManager.Cleaner() {
+        @Override
+        protected void run(Pointer pointer, Object opaque) {
+            destruct(pointer);
+
+            Map<OnContentChangedListener, Pointer> listeners = (Map<OnContentChangedListener, Pointer>)opaque;
+            if(listeners != null) {
+                synchronized (listeners) {
+                    for (Pointer callback : listeners.values())
+                        removeOnContentChangedListener(0L, callback);
+                    listeners.clear();
+                }
+            }
+        }
+    };
 
     final static Interop<Geometry> Geometry_interop = Interop.findInterop(Geometry.class);
 
     final ReadWriteLock rwlock = new ReadWriteLock();
     Pointer pointer;
     Object owner;
+    Cleaner cleaner;
     Map<OnContentChangedListener, Pointer> listeners;
 
     private NativeElevationSource(Pointer pointer, Object owner) {
         this.pointer = pointer;
         this.owner = owner;
         this.listeners = new IdentityHashMap<>();
+
+        cleaner = NativePeerManager.register(this, pointer, rwlock, this.listeners, CLEANER);
     }
 
     @Override
@@ -110,24 +133,9 @@ final class NativeElevationSource extends ElevationSource {
     }
 
     @Override
-    public void finalize() {
-        this.rwlock.acquireWrite();
-        try {
-            if(this.pointer.raw != 0L)
-                destruct(this.pointer);
-        } finally {
-            this.rwlock.releaseWrite();
-        }
-
-        synchronized(this.listeners) {
-            for(Pointer callback : this.listeners.values())
-                removeOnContentChangedListener(0L, callback);
-            this.listeners.clear();
-        }
-
-        try {
-            super.finalize();
-        } catch(Throwable ignored) {}
+    public void dispose() {
+        if(this.cleaner != null)
+            this.cleaner.clean();
     }
 
     /*************************************************************************/

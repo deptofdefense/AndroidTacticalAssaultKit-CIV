@@ -16,6 +16,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.coremap.xml.XMLUtils;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -242,19 +243,8 @@ public class GeocoderPreferenceFragment extends AtakPreferenceFragment {
             if (FileSystemUtils.isFile(supplier)) {
                 Log.d(TAG, "loading: " + supplier.getAbsolutePath());
 
-                DocumentBuilderFactory dbf = DocumentBuilderFactory
-                        .newInstance();
-                try {
-                    dbf.setFeature(
-                            "http://apache.org/xml/features/disallow-doctype-decl",
-                            true);
-                } catch (Exception ignored) {
-                }
-                try {
-                    dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING,
-                            true);
-                } catch (Exception ignored) {
-                }
+                DocumentBuilderFactory dbf = XMLUtils
+                        .getDocumenBuilderFactory();
 
                 DocumentBuilder db = dbf.newDocumentBuilder();
                 Document document = db.parse(supplier);

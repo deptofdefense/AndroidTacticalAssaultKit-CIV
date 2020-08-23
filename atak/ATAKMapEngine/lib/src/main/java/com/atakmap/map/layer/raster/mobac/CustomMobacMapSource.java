@@ -140,12 +140,16 @@ public class CustomMobacMapSource extends AbstractMobacMapSource {
             return tile;
         } catch (IOException e) {
             if ((conn instanceof HttpURLConnection)
-                    && ((HttpURLConnection) conn).getResponseCode() == 401)
+                    && isBadAccess(((HttpURLConnection) conn).getResponseCode() ))
                 synchronized (this) { 
                     this.authFailed = true;
                 }
             throw e;
         }
     }
+    private static boolean isBadAccess(int status) {
+        return (status == HttpURLConnection.HTTP_UNAUTHORIZED || status == HttpURLConnection.HTTP_FORBIDDEN);
+    }
+
 
 }

@@ -97,6 +97,7 @@ public final class Unsafe {
                 if(finalized == null)
                     break;
                 final Long derefPtr = takDirectBufferRefs.remove(finalized);
+                finalized.clear();
                 if(derefPtr != null) {
                     free(derefPtr.longValue());
                     takDirectBufferPtrs.remove(derefPtr);

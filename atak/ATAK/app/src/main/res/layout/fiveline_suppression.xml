@@ -58,6 +58,68 @@
 
         <LinearLayout
             android:layout_width="fill_parent"
+            android:layout_height="@dimen/nineline_line_height"
+            android:layout_weight="1"
+            android:paddingStart="5dp"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:text="Target #"
+                android:textColor="@color/heading_yellow"
+                android:maxLines="1"
+                android:layout_weight=".45"
+                android:visibility="visible"/>
+
+            <EditText
+                android:id="@+id/targetNumber"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/nineline_line_height"
+                android:layout_weight=".65"
+                android:inputType="textNoSuggestions"
+                android:hint="@string/ellipses"
+                android:focusableInTouchMode="true"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:maxLength="10"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="@dimen/nineline_line_height"
+            android:layout_weight="1"
+            android:paddingStart="5dp"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:text="Originator"
+                android:textColor="@color/heading_yellow"
+                android:maxLines="1"
+                android:layout_weight=".45"
+                android:visibility="visible"/>
+
+            <EditText
+                android:id="@+id/originatorCallsign"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/nineline_line_height"
+                android:layout_weight=".65"
+                android:inputType="textNoSuggestions"
+                android:hint="@string/ellipses"
+                android:focusableInTouchMode="true"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:maxLength="10"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:paddingStart="5dp"
@@ -84,6 +146,65 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:id="@+id/smoke_supp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingStart="5dp"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:text="@string/fssystem_fiveline"
+                android:textColor="@color/heading_yellow"
+                android:maxLines="1"
+                android:layout_weight=".45"
+                android:visibility="visible"/>
+
+            <include
+                layout="@layout/atak_selection_flat"
+                android:layout_width="0dp"
+                android:layout_weight=".65"
+                android:layout_marginRight="2dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:id="@+id/fssystem_supp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:paddingStart="5dp"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="1dp"
+            android:orientation="horizontal"
+            >
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceSmall"
+                android:text="@string/moc_fiveline"
+                android:textColor="@color/heading_yellow"
+                android:maxLines="1"
+                android:layout_weight=".45"
+                android:visibility="visible"/>
+
+            <include
+                layout="@layout/atak_selection_flat"
+                android:layout_width="0dp"
+                android:layout_weight=".65"
+                android:layout_marginRight="2dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:id="@+id/moc_supp" />
         </LinearLayout>
 
         <LinearLayout
@@ -182,47 +303,6 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight=".10"
-                android:id="@+id/suppNumberCB"
-                android:layout_marginEnd="5dp"
-                />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:textAppearance="?android:attr/textAppearanceSmall"
-                android:text="@string/number"
-                android:textColor="@color/heading_yellow"
-                android:maxLines="1"
-                android:layout_weight=".25"
-                android:visibility="visible"/>
-
-            <EditText
-                android:id="@+id/suppNumber"
-                android:layout_width="0dp"
-                android:layout_height="@dimen/nineline_line_height"
-                android:layout_weight=".65"
-                android:hint="@string/target_number"
-                android:inputType="number"
-                android:focusableInTouchMode="false"
-                android:focusable="false"
-                android:textAppearance="?android:attr/textAppearanceSmall"
-                android:maxLength="10"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="@dimen/nineline_line_height"
-            android:layout_weight="1"
-            android:paddingStart="5dp"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="1dp"
-            android:orientation="horizontal"
-            >
-
-            <CheckBox
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight=".10"
                 android:id="@+id/suppRBCB"
                 android:layout_marginEnd="5dp"
                 android:paddingStart="-5dp"/>
@@ -284,6 +364,76 @@
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:visibility="visible"/>
         </LinearLayout>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="1dp"
+        android:orientation="horizontal"
+        android:paddingStart="5dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="@string/tgt_description"
+            android:textColor="@color/heading_yellow"
+            android:maxLines="1"
+            android:layout_weight=".45"
+            android:visibility="visible"/>
+
+        <include
+            layout="@layout/atak_selection_flat"
+            android:layout_width="0dp"
+            android:layout_weight=".65"
+            android:layout_marginRight="2dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:id="@+id/targetDescriptionSuppression"/>
+    </LinearLayout>
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/customTgtDescriptionSuppression"
+        android:hint="@string/custom_description"
+        android:textColor="#FFFFFF"
+        android:visibility="gone"
+        android:focusableInTouchMode="true"
+        android:inputType="textMultiLine"/>
+
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="@dimen/nineline_line_height"
+        android:layout_weight="1"
+        android:paddingStart="5dp"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="1dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:text="Strength"
+            android:textColor="@color/heading_yellow"
+            android:maxLines="1"
+            android:layout_weight=".45"
+            android:visibility="visible"/>
+
+        <EditText
+            android:id="@+id/targetStrength"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/nineline_line_height"
+            android:layout_weight=".65"
+            android:inputType="textNoSuggestions"
+            android:hint="@string/ellipses"
+            android:focusableInTouchMode="true"
+            android:textAppearance="?android:attr/textAppearanceSmall"
+            android:maxLength="10"/>
     </LinearLayout>
 
 </com.atakmap.android.nineline.SuppressionView>

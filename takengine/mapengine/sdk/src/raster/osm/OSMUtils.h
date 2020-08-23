@@ -34,6 +34,7 @@ namespace atakmap {
                 static double mapnikTileResolution(int level, double lat);
                 static int mapnikTileLevel(double resolution);
                 static int mapnikTileLevel(double resolution, double lat);
+                static double mapnikTileLeveld(double resolution, double lat);
 
 
                 /**************************************************************************/

@@ -2,7 +2,7 @@
 package com.atakmap.android.database;
 
 import android.net.Uri;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 

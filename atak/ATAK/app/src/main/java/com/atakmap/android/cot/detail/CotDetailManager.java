@@ -51,8 +51,8 @@ public class CotDetailManager {
 
     /**
      * Register a detail handler for the given detail element name.  Registration of a handler
-     * object more than once is disallowed. 
-     * 
+     * object more than once is disallowed.
+     *
      *
      * @param handler CoT detail handler
      */

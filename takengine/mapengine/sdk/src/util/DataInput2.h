@@ -8,18 +8,10 @@
 #include "port/Platform.h"
 #include "util/Error.h"
 #include "util/IO2.h"
-
-#if defined(__APPLE__) || defined(__ANDROID__)
 #include "util/IO_Decls.h"
-#endif
 
 namespace atakmap {
     namespace util {
-#ifdef __APPLE__
-        // ISO C++ does not allow forward decl of enums
-#else
-        enum Endian;
-#endif
         template<class T>
         class MemBufferT;
     }
@@ -132,20 +124,20 @@ namespace TAK {
                 FileInput2() NOTHROWS;
                 virtual ~FileInput2() NOTHROWS;
                 virtual TAKErr open(const char *filename) NOTHROWS;
-                virtual TAKErr close() NOTHROWS;
+                virtual TAKErr close() NOTHROWS override;
 
-                virtual TAKErr read(uint8_t *buf, std::size_t *numRead, const std::size_t len) NOTHROWS;
-                virtual TAKErr readByte(uint8_t *value) NOTHROWS;
-                virtual TAKErr skip(const std::size_t n) NOTHROWS;
-                virtual int64_t length() const NOTHROWS;
+                virtual TAKErr read(uint8_t *buf, std::size_t *numRead, const std::size_t len) NOTHROWS override;
+                virtual TAKErr readByte(uint8_t *value) NOTHROWS override;
+                virtual TAKErr skip(const std::size_t n) NOTHROWS override;
+                virtual int64_t length() const NOTHROWS override;
 
                 TAKErr seek(int64_t offset) NOTHROWS;
                 TAKErr tell(int64_t *value) NOTHROWS;
             private :
                 TAKErr closeImpl() NOTHROWS;
             private:
-                FILE *f;
-                int64_t len;
+                FILE *f_;
+                int64_t len_;
             };
 
 
@@ -157,11 +149,11 @@ namespace TAK {
 
                 virtual TAKErr open(const uint8_t *bytes, const std::size_t len) NOTHROWS;
                 virtual TAKErr open(std::unique_ptr<const uint8_t, void(*)(const uint8_t *)> &&bytes, const std::size_t len) NOTHROWS;
-                virtual TAKErr close() NOTHROWS;
-                virtual TAKErr read(uint8_t *buf, std::size_t *numRead, const std::size_t len) NOTHROWS;
-                virtual TAKErr readByte(uint8_t *value) NOTHROWS;
-                virtual TAKErr skip(const std::size_t n) NOTHROWS;
-                virtual int64_t length() const NOTHROWS;
+                virtual TAKErr close() NOTHROWS override;
+                virtual TAKErr read(uint8_t *buf, std::size_t *numRead, const std::size_t len) NOTHROWS override;
+                virtual TAKErr readByte(uint8_t *value) NOTHROWS override;
+                virtual TAKErr skip(const std::size_t n) NOTHROWS override;
+                virtual int64_t length() const NOTHROWS override;
 
                 virtual TAKErr remaining(std::size_t *value) NOTHROWS;
 
@@ -179,17 +171,17 @@ namespace TAK {
                 virtual ~ByteBufferInput2() NOTHROWS;
 
                 virtual TAKErr open(atakmap::util::MemBufferT<uint8_t> *buffer) NOTHROWS;
-                virtual TAKErr close() NOTHROWS;
+                virtual TAKErr close() NOTHROWS override;
 
-                virtual TAKErr read(uint8_t *buf, std::size_t *numRead, const std::size_t len) NOTHROWS;
-                virtual TAKErr readByte(uint8_t *value) NOTHROWS;
-                virtual TAKErr skip(const std::size_t n) NOTHROWS;
-                virtual int64_t length() const NOTHROWS;
+                virtual TAKErr read(uint8_t *buf, std::size_t *numRead, const std::size_t len) NOTHROWS override;
+                virtual TAKErr readByte(uint8_t *value) NOTHROWS override;
+                virtual TAKErr skip(const std::size_t n) NOTHROWS override;
+                virtual int64_t length() const NOTHROWS override;
 
 
             private:
-                atakmap::util::MemBufferT<uint8_t> *buffer;
-                int64_t len;
+                atakmap::util::MemBufferT<uint8_t> *buffer_;
+                int64_t len_;
             };
         }
     }

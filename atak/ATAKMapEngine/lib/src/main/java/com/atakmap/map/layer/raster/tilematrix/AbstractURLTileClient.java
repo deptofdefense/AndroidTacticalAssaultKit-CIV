@@ -78,12 +78,16 @@ public abstract class AbstractURLTileClient extends AbstractTileClient {
             return load(conn);
         } catch (IOException e) {
             if ((conn instanceof HttpURLConnection)
-                    && ((HttpURLConnection) conn).getResponseCode() == 401)
+                    && isBadAccess(((HttpURLConnection) conn).getResponseCode()))
                 synchronized (this) { 
                     this.authFailed = true;
                 }
             throw e;
         }
+    }
+
+    private static boolean isBadAccess(int status) {
+        return (status == HttpURLConnection.HTTP_UNAUTHORIZED || status == HttpURLConnection.HTTP_FORBIDDEN);
     }
 
     protected void configureConnection(URLConnection conn) {
@@ -114,7 +118,7 @@ public abstract class AbstractURLTileClient extends AbstractTileClient {
         AtakAuthenticationHandlerHTTP.Connection connection = null;
         try {
             connection = AtakAuthenticationHandlerHTTP.makeAuthenticatedConnection(
-                    (java.net.HttpURLConnection) conn, 3);
+                    (java.net.HttpURLConnection) conn, 5);
             // XXX: Can't rely on content-length HTTP header being set.
             final int contentLength = conn.getContentLength();
             byte[] buffer = new byte[Math.max(contentLength, BUFFER_SIZE)];
@@ -143,4 +147,5 @@ public abstract class AbstractURLTileClient extends AbstractTileClient {
                 } catch (IOException ignored) {}
         }
     }
+
 }

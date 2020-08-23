@@ -2,6 +2,7 @@
 package com.atakmap.android.video;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.util.Pair;
 
 import com.atakmap.android.importfiles.sort.ImportResolver;
@@ -102,6 +103,11 @@ public class ImportVideoAliasSort extends ImportResolver {
     @Override
     public String getDisplayableName() {
         return _context.getString(R.string.video_alias);
+    }
+
+    @Override
+    public Drawable getIcon() {
+        return _context.getDrawable(R.drawable.ic_video_alias);
     }
 
     @Override

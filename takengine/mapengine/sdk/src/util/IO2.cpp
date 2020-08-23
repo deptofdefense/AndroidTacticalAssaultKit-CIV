@@ -4,6 +4,7 @@
 #include <unistd.h>
 #ifdef MSVC
 #include <sys/timeb.h>
+#include "vscompat.h"
 #endif
 
 #include <cpl_vsi.h>
@@ -35,8 +36,6 @@ namespace
 #ifdef MSVC
     char *mktemp(char *path)
     {
-        errno_t err;
-
         size_t templateOffset = strlen(path) - 6;
 
         struct _timeb t;
@@ -55,7 +54,7 @@ namespace
             }
         } while (true);
 
-        return NULL;
+        return nullptr;
     }
 
     TAK::Engine::Port::String getTempDirImpl()
@@ -78,6 +77,7 @@ namespace
 
 #endif
 
+    TAKErr getFileCountImpl(std::size_t *result, const char *path) NOTHROWS;
     TAKErr getFileCountImpl(std::size_t *result, const char *path, const std::size_t limit) NOTHROWS;
 
     class ZipExtRegistry {
@@ -208,8 +208,8 @@ TAKErr TAK::Engine::Util::IO_createTempFile(TAK::Engine::Port::String &value, co
         tmpDir = P_tmpdir;
 #endif
     }
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mtx);
+    Lock lock(mtx);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     for (int i = 0; i < 20; i++) {
@@ -218,7 +218,7 @@ TAKErr TAK::Engine::Util::IO_createTempFile(TAK::Engine::Port::String &value, co
             << (prefix ? prefix : "") << "XXXXXX";
         Port::String tmpPath(tmpStrm.c_str());
 
-        if (!mktemp(tmpPath.get()))
+        if (!mkstemp(tmpPath.get()))
         {
             Logger::log(Logger::Error, "IO_createTempDir: Call to mkdtemp failed");
             return TE_IO;
@@ -249,6 +249,12 @@ TAKErr TAK::Engine::Util::IO_getFileCount(std::size_t *result, const char *path,
 {
     *result = 0;
     return getFileCountImpl(result, path, limit);
+}
+
+TAKErr TAK::Engine::Util::IO_getFileCount(std::size_t *result, const char *path) NOTHROWS
+{
+    *result = 0;
+    return getFileCountImpl(result, path);
 }
 
 TAKErr TAK::Engine::Util::IO_getParentFile(Port::String &value, const char *path) NOTHROWS
@@ -335,8 +341,8 @@ TAKErr TAK::Engine::Util::IO_listFiles(Port::Collection<Port::String> &value, co
     TAKErr code = IO_listFiles(vectorAdapter, path);
     TE_CHECKRETURN_CODE(code);
 
-    std::vector<Port::String>::iterator it = files.begin();
-    std::vector<Port::String>::iterator end = files.end();
+    auto it = files.begin();
+    auto end = files.end();
     while (it != end) {
         bool isFile = false;
         bool isDir = false;
@@ -430,6 +436,26 @@ TAKErr TAK::Engine::Util::IO_isDirectory(bool *value, const char* path) NOTHROWS
     }
 }
 
+TAKErr TAK::Engine::Util::IO_isNetworkDirectory(bool *value, const char *path) NOTHROWS
+{
+#if MSVC
+    typedef platformstl::filesystem_traits<char> FS_Traits;
+    try {
+        if (FS_Traits::is_directory(path)) {
+            DWORD drive_type = FS_Traits::get_drive_type(path[0]);
+            if (drive_type == DRIVE_REMOTE) 
+                *value = true;
+        }
+        return TE_Ok;
+    } catch (...) {
+        return TE_Err;
+    }
+#else
+    *value = false;
+    return TE_Ok;
+#endif
+}
+
 TAKErr TAK::Engine::Util::IO_isFile(bool *value, const char* path) NOTHROWS
 {
     try {
@@ -500,8 +526,8 @@ TAKErr TAK::Engine::Util::IO_visitFiles(TAKErr(*visitor)(void *, const char *), 
     TAKErr code = IO_listFiles(vectorAdapter, path);
     TE_CHECKRETURN_CODE(code);
 
-    std::vector<Port::String>::iterator it = files.begin();
-    std::vector<Port::String>::iterator end = files.end();
+    auto it = files.begin();
+    auto end = files.end();
     while (it != end) {
         bool isFile = false;
         bool isDir = false;
@@ -752,7 +778,7 @@ TAKErr TAK::Engine::Util::IO_listFilesV(TAK::Engine::Port::Collection<TAK::Engin
 
         static TAKErr process(void *opaque, const char *path)
         {
-            ListFiles *ctx = static_cast<ListFiles *>(opaque);
+            auto *ctx = static_cast<ListFiles *>(opaque);
             if (!ctx->filter || ctx->filter(path)) {
                 ctx->result.add(path);
                 if (ctx->result.size() == ctx->limit)
@@ -938,6 +964,45 @@ TAKErr TAK::Engine::Util::IO_correctPathSeps(Port::String &result, const char *p
 
 namespace
 {
+    TAKErr getFileCountImpl(std::size_t *result, const char *path) NOTHROWS
+    {
+        typedef platformstl::filesystem_traits<char>        FS_Traits;
+        typedef platformstl::readdir_sequence               DirSequence;
+
+        FS_Traits::stat_data_type statData;
+
+        TAKErr code;
+
+        code = TE_Ok;
+        if (path && FS_Traits::stat(path, &statData))
+        {
+            if (FS_Traits::is_directory(&statData)) {
+                DirSequence subdirSeq(path, 
+                    DirSequence::directories 
+                    | DirSequence::fullPath 
+                    | DirSequence::absolutePath);
+
+                for (DirSequence::const_iterator dIter(subdirSeq.begin()); 
+                    dIter != subdirSeq.end(); 
+                    ++dIter) {
+                    code = getFileCountImpl(result, *dIter);
+                    TE_CHECKBREAK_CODE(code);
+                }
+
+                DirSequence fileSeq(path, DirSequence::files);
+                (*result) += std::distance(fileSeq.begin(), fileSeq.end());
+            }
+            else if (FS_Traits::is_file(&statData))
+            {
+                (*result)++;
+            }
+        } else {
+            return TE_InvalidArg;
+        }
+
+        return code;
+    }
+
     TAKErr getFileCountImpl(std::size_t *result, const char *path, const std::size_t limit) NOTHROWS
     {
         typedef platformstl::filesystem_traits<char>        FS_Traits;
@@ -950,28 +1015,33 @@ namespace
         code = TE_Ok;
         if (path && FS_Traits::stat(path, &statData))
         {
-            if (FS_Traits::is_file(&statData))
-            {
-                (*result)++;
-            }
-            else if (FS_Traits::is_directory(&statData))
-            {
-                DirSequence dirSeq(path,
-                    DirSequence::files
-                    | DirSequence::directories
-                    | DirSequence::fullPath
+            if (FS_Traits::is_directory(&statData)) {
+                DirSequence subdirSeq(path, 
+                    DirSequence::directories 
+                    | DirSequence::fullPath 
                     | DirSequence::absolutePath);
 
-                for (DirSequence::const_iterator dIter(dirSeq.begin());
-                    dIter != dirSeq.end();
-                    ++dIter)
-                {
+                for (DirSequence::const_iterator dIter(subdirSeq.begin()); 
+                    dIter != subdirSeq.end(); 
+                    ++dIter) {
                     code = getFileCountImpl(result, *dIter, limit);
                     TE_CHECKBREAK_CODE(code);
-                    if (*result >= limit)
-                        break;
+                    if (*result >= limit) 
+                        return code;
                 }
-                TE_CHECKRETURN_CODE(code);
+
+                DirSequence fileSeq(path, DirSequence::files);
+                for (DirSequence::const_iterator fIter(fileSeq.begin()); 
+                    fIter != fileSeq.end();
+                    ++fIter) {
+                    (*result)++;
+                    if (*result >= limit) 
+                        return code;
+                }
+            }
+            else if (FS_Traits::is_file(&statData))
+            {
+                (*result)++;
             }
         } else {
             return TE_InvalidArg;

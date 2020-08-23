@@ -22,10 +22,15 @@ import com.atakmap.android.missionpackage.export.MissionPackageExportWrapper;
 import com.atakmap.android.overlay.AbstractMapOverlay2;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.map.layer.feature.Adapters;
 import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
+import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.FeatureDataStore;
+import com.atakmap.map.layer.feature.FeatureDataStore2;
 import com.atakmap.map.layer.feature.FeatureLayer;
 import com.atakmap.map.layer.feature.FeatureSet;
+import com.atakmap.map.layer.feature.FeatureSetCursor;
+import com.atakmap.map.layer.feature.Utils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -35,13 +40,13 @@ import java.util.Set;
 
 public class FeatureDataStoreMapOverlay extends AbstractMapOverlay2 {
 
-    private static final String TAG = "SpatialDb2MapOverlay";
+    private static final String TAG = "FeatureDataStoreMapOverlay";
 
     protected final Context context;
     protected final String contentSource;
     protected final String name;
     protected final String iconUri;
-    protected final FeatureDataStore spatialDb;
+    protected final FeatureDataStore2 spatialDb;
     protected final FeatureDataStoreDeepMapItemQuery query;
     protected final String contentType;
     protected final String mimeType;
@@ -64,6 +69,21 @@ public class FeatureDataStoreMapOverlay extends AbstractMapOverlay2 {
 
     public FeatureDataStoreMapOverlay(Context context,
             FeatureDataStore spatialDb, String contentSource,
+            String name, String iconUri,
+            FeatureDataStoreDeepMapItemQuery query,
+            String contentType, String mimeType) {
+        this(context,
+                Adapters.adapt(spatialDb),
+                contentSource,
+                name,
+                iconUri,
+                query,
+                contentType,
+                mimeType);
+    }
+
+    public FeatureDataStoreMapOverlay(Context context,
+            FeatureDataStore2 spatialDb, String contentSource,
             String name, String iconUri,
             FeatureDataStoreDeepMapItemQuery query,
             String contentType, String mimeType) {
@@ -114,31 +134,31 @@ public class FeatureDataStoreMapOverlay extends AbstractMapOverlay2 {
     }
 
     protected Set<String> getChildFiles() {
-        if (!(this.spatialDb instanceof DataSourceFeatureDataStore))
-            return null;
-
         FeatureDataStore.FeatureSetQueryParameters params = new FeatureDataStore.FeatureSetQueryParameters();
         if (this.contentSource != null)
             params.types = Collections.singleton(this.contentSource);
 
         Set<String> files = new HashSet<>();
-        FeatureDataStore.FeatureSetCursor result = null;
+        FeatureSetCursor result = null;
         try {
-            result = this.spatialDb.queryFeatureSets(params);
+            result = this.spatialDb
+                    .queryFeatureSets(Adapters.adapt(params, null));
             FeatureSet featureSet;
             File featureFile;
             while (result.moveToNext()) {
                 featureSet = result.get();
-                featureFile = ((DataSourceFeatureDataStore) this.spatialDb)
-                        .getFile(featureSet);
+                featureFile = Utils.getSourceFile(this.spatialDb, featureSet);
                 if (featureFile != null)
                     files.add(featureFile.getAbsolutePath());
             }
-            return files;
+
+        } catch (DataStoreException dse) {
+            Log.e(TAG, "datastore exception occured", dse);
         } finally {
             if (result != null)
                 result.close();
         }
+        return files;
     }
 
     /**************************************************************************/

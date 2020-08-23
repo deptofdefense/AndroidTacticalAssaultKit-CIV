@@ -27,23 +27,22 @@ public class MenuMapComponent extends AbstractMapComponent {
         MapActivity mapActivity = (MapActivity) context;
         _mapView = view;
 
-        _adapter = new MenuMapAdapter();
-
-        _menuLayout = new MenuLayoutWidget(context, view,
-                mapActivity.getMapAssets(), _adapter);
-        _menuLayout.setZOrder(0d);
-        _menuLayout.setName("Radial Menu");
-        LayoutWidget rootLayout = (LayoutWidget) view
-                .getComponentExtra("rootLayoutWidget");
-        rootLayout.addWidget(_menuLayout);
-
         //load up the default menu filters for a marker.
+        _adapter = new MenuMapAdapter();
         try {
             _adapter.loadMenuFilters(mapActivity.getMapAssets(),
                     "filters/menu_filters.xml");
         } catch (IOException e) {
             Log.e(_TAG, "Error loading menu filters", e);
         }
+
+        _menuLayout = new MenuLayoutWidget(view,
+                mapActivity.getMapAssets(), _adapter);
+        _menuLayout.setZOrder(0d);
+        _menuLayout.setName("Radial Menu");
+        LayoutWidget rootLayout = (LayoutWidget) view
+                .getComponentExtra("rootLayoutWidget");
+        rootLayout.addWidget(_menuLayout);
 
         MapMenuReceiver _menuReceiver = new MapMenuReceiver(_mapView,
                 _menuLayout, _adapter);
@@ -78,7 +77,6 @@ public class MenuMapComponent extends AbstractMapComponent {
                 });
         menuFilter.addAction(ToolManagerBroadcastReceiver.BEGIN_TOOL);
         this.registerReceiver(context, _menuReceiver, menuFilter);
-
     }
 
     @Override

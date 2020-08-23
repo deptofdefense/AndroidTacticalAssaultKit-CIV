@@ -83,7 +83,11 @@ public class AssimpModelSpi implements ModelSpi {
                     // XXX-- Splits, de-dupe and other optimizations seem to take too much memory for very large OBJs
             );*/
 
-            File file = new File(modelInfo.uri);
+            String path = modelInfo.uri;
+            if (path.startsWith("zip://"))
+                path = path.substring(6);
+
+            File file = new File(path);
             iosys = ATAKAiIOSystem.forModelSpiCallback(callback, 50);
 
             AiScene scene = Jassimp.importFile(file.getPath(), postSteps, iosys);

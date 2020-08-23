@@ -28,7 +28,7 @@ namespace
 ProjectionSpi2::~ProjectionSpi2() { }
 
 ProjectionPtr2 ProjectionSpi2::nullProjectionPtr() {
-    return ProjectionPtr2(NULL, NULL);
+    return ProjectionPtr2(nullptr, nullptr);
 }
 
 /******************************************************************************/
@@ -37,12 +37,12 @@ ProjectionPtr2 ProjectionSpi2::nullProjectionPtr() {
 ProjectionPtr2 TAK::Engine::Core::ProjectionFactory2_getProjection(int srid)
 {
     // obtain the projection
-    Projection2Ptr value(NULL, NULL);
+    Projection2Ptr value(nullptr, nullptr);
     if (ProjectionFactory3_create(value, srid) != TE_Ok)
         return ProjectionSpi2::nullProjectionPtr();
 
     // adapt the projection back to legacy
-    ProjectionPtr2 lvalue(NULL, NULL);
+    ProjectionPtr2 lvalue(nullptr, nullptr);
     LegacyAdapters_adapt(lvalue, std::move(value));
 
     return lvalue;
@@ -50,41 +50,43 @@ ProjectionPtr2 TAK::Engine::Core::ProjectionFactory2_getProjection(int srid)
 
 void TAK::Engine::Core::ProjectionFactory2_registerSpi(std::shared_ptr<ProjectionSpi2> *lspi)
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, mutex());
+    ProjectionSpi3Ptr spi(nullptr, nullptr);
+    {
+        Lock lock(mutex());
 
-    std::map<std::shared_ptr<ProjectionSpi2>, ProjectionSpi3 *> &spis = adaptedSpis();
-    std::map<std::shared_ptr<ProjectionSpi2>, ProjectionSpi3 *>::iterator entry;
-    entry = spis.find(*lspi);
-    if (entry != spis.end())
-        return;
+        std::map<std::shared_ptr<ProjectionSpi2>, ProjectionSpi3 *> &spis = adaptedSpis();
+        std::map<std::shared_ptr<ProjectionSpi2>, ProjectionSpi3 *>::iterator entry;
+        entry = spis.find(*lspi);
+        if (entry != spis.end())
+            return;
 
-    ProjectionSpi3Ptr spi(NULL, NULL);
-    if (LegacyAdapters_adapt(spi, std::unique_ptr<ProjectionSpi2, void(*)(const ProjectionSpi2 *)>(lspi->get(), Memory_leaker_const<ProjectionSpi2>)) != TE_Ok)
-        return;
+        
+        if (LegacyAdapters_adapt(spi, std::unique_ptr<ProjectionSpi2, void(*)(const ProjectionSpi2 *)>(lspi->get(), Memory_leaker_const<ProjectionSpi2>)) != TE_Ok)
+            return;
 
-    spis[*lspi] = spi.get();
-    lock.reset();
+        spis[*lspi] = spi.get();
+    }
 
     ProjectionFactory3_registerSpi(std::move(spi), 0);
 }
 
 void TAK::Engine::Core::ProjectionFactory2_unregisterSpi(std::shared_ptr<ProjectionSpi2> *lspi)
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, mutex());
+    ProjectionSpi3 *spi = nullptr;
+    {
+        Lock lock(mutex());
 
-    std::map<std::shared_ptr<ProjectionSpi2>, ProjectionSpi3 *> &spis = adaptedSpis();
-    std::map<std::shared_ptr<ProjectionSpi2>, ProjectionSpi3 *>::iterator entry;
-    entry = spis.find(*lspi);
-    if (entry == spis.end())
-        return;
+        std::map<std::shared_ptr<ProjectionSpi2>, ProjectionSpi3 *> &spis = adaptedSpis();
+        std::map<std::shared_ptr<ProjectionSpi2>, ProjectionSpi3 *>::iterator entry;
+        entry = spis.find(*lspi);
+        if (entry == spis.end())
+            return;
 
-    ProjectionSpi3 &spi = *entry->second;
-    spis.erase(entry);
-    lock.reset();
+        spi = entry->second;
+        spis.erase(entry);
+    }
 
-    ProjectionFactory3_unregisterSpi(spi);
+    ProjectionFactory3_unregisterSpi(*spi);
 }
 
 void TAK::Engine::Core::ProjectionFactory2_setPreferSdkProjections(bool sdk)

@@ -2,6 +2,7 @@
 package com.atakmap.android.importfiles.sort;
 
 import android.content.Context;
+import android.util.Pair;
 
 import com.atakmap.android.maps.tilesets.TilesetInfo;
 import com.atakmap.app.R;
@@ -19,14 +20,11 @@ public class ImportTilesetSort extends ImportInternalSDResolver {
 
     private static final String TAG = "ImportTilesetSort";
 
-    private final Context _context;
-
     public ImportTilesetSort(Context context, boolean validateExt,
             boolean copyFile) {
-        super(".zip", "layers", validateExt, copyFile, context
-                .getString(R.string.tileset));
-
-        this._context = context;
+        super(".zip", "layers", validateExt, copyFile,
+                context.getString(R.string.tileset),
+                context.getDrawable(R.drawable.ic_menu_maps));
     }
 
     @Override
@@ -47,5 +45,10 @@ public class ImportTilesetSort extends ImportInternalSDResolver {
     @Override
     protected void onFileSorted(File src, File dst, Set<SortFlags> flags) {
         super.onFileSorted(src, dst, flags);
+    }
+
+    @Override
+    public Pair<String, String> getContentMIME() {
+        return new Pair<>("Tileset", "application/zip");
     }
 }

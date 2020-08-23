@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "port/Platform.h"
-#include "thread/impl/LockImpl.h"
+#include "thread/impl/MutexImpl.h"
 #include "util/Error.h"
 
 namespace TAK {
@@ -32,7 +32,7 @@ namespace TAK {
                      *
                      * @return  TE_Ok on success, various codes on failure
                      */
-                    virtual Util::TAKErr broadcast(LockImpl &lock) NOTHROWS = 0;
+                    virtual Util::TAKErr broadcast(MutexImpl &lock) NOTHROWS = 0;
                     /**
                      * Signals a single threads that is currently waiting on this
                      * condition.
@@ -42,7 +42,7 @@ namespace TAK {
                      *
                      * @return  TE_Ok on success, various codes on failure
                      */
-                    virtual Util::TAKErr signal(LockImpl &lock) NOTHROWS = 0;
+                    virtual Util::TAKErr signal(MutexImpl &lock) NOTHROWS = 0;
                     /**
                      * Releases the specified lock and causes the currently
                      * executing thread to block until this condition is signaled
@@ -59,7 +59,7 @@ namespace TAK {
                      * @return  TE_Ok on success, TE_TimedOut if the timeout
                      *          elapsed or various codes on failure.
                      */
-                    virtual Util::TAKErr wait(LockImpl &lockImpl, const int64_t milliseconds = 0LL) NOTHROWS = 0;
+                    virtual Util::TAKErr wait(MutexImpl &lockImpl, const int64_t milliseconds = 0LL) NOTHROWS = 0;
                 };
 
                 typedef std::unique_ptr<CondVarImpl, void(*)(const CondVarImpl *)> CondVarImplPtr;

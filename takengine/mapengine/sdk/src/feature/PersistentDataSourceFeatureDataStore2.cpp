@@ -63,11 +63,11 @@ namespace
     public:
         ValidateCurrency() NOTHROWS;
     public:
-        virtual const char *getName() const NOTHROWS;
-        virtual int getAppVersion() const NOTHROWS;
+        const char *getName() const NOTHROWS override;
+        int getAppVersion() const NOTHROWS override;
 
-        virtual TAK::Engine::Util::TAKErr getAppData(AppDataPtr &data, const char *file) const NOTHROWS;
-        virtual TAK::Engine::Util::TAKErr isValidApp(bool *value, const char *f, const int appVersion, const AppData &data) const NOTHROWS;
+        TAK::Engine::Util::TAKErr getAppData(AppDataPtr &data, const char *file) const NOTHROWS override;
+        TAK::Engine::Util::TAKErr isValidApp(bool *value, const char *f, const int appVersion, const AppData &data) const NOTHROWS override;
     };
 
     class GenerateCurrency : public CatalogCurrency2
@@ -77,11 +77,11 @@ namespace
     public:
         TAKErr init(const FeatureDataSource2::Content &content) NOTHROWS;
     public:
-        virtual const char *getName() const NOTHROWS;
-        virtual int getAppVersion() const NOTHROWS;
+        const char *getName() const NOTHROWS override;
+        int getAppVersion() const NOTHROWS override;
 
-        virtual TAKErr getAppData(AppDataPtr &data, const char *file) const NOTHROWS;
-        virtual TAKErr isValidApp(bool *value, const char *f, const int appVersion, const AppData &data) const NOTHROWS;
+        TAKErr getAppData(AppDataPtr &data, const char *file) const NOTHROWS override;
+        TAKErr isValidApp(bool *value, const char *f, const int appVersion, const AppData &data) const NOTHROWS override;
     private :
         std::set<std::shared_ptr<FeatureDataSource2>> contentSpis;
     };
@@ -91,9 +91,9 @@ namespace
     public:
         FileCursorImpl(CatalogDatabase2::CatalogCursorPtr &&filter) NOTHROWS;
     public: // FileCursor
-        virtual TAKErr getFile(TAK::Engine::Port::String &path) NOTHROWS;
+        TAKErr getFile(TAK::Engine::Port::String &path) NOTHROWS override;
     public : // RowIterator
-        virtual TAKErr moveToNext() NOTHROWS;
+        TAKErr moveToNext() NOTHROWS override;
     private :
         CatalogDatabase2::CatalogCursorPtr filter;
     };
@@ -103,9 +103,9 @@ namespace
     public:
         ModifiedFileCursorImpl(QueryPtr &&filter) NOTHROWS;
     public: // FileCursor
-        virtual TAKErr getFile(TAK::Engine::Port::String &path) NOTHROWS;
+        TAKErr getFile(TAK::Engine::Port::String &path) NOTHROWS override;
     public: // RowIterator
-        virtual TAKErr moveToNext() NOTHROWS;
+        TAKErr moveToNext() NOTHROWS override;
     private:
         QueryPtr filter;
     };
@@ -120,12 +120,13 @@ namespace
 PersistentDataSourceFeatureDataStore2::PersistentDataSourceFeatureDataStore2() NOTHROWS :
     AbstractFeatureDataStore2(0xFFFFFFFF,
                               VISIBILITY_SETTINGS_FEATURESET | VISIBILITY_SETTINGS_FEATURE),
-    index(NULL),
-    indexDb(NULL, NULL),
-    mutex(TEMT_Recursive)
+    index_(nullptr),
+    index_db_(nullptr, nullptr),
+    mutex_(TEMT_Recursive),
+    fdb_template_version_(-1)
 {
     static ValidateCurrency validate;
-    currency.registerCurrency(&validate);
+    currency_.registerCurrency(&validate);
 }
 
 PersistentDataSourceFeatureDataStore2::~PersistentDataSourceFeatureDataStore2() NOTHROWS
@@ -136,8 +137,8 @@ PersistentDataSourceFeatureDataStore2::~PersistentDataSourceFeatureDataStore2() 
 TAKErr PersistentDataSourceFeatureDataStore2::open(const char *database) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
     if (pathExists(database) && !isDirectory(database) && getFileSize(database) > 0) {
         Logger::log(Logger::Error, TAG ": database is not a directory or an empty file");
@@ -158,49 +159,49 @@ TAKErr PersistentDataSourceFeatureDataStore2::open(const char *database) NOTHROW
         }
     }
 
-    this->databaseDir = database;
+    this->database_dir_ = database;
 
     {
         std::ostringstream strm;
-        strm << this->databaseDir;
+        strm << this->database_dir_;
         strm << "/";
         strm << "fdbs";
-        this->fdbsDir = strm.str().c_str();
+        this->fdbs_dir_ = strm.str().c_str();
     }
 
     {
         std::ostringstream strm;
-        strm << this->databaseDir;
+        strm << this->database_dir_;
         strm << "/";
         strm << TEMPLATE_FDB_FILENAME;
-        this->fdbTemplate = strm.str().c_str();
+        this->fdb_template_ = strm.str().c_str();
     }
 
     {
         std::ostringstream strm;
-        strm << this->databaseDir;
+        strm << this->database_dir_;
         strm << "/";
         strm << "index.sqlite";
-        code = Databases_openDatabase(this->indexDb, strm.str().c_str());
+        code = Databases_openDatabase(this->index_db_, strm.str().c_str());
         TE_CHECKRETURN_CODE(code);
     }
 
-    this->index = new Index(*this, currency);
-    code = this->index->open(this->indexDb.get());
+    this->index_ = new Index(*this, currency_);
+    code = this->index_->open(this->index_db_.get());
     TE_CHECKRETURN_CODE(code);
 
     // check and generate the FDBs dir *after* creating the index as we will
     // dump the FDBs if the schema is updated
-    if (!pathExists(this->fdbsDir)) {
-        if (!createDir(this->fdbsDir)) {
+    if (!pathExists(this->fdbs_dir_)) {
+        if (!createDir(this->fdbs_dir_)) {
             Logger::log(Logger::Error, TAG ": Failed to create FDBs directory");
             return TE_IO;
         }
     }
 
     // load existing entries
-    QueryPtr result(NULL, NULL);
-    code = this->indexDb->query(result, "SELECT id, name, fdb_path, provider, type, file_id FROM featuresets");
+    QueryPtr result(nullptr, nullptr);
+    code = this->index_db_->query(result, "SELECT id, name, fdb_path, provider, type, file_id FROM featuresets");
     TE_CHECKRETURN_CODE(code);
 
     const char *dbFile;
@@ -237,7 +238,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::open(const char *database) NOTHROW
 
         if (!pathExists(dbFile)) {
             // FDB was deleted, invalidate the entry
-            this->index->invalidateCatalogEntry(db->catalogId);
+            this->index_->invalidateCatalogEntry(db->catalogId);
             continue;
         }
         db->fdbFile = dbFile;
@@ -254,7 +255,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::open(const char *database) NOTHROW
             std::unique_ptr<FeatureSetDatabase, void(*)(const FeatureDataStore2 *)> fdb(new FeatureSetDatabase(modificationFlags, visibilityFlags), Memory_deleter_const<FeatureDataStore2, FeatureSetDatabase>);
             if (fdb->open(dbFile) != TE_Ok) {
                 // something is wrong, invalidate the entry
-                this->index->invalidateCatalogEntry(db->catalogId);
+                this->index_->invalidateCatalogEntry(db->catalogId);
                 continue;
             }
 
@@ -266,16 +267,16 @@ TAKErr PersistentDataSourceFeatureDataStore2::open(const char *database) NOTHROW
             refs[dbFile] = db->database;
         } else {
             db->database = entry->second;
-            this->sharedDbs.insert(db->database);
+            this->shared_dbs_.insert(db->database);
         }
 
-        FeatureSetPtr_const fs(NULL, NULL);
+        FeatureSetPtr_const fs(nullptr, nullptr);
         code = db->database->value->getFeatureSet(fs, db->fsid);
         if (code == TE_InvalidArg || !fs.get()) {
             // something is wrong (ingest likely did not complete), invalidate the entry
             int64_t id;
             if (result->getLong(&id, 5) == TE_Ok)
-                this->index->invalidateCatalogEntry(id);
+                this->index_->invalidateCatalogEntry(id);
             continue;
         }
         TE_CHECKBREAK_CODE(code);
@@ -285,7 +286,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::open(const char *database) NOTHROW
         db->version = fs->getVersion();
 
         int64_t fsid = db->fsid;
-        this->fsidToFeatureDb[fsid] = db;
+        this->fsid_to_feature_db_[fsid] = db;
     } while(true);
 
     result.reset();
@@ -299,7 +300,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::getFeature(FeaturePtr_const &featu
     FeatureQueryParameters params;
     params.featureIds->add(fid);
 
-    FeatureCursorPtr result(NULL, NULL);
+    FeatureCursorPtr result(nullptr, nullptr);
     code = this->queryFeatures(result, params);
     TE_CHECKRETURN_CODE(code);
 
@@ -354,7 +355,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::matches(bool *matched, const Featu
     }
     if (!params->featureIds->empty()) {
         bool matches = false;
-        Collection<int64_t>::IteratorPtr fids(NULL, NULL);
+        Collection<int64_t>::IteratorPtr fids(nullptr, nullptr);
         code = params->featureIds->iterator(fids);
         TE_CHECKRETURN_CODE(code);
 
@@ -456,7 +457,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::filter(std::shared_ptr<FeatureQuer
             retval.reset(new FeatureQueryParameters());
 
         // check and mask off FSID
-        TAK::Engine::Port::Collection<int64_t>::IteratorPtr fids(NULL, NULL);
+        TAK::Engine::Port::Collection<int64_t>::IteratorPtr fids(nullptr, nullptr);
         code = params->featureIds->iterator(fids);
         do {
             int64_t fid;
@@ -577,7 +578,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::prepareQuery(std::map<std::shared_
 
     code = TE_Ok;
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator iter;
-    for (iter = this->fsidToFeatureDb.begin(); iter != this->fsidToFeatureDb.end(); iter++) {
+    for (iter = this->fsid_to_feature_db_.begin(); iter != this->fsid_to_feature_db_.end(); iter++) {
         std::shared_ptr<FeatureDb> db = iter->second;
         bool matched;
         code = matches(&matched, *db, params);
@@ -586,10 +587,10 @@ TAKErr PersistentDataSourceFeatureDataStore2::prepareQuery(std::map<std::shared_
         if (matched) {
             std::map<std::shared_ptr<DatabaseRef>, std::shared_ptr<FeatureQueryParameters>>::iterator entry;
             entry = value.find(db->database);
-            std::shared_ptr<FeatureQueryParameters> paramsPtr(NULL);
+            std::shared_ptr<FeatureQueryParameters> paramsPtr(nullptr);
             if(entry != value.end())
                 paramsPtr = entry->second;
-            code = filter(paramsPtr, *db, params, (this->sharedDbs.find(db->database) != this->sharedDbs.end()));
+            code = filter(paramsPtr, *db, params, (this->shared_dbs_.find(db->database) != this->shared_dbs_.end()));
 
             if (code != TE_Ok)
                 break;
@@ -605,7 +606,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::prepareQuery(std::map<std::shared_
 {
     TAKErr code(TE_Ok);
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator iter;
-    for (iter = this->fsidToFeatureDb.begin(); iter != this->fsidToFeatureDb.end(); iter++) {
+    for (iter = this->fsid_to_feature_db_.begin(); iter != this->fsid_to_feature_db_.end(); iter++) {
         std::shared_ptr<FeatureDb> db = iter->second;
         bool matched;
         code = matches(&matched, *db, params);
@@ -614,10 +615,10 @@ TAKErr PersistentDataSourceFeatureDataStore2::prepareQuery(std::map<std::shared_
         if (matched) {
             std::map<std::shared_ptr<DatabaseRef>, std::shared_ptr<FeatureSetQueryParameters>>::iterator entry;
             entry = value.find(db->database);
-            std::shared_ptr<FeatureSetQueryParameters> paramsPtr(NULL);
+            std::shared_ptr<FeatureSetQueryParameters> paramsPtr(nullptr);
             if (entry != value.end())
                 paramsPtr = entry->second;
-            code = filter(paramsPtr, *db, params, (this->sharedDbs.find(db->database) != this->sharedDbs.end()));
+            code = filter(paramsPtr, *db, params, (this->shared_dbs_.find(db->database) != this->shared_dbs_.end()));
             if (code != TE_Ok)
                 break;
             if (entry == value.end())
@@ -630,18 +631,18 @@ TAKErr PersistentDataSourceFeatureDataStore2::prepareQuery(std::map<std::shared_
 TAKErr PersistentDataSourceFeatureDataStore2::queryFeatures(FeatureCursorPtr &result) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     std::map<std::shared_ptr<DatabaseRef>, std::shared_ptr<FeatureQueryParameters>> dbs;
-    code = this->prepareQuery(dbs, NULL);
+    code = this->prepareQuery(dbs, nullptr);
     TE_CHECKRETURN_CODE(code);
 
     std::vector<FeatureCursorPtr> cursors;
     std::map<std::shared_ptr<DatabaseRef>, std::shared_ptr<FeatureQueryParameters>>::iterator db;
     for (db = dbs.begin(); db != dbs.end(); db++) {
-        FeatureCursorPtr cursor(NULL, NULL);
+        FeatureCursorPtr cursor(nullptr, nullptr);
         if (db->second.get())
             code = db->first->value->queryFeatures(cursor, *db->second);
         else
@@ -666,8 +667,8 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatures(FeatureCursorPtr &re
 TAKErr PersistentDataSourceFeatureDataStore2::queryFeatures(FeatureCursorPtr &result, const FeatureQueryParameters &params) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     std::map<std::shared_ptr<DatabaseRef>, std::shared_ptr<FeatureQueryParameters>> dbs;
@@ -691,7 +692,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatures(FeatureCursorPtr &re
     std::vector<FeatureCursorPtr> cursors;
     std::map<std::shared_ptr<DatabaseRef>, std::shared_ptr<FeatureQueryParameters>>::iterator db;
     for (db = dbs.begin(); db != dbs.end(); db++) {
-        FeatureCursorPtr cursor(NULL, NULL);
+        FeatureCursorPtr cursor(nullptr, nullptr);
         if (db->second.get())
             code = db->first->value->queryFeatures(cursor, *db->second);
         else
@@ -718,11 +719,11 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatures(FeatureCursorPtr &re
 TAKErr PersistentDataSourceFeatureDataStore2::queryFeaturesCount(int *value) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
     std::map<std::shared_ptr<DatabaseRef>, std::shared_ptr<FeatureQueryParameters>> dbs;
-    code = this->prepareQuery(dbs, NULL);
+    code = this->prepareQuery(dbs, nullptr);
     TE_CHECKRETURN_CODE(code);
 
     std::map<std::shared_ptr<DatabaseRef>, std::shared_ptr<FeatureQueryParameters>>::iterator db;
@@ -747,8 +748,8 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeaturesCount(int *value, con
         return AbstractFeatureDataStore2::queryFeaturesCount(value, *this, params);
     } else {
         TAKErr code(TE_Ok);
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
+        Lock lock(mutex_);
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
         std::map<std::shared_ptr<DatabaseRef>, std::shared_ptr<FeatureQueryParameters>> dbs;
         code = this->prepareQuery(dbs, &params);
@@ -776,12 +777,12 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeaturesCount(int *value, con
 TAKErr PersistentDataSourceFeatureDataStore2::getFeatureSet(FeatureSetPtr_const &value, const int64_t fsid) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry = this->fsidToFeatureDb.find(fsid);
-    if (entry == this->fsidToFeatureDb.end())
+    auto entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end())
         return TE_InvalidArg;
 
     return entry->second->database->value->getFeatureSet(value, fsid);
@@ -791,13 +792,13 @@ TAKErr PersistentDataSourceFeatureDataStore2::getFeatureSet(FeatureSetPtr_const 
 TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSets(FeatureSetCursorPtr &result) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     std::set<std::shared_ptr<const FeatureDb>, FeatureSetCursorImpl::LT_featureSetName> retval;
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
-    for (entry = this->fsidToFeatureDb.begin(); entry != this->fsidToFeatureDb.end(); entry++)
+    for (entry = this->fsid_to_feature_db_.begin(); entry != this->fsid_to_feature_db_.end(); entry++)
         retval.insert(entry->second);
 
     result = FeatureSetCursorPtr(new FeatureSetCursorImpl(retval), Memory_deleter_const<FeatureSetCursor2, FeatureSetCursorImpl>);
@@ -808,18 +809,18 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSets(FeatureSetCursorP
 {
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     code = TE_Ok;
 
     std::set<int64_t> fsids;
-    for (entry = this->fsidToFeatureDb.begin(); entry != this->fsidToFeatureDb.end(); entry++)
+    for (entry = this->fsid_to_feature_db_.begin(); entry != this->fsid_to_feature_db_.end(); entry++)
         fsids.insert(entry->first);
 
     if (!params.ids->empty()) {
-        std::set<int64_t>::iterator iter = fsids.begin();
+        auto iter = fsids.begin();
         while (iter != fsids.end()) {
             bool contained;
             int64_t fsid = *iter;
@@ -835,10 +836,10 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSets(FeatureSetCursorP
     }
 
     if (!params.types->empty()) {
-        std::set<int64_t>::iterator iter = fsids.begin();
+        auto iter = fsids.begin();
         while (iter != fsids.end()) {
-            entry = this->fsidToFeatureDb.find(*iter);
-            if (entry == this->fsidToFeatureDb.end()) {
+            entry = this->fsid_to_feature_db_.find(*iter);
+            if (entry == this->fsid_to_feature_db_.end()) {
                 iter = fsids.erase(iter);
             } else {
                 bool matched = false;
@@ -854,10 +855,10 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSets(FeatureSetCursorP
         TE_CHECKRETURN_CODE(code);
     }
     if (!params.providers->empty()) {
-        std::set<int64_t>::iterator iter = fsids.begin();
+        auto iter = fsids.begin();
         while (iter != fsids.end()) {
-            entry = this->fsidToFeatureDb.find(*iter);
-            if (entry == this->fsidToFeatureDb.end()) {
+            entry = this->fsid_to_feature_db_.find(*iter);
+            if (entry == this->fsid_to_feature_db_.end()) {
                 iter = fsids.erase(iter);
             } else {
                 bool matched = false;
@@ -873,10 +874,10 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSets(FeatureSetCursorP
         TE_CHECKRETURN_CODE(code);
     }
     if (params.visibleOnly) {
-        std::set<int64_t>::iterator iter = fsids.begin();
+        auto iter = fsids.begin();
         while (iter != fsids.end()) {
-            entry = this->fsidToFeatureDb.find(*iter);
-            if (entry == this->fsidToFeatureDb.end()) {
+            entry = this->fsid_to_feature_db_.find(*iter);
+            if (entry == this->fsid_to_feature_db_.end()) {
                 iter = fsids.erase(iter);
             } else {
                 bool visible = false;
@@ -892,10 +893,10 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSets(FeatureSetCursorP
         TE_CHECKRETURN_CODE(code);
     }
     if (!params.names->empty()) {
-        std::set<int64_t>::iterator iter = fsids.begin();
+        auto iter = fsids.begin();
         while (iter != fsids.end()) {
-            entry = this->fsidToFeatureDb.find(*iter);
-            if (entry == this->fsidToFeatureDb.end()) {
+            entry = this->fsid_to_feature_db_.find(*iter);
+            if (entry == this->fsid_to_feature_db_.end()) {
                 iter = fsids.erase(iter);
             }
             else {
@@ -913,9 +914,9 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSets(FeatureSetCursorP
     }
 
     std::set<std::shared_ptr<const FeatureDb>, FeatureSetCursorImpl::LT_featureSetName> dbs;
-    for (std::set<int64_t>::iterator fsid = fsids.begin(); fsid != fsids.end(); fsid++) {
-        entry = this->fsidToFeatureDb.find(*fsid);
-        if (entry != this->fsidToFeatureDb.end())
+    for (auto fsid = fsids.begin(); fsid != fsids.end(); fsid++) {
+        entry = this->fsid_to_feature_db_.find(*fsid);
+        if (entry != this->fsid_to_feature_db_.end())
             dbs.insert(entry->second);
     }
 
@@ -926,8 +927,8 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSets(FeatureSetCursorP
             dbs.erase(dbs.begin());
         }
     }
-    if (params.limit != 0) {
-        while (dbs.size() > params.limit)
+    if (params.limit > 0) {
+        while (dbs.size() > static_cast<std::size_t>(params.limit))
             dbs.erase(--dbs.end());
     }
 
@@ -940,29 +941,29 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSets(FeatureSetCursorP
 TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSetsCount(int *value) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    *value = this->fsidToFeatureDb.size();
+    *value = static_cast<int>(this->fsid_to_feature_db_.size());
     return TE_Ok;
 }
 TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSetsCount(int *value, const FeatureSetQueryParameters &params) NOTHROWS
 {
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     code = TE_Ok;
 
     std::set<int64_t> fsids;
-    for (entry = this->fsidToFeatureDb.begin(); entry != this->fsidToFeatureDb.end(); entry++)
+    for (entry = this->fsid_to_feature_db_.begin(); entry != this->fsid_to_feature_db_.end(); entry++)
         fsids.insert(entry->first);
 
     if (!params.ids->empty()) {
-        std::set<int64_t>::iterator iter = fsids.begin();
+        auto iter = fsids.begin();
         while (iter != fsids.end()) {
             bool contained;
             int64_t fsid = *iter;
@@ -977,10 +978,10 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSetsCount(int *value, 
         TE_CHECKRETURN_CODE(code);
     }
     if (!params.types->empty()) {
-        std::set<int64_t>::iterator iter = fsids.begin();
+        auto iter = fsids.begin();
         while (iter != fsids.end()) {
-            entry = this->fsidToFeatureDb.find(*iter);
-            if (entry == this->fsidToFeatureDb.end()) {
+            entry = this->fsid_to_feature_db_.find(*iter);
+            if (entry == this->fsid_to_feature_db_.end()) {
                 iter = fsids.erase(iter);
             } else {
                 bool matched = false;
@@ -996,10 +997,10 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSetsCount(int *value, 
         TE_CHECKRETURN_CODE(code);
     }
     if (!params.providers->empty()) {
-        std::set<int64_t>::iterator iter = fsids.begin();
+        auto iter = fsids.begin();
         while (iter != fsids.end()) {
-            entry = this->fsidToFeatureDb.find(*iter);
-            if (entry == this->fsidToFeatureDb.end()) {
+            entry = this->fsid_to_feature_db_.find(*iter);
+            if (entry == this->fsid_to_feature_db_.end()) {
                 iter = fsids.erase(iter);
             }
             else {
@@ -1016,10 +1017,10 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSetsCount(int *value, 
         TE_CHECKRETURN_CODE(code);
     }
     if (params.visibleOnly) {
-        std::set<int64_t>::iterator iter = fsids.begin();
+        auto iter = fsids.begin();
         while (iter != fsids.end()) {
-            entry = this->fsidToFeatureDb.find(*iter);
-            if (entry == this->fsidToFeatureDb.end()) {
+            entry = this->fsid_to_feature_db_.find(*iter);
+            if (entry == this->fsid_to_feature_db_.end()) {
                 iter = fsids.erase(iter);
             }
             else {
@@ -1036,10 +1037,10 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSetsCount(int *value, 
         TE_CHECKRETURN_CODE(code);
     }
     if (!params.names->empty()) {
-        std::set<int64_t>::iterator iter = fsids.begin();
+        auto iter = fsids.begin();
         while (iter != fsids.end()) {
-            entry = this->fsidToFeatureDb.find(*iter);
-            if (entry == this->fsidToFeatureDb.end()) {
+            entry = this->fsid_to_feature_db_.find(*iter);
+            if (entry == this->fsid_to_feature_db_.end()) {
                 iter = fsids.erase(iter);
             }
             else {
@@ -1056,7 +1057,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSetsCount(int *value, 
         TE_CHECKRETURN_CODE(code);
     }
 
-    int retval = fsids.size();
+    int retval = static_cast<int>(fsids.size());
     if (params.offset != 0)
         retval = (params.offset<retval) ? (retval-params.offset) : 0;
     if (params.limit && retval > params.limit)
@@ -1071,25 +1072,88 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSetsCount(int *value, 
 TAKErr PersistentDataSourceFeatureDataStore2::isFeatureSetVisible(bool *value, const int64_t fsid) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry = this->fsidToFeatureDb.find(fsid);
-    if (entry == this->fsidToFeatureDb.end())
+    auto entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end())
         return TE_InvalidArg;
 
     return entry->second->database->value->isFeatureSetVisible(value, fsid);
+}
+
+TAKErr PersistentDataSourceFeatureDataStore2::setFeatureSetReadOnlyImpl(const int64_t fsid, const bool readOnly) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+    Lock lock(mutex_);
+    code = lock.status;
+    TE_CHECKRETURN_CODE(code);
+
+    auto entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end())
+        return TE_InvalidArg;
+
+    return entry->second->database->value->setFeatureSetReadOnly(fsid, readOnly);
+}
+
+TAKErr PersistentDataSourceFeatureDataStore2::setFeatureSetsReadOnlyImpl(const FeatureSetQueryParameters &params, const bool readOnly) NOTHROWS 
+{
+    TAKErr code;
+    std::map<std::shared_ptr<DatabaseRef>, std::shared_ptr<FeatureSetQueryParameters>> dbs;
+    code = this->prepareQuery(dbs, &params);
+
+    std::map<std::shared_ptr<DatabaseRef>, std::shared_ptr<FeatureSetQueryParameters>>::iterator entry;
+    for (entry = dbs.begin(); entry != dbs.end(); entry++) {
+        if (entry->second)
+            code = entry->first->value->setFeatureSetsReadOnly(*entry->second, readOnly);
+        else
+            code = entry->first->value->setFeatureSetsReadOnly(FeatureSetQueryParameters(), readOnly);
+        TE_CHECKBREAK_CODE(code);
+    }
+    TE_CHECKRETURN_CODE(code);
+    return code;
+}
+
+TAKErr PersistentDataSourceFeatureDataStore2::isFeatureSetReadOnly(bool* value, const int64_t fsid) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+    Lock lock(mutex_);
+    code = lock.status;
+    TE_CHECKRETURN_CODE(code);
+
+    auto entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end())
+        return TE_InvalidArg;
+
+    return entry->second->database->value->isFeatureSetReadOnly(value, fsid);
+}
+
+TAKErr PersistentDataSourceFeatureDataStore2::isFeatureReadOnly(bool* value, const int64_t fid) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+    Lock lock(mutex_);
+    code = lock.status;
+    TE_CHECKRETURN_CODE(code);
+    const int64_t fsid = ((fid >> 32LL) & 0xFFFFFFFFLL);
+
+    std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
+    entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end()) {
+        return TE_InvalidArg;
+    }
+
+    return entry->second->database->value->isFeatureReadOnly(value, fid);
 }
 
 //public synchronized boolean isAvailable() {
 TAKErr PersistentDataSourceFeatureDataStore2::isAvailable(bool *value) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    *value = !!this->index;
+    *value = !!this->index_;
     return TE_Ok;
 }
 
@@ -1097,12 +1161,12 @@ TAKErr PersistentDataSourceFeatureDataStore2::isAvailable(bool *value) NOTHROWS
 TAKErr PersistentDataSourceFeatureDataStore2::refresh() NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    if (!this->index)
+    if (!this->index_)
         return TE_IllegalState;
-    code = this->index->validateCatalog();
+    code = this->index_->validateCatalog();
     TE_CHECKRETURN_CODE(code);
     this->setContentChanged();
     return TE_Ok;
@@ -1112,20 +1176,20 @@ TAKErr PersistentDataSourceFeatureDataStore2::refresh() NOTHROWS
 TAKErr PersistentDataSourceFeatureDataStore2::getUri(TAK::Engine::Port::String &value) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    value = this->databaseDir;
+    value = this->database_dir_;
     return TE_Ok;
 }
 
 TAKErr PersistentDataSourceFeatureDataStore2::close() NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    if (!this->index) {
+    if (!this->index_) {
         Logger::log(Logger::Error, "PersistentDataSourceFeatureDataStore2::close() already closed.");
         return TE_IllegalState;
     }
@@ -1134,13 +1198,14 @@ TAKErr PersistentDataSourceFeatureDataStore2::close() NOTHROWS
 
 TAKErr PersistentDataSourceFeatureDataStore2::closeImpl() NOTHROWS
 {
-    if (this->index) {
-        delete this->index;
-        this->index = NULL;
+    if (this->index_) {
+        delete this->index_;
+        this->index_ = nullptr;
     }
-    this->indexDb.reset();
+    this->index_db_.reset();
 
-    this->fsidToFeatureDb.clear();
+    this->shared_dbs_.clear();
+    this->fsid_to_feature_db_.clear();
 
     return TE_Ok;
 }
@@ -1198,8 +1263,8 @@ TAKErr PersistentDataSourceFeatureDataStore2::setFeaturesVisibleImpl(const Featu
 TAKErr PersistentDataSourceFeatureDataStore2::setFeatureSetVisibleImpl(const int64_t fsid, const bool visible) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator db = this->fsidToFeatureDb.find(fsid);
-    if (db == this->fsidToFeatureDb.end())
+    auto db = this->fsid_to_feature_db_.find(fsid);
+    if (db == this->fsid_to_feature_db_.end())
         return TE_InvalidArg;
     code = db->second->database->value->setFeatureSetVisible(db->second->fsid, visible);
     TE_CHECKRETURN_CODE(code);
@@ -1239,8 +1304,8 @@ TAKErr PersistentDataSourceFeatureDataStore2::beginBulkModificationImpl() NOTHRO
 TAKErr PersistentDataSourceFeatureDataStore2::endBulkModificationImpl(const bool successful) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     this->setContentChanged();
@@ -1253,11 +1318,11 @@ TAKErr PersistentDataSourceFeatureDataStore2::endBulkModificationImpl(const bool
 TAKErr PersistentDataSourceFeatureDataStore2::deleteAllFeatureSetsImpl() NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    code = this->index->deleteAll();
+    code = this->index_->deleteAll();
     TE_CHECKRETURN_CODE(code);
     this->setContentChanged();
     return code;
@@ -1273,17 +1338,17 @@ TAKErr PersistentDataSourceFeatureDataStore2::insertFeatureSetImpl(FeatureSetPtr
 TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureSetImpl(const int64_t fsid, const char *name) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
-    entry = this->fsidToFeatureDb.find(fsid);
-    if (entry == this->fsidToFeatureDb.end())
+    entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end())
         return TE_InvalidArg;
 
-    StatementPtr stmt(NULL, NULL);
-    code = this->indexDb->compileStatement(stmt,
+    StatementPtr stmt(nullptr, nullptr);
+    code = this->index_db_->compileStatement(stmt,
         "UPDATE featuresets SET name = ? WHERE id = ?");
 
     TE_CHECKRETURN_CODE(code);
@@ -1310,13 +1375,13 @@ TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureSetImpl(const int64_t
 TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureSetImpl(const int64_t fsid, const double minResolution, const double maxResolution) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
-    entry = this->fsidToFeatureDb.find(fsid);
-    if (entry == this->fsidToFeatureDb.end())
+    entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end())
         return TE_InvalidArg;
     code = entry->second->database->value->updateFeatureSet(fsid, minResolution, maxResolution);
     if (code == TE_Ok) {
@@ -1335,17 +1400,17 @@ TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureSetImpl(const int64_t
 TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureSetImpl(const int64_t fsid, const char *name, const double minResolution, const double maxResolution) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
-    entry = this->fsidToFeatureDb.find(fsid);
-    if (entry == this->fsidToFeatureDb.end())
+    entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end())
         return TE_InvalidArg;
 
-    StatementPtr stmt(NULL, NULL);
-    code = this->indexDb->compileStatement(stmt,
+    StatementPtr stmt(nullptr, nullptr);
+    code = this->index_db_->compileStatement(stmt,
         "UPDATE featuresets SET name = ? WHERE id = ?");
 
     TE_CHECKRETURN_CODE(code);
@@ -1374,27 +1439,27 @@ TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureSetImpl(const int64_t
 TAKErr PersistentDataSourceFeatureDataStore2::deleteFeatureSetImpl(const int64_t fsid) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
-    entry = this->fsidToFeatureDb.find(fsid);
-    if (entry == this->fsidToFeatureDb.end())
+    entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end())
         return TE_InvalidArg;
 
     code = entry->second->database->value->deleteFeatureSet(fsid);
     TE_CHECKRETURN_CODE(code);
 
     // erase the FDB entry
-    this->fsidToFeatureDb.erase(entry);
+    this->fsid_to_feature_db_.erase(entry);
 
     // mark the file dirty
     this->markFileDirty(fsid);
 
     // delete the index record
-    StatementPtr stmt(NULL, NULL);
-    code = this->indexDb->compileStatement(stmt, "DELETE FROM featuresets WHERE id = ?");
+    StatementPtr stmt(nullptr, nullptr);
+    code = this->index_db_->compileStatement(stmt, "DELETE FROM featuresets WHERE id = ?");
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindLong(1, fsid);
     TE_CHECKRETURN_CODE(code);
@@ -1407,18 +1472,18 @@ TAKErr PersistentDataSourceFeatureDataStore2::deleteFeatureSetImpl(const int64_t
 }
 
 //protected boolean insertFeatureImpl(int64_t fsid, String name, Geometry geom, Style style, AttributeSet attributes, Feature[] returnRef) {
-TAKErr PersistentDataSourceFeatureDataStore2::insertFeatureImpl(FeaturePtr_const *value, const int64_t fsid, const char *name, const atakmap::feature::Geometry &geom, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attributes) NOTHROWS
+TAKErr PersistentDataSourceFeatureDataStore2::insertFeatureImpl(FeaturePtr_const *value, const int64_t fsid, const char *name, const atakmap::feature::Geometry &geom, const AltitudeMode altitudeMode, const double extrude, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attributes) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
-    entry = this->fsidToFeatureDb.find(fsid);
-    if (entry == this->fsidToFeatureDb.end())
+    entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end())
         return TE_InvalidArg;
-    code = entry->second->database->value->insertFeature(value, fsid, name, geom, style, attributes);
+    code = entry->second->database->value->insertFeature(value, fsid, name, geom, altitudeMode, extrude, style, attributes);
     if (code == TE_Ok) {
         markFileDirty(fsid);
         this->setContentChanged();
@@ -1426,17 +1491,13 @@ TAKErr PersistentDataSourceFeatureDataStore2::insertFeatureImpl(FeaturePtr_const
         // need to adjust FID for FSID masking
         if (value && value->get()) {
             const Feature2 *inserted = value->get();
-            GeometryPtr_const insertedGeom = GeometryPtr_const(inserted->getGeometry() ? inserted->getGeometry()->clone() : NULL, atakmap::feature::destructGeometry);
-            StylePtr_const insertedStyle = StylePtr_const(inserted->getStyle() ? inserted->getStyle()->clone() : NULL, atakmap::feature::Style::destructStyle);
+            GeometryPtr_const insertedGeom = GeometryPtr_const(inserted->getGeometry() ? inserted->getGeometry()->clone() : nullptr, atakmap::feature::destructGeometry);
+            StylePtr_const insertedStyle = StylePtr_const(inserted->getStyle() ? inserted->getStyle()->clone() : nullptr, atakmap::feature::Style::destructStyle);
             AttributeSetPtr_const insertedAttributes = AttributeSetPtr_const(inserted->getAttributes() ? new AttributeSet(*inserted->getAttributes()) : new AttributeSet(), Memory_deleter_const<AttributeSet>);
 
-            *value = FeaturePtr_const(new Feature2((fsid << 32) | inserted->getId(),
-                                                   fsid,
-                                                   inserted->getName(),
-                                                   std::move(insertedGeom),
-                                                   std::move(insertedStyle),
-                                                   std::move(insertedAttributes),
-                                                   inserted->getVersion()),
+            *value = FeaturePtr_const(new Feature2((fsid << 32) | inserted->getId(), fsid, inserted->getName(), std::move(insertedGeom),
+                                                   inserted->getAltitudeMode(), inserted->getExtrude(), std::move(insertedStyle),
+                                                   std::move(insertedAttributes), inserted->getVersion()),
                                       Memory_deleter_const<Feature2>);
         }
     }
@@ -1447,14 +1508,14 @@ TAKErr PersistentDataSourceFeatureDataStore2::insertFeatureImpl(FeaturePtr_const
 TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureImpl(const int64_t fid, const char *name) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     const int64_t fsid = (fid >> 32) & 0xFFFFFFFFLL;
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
-    entry = this->fsidToFeatureDb.find(fsid);
-    if (entry == this->fsidToFeatureDb.end())
+    entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end())
         return TE_InvalidArg;
     code =  entry->second->database->value->updateFeature(fid & 0xFFFFFFFFLL, name);
     if (code == TE_Ok) {
@@ -1468,16 +1529,54 @@ TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureImpl(const int64_t fi
 TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureImpl(const int64_t fid, const atakmap::feature::Geometry &geom) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     const int64_t fsid = (fid >> 32) & 0xFFFFFFFFLL;
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
-    entry = this->fsidToFeatureDb.find(fsid);
-    if (entry == this->fsidToFeatureDb.end())
+    entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end())
         return TE_InvalidArg;
     code = entry->second->database->value->updateFeature(fid & 0xFFFFFFFFLL, geom);
+    if (code == TE_Ok) {
+        this->markFileDirty(fsid);
+        this->setContentChanged();
+    }
+    return code;
+}
+
+TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureImpl(const int64_t fid, const atakmap::feature::Geometry &geom, const TAK::Engine::Feature::AltitudeMode altitudeMode, const double extrude) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+    Lock lock(mutex_);
+    code = lock.status;
+    TE_CHECKRETURN_CODE(code);
+
+    const int64_t fsid = (fid >> 32) & 0xFFFFFFFFLL;
+    std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
+    entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end()) return TE_InvalidArg;
+    code = entry->second->database->value->updateFeature(fid & 0xFFFFFFFFLL, geom, altitudeMode, extrude);
+    if (code == TE_Ok) {
+        this->markFileDirty(fsid);
+        this->setContentChanged();
+    }
+    return code;
+}
+
+TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureImpl(const int64_t fid, const TAK::Engine::Feature::AltitudeMode altitudeMode, const double extrude) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+    Lock lock(mutex_);
+    code = lock.status;
+    TE_CHECKRETURN_CODE(code);
+
+    const int64_t fsid = (fid >> 32) & 0xFFFFFFFFLL;
+    std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
+    entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end()) return TE_InvalidArg;
+    code = entry->second->database->value->updateFeature(fid & 0xFFFFFFFFLL, altitudeMode, extrude);
     if (code == TE_Ok) {
         this->markFileDirty(fsid);
         this->setContentChanged();
@@ -1490,14 +1589,14 @@ TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureImpl(const int64_t fi
 TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureImpl(const int64_t fid, const atakmap::feature::Style *style) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     const int64_t fsid = (fid >> 32) & 0xFFFFFFFFLL;
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
-    entry = this->fsidToFeatureDb.find(fsid);
-    if (entry == this->fsidToFeatureDb.end())
+    entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end())
         return TE_InvalidArg;
     code = entry->second->database->value->updateFeature(fid & 0xFFFFFFFFLL, style);
     if (code == TE_Ok) {
@@ -1511,14 +1610,14 @@ TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureImpl(const int64_t fi
 TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureImpl(const int64_t fid, const atakmap::util::AttributeSet &attributes) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     const int64_t fsid = (fid >> 32) & 0xFFFFFFFFLL;
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
-    entry = this->fsidToFeatureDb.find(fsid);
-    if (entry == this->fsidToFeatureDb.end())
+    entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end())
         return TE_InvalidArg;
     code = entry->second->database->value->updateFeature(fid & 0xFFFFFFFFLL, attributes);
     if (code == TE_Ok) {
@@ -1532,14 +1631,14 @@ TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureImpl(const int64_t fi
 TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureImpl(const int64_t fid, const char *name, const atakmap::feature::Geometry &geom, const atakmap::feature::Style *style, const atakmap::util::AttributeSet &attributes) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     const int64_t fsid = (fid >> 32) & 0xFFFFFFFFLL;
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
-    entry = this->fsidToFeatureDb.find(fsid);
-    if (entry == this->fsidToFeatureDb.end())
+    entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end())
         return TE_InvalidArg;
     code = entry->second->database->value->updateFeature(fid & 0xFFFFFFFFLL, name, geom, style, attributes);
     if (code == TE_Ok) {
@@ -1553,14 +1652,14 @@ TAKErr PersistentDataSourceFeatureDataStore2::updateFeatureImpl(const int64_t fi
 TAKErr PersistentDataSourceFeatureDataStore2::deleteFeatureImpl(const int64_t fid) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     const int64_t fsid = (fid >> 32) & 0xFFFFFFFFLL;
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
-    entry = this->fsidToFeatureDb.find(fsid);
-    if (entry == this->fsidToFeatureDb.end())
+    entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end())
         return TE_InvalidArg;
     code = entry->second->database->value->deleteFeature(fid & 0xFFFFFFFFLL);
     if (code == TE_Ok) {
@@ -1574,13 +1673,13 @@ TAKErr PersistentDataSourceFeatureDataStore2::deleteFeatureImpl(const int64_t fi
 TAKErr PersistentDataSourceFeatureDataStore2::deleteAllFeaturesImpl(int64_t fsid) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
-    entry = this->fsidToFeatureDb.find(fsid);
-    if (entry == this->fsidToFeatureDb.end())
+    entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end())
         return TE_InvalidArg;
     code = entry->second->database->value->deleteAllFeatures(fsid);
     if (code == TE_Ok) {
@@ -1594,12 +1693,12 @@ TAKErr PersistentDataSourceFeatureDataStore2::deleteAllFeaturesImpl(int64_t fsid
 TAKErr PersistentDataSourceFeatureDataStore2::contains(bool *value, const char *file) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    CatalogDatabase2::CatalogCursorPtr result(NULL, NULL);
-    code = this->index->queryCatalogPath(result, file);
+    CatalogDatabase2::CatalogCursorPtr result(nullptr, nullptr);
+    code = this->index_->queryCatalogPath(result, file);
     TE_CHECKRETURN_CODE(code);
 
     code = result->moveToNext();
@@ -1613,8 +1712,8 @@ TAKErr PersistentDataSourceFeatureDataStore2::contains(bool *value, const char *
 TAKErr PersistentDataSourceFeatureDataStore2::getFile(TAK::Engine::Port::String &value, const int64_t fsid) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
     return this->getFileImpl(value, fsid);
 }
@@ -1625,8 +1724,8 @@ TAKErr PersistentDataSourceFeatureDataStore2::getFileImpl(TAK::Engine::Port::Str
 {
     TAKErr code(TE_Ok);
 
-    CatalogDatabase2::CatalogCursorPtr result(NULL, NULL);
-    code = this->index->query(result, fsid);
+    CatalogDatabase2::CatalogCursorPtr result(nullptr, nullptr);
+    code = this->index_->query(result, fsid);
     TE_CHECKRETURN_CODE(code);
 
     code = result->moveToNext();
@@ -1634,7 +1733,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::getFileImpl(TAK::Engine::Port::Str
         return TE_InvalidArg;
     TE_CHECKRETURN_CODE(code);
 
-    const char *path(NULL);
+    const char *path(nullptr);
     code = result->getPath(&path);
     TE_CHECKRETURN_CODE(code);
 
@@ -1658,21 +1757,23 @@ TAKErr PersistentDataSourceFeatureDataStore2::addImpl(const char* cfile, const c
     TAKErr code(TE_Ok);
     AddMgr pendingMgr(*this);
 
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
-    TE_CHECKRETURN_CODE(code);
-    if (this->pending.find(cfile) != this->pending.end()) {
-        while (this->pending.find(cfile) != this->pending.end()) this->cond.wait(*lock);
-        bool contained;
-        code = this->contains(&contained, cfile);
+    {
+        Lock lock(mutex_);
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
+        if (this->pending_.find(cfile) != this->pending_.end()) {
+            while (this->pending_.find(cfile) != this->pending_.end()) this->cond_.wait(lock);
+            bool contained;
+            code = this->contains(&contained, cfile);
+            TE_CHECKRETURN_CODE(code);
 
-        return contained ? TE_Ok : TE_Err;
+            return contained ? TE_Ok : TE_Err;
+        }
+        pendingMgr.markPending(cfile);
     }
-    pendingMgr.markPending(cfile);
 
     // create data source
-    FeatureDataSource2::ContentPtr content(NULL, NULL);
+    FeatureDataSource2::ContentPtr content(nullptr, nullptr);
     code = FeatureDataSourceFactory_parse(content, cfile, hint);
 
     TAK::Engine::Port::String file(cfile);
@@ -1691,20 +1792,20 @@ TAKErr PersistentDataSourceFeatureDataStore2::addImpl(const char* cfile, const c
 
     int64_t catalogId;
     {
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
+        Lock lock(mutex_);
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
         GenerateCurrency currency;
         code = currency.init(*content);
         TE_CHECKRETURN_CODE(code);
-        code = this->index->addCatalogEntry(&catalogId, file, currency);
+        code = this->index_->addCatalogEntry(&catalogId, file, currency);
         TE_CHECKRETURN_CODE(code);
 
         pendingMgr.setCatalogId(catalogId);
 
-        StatementPtr stmt(NULL, NULL);
+        StatementPtr stmt(nullptr, nullptr);
 
-        code = this->indexDb->compileStatement(
+        code = this->index_db_->compileStatement(
             stmt, "INSERT INTO catalog_ex (file_id, provider, type, fdb_type, modified) VALUES (?, ?, ?, NULL, 0)");
         TE_CHECKRETURN_CODE(code);
         code = stmt->bindLong(1, catalogId);
@@ -1718,9 +1819,16 @@ TAKErr PersistentDataSourceFeatureDataStore2::addImpl(const char* cfile, const c
         TE_CHECKRETURN_CODE(code);
 
 		// rebuild the template if it does not exist before we proceed to generating the FDBs
-		if (!pathExists(this->fdbTemplate)) {
+        if (this->fdb_template_version_ == -1 && pathExists(this->fdb_template_)) {
+            FeatureSetDatabase::Builder t;
+            code = t.create(this->fdb_template_, &this->fdb_template_version_);
+            TE_CHECKRETURN_CODE(code);
+            code = t.close();
+            TE_CHECKRETURN_CODE(code);
+        }
+		if (!pathExists(this->fdb_template_)) {
 			FeatureSetDatabase::Builder t;
-			code = t.create(this->fdbTemplate);
+			code = t.create(this->fdb_template_);
 			TE_CHECKRETURN_CODE(code);
 		}
     }
@@ -1738,8 +1846,8 @@ TAKErr PersistentDataSourceFeatureDataStore2::addImpl(const char* cfile, const c
     TE_CHECKRETURN_CODE(code);
 
     {
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
+        Lock lock(mutex_);
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
 
         // bulk insert of featuresets as atomic operation
@@ -1773,13 +1881,13 @@ TAKErr PersistentDataSourceFeatureDataStore2::addImpl(const char* cfile, const c
                 (*db)->database = fdb;
 
                 // add FDB
-                this->fsidToFeatureDb[(*db)->fsid] = *db;
+                this->fsid_to_feature_db_[(*db)->fsid] = *db;
                                 
-                code = this->index->setFeatureSetCatalogId((*db)->fsid, catalogId);
+                code = this->index_->setFeatureSetCatalogId((*db)->fsid, catalogId);
                 TE_CHECKBREAK_CODE(code);
             }
 
-            if (dbs.size() > 1) this->sharedDbs.insert(fdb);
+            if (dbs.size() > 1) this->shared_dbs_.insert(fdb);
         }
         this->setContentChanged();
         this->dispatchDataStoreContentChangedNoSync(false);
@@ -1792,11 +1900,12 @@ TAKErr PersistentDataSourceFeatureDataStore2::addImpl(const char* cfile, const c
 
 TAKErr PersistentDataSourceFeatureDataStore2::updateImpl(const char *cfile, const char *hint) NOTHROWS {
     TAKErr code(TE_Ok);
-    AddMgr pendingMgr(*this);
+    AddMgr pendingMgr(*this, true);
 
     // create data source
-    FeatureDataSource2::ContentPtr content(NULL, NULL);
+    FeatureDataSource2::ContentPtr content(nullptr, nullptr);
     code = FeatureDataSourceFactory_parse(content, cfile, hint);
+    TE_CHECKRETURN_CODE(code);
 
     TAK::Engine::Port::String file(cfile);
 #ifdef MSVC
@@ -1809,17 +1918,17 @@ TAKErr PersistentDataSourceFeatureDataStore2::updateImpl(const char *cfile, cons
         file[(int)(extStart - cfile + 4u)] = '\0';
     }
 
+    pendingMgr.markPending(cfile);
     Logger::log(Logger::Debug, TAG ": Updating %s (%s) -> %p", atakmap::util::getFileName(file).c_str(), hint, content.get());
-    TE_CHECKRETURN_CODE(code);
 
     int64_t catalogId;
     {
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
+        Lock lock(mutex_);
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
 
         QueryPtr query(nullptr, nullptr);
-        code = this->indexDb->compileQuery(query, "SELECT id FROM catalog WHERE path = ?");
+        code = this->index_db_->compileQuery(query, "SELECT id FROM catalog WHERE path = ?");
         TE_CHECKRETURN_CODE(code);
 
         code = query->bindString(1, cfile);
@@ -1834,19 +1943,21 @@ TAKErr PersistentDataSourceFeatureDataStore2::updateImpl(const char *cfile, cons
         GenerateCurrency currency;
         code = currency.init(*content);
         TE_CHECKRETURN_CODE(code);
-        code = this->index->updateCatalogEntry(catalogId, file, currency);
+        code = this->index_->updateCatalogEntry(catalogId, file, currency);
         TE_CHECKRETURN_CODE(code);
+
+        pendingMgr.setCatalogId(catalogId);
     }
 
     std::list<int64_t> staleFsids;
     std::map<std::string, std::tuple<int64_t,int64_t>> replacementFsidMap;
     {
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
+        Lock lock(mutex_);
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
 
         QueryPtr query(nullptr, nullptr);
-        code = this->indexDb->compileQuery(query, "SELECT id, name FROM featuresets WHERE file_id = ?");
+        code = this->index_db_->compileQuery(query, "SELECT id, name FROM featuresets WHERE file_id = ?");
         TE_CHECKRETURN_CODE(code);
 
         code = query->bindLong(1, catalogId);
@@ -1864,15 +1975,15 @@ TAKErr PersistentDataSourceFeatureDataStore2::updateImpl(const char *cfile, cons
 
             int64_t updateVersion(0);
             std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator staleDbIter;
-            staleDbIter = this->fsidToFeatureDb.find(staleFsid);
-            if (staleDbIter != this->fsidToFeatureDb.end()) {
+            staleDbIter = this->fsid_to_feature_db_.find(staleFsid);
+            if (staleDbIter != this->fsid_to_feature_db_.end()) {
                 FDB *fdb = dynamic_cast<FDB *>(staleDbIter->second->database->value);
                 if (fdb != nullptr) {
                     fdb->getMaxFeatureVersion(staleFsid, &updateVersion);
                 }
 
-                StatementPtr stmt(NULL, NULL);
-                code = this->indexDb->compileStatement(stmt, "DELETE FROM featuresets WHERE id = ?");
+                StatementPtr stmt(nullptr, nullptr);
+                code = this->index_db_->compileStatement(stmt, "DELETE FROM featuresets WHERE id = ?");
                 TE_CHECKBREAK_CODE(code);
 
                 code = stmt->bindLong(1, staleFsid);
@@ -1898,8 +2009,8 @@ TAKErr PersistentDataSourceFeatureDataStore2::updateImpl(const char *cfile, cons
     TE_CHECKRETURN_CODE(code);
 
     {
-        LockPtr lock(NULL, NULL);
-        code = Lock_create(lock, mutex);
+        Lock lock(mutex_);
+        code = lock.status;
         TE_CHECKRETURN_CODE(code);
 
         // bulk insert of featuresets as atomic operation
@@ -1932,31 +2043,31 @@ TAKErr PersistentDataSourceFeatureDataStore2::updateImpl(const char *cfile, cons
             for (db = dbIter->second.begin(); db != dbIter->second.end(); db++) {
                 (*db)->database = fdb;
 
-                std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator staleDbIter = this->fsidToFeatureDb.find((*db)->fsid);
-                if (staleDbIter != this->fsidToFeatureDb.end()) {
+                auto staleDbIter = this->fsid_to_feature_db_.find((*db)->fsid);
+                if (staleDbIter != this->fsid_to_feature_db_.end()) {
                     staleDbIter->second->database->markForDelete();
-                    this->sharedDbs.erase(staleDbIter->second->database);
-                    this->fsidToFeatureDb.erase((*db)->fsid);
+                    this->shared_dbs_.erase(staleDbIter->second->database);
+                    this->fsid_to_feature_db_.erase((*db)->fsid);
                     staleFsids.remove((*db)->fsid);
                 }
 
                 // add FDB
-                this->fsidToFeatureDb[(*db)->fsid] = *db;
+                this->fsid_to_feature_db_[(*db)->fsid] = *db;
 
-                code = this->index->setFeatureSetCatalogId((*db)->fsid, catalogId);
+                code = this->index_->setFeatureSetCatalogId((*db)->fsid, catalogId);
                 TE_CHECKBREAK_CODE(code);
             }
 
-            if (dbs.size() > 1) this->sharedDbs.insert(fdb);
+            if (dbs.size() > 1) this->shared_dbs_.insert(fdb);
         }
 
         // Cleanup any other stale featuresets that weren't replaced
         for (int64_t staleFsid : staleFsids) {
-            std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator staleDbIter = this->fsidToFeatureDb.find(staleFsid);
-            if (staleDbIter != this->fsidToFeatureDb.end()) {
+            auto staleDbIter = this->fsid_to_feature_db_.find(staleFsid);
+            if (staleDbIter != this->fsid_to_feature_db_.end()) {
                 staleDbIter->second->database->markForDelete();
-                this->sharedDbs.erase(staleDbIter->second->database);
-                this->fsidToFeatureDb.erase(staleFsid);
+                this->shared_dbs_.erase(staleDbIter->second->database);
+                this->fsid_to_feature_db_.erase(staleFsid);
                 staleFsids.remove(staleFsid);
             }
         }
@@ -1988,7 +2099,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::generateFDB(std::map<std::string, 
         fdbFile,
         getFileName(file).c_str(),
         ".sqlite",
-        this->fdbsDir);
+        this->fdbs_dir_);
     TE_CHECKRETURN_CODE(code);
 
     pendingMgr.addFDB(fdbFile);
@@ -1999,7 +2110,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::generateFDB(std::map<std::string, 
     if (pathExists(fdbFile))
         deletePath(fdbFile);
 
-    code = IO_copy(fdbFile, this->fdbTemplate);
+    code = IO_copy(fdbFile, this->fdb_template_);
     if (code != TE_IO) {
         TE_CHECKRETURN_CODE(code);
     }
@@ -2016,7 +2127,6 @@ TAKErr PersistentDataSourceFeatureDataStore2::generateFDB(std::map<std::string, 
 
         int featureCount;
         int64_t fsid;
-        int64_t version;
         do {
             code = content.moveToNextFeatureSet();
             TE_CHECKBREAK_CODE(code);
@@ -2027,10 +2137,10 @@ TAKErr PersistentDataSourceFeatureDataStore2::generateFDB(std::map<std::string, 
 
             bool replace(false);
             {
-                LockPtr lock(NULL, NULL);
-                code = Lock_create(lock, mutex);
+                Lock lock(mutex_);
+                code = lock.status;
                 TE_CHECKBREAK_CODE(code);
-                if (!this->index)
+                if (!this->index_)
                     break;
                 code = content.getFeatureSetName(fsName);
                 TE_CHECKBREAK_CODE(code);
@@ -2040,16 +2150,15 @@ TAKErr PersistentDataSourceFeatureDataStore2::generateFDB(std::map<std::string, 
                     auto replacementIter = replacementFsids->find(nameKey);
                     if (replacementIter != replacementFsids->end()) {
                         fsid = std::get<0>(replacementIter->second);
-                        version = std::get<1>(replacementIter->second) + 1;
                         replace = true;
                         replacementFsids->erase(nameKey);
                     }
                 }
 
                 if (replace) {
-                    code = this->index->reserveFeatureSet(fsid, fsName, fdbFile, content.getProvider(), content.getType());
+                    code = this->index_->reserveFeatureSet(fsid, fsName, fdbFile, content.getProvider(), content.getType());
                 } else {
-                    code = this->index->reserveFeatureSet(&fsid, fsName, fdbFile, content.getProvider(), content.getType());
+                    code = this->index_->reserveFeatureSet(&fsid, fsName, fdbFile, content.getProvider(), content.getType());
                 }
                 TE_CHECKBREAK_CODE(code);
             }
@@ -2084,9 +2193,6 @@ TAKErr PersistentDataSourceFeatureDataStore2::generateFDB(std::map<std::string, 
 				if (!visible) {
 					builder->setFeatureVisible(fid, visible);
 				}
-                if (replace) {
-                    builder->setFeatureVersion(fid, version);
-                }
 
                 featureCount++;
 
@@ -2095,7 +2201,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::generateFDB(std::map<std::string, 
                 if ((featureCount % 250) == 0) {
                     // this isn't thread-safe, however, index is only likely to
                     // go in one direction
-                    if (!this->index)
+                    if (!this->index_)
                         break;
                 }
             } while (true);
@@ -2145,12 +2251,12 @@ TAKErr PersistentDataSourceFeatureDataStore2::generateFDB(std::map<std::string, 
                 TE_CHECKBREAK_CODE(code);
 
                 {
-                    LockPtr lock(NULL, NULL);
-                    code = Lock_create(lock, mutex);
+                    Lock lock(mutex_);
+                    code = lock.status;
                     TE_CHECKBREAK_CODE(code);
-                    StatementPtr stmt(NULL, NULL);
+                    StatementPtr stmt(nullptr, nullptr);
 
-                    code = this->indexDb->compileStatement(stmt, "DELETE FROM featuresets WHERE id = ?");
+                    code = this->index_db_->compileStatement(stmt, "DELETE FROM featuresets WHERE id = ?");
                     TE_CHECKBREAK_CODE(code);
 
                     code = stmt->bindLong(1, fsid);
@@ -2205,8 +2311,8 @@ TAKErr PersistentDataSourceFeatureDataStore2::markFileDirty(const int64_t fsid) 
 {
     TAKErr code(TE_Ok);
 
-    StatementPtr stmt(NULL, NULL);
-    code = indexDb->compileStatement(stmt, "UPDATE catalog_ex SET modified = 1 WHERE file_id IN (SELECT file_id FROM featuresets WHERE id = ? LIMIT 1)");
+    StatementPtr stmt(nullptr, nullptr);
+    code = index_db_->compileStatement(stmt, "UPDATE catalog_ex SET modified = 1 WHERE file_id IN (SELECT file_id FROM featuresets WHERE id = ? LIMIT 1)");
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindLong(1, fsid);
     TE_CHECKRETURN_CODE(code);
@@ -2219,10 +2325,10 @@ TAKErr PersistentDataSourceFeatureDataStore2::markFileDirty(const int64_t fsid) 
 TAKErr PersistentDataSourceFeatureDataStore2::remove(const char *file) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    code = this->index->deleteCatalogPath(file);
+    code = this->index_->deleteCatalogPath(file);
     TE_CHECKRETURN_CODE(code);
     this->setContentChanged();
     this->dispatchDataStoreContentChangedNoSync(false);
@@ -2260,8 +2366,8 @@ TAKErr PersistentDataSourceFeatureDataStore2::update(const int64_t fsid) NOTHROW
 TAKErr PersistentDataSourceFeatureDataStore2::queryFiles(FileCursorPtr &result) NOTHROWS
 {
     TAKErr code;
-    CatalogDatabase2::CatalogCursorPtr impl(NULL, NULL);
-    code = this->index->queryCatalog(impl);
+    CatalogDatabase2::CatalogCursorPtr impl(nullptr, nullptr);
+    code = this->index_->queryCatalog(impl);
     TE_CHECKRETURN_CODE(code);
 
     result = FileCursorPtr(new FileCursorImpl(std::move(impl)), Memory_deleter_const<FileCursor, FileCursorImpl>);
@@ -2271,12 +2377,12 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFiles(FileCursorPtr &result) 
 TAKErr PersistentDataSourceFeatureDataStore2::isModified(bool *value, const char *file) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    QueryPtr query(NULL, NULL);
-    code = this->indexDb->compileQuery(query, "SELECT 1 FROM catalog_ex LEFT JOIN catalog ON catalog.id = catalog_ex.file_id WHERE catalog.path = ? AND modified != 0 LIMIT 1");
+    QueryPtr query(nullptr, nullptr);
+    code = this->index_db_->compileQuery(query, "SELECT 1 FROM catalog_ex LEFT JOIN catalog ON catalog.id = catalog_ex.file_id WHERE catalog.path = ? AND modified != 0 LIMIT 1");
     TE_CHECKRETURN_CODE(code);
 
     code = query->bindString(1, file);
@@ -2296,8 +2402,8 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFiles(FileCursorPtr &cursor, 
         return queryFiles(cursor);
     } else {
         TAKErr code(TE_Ok);
-        QueryPtr query(NULL, NULL);
-        code = indexDb->compileQuery(query, "SELECT catalog.path FROM catalog LEFT JOIN catalog_ex ON catalog_ex.file_id = catalog.id WHERE catalog_ex.modified != 0");
+        QueryPtr query(nullptr, nullptr);
+        code = index_db_->compileQuery(query, "SELECT catalog.path FROM catalog LEFT JOIN catalog_ex ON catalog_ex.file_id = catalog.id WHERE catalog_ex.modified != 0");
         TE_CHECKRETURN_CODE(code);
         cursor = FileCursorPtr(new ModifiedFileCursorImpl(std::move(query)), Memory_deleter_const<FileCursor, ModifiedFileCursorImpl>);
         return code;
@@ -2306,12 +2412,12 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFiles(FileCursorPtr &cursor, 
 TAKErr PersistentDataSourceFeatureDataStore2::queryFeatures(FeatureCursorPtr &result, const char *file) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    QueryPtr query(NULL, NULL);
-    code = this->indexDb->compileQuery(query, "SELECT featuresets.id FROM featuresets LEFT JOIN catalog ON catalog.id = featuresets.file_id WHERE catalog.path = ?");
+    QueryPtr query(nullptr, nullptr);
+    code = this->index_db_->compileQuery(query, "SELECT featuresets.id FROM featuresets LEFT JOIN catalog ON catalog.id = featuresets.file_id WHERE catalog.path = ?");
     TE_CHECKRETURN_CODE(code);
 
     code = query->bindString(1, file);
@@ -2340,12 +2446,12 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatures(FeatureCursorPtr &re
 TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSets(FeatureSetCursorPtr &result, const char *file) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
-    QueryPtr query(NULL, NULL);
-    code = this->indexDb->compileQuery(query, "SELECT featuresets.id FROM featuresets LEFT JOIN catalog ON catalog.id = featuresets.file_id WHERE catalog.path = ?");
+    QueryPtr query(nullptr, nullptr);
+    code = this->index_db_->compileQuery(query, "SELECT featuresets.id FROM featuresets LEFT JOIN catalog ON catalog.id = featuresets.file_id WHERE catalog.path = ?");
     TE_CHECKRETURN_CODE(code);
 
     code = query->bindString(1, file);
@@ -2374,13 +2480,13 @@ TAKErr PersistentDataSourceFeatureDataStore2::queryFeatureSets(FeatureSetCursorP
 TAKErr PersistentDataSourceFeatureDataStore2::insertFeatureSet(FeatureSetPtr_const *featureSet, const char *file, const char *name, const double minResolution, const double maxResolution) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
 
     // get catalogid
-    QueryPtr query(NULL, NULL);
-    code = this->indexDb->compileQuery(query, "SELECT catalog_ex.file_id, catalog_ex.provider, catalog_ex.type FROM catalog LEFT JOIN catalog_ex ON catalog.id = catalog_ex.file_id WHERE path = ? LIMIT 1");
+    QueryPtr query(nullptr, nullptr);
+    code = this->index_db_->compileQuery(query, "SELECT catalog_ex.file_id, catalog_ex.provider, catalog_ex.type FROM catalog LEFT JOIN catalog_ex ON catalog.id = catalog_ex.file_id WHERE path = ? LIMIT 1");
     TE_CHECKRETURN_CODE(code);
     code = query->bindString(1, file);
     TE_CHECKRETURN_CODE(code);
@@ -2407,7 +2513,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::insertFeatureSet(FeatureSetPtr_con
 
     // check can add featureset to FDB
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
-    for (entry = this->fsidToFeatureDb.begin(); entry != this->fsidToFeatureDb.end(); entry++) {
+    for (entry = this->fsid_to_feature_db_.begin(); entry != this->fsid_to_feature_db_.end(); entry++) {
         if (entry->second->catalogId != catalogid)
             continue;
         int fsCount;
@@ -2419,14 +2525,14 @@ TAKErr PersistentDataSourceFeatureDataStore2::insertFeatureSet(FeatureSetPtr_con
     std::shared_ptr<FeatureDb> fdb(new FeatureDb());
 
     // create new FDB if necessary
-    if (entry == this->fsidToFeatureDb.end()) {
+    if (entry == this->fsid_to_feature_db_.end()) {
         TAK::Engine::Port::String fdbFile;
 
         code = IO_createTempFile(
             fdbFile,
             getFileName(file).c_str(),
             ".sqlite",
-            this->fdbsDir);
+            this->fdbs_dir_);
         TE_CHECKRETURN_CODE(code);
 
         int visibilityFlags;
@@ -2461,7 +2567,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::insertFeatureSet(FeatureSetPtr_con
         ~InsertGuard()
         {
             if (revert) {
-                StatementPtr s(NULL, NULL);
+                StatementPtr s(nullptr, nullptr);
                 if (db.compileStatement(s, "DELETE FROM featuresets WHERE id = ?") != TE_Ok)
                     return;
                 if (s->bindLong(1, fsid) != TE_Ok)
@@ -2481,8 +2587,8 @@ TAKErr PersistentDataSourceFeatureDataStore2::insertFeatureSet(FeatureSetPtr_con
     };
 
     // update the index
-    StatementPtr stmt(NULL, NULL);
-    code = this->indexDb->compileStatement(stmt, "INSERT INTO featuresets (name, file_id, fdb_path, provider, type) VALUES (?, ?, ?, ?, ?)");
+    StatementPtr stmt(nullptr, nullptr);
+    code = this->index_db_->compileStatement(stmt, "INSERT INTO featuresets (name, file_id, fdb_path, provider, type) VALUES (?, ?, ?, ?, ?)");
     TE_CHECKRETURN_CODE(code);
 
     fdb->catalogId = catalogid;
@@ -2507,17 +2613,17 @@ TAKErr PersistentDataSourceFeatureDataStore2::insertFeatureSet(FeatureSetPtr_con
     code = stmt->execute();
     TE_CHECKRETURN_CODE(code);
 
-    code = Databases_lastInsertRowID(&fdb->fsid, *indexDb);
+    code = Databases_lastInsertRowID(&fdb->fsid, *index_db_);
     TE_CHECKRETURN_CODE(code);
 
-    InsertGuard guard(fdb->fsid, *indexDb);
+    InsertGuard guard(fdb->fsid, *index_db_);
 
     code = dynamic_cast<FeatureSetDatabase *>(fdb->database->value)->insertFeatureSet(fdb->fsid, provider, type, name, minResolution, maxResolution);
     TE_CHECKRETURN_CODE(code);
 
     guard.successful();
 
-    this->fsidToFeatureDb[fdb->fsid] = fdb;
+    this->fsid_to_feature_db_[fdb->fsid] = fdb;
 
 
 
@@ -2533,14 +2639,14 @@ TAKErr PersistentDataSourceFeatureDataStore2::insertFeatureSet(FeatureSetPtr_con
 TAKErr PersistentDataSourceFeatureDataStore2::isFeatureVisible(bool *value, const int64_t fid) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex_);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
     const int64_t fsid = ((fid >> 32LL) & 0xFFFFFFFFLL);
 
     std::map<int64_t, std::shared_ptr<FeatureDb>>::iterator entry;
-    entry = this->fsidToFeatureDb.find(fsid);
-    if (entry == this->fsidToFeatureDb.end()) {
+    entry = this->fsid_to_feature_db_.find(fsid);
+    if (entry == this->fsid_to_feature_db_.end()) {
         return TE_InvalidArg;
     }
 
@@ -2570,23 +2676,23 @@ PersistentDataSourceFeatureDataStore2::Index::Index(PersistentDataSourceFeatureD
     owner(owner_)
 {}
 
-TAKErr PersistentDataSourceFeatureDataStore2::Index::open(Database2 *database) NOTHROWS
+TAKErr PersistentDataSourceFeatureDataStore2::Index::open(Database2 *index_database) NOTHROWS
 {
     TAKErr code(TE_Ok);
 #ifdef MSVC
     // XXX - dataset ingestion is at least an order of magnitude slower due to
     //       the 'insertFeatureSet' call. Synchronous mode on Windows seems to
     //       perform very, very poorly.
-    code = database->execute("PRAGMA synchronous = OFF", NULL, 0);
+    code = index_database->execute("PRAGMA synchronous = OFF", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 #endif
-    DatabasePtr db(database, Memory_leaker_const<Database2>);
+    DatabasePtr db(index_database, Memory_leaker_const<Database2>);
     code = this->openImpl(std::move(db));
     TE_CHECKRETURN_CODE(code);
 
 #if INDEX_SCHEMA_VERSION == 8
     // for index schema 8, add a modified column for the featuresets if necessary
-    QueryPtr query(NULL, NULL);
+    QueryPtr query(nullptr, nullptr);
     code = this->database->compileQuery(query, "SELECT value FROM catalog_metadata WHERE key = ? LIMIT 1");
     TE_CHECKRETURN_CODE(code);
     code = query->bindString(1, "subschema_version");
@@ -2595,7 +2701,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::Index::open(Database2 *database) N
     if (code == TE_Done) {
         code = TE_Ok;
 
-        StatementPtr stmt(NULL, NULL);
+        StatementPtr stmt(nullptr, nullptr);
 
         // create the extended catalog table
         stmt.reset();
@@ -2632,10 +2738,10 @@ TAKErr PersistentDataSourceFeatureDataStore2::Index::open(Database2 *database) N
 TAKErr PersistentDataSourceFeatureDataStore2::Index::invalidateCatalogEntry(const int64_t catalogId) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
     std::ostringstream sql;
     sql << "UPDATE " << TABLE_CATALOG << " SET " <<
@@ -2655,10 +2761,10 @@ TAKErr PersistentDataSourceFeatureDataStore2::Index::invalidateCatalogEntry(cons
 TAKErr PersistentDataSourceFeatureDataStore2::Index::finalizeCatalogEntry(const int64_t catalogId) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    LockPtr lock(NULL, NULL);
-    code = Lock_create(lock, mutex);
+    Lock lock(mutex);
+    code = lock.status;
     TE_CHECKRETURN_CODE(code);
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
     std::ostringstream sql;
     sql << "UPDATE " << TABLE_CATALOG << " SET " <<
@@ -2679,7 +2785,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::Index::query(CatalogDatabase2::Cat
 {
     TAKErr code;
 
-    QueryPtr result(NULL, NULL);
+    QueryPtr result(nullptr, nullptr);
 
     std::ostringstream sql;
     sql << "SELECT * FROM "
@@ -2700,7 +2806,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::Index::query(CatalogDatabase2::Cat
 TAKErr PersistentDataSourceFeatureDataStore2::Index::insertFeatureSet(int64_t *fsid, const int64_t catalogId, const char *name, const char *fdb, const char *provider, const char *type) NOTHROWS
 {
     TAKErr code;
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
     code = this->database->compileStatement(stmt,
         "INSERT INTO featuresets (file_id, name, fdb_path, provider, type) VALUES (?, ?, ?, ?, ?)");
@@ -2729,7 +2835,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::Index::insertFeatureSet(int64_t *f
 TAKErr PersistentDataSourceFeatureDataStore2::Index::reserveFeatureSet(int64_t *fsid, const char *name, const char *fdb, const char *provider, const char *type) NOTHROWS
 {
     TAKErr code;
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
     code = this->database->compileStatement(stmt,
         "INSERT INTO featuresets (name, fdb_path, provider, type) VALUES (?, ?, ?, ?)");
@@ -2756,7 +2862,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::Index::reserveFeatureSet(int64_t *
 TAKErr PersistentDataSourceFeatureDataStore2::Index::reserveFeatureSet(const int64_t fsid, const char *name, const char *fdb,
                                                                        const char *provider, const char *type) NOTHROWS {
     TAKErr code;
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
 
     code = this->database->compileStatement(stmt, "INSERT INTO featuresets (id, name, fdb_path, provider, type) VALUES (?, ?, ?, ?, ?)");
     TE_CHECKRETURN_CODE(code);
@@ -2784,7 +2890,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::Index::reserveFeatureSet(const int
 TAKErr PersistentDataSourceFeatureDataStore2::Index::setFeatureSetCatalogId(const int64_t fsid, const int64_t catalogId) NOTHROWS
 {
     TAKErr code;
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
     code = this->database->compileStatement(stmt, "UPDATE featuresets SET file_id = ? WHERE id = ?");
 
     TE_CHECKRETURN_CODE(code);
@@ -2854,11 +2960,11 @@ TAKErr PersistentDataSourceFeatureDataStore2::Index::setDatabaseVersion() NOTHRO
 TAKErr PersistentDataSourceFeatureDataStore2::Index::dropTables() NOTHROWS
 {
     TAKErr code;
-    code = this->database->execute("DROP TABLE IF EXISTS featuresets", NULL, 0);
+    code = this->database->execute("DROP TABLE IF EXISTS featuresets", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
-    if (pathExists(owner.fdbsDir))
-        deletePath(owner.fdbsDir);
-    code = this->database->execute("DROP TABLE IF EXISTS catalog_ex", NULL, 0);
+    if (pathExists(owner.fdbs_dir_))
+        deletePath(owner.fdbs_dir_);
+    code = this->database->execute("DROP TABLE IF EXISTS catalog_ex", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
     return CatalogDatabase2::dropTables();
 }
@@ -2879,7 +2985,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::Index::buildTables() NOTHROWS
             "fdb_path TEXT, "
             "provider TEXT, "
             "type TEXT, "
-            "fdb_type TEXT)", NULL, 0);
+            "fdb_type TEXT)", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
     // create the extended catalog table
@@ -2889,10 +2995,10 @@ TAKErr PersistentDataSourceFeatureDataStore2::Index::buildTables() NOTHROWS
             "provider TEXT, "
             "type TEXT, "
             "fdb_type TEXT, "
-            "modified INTEGER)", NULL, 0);
+            "modified INTEGER)", nullptr, 0);
     TE_CHECKRETURN_CODE(code);
 
-    StatementPtr stmt(NULL, NULL);
+    StatementPtr stmt(nullptr, nullptr);
     code = this->database->compileStatement(stmt, "INSERT INTO catalog_metadata (key, value) VALUES(?, ?)");
     TE_CHECKRETURN_CODE(code);
     code = stmt->bindString(1, "subschema_version");
@@ -2904,7 +3010,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::Index::buildTables() NOTHROWS
 
     // create the template file to save some CPU on spatial metadata and
     // table construction
-    const char *templateFile = owner.fdbTemplate;
+    const char *templateFile = owner.fdb_template_;
 
     // the template file does not contain any external data so there is
     // no need to use FileSystems.deleteFile.
@@ -2925,7 +3031,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::Index::onCatalogEntryRemoved(const
 {
     TAKErr code(TE_Ok);
     if (catalogId > 0LL) {
-        QueryPtr query(NULL, NULL);
+        QueryPtr query(nullptr, nullptr);
 
         code = this->database->compileQuery(query, "SELECT id, fdb_path FROM featuresets WHERE file_id = ?");
         TE_CHECKRETURN_CODE(code);
@@ -2942,8 +3048,8 @@ TAKErr PersistentDataSourceFeatureDataStore2::Index::onCatalogEntryRemoved(const
             code = query->getLong(&fsid, 0);
             TE_CHECKBREAK_CODE(code);
 
-            db = owner.fsidToFeatureDb.find(fsid);
-            if (db == owner.fsidToFeatureDb.end()) {
+            db = owner.fsid_to_feature_db_.find(fsid);
+            if (db == owner.fsid_to_feature_db_.end()) {
                 const char *fdbPath;
                 code = query->getString(&fdbPath, 1);
                 if (code == TE_Ok) {
@@ -2961,15 +3067,15 @@ TAKErr PersistentDataSourceFeatureDataStore2::Index::onCatalogEntryRemoved(const
             db->second->database->markForDelete();
 
             // clear shared
-            owner.sharedDbs.erase(db->second->database);
-            owner.fsidToFeatureDb.erase(fsid);
+            owner.shared_dbs_.erase(db->second->database);
+            owner.fsid_to_feature_db_.erase(fsid);
         } while (true);
         if (code == TE_Done)
             code = TE_Ok;
         TE_CHECKRETURN_CODE(code);
         query.reset();
 
-        StatementPtr stmt(NULL, NULL);
+        StatementPtr stmt(nullptr, nullptr);
 
         stmt.reset();
         code = this->database->compileStatement(stmt, "DELETE FROM featuresets WHERE file_id = ?");
@@ -2991,7 +3097,7 @@ TAKErr PersistentDataSourceFeatureDataStore2::Index::onCatalogEntryRemoved(const
     } else if (catalogId != 0LL) {
         std::set<int64_t> links;
 
-        QueryPtr result(NULL, NULL);
+        QueryPtr result(nullptr, nullptr);
 
         std::ostringstream sql;
         sql << "SELECT file_id FROM featuresets WHERE file_id IN (SELECT file_id FROM featuresets LEFT JOIN "
@@ -3089,6 +3195,16 @@ FeatureDefinition2::GeometryEncoding PersistentDataSourceFeatureDataStore2::Dist
     return this->filter->getGeomCoding();
 }
 
+AltitudeMode PersistentDataSourceFeatureDataStore2::DistributedFeatureCursorImpl::getAltitudeMode() NOTHROWS
+{
+    return this->filter->getAltitudeMode();
+}
+
+double PersistentDataSourceFeatureDataStore2::DistributedFeatureCursorImpl::getExtrude() NOTHROWS
+{
+    return this->filter->getExtrude();
+}
+
 TAKErr PersistentDataSourceFeatureDataStore2::DistributedFeatureCursorImpl::getName(const char **value) NOTHROWS
 {
     return this->filter->getName(value);
@@ -3115,13 +3231,15 @@ TAKErr PersistentDataSourceFeatureDataStore2::DistributedFeatureCursorImpl::get(
         *feature = rowData.get();
         return TE_Ok;
     } else {
-        const Feature2 *f(NULL);
+        const Feature2 *f(nullptr);
         TAKErr code = this->filter->get(&f);
         TE_CHECKRETURN_CODE(code);
         rowData.reset(new Feature2((f->getFeatureSetId() << 32LL) | f->getId(),
                                    f->getFeatureSetId(),
                                    f->getName(),
                                    GeometryPtr_const(f->getGeometry(), Memory_leaker_const<atakmap::feature::Geometry>),
+                                   f->getAltitudeMode(),
+                                   f->getExtrude(),
                                    StylePtr_const(f->getStyle(), Memory_leaker_const<atakmap::feature::Style>),
                                    AttributeSetPtr_const(f->getAttributes(), Memory_leaker_const<atakmap::util::AttributeSet>),
                                    f->getVersion()));
@@ -3133,64 +3251,72 @@ TAKErr PersistentDataSourceFeatureDataStore2::DistributedFeatureCursorImpl::get(
 /**************************************************************************/
 
 PersistentDataSourceFeatureDataStore2::FeatureDb::FeatureDb() :
-    database(NULL),
+    database(nullptr),
     fsid(FeatureDataStore2::FEATURESET_ID_NONE),
-    name(NULL),
-    provider(NULL),
-    type(NULL),
+    name(nullptr),
+    provider(nullptr),
+    type(nullptr),
     minResolution(NAN),
     maxResolution(NAN),
-    version(FeatureDataStore2::FEATURESET_VERSION_NONE)
+    version(FeatureDataStore2::FEATURESET_VERSION_NONE),
+    catalogId(0LL)
 {}
 
-PersistentDataSourceFeatureDataStore2::AddMgr::AddMgr(PersistentDataSourceFeatureDataStore2 &owner_) NOTHROWS :
-    owner(owner_),
-    marked(false),
-    catalogId(0LL),
-    successful(false)
+PersistentDataSourceFeatureDataStore2::AddMgr::AddMgr(PersistentDataSourceFeatureDataStore2 &owner, const bool update /*= false*/) NOTHROWS :
+    owner_(owner),
+    update_(update),
+    marked_(false),
+    catalog_id_(0LL),
+    successful_(false)
 {}
 
 PersistentDataSourceFeatureDataStore2::AddMgr::~AddMgr() NOTHROWS
 {
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, owner.mutex);
-    if (!path.empty()) {
-        if (!successful) {
-            if (owner.index)
-                owner.index->deleteCatalogPath(path.c_str());
+    Lock lock(owner_.mutex_);
+    if (!path_.empty()) {
+        if (!successful_) {
+            if (owner_.index_)
+                owner_.index_->deleteCatalogPath(path_.c_str());
 
             // delete any FDBs that may have been created
             std::list<std::string>::iterator it;
-            for (it = fdbFiles.begin(); it != fdbFiles.end(); it++) {
+            for (it = fdb_files_.begin(); it != fdb_files_.end(); it++) {
                 deletePath((*it).c_str());
             }
-        } else if(owner.index) {
-            owner.index->finalizeCatalogEntry(catalogId);
+        } else if (owner_.index_) {
+            owner_.index_->finalizeCatalogEntry(catalog_id_);
+
+            if (update_) {
+                StatementPtr stmt(nullptr, nullptr);
+                TAKErr code = owner_.index_db_->compileStatement(stmt, "UPDATE catalog_ex SET modified = 0 WHERE file_id = ? ");
+                code = stmt->bindLong(1, catalog_id_);
+                code = stmt->execute();
+            }
         }
 
-        owner.pending.erase(path);
-        owner.cond.broadcast(*lock);
+        owner_.pending_.erase(path_);
+        owner_.cond_.broadcast(lock);
     }
 }
 
 void PersistentDataSourceFeatureDataStore2::AddMgr::markPending(const char *f_) NOTHROWS
 {
-    path = f_;
+    path_ = f_;
 }
 
 void PersistentDataSourceFeatureDataStore2::AddMgr::setCatalogId(const int64_t catalogId_) NOTHROWS
 {
-    catalogId = catalogId_;
+    catalog_id_ = catalogId_;
 }
 
 void PersistentDataSourceFeatureDataStore2::AddMgr::addFDB(const char *fdbFile_) NOTHROWS
 {
-    fdbFiles.push_back(fdbFile_);
+    fdb_files_.push_back(fdbFile_);
 }
 
 void PersistentDataSourceFeatureDataStore2::AddMgr::setSuccessful() NOTHROWS
 {
-    successful = true;
+    successful_ = true;
 }
 
 PersistentDataSourceFeatureDataStore2::FeatureSetCursorImpl::FeatureSetCursorImpl(std::set<std::shared_ptr<const FeatureDb>, LT_featureSetName> featureSets_) NOTHROWS :
@@ -3413,7 +3539,7 @@ TAKErr GenerateCurrency::getAppData(CatalogCurrency2::AppDataPtr &appData, const
     if(extStart)
         file[(int)(extStart-cfile+4u)] = '\0';
 
-    int len = 4 + (2 * this->contentSpis.size()) + 1 + 16;
+    size_t len = 4 + (2 * this->contentSpis.size()) + 1 + 16;
 
     for (spi = this->contentSpis.begin(); spi != this->contentSpis.end(); spi++)
         len += getCodedStringLength((*spi)->getName());
@@ -3424,7 +3550,7 @@ TAKErr GenerateCurrency::getAppData(CatalogCurrency2::AppDataPtr &appData, const
     retval.open(blob.get(), len);
     retval.setSourceEndian(atakmap::util::LITTLE_ENDIAN);
 
-    code = retval.writeInt(this->contentSpis.size());
+    code = retval.writeInt(static_cast<int32_t>(this->contentSpis.size()));
     TE_CHECKRETURN_CODE(code);
 
     for (spi = this->contentSpis.begin(); spi != this->contentSpis.end(); spi++) {
@@ -3502,7 +3628,7 @@ TAKErr ModifiedFileCursorImpl::moveToNext() NOTHROWS
 
 int getCodedStringLength(const char *s) NOTHROWS
 {
-    return 4 + strlen(s);
+    return 4 + static_cast<int>(strlen(s));
 }
 
 TAKErr putString(DataOutput2 &buffer, const char *s) NOTHROWS
@@ -3510,9 +3636,9 @@ TAKErr putString(DataOutput2 &buffer, const char *s) NOTHROWS
     TAKErr code;
 
     const std::size_t len = strlen(s);
-    code = buffer.writeInt(len);
+    code = buffer.writeInt(static_cast<int32_t>(len));
     TE_CHECKRETURN_CODE(code);
-    for (int i = 0; i < len; i++) {
+    for (std::size_t i = 0u; i < len; i++) {
         code = buffer.writeByte(s[i]);
         if (code != TE_Ok)
             break;

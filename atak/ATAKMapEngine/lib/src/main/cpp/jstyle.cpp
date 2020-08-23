@@ -93,13 +93,12 @@ JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_style_Style_getClass
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_style_Style_BasicFillStyle_1create
   (JNIEnv *env, jclass clazz, jint color)
 {
-    try {
-        StylePtr retval(new BasicFillStyle(color), Memory_deleter_const<Style, BasicFillStyle>);
-        return NewPointer(env, std::move(retval));
-    } catch(...) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_Err);
+    TAKErr code(TE_Ok);
+    StylePtr retval(nullptr, nullptr);
+    code = BasicFillStyle_create(retval, color);
+    if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return NULL;
-    }
+    return NewPointer(env, std::move(retval));
 }
 JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_style_Style_BasicFillStyle_1getColor
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -113,13 +112,12 @@ JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_style_Style_BasicFillS
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_style_Style_BasicStrokeStyle_1create
   (JNIEnv *env, jclass clazz, jint color, jfloat strokeWidth)
 {
-    try {
-        StylePtr retval(new BasicStrokeStyle(color, strokeWidth), Memory_deleter_const<Style, BasicStrokeStyle>);
-        return NewPointer(env, std::move(retval));
-    } catch(...) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_Err);
+    TAKErr code(TE_Ok);
+    StylePtr retval(nullptr, nullptr);
+    code = BasicStrokeStyle_create(retval, color, strokeWidth);
+    if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return NULL;
-    }
+    return NewPointer(env, std::move(retval));
 }
 JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_style_Style_BasicStrokeStyle_1getColor
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -138,13 +136,12 @@ JNIEXPORT jfloat JNICALL Java_com_atakmap_map_layer_feature_style_Style_BasicStr
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_style_Style_BasicPointStyle_1create
   (JNIEnv *env, jclass clazz, jint color, jfloat size)
 {
-    try {
-        StylePtr retval(new BasicPointStyle(color, size), Memory_deleter_const<Style, BasicPointStyle>);
-        return NewPointer(env, std::move(retval));
-    } catch(...) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_Err);
+    TAKErr code(TE_Ok);
+    StylePtr retval(nullptr, nullptr);
+    code = BasicPointStyle_create(retval, color, size);
+    if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return NULL;
-    }
+    return NewPointer(env, std::move(retval));
 }
 JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_style_Style_BasicPointStyle_1getColor
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -163,23 +160,20 @@ JNIEXPORT jfloat JNICALL Java_com_atakmap_map_layer_feature_style_Style_BasicPoi
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_style_Style_IconPointStyle_1create
   (JNIEnv *env, jclass clazz, jint color, jstring juri, jfloat width, jfloat height, jint halign, jint valign, jfloat rotation, jboolean isRotationAbsolute)
 {
-    try {
-        JNIStringUTF uri(*env, juri);
-
-        StylePtr retval(new IconPointStyle(color,
-                                             uri,
-                                             width,
-                                             height,
-                                             (IconPointStyle::HorizontalAlignment)halign,
-                                             (IconPointStyle::VerticalAlignment)valign,
-                                             rotation,
-                                             isRotationAbsolute),
-                        Memory_deleter_const<Style, IconPointStyle>);
-        return NewPointer(env, std::move(retval));
-    } catch(...) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_Err);
+    TAKErr code(TE_Ok);
+    JNIStringUTF uri(*env, juri);
+    StylePtr retval(nullptr, nullptr);
+    code = IconPointStyle_create(retval, color,
+                                         uri,
+                                         width,
+                                         height,
+                                         (IconPointStyle::HorizontalAlignment)halign,
+                                         (IconPointStyle::VerticalAlignment)valign,
+                                         rotation,
+                                         isRotationAbsolute);
+    if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return NULL;
-    }
+    return NewPointer(env, std::move(retval));
 }
 JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_style_Style_IconPointStyle_1getColor
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -264,25 +258,26 @@ JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_style_Style_getIconPoi
 // LabelPointStyle
 
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_style_Style_LabelPointStyle_1create
-  (JNIEnv *env, jclass clazz, jstring jtext, jint color, jint bgColor, jint scrollMode, jfloat size, jint halign, jint valign, jfloat rotation, jboolean isRotationAbsolute)
+  (JNIEnv *env, jclass clazz, jstring jtext, jint color, jint bgColor, jint scrollMode, jfloat size, jint halign, jint valign, jfloat rotation, jboolean isRotationAbsolute, jdouble labelMinRenderResolution)
 {
-    try {
-        JNIStringUTF text(*env, jtext);
-        StylePtr retval(new LabelPointStyle(text,
-                                              color,
-                                              bgColor,
-                                              (LabelPointStyle::ScrollMode)scrollMode,
-                                              size,
-                                              (LabelPointStyle::HorizontalAlignment)halign,
-                                              (LabelPointStyle::VerticalAlignment)valign,
-                                              rotation,
-                                              isRotationAbsolute),
-                        Memory_deleter_const<Style, LabelPointStyle>);
-        return NewPointer(env, std::move(retval));
-    } catch(...) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_Err);
+    TAKErr code(TE_Ok);
+    JNIStringUTF text(*env, jtext);
+    StylePtr retval(nullptr, nullptr);
+
+    code =  LabelPointStyle_create(retval, text,
+                                           color,
+                                           bgColor,
+                                           (LabelPointStyle::ScrollMode)scrollMode,
+                                           size,
+                                           (LabelPointStyle::HorizontalAlignment)halign,
+                                           (LabelPointStyle::VerticalAlignment)valign,
+                                           rotation,
+                                           isRotationAbsolute, 0.0, 0.0,
+                                           labelMinRenderResolution);
+
+    if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return NULL;
-    }
+    return NewPointer(env, std::move(retval));
 }
 JNIEXPORT jstring JNICALL Java_com_atakmap_map_layer_feature_style_Style_LabelPointStyle_1getText
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -314,6 +309,11 @@ JNIEXPORT jfloat JNICALL Java_com_atakmap_map_layer_feature_style_Style_LabelPoi
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
     STYLE_IMPL_ACCESSOR_BODY(LabelPointStyle, getTextSize)
+}
+JNIEXPORT jdouble JNICALL Java_com_atakmap_map_layer_feature_style_Style_LabelPointStyle_1getLabelMinRenderResolution
+  (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    STYLE_IMPL_ACCESSOR_BODY(LabelPointStyle, getLabelMinRenderResolution)
 }
 JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_style_Style_LabelPointStyle_1getHorizontalAlignment
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -395,27 +395,22 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_style_Style_Composi
         return NULL;
     }
 
-    try {
-        JNILongArray stylePtrs(*env, jstylePtrs, JNI_ABORT);
+    TAKErr code(TE_Ok);
+    JNILongArray stylePtrs(*env, jstylePtrs, JNI_ABORT);
 
-        // CompositeStyle is going to assume ownership, so we are going to pass
-        // it clones
-        std::vector<Style *> styles;
-        styles.reserve(stylePtrs.length());
+    std::vector<const Style *> styles;
+    styles.reserve(stylePtrs.length());
 
-        for(std::size_t i = 0u; i < stylePtrs.length(); i++) {
-            Style *s = JLONG_TO_INTPTR(Style, stylePtrs[i]);
-            if(s)
-                s = s->clone();
-            styles.push_back(s);
-        }
-
-        StylePtr retval(new CompositeStyle(styles), Memory_deleter_const<Style, CompositeStyle>);
-        return NewPointer(env, std::move(retval));
-    } catch(...) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_Err);
-        return NULL;
+    for(std::size_t i = 0u; i < stylePtrs.length(); i++) {
+        Style *s = JLONG_TO_INTPTR(Style, stylePtrs[i]);
+        styles.push_back(s);
     }
+
+    StylePtr retval(nullptr, nullptr);
+    code = CompositeStyle_create(retval, styles.empty() ? nullptr : &styles.at(0), styles.size());
+    if(ATAKMapEngineJNI_checkOrThrow(env, code))
+        return NULL;
+    return NewPointer(env, std::move(retval));
 }
 JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_style_Style_CompositeStyle_1getNumStyles
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -448,13 +443,12 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_style_Style_Composi
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_style_Style_PatternStrokeStyle_1create
   (JNIEnv *env, jclass clazz, jlong pattern, jint patternLen, jint color, jfloat width)
 {
-    try {
-        StylePtr retval(new PatternStrokeStyle(pattern, patternLen, color, width), Memory_deleter_const<Style, PatternStrokeStyle>);
-        return NewPointer(env, std::move(retval));
-    } catch(...) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_Err);
+    TAKErr code(TE_Ok);
+    StylePtr retval(nullptr, nullptr);
+    code = PatternStrokeStyle_create(retval, pattern, patternLen, color, width);
+    if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return NULL;
-    }
+    return NewPointer(env, std::move(retval));
 }
 JNIEXPORT jlong JNICALL Java_com_atakmap_map_layer_feature_style_Style_PatternStrokeStyle_1getPattern
   (JNIEnv *env, jclass clazz, jlong ptr)

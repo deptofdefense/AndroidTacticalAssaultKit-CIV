@@ -6,8 +6,10 @@ import android.content.Intent;
 import android.os.FileObserver;
 
 import com.atakmap.android.attachment.AttachmentBroadcastReceiver;
+import com.atakmap.android.attachment.AttachmentGalleryProvider;
 import com.atakmap.android.attachment.AttachmentMapOverlay;
 import com.atakmap.android.attachment.export.AttachmentExportMarshal;
+import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.dropdown.DropDownMapComponent;
 import com.atakmap.android.importexport.ExporterManager;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
@@ -40,6 +42,7 @@ public class CoTInfoMapComponent extends DropDownMapComponent {
     private CoTInfoBroadcastReceiver cibr;
     private AttachmentBroadcastReceiver abr;
     private AttachmentMapOverlay _overlay;
+    private AttachmentGalleryProvider _provider;
 
     private MapView mapView;
     private FileObserver fObserver;
@@ -80,6 +83,9 @@ public class CoTInfoMapComponent extends DropDownMapComponent {
         _overlay = new AttachmentMapOverlay(view);
         MapOverlayManager overlayManager = view.getMapOverlayManager();
         overlayManager.addOverlay(_overlay);
+
+        URIContentManager.getInstance().registerProvider(
+                _provider = new AttachmentGalleryProvider(view));
 
         //register Overlay Manager exporter
         ExporterManager.registerExporter(
@@ -190,6 +196,7 @@ public class CoTInfoMapComponent extends DropDownMapComponent {
         if (fObserver != null)
             fObserver.stopWatching();
 
+        URIContentManager.getInstance().unregisterProvider(_provider);
     }
 
     private void addAttachment(MapItem item) {

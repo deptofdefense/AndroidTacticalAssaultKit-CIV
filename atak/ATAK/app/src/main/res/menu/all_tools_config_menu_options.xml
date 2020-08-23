@@ -1,17 +1,18 @@
-<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
         android:id="@+id/allToolsConfigUndo"
-        android:showAsAction="always"
-        android:title="@string/undo"/>
+        android:title="@string/undo"
+        android:showAsAction="ifRoom" />
     <item
         android:id="@+id/allToolsConfigHideAll"
-        android:showAsAction="always"
-        android:title="@string/hide_all"/>
+        android:title="@string/hide_all"
+        android:showAsAction="ifRoom" />
     <item
         android:title="@string/more"
           android:icon="@drawable/ic_action_overflow_orig"
-          android:showAsAction="always">
+        android:showAsAction="ifRoom">
 
 
         <menu>

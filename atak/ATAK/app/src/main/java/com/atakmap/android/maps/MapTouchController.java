@@ -28,14 +28,18 @@ import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.editableShapes.EditablePolyline;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.DeconflictionAdapter.DeconflictionType;
+import com.atakmap.android.menu.MenuCapabilities;
 import com.atakmap.android.routes.Route;
 import com.atakmap.android.toolbars.RangeAndBearingMapItem;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.app.DeveloperOptions;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.AtakMapController;
+import com.atakmap.map.AtakMapView;
+
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import java.util.ArrayList;
@@ -125,6 +129,12 @@ public class MapTouchController implements OnTouchListener,
         ddosl = new DeconflictionOnStateListener();
 
         _tiltEnabled = STATE_TILT_DISABLED;
+
+        if (DeveloperOptions.getIntOption(
+                "disable-3D-mode", 0) == 0)
+            MenuCapabilities.registerSupported("capability.3d");
+
+
     }
 
     public void dispose() {
@@ -211,11 +221,18 @@ public class MapTouchController implements OnTouchListener,
     }
 
     protected void onMapPress(MotionEvent event) {
+        onMapPress(event, _mapView.inverse(event.getX(), event.getY(),
+                MapView.InverseMode.RayCast).get());
+    }
+
+    protected void onMapPress(MotionEvent event, GeoPoint touchPoint) {
         MapEventDispatcher eventDispatcher = _mapView.getMapEventDispatcher();
 
         Point screenTouchPoint = new Point((int) event.getX(),
                 (int) event.getY());
-        _setTouchPoint(screenTouchPoint);
+
+        _mapView.getMapData().putString("touchPoint",
+                touchPoint.toString());
 
         MapEvent.Builder eventBuilder = new MapEvent.Builder(
                 MapEvent.MAP_PRESS);
@@ -223,13 +240,6 @@ public class MapTouchController implements OnTouchListener,
                 .setPoint(screenTouchPoint);
         eventDispatcher.dispatch(eventBuilder.build());
         _mapPressed = true;
-    }
-
-    private void _setTouchPoint(Point point) {
-        GeoPointMetaData touchPoint = _mapView.inverse(point.x, point.y,
-                MapView.InverseMode.RayCast);
-        _mapView.getMapData().putString("touchPoint",
-                touchPoint.get().toString());
     }
 
     protected void onItemDoubleTap(MapItem item, MotionEvent event) {
@@ -485,8 +495,11 @@ public class MapTouchController implements OnTouchListener,
         float x = event.getX();
         float y = event.getY();
 
+        final GeoPoint geo = _mapView.inverse(x, y, MapView.InverseMode.RayCast)
+                .get();
+
         _downHitItem = null;
-        SortedSet<MapItem> hitItems = _fetchOrthoHitItems(x, y);
+        SortedSet<MapItem> hitItems = _fetchOrthoHitItems(x, y, geo);
         hitItems = filterItems(hitItems, false);
         if (hitItems != null && !hitItems.isEmpty())
             _downHitItem = hitItems.first();
@@ -518,10 +531,8 @@ public class MapTouchController implements OnTouchListener,
             }
             onItemPress(_downHitItem, event);
         } else {
-            GeoPointMetaData geoPoint = _mapView.inverse(x, y,
-                    MapView.InverseMode.RayCast);
-            if (geoPoint.get().isValid()) {
-                onMapPress(event);
+            if (geo.isValid()) {
+                onMapPress(event, geo);
             }
         }
         return true;
@@ -542,9 +553,12 @@ public class MapTouchController implements OnTouchListener,
 
             boolean longPress = true;
 
-            MapItem hitItem = _fetchOrthoHit(x, y);
+            final GeoPoint geo = _mapView
+                    .inverse(x, y, MapView.InverseMode.RayCast).get();
+
+            MapItem hitItem = _fetchOrthoHit(x, y, geo);
             SortedSet<MapItem> hitItems = filterItems(
-                    _fetchOrthoHitItems(x, y), true);
+                    _fetchOrthoHitItems(x, y, geo), true);
             if (hitItems != null && hitItems.size() == 1)
                 hitItem = hitItems.first();
             if (hitItems != null && hitItems.size() > 1) {
@@ -1085,16 +1099,17 @@ public class MapTouchController implements OnTouchListener,
         // bad!
     }
 
-    private MapItem _fetchOrthoHit(float x, float y) {
+    private MapItem _fetchOrthoHit(float x, float y, GeoPoint geo) {
         return _mapView.getRootGroup().deepHitTest((int) x, (int) y,
-                _mapView.inverse(x, y, MapView.InverseMode.RayCast).get(),
+                geo,
                 _mapView);
     }
 
     // RC/AML/2015-01-20: Check which tracks were hit and return a sorted set containing them.
-    private SortedSet<MapItem> _fetchOrthoHitItems(float x, float y) {
+    private SortedSet<MapItem> _fetchOrthoHitItems(float x, float y,
+            GeoPoint geo) {
         return _mapView.getRootGroup().deepHitTestItems((int) x, (int) y,
-                _mapView.inverse(x, y, MapView.InverseMode.RayCast).get(),
+                geo,
                 _mapView);
     }
 
@@ -1193,6 +1208,11 @@ public class MapTouchController implements OnTouchListener,
      * STATE_TILT_DISABLED=3 
      */
     public void setTiltEnabledState(int state) {
+
+        if (DeveloperOptions.getIntOption(
+                "disable-3D-mode", 0) == 1)
+            return;
+
         _tiltEnabled = state;
     }
 
@@ -1201,17 +1221,24 @@ public class MapTouchController implements OnTouchListener,
     }
 
     public void setFreeForm3DEnabled(boolean enabled) {
-        _freeForm3DEnabled = enabled;
-        setFreeForm3DPoint(enabled ? _mapView.inverseWithElevation(
+
+        if (DeveloperOptions.getIntOption(
+                "disable-3D-mode", 0) == 1)
+            return;
+
+        double tilt = _mapView.getMapTilt();
+        GeoPointMetaData focus = _mapView.inverseWithElevation(
                 _mapView.getMapController().getFocusX(),
-                _mapView.getMapController().getFocusY()) : null);
+                _mapView.getMapController().getFocusY());
+        GeoPointMetaData ffPoint = _freeFormPoint;
+        if (ffPoint == null)
+            ffPoint = focus;
+        _freeForm3DEnabled = enabled;
+        setFreeForm3DPoint(enabled ? focus : null);
         if (!enabled) {
-            if (getTiltEnabledState() != STATE_TILT_ENABLED) {
-                if (isUserOrientationEnabled())
-                    _mapView.getMapController().tiltTo(0, true);
-                else
-                    _mapView.getMapController().tiltTo(0, 0, true);
-            } else if (!isUserOrientationEnabled())
+            if (getTiltEnabledState() != STATE_TILT_ENABLED)
+                _mapView.getMapController().tiltBy(-tilt, ffPoint.get(), true);
+            if (!isUserOrientationEnabled())
                 _mapView.getMapController().rotateTo(0, true);
         }
     }
@@ -1382,7 +1409,8 @@ public class MapTouchController implements OnTouchListener,
         }
         float x = event.getX();
         float y = event.getY();
-        MapItem hitItem = _fetchOrthoHit(x, y);
+        MapItem hitItem = _fetchOrthoHit(x, y,
+                _mapView.inverse(x, y, MapView.InverseMode.RayCast).get());
         if (hitItem != null) {
             onItemDoubleTap(hitItem, event);
         } else {

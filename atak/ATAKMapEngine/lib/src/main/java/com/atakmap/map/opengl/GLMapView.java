@@ -1,13 +1,12 @@
+
 package com.atakmap.map.opengl;
 
 import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -15,35 +14,38 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import android.graphics.Bitmap;
 import android.graphics.PointF;
 import android.graphics.RectF;
-import android.opengl.GLES30;
+import android.view.Display;
 
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.conversion.EGM96;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 
+import com.atakmap.interop.NativePeerManager;
+import com.atakmap.interop.Pointer;
 import com.atakmap.lang.Unsafe;
+import com.atakmap.lang.ref.Cleaner;
+import com.atakmap.map.AtakMapController;
+import com.atakmap.map.AtakMapView;
 import com.atakmap.map.EngineLibrary;
-import com.atakmap.map.elevation.ElevationSourceManager;
+import com.atakmap.map.Globe;
+import com.atakmap.map.Interop;
+import com.atakmap.map.MapRenderer2;
+import com.atakmap.map.RenderContext;
+import com.atakmap.map.RenderSurface;
 import com.atakmap.map.layer.control.TerrainBlendControl;
+import com.atakmap.map.layer.model.Mesh;
 import com.atakmap.map.layer.model.Model;
+import com.atakmap.map.layer.model.ModelBuilder;
+import com.atakmap.map.layer.model.ModelHitTestControl;
 import com.atakmap.map.layer.model.ModelInfo;
 import com.atakmap.map.layer.model.Models;
-import com.atakmap.map.layer.model.VertexDataLayout;
-import com.atakmap.map.layer.raster.mobileimagery.MobileImageryRasterLayer2;
-import com.atakmap.map.projection.Ellipsoid;
 import com.atakmap.map.projection.Projection;
 import com.atakmap.math.GeometryModel;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
-import com.atakmap.math.Ray;
-import com.atakmap.math.Rectangle;
-import com.atakmap.map.AtakMapController;
-import com.atakmap.map.AtakMapView;
 import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapSceneModel;
@@ -56,11 +58,11 @@ import com.atakmap.map.layer.opengl.GLLayer3;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
 import com.atakmap.map.projection.ProjectionFactory;
 import com.atakmap.math.Matrix;
-import com.atakmap.math.Vector3D;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLTexture;
-import com.atakmap.opengl.GLWireFrame;
-import com.atakmap.util.ConfigOptions;
+import com.atakmap.util.Collections2;
+import com.atakmap.util.Disposable;
+import com.atakmap.util.ReadWriteLock;
 import com.atakmap.util.Visitor;
 
 /**
@@ -72,43 +74,34 @@ import com.atakmap.util.Visitor;
  *
  * @author Developer
  */
-public class GLMapView implements AtakMapView.OnMapMovedListener,
+public class GLMapView implements
+        AtakMapView.OnMapMovedListener,
         AtakMapView.OnMapProjectionChangedListener,
         AtakMapView.OnLayersChangedListener,
         AtakMapView.OnElevationExaggerationFactorChangedListener,
         AtakMapView.OnContinuousScrollEnabledChangedListener,
         AtakMapController.OnFocusPointChangedListener,
-        MapRenderer {
+        MapRenderer,
+        MapRenderer2,
+        Disposable {
 
     static {
         EngineLibrary.initialize();
     }
 
-    private final static String OFFSCREEN_VERT_SHADER_SRC =
-            "uniform mat4 uProjection;\n" +
-                    "uniform mat4 uModelView;\n" +
-                    "uniform mat4 uModelViewOffscreen;\n" +
-                    "uniform float uTexWidth;\n" +
-                    "uniform float uTexHeight;\n" +
-                    "attribute vec3 aVertexCoords;\n" +
-                    "varying vec2 vTexPos;\n" +
-                    "void main() {\n" +
-                    "  vec4 offscreenPos = uModelViewOffscreen * vec4(aVertexCoords.xyz, 1.0);\n" +
-                    "  offscreenPos.x = offscreenPos.x / offscreenPos.w;\n" +
-                    "  offscreenPos.y = offscreenPos.y / offscreenPos.w;\n" +
-                    "  offscreenPos.z = offscreenPos.z / offscreenPos.w;\n" +
-                    "  vec4 texPos = vec4(offscreenPos.x / uTexWidth, offscreenPos.y / uTexHeight, 0.0, 1.0);\n" +
-                    "  vTexPos = texPos.xy;\n" +
-                    "  gl_Position = uProjection * uModelView * vec4(aVertexCoords.xyz, 1.0);\n" +
-                    "}";
+    final static NativePeerManager.Cleaner CLEANER = new NativePeerManager.Cleaner() {
+        @Override
+        protected void run(Pointer pointer, Object opaque) {
+            destruct(pointer);
+        }
+    };
 
-    private final static String OFFSCREEN_FRAG_SHADER_SRC =
-            "precision mediump float;\n" +
-                    "uniform sampler2D uTexture;\n" +
-                    "varying vec2 vTexPos;\n" +
-                    "void main(void) {\n" +
-                    "  gl_FragColor = texture2D(uTexture, vTexPos);\n" +
-                    "}";
+    final static Interop<MapSceneModel> MapSceneModel_interop = Interop.findInterop(MapSceneModel.class);
+    final static Interop<Mesh> Mesh_interop = Interop.findInterop(Mesh.class);
+
+    private final static int INVERSE_MODE_ABSOLUTE = 0;
+    private final static int INVERSE_MODE_TERRAIN = 1;
+    private final static int INVERSE_MODE_MODEL = 2;
 
     public final static int RENDER_PASS_SURFACE = 0x01;
     public final static int RENDER_PASS_SPRITES = 0x02;
@@ -126,6 +119,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
     private static final double _EPSILON_F = 0.01d;
 
     private final static boolean depthEnabled = true;
+    private final Cleaner cleaner;
 
     /** The scale that the map is being drawn at. */
     public double drawMapScale = 2.5352504279048383E-9d;
@@ -164,7 +158,8 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
     public int _top;
     public int _bottom;
 
-    private GLMapSurface _surface;
+    private RenderContext _context;
+    private RenderSurface _surface;
     public int drawSrid = -1;
     private Projection drawProjection;
 
@@ -186,13 +181,8 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
     /** access is only thread-safe on the GL thread */
     private List<GLLayer2> renderables;
 
-    private GLMapRenderable basemap;
-    private GLMapRenderable defaultBasemap;
-
     private Matrix verticalFlipTranslate;
     private int verticalFlipTranslateHeight;
-
-    private long coordTransformPtr;
 
     /**
      * A shared set of mutable objects that may be used by renderables in their <code>draw</code>
@@ -212,21 +202,17 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
     public MapSceneModel scene;
     private MapSceneModel oscene;
     public float[] sceneModelForwardMatrix;
-    private DoubleBuffer bulkForwardMatrix;
-    private DoubleBuffer bulkInverseMatrix;
-
-    // XXX - OsrUtils current expects 3x3 matrix for 2D transforms !!!
-    private DoubleBuffer bulkForwardMatrix3x3;
-    private DoubleBuffer bulkInverseMatrix3x3;
 
     public final static double recommendedGridSampleDistance = 0.125d;
 
     private Map<Layer2, Collection<MapControl>> controls;
     private Collection<MapControl> mapViewControls;
+    // XXX - cache the model hit test controls separately to optimize inverse impl
+    private Set<ModelHitTestControl> modelHitTestControls = Collections2.newIdentityHashSet();
+
 
     public double hardwareTransformResolutionThreshold = 0d;
 
-    //public GLTerrain terrain;
     public TerrainRenderService terrain;
     public static final double elevationOffset = 0d;
     public double elevationScaleFactor;
@@ -235,17 +221,30 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
 
     public boolean continuousScrollEnabled = true;
 
-    private boolean drawTerrain = true;
-    private boolean drawTerrainMesh = true;
-    private boolean refreshTerrain = true;
-    private boolean lockTiles = false;
-    // XXX - when not forced, lines do significant vertical jitter when zoomed in and tilted ???
-    private boolean forceTerrainTileRefresh = true;
-
-    private boolean continuousRenderEnabled = true;
-
     private MapMoved mapMovedUpdater = new MapMoved();
 
+    Pointer pointer;
+    final ReadWriteLock rwlock = new ReadWriteLock();
+    Object owner;
+
+    Pointer ctxptr;
+
+    private int syncVersion;
+    private int syncPass;
+
+    private final RenderSurface.OnSizeChangedListener sizeChangedHandler = new RenderSurface.OnSizeChangedListener() {
+        @Override
+        public void onSizeChanged(RenderSurface surface, int width, int height) {
+            rwlock.acquireRead();
+            try {
+                if(pointer.raw == 0L)
+                    return;
+                setSize(pointer.raw, width, height);
+            } finally {
+                rwlock.releaseRead();
+            }
+        }
+    };
     // XXX - move offscreen into single struct for easier management
 
     // offscreen rendering
@@ -281,7 +280,8 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
 
         double hfactor = Double.NaN;
 
-        Collection<TerrainTile> terrainTiles = new LinkedList<TerrainTile>();
+        Map<Pointer, TerrainTile> terrainTilesFront = new HashMap<>();
+        Map<Pointer, TerrainTile> terrainTilesBack = new HashMap<>();
         int terrainTilesVersion = -1;
 
         final Program program = new Program();
@@ -309,9 +309,6 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
     }
 
     Offscreen offscreen;
-    private final boolean enableMultiPassRendering;
-
-    private boolean debugDrawBounds;
 
     private Set<OnControlsChangedListener> controlsListeners;
 
@@ -325,8 +322,20 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
      * @param top the top pixel bound in GL view space
      */
     public GLMapView(GLMapSurface surface, int left, int bottom, int right, int top) {
-        _surface = surface;
+        this(surface, surface.getMapView().getGlobe(), left, bottom, right, top);
+    }
+    public GLMapView(RenderContext context, Globe globe, int left, int bottom, int right, int top) {
+        _context = context;
+        _surface = _context.getRenderSurface();
 
+        Interop<RenderContext> RenderContext_interop = Interop.findInterop(RenderContext.class);
+        Interop<Globe> Globe_interop = Interop.findInterop(Globe.class);
+
+        ctxptr = RenderContext_interop.wrap(_context);
+        pointer = create(ctxptr.raw, Globe_interop.getPointer(globe), left, bottom, right, top);
+        cleaner = NativePeerManager.register(this, pointer, rwlock, null, CLEANER);
+
+        intern(this);
 
         this.upperLeft = GeoPoint.createMutable();
         this.upperRight = GeoPoint.createMutable();
@@ -345,75 +354,22 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
         this.layerRenderers = new IdentityHashMap<Layer, GLLayer2>();
         this.renderables = new LinkedList<GLLayer2>();
 
-        this.defaultBasemap = new GLBaseMap();
-        this.basemap = this.defaultBasemap;
-
         this.verticalFlipTranslate = null;
         this.verticalFlipTranslateHeight = -1;
 
-        this.coordTransformPtr = 0L;
-
         this.sceneModelForwardMatrix = new float[16];
-
-        _left = left;
-        _right = right;
-        _top = top;
-        _bottom = bottom;
-        focusx = (float) (_right + _left) / 2;
-        focusy = (float) (_top + _bottom) / 2;
-
-        this.scene = new MapSceneModel(_surface.getMapView());
-        this.sceneModelVersion = this.drawVersion-1;
-
-        this.drawSrid = this.scene.mapProjection.getSpatialReferenceID();
-        this.drawProjection = this.scene.mapProjection;
-        this.drawLat = _surface.getMapView().getLatitude();
-        this.drawLng = _surface.getMapView().getLongitude();
-        this.drawRotation = _surface.getMapView().getMapRotation();
-        this.drawTilt = _surface.getMapView().getMapTilt();
-        this.drawMapScale = _surface.getMapView().getMapScale();
-        this.drawMapResolution = _surface.getMapView().getMapResolution();
-        this.elevationScaleFactor = _surface.getMapView().getElevationExaggerationFactor();
-        this.focusx = _surface.getMapView().getMapController().getFocusX();
-        this.focusy = _surface.getMapView().getMapController().getFocusY();
-        this.continuousScrollEnabled = _surface.getMapView().isContinuousScrollEnabled();
-
-        ByteBuffer buf;
-
-        buf = com.atakmap.lang.Unsafe.allocateDirect(16*8);
-        buf.order(ByteOrder.nativeOrder());
-        this.bulkForwardMatrix = buf.asDoubleBuffer();
-
-        buf = com.atakmap.lang.Unsafe.allocateDirect(16*8);
-        buf.order(ByteOrder.nativeOrder());
-        this.bulkInverseMatrix = buf.asDoubleBuffer();
-
-        // XXX -
-        buf = com.atakmap.lang.Unsafe.allocateDirect(9*8);
-        buf.order(ByteOrder.nativeOrder());
-        this.bulkForwardMatrix3x3 = buf.asDoubleBuffer();
-
-        buf = com.atakmap.lang.Unsafe.allocateDirect(9*8);
-        buf.order(ByteOrder.nativeOrder());
-        this.bulkInverseMatrix3x3 = buf.asDoubleBuffer();
-
-        this.coordTransformPtr = OsrUtils.createProjection(this.drawSrid);
 
         this.controls = new IdentityHashMap<Layer2, Collection<MapControl>>();
 
-        this.terrain = new ElMgrTerrainRenderService(this);
-        ElevationSourceManager.addOnSourcesChangedListener((ElMgrTerrainRenderService)this.terrain);
-        //this.terrain = new LegacyElMgrTerrainRenderService();
+        this.terrain = new ElMgrTerrainRenderService(getTerrainRenderService(this.pointer.raw), this);
 
         this.offscreen = new Offscreen();
-
-        this.enableMultiPassRendering = (ConfigOptions.getOption("glmapview.enable-multi-pass-rendering", 1) != 0);
-        this.debugDrawBounds = (ConfigOptions.getOption("glmapview.debug-draw-bounds", 0) != 0);
-        this.drawTerrainMesh = (ConfigOptions.getOption("glmapview.draw-terrain-mesh", 0) != 0);
 
         this.controlsListeners = Collections.newSetFromMap(new IdentityHashMap<OnControlsChangedListener, Boolean>());
 
         this.registerControl(null, terrainBlendControl);
+
+        this.sync();
 
         this.startAnimating(this.drawLat, this.drawLng, this.drawMapScale, this.drawRotation, this.drawTilt, 1d);
     }
@@ -442,7 +398,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
             synchronized (this) {
                 localBlendEnabled = enabled;
             }
-            _surface.queueEvent(new Runnable() {
+            _context.queueEvent(new Runnable() {
                 @Override
                 public void run() {
                     GLMapView.this.terrainBlendEnabled = enabled;
@@ -456,7 +412,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
             synchronized (this) {
                 localBlendFactor = clampedValue;
             }
-            _surface.queueEvent(new Runnable() {
+            _context.queueEvent(new Runnable() {
                 @Override
                 public void run() {
                     GLMapView.this.terrainBlendFactor = clampedValue;
@@ -465,43 +421,30 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
         }
     };
 
+    protected void setTargeting(boolean v) {
+        this.rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                return;
+            set_targeting(this.pointer.raw, v);
+        } finally {
+            this.rwlock.releaseRead();
+        }
+    }
+
     public void setBaseMap(final GLMapRenderable basemap) {
-        _surface.queueEvent(new Runnable() {
-            @Override
-            public void run() {
-                if(GLMapView.this.basemap != null)
-                    GLMapView.this.basemap.release();
-                GLMapView.this.basemap = basemap;
-            }
-        });
+        setBaseMap(this.pointer.raw, LegacyAdapters.adapt(basemap));
     }
 
     /**
      * Clean up the GLMapView
      */
     public void dispose() {
-        if(this.renderables != null){
-            this.renderables.clear();
-            this.renderables = null;
-        }
-
-        if (this.coordTransformPtr != 0L) {
-            OsrUtils.destroyProjection(this.coordTransformPtr);
-            this.coordTransformPtr = 0L;
-        }
-
-        ElevationSourceManager.removeOnSourcesChangedListener((ElMgrTerrainRenderService)this.terrain);
-        this.terrain.dispose();
+        //if(this.cleaner != null)
+        //    this.cleaner.clean();
     }
 
     public void release() {
-        if(this.renderables != null)
-            for(GLLayer2 layer : this.renderables) {
-                // XXX - stop here ???
-                layer.release();
-            }
-        if(this.basemap != null)
-            this.basemap.release();
     }
 
     /**
@@ -515,10 +458,13 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
      */
     public void startAnimating(double lat, double lng, double scale, double rotation,
                                double tilt, double animateFactor) {
+
+        // XXX - invoke native
         this.animator.startAnimating(lat, lng, scale, rotation, tilt, animateFactor);
     }
 
     public void startAnimatingFocus(float x, float y, double animateFactor) {
+        // XXX - invoke native
         this.animator.startAnimatingFocus(x, y, animateFactor);
     }
 
@@ -541,8 +487,236 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
      * @return
      */
     public GLMapSurface getSurface() {
+        return (GLMapSurface) _context;
+    }
+
+    public RenderContext getRenderContext() {
+        return _context;
+    }
+
+    @Override
+    public boolean lookAt(GeoPoint from, GeoPoint at, boolean animate) {
+        return false;
+    }
+
+    @Override
+    public boolean lookAt(GeoPoint at, double resolution, double azimuth, double tilt, boolean animate) {
+        this.rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                return false;
+            return lookAt(this.pointer.raw, at.getLatitude(), at.getLongitude(), resolution, azimuth, tilt, animate);
+        } finally {
+            this.rwlock.releaseRead();
+        }
+    }
+
+    @Override
+    public boolean lookFrom(GeoPoint from, double azimuth, double elevation, boolean animate) {
+        return false;
+    }
+
+    @Override
+    public MapSceneModel getMapSceneModel(boolean instant, DisplayOrigin origin) {
+        this.rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                return null;
+            return MapSceneModel_interop.create(getMapSceneModel(this.pointer.raw, instant, (origin == DisplayOrigin.Lowerleft)));
+        } finally {
+            this.rwlock.releaseRead();
+        }
+    }
+
+    @Override
+    public DisplayMode getDisplayMode() {
+        final int srid;
+        this.rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                return null;
+            srid = getDisplayMode(this.pointer.raw);
+        } finally {
+            this.rwlock.releaseRead();
+        }
+
+        switch(srid) {
+            case 4326 :
+                return DisplayMode.Flat;
+            case 4978 :
+                return DisplayMode.Globe;
+            default :
+                return null;
+        }
+    }
+
+    @Override
+    public void setDisplayMode(DisplayMode mode) {
+        if(mode == null)
+            throw new IllegalArgumentException();
+        int srid;
+        switch(mode) {
+            case Flat:
+                srid = 4326;
+                break;
+            case Globe:
+                srid = 4978;
+                break;
+            default :
+                throw new IllegalArgumentException();
+        }
+        this.rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                return;
+            setDisplayMode(this.pointer.raw, srid);
+        } finally {
+            this.rwlock.releaseRead();
+        }
+    }
+
+    @Override
+    public DisplayOrigin getDisplayOrigin() {
+        return DisplayOrigin.Lowerleft;
+    }
+
+    @Override
+    public void addOnCameraChangedListener(OnCameraChangedListener l) {
+        // XXX -
+    }
+
+    @Override
+    public void removeOnCameraChangedListener(OnCameraChangedListener l) {
+        // XXX -
+    }
+
+    @Override
+    public boolean forward(GeoPoint lla, PointD xyz, DisplayOrigin origin) {
+        // XXX -
+        return false;
+    }
+
+    @Override
+    public InverseResult inverse(PointD xyz, GeoPoint lla, InverseMode mode, int hints, DisplayOrigin origin) {
+        double x = xyz.x;
+        double y = xyz.y;
+        double z = xyz.z;
+        // flip origin if necessary
+        if(origin == DisplayOrigin.UpperLeft)
+            y = _surface.getHeight()-y;
+
+        switch (mode) {
+            case Transform:
+                if(inverse(this.pointer.raw, x, y, z, INVERSE_MODE_ABSOLUTE, lla))
+                    return InverseResult.Transformed;
+                else
+                    return InverseResult.None;
+            case RayCast:
+                if(!MathUtils.hasBits(hints, HINT_RAYCAST_IGNORE_SURFACE_MESH)) {
+                    // perform model hit test
+                    synchronized (this) {
+                        final float px = (float) x;
+                        final float py = (origin == DisplayOrigin.UpperLeft) ? (float) xyz.y : (float) (_surface.getHeight() - xyz.y);
+                        for (ModelHitTestControl ctrl : modelHitTestControls) {
+                            // NOTE: control expects UL xyz
+                            if (ctrl.hitTest(px, py, lla))
+                                return InverseResult.SurfaceMesh;
+                        }
+                    }
+                }
+                if(!MathUtils.hasBits(hints, HINT_RAYCAST_IGNORE_TERRAIN_MESH)) {
+                    // perform terrain mesh hit test
+                    if (inverse(this.pointer.raw, x, y, z, INVERSE_MODE_TERRAIN, lla))
+                        return InverseResult.TerrainMesh;
+                }
+                // intersect with the underlying geometry model
+                if (inverse(this.pointer.raw, x, y, z, INVERSE_MODE_MODEL, lla))
+                    return InverseResult.GeometryModel;
+
+                // no intersection
+                return InverseResult.None;
+            default:
+                return InverseResult.None;
+        }
+    }
+
+    @Override
+    public void setElevationExaggerationFactor(double factor) {
+        rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                return;
+            setElevationExaggerationFactor(this.pointer.raw, factor);
+        } finally {
+            rwlock.releaseRead();
+        }
+    }
+
+    @Override
+    public double getElevationExaggerationFactor() {
+        rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                return 1d;
+            return getElevationExaggerationFactor(this.pointer.raw);
+        } finally {
+            rwlock.releaseRead();
+        }
+    }
+
+    @Override
+    public boolean isAnimating() {
+        this.rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                return false;
+            return isAnimating(this.pointer.raw);
+        } finally {
+            this.rwlock.releaseRead();
+        }
+    }
+
+    @Override
+    public void setFocusPointOffset(float x, float y) {
+        this.rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                return;
+            setFocusPointOffset(this.pointer.raw, x, y);
+        } finally {
+            this.rwlock.releaseRead();
+        }
+    }
+
+    @Override
+    public float getFocusPointOffsetX() {
+        this.rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                return 0f;
+            return getFocusPointOffsetX(this.pointer.raw);
+        } finally {
+            this.rwlock.releaseRead();
+        }
+    }
+
+    @Override
+    public float getFocusPointOffsetY() {
+        this.rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                return 0f;
+            return getFocusPointOffsetY(this.pointer.raw);
+        } finally {
+            this.rwlock.releaseRead();
+        }
+    }
+
+    public RenderSurface getRenderSurface() {
         return _surface;
     }
+
+
 
     /**
      * Retrieves the mesh elevation, including offset and scaling, at the
@@ -556,72 +730,11 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
      * @return  The elevation value at the given latitude/longitude
      */
     public double getTerrainMeshElevation(double latitude, double longitude) {
-        return this.getTerrainMeshElevationImpl(latitude, longitude, true);
+        return getTerrainMeshElevation(this.pointer.raw, latitude, longitude);
     }
 
-    private double getTerrainMeshElevationImpl(double latitude, double longitude, boolean lookupOffMesh) {
-        double elevation = Double.NaN;
-        // XXX - implement IDL cross handling
-        if(!this.crossesIDL) {
-            synchronized(this.offscreen) {
-                final double aboveSurface = 30000;
-
-                // shoot a nadir ray into the terrain tiles and obtain the
-                // height at the intersection
-                for(TerrainTile tile : this.offscreen.terrainTiles) {
-                    // AABB/bounds check
-                    if(!Rectangle.contains(tile.aabb.minX,
-                                           tile.aabb.minY,
-                                           tile.aabb.maxX,
-                                           tile.aabb.maxY,
-                                           longitude, latitude)) {
-                        continue;
-                    }
-
-                    Projection proj = MobileImageryRasterLayer2.getProjection(tile.info.srid);
-                    if(proj == null)
-                        continue;
-
-                    GeoPoint scratchG = GeoPoint.createMutable();
-                    PointD scratchP = new PointD(0d, 0d, 0d);
-
-                    // obtain the ellipsoid surface point
-                    scratchG.set(latitude, longitude);
-                    scratchG.set(GeoPoint.UNKNOWN);
-                    proj.forward(scratchG, scratchP);
-                    final double surfaceX = scratchP.x;
-                    final double surfaceY = scratchP.y;
-                    final double surfaceZ = scratchP.z;
-
-                    // obtain the point at altitude
-                    scratchG.set(aboveSurface);
-                    proj.forward(scratchG, scratchP);
-
-                    // construct the geometry model and compute the intersection
-                    GeometryModel model = Models.createGeometryModel(tile.model, tile.info.localFrame);
-                    PointD isect = model.intersect(new Ray(scratchP, new Vector3D(surfaceX-scratchP.x, surfaceY-scratchP.y, surfaceZ-scratchP.z)));
-                    if(isect != null) {
-                        scratchG.set(GeoPoint.UNKNOWN);
-                        proj.inverse(isect, scratchG);
-                        final double alt = scratchG.getAltitude();
-                        if(!GeoPoint.isAltitudeValid(alt))
-                            continue;
-                        final double el = EGM96.getHAE(scratchG);
-                        if(Double.isNaN(elevation) || el > elevation)
-                            elevation = el;
-                    }
-                }
-            }
-        }
-        // if lookup failed and lookup off mesh is allowed, query the terrain
-        // service
-        if(Double.isNaN(elevation) && lookupOffMesh) {
-            elevation = this.terrain.getElevation(new GeoPoint(latitude, longitude));
-        }
-        // no elevation was found, use the mean
-        if(Double.isNaN(elevation))
-            elevation = 0d;
-        return elevation;
+    public int getTerrainVersion() {
+        return offscreen.terrainTilesVersion;
     }
 
     /**
@@ -633,14 +746,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
      * @deprecated
      */
     public double getElevation(double latitude, double longitude) {
-        if(this.offscreen == null)
-            return GeoPoint.UNKNOWN;
-        synchronized(this.offscreen) {
-            final double retval = this.getTerrainMeshElevationImpl(latitude, longitude, false);
-            if(Double.isNaN(retval))
-                return GeoPoint.UNKNOWN;
-            return retval;
-        }
+        return getTerrainMeshElevation(latitude, longitude);
     }
 
     /**
@@ -717,24 +823,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
      *             <code>remaining()</code>.
      */
     public void forward(FloatBuffer src, FloatBuffer dst) {
-        // XXX - OsrUtils does not currently interpret input/output points as 3D
-        if (!this.scene.mapProjection.is3D() && this.coordTransformPtr != 0L) {
-            OsrUtils.forward(this.coordTransformPtr, this.bulkForwardMatrix3x3, src, dst);
-        } else {
-            final int count = src.remaining() / 2;
-            int srcIdx = src.position();
-            int dstIdx = dst.position();
-            double lat;
-            double lon;
-            for (int i = 0; i < count; i++) {
-                lon = src.get(srcIdx++);
-                lat = src.get(srcIdx++);
-                this.internal.geo.set(lat, lon, 0d);
-                this.forwardImpl(this.internal.geo, this.internal.pointF);
-                dst.put(dstIdx++, this.internal.pointF.x);
-                dst.put(dstIdx++, this.internal.pointF.y);
-            }
-        }
+        forward(src, 2, dst, 2);
     }
 
     /**
@@ -749,82 +838,24 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
      *             <code>remaining()</code>.
      */
     public void forward(FloatBuffer src, int srcSize, FloatBuffer dst, int dstSize) {
-        if(srcSize == 2 && dstSize == 2) {
-            this.forward(src, dst);
-            return;
-        }
-
-        final long srcPtr = Unsafe.getBufferPointer(src);
-        final long dstPtr = Unsafe.getBufferPointer(dst);
-
-        if(srcSize == 2 && dstSize == 3) {
-            this.internal.geo.set(GeoPoint.UNKNOWN);
-
-            final int count = src.remaining() / srcSize;
-            int srcIdx = src.position();
-            int dstIdx = dst.position();
-            double lat;
-            double lon;
-            for (int i = 0; i < count; i++) {
-                lon = Unsafe.getFloat(srcPtr + (srcIdx*4));
-                lat = Unsafe.getFloat(srcPtr + ((srcIdx+1)*4));
-                srcIdx += 2;
-                this.internal.geo.set(lat, lon);
-                this.scene.mapProjection.forward(this.internal.geo, this.internal.pointD);
-                this.scene.forward.transform(this.internal.pointD, this.internal.pointD);
-                Unsafe.setFloats(dstPtr + (dstIdx*4),
-                        (float)this.internal.pointD.x,
-                        (float)this.internal.pointD.y,
-                        (float)this.internal.pointD.z);
-
-                dstIdx += 3;
-            }
-        } else if(srcSize == 3 && dstSize == 2) {
-            final int count = src.remaining() / srcSize;
-            int srcIdx = src.position();
-            int dstIdx = dst.position();
-            double lat;
-            double lon;
-            double alt;
-            for (int i = 0; i < count; i++) {
-                lon = Unsafe.getFloat(srcPtr + (srcIdx*4));
-                lat = Unsafe.getFloat(srcPtr + ((srcIdx+1)*4));
-                alt = Unsafe.getFloat(srcPtr + ((srcIdx+2)*4));
-                srcIdx += 3;
-                this.internal.geo.set(lat, lon);
-                this.internal.geo.set(alt);
-                this.scene.mapProjection.forward(this.internal.geo, this.internal.pointD);
-                this.scene.forward.transform(this.internal.pointD, this.internal.pointD);
-                Unsafe.setFloats(dstPtr + (dstIdx*4),
-                        (float)this.internal.pointD.x,
-                        (float)this.internal.pointD.y);
-                dstIdx += 2;
-            }
-        } else if(srcSize == 3 && dstSize == 3) {
-            final int count = src.remaining() / srcSize;
-            int srcIdx = src.position();
-            int dstIdx = dst.position();
-            double lat;
-            double lon;
-            double alt;
-            for (int i = 0; i < count; i++) {
-                lon = Unsafe.getFloat(srcPtr + (srcIdx*4));
-                lat = Unsafe.getFloat(srcPtr + ((srcIdx+1)*4));
-                alt = Unsafe.getFloat(srcPtr + ((srcIdx+2)*4));
-                srcIdx += 3;
-                this.internal.geo.set(lat, lon);
-                this.internal.geo.set(alt);
-                this.scene.mapProjection.forward(this.internal.geo, this.internal.pointD);
-                this.scene.forward.transform(this.internal.pointD, this.internal.pointD);
-                Unsafe.setFloats(dstPtr + (dstIdx*4),
-                        (float)this.internal.pointD.x,
-                        (float)this.internal.pointD.y,
-                        (float)this.internal.pointD.z);
-
-                dstIdx += 3;
-            }
-        } else {
+        if(srcSize != 2 && srcSize != 3)
             throw new IllegalArgumentException();
+        if(dstSize != 2 && dstSize != 3)
+            throw new IllegalArgumentException();
+        if(src.remaining()/srcSize != dst.remaining()/dstSize)
+            throw new IllegalArgumentException();
+
+        if(!src.isDirect() || !dst.isDirect())
+            throw new IllegalArgumentException();
+
+        // XXX - add support for arrays
+        this.rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                return;
+            forwardF(this.pointer.raw, Unsafe.getBufferPointer(src)+src.position()*4, srcSize, Unsafe.getBufferPointer(dst)+dst.position()*4, dstSize, src.remaining()/srcSize);
+        } finally {
+            this.rwlock.releaseRead();
         }
     }
 
@@ -840,24 +871,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
      *             <code>remaining()</code>.
      */
     public void forward(DoubleBuffer src, FloatBuffer dst) {
-        // XXX - OsrUtils does not currently interpret input/output points as 3D
-        if (!this.scene.mapProjection.is3D() && this.coordTransformPtr != 0L) {
-            OsrUtils.forward(this.coordTransformPtr, this.bulkForwardMatrix3x3, src, dst);
-        } else {
-            final int count = src.remaining() / 2;
-            int srcIdx = src.position();
-            int dstIdx = dst.position();
-            double lat;
-            double lon;
-            for (int i = 0; i < count; i++) {
-                lon = src.get(srcIdx++);
-                lat = src.get(srcIdx++);
-                this.internal.geo.set(lat, lon, 0d);
-                this.forwardImpl(this.internal.geo, this.internal.pointF);
-                dst.put(dstIdx++, this.internal.pointF.x);
-                dst.put(dstIdx++, this.internal.pointF.y);
-            }
-        }
+        forward(src, 2, dst, 2);
     }
 
     /**
@@ -872,80 +886,24 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
      *             <code>remaining()</code>.
      */
     public void forward(DoubleBuffer src, int srcSize, FloatBuffer dst, int dstSize) {
-        if(srcSize == 2 && dstSize == 2) {
-            this.forward(src, dst);
-            return;
-        }
-
-        final long srcPtr = Unsafe.getBufferPointer(src);
-        final long dstPtr = Unsafe.getBufferPointer(dst);
-
-        if(srcSize == 2 && dstSize == 3) {
-            this.internal.geo.set(GeoPoint.UNKNOWN);
-
-            final int count = src.remaining() / srcSize;
-            int srcIdx = src.position();
-            int dstIdx = dst.position();
-            double lat;
-            double lon;
-            for (int i = 0; i < count; i++) {
-                lon = Unsafe.getDouble(srcPtr + (srcIdx*8));
-                lat = Unsafe.getDouble(srcPtr + ((srcIdx+1)*8));
-                srcIdx += 2;
-                this.internal.geo.set(lat, lon, 0d);
-                this.scene.mapProjection.forward(this.internal.geo, this.internal.pointD);
-                this.scene.forward.transform(this.internal.pointD, this.internal.pointD);
-                Unsafe.setFloats(dstPtr + (dstIdx*4),
-                        (float)this.internal.pointD.x,
-                        (float)this.internal.pointD.y,
-                        (float)this.internal.pointD.z);
-
-                dstIdx += 3;
-            }
-        } else if(srcSize == 3 && dstSize == 2) {
-            final int count = src.remaining() / srcSize;
-            int srcIdx = src.position();
-            int dstIdx = dst.position();
-            double lat;
-            double lon;
-            double alt;
-            for (int i = 0; i < count; i++) {
-                lon = Unsafe.getDouble(srcPtr + (srcIdx*8));
-                lat = Unsafe.getDouble(srcPtr + ((srcIdx+1)*8));
-                alt = Unsafe.getDouble(srcPtr + ((srcIdx+2)*8));
-                srcIdx += 3;
-                this.internal.geo.set(lat, lon, alt);
-                this.scene.mapProjection.forward(this.internal.geo, this.internal.pointD);
-                this.scene.forward.transform(this.internal.pointD, this.internal.pointD);
-                Unsafe.setFloats(dstPtr + (dstIdx*4),
-                        (float)this.internal.pointD.x,
-                        (float)this.internal.pointD.y);
-                dstIdx += 2;
-            }
-        } else if(srcSize == 3 && dstSize == 3) {
-            final int count = src.remaining() / srcSize;
-            int srcIdx = src.position();
-            int dstIdx = dst.position();
-            double lat;
-            double lon;
-            double alt;
-            for (int i = 0; i < count; i++) {
-                lon = Unsafe.getDouble(srcPtr + (srcIdx*8));
-                lat = Unsafe.getDouble(srcPtr + ((srcIdx+1)*8));
-                alt = Unsafe.getDouble(srcPtr + ((srcIdx+2)*8));
-                srcIdx += 3;
-                this.internal.geo.set(lat, lon, alt);
-                this.scene.mapProjection.forward(this.internal.geo, this.internal.pointD);
-                this.scene.forward.transform(this.internal.pointD, this.internal.pointD);
-                Unsafe.setFloats(dstPtr + (dstIdx*4),
-                        (float)this.internal.pointD.x,
-                        (float)this.internal.pointD.y,
-                        (float)this.internal.pointD.z);
-
-                dstIdx += 3;
-            }
-        } else {
+        if(srcSize != 2 && srcSize != 3)
             throw new IllegalArgumentException();
+        if(dstSize != 2 && dstSize != 3)
+            throw new IllegalArgumentException();
+        if(src.remaining()/srcSize != dst.remaining()/dstSize)
+            throw new IllegalArgumentException();
+
+        if(!src.isDirect() || !dst.isDirect())
+            throw new IllegalArgumentException();
+
+        // XXX - add support for arrays
+        this.rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                return;
+            forwardD(this.pointer.raw, Unsafe.getBufferPointer(src)+src.position()*8, srcSize, Unsafe.getBufferPointer(dst)+dst.position()*4, dstSize, src.remaining()/srcSize);
+        } finally {
+            this.rwlock.releaseRead();
         }
     }
 
@@ -1037,262 +995,69 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
         this.scene.inverse(p, retval);
     }
 
-    private void computeOffscreenBounds(int drawSurfaceWidth, int drawSurfaceHeight) {
-        double offscreenNorth;
-        double offscreenWest;
-        double offscreenSouth;
-        double offscreenEast;
-        GeoPoint offscreenUpperLeft;
-        GeoPoint offscreenUpperRight;
-        GeoPoint offscreenLowerRight;
-        GeoPoint offscreenLowerLeft;
-        boolean offscreenCrossesIdl;
+    private void sync() {
+        // sync with the map
+        sync(this.pointer.raw, this);
+        // update boolean fields explicitly
+        this.targeting = get_targeting(this.pointer.raw);
+        this.rigorousRegistrationResolutionEnabled = get_rigorousRegistrationResolutionEnabled(this.pointer.raw);
+        this.crossesIDL = get_crossesIDL(this.pointer.raw);
+        // XXX - managed by Java layer currently
+        //this.terrainBlendEnabled = get_terrainBlendEnabled(this.pointer.raw);
+        this.continuousScrollEnabled = get_continuousScrollEnabled(this.pointer.raw);
+        this.settled = get_settled(this.pointer.raw);
 
-        State stack = new State();
-        stack.save(this);
-        try {
-            final double tiltSkew = Math.sin(Math.toRadians(this.drawTilt));
+        // update transforms
+        GLES20FixedPipeline.glMatrixMode(GLES20FixedPipeline.GL_PROJECTION);
+        GLES20FixedPipeline.glOrthof(this._left, this._right, this._bottom, this._top, (float) this.scene.camera.near, (float) this.scene.camera.far);
+        GLES20FixedPipeline.glMatrixMode(GLES20FixedPipeline.GL_MODELVIEW);
+        GLES20FixedPipeline.glLoadIdentity();
 
-            // compute an adjustment to be applied to the scale based on the
-            // current tilt
-            double scaleAdj = 1d + (tiltSkew*2.5d);
+        // update "wrapped" east/west
+        {
+            // corners
+            this.internal.pointF.x = _left;
+            this.internal.pointF.y = _top;
+            this.scene.inverse(this.internal.pointF, this.internal.geo, true);
+            final double ullng = this.internal.geo.getLongitude();
 
-            // we're going to stretch the capture texture vertically to try
-            // to closely match the AOI with the perspective skew. If we
-            // did not adjust the texture dimensions, the AOI defined by
-            // simply zooming out would request way more data than we are
-            // actually interested in
-            final int offscreenTextureWidth = drawSurfaceWidth;
-            final int offscreenTextureHeight = (int)Math.min(Math.ceil((double)drawSurfaceHeight * scaleAdj), this.offscreen.texture.getTexHeight());
+            this.internal.pointF.x = _right;
+            this.internal.pointF.y = _top;
+            this.scene.inverse(this.internal.pointF, this.internal.geo, true);
+            final double urlng = this.internal.geo.getLongitude();
 
-            // update _left, _right, _top, _bottom
-            _left = 0;
-            _bottom = 0;
-            _right = offscreenTextureWidth;
-            _top = offscreenTextureHeight;
+            this.internal.pointF.x = _right;
+            this.internal.pointF.y = _bottom;
+            this.scene.inverse(this.internal.pointF, this.internal.geo, true);
+            final double lrlng = this.internal.geo.getLongitude();
 
-            // update focus
-            this.focusx = ((float)this.focusx/(float)_surface.getMapView().getWidth()) * (float)offscreenTextureWidth;
-            this.focusy = ((float)this.focusy/(float)_surface.getMapView().getHeight()) * (float)offscreenTextureHeight;
+            this.internal.pointF.x = _left;
+            this.internal.pointF.y = _bottom;
+            this.scene.inverse(this.internal.pointF, this.internal.geo, true);
+            final double lllng = this.internal.geo.getLongitude();
 
-            // regenerate the scene model based on current parameters
-            this.sceneModelVersion = ~this.drawVersion;
-            this.validateSceneModelImpl(offscreenTextureWidth, offscreenTextureHeight);
-            this.updateBounds();
-
-            offscreenNorth = this.northBound;
-            offscreenWest = this.westBound;
-            offscreenSouth = this.southBound;
-            offscreenEast = this.eastBound;
-
-            offscreenUpperLeft = new GeoPoint(this.upperLeft);
-            offscreenUpperRight = new GeoPoint(this.upperRight);
-            offscreenLowerRight = new GeoPoint(this.lowerRight);
-            offscreenLowerLeft = new GeoPoint(this.lowerLeft);
-        } finally {
-            stack.restore(this);
+            eastBoundUnwrapped = MathUtils.max(ullng, urlng, lrlng, lllng);
+            westBoundUnwrapped = MathUtils.min(ullng, urlng, lrlng, lllng);
         }
 
-        this.northBound = offscreenNorth;
-        this.westBound = offscreenWest;
-        this.southBound = offscreenSouth;
-        this.eastBound = offscreenEast;
-
-        (this.upperLeft).set(offscreenUpperLeft);
-        (this.upperRight).set(offscreenUpperRight);
-        (this.lowerRight).set(offscreenLowerRight);
-        (this.lowerLeft).set(offscreenLowerLeft);
-
+        // update IDL helper
         this.idlHelper.update(this);
+
+        this.offscreen.terrainTilesVersion = getTerrainVersion(this.pointer.raw);
     }
 
     /**
      * Renders the current view of the map.
      */
     public void render() {
-        if (_right == MATCH_SURFACE)
-            _right = _surface.getWidth();
-        if (_top == MATCH_SURFACE)
-            _top = _surface.getHeight();
-
-        // for occluded MapView do not render
-        if (_right == _left || _top == _bottom)
-             return; 
-
-
-        animator.animate();
-
-        // mark terrain fetch if the version has changed
-        this.refreshTerrain |= (this.offscreen != null && this.terrain.getTerrainVersion() != this.offscreen.terrainTilesVersion);
-        this.refreshTerrain |= forceTerrainTileRefresh;
-
-        this.animator.updateView();
-
-        // validate scene model
-        this.validateSceneModel();
-        this.oscene = this.scene;
-
-        this.updateBounds();
-
-        // compute the ortho far plane
-
-        // obtain the camera position as LLA, then compute the distance to
-        // horizon
-        scene.mapProjection.inverse(scene.camera.location, internal.geo);
-        // use a minimum height of 2m (~person standing)
-        double heightMsl = Math.max(internal.geo.isAltitudeValid() ? EGM96.getMSL(internal.geo) : internal.geo.getAltitude(), 2d);
-        // https://en.wikipedia.org/wiki/Horizon#Distance_to_the_horizon
-        final double horizonDistance = Math.sqrt((2d*Ellipsoid.WGS84.semiMajorAxis*heightMsl) + (heightMsl*heightMsl));
-
-        // the far distance in meters will be the minimm of the distance  to
-        // the horizon and the center of the earth -- if the distance to the
-        // horizon is less than the eye altitude, simply use the eye altitude
-        final double farMeters = Math.max(horizonDistance, heightMsl);
-
-        // compute camera location/target in meters
-        final double camLocMetersX = scene.camera.location.x*scene.displayModel.projectionXToNominalMeters;
-        final double camLocMetersY = scene.camera.location.y*scene.displayModel.projectionYToNominalMeters;
-        final double camLocMetersZ = scene.camera.location.z*scene.displayModel.projectionZToNominalMeters;
-        final double camTgtMetersX = scene.camera.target.x*scene.displayModel.projectionXToNominalMeters;
-        final double camTgtMetersY = scene.camera.target.y*scene.displayModel.projectionYToNominalMeters;
-        final double camTgtMetersZ = scene.camera.target.z*scene.displayModel.projectionZToNominalMeters;
-
-        // distance from camera to target
-        final double dist = MathUtils.distance(camLocMetersX, camLocMetersY, camLocMetersZ, camTgtMetersX, camTgtMetersY, camTgtMetersZ);
-
-        // direction of camera pointing
-        final double dirMeterX = (camTgtMetersX-camLocMetersX)/dist;
-        final double dirMeterY = (camTgtMetersY-camLocMetersY)/dist;
-        final double dirMeterZ = (camTgtMetersZ-camLocMetersZ)/dist;
-
-        // compute the projected location, scaled to meters at the computed far
-        // distance
-        internal.pointD.x = camLocMetersX+(farMeters*dirMeterX);
-        internal.pointD.y = camLocMetersY+(farMeters*dirMeterY);
-        internal.pointD.z = camLocMetersZ+(farMeters*dirMeterZ);
-
-        // unscale from meters to original projection units
-        internal.pointD.x /= scene.displayModel.projectionXToNominalMeters;
-        internal.pointD.y /= scene.displayModel.projectionYToNominalMeters;
-        internal.pointD.z /= scene.displayModel.projectionZToNominalMeters;
-
-        // obtain the far location in screen space to get the 'z'
-        scene.forward.transform(internal.pointD, internal.pointD);
-
-        // clamp the far plane to -1f
-        final float far = Math.max(-1f, -(float)internal.pointD.z);
-        GLES20FixedPipeline.glMatrixMode(GLES20FixedPipeline.GL_PROJECTION);
-        GLES20FixedPipeline.glOrthof(_left, _right, _bottom, _top, 0.01f, far);
-
-        // XXX - implementation needs to be transitioned to C++ SDK
-        scene.camera.near = 0.01f;
-        scene.camera.far = far;
-
-        GLES20FixedPipeline.glMatrixMode(GLES20FixedPipeline.GL_MODELVIEW);
-        GLES20FixedPipeline.glLoadIdentity();
-
-        if(depthEnabled) {
-            GLES20FixedPipeline.glDepthMask(true);
-            GLES20FixedPipeline.glEnable(GLES20FixedPipeline.GL_DEPTH_TEST);
-
-            GLES20FixedPipeline.glDepthRangef(0f, 1f);
-            GLES20FixedPipeline.glClearDepthf(1f);
-            GLES20FixedPipeline.glDepthFunc(GLES20FixedPipeline.GL_LEQUAL);
-        }
-
-        State stack = new State();
-        stack.save(this);
-        try {
-            this.drawRenderables();
-        } finally {
-            stack.restore(this);
-        }
-
-        this.renderPump++;
-    }
-
-    private void constructOffscreenScene(int drawSurfaceWidth, int drawSurfaceHeight) {
-        this.scene = createOffscreenSceneModel(this, drawSurfaceWidth, drawSurfaceHeight);
-        this.refreshSceneMatrices();
-        // update render parameters
-        this.drawTilt = this.scene.camera.elevation+90d;
-        this.drawRotation = this.scene.camera.azimuth;
-        this.focusx = this.scene.focusx;
-        this.focusy = this.scene.focusy;
-
-        // update _left, _right, _top, _bottom
-        _left = 0;
-        _bottom = 0;
-        _right = this.scene.width;
-        _top = this.scene.height;
-
-        this.offscreen.scene = this.scene;
-    }
-
-    private static MapSceneModel createOffscreenSceneModel(GLMapView view, final int drawSurfaceWidth, final int drawSurfaceHeight) {
-        // adjust the size of the offscreen texture target based on the
-        // tilt skew
-        final double tiltSkew = Math.sin(Math.toRadians(view.drawTilt));
-
-        // compute an adjustment to be applied to the scale based on the
-        // current tilt
-        final double scaleAdj = 1d + (tiltSkew*2.55d);
-
-        // reset the tilt to 0 for offscreen render
-        final double drawTilt = 0d;
-
-        // adjust the scale/resolution to capture more than the nadir
-        // AOI
-        final double drawMapResolution = view.drawMapResolution * scaleAdj;
-
-        // we're going to stretch the capture texture vertically to try
-        // to closely match the AOI with the perspective skew. If we
-        // did not adjust the texture dimensions, the AOI defined by
-        // simply zooming out would request way more data than we are
-        // actually interested in
-        final int offscreenTextureWidth = (int)Math.ceil((double)drawSurfaceWidth / (scaleAdj*0.75d));
-        final int offscreenTextureHeight = (int)Math.min(Math.ceil((double)drawSurfaceHeight * scaleAdj), view.offscreen.texture.getTexHeight());
-
-        // update focus
-        final float focusx = ((float)view.focusx/(float)view._surface.getMapView().getWidth()) * (float)offscreenTextureWidth;
-        final float focusy = ((float)view.focusy/(float)view._surface.getMapView().getHeight()) * (float)offscreenTextureHeight;
-
-        // generate the scene model based on current parameters
-        final int vflipHeight = offscreenTextureHeight;
-
-        view.internal.geo.set(view.drawLat, view.drawLng, 0d);
-
-        if(view.drawProjection == null || view.drawProjection.getSpatialReferenceID() != view.drawSrid)
-            view.drawProjection = ProjectionFactory.getProjection(view.drawSrid);
-        final MapSceneModel retval = new MapSceneModel(AtakMapView.DENSITY*240f,
-                offscreenTextureWidth, offscreenTextureHeight,
-                view.drawProjection,
-                view.internal.geo,
-                focusx, focusy,
-                view.drawRotation, drawTilt,
-                drawMapResolution,
-                view.continuousScrollEnabled);
-
-        // account for flipping of y-axis for OpenGL coordinate space
-        retval.inverse.translate(0d, vflipHeight, 0d);
-        retval.inverse.concatenate(XFORM_VERTICAL_FLIP_SCALE);
-
-        retval.forward.preConcatenate(XFORM_VERTICAL_FLIP_SCALE);
-        view.internal.matrix.setToTranslation(0d, vflipHeight, 0d);
-        retval.forward.preConcatenate(view.internal.matrix);
-
-        return retval;
-    }
-
-    int depthToggle = 0x1;
-
-    protected void drawRenderables() {
         scratch.pointD.x = 0;
         scratch.pointD.y = 0;
         scratch.pointD.z = 0;
 
         scratch.pointF.x = 0;
         scratch.pointF.y = 0;
+
+        scratch.geo.set(0, 0, 0);
 
         internal.pointD.x = 0;
         internal.pointD.y = 0;
@@ -1301,586 +1066,52 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
         internal.pointF.x = 0;
         internal.pointF.y = 0;
 
-        // if tilt, set FBO to texture
-        boolean offscreenSurfaceRendering = false;
+        internal.geo.set(0, 0, 0);
 
-        int pass = RENDER_PASS_SCENES|RENDER_PASS_SPRITES|RENDER_PASS_SURFACE;
+        render(this.pointer.raw);
+        sync();
 
-        final int drawSurfaceWidth = _surface.getWidth();
-        final int drawSurfaceHeight = _surface.getHeight();
-        final boolean emptySurface = ((drawSurfaceWidth*drawSurfaceHeight) == 0);
-
-        LinkedList<TerrainTile> terrainTiles = new LinkedList<TerrainTile>();
-        int terrainTilesVersion = -1;
-        if(this.refreshTerrain && !lockTiles)
-            terrainTilesVersion = this.terrain.lock(this, terrainTiles);
-
-
-        State stack = null;
-        if(!emptySurface && this.enableMultiPassRendering && (this.drawTilt > 0d || false)) {
-            if(this.offscreen.fbo == null) {
-                offscreenSurfaceRendering = this.initOffscreenRendering(drawSurfaceWidth, drawSurfaceHeight);
-            } else if(this.offscreen.fbo[0] != 0){
-                GLES20FixedPipeline.glBindFramebuffer(GLES20FixedPipeline.GL_FRAMEBUFFER,
-                        this.offscreen.fbo[0]);
-                offscreenSurfaceRendering = true;
-            }
-            if(offscreenSurfaceRendering) {
-                GLES20FixedPipeline.glClear(GLES20FixedPipeline.GL_COLOR_BUFFER_BIT |
-                        GLES20FixedPipeline.GL_DEPTH_BUFFER_BIT |
-                        GLES20FixedPipeline.GL_STENCIL_BUFFER_BIT);
-
-                stack = new State();
-                stack.save(this);
-
-                if(this.intersectWithTerrain(terrainTiles, this.scene, focusx, _top-focusy, this.internal.geo)) {
-                    this.drawLat = this.internal.geo.getLatitude();
-                    this.drawLng = this.internal.geo.getLongitude();
-                }
-
-                // compute the offscreen bounds based on the adjusted center
-                this.computeOffscreenBounds(drawSurfaceWidth, drawSurfaceHeight);
-
-                // construct the offscreen scene
-                this.constructOffscreenScene(drawSurfaceWidth, drawSurfaceHeight);
-
-                // reset the bounds based on the offscreen scene
-                stack.northBound = this.northBound;
-                stack.westBound = this.westBound;
-                stack.eastBound = this.eastBound;
-                stack.southBound = this.southBound;
-                stack.upperLeft.set(this.upperLeft);
-                stack.upperRight.set(this.upperRight);
-                stack.lowerRight.set(this.lowerRight);
-                stack.lowerLeft.set(this.lowerLeft);
-
-                // mark render pass: surface
-                pass = RENDER_PASS_SURFACE;
-
-                // update the viewport and transformation matrices
-                GLES20FixedPipeline.glViewport(_left, _bottom, _right, _top);
-                GLES20FixedPipeline.glMatrixMode(GLES20FixedPipeline.GL_PROJECTION); // select projection
-                // matrix
-                GLES20FixedPipeline.glPushMatrix();
-                GLES20FixedPipeline.glLoadIdentity(); // reset projection matrix
-                GLES20FixedPipeline.glOrthof(_left, _right, _bottom, _top, -1f, 1f);
-
-                GLES20FixedPipeline.glMatrixMode(GLES20FixedPipeline.GL_MODELVIEW);
-                GLES20FixedPipeline.glPushMatrix();
-                GLES20FixedPipeline.glLoadIdentity();
-
-                if(depthEnabled) {
-                    GLES20FixedPipeline.glDepthMask(false);
-                    GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_DEPTH_TEST);
-                }
-            }
-        }
-        if(depthEnabled && !offscreenSurfaceRendering) {
-            if(MathUtils.hasBits(depthToggle, 0x1))
-                GLES20FixedPipeline.glDepthFunc(GLES20FixedPipeline.GL_ALWAYS);
-            if(MathUtils.hasBits(depthToggle, 0x2))
-                GLES20FixedPipeline.glDepthMask(false);
-            if(MathUtils.hasBits(depthToggle, 0x4))
-                GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_DEPTH_TEST);
-        }
-
-        // render the basemap and layers. this will always include the surface
-        // pass and may also include the sprites pass
-        if(this.basemap != null)
-            this.basemap.draw(this);
-
-        this.renderableDrawPump(pass);
-
-        // if tilt, reset the FBO to the display and render the captured scene
-        if(offscreenSurfaceRendering) {
-            if (this.debugDrawBounds) {
-                final double ullat = this.upperLeft.getLatitude();
-                final double ullng = this.upperLeft.getLongitude();
-                final double urlat = this.upperRight.getLatitude();
-                final double urlng = this.upperRight.getLongitude();
-                final double lrlat = this.lowerRight.getLatitude();
-                final double lrlng = this.lowerRight.getLongitude();
-                final double lllat = this.lowerLeft.getLatitude();
-                final double lllng = this.lowerLeft.getLongitude();
-
-                // draw bounding box on offscreen
-                ByteBuffer bb = Unsafe.allocateDirect(2 * 4 * 8);
-                bb.order(ByteOrder.nativeOrder());
-
-                bb.putFloat((float) ullng);
-                bb.putFloat((float) ullat);
-                bb.putFloat((float) urlng);
-                bb.putFloat((float) urlat);
-                bb.putFloat((float) lrlng);
-                bb.putFloat((float) lrlat);
-                bb.putFloat((float) lllng);
-                bb.putFloat((float) lllat);
-                bb.putFloat((float) ullng);
-                bb.putFloat((float) ullat);
-                bb.putFloat((float) lrlng);
-                bb.putFloat((float) lrlat);
-                bb.putFloat((float) lllng);
-                bb.putFloat((float) lllat);
-                bb.putFloat((float) urlng);
-                bb.putFloat((float) urlat);
-
-                bb.flip();
-
-                this.forward(bb.asFloatBuffer(), bb.asFloatBuffer());
-
-                GLES20FixedPipeline.glColor4f(1f, 0f, 0f, 1f);
-                GLES20FixedPipeline.glLineWidth(8f);
-                GLES20FixedPipeline.glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-                GLES20FixedPipeline.glVertexPointer(2, GLES20FixedPipeline.GL_FLOAT, 0, bb);
-                GLES20FixedPipeline.glDrawArrays(GLES20FixedPipeline.GL_LINE_STRIP, 0, bb.limit() / 8);
-                GLES20FixedPipeline.glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-
-                bb.putFloat((float) lrlng);
-                bb.putFloat((float) lrlat);
-                bb.putFloat((float) drawLng);
-                bb.putFloat((float) drawLat);
-                bb.putFloat((float) lllng);
-                bb.putFloat((float) lllat);
-
-
-                bb.flip();
-
-                this.forward(bb.asFloatBuffer(), bb.asFloatBuffer());
-
-                GLES20FixedPipeline.glColor4f(0f, 0f, 1f, 1f);
-                GLES20FixedPipeline.glLineWidth(8f);
-                GLES20FixedPipeline.glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-                GLES20FixedPipeline.glVertexPointer(2, GLES20FixedPipeline.GL_FLOAT, 0, bb);
-                GLES20FixedPipeline.glDrawArrays(GLES20FixedPipeline.GL_LINE_STRIP, 0, bb.limit() / 8);
-                GLES20FixedPipeline.glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-
-                Unsafe.free(bb);
-            }
-
-            if (depthEnabled) {
-                GLES20FixedPipeline.glDepthMask(true);
-                GLES20FixedPipeline.glEnable(GLES20FixedPipeline.GL_DEPTH_TEST);
-                GLES20FixedPipeline.glDepthFunc(GLES20FixedPipeline.GL_LEQUAL);
-            }
-
-
-
-            // restore state
-            stack.restore(this);
-
-            synchronized (this.offscreen) {
-                if(this.refreshTerrain && !lockTiles) {
-                    this.terrain.unlock(this.offscreen.terrainTiles);
-                    this.offscreen.terrainTiles.clear();
-                    this.offscreen.terrainTiles.addAll(terrainTiles);
-                    this.offscreen.terrainTilesVersion = terrainTilesVersion;
-                    this.refreshTerrain = false;
-                }
-            }
-
-            GLES20FixedPipeline.glViewport(0, 0, drawSurfaceWidth, drawSurfaceHeight);
-            GLES20FixedPipeline.glMatrixMode(GLES20FixedPipeline.GL_PROJECTION); // select projection                                                                                 // matrix
-            GLES20FixedPipeline.glPopMatrix();
-
-            GLES20FixedPipeline.glMatrixMode(GLES20FixedPipeline.GL_MODELVIEW);
-            GLES20FixedPipeline.glPopMatrix();
-
-            // reset FBO to display
-            GLES20FixedPipeline.glBindFramebuffer(GLES20FixedPipeline.GL_FRAMEBUFFER,
-                    0);
-            GLES20FixedPipeline.glClear(GLES20FixedPipeline.GL_COLOR_BUFFER_BIT |
-                    GLES20FixedPipeline.GL_DEPTH_BUFFER_BIT |
-                    GLES20FixedPipeline.GL_STENCIL_BUFFER_BIT);
-/*
-            GLES20FixedPipeline.glViewport(0, 0, drawSurfaceWidth, drawSurfaceHeight);
-            GLES20FixedPipeline.glMatrixMode(GLES20FixedPipeline.GL_PROJECTION); // select projection                                                                                 // matrix
-            GLES20FixedPipeline.glPushMatrix();
-            loadMatrix(scene.camera.projection);
-
-            GLES20FixedPipeline.glMatrixMode(GLES20FixedPipeline.GL_MODELVIEW);
-            GLES20FixedPipeline.glPushMatrix();
-            loadMatrix(scene.camera.modelView);
-*/
-
-            this.renderableDrawPump(RENDER_PASS_SCENES);
-            pass |= GLMapView.RENDER_PASS_SCENES;
-
-            // draw the terrain tiles
-            drawTerrainTiles(drawSurfaceWidth, drawSurfaceHeight);
-            if(drawTerrainMesh)
-                drawTerrainMeshes();
-/*
-            GLES20FixedPipeline.glViewport(0, 0, drawSurfaceWidth, drawSurfaceHeight);
-            GLES20FixedPipeline.glMatrixMode(GLES20FixedPipeline.GL_PROJECTION); // select projection                                                                                 // matrix
-            GLES20FixedPipeline.glPopMatrix();
-
-            GLES20FixedPipeline.glMatrixMode(GLES20FixedPipeline.GL_MODELVIEW);
-            GLES20FixedPipeline.glPopMatrix();
-            */
-        }
-
-        // execute any remaining passes
-        pass ^= (RENDER_PASS_SCENES|RENDER_PASS_SURFACE|RENDER_PASS_SPRITES);
-        if(pass != 0)
-            this.renderableDrawPump(pass);
-
-        this.renderableDrawPump(GLMapView.RENDER_PASS_UI);
+        if(this.drawTilt > 0 && this.terrainBlendEnabled)
+            set_terrainBlendFactor(this.pointer.raw, (float)this.terrainBlendFactor);
+        else
+            set_terrainBlendFactor(this.pointer.raw, 1f);
     }
 
-    private void loadMatrix(Matrix m) {
-        m.get(internal.matrixD, Matrix.MatrixOrder.COLUMN_MAJOR);
-        for(int i = 0; i < 16; i++)
-            internal.matrixF[i] = (float)internal.matrixD[i];
-        GLES20FixedPipeline.glLoadMatrixf(internal.matrixF, 0);
-
+    public void start() {
+        _surface.addOnSizeChangedListener(sizeChangedHandler);
+        sizeChangedHandler.onSizeChanged(_surface, _surface.getWidth(), _surface.getHeight());
+        setDisplayDpi(this.pointer.raw, _surface.getDpi());
+        start(this.pointer.raw);
+        sync(this.pointer.raw, this);
     }
 
-    private void renderableDrawPump(int pass) {
-        for (GLLayer2 l : this.renderables) {
-            GLLayer3 r = (GLLayer3)l;
-            if((r.getRenderPass()&pass) != 0)
-                r.draw(this, pass);
-        }
+    public void stop() {
+        _surface.removeOnSizeChangedListener(sizeChangedHandler);
+        stop(this.pointer.raw);
     }
 
-    private void drawTerrainTiles(int drawSurfaceWidth, int drawSurfaceHeight) {
-        GLES30.glUseProgram(this.offscreen.program.handle);
-        int[] activeTexture = new int[1];
-        GLES30.glGetIntegerv(GLES30.GL_ACTIVE_TEXTURE, activeTexture, 0);
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, this.drawTerrain ? this.offscreen.texture.getTexId() : 0);
+    protected void drawRenderables() {
+        // duplicating `render()` for backwards compatibility
+        scratch.pointD.x = 0;
+        scratch.pointD.y = 0;
+        scratch.pointD.z = 0;
 
-        GLES30.glUniform1i(this.offscreen.program.uTexture, activeTexture[0] - GLES30.GL_TEXTURE0);
-        GLES30.glUniform1f(this.offscreen.program.uTexWidth, this.offscreen.texture.getTexWidth());
-        GLES30.glUniform1f(this.offscreen.program.uTexHeight, this.offscreen.texture.getTexHeight());
+        scratch.pointF.x = 0;
+        scratch.pointF.y = 0;
 
-        GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_PROJECTION, this.internal.matrixF, 0);
-        GLES30.glUniformMatrix4fv(this.offscreen.program.uProjection, 1, false, this.internal.matrixF, 0);
+        scratch.geo.set(0, 0, 0);
 
-        GLES30.glEnableVertexAttribArray(this.offscreen.program.aVertexCoords);
+        internal.pointD.x = 0;
+        internal.pointD.y = 0;
+        internal.pointD.z = 0;
 
-        if (this.terrainBlendEnabled) {
-            GLES30.glEnable(GLES30.GL_BLEND);
-            GLES30.glBlendFunc(GLES30.GL_CONSTANT_ALPHA, GLES30.GL_ONE_MINUS_CONSTANT_ALPHA);
-            GLES30.glBlendEquation(GLES30.GL_FUNC_ADD);
-            GLES30.glBlendColor(0.0f, 0.0f, 0.0f, (float)this.terrainBlendFactor);
-        }
+        internal.pointF.x = 0;
+        internal.pointF.y = 0;
 
-        // draw terrain tiles
-        for (TerrainTile tile : offscreen.terrainTiles)
-            drawTerrainTile(tile);
+        internal.geo.set(0, 0, 0);
 
-        if(this.crossesIDL) {
-            State stack = new State();
-            stack.save(this);
-            // reconstruct the scene model in the secondary hemisphere
-            if(idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper.HEMISPHERE_WEST)
-                this.drawLng += 360d;
-            else if(idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper.HEMISPHERE_EAST)
-                this.drawLng -= 360d;
-            else
-                throw new IllegalStateException();
-            this.sceneModelVersion = ~this.sceneModelVersion;
-            this.validateSceneModel();
-
-            final MapSceneModel ooscene = this.offscreen.scene;
-            try {
-                this.offscreen.scene = createOffscreenSceneModel(this, drawSurfaceWidth, drawSurfaceHeight);
-                for (TerrainTile tile : offscreen.terrainTiles) {
-                    drawTerrainTile(tile);
-                }
-            } finally {
-                this.offscreen.scene = ooscene;
-            }
-
-            stack.restore(this);
-        }
-
-        if (this.terrainBlendEnabled) {
-            GLES30.glDisable(GLES30.GL_BLEND);
-        }
-
-        GLES30.glDisableVertexAttribArray(this.offscreen.program.aVertexCoords);
-
-        GLES30.glUseProgram(0);
-    }
-
-    private void drawTerrainMeshes() {
-        GLES20FixedPipeline.glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-
-        GLES20FixedPipeline.glColor4f(0.6f, 0.6f, 0.6f, 0.6f);
-
-        int idx = 0;
-
-        // draw terrain tiles
-        for(TerrainTile tile : offscreen.terrainTiles) {
-            GLES20FixedPipeline.glColor4f(idx%2, (idx%2)+1, 0f, 1f);
-            idx++;
-            drawTerrainMesh(tile);
-        }
-
-        if(this.crossesIDL) {
-            State stack = new State();
-            stack.save(this);
-            // reconstruct the scene model in the secondary hemisphere
-            if(idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper.HEMISPHERE_WEST)
-                this.drawLng += 360d;
-            else if(idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper.HEMISPHERE_EAST)
-                this.drawLng -= 360d;
-            else
-                throw new IllegalStateException();
-            this.sceneModelVersion = ~this.sceneModelVersion;
-            this.validateSceneModel();
-
-            for(TerrainTile tile : offscreen.terrainTiles) {
-                GLES20FixedPipeline.glColor4f(idx%2, (idx%2)+1, 0f, 1f);
-                idx++;
-                drawTerrainMesh(tile);
-            }
-
-            stack.restore(this);
-        }
-        GLES20FixedPipeline.glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-    }
-
-    private void drawTerrainTile(TerrainTile tile) {
-        final int drawMode;
-        switch(tile.model.getDrawMode()) {
-            case Triangles:
-                drawMode = GLES20FixedPipeline.GL_TRIANGLES;
-                break;
-            case TriangleStrip:
-                drawMode = GLES20FixedPipeline.GL_TRIANGLE_STRIP;
-                break;
-            default :
-                Log.w("GLMapView", "Undefined terrain model draw mode");
-                return;
-        }
-
-        // set the local frame
-        this.internal.matrix.set(this.scene.forward);
-        this.internal.matrix.scale(1d, 1d, this.elevationScaleFactor);
-        this.internal.matrix.concatenate(tile.info.localFrame);
-
-        this.internal.matrix.get(this.internal.matrixD, Matrix.MatrixOrder.COLUMN_MAJOR);
-        for(int i = 0; i < 16; i++)
-            this.internal.matrixF[i] = (float)this.internal.matrixD[i];
-
-        GLES30.glUniformMatrix4fv(this.offscreen.program.uModelView, 1, false, this.internal.matrixF, 0);
-
-        // set the local frame for the offscreen texture
-        this.internal.matrix.set(this.offscreen.scene.forward);
-        this.internal.matrix.concatenate(tile.info.localFrame);
-
-        float[] f2 = new float[16];
-        this.internal.matrix.get(this.internal.matrixD, Matrix.MatrixOrder.COLUMN_MAJOR);
-        for(int i = 0; i < 16; i++)
-            f2[i] = (float)this.internal.matrixD[i];
-
-        GLES30.glUniformMatrix4fv(this.offscreen.program.uModelViewOffscreen, 1, false, f2, 0);
-
-        if(depthEnabled) {
-            GLES20FixedPipeline.glDepthFunc(GLES20FixedPipeline.GL_LEQUAL);
-        }
-/*
-            GLES20FixedPipeline.glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-            GLES20FixedPipeline.glVertexPointer(3, GLES20FixedPipeline.GL_FLOAT, 0, this.offscreen.vertexCoords);
-            GLES20FixedPipeline.glColor4f(1f,  1f, 1f, 1f);
-            GLES20FixedPipeline.glDrawElements(GLES20FixedPipeline.GL_LINE_STRIP, this.offscreen.indicesCount, GLES20FixedPipeline.GL_UNSIGNED_SHORT, this.offscreen.indices);
-            GLES20FixedPipeline.glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-*/
-
-        final boolean hasWinding = (tile.model.getFaceWindingOrder() != null && tile.model.getFaceWindingOrder() != Model.WindingOrder.Undefined);
-        if(hasWinding) {
-            GLES20FixedPipeline.glEnable(GLES20FixedPipeline.GL_CULL_FACE);
-            switch(tile.model.getFaceWindingOrder()) {
-                case Clockwise:
-                    GLES20FixedPipeline.glFrontFace(GLES20FixedPipeline.GL_CW);
-                    break;
-                case CounterClockwise:
-                    GLES20FixedPipeline.glFrontFace(GLES20FixedPipeline.GL_CCW);
-                    break;
-                default :
-                    throw new IllegalStateException();
-            }
-            GLES20FixedPipeline.glCullFace(GLES20FixedPipeline.GL_BACK);
-        }
-
-        // render offscreen texture
-        VertexDataLayout layout = tile.model.getVertexDataLayout();
-
-        // XXX - VBO
-        // XXX - assumes ByteBuffer
-        ByteBuffer vertexCoords = (ByteBuffer)tile.model.getVertices(Model.VERTEX_ATTR_POSITION);
-        vertexCoords = vertexCoords.duplicate();
-        vertexCoords.position(layout.position.offset);
-
-        GLES30.glVertexAttribPointer(offscreen.program.aVertexCoords, 3, GLES30.GL_FLOAT, false, layout.position.stride, vertexCoords);
-
-        if(tile.model.isIndexed()) {
-            int numIndices = this.terrainBlendEnabled ? tile.skirtIndexOffset : tile.numIndices;
-            GLES30.glDrawElements(drawMode, numIndices, GLES20FixedPipeline.GL_UNSIGNED_SHORT, tile.model.getIndices());
-        } else
-            GLES30.glDrawArrays(drawMode, 0, tile.model.getNumVertices());
-
-        if(hasWinding)
-            GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_CULL_FACE);
-    }
-
-    private void drawTerrainMesh(TerrainTile tile) {
-        final int drawMode;
-        switch(tile.model.getDrawMode()) {
-            case Triangles:
-                drawMode = GLES20FixedPipeline.GL_TRIANGLES;
-                break;
-            case TriangleStrip:
-                drawMode = GLES20FixedPipeline.GL_TRIANGLE_STRIP;
-                break;
-            default :
-                Log.w("GLMapView", "Undefined terrain model draw mode");
-                return;
-        }
-/*
-        float[] hsv = new float[3];
-        hsv[0] = (1.0f - (float) OSMUtils.mapnikTileLevel(tile.info.minDisplayResolution) / (float) (18))
-                * 255f;
-        hsv[1] = 0.5f;
-        hsv[2] = 0.5f;
-
-        int rgb = Color.HSVToColor(255, hsv);
-
-        GLES20FixedPipeline.glColor4f(Color.red(rgb)/255f, Color.green(rgb)/255f, Color.blue(rgb)/255f, 1f);
-*/
-        GLES20FixedPipeline.glPushMatrix();
-
-        // set the local frame
-        this.internal.matrix.set(this.scene.forward);
-        this.internal.matrix.scale(1d, 1d, this.elevationScaleFactor);
-        this.internal.matrix.concatenate(tile.info.localFrame);
-
-        for(int i = 0; i < 16; i++)
-            this.internal.matrixF[i] = (float)this.internal.matrix.get(i%4, i/4);
-
-        GLES20FixedPipeline.glLoadMatrixf(this.internal.matrixF, 0);
-
-        // render offscreen texture
-        VertexDataLayout layout = tile.model.getVertexDataLayout();
-
-        // XXX - VBO
-        // XXX - assumes ByteBuffer
-        ByteBuffer vertexCoords = (ByteBuffer)tile.model.getVertices(Model.VERTEX_ATTR_POSITION);
-        vertexCoords = vertexCoords.duplicate();
-        vertexCoords.position(layout.position.offset);
-
-        GLES20FixedPipeline.glVertexPointer(3, GLES20FixedPipeline.GL_FLOAT, layout.position.stride, vertexCoords);
-
-        Buffer indices = null;
-        try {
-            if (tile.model.isIndexed()) {
-                Buffer bindices = tile.model.getIndices();
-                if(bindices instanceof ByteBuffer) {
-                    ((ByteBuffer)bindices).order(ByteOrder.nativeOrder());
-                    bindices = ((ByteBuffer) bindices).asShortBuffer();
-                    bindices.limit(Models.getNumIndices(tile.model));
-                }
-                indices = GLWireFrame.deriveIndices((ShortBuffer) bindices, drawMode, Models.getNumIndices(tile.model), GLES20FixedPipeline.GL_UNSIGNED_SHORT);
-            } else {
-                indices = GLWireFrame.deriveIndices(drawMode, tile.model.getNumVertices(), GLES20FixedPipeline.GL_UNSIGNED_SHORT);
-            }
-
-            GLES20FixedPipeline.glDrawElements(GLES20FixedPipeline.GL_LINES, indices.limit(), GLES20FixedPipeline.GL_UNSIGNED_SHORT, indices);
-        } finally {
-            if(indices != null)
-                Unsafe.free(indices);
-        }
-
-        GLES20FixedPipeline.glPopMatrix();
-    }
-
-    private boolean initOffscreenRendering(int drawSurfaceWidth, int drawSurfaceHeight) {
-        if(Double.isNaN(offscreen.hfactor))
-            offscreen.hfactor = ConfigOptions.getOption("glmapview.offscreen.hfactor", 3.5d);
-
-        float wfactor = 1.25f;
-        float hfactor = (float)offscreen.hfactor;
-
-        int[] ivalue = new int[1];
-        GLES20FixedPipeline.glGetIntegerv(GLES20FixedPipeline.GL_MAX_TEXTURE_SIZE, ivalue, 0);
-
-        final int offscreenTextureWidth = Math.min((int)((float)drawSurfaceWidth*wfactor), ivalue[0]);
-        final int offscreenTextureHeight = Math.min((int)((float)drawSurfaceHeight*hfactor), ivalue[0]);
-
-        final int textureSize = Math.max(offscreenTextureWidth, offscreenTextureHeight);
-
-        // Using 565 without any alpha to avoid alpha drawing overlays from becoming darker
-        // when the map is tilted. Alternatively glBlendFuncSeparate could be used for all
-        // glBlendFunc calls where srcAlpha is set to 0 and dstAlpha is 1
-        this.offscreen.texture = new GLTexture(textureSize, textureSize, Bitmap.Config.RGB_565);
-        this.offscreen.texture.init();
-
-        this.offscreen.fbo = new int[2];
-
-        boolean fboCreated = false;
-        do {
-            if (this.offscreen.fbo[0] == 0)
-                GLES20FixedPipeline.glGenFramebuffers(1, this.offscreen.fbo, 0);
-
-            if (this.offscreen.fbo[1] == 0)
-                GLES20FixedPipeline.glGenRenderbuffers(1, this.offscreen.fbo, 1);
-
-            GLES20FixedPipeline.glBindRenderbuffer(GLES20FixedPipeline.GL_RENDERBUFFER,
-                    this.offscreen.fbo[1]);
-            GLES20FixedPipeline.glRenderbufferStorage(GLES20FixedPipeline.GL_RENDERBUFFER,
-                    GLES20FixedPipeline.GL_DEPTH_COMPONENT16, this.offscreen.texture.getTexWidth(),
-                    this.offscreen.texture.getTexHeight());
-            GLES20FixedPipeline.glBindRenderbuffer(GLES20FixedPipeline.GL_RENDERBUFFER, 0);
-
-            GLES20FixedPipeline.glBindFramebuffer(GLES20FixedPipeline.GL_FRAMEBUFFER,
-                    this.offscreen.fbo[0]);
-
-            // clear any pending errors
-            while(GLES20FixedPipeline.glGetError() != GLES20FixedPipeline.GL_NO_ERROR)
-                ;
-            GLES20FixedPipeline.glFramebufferTexture2D(GLES20FixedPipeline.GL_FRAMEBUFFER,
-                    GLES20FixedPipeline.GL_COLOR_ATTACHMENT0,
-                    GLES20FixedPipeline.GL_TEXTURE_2D, this.offscreen.texture.getTexId(), 0);
-
-            // XXX - observing hard crash following bind of "complete"
-            //       FBO on SM-T230NU. reported error is 1280 (invalid
-            //       enum) on glFramebufferTexture2D. I have tried using
-            //       the color-renderable formats required by GLES 2.0
-            //       (RGBA4, RGB5_A1, RGB565) but all seem to produce
-            //       the same outcome.
-            if(GLES20FixedPipeline.glGetError() != GLES20FixedPipeline.GL_NO_ERROR)
-                break;
-
-            GLES20FixedPipeline.glFramebufferRenderbuffer(GLES20FixedPipeline.GL_FRAMEBUFFER,
-                    GLES20FixedPipeline.GL_DEPTH_ATTACHMENT, GLES20FixedPipeline.GL_RENDERBUFFER,
-                    this.offscreen.fbo[1]);
-            final int fboStatus = GLES20FixedPipeline.glCheckFramebufferStatus(GLES20FixedPipeline.GL_FRAMEBUFFER);
-            fboCreated = (fboStatus == GLES20FixedPipeline.GL_FRAMEBUFFER_COMPLETE);
-        } while(false);
-
-        int vertShader = GLES20FixedPipeline.GL_NONE;
-        int fragShader = GLES20FixedPipeline.GL_NONE;
-        try {
-            vertShader = GLES20FixedPipeline.loadShader(GLES20FixedPipeline.GL_VERTEX_SHADER, OFFSCREEN_VERT_SHADER_SRC);
-            fragShader = GLES20FixedPipeline.loadShader(GLES20FixedPipeline.GL_FRAGMENT_SHADER, OFFSCREEN_FRAG_SHADER_SRC);
-
-            offscreen.program.handle = GLES20FixedPipeline.createProgram(vertShader, fragShader);
-            offscreen.program.aVertexCoords = GLES20FixedPipeline.glGetAttribLocation(offscreen.program.handle, "aVertexCoords");
-            offscreen.program.uProjection = GLES20FixedPipeline.glGetUniformLocation(offscreen.program.handle, "uProjection");
-            offscreen.program.uModelView = GLES20FixedPipeline.glGetUniformLocation(offscreen.program.handle, "uModelView");
-            offscreen.program.uModelViewOffscreen = GLES20FixedPipeline.glGetUniformLocation(offscreen.program.handle, "uModelViewOffscreen");
-            offscreen.program.uTexWidth = GLES20FixedPipeline.glGetUniformLocation(offscreen.program.handle, "uTexWidth");
-            offscreen.program.uTexHeight = GLES20FixedPipeline.glGetUniformLocation(offscreen.program.handle, "uTexHeight");
-            offscreen.program.uTexture = GLES20FixedPipeline.glGetUniformLocation(offscreen.program.handle, "uTexture");
-        } finally {
-            if(vertShader != GLES20FixedPipeline.GL_NONE)
-                GLES20FixedPipeline.glDeleteShader(vertShader);
-            if(fragShader != GLES20FixedPipeline.GL_NONE)
-                GLES20FixedPipeline.glDeleteShader(fragShader);
-        }
-        return fboCreated;
+        render(this.pointer.raw);
+        sync();
     }
 
     public int getLeft() {
@@ -1907,8 +1138,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
 
     /** @deprecated */
     public double getLegacyScale() {
-        final AtakMapView mapView = _surface.getMapView();
-        return ((drawMapScale * mapView.fullEquitorialExtentPixels) / 360d);
+        return ((drawMapScale * Globe.getFullEquitorialExtentPixels(_surface.getDpi())) / 360d);
     }
 
     /**
@@ -1919,24 +1149,36 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
         // corners
         this.internal.pointF.x = _left;
         this.internal.pointF.y = _top;
-        this.scene.inverse(this.internal.pointF,   this.upperLeft, true);
+        this.scene.inverse(this.internal.pointF,   this.internal.geo, true);
+        this.upperLeft.set(this.internal.geo);
+        final double ullat = this.internal.geo.getLatitude();
+        final double ullng = this.internal.geo.getLongitude();
 
         this.internal.pointF.x = _right;
         this.internal.pointF.y = _top;
-        this.scene.inverse(this.internal.pointF,   this.upperRight, true);
+        this.scene.inverse(this.internal.pointF,   this.internal.geo, true);
+        this.upperRight.set(this.internal.geo);
+        final double urlat = this.internal.geo.getLatitude();
+        final double urlng = this.internal.geo.getLongitude();
 
         this.internal.pointF.x = _right;
         this.internal.pointF.y = _bottom;
-        this.scene.inverse(this.internal.pointF,   this.lowerRight, true);
+        this.scene.inverse(this.internal.pointF,   this.internal.geo, true);
+        this.lowerRight.set(this.internal.geo);
+        final double lrlat = this.internal.geo.getLatitude();
+        final double lrlng = this.internal.geo.getLongitude();
 
         this.internal.pointF.x = _left;
         this.internal.pointF.y = _bottom;
-        this.scene.inverse(this.internal.pointF,   this.lowerLeft, true);
+        this.scene.inverse(this.internal.pointF,   this.internal.geo, true);
+        this.lowerLeft.set(this.internal.geo);
+        final double lllat = this.internal.geo.getLatitude();
+        final double lllng = this.internal.geo.getLongitude();
 
-        northBound = MathUtils.max(this.upperLeft.getLatitude(), this.upperRight.getLatitude(), this.lowerRight.getLatitude(), this.lowerLeft.getLatitude());
-        southBound = MathUtils.min(this.upperLeft.getLatitude(), this.upperRight.getLatitude(), this.lowerRight.getLatitude(), this.lowerLeft.getLatitude());
-        eastBound = eastBoundUnwrapped = MathUtils.max(this.upperLeft.getLongitude(), this.upperRight.getLongitude(), this.lowerRight.getLongitude(), this.lowerLeft.getLongitude());
-        westBound = westBoundUnwrapped = MathUtils.min(this.upperLeft.getLongitude(), this.upperRight.getLongitude(), this.lowerRight.getLongitude(), this.lowerLeft.getLongitude());
+        northBound = MathUtils.max(ullat, urlat, lrlat, lllat);
+        southBound = MathUtils.min(ullat, urlat, lrlat, lllat);;
+        eastBound = eastBoundUnwrapped = MathUtils.max(ullng, urlng, lrlng, lllng);
+        westBound = westBoundUnwrapped = MathUtils.min(ullng, urlng, lrlng, lllng);
         crossesIDL = continuousScrollEnabled && (eastBound > 180d && westBound < 180d
                 || westBound < -180d && eastBound > -180d);
 
@@ -2202,22 +1444,13 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
     @Override
     public void onMapProjectionChanged(AtakMapView view) {
         final int srid = view.getProjection().getSpatialReferenceID();
-        _surface.queueEvent(new Runnable() {
+        _context.queueEvent(new Runnable() {
             @Override
             public void run() {
                 if (GLMapView.this.drawSrid != srid) {
                     GLMapView.this.drawSrid = srid;
                     GLMapView.this.drawProjection = ProjectionFactory.getProjection(GLMapView.this.drawSrid);
                     GLMapView.this.drawVersion++;
-                    GLMapView.this.refreshTerrain = true;
-
-                    if (GLMapView.this.coordTransformPtr != 0L) {
-                        OsrUtils.destroyProjection(GLMapView.this.coordTransformPtr);
-                        GLMapView.this.coordTransformPtr = 0L;
-                    }
-
-                    GLMapView.this.coordTransformPtr = OsrUtils
-                            .createProjection(GLMapView.this.drawSrid);
                 }
             }
         });
@@ -2228,7 +1461,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
 
     @Override
     public void onContinuousScrollEnabledChanged(AtakMapView mapView, final boolean enabled) {
-        _surface.queueEvent(new Runnable() {
+        _context.queueEvent(new Runnable() {
             @Override
             public void run() {
                 if (GLMapView.this.continuousScrollEnabled != enabled) {
@@ -2244,7 +1477,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
 
     @Override
     public void onTerrainExaggerationFactorChanged(AtakMapView mapView, final double factor) {
-        _surface.queueEvent(new Runnable() {
+        _context.queueEvent(new Runnable() {
             @Override
             public void run() {
                 if (GLMapView.this.elevationScaleFactor != factor) {
@@ -2302,7 +1535,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
             this.refreshLayersImpl2(layers, this.layerRenderers);
         } else {
             final Map<Layer, GLLayer2> renderers = new IdentityHashMap<Layer, GLLayer2>(this.layerRenderers);
-            _surface.queueEvent(new Runnable() {
+            _context.queueEvent(new Runnable() {
                 @Override
                 public void run() {
                     GLMapView.this.refreshLayersImpl2(layers, renderers);
@@ -2338,7 +1571,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
     @Override
     public void onFocusPointChanged (final float x,
                                      final float y) {
-        _surface.queueEvent (new Runnable () {
+        _context.queueEvent (new Runnable () {
             @Override
             public void run () {
                 animator.startAnimatingFocus (x, y, 0.3);
@@ -2365,8 +1598,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
     /**************************************************************************/
 
     protected final void validateSceneModel() {
-        AtakMapView mapView = _surface.getMapView();
-        this.validateSceneModelImpl(mapView.getWidth(), mapView.getHeight());
+        this.validateSceneModelImpl(_surface.getWidth(), _surface.getHeight());
     }
 
     protected final void validateSceneModelImpl(int width, int height) {
@@ -2384,7 +1616,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
             if(this.drawProjection == null || this.drawProjection.getSpatialReferenceID() != this.drawSrid)
                 this.drawProjection = ProjectionFactory.getProjection(this.drawSrid);
 
-            this.scene = new MapSceneModel(AtakMapView.DENSITY*240f,
+            this.scene = new MapSceneModel(_surface.getDpi(),
                     width, height,
                     this.drawProjection,
                     this.internal.geo,
@@ -2400,51 +1632,13 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
             this.scene.forward.preConcatenate(XFORM_VERTICAL_FLIP_SCALE);
             this.scene.forward.preConcatenate(GLMapView.this.verticalFlipTranslate);
 
-            this.refreshSceneMatrices();
+            this.scene.forward.get(internal.matrixD);
+            for(int i = 0; i < 16; i++)
+                this.sceneModelForwardMatrix[i] = (float)internal.matrixD[i];
 
             // mark as valid
             this.sceneModelVersion = this.drawVersion;
         }
-    }
-
-    private void refreshSceneMatrices() {
-        // fill the inverse matrix for bulk transforms
-        this.scene.inverse.get(this.internal.matrixD, Matrix.MatrixOrder.ROW_MAJOR);
-        this.bulkInverseMatrix.clear();
-        this.bulkInverseMatrix.put(this.internal.matrixD);
-        this.bulkInverseMatrix.flip();
-
-        // fill the forward matrix for bulk transforms
-        this.scene.forward.get(this.internal.matrixD, Matrix.MatrixOrder.ROW_MAJOR);
-        this.bulkForwardMatrix.clear();
-        this.bulkForwardMatrix.put(this.internal.matrixD);
-        this.bulkForwardMatrix.flip();
-
-        // XXX -
-        this.bulkForwardMatrix3x3.put(0, this.bulkForwardMatrix.get(0));
-        this.bulkForwardMatrix3x3.put(1, this.bulkForwardMatrix.get(1));
-        this.bulkForwardMatrix3x3.put(2, this.bulkForwardMatrix.get(3));
-        this.bulkForwardMatrix3x3.put(3, this.bulkForwardMatrix.get(4));
-        this.bulkForwardMatrix3x3.put(4, this.bulkForwardMatrix.get(5));
-        this.bulkForwardMatrix3x3.put(5, this.bulkForwardMatrix.get(7));
-        this.bulkForwardMatrix3x3.put(6, this.bulkForwardMatrix.get(12));
-        this.bulkForwardMatrix3x3.put(7, this.bulkForwardMatrix.get(13));
-        this.bulkForwardMatrix3x3.put(8, this.bulkForwardMatrix.get(15));
-
-        this.bulkInverseMatrix3x3.put(0, this.bulkInverseMatrix.get(0));
-        this.bulkInverseMatrix3x3.put(1, this.bulkInverseMatrix.get(1));
-        this.bulkInverseMatrix3x3.put(2, this.bulkInverseMatrix.get(3));
-        this.bulkInverseMatrix3x3.put(3, this.bulkInverseMatrix.get(4));
-        this.bulkInverseMatrix3x3.put(4, this.bulkInverseMatrix.get(5));
-        this.bulkInverseMatrix3x3.put(5, this.bulkInverseMatrix.get(7));
-        this.bulkInverseMatrix3x3.put(6, this.bulkInverseMatrix.get(12));
-        this.bulkInverseMatrix3x3.put(7, this.bulkInverseMatrix.get(13));
-        this.bulkInverseMatrix3x3.put(8, this.bulkInverseMatrix.get(15));
-
-        // fill the forward matrix for the Model-View
-        this.scene.forward.get(this.internal.matrixD, Matrix.MatrixOrder.COLUMN_MAJOR);
-        for(int i = 0; i < 16; i++)
-            this.sceneModelForwardMatrix[i] = (float)this.internal.matrixD[i];
     }
 
     protected class Animator {
@@ -2521,7 +1715,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
             GLMapView.this.drawRotation = _drawRotation;
             GLMapView.this.drawTilt = _drawTilt;
             GLMapView.this.drawMapScale = _drawMapScale;
-            GLMapView.this.drawMapResolution = GLMapView.this._surface.getMapView().getMapResolution(_drawMapScale);
+            GLMapView.this.drawMapResolution = Globe.getMapResolution(_surface.getDpi(), _drawMapScale);
 
             GLMapView.this.focusx = _focusx;
             GLMapView.this.focusy = _focusy;
@@ -2529,8 +1723,6 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
             GLMapView.this.settled = _isSettled;
 
             GLMapView.this.drawVersion++;
-
-            GLMapView.this.refreshTerrain = true;
 
             this.viewFieldsValid = true;
         }
@@ -2552,7 +1744,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
                     lngDelta += 360d;
                 else
                     lngDelta -= 360d;
-            }
+        }
 
             _drawMapScale += scaleDelta * _animationFactor;
             _drawLat += latDelta * _animationFactor;
@@ -2568,7 +1760,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
                     _drawRotation -= 360d;
                 } else {
                     _drawRotation += 360d;
-                }
+    }
                 rotDelta = (_targetRotation - _drawRotation);
             }
 
@@ -2596,7 +1788,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
                 } else if(!isContinuousRenderEnabled()){
                     // if not continuous rendering, continue to request render
                     // until settled
-                    _surface.requestRender();
+                    _context.requestRefresh();
                 }
             }
 
@@ -2633,9 +1825,12 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
         if (layer != null) {
             ctrls = this.controls.get(layer);
             if (ctrls == null)
-                this.controls.put(layer, ctrls = Collections.newSetFromMap(new IdentityHashMap<MapControl, Boolean>()));
+                this.controls.put(layer, ctrls = Collections2.<MapControl>newIdentityHashSet());
         }
         if(ctrls.add(ctrl)) {
+            if(ctrl instanceof ModelHitTestControl)
+                this.modelHitTestControls.add((ModelHitTestControl)ctrl);
+
             for(OnControlsChangedListener l : this.controlsListeners)
                 l.onControlRegistered(layer, ctrl);
         }
@@ -2646,6 +1841,8 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
         Collection<MapControl> ctrls = layer == null ? this.mapViewControls : this.controls.get(layer);
         if(ctrls != null) {
             if(ctrls.remove(ctrl)) {
+                if(ctrl instanceof ModelHitTestControl)
+                    this.modelHitTestControls.remove((ModelHitTestControl)ctrl);
                 for(OnControlsChangedListener l : this.controlsListeners)
                     l.onControlUnregistered(layer, ctrl);
             }
@@ -2681,43 +1878,46 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
         visitor.visit(this.controls.entrySet().iterator());
     }
 
+    /*************************************************************************/
+    // MapRenderer : RenderContext
+
     @Override
-    public boolean isRenderThread() {
-        return GLMapSurface.isGLThread();
+    public final boolean isRenderThread() {
+        return _context.isRenderThread();
     }
 
     @Override
-    public void queueEvent(Runnable r) {
-        _surface.queueEvent(r);
+    public final void queueEvent(Runnable r) {
+        _context.queueEvent(r);
     }
 
     @Override
-    public void requestRefresh() {
-        if(!this.isContinuousRenderEnabled())
-            _surface.requestRender();
+    public final void requestRefresh() {
+        _context.requestRefresh();
     }
 
     @Override
-    public void setFrameRate(float rate) {
-        _surface.getRenderer().setFrameRate(rate);
+    public final void setFrameRate(float rate) {
+        _context.setFrameRate(rate);
 
     }
 
     @Override
-    public float getFrameRate() {
-        return (float)_surface.getRenderer().getFramerate();
+    public final float getFrameRate() {
+        return _context.getFrameRate();
     }
 
     @Override
-    public synchronized void setContinuousRenderEnabled(boolean enabled) {
-        this.continuousRenderEnabled = enabled;
-        _surface.setRenderMode(this.continuousRenderEnabled ? GLMapSurface.RENDERMODE_CONTINUOUSLY : GLMapSurface.RENDERMODE_WHEN_DIRTY);
+    public final synchronized void setContinuousRenderEnabled(boolean enabled) {
+        _context.setContinuousRenderEnabled(enabled);
     }
 
     @Override
-    public boolean isContinuousRenderEnabled() {
-        return this.continuousRenderEnabled;
+    public final boolean isContinuousRenderEnabled() {
+        return _context.isContinuousRenderEnabled();
     }
+
+    //
 
     @Override
     public synchronized void addOnControlsChangedListener(OnControlsChangedListener l) {
@@ -2732,65 +1932,11 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
     public GeoPoint intersectWithTerrain2(MapSceneModel scene, float x, float y) {
         GeoPoint result = GeoPoint.createMutable();
         synchronized(this.offscreen) {
-            if (intersectWithTerrain(this.offscreen.terrainTiles, scene, x, y, result))
+            if (intersectWithTerrain2(this.pointer.raw, MapSceneModel_interop.getPointer(scene), x, y, result))
                 return result;
 
         }
         return scene.inverse(new PointF(x, y), null);
-    }
-
-    /**
-     * Must be called when holding lock on <code>this</code> or on GL thread
-     * @param tiles
-     * @param scene
-     * @param x
-     * @param y
-     * @param result
-     * @return
-     */
-
-    private static boolean intersectWithTerrain(Collection<TerrainTile> tiles, MapSceneModel scene, float x, float y, GeoPoint result) {
-        if(tiles.isEmpty())
-            return false;
-
-        final double camdirx = (scene.camera.location.x-scene.camera.target.x)*scene.displayModel.projectionXToNominalMeters;
-        final double camdiry = (scene.camera.location.y-scene.camera.target.y)*scene.displayModel.projectionYToNominalMeters;
-        final double camdirz = (scene.camera.location.z-scene.camera.target.z)*scene.displayModel.projectionZToNominalMeters;
-
-        final double mag = Math.max(Math.sqrt(camdirx*camdirx + camdiry*camdiry + camdirz*camdirz), 2000);
-
-        //PointD loc = new PointD(scene.camera.target.x+(camdirx*mag*2d), scene.camera.target.y+(camdiry*mag*2d), scene.camera.target.z+(camdirz*mag*2d));
-        PointD loc = new PointD(scene.camera.target.x, scene.camera.target.y, scene.camera.target.z);
-        loc.x *= scene.displayModel.projectionXToNominalMeters;
-        loc.x += (camdirx*mag*2d);
-        loc.y *= scene.displayModel.projectionYToNominalMeters;
-        loc.y += (camdiry*mag*2d);
-        loc.z *= scene.displayModel.projectionZToNominalMeters;
-        loc.z += (camdirz*mag*2d);
-
-        PointD candidate = null;
-        double candDist2 = Double.NaN;
-        for(TerrainTile tile : tiles) {
-            if(hitTest(scene, tile, x, y, result)) {
-                // set as candidate if no result or closest to camera
-                final PointD hit = scene.mapProjection.forward(result, null);
-                final double dx = ((hit.x*scene.displayModel.projectionXToNominalMeters)-loc.x);
-                final double dy = ((hit.y*scene.displayModel.projectionYToNominalMeters)-loc.y);
-                final double dz = ((hit.z*scene.displayModel.projectionZToNominalMeters)-loc.z);
-                double dist2 = (dx*dx)+(dy*dy)+(dz*dz);
-                if(candidate == null || dist2 < candDist2) {
-                    candDist2 = dist2;
-                    candidate = hit;
-                }
-            }
-        }
-
-        if(candidate == null)
-            return false;
-        scene.mapProjection.inverse(candidate, result);
-        // XXX - legacy did not return altitude
-        result.set(GeoPoint.UNKNOWN);
-        return true;
     }
 
     /**
@@ -2808,6 +1954,8 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
         int srid;
         Matrix localFrame = null;
         double renderElOffset;
+        if (tile.model == null)
+            return false;
         m = tile.model;
         srid = tile.info.srid;
         if (tile.info.localFrame != null) { 
@@ -2833,32 +1981,12 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
         return true;
     }
 
-    static double camLocAdj = 2.5d;
-
-    private static PointD adjustCamLocation(MapSceneModel view) {
-        final double camlocx = view.camera.location.x*view.displayModel.projectionXToNominalMeters;
-        final double camlocy = view.camera.location.y*view.displayModel.projectionYToNominalMeters;
-        final double camlocz = view.camera.location.z*view.displayModel.projectionZToNominalMeters;
-        final double camtgtx = view.camera.target.x*view.displayModel.projectionXToNominalMeters;
-        final double camtgty = view.camera.target.y*view.displayModel.projectionYToNominalMeters;
-        final double camtgtz = view.camera.target.z*view.displayModel.projectionZToNominalMeters;
-
-        final double len = MathUtils.distance(camlocx, camlocy, camlocz, camtgtx, camtgty, camtgtz);
-
-        final double dirx = (camlocx - camtgtx)/len;
-        final double diry = (camlocy - camtgty)/len;
-        final double dirz = (camlocz - camtgtz)/len;
-        return new PointD((camtgtx + (dirx*len*camLocAdj)) / view.displayModel.projectionXToNominalMeters,
-                          (camtgty + (diry*len*camLocAdj)) / view.displayModel.projectionYToNominalMeters,
-                          (camtgtz + (dirz*len*camLocAdj)) / view.displayModel.projectionZToNominalMeters);
-    }
-
     /**
      * @deprecated subject to be changed/removed at any time
      * @return
      */
     public static double estimateResolution(GLMapView model, double ullat, double ullng, double lrlat, double lrlng, GeoPoint closest) {
-        return estimateResolution(model.oscene, ullat, ullng, lrlat, lrlng, closest);
+        return estimateResolutionFromViewAABB(model.pointer.raw, ullat, ullng, lrlat, lrlng, closest);
     }
 
     /**
@@ -2866,61 +1994,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
      * @return
      */
     public static double estimateResolution(MapSceneModel model, double ullat, double ullng, double lrlat, double lrlng, GeoPoint closest) {
-        final double gsd;
-        if(model.camera.elevation > -90d) {
-            // get eye pos as LLA
-            final PointD eyeProj;
-            if (!model.camera.perspective) {
-                eyeProj = adjustCamLocation(model);
-            } else {
-                eyeProj = model.camera.location;
-            }
-            GeoPoint eye = model.mapProjection.inverse(eyeProj, null);
-            eye = new GeoPoint(eye.getLatitude(), GeoCalculations.wrapLongitude(eye.getLongitude()), eye.getAltitude());
-
-            // XXX - find closest LLA on tile
-            final double closestLat = MathUtils.clamp(eye.getLatitude(), lrlat, ullat);
-            final double eyelng = eye.getLongitude();
-            double lrlng_dist = Math.abs(lrlng-eyelng);
-            if(lrlng_dist > 180d)
-                lrlng_dist = 360d - lrlng_dist;
-            double ullng_dist = Math.abs(ullng-eyelng);
-            if(ullng_dist > 180d)
-                ullng_dist = 360d - ullng_dist;
-            final double closestLng;
-            if(eyelng >= ullng && eyelng <= lrlng) {
-                closestLng = eyelng;
-            } else if(eyelng > lrlng || (lrlng_dist < ullng_dist)) {
-                closestLng = lrlng;
-            } else if(eyelng < ullng || (ullng_dist < lrlng_dist)) {
-                closestLng = ullng;
-            } else {
-                throw new IllegalStateException();
-            }
-
-            if(closest == null)
-                closest = GeoPoint.createMutable();
-            closest.set(closestLat, GeoCalculations.wrapLongitude(closestLng), 0d);
-
-            final boolean isSame = (eye.getLatitude() == closestLat && eye.getLongitude() == closestLng);
-            if(isSame)
-                return model.gsd;
-
-            final double closestslant = GeoCalculations.slantDistanceTo(eye, closest);
-
-            final double camlocx = model.camera.location.x*model.displayModel.projectionXToNominalMeters;
-            final double camlocy = model.camera.location.y*model.displayModel.projectionYToNominalMeters;
-            final double camlocz = model.camera.location.z*model.displayModel.projectionZToNominalMeters;
-            final double camtgtx = model.camera.target.x*model.displayModel.projectionXToNominalMeters;
-            final double camtgty = model.camera.target.y*model.displayModel.projectionYToNominalMeters;
-            final double camtgtz = model.camera.target.z*model.displayModel.projectionZToNominalMeters;
-
-            final double camtgtslant = MathUtils.distance(camlocx, camlocy, camlocz, camtgtx, camtgty, camtgtz);
-
-            return (closestslant/camtgtslant)*model.gsd;
-        } else {
-            return model.gsd;
-        }
+        return estimateResolutionFromModelAABB(MapSceneModel_interop.getPointer(model), ullat, ullng, lrlat, lrlng, closest);
     }
 
     /**
@@ -2928,7 +2002,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
      * @return
      */
     public static double estimateResolution(GLMapView model, PointD center, double radius, GeoPoint closest) {
-        return estimateResolution(model.oscene, center, radius, closest);
+        return estimateResolutionFromViewSphere(model.pointer.raw, center.x, center.y, center.z, radius, closest);
     }
 
     /**
@@ -2936,44 +2010,7 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
      * @return
      */
     public static double estimateResolution(MapSceneModel model, PointD center, double radius, GeoPoint closest) {
-        final double gsd;
-        if(model.camera.elevation > -90d) {
-            // get eye pos as LLA
-            final PointD eyeProj;
-            if (!model.camera.perspective) {
-                eyeProj = adjustCamLocation(model);
-            } else {
-                eyeProj = model.camera.location;
-            }
-            GeoPoint eye = model.mapProjection.inverse(eyeProj, null);
-            eye = new GeoPoint(eye.getLatitude(), GeoCalculations.wrapLongitude(eye.getLongitude()), eye.getAltitude());
-
-            if(closest == null)
-                closest = GeoPoint.createMutable();
-            closest.set(center.y, center.x, center.z);
-
-            // XXX - find closest LLA on tile
-            if(Math.abs(center.x-eye.getLongitude()) > 180d) {
-                // XXX - wrapping
-            }
-
-            final double closestslant = GeoCalculations.slantDistanceTo(eye, closest);
-            if(closestslant <= radius)
-                return model.gsd;
-
-            final double camlocx = model.camera.location.x*model.displayModel.projectionXToNominalMeters;
-            final double camlocy = model.camera.location.y*model.displayModel.projectionYToNominalMeters;
-            final double camlocz = model.camera.location.z*model.displayModel.projectionZToNominalMeters;
-            final double camtgtx = model.camera.target.x*model.displayModel.projectionXToNominalMeters;
-            final double camtgty = model.camera.target.y*model.displayModel.projectionYToNominalMeters;
-            final double camtgtz = model.camera.target.z*model.displayModel.projectionZToNominalMeters;
-
-            final double camtgtslant = MathUtils.distance(camlocx, camlocy, camlocz, camtgtx, camtgty, camtgtz);
-
-            return ((closestslant-radius)/camtgtslant)*model.gsd;
-        } else {
-            return model.gsd;
-        }
+        return estimateResolutionFromModelSphere(MapSceneModel_interop.getPointer(model), center.x, center.y, center.z, radius, closest);
     }
 
     private final static class State {
@@ -3005,17 +2042,12 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
         private int renderPump;
         private Matrix verticalFlipTranslate;
         private int verticalFlipTranslateHeight;
-        private long coordTransformPtr;
         private boolean rigorousRegistrationResolutionEnabled;
         private long animationLastTick = -1L;
         private long animationDelta = -1L;
         private int sceneModelVersion;
         public MapSceneModel scene;
         private float[] sceneModelForwardMatrix;
-        private double[] bulkForwardMatrix;
-        private double[] bulkInverseMatrix;
-        private double[] bulkForwardMatrix3x3;
-        private double[] bulkInverseMatrix3x3;
 
         public State() {
             this.upperLeft = GeoPoint.createMutable();
@@ -3025,10 +2057,6 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
             this.verticalFlipTranslate = Matrix.getIdentity();
             this.sceneModelForwardMatrix = new float[16];
             this.scene = null;
-            this.bulkForwardMatrix = new double[16];
-            this.bulkInverseMatrix = new double[16];
-            this.bulkForwardMatrix3x3 = new double[9];
-            this.bulkInverseMatrix3x3 = new double[9];
         }
 
         /**
@@ -3066,25 +2094,12 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
             this.renderPump = view.renderPump;
             this.verticalFlipTranslate.set(view.verticalFlipTranslate);
             this.verticalFlipTranslateHeight = view.verticalFlipTranslateHeight;
-            this.coordTransformPtr = view.coordTransformPtr;
             this.rigorousRegistrationResolutionEnabled = view.rigorousRegistrationResolutionEnabled;
             this.animationLastTick = view.animationLastTick;
             this.animationDelta = view.animationDelta;
             this.sceneModelVersion = view.sceneModelVersion;
             this.scene = view.scene;
             System.arraycopy(view.sceneModelForwardMatrix, 0, this.sceneModelForwardMatrix, 0, 16);
-
-            view.bulkForwardMatrix.get(this.bulkForwardMatrix);
-            view.bulkForwardMatrix.clear();
-
-            view.bulkInverseMatrix.get(this.bulkInverseMatrix);
-            view.bulkInverseMatrix.clear();
-
-            view.bulkForwardMatrix3x3.get(this.bulkForwardMatrix3x3);
-            view.bulkForwardMatrix3x3.clear();
-
-            view.bulkInverseMatrix3x3.get(this.bulkInverseMatrix3x3);
-            view.bulkInverseMatrix3x3.clear();
         }
 
         /**
@@ -3121,25 +2136,12 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
             view.renderPump = this.renderPump;
             view.verticalFlipTranslate.set(this.verticalFlipTranslate);
             view.verticalFlipTranslateHeight = this.verticalFlipTranslateHeight;
-            view.coordTransformPtr = this.coordTransformPtr;
             view.rigorousRegistrationResolutionEnabled = this.rigorousRegistrationResolutionEnabled;
             view.animationLastTick = this.animationLastTick;
             view.animationDelta = this.animationDelta;
             view.sceneModelVersion = this.sceneModelVersion;
             view.scene = this.scene;
             System.arraycopy(this.sceneModelForwardMatrix, 0, view.sceneModelForwardMatrix, 0, 16);
-
-            view.bulkForwardMatrix.put(this.bulkForwardMatrix);
-            view.bulkForwardMatrix.clear();
-
-            view.bulkInverseMatrix.put(this.bulkInverseMatrix);
-            view.bulkInverseMatrix.clear();
-
-            view.bulkForwardMatrix3x3.put(this.bulkForwardMatrix3x3);
-            view.bulkForwardMatrix3x3.clear();
-
-            view.bulkInverseMatrix3x3.put(this.bulkInverseMatrix3x3);
-            view.bulkInverseMatrix3x3.clear();
         }
     }
 
@@ -3186,14 +2188,13 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
 
             if(!this.enqueued) {
                 this.enqueued = true;
-                _surface.queueEvent(this);
+                _context.queueEvent(this);
             }
         }
     }
 
     /**
-     * Stub of the old 'gdalext' library class.
-     * @deprecated only made public to enable the compilation of the ISP plugin.
+     * depcrecated public marking but still used by the ISP plugin
      */
     public static class OsrUtils {
         static {
@@ -3311,6 +2312,109 @@ public class GLMapView implements AtakMapView.OnMapMovedListener,
         private static native int forwardImplD(long transformPtr, DoubleBuffer postTransform, DoubleBuffer src, int srcOff, FloatBuffer dst, int dstOff, int count);
         
     }
+
+    void refreshTerrainTiles() {
+        LinkedList<Pointer> tilePtrs = new LinkedList<>();
+        getTerrainTiles(this.pointer.raw, tilePtrs);
+        synchronized(this.offscreen) {
+            for (Pointer tilePtr : tilePtrs) {
+                GLMapView.TerrainTile tile = this.offscreen.terrainTilesFront.remove(tilePtr);
+                if (tile == null) {
+                    // interop
+                    tile = new GLMapView.TerrainTile();
+                    tile.aabb = new Envelope();
+                    ElMgrTerrainRenderService.TerrainTile_getAAbbWgs84(tilePtr.raw, tile.aabb);
+                    tile.skirtIndexOffset = ElMgrTerrainRenderService.TerrainTile_getSkirtIndexOffset(tilePtr.raw);
+                    tile.numIndices = ElMgrTerrainRenderService.TerrainTile_getNumIndices(tilePtr.raw);
+                    tile.model = ModelBuilder.build(Mesh_interop.create(ElMgrTerrainRenderService.TerrainTile_getMesh(tilePtr.raw)));
+                    tile.info = new ModelInfo();
+                    tile.info.srid = ElMgrTerrainRenderService.TerrainTile_getSrid(tilePtr.raw);
+                    tile.info.localFrame = ElMgrTerrainRenderService.TerrainTile_getLocalFrame(tilePtr.raw);
+                }
+                offscreen.terrainTilesBack.put(tilePtr, tile);
+            }
+
+            // swap buffers
+            Map<Pointer, TerrainTile> tmp = offscreen.terrainTilesFront;
+            offscreen.terrainTilesFront = offscreen.terrainTilesBack;
+            offscreen.terrainTilesBack = tmp;
+
+            // destruct all pointers in the back buffer and clear it
+            for(Pointer pointer : offscreen.terrainTilesBack.keySet()) {
+                ElMgrTerrainRenderService.TerrainTile_destruct(pointer);
+            }
+            offscreen.terrainTilesBack.clear();
+        }
+    }
+
+    /*************************************************************************/
+    // Interop
+
+    static long getPointer(GLMapView object) {
+        return object.pointer.raw;
+    }
+    //static native Pointer wrap(GLLayerSpi2 object);
+    static boolean hasPointer(GLMapView object) {
+        return true;
+    }
+    //static native GLMapView create(Pointer pointer, Object ownerReference);
+    //static native boolean hasObject(long pointer);
+    //static native GLMapView getObject(long pointer);
+    //static Pointer clone(long otherRawPointer);
+    static native void destruct(Pointer pointer);
+
+    // native implementation
+
+    static native Pointer create(long ctxPtr, long mapviewPtr, int left, int bottom, int right, int top);
+    static native void render(long ptr);
+    static native void setBaseMap(long ptr, GLMapRenderable2 basemap);
+    static native void sync(long ptr, GLMapView view);
+    static native void start(long ptr);
+    static native void stop(long ptr);
+    static native void intern(GLMapView view);
+
+    static native double getTerrainMeshElevation(long ptr, double latitude, double longitude);
+    static native boolean intersectWithTerrain2(long viewptr, long sceneptr, float x, float y, GeoPoint result);
+    static native void getTerrainTiles(long ptr, Collection<Pointer> tiles);
+    static native int getTerrainVersion(long ptr);
+    static native Pointer getTerrainRenderService(long ptr);
+
+    static native void forwardD(long ptr, long srcBufPtr, int srcSize, long dstBufPtr, int dstSize, int count);
+    static native void forwardF(long ptr, long srcBufPtr, int srcSize, long dstBufPtr, int dstSize, int count);
+
+    static native double estimateResolutionFromViewAABB(long ptr, double ullat, double ullng, double lrlat, double lrlng, GeoPoint closest);
+    static native double estimateResolutionFromModelAABB(long ptr, double ullat, double ullng, double lrlat, double lrlng, GeoPoint closest);
+    static native double estimateResolutionFromViewSphere(long ptr, double centerX, double centerY, double centerZ, double radius, GeoPoint closest);
+    static native double estimateResolutionFromModelSphere(long ptr, double centerX, double centerY, double centerZ, double radius, GeoPoint closest);
+
+    static native void set_terrainBlendFactor(long pointer, float value);
+    static native void set_targeting(long pointer, boolean value);
+
+    // XXX - so bizarre, but getting a JNI error trying to set boolean fields, make accessors as temporary workaround
+
+    static native boolean get_targeting(long pointer);
+    static native boolean get_crossesIDL(long pointr);
+    static native boolean get_settled(long pointer);
+    static native boolean get_rigorousRegistrationResolutionEnabled(long pointer);
+    static native boolean get_terrainBlendEnabled(long pointer);
+    static native boolean get_continuousScrollEnabled(long pointer);
+
+    // MapRenderer2 camera management
+    static native int getDisplayMode(long pointer);
+    static native void setDisplayMode(long pointer, int srid);
+    static native boolean lookAt(long ptr, double lat, double lng, double resolution, double azimuth, double tilt, boolean animate);
+    static native Pointer getMapSceneModel(long ptr, boolean instant, boolean llOrigin);
+    static native boolean isAnimating(long ptr);
+    static native void setFocusPointOffset(long ptr, float x, float y);
+    static native float getFocusPointOffsetX(long ptr);
+    static native float getFocusPointOffsetY(long ptr);
+    static native void setDisplayDpi(long ptr, double dpi);
+    static native void setSize(long ptr, int w, int h);
+
+    static native boolean inverse(long ptr, double x, double y, double z, int mode, GeoPoint result);
+
+    static native double getElevationExaggerationFactor(long ptr);
+    static native void setElevationExaggerationFactor(long ptr, double factor);
 
 }
 

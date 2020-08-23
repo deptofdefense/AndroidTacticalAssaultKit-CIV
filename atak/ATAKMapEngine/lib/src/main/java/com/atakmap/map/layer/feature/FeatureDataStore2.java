@@ -28,7 +28,8 @@ public interface FeatureDataStore2 extends Disposable {
     public final static int PROPERTY_FEATURE_GEOMETRY = 0x02;
     public final static int PROPERTY_FEATURE_STYLE = 0x04;
     public final static int PROPERTY_FEATURE_ATTRIBUTES = 0x08;
-    
+
+
     public final static int UPDATE_ATTRIBUTES_SET = 0;
     public final static int UPDATE_ATTRIBUTES_ADD_OR_REPLACE = 1;
     
@@ -127,13 +128,13 @@ public interface FeatureDataStore2 extends Disposable {
     /**
      * Inserts the specified feature into the data store.
      * 
-     * @param fsid  The feature set ID that the feature will belong to.
-     * @param fid   The desired feature ID. If {@link #FEATURE_ID_NONE} is
-     *              specified, the data store will assign a unique ID. 
-     * @param def   The feature definition
-     * @version     The desired feature version. If
-     *              {@link #FEATURE_VERSION_NONE} is specified, the data store
-     *              will assign a version of <code>1L</code>.
+     * @param fsid      The feature set ID that the feature will belong to.
+     * @param fid       The desired feature ID. If {@link #FEATURE_ID_NONE} is
+     *                  specified, the data store will assign a unique ID.
+     * @param def       The feature definition
+     * @param version   The desired feature version. If
+     *                  {@link #FEATURE_VERSION_NONE} is specified, the data store
+     *                  will assign a version of <code>1L</code>.
      * 
      * @return  The ID of the feature inserted
      * 
@@ -248,6 +249,15 @@ public interface FeatureDataStore2 extends Disposable {
         public long minimumTimestamp;
         public long maximumTimestamp;
 
+        public Feature.AltitudeMode altitudeMode;
+
+        /**
+         * If <code>true</code>, accepts only extruded features. If <code>false</code> does not filter
+         * based on feature extrude property.
+         */
+        boolean extrudedOnly;
+
+
         public int ignoredFeatureProperties;
         public Collection<SpatialOp> spatialOps;
         
@@ -268,6 +278,8 @@ public interface FeatureDataStore2 extends Disposable {
             this.spatialFilter = null;
             this.minimumTimestamp = TIMESTAMP_NONE;
             this.maximumTimestamp = TIMESTAMP_NONE;
+            this.altitudeMode = Feature.AltitudeMode.ClampToGround;
+            this.extrudedOnly = false;
             this.ignoredFeatureProperties = 0;
             this.spatialOps = null;
             this.order = null;
@@ -286,6 +298,8 @@ public interface FeatureDataStore2 extends Disposable {
             this.spatialFilter = other.spatialFilter; // XXX - should clone here
             this.minimumTimestamp = other.minimumTimestamp;
             this.maximumTimestamp = other.maximumTimestamp;
+            this.altitudeMode = other.altitudeMode;
+            this.extrudedOnly = other.extrudedOnly;
             this.ignoredFeatureProperties = other.ignoredFeatureProperties;
             this.spatialOps = (other.spatialOps == null) ? null : new ArrayList<SpatialOp>(other.spatialOps);
             this.order = (other.order == null) ? null : new ArrayList<Order>(other.order);

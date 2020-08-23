@@ -83,7 +83,7 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
                         try {
                             ZipVirtualFile vf = new ZipVirtualFile(fName, url);
                             return new WebResourceResponse("text/html",
-                                    FileSystemUtils.UTF8_CHARSET, vf
+                                    FileSystemUtils.UTF8_CHARSET.name(), vf
                                             .openStream());
                         } catch (IOException ioe) {
                             Log.d(TAG, "error reading: " + fName + " entry: "
@@ -188,7 +188,8 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
 
                 String html = item.getMetaString("html", "No Metadata");
                 this.htmlViewer.loadDataWithBaseURL("file:///android_asset/",
-                        html, "text/html", FileSystemUtils.UTF8_CHARSET, null);
+                        html, "text/html", FileSystemUtils.UTF8_CHARSET.name(),
+                        null);
                 setSelected(item, "asset:/icons/outline.png");
 
                 if (!this.isVisible()) {

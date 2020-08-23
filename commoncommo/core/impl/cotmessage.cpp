@@ -3,6 +3,7 @@
 #include "commotime.h"
 #include "internalutils.h"
 #include "cryptoutil.h"
+#include "missionpackage.h"
 
 #include "protobuf.h"
 
@@ -291,7 +292,6 @@ struct CoTMessageImpl
                 (const xmlChar *)fileTransferRequest.sha256hash.c_str());
         xmlNewProp(fileShareAckElement, (const xmlChar *)"sizeInBytes",
                 (const xmlChar *)sizeStr.c_str());
-
     }
 
     CoTMessageImpl(const std::string &uid,
@@ -341,6 +341,15 @@ struct CoTMessageImpl
                 (const xmlChar *)fileTransferRequest.senderCallsign.c_str());
         xmlNewProp(fileShareElement, (const xmlChar *)"name",
                 (const xmlChar *)fileTransferRequest.name.c_str());
+        if (fileTransferRequest.peerHosted)
+            xmlNewProp(fileShareElement, (const xmlChar *)"peerHosted",
+                (const xmlChar *)"true");
+        if (fileTransferRequest.httpsPort != MP_LOCAL_PORT_DISABLE) {
+            std::string httpsPortStr = InternalUtils::uint64ToString(
+                                            fileTransferRequest.httpsPort);
+            xmlNewProp(fileShareElement, (const xmlChar *)"httpsPort",
+                (const xmlChar *)httpsPortStr.c_str());
+        }
 
         if (!fileTransferRequest.ackuid.empty()) {
             ackRequestElement = xmlNewChild(detailsElement, NULL, (const xmlChar *)"ackrequest", NULL);
@@ -516,6 +525,21 @@ private:
                                      senderUidStr.length());
                 std::string senderCallsign = checkedGetProp(fileShareElement, "senderCallsign");
 
+                bool peerHosted = false;
+                xmlChar *xmlProp = xmlGetProp(fileShareElement, (const xmlChar *)"peerHosted");
+                if (xmlProp) {
+                    std::string peerHostedStr = (char *)xmlProp;
+                    xmlFree(xmlProp);
+                    peerHosted = peerHostedStr == "true";
+                }
+                int httpsPort = MP_LOCAL_PORT_DISABLE;
+                xmlProp = xmlGetProp(fileShareElement, (const xmlChar *)"httpsPort");
+                if (xmlProp) {
+                    std::string httpsPortStr = (char *)xmlProp;
+                    xmlFree(xmlProp);
+                    httpsPort = InternalUtils::intFromString(httpsPortStr.c_str(), 1, 65535);
+                }
+
                 std::string ackuid;
                 ackRequestElement = getFirstChildElementByName(detailsElement, (const xmlChar *)"ackrequest");
                 if (ackRequestElement) {
@@ -526,7 +550,8 @@ private:
 
                 xferReq = new CoTFileTransferRequest(sha256, name,
                         senderFilename, senderUrl, sizeInBytes,
-                        senderCallsign, &senderuid, ackuid);
+                        senderCallsign, &senderuid, ackuid, peerHosted,
+                        httpsPort);
             } catch (std::invalid_argument &) {
             }
         }
@@ -1466,7 +1491,9 @@ CoTFileTransferRequest::CoTFileTransferRequest(const std::string &sha256hash,
                        const uint64_t sizeInBytes,
                        const std::string &senderCallsign,
                        const ContactUID *senderuid,
-                       const std::string &ackuid) :
+                       const std::string &ackuid,
+                       const bool peerHosted,
+                       const int httpsPort) :
                             sha256hash(sha256hash),
                             name(name),
                             senderFilename(senderFilename),
@@ -1474,7 +1501,9 @@ CoTFileTransferRequest::CoTFileTransferRequest(const std::string &sha256hash,
                             sizeInBytes(sizeInBytes),
                             senderCallsign(senderCallsign),
                             senderuid(new InternalContactUID(senderuid)),
-                            ackuid(ackuid)
+                            ackuid(ackuid),
+                            peerHosted(peerHosted),
+                            httpsPort(httpsPort)
 {
 }
 CoTFileTransferRequest::CoTFileTransferRequest(const CoTFileTransferRequest &src) :
@@ -1485,7 +1514,9 @@ CoTFileTransferRequest::CoTFileTransferRequest(const CoTFileTransferRequest &src
         sizeInBytes(src.sizeInBytes),
         senderCallsign(src.senderCallsign),
         senderuid(new InternalContactUID(src.senderuid)),
-        ackuid(src.ackuid)
+        ackuid(src.ackuid),
+        peerHosted(src.peerHosted),
+        httpsPort(src.httpsPort)
 {
 }
 CoTFileTransferRequest::~CoTFileTransferRequest()

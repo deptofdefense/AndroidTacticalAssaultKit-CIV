@@ -18,7 +18,7 @@ namespace atakmap {
     namespace core
     {
 
-        class MapSceneModel
+        class ENGINE_API MapSceneModel
         {
         public:
             MapSceneModel();

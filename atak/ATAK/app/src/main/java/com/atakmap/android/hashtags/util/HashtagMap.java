@@ -1,6 +1,8 @@
 
 package com.atakmap.android.hashtags.util;
 
+import com.atakmap.coremap.locale.LocaleUtil;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -61,6 +63,6 @@ public class HashtagMap<V> extends HashMap<String, V> {
     }
 
     private String key(Object tag) {
-        return String.valueOf(tag).toLowerCase();
+        return String.valueOf(tag).toLowerCase(LocaleUtil.getCurrent());
     }
 }

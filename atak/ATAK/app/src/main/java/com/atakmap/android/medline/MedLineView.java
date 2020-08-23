@@ -6,12 +6,14 @@ import android.app.Service;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.graphics.drawable.Drawable;
 import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ScrollView;
 import android.widget.ArrayAdapter;
@@ -23,6 +25,10 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.graphics.Color;
 import android.widget.AdapterView;
+import android.widget.Toast;
+
+import com.atakmap.android.gui.TileButtonDialog;
+import com.atakmap.android.importexport.CotEventFactory;
 import com.atakmap.android.util.SimpleItemSelectedListener;
 
 import com.atakmap.android.gui.ActionButton;
@@ -39,12 +45,15 @@ import com.atakmap.android.util.DialogConstructor;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
+import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.android.util.AttachmentManager;
 
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
+import java.util.Map;
+
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
@@ -104,6 +113,83 @@ public class MedLineView implements PointMapItem.OnPointChangedListener {
         }
     };
 
+    // for the choices to send
+    final TileButtonDialog tileButtonDialog;
+
+    /**
+     * When a plugin wants to send a Casevac/Medevac digitally using a transport method other than CoT
+     * (such as VMF), the plugin should register a runnable with this class.
+     * In the future we will be deprecating this feature in favor of using the contact list.
+     */
+    public interface ExternalMedevacProcessor {
+        boolean processMedevac(CotEvent ce);
+    }
+
+    private final Map<ExternalMedevacProcessor, TileButtonDialog.TileButton> eflpList = new HashMap<>();
+
+    /**
+     * Installs and external Medevac Processor.
+     * @param icon the icon used when the selection dialog is shown.
+     * @param txt the text that appears under the icon.
+     * @param eflp the External Medevac Processor implementation.
+     */
+    synchronized public void addExternalMedevacProcessor(final Drawable icon,
+            String txt, final ExternalMedevacProcessor eflp) {
+        TileButtonDialog.TileButton tb = tileButtonDialog.createButton(icon,
+                txt);
+        tb.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendMedevacEvent(eflp);
+            }
+        });
+        tileButtonDialog.addButton(tb);
+        eflpList.put(eflp, tb);
+    }
+
+    /**
+     * Returns true if the number of external Medevac processors is greater than 0.
+     */
+    synchronized public boolean hasExternalMedevacProcessors() {
+        return eflpList.size() > 0;
+    }
+
+    /**
+     * Removes an External Medevac Processor.
+     * @param eflp the External Medevac Processor.
+     * processor.
+     */
+    synchronized public void removeExternalMedevacProcessor(
+            final ExternalMedevacProcessor eflp) {
+        TileButtonDialog.TileButton tb = eflpList.get(eflp);
+        if (tb != null)
+            tileButtonDialog.removeButton(tb);
+        eflpList.remove(eflp);
+    }
+
+    private void sendMedevacEvent(final ExternalMedevacProcessor eflp) {
+
+        boolean success = false;
+
+        try {
+            if (eflp != null) {
+                success = eflp.processMedevac(CotEventFactory
+                        .createCotEvent(marker));
+            }
+        } catch (Exception e) {
+            // guarding against null above reveals a NPE in generateFriendlyEvent
+            // since at this point the information might be invalid, show the
+            // error in logcat and do not allow ATAK to crash.
+            // please revisit.
+            Log.e(TAG, "error: ", e);
+        }
+        if (!success) {
+            Toast.makeText(_mapView.getContext(),
+                    "Medevac failed to send",
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
     synchronized public static MedLineView getInstance(final MapView mapView) {
         if (_instance == null) {
             _instance = new MedLineView(mapView);
@@ -120,6 +206,22 @@ public class MedLineView implements PointMapItem.OnPointChangedListener {
         } catch (Exception e) {
             Log.d(TAG, "catch against bad call to init()", e);
         }
+
+        tileButtonDialog = new TileButtonDialog(mapView);
+        TileButtonDialog.TileButton tb = tileButtonDialog
+                .createButton(
+                        mapView.getContext()
+                                .getResources()
+                                .getDrawable(
+                                        com.atakmap.app.R.drawable.send_square),
+                        "Share");
+        tb.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                attachmentManager.send();
+            }
+        });
+        tileButtonDialog.addButton(tb);
 
     }
 
@@ -345,8 +447,10 @@ public class MedLineView implements PointMapItem.OnPointChangedListener {
                                 });
 
                 AlertDialog dialog = ad.create();
-                dialog.getWindow().setSoftInputMode(
-                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+                Window w = dialog.getWindow();
+                if (w != null)
+                    w.setSoftInputMode(
+                            WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
                 dialog.show();
             }
         });
@@ -992,7 +1096,12 @@ public class MedLineView implements PointMapItem.OnPointChangedListener {
         send.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                attachmentManager.send();
+                if (!hasExternalMedevacProcessors()) {
+                    attachmentManager.send();
+                } else {
+                    tileButtonDialog.show("Options", "");
+                }
+
             }
         });
 

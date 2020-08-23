@@ -8,6 +8,7 @@ import android.content.pm.ActivityInfo;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.tools.menu.AtakActionBarMenuData.Orientation;
+import com.atakmap.app.BuildConfig;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -76,10 +77,7 @@ public class AtakActionBarListData {
     }
 
     public boolean equals(AtakActionBarListData c) {
-        if (!FileSystemUtils.isEquals(getActionBars(), c.getActionBars()))
-            return false;
-
-        return true;
+        return FileSystemUtils.isEquals(getActionBars(), c.getActionBars());
     }
 
     @Override
@@ -274,7 +272,7 @@ public class AtakActionBarListData {
         return true;
     }
 
-    public static boolean rollout(Context context, boolean full) {
+    private static boolean rollout(Context context, boolean full) {
         FileSystemUtils.copyFromAssetsToStorageFile(context,
                 "actionbar/default_landscape.xml",
                 ACTION_BAR_DIR + "/default_landscape.xml", true);
@@ -282,9 +280,19 @@ public class AtakActionBarListData {
                 "actionbar/default_portrait.xml",
                 ACTION_BAR_DIR + "/default_portrait.xml", true);
         if (full) {
-            String[] list = new String[] {
-                    "planning", "jtac", "minimal"
-            };
+            final String[] list;
+
+            if (BuildConfig.HAS_FIRES) {
+                list = new String[] {
+                        "planning", "jtac", "minimal"
+                };
+            } else {
+                // jtac is bundled but completely non-functional do not unroll it.
+                list = new String[] {
+                        "planning", "minimal"
+                };
+            }
+
             for (String s : list) {
                 FileSystemUtils.copyFromAssetsToStorageFile(context,
                         "actionbar/" + s + "_landscape.xml",
@@ -302,7 +310,7 @@ public class AtakActionBarListData {
     /**
      * Get the list of configured action bar layouts from the default location
      * 
-     * @return
+     * @return the AtakActionBarListData object that refers to the action bar items.
      */
     public static AtakActionBarListData loadActionBars(Context context) {
 

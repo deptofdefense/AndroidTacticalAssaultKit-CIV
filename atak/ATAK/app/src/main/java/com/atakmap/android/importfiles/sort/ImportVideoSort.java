@@ -2,9 +2,11 @@
 package com.atakmap.android.importfiles.sort;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.util.Pair;
 
 import com.atakmap.android.filesystem.ResourceFile;
+import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
@@ -81,7 +83,12 @@ public class ImportVideoSort extends ImportResolver {
 
     @Override
     public String getDisplayableName() {
-        return "Video";
+        return _context.getString(R.string.video);
+    }
+
+    @Override
+    public Drawable getIcon() {
+        return _context.getDrawable(R.drawable.ic_video_alias);
     }
 
     @Override

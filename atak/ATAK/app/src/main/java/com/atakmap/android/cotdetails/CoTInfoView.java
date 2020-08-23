@@ -35,6 +35,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import com.atakmap.android.cotdetails.extras.ExtraDetailsLayout;
 import com.atakmap.android.hashtags.view.RemarksLayout;
 import com.atakmap.app.BuildConfig;
 
@@ -160,6 +161,7 @@ public class CoTInfoView extends RelativeLayout
     private ImageButton _sendButton;
     private ImageButton _attachmentsButton;
     private ToggleButton _autoBroadcastButton;
+    private ExtraDetailsLayout _extrasLayout;
     private boolean _visible = false;
 
     private String _prevName;
@@ -282,6 +284,7 @@ public class CoTInfoView extends RelativeLayout
 
         _autoBroadcastButton = this
                 .findViewById(R.id.cotInfoBroadcastButton);
+        _extrasLayout = findViewById(R.id.extrasLayout);
 
         _colorButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -1310,6 +1313,8 @@ public class CoTInfoView extends RelativeLayout
                 }
             }
         }
+
+        _extrasLayout.setItem(_marker);
     }
 
     private static boolean isEditable(MapItem item) {

@@ -997,7 +997,7 @@ struct ENGINE_API FeatureDataStore::FeatureQueryParameters
         bool
         isValid ()
             const
-            throw ()
+            throw () override
           { return point.isValid (); }
 
         core::GeoPoint point;

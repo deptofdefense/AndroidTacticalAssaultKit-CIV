@@ -11,28 +11,40 @@ import android.graphics.Color;
 import android.util.Pair;
 
 import com.atakmap.android.maps.graphics.GLTriangle;
+import com.atakmap.android.targetbubble.CrosshairLayer;
 import com.atakmap.android.targetbubble.MapTargetBubble;
 import com.atakmap.android.targetbubble.MapTargetBubble.OnCrosshairColorChangedListener;
 import com.atakmap.android.targetbubble.MapTargetBubble.OnLocationChangedListener;
 import com.atakmap.android.targetbubble.MapTargetBubble.OnScaleChangedListener;
+import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.Globe;
+import com.atakmap.map.LegacyAdapters;
 import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.RenderContext;
+import com.atakmap.map.layer.AbstractLayer;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.feature.geometry.Polygon;
+import com.atakmap.map.layer.opengl.GLAbstractLayer2;
 import com.atakmap.map.layer.opengl.GLLayer2;
 import com.atakmap.map.layer.opengl.GLLayer3;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
 import com.atakmap.map.layer.opengl.GLLayerSpi2;
 import com.atakmap.map.opengl.GLMapRenderable;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLES20FixedPipeline;
 
 public class GLMapTargetBubble extends GLMapView implements
         OnLocationChangedListener,
         OnScaleChangedListener,
         OnCrosshairColorChangedListener,
-        GLLayer2,
+        GLLayer3,
         MapControl {
+
+    static {
+        GLLayerFactory.register(GLTargetBubbleCrosshair.SPI);
+    }
 
     public final static GLLayerSpi2 SPI2 = new GLLayerSpi2() {
         @Override
@@ -59,14 +71,6 @@ public class GLMapTargetBubble extends GLMapView implements
 
     private static final int _STENCIL_CIRCLE_POINT_COUNT = 48;
 
-    private double targetLat;
-    private double targetLng;
-    private double targetMapScale;
-
-    // how is this even used targetRotation.
-    private double targetRotation = 0.0;
-    private double targetTilt = 0.0;
-    private final GLTargetBubbleCrosshair crosshair;
     private final double circleRadius;
 
     private final MapTargetBubble subject;
@@ -79,6 +83,8 @@ public class GLMapTargetBubble extends GLMapView implements
 
     private final GLMapView parent;
 
+    private GLTargetBubbleCrosshair crosshair;
+
     private float subjectLeft;
     private float subjectTop;
     private float subjectRight;
@@ -86,7 +92,7 @@ public class GLMapTargetBubble extends GLMapView implements
 
     public GLMapTargetBubble(final MapRenderer surface,
             MapTargetBubble subject) {
-        super(((GLMapView) surface).getSurface(),
+        super(LegacyAdapters.getRenderContext(surface), subject.getGlobe(),
                 ((GLMapView) surface)._left,
                 ((GLMapView) surface)._bottom,
                 ((GLMapView) surface)._right,
@@ -103,70 +109,18 @@ public class GLMapTargetBubble extends GLMapView implements
         this.renderCtx = surface;
         this.parent = (GLMapView) this.renderCtx;
         this.subject = subject;
-        this.continuousScrollEnabled = this.parent.continuousScrollEnabled;
-        this.hardwareTransformResolutionThreshold = this.parent.hardwareTransformResolutionThreshold;
 
-        this.targeting = this.subject.isCoordExtractionBubble();
+        this.setTargeting(this.subject.isCoordExtractionBubble());
 
         final double lat = subject.getLatitude();
         final double lng = subject.getLongitude();
         circleRadius = subject.getWidth() / 2d;
         viewport = subject.getViewport();
 
-        startAnimating(lat, lng, subject.getMapScale(), targetRotation,
-                targetTilt, 1d);
-        drawRotation = targetRotation;
-        drawTilt = targetTilt;
-
-        this.focusx = this.parent.focusx;
-        this.focusy = this.parent.focusy;
-
-        this.crosshair = new GLTargetBubbleCrosshair();
-
-        final List<Layer> layers = this.subject.getLayers();
-        Map<Layer, GLLayer2> renderers = new HashMap<>();
-        for (Layer layer : layers) {
-            final GLLayer2 renderer = GLLayerFactory.create3(this, layer);
-            if (renderer != null) {
-                // if a renderer was created, start it and do the GL refresh
-                renderer.start();
-                renderers.put(layer, renderer);
-            }
-        }
-
-        this.refreshLayersImpl2(layers, renderers);
-
-        drawVersion++;
+        this.setFocusPointOffset(((GLMapView) surface).getFocusPointOffsetX(),
+                ((GLMapView) surface).getFocusPointOffsetY());
 
         this.initialized = false;
-    }
-
-    private void onAnimate() {
-        final float parentFocusX = this.parent.focusx;
-        final float parentFocusY = this.parent.focusy;
-
-        if (this.focusx != parentFocusX ||
-                this.focusy != parentFocusY ||
-                this.drawLat != targetLat ||
-                this.drawLng != targetLng ||
-                this.drawRotation != targetRotation ||
-                this.drawTilt != targetTilt ||
-                this.drawMapScale != targetMapScale) {
-
-            this.focusx = parentFocusX;
-            this.focusy = parentFocusY;
-
-            drawLat = targetLat;
-            drawLng = targetLng;
-            drawRotation = targetRotation;
-            drawTilt = targetTilt;
-            drawMapScale = targetMapScale;
-            drawMapResolution = getSurface().getMapView().getMapResolution(
-                    drawMapScale);
-            drawVersion++;
-        }
-
-        super.updateBounds();
     }
 
     @Override
@@ -175,48 +129,35 @@ public class GLMapTargetBubble extends GLMapView implements
     }
 
     @Override
-    protected void drawRenderables() {
-        super.drawRenderables();
-
-        // draw the crosshair
-        this.crosshair.draw(this);
-    }
-
-    @Override
     public void onMapTargetBubbleLocationChanged(final MapTargetBubble bubble) {
-        this.onBubbleUpdate(bubble);
-    }
-
-    private void onBubbleUpdate(final MapTargetBubble bubble) {
-        final double lat = bubble.getLatitude();
-        final double lng = bubble.getLongitude();
-        final double scale = bubble.getMapScale();
-        final int color = bubble.getCrosshairColor();
-        getSurface().queueEvent(new Runnable() {
-            @Override
-            public void run() {
-                crosshair.colorR = Color.red(color) / 255f;
-                crosshair.colorG = Color.green(color) / 255f;
-                crosshair.colorB = Color.blue(color) / 255f;
-                crosshair.colorA = Color.alpha(color) / 255f;
-                startAnimating(lat, lng, scale, targetRotation, targetTilt,
-                        0.3d);
-            }
-        });
+        this.lookAt(new GeoPoint(bubble.getLatitude(), bubble.getLongitude()),
+                Globe.getMapResolution(getRenderSurface().getDpi(),
+                        bubble.getMapScale()),
+                0d, 0d, false);
     }
 
     @Override
     public void onMapTargetBubbleScaleChanged(MapTargetBubble bubble) {
-        this.onBubbleUpdate(bubble);
+        this.lookAt(new GeoPoint(bubble.getLatitude(), bubble.getLongitude()),
+                Globe.getMapResolution(getRenderSurface().getDpi(),
+                        bubble.getMapScale()),
+                0d, 0d, false);
     }
 
     @Override
     public void onMapTargetBubbleCrosshairColorChanged(MapTargetBubble bubble) {
-        this.onBubbleUpdate(bubble);
     }
 
     @Override
     public void draw(GLMapView view) {
+        this.draw(view, -1);
+    }
+
+    @Override
+    public void draw(GLMapView view, int renderPass) {
+        if (!MathUtils.hasBits(renderPass, getRenderPass()))
+            return;
+
         if (!this.initialized) {
             if (this.viewport != null) {
                 /* create the stencil buffer circle */
@@ -230,10 +171,11 @@ public class GLMapTargetBubble extends GLMapView implements
                     _circle.setY(i, (float) cy);
                 }
             }
+            this.crosshair = new GLTargetBubbleCrosshair(this,
+                    this.subject.getCrosshair());
+            this.crosshair.start();
             this.initialized = true;
         }
-
-        onAnimate();
 
         if (_circle != null) {
             GLES20FixedPipeline
@@ -278,6 +220,7 @@ public class GLMapTargetBubble extends GLMapView implements
         if (_circle != null) {
             GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_STENCIL_TEST);
         }
+        crosshair.draw(this, RENDER_PASS_UI);
     }
 
     @Override
@@ -289,23 +232,26 @@ public class GLMapTargetBubble extends GLMapView implements
                 ((GLLayer3) r).stop();
             r.release();
         }
+        if (crosshair != null) {
+            crosshair.stop();
+            crosshair.release();
+            this.crosshair = null;
+        }
         super.release();
         super.dispose();
-
-        this.crosshair.release();
 
         _circle = null;
         this.initialized = false;
     }
 
     @Override
+    public int getRenderPass() {
+        return GLMapView.RENDER_PASS_UI;
+    }
+
+    @Override
     public void startAnimating(double lat, double lng, double scale,
             double rotation, double tilt, double animateFactor) {
-        this.targetLat = lat;
-        this.targetLng = lng;
-        this.targetMapScale = scale;
-        this.targetRotation = rotation;
-        this.targetTilt = tilt;
     }
 
     /**************************************************************************/
@@ -320,25 +266,45 @@ public class GLMapTargetBubble extends GLMapView implements
     public void start() {
         this.subject.addOnLocationChangedListener(this);
         this.subject.addOnScaleChangedListener(this);
+        this.onMapTargetBubbleLocationChanged(this.subject);
+
+        super.start();
+
         this.subject.addOnCrosshairColorChangedListener(this);
         this.renderCtx.registerControl(this.subject, this);
-
-        this.onBubbleUpdate(this.subject);
     }
 
     @Override
     public void stop() {
         this.renderCtx.unregisterControl(this.subject, this);
         this.subject.removeOnCrosshairColorChangedListener(this);
+
         this.subject.removeOnLocationChangedListener(this);
         this.subject.removeOnScaleChangedListener(this);
+
+        super.stop();
     }
 
     private GLTriangle.Fan _circle;
 
     /**************************************************************************/
 
-    private class GLTargetBubbleCrosshair implements GLMapRenderable {
+    private final static class GLTargetBubbleCrosshair extends GLAbstractLayer2
+            implements CrosshairLayer.OnCrosshairColorChangedListener {
+        final static GLLayerSpi2 SPI = new GLLayerSpi2() {
+            @Override
+            public int getPriority() {
+                return 1;
+            }
+
+            @Override
+            public GLLayer2 create(Pair<MapRenderer, Layer> object) {
+                if (object.second instanceof CrosshairLayer)
+                    return new GLTargetBubbleCrosshair(object.first,
+                            (CrosshairLayer) object.second);
+                return null;
+            }
+        };
 
         GLTriangle.Strip _crossHairLine;
         float colorR;
@@ -346,8 +312,31 @@ public class GLMapTargetBubble extends GLMapView implements
         float colorB;
         float colorA;
 
+        GLTargetBubbleCrosshair(MapRenderer surface, CrosshairLayer subject) {
+            super(surface, subject, GLMapView.RENDER_PASS_UI);
+        }
+
         @Override
-        public void draw(GLMapView view) {
+        public void start() {
+            super.start();
+            ((CrosshairLayer) this.subject)
+                    .addOnCrosshairColorChangedListener(this);
+            this.onCrosshairColorChanged((CrosshairLayer) this.subject,
+                    ((CrosshairLayer) this.subject).getCrosshairColor());
+        }
+
+        @Override
+        public void stop() {
+            ((CrosshairLayer) this.subject)
+                    .removeOnCrosshairColorChangedListener(this);
+            super.stop();
+        }
+
+        @Override
+        protected void drawImpl(GLMapView view, int renderPass) {
+            if (!MathUtils.hasBits(renderPass, getRenderPass()))
+                return;
+
             if (_crossHairLine == null) {
                 _crossHairLine = new GLTriangle.Strip(2, 4);
                 _crossHairLine.setX(0, 0f);
@@ -363,16 +352,17 @@ public class GLMapTargetBubble extends GLMapView implements
                 _crossHairLine.setY(3, 1f);
             }
 
-            final float width = _right - _left;
-            final float height = _top - _bottom;
+            final float width = view._right - view._left;
+            final float height = view._top - view._bottom;
 
             // XXX - this is a little messy, but we need to capture relative
             //       focus here, as opposed to onAnimate due to baseclass
             //       implementation detail. It is also important to note that
             //       'focusy' is relative to origin at UPPER left, not LOWER
             //       left
-            final float fx = focusx - _left;
-            final float fy = focusy - (parent._top - _top);
+            final float fx = view.focusx - view._left;
+            final float fy = view.focusy
+                    - (((GLMapTargetBubble) view).parent._top - view._top);
 
             final float pinLength = Math.min(width, height);
 
@@ -383,56 +373,57 @@ public class GLMapTargetBubble extends GLMapView implements
             // the crosshair is centered relative to the focus
 
             // RIGHT
-            GLES20FixedPipeline.glTranslatef(_left + fx + pinLength / 8,
-                    _top - fy - 1f, 0f);
+            GLES20FixedPipeline.glLoadIdentity();
+            GLES20FixedPipeline.glTranslatef(view._left + fx + pinLength / 8,
+                    view._top - fy - 1f, 0f);
             GLES20FixedPipeline.glScalef(width - fx, 3f, 1f);
             _crossHairLine.draw();
 
             GLES20FixedPipeline.glLoadIdentity();
             GLES20FixedPipeline.glTranslatef(
-                    _left + fx + pinLength / 32,
-                    _top - fy, 0f);
+                    view._left + fx + pinLength / 32,
+                    view._top - fy, 0f);
             GLES20FixedPipeline.glScalef(width - fx, 1, 1f);
             _crossHairLine.draw();
 
             // LEFT
             GLES20FixedPipeline.glLoadIdentity();
-            GLES20FixedPipeline.glTranslatef(_left - pinLength / 8,
-                    _top - fy - 1f, 0f);
+            GLES20FixedPipeline.glTranslatef(view._left - pinLength / 8,
+                    view._top - fy - 1f, 0f);
             GLES20FixedPipeline.glScalef(fx, 3f, 1f);
             _crossHairLine.draw();
 
             GLES20FixedPipeline.glLoadIdentity();
-            GLES20FixedPipeline.glTranslatef(_left - pinLength / 32,
-                    _top - fy, 0f);
+            GLES20FixedPipeline.glTranslatef(view._left - pinLength / 32,
+                    view._top - fy, 0f);
             GLES20FixedPipeline.glScalef(fx, 1f, 1f);
             _crossHairLine.draw();
 
             // TOP
             GLES20FixedPipeline.glLoadIdentity();
-            GLES20FixedPipeline.glTranslatef(_left + fx - 1f,
-                    _top - fy + pinLength / 8,
+            GLES20FixedPipeline.glTranslatef(view._left + fx - 1f,
+                    view._top - fy + pinLength / 8,
                     0f);
             GLES20FixedPipeline.glScalef(3f, fy, 1f);
             _crossHairLine.draw();
 
             GLES20FixedPipeline.glLoadIdentity();
-            GLES20FixedPipeline.glTranslatef(_left + fx,
-                    _top - fy + pinLength / 32,
+            GLES20FixedPipeline.glTranslatef(view._left + fx,
+                    view._top - fy + pinLength / 32,
                     0f);
             GLES20FixedPipeline.glScalef(1f, fy, 1f);
             _crossHairLine.draw();
 
             // BOTTOM
             GLES20FixedPipeline.glLoadIdentity();
-            GLES20FixedPipeline.glTranslatef(_left + fx - 1f,
-                    _bottom - pinLength / 8, 0f);
+            GLES20FixedPipeline.glTranslatef(view._left + fx - 1f,
+                    view._bottom - pinLength / 8, 0f);
             GLES20FixedPipeline.glScalef(3f, height - fy, 1f);
             _crossHairLine.draw();
 
             GLES20FixedPipeline.glLoadIdentity();
-            GLES20FixedPipeline.glTranslatef(_left + fx,
-                    _bottom - pinLength / 32, 0f);
+            GLES20FixedPipeline.glTranslatef(view._left + fx,
+                    view._bottom - pinLength / 32, 0f);
             GLES20FixedPipeline.glScalef(1f, height - fy, 1f);
             _crossHairLine.draw();
 
@@ -446,5 +437,12 @@ public class GLMapTargetBubble extends GLMapView implements
             _crossHairLine = null;
         }
 
+        @Override
+        public void onCrosshairColorChanged(CrosshairLayer layer, int color) {
+            this.colorR = Color.red(color) / 255f;
+            this.colorG = Color.green(color) / 255f;
+            this.colorB = Color.blue(color) / 255f;
+            this.colorA = Color.alpha(color) / 255f;
+        }
     }
 }

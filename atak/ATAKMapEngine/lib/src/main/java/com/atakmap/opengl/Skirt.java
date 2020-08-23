@@ -1,9 +1,18 @@
 package com.atakmap.opengl;
 
+import android.opengl.GLES20;
 import android.opengl.GLES30;
 
+import com.atakmap.lang.Unsafe;
+
 import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.CharBuffer;
+import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
 
 public final class Skirt {
@@ -36,93 +45,67 @@ public final class Skirt {
      * @param skirtIndices  The buffer to store the generated indices for the skirt mesh geometry, may not be <code>null</code>
      */
     public static void create(int mode, int stride, FloatBuffer vertices, ShortBuffer edgeIndices, int count, ShortBuffer skirtIndices, float height) {
-        switch(mode) {
-            case GLES30.GL_TRIANGLE_STRIP :
-            case GLES30.GL_TRIANGLES :
-                break;
-            default :
-                throw new IllegalArgumentException("mode is not correct");
-        }
-        if(count < 2)
-            throw new IllegalArgumentException("count is less then 2");
-        if(stride == 0)
-            stride = 3;
-        else if(stride < 3)
-            throw new IllegalArgumentException("stride is less than 3");
         if(vertices == null)
-            throw new IllegalArgumentException("vertices is null");
+            throw new IllegalArgumentException();
+        FloatBuffer dvertices = asDirect(vertices, FloatBuffer.class);
+        ShortBuffer dedgeIndices = asDirect(edgeIndices, ShortBuffer.class);
         if(skirtIndices == null)
-            throw new IllegalArgumentException("skirtIndices is null");
+            throw new IllegalArgumentException();
+        ShortBuffer dskirtIndices = asDirect(skirtIndices, ShortBuffer.class);
 
-        final int basePos = vertices.position();
-        final int baseLim = vertices.limit();
-        vertices.position(vertices.limit());
-        vertices.limit(vertices.capacity());
+        if(stride ==0)
+            stride = 3;
 
-        final int skip = stride-3;
+        create(mode,
+                stride*4,
+                GLES20.GL_FLOAT,
+                Unsafe.getBufferPointer(dvertices)+(4*dvertices.position()),
+                (dvertices.limit()-dvertices.position())*4,
+                (dvertices.capacity()-dvertices.position())*4,
+                GLES20.GL_UNSIGNED_SHORT,
+                (edgeIndices != null) ? Unsafe.getBufferPointer(dedgeIndices)+(2*dedgeIndices.position()) : null,
+                (edgeIndices != null) ? (dedgeIndices.capacity()-dedgeIndices.position())*2 : 0,
+                count,
+                Unsafe.getBufferPointer(dskirtIndices)+(2*dskirtIndices.position()),
+                (dskirtIndices.capacity()-dskirtIndices.position())*2,
+                height);
 
-        // write skirt vertices to vertex buffer
-        for (int i = 0; i < count; i++) {
-            final int index = (edgeIndices != null) ? (int)edgeIndices.get(edgeIndices.position()+i) : i;
+        // data was written, update limit
+        dvertices.limit(dvertices.limit()+(stride*getNumOutputVertices(count)));
+        if(dvertices != vertices) {
+            // copy back
+            final int basePos = vertices.position();
+            vertices.limit(dvertices.limit());
+            vertices.put(dvertices);
+            vertices.position(basePos);
 
-            // top vertex (from exterior edge)
-            final float x_t = vertices.get(basePos + (index * stride));
-            final float y_t = vertices.get(basePos + (index * stride) + 1);
-            final float z_t = vertices.get(basePos + (index * stride) + 2);
+            // free
+            Unsafe.free(dvertices);
+        }
+        if(dedgeIndices != edgeIndices) {
+            // read-only
+            Unsafe.free(dedgeIndices);
+        }
+        // data was written, update limit
+        dskirtIndices.limit(dskirtIndices.position()+getNumOutputIndices(mode, count));
+        if(dskirtIndices != skirtIndices) {
+            // copy back
+            final int basePos = skirtIndices.position();
+            skirtIndices.limit(dskirtIndices.limit());
+            skirtIndices.put(dskirtIndices);
 
-            // emit skirt vertex
-            final float x_b = x_t;
-            final float y_b = y_t;
-            final float z_b = z_t - height;
-
-            vertices.put(x_b);
-            vertices.put(y_b);
-            vertices.put(z_b);
-            if(skip > 0)
-                vertices.position(vertices.position()+skip);
+            // free
+            Unsafe.free(dskirtIndices);
+        } else {
+            dskirtIndices.position(dskirtIndices.limit());
         }
 
-        // emit indices for skirt mesh geometry
-        if(mode == GLES30.GL_TRIANGLE_STRIP) {
-            // for a triangle strip, we emit the top and bottom for each vertex
-            // in the exterior edge
-            for (int i = 0; i < count; i++) {
-                final int index = (edgeIndices != null) ? (int)edgeIndices.get(edgeIndices.position()+i) : i;
-
-                skirtIndices.put((short)index);
-                skirtIndices.put((short)(baseLim/stride+i));
-            }
-        } else if(mode == GLES30.GL_TRIANGLES) {
-            // for triangles, we emit two triangles for each segment in the
-            // exterior edge
-            for (int i = 0; i < count-1; i++) {
-                final int index0 = (edgeIndices != null) ? (int)edgeIndices.get(edgeIndices.position()+i) : i;
-                final int index1 = (edgeIndices != null) ? (int)edgeIndices.get(edgeIndices.position()+(i+1)) : (i+1);
-
-                // a --- b
-                // | \   |
-                // |  \  |
-                // |   \ |
-                // c --- d
-                final int aidx = index0;
-                final int bidx = index1;
-                final int cidx = baseLim/stride+i;
-                final int didx = baseLim/stride+(i+1);
-
-                skirtIndices.put((short)cidx);
-                skirtIndices.put((short)didx);
-                skirtIndices.put((short)aidx);
-
-                skirtIndices.put((short)aidx);
-                skirtIndices.put((short)didx);
-                skirtIndices.put((short)bidx);
-            }
-        } // else illegal state
-
-        vertices.flip();
-        vertices.position(basePos);
+        // XXX - consistency with original implementation, flip may not
+        //       actually be desired here
         skirtIndices.flip();
     }
+
+    private static native void create(int mode, int stride, int verticesType, long verticesPtr, int verticesLim, int verticesSize, int indicesType, long edgeIndicesPtr, int edgeIndicesSize, int count, long skirtIndicesPtr, int skirtIndicesSize, float height);
 
     /**
      * Returns the number of skirt vertices that will be output.
@@ -131,24 +114,42 @@ public final class Skirt {
      *          buffer as a result of
      *          {@link #create(int, int, FloatBuffer, ShortBuffer, int, ShortBuffer, float)}}
      */
-    public static int getNumOutputVertices(int count) {
-        return count;
-    }
+    public static native int getNumOutputVertices(int count);
 
     /**
      * Returns the number of indices that will be output to define the skirt mesh.
      * @param mode  The mesh draw mode
      * @param count The number of exterior edge vertices
-     * @return the number of output indicies based on the mode and the count
+     * @return
      */
-    public static int getNumOutputIndices(int mode, int count) {
-        switch(mode) {
-            case GLES30.GL_TRIANGLES :
-                return 6*(count-1);
-            case GLES30.GL_TRIANGLE_STRIP :
-                return 2*count;
-            default :
-                throw new IllegalArgumentException("invalid mode");
+    public static native int getNumOutputIndices(int mode, int count);
+
+    private static <T extends Buffer> T asDirect(T src, Class<T> buftype) {
+        if(src == null)
+            return null;
+        if(src.isDirect())
+            return src;
+        T retval = Unsafe.allocateDirect(src.capacity(), buftype);
+        retval.position(src.position());
+        if(buftype == DoubleBuffer.class) {
+            ((DoubleBuffer)retval).put(((DoubleBuffer)src).duplicate());
+        } else if(buftype == FloatBuffer.class) {
+            ((FloatBuffer)retval).put(((FloatBuffer)src).duplicate());
+        } else if(buftype == ShortBuffer.class) {
+            ((ShortBuffer)retval).put(((ShortBuffer)src).duplicate());
+        } else if(buftype == IntBuffer.class) {
+            ((IntBuffer)retval).put(((IntBuffer)src).duplicate());
+        } else if(buftype == LongBuffer.class) {
+            ((LongBuffer)retval).put(((LongBuffer)src).duplicate());
+        } else if(buftype == CharBuffer.class) {
+            ((CharBuffer)retval).put(((CharBuffer)src).duplicate());
+        } else if(buftype == ByteBuffer.class) {
+            ((ByteBuffer)retval).put(((ByteBuffer)src).duplicate());
+        } else {
+            throw new IllegalArgumentException();
         }
+        retval.position(src.position());
+        retval.limit(src.limit());
+        return retval;
     }
 }

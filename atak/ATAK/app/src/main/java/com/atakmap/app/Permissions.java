@@ -13,14 +13,13 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
+import androidx.annotation.NonNull;
 
 public class Permissions {
 
     private final static String TAG = "Permissions";
 
     final static int REQUEST_ID = 90402;
-
-    final static String ACCESS_BACKGROUND_LOCATION = "android.permission.ACCESS_BACKGROUND_LOCATION"; // Android 29 Requirement
 
     final static String[] PermissionsList = new String[] {
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -43,14 +42,19 @@ public class Permissions {
             Manifest.permission.GET_TASKS,
             Manifest.permission.SEND_SMS,
             Manifest.permission.NFC,
-            Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
             Manifest.permission.CHANGE_WIFI_STATE,
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.MODIFY_AUDIO_SETTINGS,
-            ACCESS_BACKGROUND_LOCATION,
+
+            // 23 - protection in place
+            Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+
+            // 26 - protection in place
+            Manifest.permission.REQUEST_DELETE_PACKAGES,
+
+            // 29 - protection in place
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION,
             "com.atakmap.app.ALLOW_TEXT_SPEECH",
-            //Manifest.permission.DEVICE_POWER,
-            //Manifest.permission.READ_CONTACTS
     };
 
     static boolean checkPermissions(final Activity a) {
@@ -60,17 +64,25 @@ public class Permissions {
         }
         int result = 0;
         for (String permission : PermissionsList) {
-            if (Build.VERSION.SDK_INT >= 29
-                    || !ACCESS_BACKGROUND_LOCATION.equals(permission)) {
-                result += a.checkSelfPermission(permission);
-            }
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
+                    && Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                            .equals(permission))
+                continue;
+
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O
+                    && Manifest.permission.REQUEST_DELETE_PACKAGES
+                            .equals(permission))
+                continue;
+
+            result += a.checkSelfPermission(permission);
         }
 
-        if (Build.VERSION.SDK_INT >= 29) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             if (PackageManager.PERMISSION_GRANTED != a
-                    .checkCallingOrSelfPermission(ACCESS_BACKGROUND_LOCATION)) {
+                    .checkCallingOrSelfPermission(
+                            Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
                 Log.d(TAG,
-                        "permission not granted for background location listenening");
+                        "permission not granted for background location listening");
                 showWarning(a);
                 return false;
             }
@@ -162,6 +174,46 @@ public class Permissions {
             Log.e(TAG, "permission denied: " + permission, new Exception());
             return false;
         }
+
+    }
+
+    /**
+     * Handles the mechanics of the permission request.
+     * @param requestCode must be Permissions.REQUEST_ID
+     * @param permissions the list of permissions requested
+     * @param grantResults the results for each of the permissions
+     * @return true if the permissions have all been granted
+     */
+    static boolean onRequestPermissionsResult(int requestCode,
+            @NonNull String[] permissions, @NonNull int[] grantResults) {
+
+        Log.d(TAG, "onRequestPermissionsResult called: " + requestCode);
+        switch (requestCode) {
+            case Permissions.REQUEST_ID:
+                if (grantResults.length > 0) {
+                    boolean b = true;
+                    for (int i = 0; i < grantResults.length; ++i) {
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
+                                && Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                                        .equals(permissions[i]))
+                            continue;
+
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O
+                                && Manifest.permission.REQUEST_DELETE_PACKAGES
+                                        .equals(permissions[i]))
+                            continue;
+
+                        b = b && (grantResults[i] == PackageManager.PERMISSION_GRANTED);
+                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED)
+                            Log.d(TAG, "onRequestPermissionResult not granted: "
+                                    + permissions[i]);
+                    }
+
+                    return b;
+
+                }
+        }
+        return false;
 
     }
 

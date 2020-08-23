@@ -17,7 +17,7 @@ namespace TAK {
                 class MutexImpl;
             }
 
-            enum ENGINE_API MutexType
+            enum MutexType
             {
                 /** Default, non-recursive behavior */
                 TEMT_Default,
@@ -50,7 +50,6 @@ namespace TAK {
                 std::unique_ptr<Impl::MutexImpl, void(*)(const Impl::MutexImpl *)> impl;
 
                 friend class ENGINE_API CondVar;
-                friend ENGINE_API Util::TAKErr Lock_create(std::unique_ptr<Lock, void(*)(const Lock *)> &value, Mutex &mutex) NOTHROWS;
             };
         }
     }

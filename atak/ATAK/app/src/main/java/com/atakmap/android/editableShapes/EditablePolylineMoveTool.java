@@ -72,6 +72,11 @@ class EditablePolylineMoveTool extends Tool {
                     return;
                 }
                 MapItem item = event.getItem();
+
+                // if it is not movable - do not allow it to move
+                if (!item.getMetaBoolean("movable", true))
+                    return;
+
                 String type = item.getType();
                 if (type.equals("shape_marker") || type.equals("center_u-o-a")
                         || type.equals("center_u-o-a-t-t")

@@ -9,9 +9,9 @@ using namespace TAK::Engine::Util;
 
 
 #define LOG_SYNC() \
-    TAK::Engine::Thread::LockPtr lock(NULL, NULL); \
-    if(!destructed) \
-        TAK::Engine::Thread::Lock_create(lock, logMutex());
+    if(destructed) \
+        return; \
+    TAK::Engine::Thread::Lock lock(logMutex());
 
 namespace
 {
@@ -21,9 +21,9 @@ namespace
     {
     public :
         StdOutLogger() NOTHROWS;
-        virtual ~StdOutLogger() NOTHROWS;
+        ~StdOutLogger() NOTHROWS override;
     public :
-        virtual int print(const LogLevel lvl, const char *fmt, va_list args) NOTHROWS;
+        int print(const LogLevel lvl, const char *fmt, va_list args) NOTHROWS override;
     };
 
     class LoggerContext

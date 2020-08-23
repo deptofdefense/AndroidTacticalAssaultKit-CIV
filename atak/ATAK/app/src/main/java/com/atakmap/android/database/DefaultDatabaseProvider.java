@@ -3,7 +3,7 @@ package com.atakmap.android.database;
 
 import android.database.sqlite.SQLiteException;
 import android.net.Uri;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;

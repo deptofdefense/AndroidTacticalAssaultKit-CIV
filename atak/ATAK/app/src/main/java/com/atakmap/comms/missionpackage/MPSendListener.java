@@ -73,7 +73,7 @@ public interface MPSendListener {
 
     /**
      * Called by the transfer engine when an MP send successfully notifies
-     * the specified contact the the transfer is available for them to download.
+     * the specified contact the transfer is available for them to download.
      * The transfer is suspended until the recipient sends us an ack message.
      * This is not invoked for direct sends to TAK servers.
      *

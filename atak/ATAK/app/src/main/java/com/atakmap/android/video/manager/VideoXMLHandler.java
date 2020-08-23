@@ -2,6 +2,7 @@
 package com.atakmap.android.video.manager;
 
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.video.ConnectionEntry;
 import com.atakmap.android.video.ConnectionEntry.Protocol;
 import com.atakmap.android.video.ConnectionEntry.Source;
@@ -10,6 +11,9 @@ import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
+import com.atakmap.coremap.xml.XMLUtils;
+import com.atakmap.net.AtakAuthenticationCredentials;
+import com.atakmap.net.AtakAuthenticationDatabase;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -27,6 +31,8 @@ import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import javax.xml.XMLConstants;
+
 /**
  * Handles serialization and deserialization of connection entry XML
  */
@@ -40,8 +46,9 @@ public class VideoXMLHandler {
     public VideoXMLHandler() {
         DocumentBuilder builder = null;
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory
-                    .newInstance();
+            DocumentBuilderFactory factory = XMLUtils
+                    .getDocumenBuilderFactory();
+
             builder = factory.newDocumentBuilder();
         } catch (Exception e) {
             Log.e(TAG, "Failed to create document builder", e);
@@ -129,6 +136,11 @@ public class VideoXMLHandler {
             fos = new FileOutputStream(file);
             FileSystemUtils.write(fos, xml);
             fos = null;
+
+            // Save any passphrase to the auth database
+            if (entry.getProtocol() == Protocol.SRT && entry.getPassphrase() != null && entry.getPassphrase().length() > 0)
+                AtakAuthenticationDatabase.saveCredentials(AtakAuthenticationCredentials.TYPE_videoPassword, entry.getUID(), "", entry.getPassphrase(), false);
+
             return file;
         } catch (Exception e) {
             Log.e(TAG, "Failed to serialize connection entry: " + entry, e);
@@ -238,20 +250,22 @@ public class VideoXMLHandler {
         Source source = proto == Protocol.FILE || proto == Protocol.DIRECTORY
                 ? Source.LOCAL_STORAGE
                 : Source.EXTERNAL;
+        String pass = "";
+        if (proto == Protocol.SRT) {
+            AtakAuthenticationCredentials creds = AtakAuthenticationDatabase.getCredentials(AtakAuthenticationCredentials.TYPE_videoPassword, uid);
+            if (creds != null)
+                pass = creds.password;
+        }
         ConnectionEntry entry = new ConnectionEntry(alias, address,
                 preferredMacAddress, port, roverPort, path, proto, timeout,
-                buffer, rtspReliable, source);
+                buffer, rtspReliable, pass, source);
         entry.setUID(uid);
         entry.setIgnoreEmbeddedKLV(ignoreKLV);
         return entry;
     }
 
     private static int parseInt(String v) {
-        try {
-            return Integer.parseInt(v);
-        } catch (Exception ignore) {
-            return -1;
-        }
+        return MathUtils.parseInt(v, -1);
     }
 
     /**

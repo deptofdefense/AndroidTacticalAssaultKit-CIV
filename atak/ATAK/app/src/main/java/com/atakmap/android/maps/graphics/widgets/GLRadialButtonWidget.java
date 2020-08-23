@@ -54,7 +54,7 @@ public class GLRadialButtonWidget extends GLAbstractButtonWidget implements
         _radius = subject.getOrientationRadius();
         _bgDirty = true;
         if (subject instanceof MapMenuButtonWidget) {
-            if (((MapMenuButtonWidget) subject).getSubmenu() != null) {
+            if (((MapMenuButtonWidget) subject).getSubmenuWidget() != null) {
                 draw_subm_arrow = true;
             }
         }
@@ -181,7 +181,16 @@ public class GLRadialButtonWidget extends GLAbstractButtonWidget implements
 
     @Override
     public void onRadialButtonOrientationChanged(RadialButtonWidget button) {
-
+        final double radius = button.getOrientationRadius();
+        final double angle = button.getOrientationAngle();
+        getSurface().queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                _angle = angle;
+                _radius = radius;
+                _bgDirty = true;
+            }
+        });
     }
 
     private GLTriangle.Strip _buildRingWedge(double angle, double radius,
@@ -265,8 +274,7 @@ public class GLRadialButtonWidget extends GLAbstractButtonWidget implements
         });
     }
 
-    private final double _radius;
-    private final double _angle;
+    private double _radius, _angle;
     private double _width, _span;
     private GLTriangle.Strip _bg;
     private boolean _bgDirty;

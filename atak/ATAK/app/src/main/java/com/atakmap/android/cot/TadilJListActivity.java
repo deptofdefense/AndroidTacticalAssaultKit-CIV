@@ -39,6 +39,7 @@ import com.atakmap.android.contact.TadilJChatConnector;
 import com.atakmap.android.contact.TadilJContact;
 import com.atakmap.android.contact.TadilJContactDatabase;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.metrics.activity.MetricActivity;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.app.R;
 import com.atakmap.comms.NetConnectString;
@@ -47,7 +48,7 @@ import com.atakmap.coremap.log.Log;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TadilJListActivity extends Activity {
+public class TadilJListActivity extends MetricActivity {
 
     public static final String TAG = "TadilJListActivity";
 
