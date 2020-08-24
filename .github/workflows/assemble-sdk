@@ -1,0 +1,83 @@
+name: Assemble ATAK
+
+on:
+  pull_request:
+jobs:
+  assemble:
+    name: Build
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+    - name: set environment
+      run: |
+        sudo apt-get install apg
+        sudo apt-get install dos2unix
+        sudo apt-get install autoconf
+        sudo apt-get install automake
+        sudo apt-get install libtool
+        sudo apt-get install patch
+        sudo apt-get install make
+        sudo apt-get install cmake
+        sudo apt-get install swig
+        sudo apt-get install tclsh
+        echo ::set-env name=ANDROID_COMPILE_SDK::"29"
+        echo ::set-env name=ANDROID_BUILD_TOOLS::"29.0.3"
+        echo ::set-env name=ANDROID_SDK_TOOLS::"4333796"
+        echo ::set-env name=NDK_VERSION::"12b"
+        echo ::set-env name=KEYSTORE_ALIAS::"CI"
+        echo ::set-env name=KEYSTORE_STORE_PASSWORD::$(apg -a 1 -n 1 -m 16 -x 16 -E '\')
+        echo ::set-env name=KEYSTORE_KEY_PASSWORD::$(apg -a 1 -n 1 -m 16 -x 16 -E '\')
+        mkdir $HOME/secrets
+    - name: set up Android SDK
+      run: |
+       wget --quiet --tries=0 --output-document=android-sdk.zip https://dl.google.com/android/repository/sdk-tools-linux-${ANDROID_SDK_TOOLS}.zip;
+       unzip -qq -d android-sdk-linux android-sdk.zip;
+       mkdir -p ~/.android;
+       touch ~/.android/repositories.cfg;
+       echo y | android-sdk-linux/tools/bin/sdkmanager "platforms;android-${ANDROID_COMPILE_SDK}" >/dev/null;
+       echo y | android-sdk-linux/tools/bin/sdkmanager "platform-tools" >/dev/null;
+       echo y | android-sdk-linux/tools/bin/sdkmanager "build-tools;${ANDROID_BUILD_TOOLS}" >/dev/null;
+       echo ::set-env name=ANDROID_HOME::$PWD/android-sdk-linux
+       echo ::set-env name=PATH::$PATH:$PWD/android-sdk-linux/platform-tools/
+       set +o pipefail
+       yes | android-sdk-linux/tools/bin/sdkmanager --licenses
+       set -o pipefail
+    - name: set up Android NDK
+      run: |
+       wget --quiet --tries=0 --output-document=android-ndk.zip https://dl.google.com/android/repository/android-ndk-r${NDK_VERSION}-linux-x86_64.zip;
+       unzip -qq  android-ndk.zip;
+       echo ::set-env name=ANDROID_NDK_HOME::$PWD/android-ndk-r${NDK_VERSION}
+       echo ::set-env name=ANDROID_NDK::$PWD/android-ndk-r${NDK_VERSION}
+    - name: Build Dependencies
+      run: |
+        cd scripts
+        bash ./prebuild.sh
+    - name: Create Keystore
+      run: |
+        echo y | $JAVA_HOME/bin/keytool -genkeypair -dname "cn=ATAK CIV, ou=, o=, c=US" -alias $KEYSTORE_ALIAS -keypass $KEYSTORE_KEY_PASSWORD -keystore $HOME/secrets/android_keystore -storepass $KEYSTORE_STORE_PASSWORD -validity 10000
+        cd atak
+        rm -rf local.properties
+        echo "takDebugKeyFile=$HOME/secrets/android_keystore" >> local.properties
+        echo "takDebugKeyFilePassword=$KEYSTORE_STORE_PASSWORD" >> local.properties
+        echo "takDebugKeyAlias=$KEYSTORE_ALIAS" >> local.properties
+        echo "takDebugKeyPassword=$KEYSTORE_KEY_PASSWORD" >> local.properties
+        echo "takReleaseKeyFile=$HOME/secrets/android_keystore" >> local.properties
+        echo "takReleaseKeyFilePassword=$KEYSTORE_STORE_PASSWORD" >> local.properties
+        echo "takReleaseKeyAlias=$KEYSTORE_ALIAS" >> local.properties
+        echo "takReleaseKeyPassword=$KEYSTORE_KEY_PASSWORD" >> local.properties
+    - name: Assemble SDK
+      run: |
+        cd atak
+        rm -rf ATAK/app/build
+        bash ./gradlew assembleCivSdk
+    - name: Upload SDK build output
+      uses: actions/upload-artifact@v2
+      with:
+        name: assembleCivSdk
+        path: |
+            atak/ATAK/app/build/outputs
