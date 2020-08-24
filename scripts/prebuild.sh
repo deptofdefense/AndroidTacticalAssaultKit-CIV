@@ -1,6 +1,6 @@
 #!/bin/sh
 
-mkdir takengine/thirdparty
+(cd ../takengine && mkdir thirdparty)
 
 (cd .. && \
         gzip -d ./depends/gdal-2.2.3-mod.tar.gz && \
