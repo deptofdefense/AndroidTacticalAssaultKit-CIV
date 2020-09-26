@@ -38,6 +38,18 @@ cd takengine/thirdparty
 git clone https://github.com/synesissoftware/STLSoft-1.9.git stlsoft
 ```  
 
+#### TinyGLTF
+
+ATAK requires a modified version of TinyGLTF 2.4.1 and a modified version of TinyGLTFLoader 0.9.5.
+
+From local repository root:
+
+``` sh
+cd takengine/thirdparty
+tar xzf ../../depends/tinygltf-2.4.1-mod.tar.gz
+tar xzf ../../depends/tinygltfloader-0.9.5-mod.tar.gz
+```
+
 #### TAK Third Party Build System
 
 **NOTE** The TAK Third Party build system is only confirmed to work on Linux. Experience may vary on other host environments.
