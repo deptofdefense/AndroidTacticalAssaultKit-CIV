@@ -901,6 +901,9 @@ public class PluginSpinner extends Spinner {
             return c.createConfigurationContext(overrideConfiguration);
         }
 
+        public boolean isUiContext() {
+            return true;
+        }
     }
 
     public static final String TAG = "PluginSpinner";

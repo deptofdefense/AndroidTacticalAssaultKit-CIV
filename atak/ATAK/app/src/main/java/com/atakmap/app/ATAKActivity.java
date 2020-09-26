@@ -1439,7 +1439,7 @@ public class ATAKActivity extends MapActivity implements
                             // system and not from this application.   Warn users for future SDK's
                             // that this might not work when running debug versions - so it can be
                             // checked.
-                            if (Build.VERSION.SDK_INT > 29 && BuildConfig.DEBUG)
+                            if (Build.VERSION.SDK_INT > 30 && BuildConfig.DEBUG)
                                 Log.e(TAG,
                                         "may need to revisit double reflection trick",
                                         new Exception());
