@@ -74,7 +74,7 @@ public class KMLUtil {
 
     private static final String TAG = "KMLUtil";
 
-    public static final long MIN_NETWORKLINK_INTERVAL_SECS = 30; // 30 seconds
+    public static final long MIN_NETWORKLINK_INTERVAL_SECS = 3; // 3 seconds
     public static final long DEFAULT_NETWORKLINK_INTERVAL_SECS = 300; // 5 minutes
 
     private static final String XML_PROLOG = "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>";
