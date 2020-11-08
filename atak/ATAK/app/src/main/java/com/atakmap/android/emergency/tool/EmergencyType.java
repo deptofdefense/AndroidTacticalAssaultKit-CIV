@@ -6,7 +6,7 @@ public enum EmergencyType {
     Cancel("Cancel Alert", "b-a-o-can", 1),
     GeoFenceBreach("Geo-fence Breached", "b-a-g", 2),
     RingTheBell("Ring The Bell", "b-a-o-pan", 3),
-    TroopsInContact("Troops In Contact", "b-a-o-opn", 4);
+    TroopsInContact("In Contact", "b-a-o-opn", 4);
 
     private final String description;
     private final String cotType;
