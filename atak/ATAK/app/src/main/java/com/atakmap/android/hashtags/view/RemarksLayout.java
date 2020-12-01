@@ -28,7 +28,7 @@ public class RemarksLayout extends LinearLayout {
 
     private final HashtagEditText _remarks;
     private final ImageButton _editBtn;
-    private String _rawText;
+    private String _rawText = "";
 
     public RemarksLayout(Context context) {
         this(context, null);
