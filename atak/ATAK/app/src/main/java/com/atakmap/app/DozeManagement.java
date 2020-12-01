@@ -169,7 +169,7 @@ class DozeManagement {
 
     static private boolean isIgnoringBatteryOptimizations(Context context,
             String packageName) {
-        if (Build.VERSION.SDK_INT > 23) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             final PowerManager pm = (PowerManager) context
                     .getSystemService(Context.POWER_SERVICE);
             if (pm != null)
@@ -179,7 +179,7 @@ class DozeManagement {
     }
 
     static private boolean isPowerSaveMode(Context context) {
-        if (Build.VERSION.SDK_INT > 23) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             final PowerManager pm = (PowerManager) context
                     .getSystemService(Context.POWER_SERVICE);
             if (pm != null)
@@ -192,7 +192,7 @@ class DozeManagement {
     static private void checkAndWarnRestrictingBackgroundData(
             final Context context) {
 
-        if (android.os.Build.VERSION.SDK_INT < 24) {
+        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
             return;
         }
 

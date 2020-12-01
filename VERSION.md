@@ -1,5 +1,11 @@
 # Version History
 
+## 4.1.0.1
+
+* Adjust Android SDK to use named SDK constants instead of raw numbers
+* Add a Developer Option to skip the drawing of route vertex points to work around crash observed on some custom hardware
+* Fix potential `NullPointerException` on Android 6 in `RemarksLayout`
+
 ## 4.1.0.0
 
 * Bloodhound integration with route planners
