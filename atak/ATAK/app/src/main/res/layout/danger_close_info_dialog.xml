@@ -124,7 +124,7 @@
             <LinearLayout
                 android:id="@+id/prone_view"
                 android:layout_width="wrap_content"
-                android:layout_height="0dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:orientation="horizontal"
                 android:layout_marginStart="20dp"
@@ -162,7 +162,7 @@
             <LinearLayout
                 android:id="@+id/prone_protected_view"
                 android:layout_width="wrap_content"
-                android:layout_height="fill_parent"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:orientation="horizontal"
                 android:layout_marginTop="5dp"

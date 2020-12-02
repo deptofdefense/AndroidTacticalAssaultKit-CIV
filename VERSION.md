@@ -1,5 +1,10 @@
 # Version History
 
+## 4.1.1.1
+
+* Handle potential crash with grid lines overlay
+* Layout fixes for Danger Close dialog
+
 ## 4.1.1.0
 
 * Video library update
