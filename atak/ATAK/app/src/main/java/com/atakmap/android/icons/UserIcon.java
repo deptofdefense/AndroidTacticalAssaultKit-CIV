@@ -338,7 +338,7 @@ public class UserIcon {
 
     /**
      * Get iconset path uniquely describing this icon
-     * @return
+     * @return the iconset path
      */
     public String getIconsetPath() {
         if (!isValid()) {
@@ -364,14 +364,16 @@ public class UserIcon {
     /**
      * Lookup icon based on iconset
      * 
-     * @param iconsetPath
-     * @return
+     * @param iconsetPath the iconset path that describes a iconset icon starting with the uuid for
+     *                    the iconset and then the path.
+     * @param bBitmap     if the bitmap is required in the return
+     * @return the bitmap if the iconset is found, otherwise null.
      */
     public static UserIcon GetIconFromIconsetPath(String iconsetPath,
             boolean bBitmap, Context context) {
         if (FileSystemUtils.isEmpty(iconsetPath)
                 || !iconsetPath.contains("/")) {
-            Log.w(TAG, "Failed to parse iconsetPath: " + iconsetPath);
+            Log.w(TAG, "Failed to parse iconsetPath: " + iconsetPath); //, new Exception());
             return null;
         }
 
@@ -390,15 +392,16 @@ public class UserIcon {
     /**
      * Lookup icon and create an optimzed bitmap query
      * 
-     * @param iconsetPath
-     * @param  
-     * @return
+     * @param iconsetPath the iconset path that describes a iconset icon starting with the uuid for
+     *        the iconset and then the path.
+     * @param context to use when getting the UserIconDatabase
+     * @return the string that represents the query
      */
     public static String GetIconBitmapQueryFromIconsetPath(String iconsetPath,
             Context context) {
         if (FileSystemUtils.isEmpty(iconsetPath)
                 || !iconsetPath.contains("/")) {
-            Log.w(TAG, "Failed to parse iconsetPath: " + iconsetPath);
+            Log.w(TAG, "Failed to parse iconsetPath: " + iconsetPath); //, new Exception());
             return null;
         }
 
@@ -593,7 +596,7 @@ public class UserIcon {
 
         int id = -1;
         try {
-            id = Integer.valueOf(query.substring(index + toMatch.length()));
+            id = Integer.parseInt(query.substring(index + toMatch.length()));
         } catch (Exception e) {
             Log.w(TAG, "Failed to parse icon ID from query (2): " + query, e);
             return -1;

@@ -21,8 +21,6 @@ public class RangeAndBearingEndpoint extends MetaMapPoint implements
     public static final int PART_TAIL = 0;
     public static final int PART_HEAD = 1;
 
-    private final float _hitRadius = 32 * MapView.DENSITY;
-
     private static RangeAndBearingEndpointMoveTool _tool = null;
     private RangeAndBearingMapItem _parent;
     private int _part;
@@ -43,14 +41,15 @@ public class RangeAndBearingEndpoint extends MetaMapPoint implements
             MapView view) {
         if (_parent == null || !_parent.getVisible())
             return false;
+        float hitRadius = getHitRadius(view);
         if (view.getMapTilt() > 0d) {
             PointF xy = view
                     .forward(view.getRenderElevationAdjustedPoint(getPoint()));
-            return Rectangle.contains(xpos - _hitRadius, ypos - _hitRadius,
-                    xpos + _hitRadius, ypos + _hitRadius,
+            return Rectangle.contains(xpos - hitRadius, ypos - hitRadius,
+                    xpos + hitRadius, ypos + hitRadius,
                     xy.x, xy.y);
         } else {
-            GeoBounds hitBox = view.createHitbox(point, _hitRadius);
+            GeoBounds hitBox = view.createHitbox(point, hitRadius);
             return hitBox.contains(getPoint());
         }
     }

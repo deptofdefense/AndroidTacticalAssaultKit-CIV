@@ -264,9 +264,9 @@ public class ShapeDetailsView extends GenericDetailsView implements
         }
         onPointChanged(_center);
 
-        double height = _shape.getMetaDouble("height", -1);
+        double height = _shape.getHeight();
         Span unit = getUnitSpan(_shape);
-        if (height >= 0) {
+        if (!Double.isNaN(height)) {
             _heightButton.setText(SpanUtilities.format(height, Span.METER,
                     unit));
         } else {
@@ -297,9 +297,7 @@ public class ShapeDetailsView extends GenericDetailsView implements
 
         // Undo shape edit
         else if (id == R.id.drawingShapeUndoButton)
-            AtakBroadcast.getInstance().sendBroadcast(new Intent(
-                    ToolManagerBroadcastReceiver.INVOKE_METHOD_TOOL)
-                            .putExtra("method", "undo"));
+            undoToolEdit();
 
         // End shape editing
         else if (id == R.id.drawingShapeEndEditingButton)
@@ -434,10 +432,11 @@ public class ShapeDetailsView extends GenericDetailsView implements
     @Override
     protected void heightSelected(final double height, final Span u,
             final double h) {
-        // This is always saved as a string in feet for some reason
-        _shape.setMetaDouble("height", height);
+        _shape.setHeight(height);
         _shape.setMetaInteger("height_unit", u.getValue());
         _heightButton.setText(SpanUtilities.format(h, u, 2));
+        if (_center != null)
+            _center.setHeight(height);
     }
 
     @Override

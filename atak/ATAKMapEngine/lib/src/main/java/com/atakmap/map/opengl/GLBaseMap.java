@@ -3,6 +3,7 @@ package com.atakmap.map.opengl;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -10,13 +11,11 @@ import android.graphics.BitmapFactory;
 import android.graphics.BitmapRegionDecoder;
 import android.graphics.Canvas;
 import android.graphics.Rect;
-import android.opengl.GLSurfaceView;
 
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.Ellipsoid;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
-import com.atakmap.R;
 import com.atakmap.map.RenderContext;
 import com.atakmap.map.layer.raster.DatasetProjection2;
 import com.atakmap.map.layer.raster.DefaultDatasetProjection2;
@@ -167,8 +166,12 @@ public final class GLBaseMap implements GLMapRenderable {
 
     private void initSource(GLMapView view) {
         try {
-            // XXX -
-            this.srcReader = new BitmapTileReader(((GLMapSurface)view.getRenderContext()).getContext(), R.drawable.worldmap_4326, 128, 128, null, TileReader.getMasterIOThread());
+            final Context context = GLRenderGlobals.appContext;
+            if(context == null)
+                return;
+
+            int id = context.getResources().getIdentifier("worldmap_4326", "drawable", context.getPackageName());
+            this.srcReader = new BitmapTileReader(context, id, 128, 128, null, TileReader.getMasterIOThread());
         
             this.srcInfo = new ImageInfo(
                     this.srcReader.getUri(),
@@ -361,8 +364,10 @@ public final class GLBaseMap implements GLMapRenderable {
                         decoded.recycle();
                         decoded = scaled;
                     }
-                    
-                    decoded.copyPixelsToBuffer(ByteBuffer.wrap(buf));
+
+                    ByteBuffer pxbuf = ByteBuffer.wrap(buf);
+                    pxbuf.order(ByteOrder.BIG_ENDIAN);
+                    decoded.copyPixelsToBuffer(pxbuf);
                 } finally {
                     if(decoded != null)
                         decoded.recycle();

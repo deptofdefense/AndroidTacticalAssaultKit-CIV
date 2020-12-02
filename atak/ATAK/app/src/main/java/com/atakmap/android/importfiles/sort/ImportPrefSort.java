@@ -9,6 +9,7 @@ import com.atakmap.android.gui.ImportFileBrowserDialog;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.PreferenceControl;
 import com.atakmap.comms.http.HttpUtil;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.xml.XMLUtils;
 import com.atakmap.net.AtakAuthenticationCredentials;
@@ -19,9 +20,8 @@ import org.w3c.dom.NodeList;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -36,8 +36,6 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-
-import javax.xml.XMLConstants;
 
 /**
  * Sorts ATAK Preferences Files
@@ -81,8 +79,8 @@ public class ImportPrefSort extends ImportInternalSDResolver {
 
         // it is a .pref, now lets see if content inspection passes
         try {
-            return isPreference(new FileInputStream(file));
-        } catch (FileNotFoundException e) {
+            return isPreference(FileIOProviderFactory.getInputStream(file));
+        } catch (IOException e) {
             Log.e(TAG, "Failed to match Pref file: " + file.getAbsolutePath(),
                     e);
             return false;
@@ -209,7 +207,7 @@ public class ImportPrefSort extends ImportInternalSDResolver {
 
                 // write the modified prefs back out
                 DOMSource source = new DOMSource(doc);
-                FileWriter writer = new FileWriter(new File(prefsFile));
+                FileWriter writer = FileIOProviderFactory.getFileWriter(new File(prefsFile));
                 StreamResult result = new StreamResult(writer);
                 TransformerFactory transformerFactory = XMLUtils
                         .getTransformerFactory();

@@ -44,7 +44,7 @@ namespace
     } Envelope_class;
 
     TAKErr geometry_clone(Geometry2Ptr &value, const Geometry2 &geom) NOTHROWS;
-    TAKErr style_clone(StylePtr &value, const Style &style) NOTHROWS;
+    TAKErr style_clone(TAK::Engine::Feature::StylePtr &value, const Style &style) NOTHROWS;
     TAKErr attributeset_clone(AttributeSetPtr &value, const AttributeSet &attrs) NOTHROWS;
     InteropImpl<Geometry2> &geometryInterop(JNIEnv &env) NOTHROWS;
     InteropImpl<Style> &styleInterop(JNIEnv &env) NOTHROWS;
@@ -117,7 +117,7 @@ jobject TAKEngineJNI::Interop::Feature::Interop_create(JNIEnv *env, const Style 
 {
     jclass Interop_class = ATAKMapEngineJNI_findClass(env, "com/atakmap/map/layer/feature/Interop");
     jmethodID Interop_createStyle = env->GetStaticMethodID(Interop_class, "createStyle", "(Lcom/atakmap/interop/Pointer;Ljava/lang/Object;)Lcom/atakmap/map/layer/feature/style/Style;");
-    StylePtr retval(cstyle.clone(), Style::destructStyle);
+    TAK::Engine::Feature::StylePtr retval(cstyle.clone(), Style::destructStyle);
     return env->CallStaticObjectMethod(Interop_class, Interop_createStyle, NewPointer(env, std::move(retval)), NULL);
 }
 jobject TAKEngineJNI::Interop::Feature::Interop_create(JNIEnv *env, const AttributeSet &cattr) NOTHROWS
@@ -241,9 +241,9 @@ namespace
     {
         return Geometry_clone(value, geom);
     }
-    TAKErr style_clone(StylePtr &value, const Style &style) NOTHROWS
+    TAKErr style_clone(TAK::Engine::Feature::StylePtr &value, const Style &style) NOTHROWS
     {
-        value = StylePtr(style.clone(), Style::destructStyle);
+        value = TAK::Engine::Feature::StylePtr(style.clone(), Style::destructStyle);
         return TE_Ok;
     }
     TAKErr attributeset_clone(AttributeSetPtr &value, const AttributeSet &attrs) NOTHROWS

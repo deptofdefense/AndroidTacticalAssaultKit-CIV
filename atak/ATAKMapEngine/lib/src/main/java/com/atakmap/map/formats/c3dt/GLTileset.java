@@ -1,14 +1,9 @@
 package com.atakmap.map.formats.c3dt;
 
-import android.net.wifi.WifiConfiguration;
 import android.opengl.GLES30;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.io.CachingProtocolHandler;
-import com.atakmap.io.ProtocolHandler;
-import com.atakmap.io.UriFactory;
-import com.atakmap.io.WebProtocolHandler;
 import com.atakmap.lang.Objects;
 import com.atakmap.map.LegacyAdapters;
 import com.atakmap.map.MapRenderer;
@@ -32,7 +27,6 @@ import com.atakmap.util.ConfigOptions;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.net.URI;
 import java.util.Collection;
 import java.util.Set;
 
@@ -52,7 +46,7 @@ final class GLTileset implements GLMapRenderable2, Controls {
                 String globalCacheDir = ConfigOptions.getOption("3dtiles.cache-dir", null);
 
                 byte[] buffer;
-                ContentSource source = ContentSources.createDefault();
+                ContentSource source = ContentSources.createDefault(true);
                 ContentContainer cache = null;
                 if((info.uri.startsWith("http:") || info.uri.startsWith("https:")) && (cacheDir != null || globalCacheDir != null)) {
                     if(globalCacheDir != null)

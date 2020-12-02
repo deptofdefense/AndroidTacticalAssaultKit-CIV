@@ -24,6 +24,7 @@ import com.atakmap.android.wfs.WFSImporter;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.GeocoderPreferenceFragment;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.feature.wfs.XMLWFSSchemaHandler;
 
@@ -31,7 +32,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Set;
@@ -114,8 +114,8 @@ final public class ImportTXTSort extends ImportInternalSDResolver {
         TxtType t = null;
         FileInputStream fis = null;
         try {
-            t = getType(fis = new FileInputStream(file));
-        } catch (FileNotFoundException e) {
+            t = getType(fis = FileIOProviderFactory.getInputStream(file));
+        } catch (IOException e) {
             Log.e(TAG, "Failed to match TXT file: " + file.getAbsolutePath(),
                     e);
         } finally {
@@ -170,8 +170,8 @@ final public class ImportTXTSort extends ImportInternalSDResolver {
         TxtType t = null;
         FileInputStream fis = null;
         try {
-            t = getType(fis = new FileInputStream(file));
-        } catch (FileNotFoundException e) {
+            t = getType(fis = FileIOProviderFactory.getInputStream(file));
+        } catch (IOException e) {
             Log.e(TAG, "Failed to match TXT file: " + file.getAbsolutePath(),
                     e);
         } finally {
@@ -313,10 +313,10 @@ final public class ImportTXTSort extends ImportInternalSDResolver {
         TxtType t;
         FileInputStream fis = null;
         try {
-            t = getType(fis = new FileInputStream(dst));
+            t = getType(fis = FileIOProviderFactory.getInputStream(dst));
             if (t != null && t.action != null)
                 t.action.doAction(dst);
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             Log.w(TAG,
                     "onFileSorted Failed to match TXT file: "
                             + dst.getAbsolutePath(),

@@ -3,6 +3,7 @@ package com.atakmap.android.video;
 
 import com.atakmap.android.video.manager.VideoManager;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -223,7 +224,7 @@ public class ConnectionEntry implements Serializable {
         } catch (Exception e) {
             this.uid = UUID.randomUUID().toString();
         }
-        this.protocol = f.isDirectory() ? Protocol.DIRECTORY : Protocol.FILE;
+        this.protocol = FileIOProviderFactory.isDirectory(f) ? Protocol.DIRECTORY : Protocol.FILE;
     }
 
     /**

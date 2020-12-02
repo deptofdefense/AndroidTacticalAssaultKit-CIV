@@ -13,6 +13,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.graphics.drawable.Drawable;
 
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.app.BuildConfig;
 
 import com.atakmap.android.bpha.BPHARectangleCreator;
@@ -389,7 +390,7 @@ public class MissionSpecificPalletFragment extends Fragment implements
         super.onResume();
     }
 
-    public Marker getPointPlacedIntent(GeoPointMetaData point, final String uid)
+    public MapItem getPointPlacedIntent(GeoPointMetaData point, final String uid)
             throws CreatePointException {
         if (selectedButton == null || selectedType.equals(""))
             throw new CreatePointException(
@@ -427,9 +428,7 @@ public class MissionSpecificPalletFragment extends Fragment implements
             if (r == null) {
                 throw new CreatePointException("unable to place rectangle");
             }
-            return r.getAnchorItem() instanceof Marker
-                    ? (Marker) r.getAnchorItem()
-                    : null;
+            return r;
         }
         //Log.d(TAG, "getPointPlacedIntent: " + _curColor + ", " + uid);
 

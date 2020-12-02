@@ -29,6 +29,15 @@ namespace TAKEngineJNI {
             TAK::Engine::Util::TAKErr marshal(std::shared_ptr<T> &value, JNIEnv &env, jobject obj) NOTHROWS;
             TAK::Engine::Util::TAKErr marshal(Java::JNILocalRef &value, JNIEnv &env, const T &obj) NOTHROWS;
         private :
+            template<class Ti>
+            static void onShutdown(JNIEnv &env, void *opaque) NOTHROWS
+            {
+                ImplementationMarshalContext<Ti> &ctx = *static_cast<ImplementationMarshalContext<Ti> *>(opaque);
+                for(auto it = ctx.nativeImplToManagedWrapper.begin(); it != ctx.nativeImplToManagedWrapper.end(); it++)
+                    env.DeleteWeakGlobalRef(it->second);
+                ctx.nativeImplToManagedWrapper.clear();
+            }
+        private :
             std::map<const T *, jweak> nativeImplToManagedWrapper;
             TAK::Engine::Thread::Mutex mutex;
 
@@ -42,10 +51,15 @@ namespace TAKEngineJNI {
             javaWrapperType(NULL),
             javaWrapperPointerField(NULL),
             javaWrapperCtor(NULL)
-        {}
+        {
+            ATAKMapEngineJNI_registerShutdownHook(ImplementationMarshalContext<T>::onShutdown<T>, std::unique_ptr<void, void(*)(const void *)>(this, TAK::Engine::Util::Memory_leaker_const<void>));
+        }
         template<class T>
         inline ImplementationMarshalContext<T>::~ImplementationMarshalContext() NOTHROWS
         {
+            std::unique_ptr<void, void(*)(const void *)> discard(nullptr, nullptr);
+            ATAKMapEngineJNI_unregisterShutdownHook(discard, this);
+#ifdef __ANDROID__
             LocalJNIEnv env;
             for(auto it = nativeImplToManagedWrapper.begin(); it != nativeImplToManagedWrapper.end(); it++)
                 env->DeleteWeakGlobalRef(it->second);
@@ -55,6 +69,7 @@ namespace TAKEngineJNI {
                 env->DeleteGlobalRef(javaWrapperType);
                 javaWrapperType = NULL;
             }
+#endif
         }
         template<class T>
         void ImplementationMarshalContext<T>::init(JNIEnv &env, jclass javaWrapperType_, jfieldID javaWrapperPointerField_, jmethodID javaWrapperCtor_) NOTHROWS

@@ -1,11 +1,14 @@
 
 package com.atakmap.map.layer.feature.geometry.opengl;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.map.layer.feature.geometry.Point;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.PointD;
 
-
+/** @deprecated use the batch feature renderering framework */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class GLPoint extends GLGeometry {
 
     private final PointD point;

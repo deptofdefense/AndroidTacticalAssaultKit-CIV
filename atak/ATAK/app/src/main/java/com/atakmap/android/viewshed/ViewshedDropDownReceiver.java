@@ -446,7 +446,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
             public void afterTextChanged(Editable s) {
                 if (s.length() > 0) {
                     try {
-                        int i = Integer.valueOf(s.toString());
+                        int i = Integer.parseInt(s.toString());
                         if (i <= 100 && i >= 0) {
                             if (satSeek.getProgress() != i)
                                 satSeek.setProgress(i);
@@ -508,7 +508,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
             public void afterTextChanged(Editable s) {
                 if (s.length() > 0) {
                     try {
-                        int i = Integer.valueOf(s.toString());
+                        int i = Integer.parseInt(s.toString());
                         if (i <= 100 && i >= 0) {
                             if (valSeek.getProgress() != i)
                                 valSeek.setProgress(i);
@@ -530,7 +530,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
         int sampleValue = ElevationOverlaysMapComponent.PREFERENCE_X_RES_DEFAULT;
         try {
             int currentSample = Integer
-                    .valueOf(prefs.getString(
+                    .parseInt(prefs.getString(
                             ElevationOverlaysMapComponent.PREFERENCE_X_RES_KEY,
                             String.valueOf(
                                     ElevationOverlaysMapComponent.PREFERENCE_X_RES_DEFAULT)));
@@ -598,10 +598,10 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
 
         //intensity check to ensure user doesn't place invisible viewsheds
         int intensityValue;
-        if (Integer.valueOf(opPref) < 10) {
+        if (Integer.parseInt(opPref) < 10) {
             intensityValue = 10;
         } else {
-            intensityValue = Integer.valueOf(opPref);
+            intensityValue = Integer.parseInt(opPref);
         }
 
         sampleView = vsView.findViewById(R.id.viewshedLineSample_view);
@@ -693,7 +693,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
                         boolean changeSeek = false;
                         if (s.length() > 0) {
                             try {
-                                int i = Integer.valueOf(s.toString());
+                                int i = Integer.parseInt(s.toString());
                                 if (i <= 100 && i >= 0) {
                                     if (intensitySeek.getProgress() != i) {
                                         intensitySeek.setProgress(i);
@@ -1520,7 +1520,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
         int heightAboveGround = 0;
         if (altitudeET.getText().length() > 0) {
             try {
-                heightAboveGround = Integer.valueOf(altitudeET.getText()
+                heightAboveGround = Integer.parseInt(altitudeET.getText()
                         .toString());
             } catch (Exception e) {
                 return;

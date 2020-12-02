@@ -4,8 +4,6 @@ import com.atakmap.interop.Pointer;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;

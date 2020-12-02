@@ -61,7 +61,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
             .ceil(55f * MapView.DENSITY);
 
     private static final double div_pi_4 = Math.PI / 4f;
-    private static final double FOURTY_FIVE_DEGREES = 0.785398; //Expressed in Radians
+    private static final double FOURTY_FIVE_DEGREES = 0.785398; // Expressed in Radians
 
     private int state;
     private GLIcon _icon;
@@ -187,10 +187,10 @@ public class GLMarker2 extends GLPointMapItem2 implements
         _textWidth = _glText.getStringWidth(_text);
         _textHeight = _glText.getStringHeight();
 
-        //Check if we have extra text
+        // Check if we have extra text
         parseText(extraLines);
 
-        //Loop through any extra lines we have
+        // Loop through any extra lines we have
         for (String t : _linesArray) {
             if (_glText.getStringWidth(t) > _textWidth)
                 _textWidth = _glText.getStringWidth(t);
@@ -332,8 +332,9 @@ public class GLMarker2 extends GLPointMapItem2 implements
     }
 
     /**
-     * Function to parse the string, splits the string on newline char's else the string
-     * will remain one big long string
+     * Function to parse the string, splits the string on newline char's else the string will remain
+     * one big long string
+     * 
      * @param text - The string to parse
      */
     private void parseText(String text) {
@@ -345,13 +346,13 @@ public class GLMarker2 extends GLPointMapItem2 implements
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
             sb.append(c);
-            //If we hit a new line char
+            // If we hit a new line char
             if (c == '\n') {
                 sb.deleteCharAt(sb.length() - 1);
-                //Store what we currently have
+                // Store what we currently have
                 _linesArray.add(sb.toString());
                 _extraLines += 1;
-                //Get ready to read chars until the next newline
+                // Get ready to read chars until the next newline
                 sb.delete(0, sb.length());
             }
         }
@@ -369,7 +370,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
         for (String s : _linesArray) {
             StringBuilder full = new StringBuilder(s);
 
-            //Get the width of the longest string
+            // Get the width of the longest string
             while (_glText.getStringWidth(s) < _textWidth) {
                 full.append(" ");
                 full.insert(0, " ");
@@ -378,7 +379,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
             temp.add(s);
         }
 
-        //Do the same thing for the callsign
+        // Do the same thing for the callsign
         _linesArray.clear();
         _linesArray = temp;
 
@@ -420,26 +421,8 @@ public class GLMarker2 extends GLPointMapItem2 implements
         if (this.subject == null)
             return;
 
-        ortho.scratch.geo.set(this.latitude,
-                ortho.idlHelper.wrapLongitude(this.longitude));
-        if (ortho.drawTilt > 0d)
-            ortho.scratch.geo.set(altHae);
-
-        forward(ortho, ortho.scratch.geo, ortho.scratch.pointD, 0d,
-                validateLocalElevation(ortho));
-        float xpos = (float) ortho.scratch.pointD.x;
-        float ypos = (float) ortho.scratch.pointD.y;
-        float zpos = (float) ortho.scratch.pointD.z;
-
-        if (ortho.drawTilt > 0d) {
-            // move up ~5 pixels from surface
-            //ypos += 5;
-            // move up half icon height
-            if (_icon != null && _iconVisibility != Marker.ICON_GONE)
-                ypos += (_icon.getHeight() / 2d);
-        }
-
-        //zpos = 0f;
+        float[] pos = getDrawPosition(ortho);
+        float xpos = pos[0], ypos = pos[1], zpos = pos[2];
 
         // if tilted, draw a line segment from the center of the point into the
         // earth's surface
@@ -498,8 +481,8 @@ public class GLMarker2 extends GLPointMapItem2 implements
                             alertTexture.getImageTextureY(),
                             alertTexture.getImageTextureWidth(),
                             alertTexture.getImageTextureHeight(),
-                            -alertTexture.getImageWidth() / 2,
-                            -alertTexture.getImageHeight() / 2,
+                            -alertTexture.getImageWidth() / 2f,
+                            -alertTexture.getImageHeight() / 2f,
                             alertTexture.getImageWidth(),
                             alertTexture.getImageHeight());
                 }
@@ -534,8 +517,8 @@ public class GLMarker2 extends GLPointMapItem2 implements
                     (_style & Marker.STYLE_ROTATE_HEADING_MASK) != 0) ||
                     subject.getUID().equals(MapView.getDeviceUid())) {
 
-                // draw a fully rotated icon or the self marker because the style 
-                // indicated no arrow and heading 
+                // draw a fully rotated icon or the self marker because the style
+                // indicated no arrow and heading
 
                 GLES20FixedPipeline.glPushMatrix();
                 float f = 360f - _heading + (float) ortho.drawRotation;
@@ -554,7 +537,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
                 if (Float.isNaN(f))
                     f = 0f;
                 GLES20FixedPipeline.glRotatef(f, 0f, 0f, 1f);
-                if (_verts != null) { //otherwise draw the heading arrow
+                if (_verts != null) { // otherwise draw the heading arrow
                     _setColor(Color.BLACK);
                     GLES20FixedPipeline.glLineWidth(3f);
                     _verts.draw(GLES20FixedPipeline.GL_LINE_STRIP);
@@ -576,82 +559,88 @@ public class GLMarker2 extends GLPointMapItem2 implements
 
         // if the displayLables preference is checked display the text if
         // the marker requested to always have the text show or if the scale is zoomed in enough
-        if (textRenderFlag == Marker.TEXT_STATE_NEVER_SHOW) {
-            // do not display anything
-        } else {
+        if (shouldDrawLabel(ortho)) {
+            if (_glText == null) {
+                MapTextFormat textFormat = new MapTextFormat(_labelTypeface,
+                        _labelTextSize);
+                _glText = GLText
+                        .getInstance(textFormat);
+            }
 
-            // plugin users are using the legacy drawMapScale but per
-            // Chris L. we will be migrating over to resolution.  Keep
-            // both in for 3.12
-            boolean legacyScale = false;
-            if (subject.hasMetaValue("minRenderScale"))
-                legacyScale = ortho.drawMapScale >= subject.getMetaDouble(
-                        "minRenderScale", DEFAULT_MIN_RENDER_SCALE);
+            float offy = 0;
+            float offtx = 0;
 
-            if (GLMapSurface.SETTING_displayLabels && _text.length() > 0
-                    && (textRenderFlag == Marker.TEXT_STATE_ALWAYS_SHOW ||
-                            legacyScale ||
-                            (ortho.drawMapResolution > subject.getMetaDouble(
-                                    "minLabelRenderResolution",
-                                    Marker.DEFAULT_MIN_LABEL_RENDER_RESOLUTION)
-                                    &&
-                                    ortho.drawMapResolution < subject
-                                            .getMetaDouble(
-                                                    "maxLabelRenderResolution",
-                                                    Marker.DEFAULT_MAX_LABEL_RENDER_RESOLUTION)))) {
+            boolean shouldMarquee = GLMapSurface.SETTING_shortenLabels
+                    && (_style & Marker.STYLE_MARQUEE_TITLE_MASK) != 0;
+            shouldMarquee &= (_textWidth > MAX_TEXT_WIDTH
+                    * AtakMapView.DENSITY);
 
-                if (_glText == null) {
-                    MapTextFormat textFormat = new MapTextFormat(_labelTypeface,
-                            _labelTextSize);
-                    _glText = GLText
-                            .getInstance(textFormat);
+            float textWidth = !shouldMarquee ? _textWidth
+                    : Math.min(MAX_TEXT_WIDTH * AtakMapView.DENSITY,
+                            _textWidth);
+            if (_icon != null && _iconVisibility != Marker.ICON_GONE) {
+                float scale = (float) ICON_SCALE;
+
+                if (_icon.getHeight() > 0) {
+                    offy = scale
+                            * -(_icon.getHeight() - _icon.getAnchorY() - 1);
+
+                    if (ortho.drawTilt > 0d)
+                        offy = (offy * -1f) + _textHeight
+                                + _glText.getDescent();
                 }
-
-                float offy = 0;
-                float offtx = 0;
-
-                boolean shouldMarquee = GLMapSurface.SETTING_shortenLabels
-                        && (_style & Marker.STYLE_MARQUEE_TITLE_MASK) != 0;
-                shouldMarquee &= (_textWidth > MAX_TEXT_WIDTH
-                        * AtakMapView.DENSITY);
-
-                float textWidth = !shouldMarquee ? _textWidth
-                        : Math.min(MAX_TEXT_WIDTH * AtakMapView.DENSITY,
-                                _textWidth);
-                if (_icon != null && _iconVisibility != Marker.ICON_GONE) {
-                    float scale = (float) ICON_SCALE;
-
-                    if (_icon.getHeight() > 0) {
-                        offy = scale
-                                * -(_icon.getHeight() - _icon.getAnchorY() - 1);
-
-                        if (ortho.drawTilt > 0d)
-                            offy = (offy * -1f) + _textHeight
-                                    + _glText.getDescent();
-                    }
-                    if (_icon.getWidth() > 0) {
-                        offtx = scale
-                                * ((_icon.getWidth() / 2) - _icon.getAnchorX());
-                    }
-                } else {
-                    offy = _glText.getDescent() + _textHeight / 2f;
+                if (_icon.getWidth() > 0) {
+                    offtx = scale
+                            * ((_icon.getWidth() / 2f) - _icon.getAnchorX());
                 }
+            } else {
+                offy = _glText.getDescent() + _textHeight / 2f;
+            }
 
-                GLES20FixedPipeline.glTranslatef(offtx - textWidth / 2f, offy
-                        - _textHeight, 0f);
+            GLES20FixedPipeline.glTranslatef(offtx - textWidth / 2f, offy
+                    - _textHeight, 0f);
 
-                if (shouldMarquee) {
-                    this.drawLabelMarquee(ortho, offtx, xpos, ypos, textWidth,
-                            _textHeight);
-                    ortho.requestRefresh();
+            if (shouldMarquee) {
+                this.drawLabelMarquee(ortho, offtx, xpos, ypos, textWidth,
+                        _textHeight);
+                ortho.requestRefresh();
 
-                } else {
-                    this.drawLabelNoMarquee(ortho, textWidth, _textHeight);
-                }
+            } else {
+                this.drawLabelNoMarquee(ortho, textWidth, _textHeight);
             }
         }
 
         GLES20FixedPipeline.glPopMatrix();
+    }
+
+    private float[] getDrawPosition(GLMapView ortho) {
+        ortho.scratch.geo.set(this.latitude, ortho.idlHelper.wrapLongitude(this.longitude));
+
+        // Offset the height if the marker has a "height" meta value, which it should have if
+        // a shape was extruded in GLPolyline
+        double height = this.subject.getHeight();
+        if (!Double.isNaN(height)) {
+            if (!Double.isNaN(altHae))
+                height += altHae;
+            ortho.scratch.geo.set(height);
+        } else if (ortho.drawTilt > 0d)
+            ortho.scratch.geo.set(altHae);
+
+        forward(ortho, ortho.scratch.geo, ortho.scratch.pointD, 0d,
+                validateLocalElevation(ortho));
+        float[] pos = {
+                (float) ortho.scratch.pointD.x,
+                (float) ortho.scratch.pointD.y,
+                (float) ortho.scratch.pointD.z
+        };
+        if (ortho.drawTilt > 0d) {
+            // move up ~5 pixels from surface
+            // ypos += 5;
+            // move up half icon height
+            if (_icon != null && _iconVisibility != Marker.ICON_GONE)
+                pos[1] += (_icon.getHeight() / 2d);
+        }
+        return pos;
     }
 
     // XXX - combine next two
@@ -692,7 +681,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
 
         if (_extraLines > 0) {
             int count = 0;
-            //Draw all of the extra text lines
+            // Draw all of the extra text lines
             for (String t : _linesArray) {
                 GLES20FixedPipeline.glTranslatef(0f, -_glText.getDescent()
                         - textHeight + 7, 0f);
@@ -771,6 +760,38 @@ public class GLMarker2 extends GLPointMapItem2 implements
         }
     }
 
+    /**
+     * Check if we should draw the label at the current map resolution
+     * @param ortho Map view
+     * @return True to draw label
+     */
+    private boolean shouldDrawLabel(GLMapView ortho) {
+        // Text empty or labels set to never show
+        if (textRenderFlag == Marker.TEXT_STATE_NEVER_SHOW
+                || !GLMapSurface.SETTING_displayLabels
+                || FileSystemUtils.isEmpty(_text))
+            return false;
+
+        // Always show label
+        if (textRenderFlag == Marker.TEXT_STATE_ALWAYS_SHOW)
+            return true;
+
+        // Legacy min render scale
+        if (subject.hasMetaValue("minRenderScale")
+                && ortho.drawMapScale >= subject.getMetaDouble(
+                "minRenderScale", DEFAULT_MIN_RENDER_SCALE))
+            return true;
+
+        // Ensure map resolution is within range
+        double minRes = subject.getMetaDouble("minLabelRenderResolution",
+                Marker.DEFAULT_MIN_LABEL_RENDER_RESOLUTION);
+        double maxRes = subject.getMetaDouble("maxLabelRenderResolution",
+                Marker.DEFAULT_MAX_LABEL_RENDER_RESOLUTION);
+
+        return ortho.drawMapResolution > minRes
+                && ortho.drawMapResolution < maxRes;
+    }
+
     private boolean isBatchable(GLMapView ortho) {
         if (this.subject == null)
             return false;
@@ -802,19 +823,11 @@ public class GLMarker2 extends GLPointMapItem2 implements
         // if the displayLables preference is checked display the text if
         // the marker requested to always have the text show or if the scale is zoomed in enough
 
-        if (textRenderFlag == Marker.TEXT_STATE_NEVER_SHOW)
-            displayLabel = false;
-        else
-            displayLabel = (GLMapSurface.SETTING_displayLabels
-                    && (textRenderFlag == Marker.TEXT_STATE_ALWAYS_SHOW
-                            || ortho.drawMapScale >= this.subject
-                                    .getMetaDouble(
-                                            "minRenderScale",
-                                            DEFAULT_MIN_RENDER_SCALE)));
+        displayLabel = shouldDrawLabel(ortho);
         if (displayLabel) {
             if (_text.length() > 0)
                 textureCount += 2;
-            //Don't know what textureCount does but apparently we need to add to it here
+            // Don't know what textureCount does but apparently we need to add to it here
             if (_extraLines > 0)
                 textureCount += 2;
         }
@@ -836,26 +849,8 @@ public class GLMarker2 extends GLPointMapItem2 implements
 
         long deltaTime = view.animationDelta;
 
-        view.scratch.geo.set(this.latitude,
-                view.idlHelper.wrapLongitude(this.longitude));
-        if (view.drawTilt > 0d)
-            view.scratch.geo.set(altHae);
-
-        forward(view, view.scratch.geo, view.scratch.pointD, 0d,
-                validateLocalElevation(view));
-        float xpos = (float) view.scratch.pointD.x;
-        float ypos = (float) view.scratch.pointD.y;
-        float zpos = (float) view.scratch.pointD.z;
-
-        if (view.drawTilt > 0d) {
-            // move up ~5 pixels from surface
-            //ypos += 5;
-            // move up half icon height
-            if (_icon != null && _iconVisibility != Marker.ICON_GONE)
-                ypos += (_icon.getHeight() / 2d);
-        }
-
-        //zpos = 0f;
+        float[] pos = getDrawPosition(view);
+        float xpos = pos[0], ypos = pos[1], zpos = pos[2];
 
         // if tilted, draw a line segment from the center of the point into the
         // earth's surface
@@ -957,7 +952,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
                     }
                     if (_icon.getWidth() > 0) {
                         offtx = scale
-                                * ((_icon.getWidth() / 2) - _icon.getAnchorX());
+                                * ((_icon.getWidth() / 2f) - _icon.getAnchorX());
                     }
                 } else {
                     offy = _glText.getDescent() + _textHeight / 2f;

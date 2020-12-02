@@ -120,8 +120,6 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
     private boolean initialBulkLoad = false; // do not need to worry about inserting points into an
     // existing line;
 
-    private boolean clampToGroundKMLElevation = true;
-
     private String _title;
 
     private Undoable _undo;
@@ -137,9 +135,6 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
     private int _linkColor = getStrokeColor();
     private boolean _closed = false;
     private boolean _filled;
-
-    private final float _hitRadius = 32 * MapView.DENSITY;
-    protected final float _hitRadiusSq = _hitRadius * _hitRadius;
 
     private final ConcurrentLinkedQueue<OnEditableChangedListener> _onEditableChanged = new ConcurrentLinkedQueue<>();
     private final MutableGeoBounds _bounds = new MutableGeoBounds(0, 0, 0, 0);
@@ -299,15 +294,12 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
     /**
      * Toggle the touchability of a route.
      */
+    @Override
     public void setTouchable(boolean state) {
-        setMetaBoolean("touchable", state);
+        super.setTouchable(state);
         final Set<PointMapItem> items = markerToIndex.keySet();
-        for (final PointMapItem item : items) {
-            if (item instanceof Marker)
-                ((Marker) item).setTouchable(state);
-            else
-                item.setMetaBoolean("touchable", state);
-        }
+        for (final PointMapItem item : items)
+            item.setTouchable(state);
     }
 
     public void hideLabels(boolean state) {
@@ -326,7 +318,7 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
     }
 
     public void setLocked(boolean locked) {
-        setMetaBoolean("touchable", !locked);
+        setTouchable(!locked);
         final Set<PointMapItem> items = markerToIndex.keySet();
         for (final PointMapItem item : items) {
             if (locked) {
@@ -352,7 +344,7 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
             MapView view) {
 
         // First check if the line is even touchable
-        if (!getMetaBoolean("touchable", true))
+        if (!isTouchable())
             return false;
 
         // Check if the line is being rendered
@@ -369,7 +361,7 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
         boolean test3D = view.getMapTilt() != 0
                 && getAltitudeMode() != AltitudeMode.ClampToGround;
 
-        float radius = _hitRadius;
+        float radius = getHitRadius(view);
         Vector2D touch = new Vector2D(xpos, ypos);
 
         // Build the screen hit rectangle (for 3D) or hit box bounds (for 2D)
@@ -513,6 +505,7 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
 
         GeoPoint curPoint;
 
+        double hitRadiusSq = Math.pow(getHitRadius(view), 2);
         for (int i = startIdx; i <= endIdx; i++) {
             if (i == count) {
                 if (isClosed()) {
@@ -550,7 +543,7 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
                     new Vector2D(pt1.x, pt1.y),
                     new Vector2D(pt2.x, pt2.y));
             double dist = nearest.distanceSq(touch);
-            if (_hitRadiusSq > dist) {
+            if (hitRadiusSq > dist) {
                 GeoPoint gp = view.inverseWithElevation((float) nearest.x,
                         (float) nearest.y).get();
                 setMetaString("hit_type", "line");
@@ -1011,22 +1004,20 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
     }
 
     @Override
-    public void setVisible(boolean visible) {
-        if (visible != getVisible()) {
-            super.setVisible(visible);
+    protected void onVisibleChanged() {
+        boolean visible = getVisible();
+        synchronized (this) {
+            // TODO: leave edit mode if you hide the route you were editing?
 
-            synchronized (this) {
-                // TODO: leave edit mode if you hide the route you were editing?
+            // Make constituent waypoints visible only if at least one route they're in is still
+            // visible
+            for (PointMapItem point : this.markerToIndex.keySet())
+                point.setVisible(visible);
 
-                // Make constituent waypoints visible only if at least one route they're in is still
-                // visible
-                for (PointMapItem point : this.markerToIndex.keySet())
-                    point.setVisible(visible);
-
-                if (_shapeMarker != null)
-                    _shapeMarker.setVisible(visible);
-            }
+            if (_shapeMarker != null)
+                _shapeMarker.setVisible(visible);
         }
+        super.onVisibleChanged();
     }
 
     @Override
@@ -1351,6 +1342,21 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
         return mapScale >= DEFAULT_MIN_RENDER_VERTS;
     }
 
+
+    @Deprecated
+    private boolean forceAltitude = false;
+
+    /**
+     * Forces the polyline to be rendered at altitude independent of the height and also turns off
+     * any extrusion.
+     * @param forceAltitude true if we are going to force the polyline to be at altitude
+     * @deprecated
+     */
+    @Deprecated
+    public void setAbsoluteKMLElev(final boolean forceAltitude) {
+        this.forceAltitude = forceAltitude;
+    }
+
     @Override
     public void setZOrder(double zOrder) {
         // do not allow for the zorder to be modified if the 
@@ -1373,7 +1379,7 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
             synchronized (EditablePolyline.this) {
                 Integer index = EditablePolyline.this.markerToIndex.get(item);
                 if (index == null)
-                    throw new IllegalStateException();
+                    throw new IllegalStateException("could not find index of the item");
                 GeoPoint gp = item.getPoint();
                 GeoPointMetaData gpm = GeoPointMetaData.wrap(gp)
                         .setAltitudeSource(item.getMetaString(
@@ -1906,10 +1912,6 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
         return event;
     }
 
-    public void setAbsoluteKMLElev(boolean useAbsoluteKMLElevation) {
-        this.clampToGroundKMLElevation = !useAbsoluteKMLElevation;
-    }
-
     protected Folder toKml() {
 
         try {
@@ -2021,18 +2023,24 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
 
         GeoPointMetaData textLoc;
         GeoPointMetaData[] pts = this.getMetaDataPoints();
+
+        boolean clampToGroundKMLElevation = Double.isNaN(getHeight()) || Double.compare(getHeight(), 0.0)  == 0;
+
+        // reintroduce legacy behavior
+        if (forceAltitude)
+            clampToGroundKMLElevation = false;
+
+
         if (this.isClosed()) {
             Polygon lr = KMLUtil.createPolygonWithLinearRing(pts,
                     this.getUID(), clampToGroundKMLElevation,
-                    _bounds.crossesIDL());
+                    _bounds.crossesIDL(), getHeight());
             if (lr == null) {
                 Log.w(TAG, "Unable to create KML Geometry");
                 return null;
             }
-            if (clampToGroundKMLElevation)
-                lr.setAltitudeMode("clampToGround");
-            else
-                lr.setAltitudeMode("absolute");
+            if (forceAltitude)
+                lr.setExtrude(false);
 
             outerGeometries.add(lr);
             textLoc = this.getCenter();
@@ -2043,10 +2051,9 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
                 Log.w(TAG, "Unable to create KML Geometry");
                 return null;
             }
-            if (clampToGroundKMLElevation)
-                ls.setAltitudeMode("clampToGround");
-            else
-                ls.setAltitudeMode("absolute");
+            if (forceAltitude)
+                ls.setExtrude(false);
+
             outerGeometries.add(ls);
 
             // use the middle point if a line, center might not be on the line
@@ -2061,10 +2068,6 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
             Log.w(TAG, "No center marker location set");
         } else {
             Point centerPoint = new Point();
-            if (clampToGroundKMLElevation)
-                centerPoint.setAltitudeMode("clampToGround");
-            else
-                centerPoint.setAltitudeMode("absolute");
             centerPoint.setCoordinates(coord);
 
             // icon for the middle of this drawing rectangle
@@ -2143,7 +2146,7 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
     }
 
     @Override
-    public boolean isSupported(Class target) {
+    public boolean isSupported(Class<?> target) {
         return CotEvent.class.equals(target) ||
                 Folder.class.equals(target) ||
                 KMZFolder.class.equals(target) ||
@@ -2153,7 +2156,7 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
     }
 
     @Override
-    public Object toObjectOf(Class target, ExportFilters filters) {
+    public Object toObjectOf(Class<?> target, ExportFilters filters) {
         if (filters != null && filters.filter(this))
             return null;
 

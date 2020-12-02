@@ -1,6 +1,7 @@
 package com.atakmap.map.formats.c3dt;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.io.ProtocolHandler;
 import com.atakmap.io.UriFactory;
 import com.atakmap.util.Collections2;
@@ -49,16 +50,24 @@ public final class ContentSources {
     }
 
     public static ContentSource createDefault() {
+        return createDefault(false);
+    }
+
+    public static ContentSource createDefault(final boolean preferLast) {
         return new ContentSource() {
+            ProtocolHandler preferred = null;
+
             @Override
             public byte[] getData(String uri, long[] version) {
                 try {
                     if(version != null)
                         version[0] = System.currentTimeMillis();
-                    try(UriFactory.OpenResult result = UriFactory.open(uri)) {
+                    try(UriFactory.OpenResult result = Util.open(preferred, uri)) {
                         if (result == null)
                             return null;
-                        else if (result.contentLength > 0L)
+                        if(preferLast && result.handler != null)
+                            preferred = result.handler;
+                        if (result.contentLength > 0L)
                             return FileSystemUtils.read(result.inputStream, (int) result.contentLength, false);
                         else
                             return FileSystemUtils.read(result.inputStream);
@@ -89,7 +98,7 @@ public final class ContentSources {
             @Override
             public void put(String uri, byte[] data, long version) {
                 final File cacheFile = getFile(uri);
-                cacheFile.getParentFile().mkdirs();
+                FileIOProviderFactory.mkdirs(cacheFile.getParentFile());
                 try {
                     try(FileOutputStream fos = new FileOutputStream(cacheFile)) {
                         fos.write(data);
@@ -109,8 +118,8 @@ public final class ContentSources {
                 if(cacheFile == null)
                     return null;
                 try {
-                    byte[] data = new byte[(int)cacheFile.length()];
-                    try(FileInputStream fis = new FileInputStream(cacheFile)) {
+                    byte[] data = new byte[(int) FileIOProviderFactory.length(cacheFile)];
+                    try(FileInputStream fis = FileIOProviderFactory.getInputStream(cacheFile)) {
                         int off = 0;
                         while(off < data.length) {
                             final int r = fis.read(data, off, (data.length-off));
@@ -120,7 +129,7 @@ public final class ContentSources {
                         }
                     }
                     if(version != null)
-                        version[0] = cacheFile.lastModified();
+                        version[0] = FileIOProviderFactory.lastModified(cacheFile);
                     return data;
                 } catch(IOException ignored) {
                     return null;

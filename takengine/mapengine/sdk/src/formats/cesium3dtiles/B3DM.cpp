@@ -21,8 +21,6 @@ using namespace TAK::Engine::Math;
 using namespace TAK::Engine::Port;
 using namespace TAK::Engine::Core;
 
-#define B3DM_OUTPUT_LLA 0
-
 // Use tinygltf's copy of JSON for Modern C++
 #include <tinygltf/json.hpp>
 using json = nlohmann::json;
@@ -239,14 +237,6 @@ TAKErr TAK::Engine::Formats::Cesium3DTiles::B3DM_parseInfo(B3DMInfo* info, DataI
     info->rtcCenter = data.rtcCenter;
 
     return TE_Ok;
-}
-
-int TAK::Engine::Formats::Cesium3DTiles::B3DM_getSRID() NOTHROWS {
-#if B3DM_OUTPUT_LLA
-    return 4326;
-#else
-    return 4978;
-#endif
 }
 
 namespace {

@@ -22,6 +22,7 @@
 #include "renderer/Skirt.h"
 #include "thread/Lock.h"
 #include "thread/Mutex.h"
+#include "util/ConfigOptions.h"
 
 using namespace TAK::Engine::Renderer::Elevation;
 
@@ -41,6 +42,7 @@ using namespace atakmap::renderer;
 
 #define TERRAIN_LEVEL 8
 #define NUM_TILE_FETCH_WORKERS 4u
+#define MAX_LEVEL 19.0
 
 namespace
 {
@@ -57,7 +59,7 @@ namespace
             return 0u;
         
         const double gsd = estimateResolution(focus, view, bounds.maxY, bounds.minX, bounds.minY, bounds.maxX, nullptr) * 8.0;
-        auto level = (std::size_t)clamp(atakmap::raster::osm::OSMUtils::mapnikTileLeveld(gsd, 0.0), 0.0, 16.0);
+        auto level = (std::size_t)clamp(atakmap::raster::osm::OSMUtils::mapnikTileLeveld(gsd, 0.0), 0.0, MAX_LEVEL);
 
         // XXX - experimental
         if (false) {
@@ -72,7 +74,7 @@ namespace
                     const double minX = bounds.minX + (i*dlng);
                     Envelope2 nbounds(minX, maxY-dlat, minX+dlng, maxY);
                     const double top_gsd = estimateResolution(focus, view, bounds.maxY, bounds.minX, bounds.minY, bounds.maxX, nullptr) * 8.0;
-                    const auto nlevel = (std::size_t)clamp(atakmap::raster::osm::OSMUtils::mapnikTileLeveld(top_gsd, 0.0), 0.0, 16.0);
+                    const auto nlevel = (std::size_t)clamp(atakmap::raster::osm::OSMUtils::mapnikTileLeveld(top_gsd, 0.0), 0.0, MAX_LEVEL);
                     if (nlevel > level)
                         level = nlevel - 1u;
                 }
@@ -82,7 +84,7 @@ namespace
                 const double minX = bounds.minX + (i*dlng);
                 Envelope2 nbounds(minX, bounds.minY, minX+dlng, bounds.maxY);
                 const double center_gsd = estimateResolution(focus, view, bounds.maxY, bounds.minX, bounds.minY, bounds.maxX, nullptr) * 8.0;
-                const auto nlevel = (std::size_t)clamp(atakmap::raster::osm::OSMUtils::mapnikTileLeveld(center_gsd, 0.0), 0.0, 16.0);
+                const auto nlevel = (std::size_t)clamp(atakmap::raster::osm::OSMUtils::mapnikTileLeveld(center_gsd, 0.0), 0.0, MAX_LEVEL);
                 if (nlevel > level)
                     level = nlevel - 1u;
             }
@@ -175,7 +177,36 @@ namespace
         Mutex *mutex;
     };
 
-    TAKErr fetch(std::shared_ptr<TerrainTile> &value, double *els, const double resolution, const Envelope2 &mbb, const int srid, const std::size_t numPostsLat, const std::size_t numPostsLng, const bool fetchEl) NOTHROWS;
+    bool getBoolOpt(const char *opt, bool defaultValue) NOTHROWS
+    {
+        do {
+            TAKErr code(TE_Ok);
+            TAK::Engine::Port::String val;
+            if (ConfigOptions_getOption(val, opt) != TE_Ok)
+                break;
+            int v;
+            if (TAK::Engine::Port::String_parseInteger(&v, val) != TE_Ok)
+                break;
+            return !!v;
+        } while (false);
+        return defaultValue;
+    }
+    double getDoubleOpt(const char *opt, double defaultValue) NOTHROWS
+    {
+        do {
+            TAKErr code(TE_Ok);
+            TAK::Engine::Port::String val;
+            if (ConfigOptions_getOption(val, opt) != TE_Ok)
+                break;
+            double v;
+            if (TAK::Engine::Port::String_parseDouble(&v, val) != TE_Ok)
+                break;
+            return v;
+        } while (false);
+        return defaultValue;
+    }
+
+    TAKErr fetch(std::shared_ptr<TerrainTile> &value, double *els, const double resolution, const Envelope2 &mbb, const int srid, const std::size_t numPostsLat, const std::size_t numPostsLng, const bool fetchEl, const bool legacyEl, const bool constrainQueryRes, const bool fillWithHiRes) NOTHROWS;
     double estimateResolution(const GeoPoint2 &focus, const MapSceneModel2 &scene, const double ullat, const double ullng, const double lrlat, const double lrlng, GeoPoint2 *closest) NOTHROWS;
     TAKErr subscribeOnContentChangedListener(void *opaque, ElevationSource &src) NOTHROWS;
 }
@@ -188,10 +219,9 @@ ElMgrTerrainRenderService::ElMgrTerrainRenderService(RenderContext &renderer_) N
     terrainVersion(1),
     reset(false),
     numPosts(32),
-    resadj(32.0),
+    resadj(10.0),
     monitor(TEMT_Recursive),
     sticky(true),
-    resadj2(8.0),
     sourceVersion(0),
     terminate(false)
 {
@@ -219,6 +249,17 @@ ElMgrTerrainRenderService::ElMgrTerrainRenderService(RenderContext &renderer_) N
 
     request.srid = -1;
     request.sceneVersion = -1;
+
+    resadj = getDoubleOpt("terrain.resadj", resadj);
+
+    fetchOptions.constrainQueryRes = getBoolOpt("terrain.constrain-query-res", false);
+    fetchOptions.fillWithHiRes = getBoolOpt("terrain.fill-with-hi-res", true);
+#ifdef _MSC_VER
+    fetchOptions.legacyElevationApi = getBoolOpt("terrain.legacy-elevation-api", true);
+#else
+    fetchOptions.legacyElevationApi = getBoolOpt("terrain.legacy-elevation-api", false);
+#endif
+    fetchOptions.fillWithHiRes = getBoolOpt("terrain.fill-with-hi-res", true);
 }
 
 ElMgrTerrainRenderService::~ElMgrTerrainRenderService() NOTHROWS
@@ -256,7 +297,7 @@ TAKErr ElMgrTerrainRenderService::lock(TAK::Engine::Port::Collection<std::shared
             std::size_t numPostsLat;
             std::size_t numPostsLng;
             computePostCount(numPostsLat, numPostsLng, roots[i]->bounds, numPosts);
-            fetch(tile, nullptr, atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(roots[i]->level)) * 10.0, roots[i]->bounds, srid, numPostsLat, numPostsLng, false);
+            fetch(tile, nullptr, atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(roots[i]->level))*resadj, roots[i]->bounds, srid, numPostsLat, numPostsLng, false, fetchOptions.legacyElevationApi, fetchOptions.constrainQueryRes, fetchOptions.fillWithHiRes);
             worldTerrain->tiles.push_back(tile);
         }
         worldTerrain->srid = srid;
@@ -470,7 +511,7 @@ void *ElMgrTerrainRenderService::requestWorkerThread(void *opaque)
                     std::size_t numPostsLat;
                     std::size_t numPostsLng;
                     computePostCount(numPostsLat, numPostsLng, owner.roots[i]->bounds, owner.numPosts);
-                    ::fetch(owner.roots[i]->tile, nullptr, atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(owner.roots[i]->level)) * 10.0, owner.roots[i]->bounds, fetchBuffer->srid, numPostsLat, numPostsLng, false);
+                    ::fetch(owner.roots[i]->tile, nullptr, atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(owner.roots[i]->level))*owner.resadj, owner.roots[i]->bounds, fetchBuffer->srid, numPostsLat, numPostsLng, false, owner.fetchOptions.legacyElevationApi, owner.fetchOptions.constrainQueryRes, owner.fetchOptions.fillWithHiRes);
                     owner.roots[i]->sourceVersion = fetchBuffer->sourceVersion;
                 }
 
@@ -570,7 +611,7 @@ void *ElMgrTerrainRenderService::fetchWorkerThread(void *opaque)
             fetchSrcVersion = service.sourceVersion;
         }
 
-        const double res = atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(node->level))*2.5;
+        const double res = atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(node->level))*service.resadj;
         std::size_t numPostsLat;
         std::size_t numPostsLng;
         computePostCount(numPostsLat, numPostsLng, node->bounds, service.numPosts);
@@ -578,7 +619,7 @@ void *ElMgrTerrainRenderService::fetchWorkerThread(void *opaque)
             els.reset(new double[numPostsLat * numPostsLng * 3u]);
             elscap = (numPostsLat*numPostsLng * 3u);
         }
-        TAKErr code = fetch(tile, els.get(), res, node->bounds, node->srid, numPostsLat, numPostsLng, node->level >= TERRAIN_LEVEL);
+        TAKErr code = fetch(tile, els.get(), res, node->bounds, node->srid, numPostsLat, numPostsLng, node->level >= TERRAIN_LEVEL, service.fetchOptions.legacyElevationApi, service.fetchOptions.constrainQueryRes, service.fetchOptions.fillWithHiRes);
         TE_CHECKBREAK_CODE(code);
 
         fetchedNodes++;
@@ -760,11 +801,12 @@ bool ElMgrTerrainRenderService::QuadNode::collect(ElMgrTerrainRenderService::Wor
         }
 
         // only allow recursion if all nodes have been fetched
-        const bool recurse = (!(fetchll || fetchingll) || (fetchll && ll->tile.get())) &&
-                                (!(fetchlr || fetchinglr) || (fetchlr && lr->tile.get())) &&
-                                (!(fetchur || fetchingur) || (fetchur && ur->tile.get())) &&
-                                (!(fetchul || fetchingul) || (fetchul && ul->tile.get())) &&
-                                (recurseLL || recurseUL || recurseUR || recurseLR);
+        const bool recurse = (recurseLL || recurseUL || recurseUR || recurseLR) &&
+                             ((ll.get() && ll->tile.get()) &&
+                              (lr.get() && lr->tile.get()) &&
+                              (ur.get() && ur->tile.get()) &&
+                              (ul.get() && ul->tile.get()));
+
         if(recurseLL) {
             if(recurse) {
                 ll->collect(value, focus, scene);
@@ -812,7 +854,7 @@ bool ElMgrTerrainRenderService::QuadNode::collect(ElMgrTerrainRenderService::Wor
             std::size_t numPostsLat;
             std::size_t numPostsLng;
             computePostCount(numPostsLat, numPostsLng, this->bounds, service.numPosts);
-            fetch(this->tile, nullptr, atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(this->level))*10.0, this->bounds, value.srid, numPostsLat, numPostsLng, false);
+            fetch(this->tile, nullptr, atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(this->level))*service.resadj, this->bounds, value.srid, numPostsLat, numPostsLng, false, service.fetchOptions.legacyElevationApi, service.fetchOptions.constrainQueryRes, service.fetchOptions.fillWithHiRes);
             //this->tile.opaque = this;
         } else {
             // XXX - this is a little goofy
@@ -886,23 +928,20 @@ void ElMgrTerrainRenderService::QuadNode::updateParentZBounds(QuadNode &node) NO
 namespace
 {
     //static GLMapView.TerrainTile fetch(double resolution, Envelope mbb, int srid, int numPostsLat, int numPostsLng, bool fetchEl)
-    TAKErr fetch(std::shared_ptr<TerrainTile> &value, double *els, const double resolution, const Envelope2 &mbb, const int srid, const std::size_t numPostsLat, const std::size_t numPostsLng, const bool fetchEl) NOTHROWS
+    TAKErr fetch(std::shared_ptr<TerrainTile> &value, double *els, const double resolution, const Envelope2 &mbb, const int srid, const std::size_t numPostsLat, const std::size_t numPostsLng, const bool fetchEl, const bool legacyEl, const bool constrainQueryRes, const bool fillWithHiRes) NOTHROWS
     {
         TAKErr code(TE_Ok);
 
-        if(fetchEl) {
-#ifndef _MSC_VER
-            double *pts = els+(numPostsLat * numPostsLng);
-            for (int postLat = 0; postLat < numPostsLat; postLat++) {
-                for (int postLng = 0; postLng < numPostsLng; postLng++) {
+        if (fetchEl && !legacyEl) {
+            double *pts = els + (numPostsLat * numPostsLng);
+            for (std::size_t postLat = 0u; postLat < numPostsLat; postLat++) {
+                for (std::size_t postLng = 0u; postLng < numPostsLng; postLng++) {
                     std::size_t i = (postLat*numPostsLng)+postLng;
                     pts[i*2u] = mbb.minX + ((mbb.maxX - mbb.minX) / (numPostsLng-1)) * postLng;
                     pts[i*2u+1u] = mbb.minY + ((mbb.maxY - mbb.minY) / (numPostsLat-1)) * postLat;
                 }
             }
 
-            const bool constrainQueryRes = false;
-            
             ElevationSource::QueryParameters params;
             params.order = TAK::Engine::Port::Collection<ElevationSource::QueryParameters::Order>::Ptr(new TAK::Engine::Port::STLVectorAdapter<ElevationSource::QueryParameters::Order>(), Memory_deleter_const<TAK::Engine::Port::Collection<ElevationSource::QueryParameters::Order>, TAK::Engine::Port::STLVectorAdapter<ElevationSource::QueryParameters::Order>>);
             code = params.order->add(ElevationSource::QueryParameters::ResolutionDesc);
@@ -923,7 +962,7 @@ namespace
 
                 std::size_t numpts2 = 0u;
                 array_ptr<double> pts2(new double[(numPostsLat*numPostsLng)*3u]);
-                for(int i = 0; i < (numPostsLat*numPostsLng); i++) {
+                for(std::size_t i = 0u; i < (numPostsLat*numPostsLng); i++) {
                     if (isnan(els[i])) {
                         pts2[numpts2*3u] = pts[i*2+1u];
                         pts2[numpts2*3u+1u] = pts[i*2+1u];
@@ -947,7 +986,7 @@ namespace
                     }
                 }
             }
-#else
+        } else if(fetchEl && legacyEl) {
             std::vector<GeoPoint2> pts;
             pts.reserve(numPostsLat * numPostsLng);
             for (std::size_t postLat = 0; postLat < numPostsLat; postLat++) {
@@ -969,7 +1008,6 @@ namespace
             TE_CHECKRETURN_CODE(code);
             code = ElevationManager_getElevation(els, ptsIter, filter, ElevationData::Hints());
             TE_CHECKRETURN_CODE(code);
-#endif
         }
 
         // number of edge vertices is equal to perimeter length, plus one, to

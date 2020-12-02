@@ -5,13 +5,9 @@ import android.graphics.BitmapFactory;
 import android.opengl.GLES30;
 
 import com.atakmap.coremap.log.Log;
-import com.atakmap.io.ProtocolHandler;
-import com.atakmap.io.UriFactory;
 import com.atakmap.nio.Buffers;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 final class GLTF {

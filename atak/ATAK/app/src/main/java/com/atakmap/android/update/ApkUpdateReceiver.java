@@ -157,8 +157,7 @@ public class ApkUpdateReceiver extends BroadcastReceiver {
 
                     Drawable icon = AppMgmtUtils.getAppDrawable(context, pkg);
                     if (icon != null)
-                        dialog.setIcon(AppMgmtUtils.scaleImage(context, icon,
-                                48));
+                        dialog.setIcon(AppMgmtUtils.getDialogIcon(context, icon));
                     else
                         dialog.setIcon(R.drawable.ic_menu_plugins);
                     dialog.setCancelable(false);
@@ -236,7 +235,7 @@ public class ApkUpdateReceiver extends BroadcastReceiver {
                         })
                 .setNegativeButton(R.string.cancel, null);
         if (icon != null)
-            builder.setIcon(AppMgmtUtils.scaleImage(c, icon, 48));
+            builder.setIcon(AppMgmtUtils.getDialogIcon(c, icon));
         else
             builder.setIcon(R.drawable.ic_menu_plugins);
         AlertDialog dialog = builder.create();

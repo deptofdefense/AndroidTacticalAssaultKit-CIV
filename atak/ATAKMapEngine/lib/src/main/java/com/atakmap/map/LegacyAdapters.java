@@ -6,7 +6,6 @@ import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 
 public final class LegacyAdapters {
     final static Map<WeakReference<MapRenderer>, RenderContext> legacyContextAdapters = new HashMap<>();

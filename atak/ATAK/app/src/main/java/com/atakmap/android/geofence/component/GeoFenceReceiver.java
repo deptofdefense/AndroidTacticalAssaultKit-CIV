@@ -41,6 +41,7 @@ import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.NotificationUtil;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
@@ -73,6 +74,7 @@ public class GeoFenceReceiver extends BroadcastReceiver implements
     public static final String ITEMS_SELECTED = "com.atakmap.android.geofence.ITEMS_SELECTED";
 
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = false)
     public static final String ADD = "com.atakmap.android.geofence.ADD";
     public static final String GEO_FENCE = "Geo Fence";
     private final SharedPreferences _prefs;

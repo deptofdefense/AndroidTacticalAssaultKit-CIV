@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.preference.UnitPreferences;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
@@ -22,8 +23,10 @@ public class AltitudeUtilities {
      * @param pointMD the geopoint with metadata.
      * @param prefs the shared preferences for the application
      * @return the standard formatting for the altitude.
-     * @deprecated 4.2 in favor of format(GeoPointMetaData)
+     * @deprecated use {@link #format(GeoPointMetaData)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static String format(GeoPointMetaData pointMD,
             SharedPreferences prefs) {
         MapView mv = MapView.getMapView();

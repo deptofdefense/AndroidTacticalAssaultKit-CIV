@@ -71,7 +71,7 @@ public class ClassLoaderHelper {
     * @param className is the class name to be used.
     * @param packageName the package name of the apk to be used.
     */
-    public static Class createClass(final String className,
+    public static Class<?> createClass(final String className,
             final String packageName) {
         // Check if plugin preference fragment
         AtakPluginRegistry registry = AtakPluginRegistry.get();
@@ -108,8 +108,12 @@ public class ClassLoaderHelper {
         }
         try {
             // Fallback to default ATAK class loader
-            return ClassLoaderHelper.class.getClassLoader()
-                    .loadClass(className);
+            ClassLoader cl = ClassLoaderHelper.class.getClassLoader();
+            if (cl == null)
+                return null;
+
+            return cl.loadClass(className);
+
         } catch (ClassNotFoundException ignored) {
             return null;
         }
@@ -120,7 +124,7 @@ public class ClassLoaderHelper {
     * @param className is the class name to be used.
     * This implementation searches through all plugins for the specified class
     */
-    public static Class createClass(final String className) {
+    public static Class<?> createClass(final String className) {
         return createClass(className, null);
     }
 

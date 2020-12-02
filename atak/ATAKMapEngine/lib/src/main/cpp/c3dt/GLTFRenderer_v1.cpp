@@ -5,7 +5,9 @@
 #include <string>
 #include <vector>
 
+#ifdef __ANDROID__
 #include <android/log.h>
+#endif
 
 #define tinygltf tinygltfloader
 #define TAK_TINYGLTFLOADER_MODS
@@ -80,7 +82,9 @@ namespace {
                 const BufferView &bufferView = it->second;
                 if (bufferView.target == 0) {
                     //std::cout << "WARN: bufferView.target is zero" << std::endl;
+#ifdef __ANDROID__
                     __android_log_print(ANDROID_LOG_WARN, "Cesium3DTiles", "WARN: bufferView.target is zero");
+#endif
                     continue;  // Unsupported bufferView.
                 }
 

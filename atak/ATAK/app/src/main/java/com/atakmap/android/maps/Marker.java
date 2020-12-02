@@ -126,7 +126,6 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
     private double _heading = Double.NaN, _speed = Double.NaN; // track property
     private final Rect _hitBounds = new Rect(0, 0, 0, 0);
     private final Rect _textBounds = new Rect(0, 0, 0, 0);
-    private boolean touchable = true;
     private int _textColor = Color.WHITE;
     private int _labelTextSize = (MapView.getDefaultTextFormat() == null) ? 14
             : MapView.getDefaultTextFormat().getFontSize();
@@ -314,12 +313,13 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
             MapView view) {
 
         // if the marker is not touchable, bypass the test ortho hit logic and return false
-        if (!touchable)
+        if (!isTouchable())
             return false;
 
         // XXX - not really ideal to reach down into the renderer, but the hit
         //       test should be totally deferred to the renderer
-        final GeoPoint geo = view.getRenderElevationAdjustedPoint(getPoint());
+        final GeoPoint geo = view.getRenderElevationAdjustedPoint(getPoint(),
+                getHeight());
         PointF p = view.forward(geo);
         if (Float.isNaN(p.x) || Float.isNaN(p.y))
             return false;
@@ -329,10 +329,6 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
         return _hitBounds.contains((int) p.x, (int) p.y)
                 || (_iconVisibility == ICON_GONE
                         && _textBounds.contains((int) p.x, (int) p.y));
-    }
-
-    public void setTouchable(final boolean touchable) {
-        this.touchable = touchable;
     }
 
     /**
@@ -405,6 +401,13 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
             updateTextBounds();
             onSummaryChanged();
         }
+    }
+
+    @Override
+    protected String getRemarksKey() {
+        // Another very special exception for CASEVAC markers
+        return getType().equals("b-r-f-h-c") ? "medline_remarks"
+                : super.getRemarksKey();
     }
 
     /**sets the text size to use for the rendering label
@@ -930,7 +933,7 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
     }
 
     @Override
-    public Object toObjectOf(Class target, ExportFilters filters)
+    public Object toObjectOf(Class<?> target, ExportFilters filters)
             throws FormatNotSupportedException {
         if (filters != null && filters.filter(this))
             return null;
@@ -955,7 +958,7 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
     }
 
     @Override
-    public boolean isSupported(Class target) {
+    public boolean isSupported(Class<?> target) {
         return Folder.class.equals(target) ||
                 KMZFolder.class.equals(target) ||
                 MissionPackageExportWrapper.class.equals(target) ||

@@ -21,7 +21,7 @@ public class ArchiveEntryMapDataRef extends MapDataRef {
     /**
      * Get the path to the archive file
      * 
-     * @return
+     * @return the archive file path as a string.
      */
     public String getArchiveFilePath() {
         return _archiveFilePath;
@@ -30,7 +30,7 @@ public class ArchiveEntryMapDataRef extends MapDataRef {
     /**
      * Get the path to the archive entry
      * 
-     * @return
+     * @return the achive entry path as a string.
      */
     public String getEntryPath() {
         return _entryPath;

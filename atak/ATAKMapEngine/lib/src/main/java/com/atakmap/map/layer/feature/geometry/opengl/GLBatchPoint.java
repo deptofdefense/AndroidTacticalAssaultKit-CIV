@@ -15,7 +15,7 @@ import android.util.Pair;
 
 
 import com.atakmap.android.maps.MapTextFormat;
-import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.lang.Objects;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.AtakMapView;
@@ -43,8 +43,8 @@ import com.atakmap.opengl.GLTextureAtlas;
 public class GLBatchPoint extends GLBatchGeometry {
 
     static GLTextureAtlas ICON_ATLAS = new GLTextureAtlas(1024,
-            (int) Math.ceil(AtakMapView.DENSITY * 32));
-    static float iconAtlasDensity = AtakMapView.DENSITY;
+            (int) Math.ceil(GLRenderGlobals.getRelativeScaling() * 32));
+    static float iconAtlasDensity = GLRenderGlobals.getRelativeScaling();
 
     final static double defaultMinLabelRenderResolution = 13d;
 
@@ -153,7 +153,7 @@ public class GLBatchPoint extends GLBatchGeometry {
         this.iconDirty = true;
     }
 
-    void checkIcon(RenderContext surface) {
+    void checkIcon(final RenderContext surface) {
         if (this.textureKey == 0L || this.iconDirty)
             getOrFetchIcon(surface, this);
     }
@@ -381,16 +381,16 @@ public class GLBatchPoint extends GLBatchGeometry {
                 final float textHeight = glText.getStringHeight();// _glText.getBaselineSpacing();
                 if (this.textureKey != 0L) {
                     if(labelAlignY > 0)
-                        offy = -iconHeight / 2;
+                        offy = -iconHeight / 2f;
                     else if(labelAlignY < 0)
-                        offy = iconHeight / 2;
+                        offy = iconHeight / 2f;
                     else
                         offy = -textHeight / 2;
 
                     if(labelAlignX > 0)
-                        offtx = -iconWidth / 2;
+                        offtx = -iconWidth / 2f;
                     else if(labelAlignX < 0)
-                        offtx = iconWidth / 2;
+                        offtx = iconWidth / 2f;
 
                     if(ortho.drawTilt > 0d)
                         offy = (offy*-1f) + textHeight + glText.getDescent();
@@ -515,9 +515,10 @@ public class GLBatchPoint extends GLBatchGeometry {
 
         // if a label style is present, override default label settings (aka name)
         if(lstyle != null) {
-            // XXX - name should be eliminated and labelling should be derived
-            //       from LabelPointStyle
-            this.name = GLText.localize(lstyle.getText());
+
+            // mimics GoogleEarth when the label point style does not contain a textString
+            if (!FileSystemUtils.isEmpty(lstyle.getText()))
+                this.name = GLText.localize(lstyle.getText());
             lblAlignX = lstyle.getLabelAlignmentX();
             lblAlignY = lstyle.getLabelAlignmentY();
             lblTextColor = lstyle.getTextColor();
@@ -726,16 +727,16 @@ public class GLBatchPoint extends GLBatchGeometry {
                 final float textHeight = glText.getStringHeight();// _glText.getBaselineSpacing();
                 if (this.textureKey != 0L) {
                     if(labelAlignY > 0)
-                        offy = -iconHeight / 2;
+                        offy = -iconHeight / 2f;
                     else if(labelAlignY < 0)
-                        offy = iconHeight / 2;
+                        offy = iconHeight / 2f;
                     else
                         offy = -textHeight / 2;
 
                     if(labelAlignX > 0)
-                        offtx = -iconWidth / 2;
+                        offtx = -iconWidth / 2f;
                     else if(labelAlignX < 0)
-                        offtx = iconWidth / 2;
+                        offtx = iconWidth / 2f;
                     
                     if(view.drawTilt > 0d)
                         offy = (offy*-1f) + textHeight + glText.getDescent();

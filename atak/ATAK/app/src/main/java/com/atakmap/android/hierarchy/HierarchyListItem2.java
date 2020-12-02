@@ -5,6 +5,8 @@ import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.atakmap.annotations.DeprecatedApi;
+
 import java.util.List;
 
 /**
@@ -15,8 +17,14 @@ import java.util.List;
  */
 public interface HierarchyListItem2 extends HierarchyListItem {
 
+    /**
+     * @deprecated Use {@link #refresh(HierarchyListFilter)}
+     * @param sort
+     * @return
+     */
     @Override
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = false)
     Sort refresh(Sort sort);
 
     /**
@@ -71,13 +79,14 @@ public interface HierarchyListItem2 extends HierarchyListItem {
 
     /**
      * Back button pressed while on this list
-     * Deprecated - please implement {@link HierarchyListStateListener} instead
+     * @deprecated - please implement {@link HierarchyListStateListener} instead
      *
      * @param deviceBack True if the device back button was pressed
      *                   False if the OM back button was pressed
      * @return True if event handled, false for default back button behavior
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     boolean onBackButtonPressed(boolean deviceBack);
 
     /**

@@ -12,6 +12,9 @@ import com.atakmap.android.hashtags.HashtagManager;
 import com.atakmap.android.hashtags.util.HashtagSet;
 import com.atakmap.android.hashtags.util.HashtagUtils;
 import com.atakmap.android.hashtags.HashtagContent;
+import com.atakmap.android.maps.visibility.VisibilityCondition;
+import com.atakmap.android.maps.visibility.VisibilityListener;
+import com.atakmap.android.maps.visibility.VisibilityUtil;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -55,8 +58,8 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  *
  */
-public abstract class MapItem extends FilterMetaDataHolder
-        implements HashtagContent {
+public abstract class MapItem extends FilterMetaDataHolder implements
+        HashtagContent, VisibilityListener {
 
     private static final String TAG = "MapItem";
 
@@ -123,6 +126,11 @@ public abstract class MapItem extends FilterMetaDataHolder
     public static final String EMPTY_TYPE = "no-defined-type";
 
     /**
+     * Default hit radius ratio (32dp)
+     */
+    public static final double HIT_RATIO_DEFAULT = 32d / 240d;
+
+    /**
      * Visible property listener
      */
     public interface OnVisibleChangedListener {
@@ -142,8 +150,6 @@ public abstract class MapItem extends FilterMetaDataHolder
 
     /**
      * Clickable property listener
-     *
-     *
      */
     public interface OnClickableChangedListener {
         void onClickableChanged(MapItem item);
@@ -151,11 +157,16 @@ public abstract class MapItem extends FilterMetaDataHolder
 
     /**
      * ZOrder property listener
-     *
-     *
      */
     public interface OnZOrderChangedListener {
         void onZOrderChanged(MapItem item);
+    }
+
+    /**
+     * Height property listener
+     */
+    public interface OnHeightChangedListener {
+        void onHeightChanged(MapItem item);
     }
 
     public interface OnGroupChangedListener {
@@ -173,6 +184,7 @@ public abstract class MapItem extends FilterMetaDataHolder
     private Object _tag;
     private boolean _clickable = CLICKABLE_DEFAULT;
     private boolean _visible = VISIBLE_DEFAULT;
+    private int _visCond = VisibilityCondition.IGNORE;
     private double _zOrder = ZORDER_DEFAULT;
     private final ConcurrentLinkedQueue<OnVisibleChangedListener> _visibleListeners = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnTypeChangedListener> _typeListeners = new ConcurrentLinkedQueue<>();
@@ -180,6 +192,7 @@ public abstract class MapItem extends FilterMetaDataHolder
     private final ConcurrentLinkedQueue<OnZOrderChangedListener> _zOrderListeners = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnGroupChangedListener> _onGroupListeners = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnMetadataChangedListener> _onMetadataChangedListeners = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<OnHeightChangedListener> _onHeightChanged = new ConcurrentLinkedQueue<>();
     private MapGroup group;
 
     MapItem(final long serialId, final String uid) {
@@ -286,7 +299,7 @@ public abstract class MapItem extends FilterMetaDataHolder
         } else if (k.equals("type")) {
             setType(dv);
             return;
-        } else if (k.equals("remarks")) {
+        } else if (k.equals(getRemarksKey())) {
             setRemarks(dv);
             return;
         }
@@ -429,22 +442,6 @@ public abstract class MapItem extends FilterMetaDataHolder
     }
 
     /**
-     * Set visible property value. Visible affects whether the MapItem is draw and whether it is hit
-     * tested.
-     *
-     * @param visible the visible value
-     */
-    public void setVisible(boolean visible) {
-        if (visible != _visible) {
-            _visible = visible;
-            onVisibleChanged();
-            // Parent group needs to be visible or clicks won't work
-            if (visible && group != null && !group.getVisible())
-                group.setVisibleIgnoreChildren(true);
-        }
-    }
-
-    /**
      * Get the clickable property value. Clickable affects whether the MapItem is hit tested.
      *
      * @return true if clickable
@@ -454,13 +451,45 @@ public abstract class MapItem extends FilterMetaDataHolder
     }
 
     /**
+     * Set visible property value. Visible affects whether the MapItem is draw and whether it is hit
+     * tested.
+     *
+     * @param visible the visible value
+     * @param ignoreConditions True to set the visibility condition to ignore if
+     *                         it conflicts with the new visibility state
+     */
+    public void setVisible(boolean visible, boolean ignoreConditions) {
+        if (visible != _visible) {
+            _visible = visible;
+            onVisibleChanged();
+            // Parent group needs to be visible or clicks won't work
+            if (visible && group != null && !group.getVisible())
+                group.setVisibleIgnoreChildren(true);
+        } else if (ignoreConditions && visible != getVisible()) {
+            // Ignore visibility condition temporarily
+            _visCond = VisibilityCondition.IGNORE;
+            onVisibleChanged();
+        }
+    }
+
+    public void setVisible(boolean visible) {
+        setVisible(visible, true);
+    }
+
+    /**
      * Get the visible property value. Visible affects whether the MapItem is draw and whether it is
      * hit.
      *
+     * @param ignoreConditions True to ignore the visibility condition state
      * @return true if visible
      */
+    public boolean getVisible(boolean ignoreConditions) {
+        return _visible && (ignoreConditions
+                || _visCond != VisibilityCondition.INVISIBLE);
+    }
+
     public boolean getVisible() {
-        return _visible;
+        return getVisible(false);
     }
 
     /**
@@ -522,6 +551,27 @@ public abstract class MapItem extends FilterMetaDataHolder
     public boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
             MapView view) {
         return false;
+    }
+
+    /**
+     * Set whether this map item is touchable (used by testOrthoHit)
+     * @param state True if touchable
+     */
+    public void setTouchable(boolean state) {
+        setMetaBoolean("touchable", state);
+    }
+
+    public boolean isTouchable() {
+        return getMetaBoolean("touchable", true);
+    }
+
+    /**
+     * Get the hit/touch radius for this map item
+     * @param view Map view
+     * @return Hit radius in floating pixels
+     */
+    public float getHitRadius(MapView view) {
+        return (float) (HIT_RATIO_DEFAULT * view.getDisplayDpi());
     }
 
     /**
@@ -607,6 +657,15 @@ public abstract class MapItem extends FilterMetaDataHolder
     }
 
     /**
+     * Invoked when the height property changes
+     */
+    protected void onHeightChanged() {
+        for (OnHeightChangedListener l : _onHeightChanged) {
+            l.onHeightChanged(this);
+        }
+    }
+
+    /**
      * Invokes when the metadata property changes
      */
     public void notifyMetadataChanged(final String field) {
@@ -654,6 +713,25 @@ public abstract class MapItem extends FilterMetaDataHolder
         }
     }
 
+    /**
+     * Add a height changed property listener
+     *
+     * @param listener the listener
+     */
+    public void addOnHeightChangedListener(OnHeightChangedListener listener) {
+        _onHeightChanged.add(listener);
+    }
+
+    /**
+     * Remove a height changed property listener
+     *
+     * @param listener the listener
+     */
+    public void removeOnHeightChangedListener(
+            OnHeightChangedListener listener) {
+        _onHeightChanged.remove(listener);
+    }
+
     public long getSerialId() {
         return _globalId;
     }
@@ -673,7 +751,7 @@ public abstract class MapItem extends FilterMetaDataHolder
      * See {@link MapEvent#ITEM_PERSIST}
      */
     public void persist(MapEventDispatcher dispatcher, Bundle persistExtras,
-            Class clazz) {
+            Class<?> clazz) {
         Bundle extras = new Bundle();
         extras.putBoolean("internal", true);
         //TODO for now this is used for logging, but could be in used in conjunction or to replace "from"
@@ -709,7 +787,7 @@ public abstract class MapItem extends FilterMetaDataHolder
      * See {@link MapEvent#ITEM_REFRESH}
      */
     public void refresh(MapEventDispatcher dispatcher, Bundle refreshExtras,
-            Class clazz) {
+            Class<?> clazz) {
         Bundle extras = new Bundle();
         //TODO for now this is used for logging, but could be in used in conjunction or to replace "from"
         extras.putString("fromClass", clazz.getName());
@@ -776,11 +854,21 @@ public abstract class MapItem extends FilterMetaDataHolder
     }
 
     /**
+     * Get the metadata key for where remarks are stored
+     * 99.9% of the time this is just "remarks". But unfortunately some items,
+     * such as CASEVAC, use a different key.
+     * @return Remarks metadata key
+     */
+    protected String getRemarksKey() {
+        return "remarks";
+    }
+
+    /**
      * Set map item remarks (may contain hashtags)
      * @param remarks Remarks string
      */
     public void setRemarks(String remarks) {
-        super.setMetaString("remarks", remarks);
+        super.setMetaString(getRemarksKey(), remarks);
 
         List<String> newTags = HashtagUtils.extractTags(remarks);
 
@@ -793,7 +881,7 @@ public abstract class MapItem extends FilterMetaDataHolder
     }
 
     public String getRemarks() {
-        return getMetaString("remarks", "");
+        return getMetaString(getRemarksKey(), "");
     }
 
     // HashtagContent overrides //
@@ -802,7 +890,7 @@ public abstract class MapItem extends FilterMetaDataHolder
     public void setHashtags(Collection<String> tags) {
 
         // Remove old tags
-        String remarks = getMetaString("remarks", "").trim();
+        String remarks = getMetaString(getRemarksKey(), "").trim();
         for (String tag : _hashtags) {
             if (!tags.contains(tag))
                 remarks = remarks.replace(tag + " ", "").replace(tag, "");
@@ -848,6 +936,45 @@ public abstract class MapItem extends FilterMetaDataHolder
                     + 0xFF000000;
         } catch (Exception ignored) {
             return Color.WHITE;
+        }
+    }
+
+    /**
+     * Set the height of this item
+     *
+     * @param height the height in meters or Double.NaN if unknown.
+     */
+    public void setHeight(final double height) {
+        if (Double.compare(getHeight(), height) != 0) {
+            super.setMetaDouble("height", height);
+            onHeightChanged();
+        }
+    }
+
+    /**
+     * Get the height property value or Double.NaN is to known.
+     *
+     * @return the height in meters.
+     */
+    public double getHeight() {
+        return getMetaDouble("height", Double.NaN);
+    }
+
+    @Override
+    public void setMetaDouble(String key, double value) {
+        if (key.equals("height"))
+            setHeight(value);
+        else
+            super.setMetaDouble(key, value);
+    } 
+
+    @Override
+    public void onVisibilityConditions(List<VisibilityCondition> conditions) {
+        // Check visibility conditions that apply to this map item
+        int newVis = VisibilityUtil.checkConditions(this, conditions);
+        if (_visCond != newVis) {
+            _visCond = newVis;
+            onVisibleChanged();
         }
     }
 }

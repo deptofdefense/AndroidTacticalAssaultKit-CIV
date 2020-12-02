@@ -190,7 +190,7 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
             //
             // did this connection use certificate enrollment?
             //
-            if (enrollForCertificateWithTrust) {
+            if (enrollForCertificateWithTrust && ncs != null) {
                 byte[] clientCert = AtakCertificateDatabase
                         .getCertificateForServer(
                                 AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
@@ -251,7 +251,7 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
                 // if our connection uses authentication, only check for creds if we didnt just
                 // launch a re-enrollment... the re-enrollment process will pull credentials and
                 // force the user to enter them if expired
-            } else if (useAuth) {
+            } else if (useAuth && ncs != null) {
                 AtakAuthenticationCredentials credentials = AtakAuthenticationDatabase
                         .getCredentials(
                                 AtakAuthenticationCredentials.TYPE_COT_SERVICE,
@@ -290,7 +290,8 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
                         TAKServer.CONNECT_STRING_KEY
                                 + i,
                         "");
-                if (nextConnectString.compareTo(connectString) == 0) {
+                if (nextConnectString != null &&
+                        nextConnectString.compareTo(connectString) == 0) {
                     return i;
                 }
             }

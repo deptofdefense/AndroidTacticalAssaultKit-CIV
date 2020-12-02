@@ -3,6 +3,7 @@ package com.atakmap.spatial.file;
 
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
 import com.atakmap.map.layer.feature.FeatureDataSource;
@@ -27,7 +28,7 @@ public class ShapefileSpatialDb extends OgrSpatialDb {
     private final static FileFilter SHP_FILTER = new FileFilter() {
         @Override
         public boolean accept(File arg0) {
-            return (arg0.isDirectory() || arg0.getName().endsWith(".shp"));
+            return (FileIOProviderFactory.isDirectory(arg0) || arg0.getName().endsWith(".shp"));
         }
 
     };

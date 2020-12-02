@@ -202,12 +202,12 @@ public class ModelInfoHierarchyListItem extends AbstractChildlessListItem
     }
 
     @Override
-    public boolean isSupported(Class target) {
+    public boolean isSupported(Class<?> target) {
         return this.parent.isSupported(target);
     }
 
     @Override
-    public Object toObjectOf(Class target, ExportFilters filters)
+    public Object toObjectOf(Class<?> target, ExportFilters filters)
             throws FormatNotSupportedException {
         return this.parent.toObjectOf(target, filters);
     }

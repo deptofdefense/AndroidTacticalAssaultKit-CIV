@@ -29,6 +29,7 @@ import com.atakmap.android.maps.MapView.RenderStack;
 import com.atakmap.android.widgets.SeekBarControl;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.MultiLayer;
@@ -377,7 +378,7 @@ public class GRGMapComponent extends AbstractMapComponent {
             final String[] mountPoints = FileSystemUtils.findMountPoints();
             for (String mountPoint : mountPoints) {
                 File scanDir = new File(mountPoint, "grg");
-                if (scanDir.exists() && scanDir.isDirectory())
+                if (FileIOProviderFactory.exists(scanDir) && FileIOProviderFactory.isDirectory(scanDir))
                     FileSystemUtils.deleteDirectory(scanDir, true);
             }
         }

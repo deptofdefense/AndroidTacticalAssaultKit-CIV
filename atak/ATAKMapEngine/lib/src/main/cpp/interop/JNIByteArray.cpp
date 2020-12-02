@@ -1,6 +1,6 @@
 #include "JNIByteArray.h"
 
-#include <cstdlib>
+#include <cstring>
 
 using namespace TAKEngineJNI::Interop;
 
@@ -11,7 +11,7 @@ namespace
         return env->GetByteArrayElements(jarr, isCopy);
     }
 
-    inline void unpin(JNIEnv *env, jbyteArray jarr, jbyte *carr, int releaseMode)
+    inline void unpin(JNIEnv *env, jbyteArray jarr, jbyte *carr, jint releaseMode)
     {
         env->ReleaseByteArrayElements(jarr, carr, releaseMode);
     }

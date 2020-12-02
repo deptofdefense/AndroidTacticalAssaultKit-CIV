@@ -16,6 +16,7 @@ import android.opengl.GLES30;
 import android.opengl.Matrix;
 
 import com.atakmap.coremap.log.Log;
+import com.atakmap.map.opengl.GLRenderGlobals;
 
 public class GLES20FixedPipeline extends GLES30 {
 
@@ -289,7 +290,7 @@ public class GLES20FixedPipeline extends GLES30 {
     }
 
     public static void glLineWidth(float w) {
-        GLES30.glLineWidth(w*AtakMapView.DENSITY);
+        GLES30.glLineWidth(w*GLRenderGlobals.getRelativeScaling());
     }
     /**************************************************************************/
 

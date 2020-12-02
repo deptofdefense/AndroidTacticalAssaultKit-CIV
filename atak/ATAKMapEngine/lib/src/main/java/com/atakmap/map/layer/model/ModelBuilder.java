@@ -1,5 +1,6 @@
 package com.atakmap.map.layer.model;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.interop.Pointer;
 import com.atakmap.map.layer.feature.geometry.Envelope;
@@ -14,6 +15,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @deprecated use {@link MeshBuilder}
+ */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public final class ModelBuilder {
     private static final String TAG = "ModelBuilder";
     private MeshBuilder mesh;
@@ -24,17 +30,44 @@ public final class ModelBuilder {
 
     public ModelBuilder() { }
 
+    /**
+     * @deprecated use {@link MeshBuilder#setWindingOrder(Model.WindingOrder)} instead
+     * @param windingOrder
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public void setWindingOrder(Model.WindingOrder windingOrder) {
         mesh.setWindingOrder(windingOrder);
     }
 
+    /**
+     * @deprecated use {@link MeshBuilder#addMaterial(Material)} instead
+     * @param textureUri
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public void setTextureUri(String textureUri) {
         this.mesh.addMaterial(new Material(textureUri, Material.PropertyType.Diffuse, -1));
     }
 
+    /**
+     * @deprecated use {@link MeshBuilder#addVertex(double, double, double, float, float, float,
+     *     float, float, float, float, float, float)} instead
+     * @param posx
+     * @param posy
+     * @param posz
+     * @param texu
+     * @param texv
+     * @param nx
+     * @param ny
+     * @param nz
+     * @param r
+     * @param g
+     * @param b
+     * @param a
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public void addVertex(double posx, double posy, double posz,
                           float texu, float texv,
                           float nx, float ny, float nz,
@@ -46,37 +79,60 @@ public final class ModelBuilder {
                 r, g, b, a);
     }
 
+    /**
+     * @deprecated use {@link MeshBuilder#addFace(int, int, int)} instead
+     * @param a
+     * @param b
+     * @param c
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public void addFace(int a, int b, int c) {
         this.mesh.addFace(a, b, c);
     }
 
+    /**
+     * @deprecated use {@link MeshBuilder#addIndex(int)} instead
+     * @param index
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public void addIndex(int index) {
         this.mesh.addIndex(index);
     }
+
     /**
-     *
-     * @param indices
-     * @param off
-     * @param count The number of faces
+     * @deprecated use {@link MeshBuilder#addIndices(int[], int, int)} instead
      */
     @Deprecated
+    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
     public void addIndices(int[] indices, int off, int count) {
         this.mesh.addIndices(indices, off, count);
     }
 
+    /**
+     * @deprecated use {@link MeshBuilder#addIndices(short[], int, int)} instead
+     */
     @Deprecated
+    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
     public void addIndices(short[] indices, int off, int count) {
         this.mesh.addIndices(indices, off, count);
     }
 
+    /**
+     * @deprecated use {@link MeshBuilder#addIndices(IntBuffer)} instead
+     */
     @Deprecated
+    @DeprecatedApi(since ="4.1", forRemoval = true, removeAt="4.4")
     public void addIndices(IntBuffer indices) {
         this.mesh.addIndices(indices);
     }
 
+    /**
+     * @deprecated use {@link MeshBuilder#addIndices(ShortBuffer)} instead
+     */
     @Deprecated
+    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
     public void addIndices(ShortBuffer indices) {
         // XXX -
         while(indices.hasRemaining())
@@ -87,13 +143,21 @@ public final class ModelBuilder {
         addMesh(meshBuilder, Model.INSTANCE_ID_NONE, null);
     }
 
+    /**
+     * @deprecated use {@link #addMesh(MeshBuilder)} instead
+     */
     @Deprecated
+    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
     public MeshBuilder beginMesh(int vertexAttr, boolean indexed, Model.DrawMode drawMode) {
         addMesh(new MeshBuilder(vertexAttr, indexed, drawMode));
         return this.mesh;
     }
 
+    /**
+     * @deprecated use {@link #addMesh(MeshBuilder)} instead
+     */
     @Deprecated
+    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
     public MeshBuilder addMesh(int vertexAttrs, Class<?> indexType, Mesh.DrawMode drawMode) {
         addMesh(new MeshBuilder(vertexAttrs, indexType, drawMode));
         return this.mesh;

@@ -74,6 +74,11 @@ public class Permissions {
                             .equals(permission))
                 continue;
 
+            // for this specific flavor, go ahead and do not enable SEND_SMS
+            if (BuildConfig.FLAVOR.equals("civSmall")
+                    && Manifest.permission.SEND_SMS.equals(permission))
+                continue;
+
             result += a.checkSelfPermission(permission);
         }
 
@@ -201,6 +206,11 @@ public class Permissions {
                         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O
                                 && Manifest.permission.REQUEST_DELETE_PACKAGES
                                         .equals(permissions[i]))
+                            continue;
+
+                        // for this specific flavor, go ahead and do not enable SEND_SMS
+                        if (BuildConfig.FLAVOR.equals("civSmall")
+                                && Manifest.permission.SEND_SMS.equals(permissions[i]))
                             continue;
 
                         b = b && (grantResults[i] == PackageManager.PERMISSION_GRANTED);

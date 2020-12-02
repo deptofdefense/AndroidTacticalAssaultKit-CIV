@@ -482,13 +482,14 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
     }
 
     @Override
-    public void setVisible(boolean visible) {
-        super.setVisible(visible);
+    protected void onVisibleChanged() {
+        boolean visible = getVisible();
         Crumb c = last;
         while (c != null) {
             c.setVisible(visible);
             c = c.prev;
         }
+        super.onVisibleChanged();
     }
 
     /**

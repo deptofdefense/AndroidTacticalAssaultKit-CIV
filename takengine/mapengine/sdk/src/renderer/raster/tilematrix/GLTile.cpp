@@ -397,12 +397,13 @@ void GLTile::debugDraw(const TAK::Engine::Renderer::Core::GLMapView2 &view) {
 
     TextFormat2Ptr txtfmt(nullptr, nullptr);
     TextFormat2_createDefaultSystemTextFormat(txtfmt, 14);
-    GLText2 txt(std::move(txtfmt));
+    std::shared_ptr<TextFormat2> txtfmts(std::move(txtfmt));
+    GLText2 *txt = GLText2_intern(txtfmts);
 
     std::stringstream ss;
     ss << "tile " << tileZ << "," << tileX << "," << tileY;
     std::string s = ss.str();
-    txt.draw(s.c_str(), 0.0f, 1.0f, 0.0f, 1.0f);
+    txt->draw(s.c_str(), 0.0f, 1.0f, 0.0f, 1.0f);
 
     fixedPipe->glPopMatrix();
 }

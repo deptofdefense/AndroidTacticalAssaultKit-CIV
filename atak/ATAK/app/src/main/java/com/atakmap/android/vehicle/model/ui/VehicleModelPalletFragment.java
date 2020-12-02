@@ -172,7 +172,7 @@ public class VehicleModelPalletFragment extends Fragment implements
     @Override
     public void onCheckedChanged(CompoundButton cb, boolean checked) {
         if (cb == _outlineCB)
-            _prefs.edit().putBoolean(PREF_OUTLINE, checked);
+            _prefs.edit().putBoolean(PREF_OUTLINE, checked).apply();
     }
 
     private void setCategory(String category) {

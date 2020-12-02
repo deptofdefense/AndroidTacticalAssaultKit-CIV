@@ -5,6 +5,7 @@ import android.app.IntentService;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Bundle;
 import android.os.Parcelable;
 import android.os.SystemClock;
 
@@ -164,12 +165,22 @@ public class DownloadAndCacheService extends IntentService {
                 this.geometry[i] = (GeoPoint) p[i];
         }
 
-        title = intent.getExtras().getString(TITLE);
-        String uri = intent.getExtras().getString(SOURCE_URI);
-        double minRes = intent.getExtras()
-                .getDouble(MIN_RESOLUTION, Double.NaN);
-        double maxRes = intent.getExtras()
-                .getDouble(MAX_RESOLUTION, Double.NaN);
+        final Bundle extras = intent.getExtras();
+
+        double minRes = Double.NaN;
+        double maxRes = Double.NaN;
+        String uri = null;
+
+
+        if (extras != null) {
+
+            title = extras.getString(TITLE);
+            uri = extras.getString(SOURCE_URI);
+            minRes = extras
+                    .getDouble(MIN_RESOLUTION, Double.NaN);
+            maxRes = extras
+                    .getDouble(MAX_RESOLUTION, Double.NaN);
+        }
 
         if (title == null || title.equals("")) {
             Log.e(TAG,
@@ -415,8 +426,7 @@ public class DownloadAndCacheService extends IntentService {
                     // location
 
                     // TODO notify the user that they do not have a network
-                    // connection
-                    // with the option to cancel the DL or retry
+                    // connection with the option to cancel the DL or retry
 
                     // for now just notify the user of the error
 
@@ -535,13 +545,20 @@ public class DownloadAndCacheService extends IntentService {
         AtakBroadcast.getInstance().sendBroadcast(scanIntent);
     }
 
+    /**
+     * Returns if the network is determined to be online.  This does not take into account
+     * networks supplied by physical radio connections.
+     * @return true if the wifi or cell is online.
+     * @deprecated
+     */
+    @Deprecated
     public boolean isOnline() {
         ConnectivityManager cm = (ConnectivityManager) this
                 .getSystemService(CONNECTIVITY_SERVICE);
-        NetworkInfo netInfo = cm.getActiveNetworkInfo();
-        if (netInfo != null && netInfo.isConnectedOrConnecting()) {
-            return true;
-        }
-        return false;
+        NetworkInfo netInfo = null;
+        if (cm != null)
+            netInfo = cm.getActiveNetworkInfo();
+
+        return netInfo != null && netInfo.isConnectedOrConnecting();
     }
 }

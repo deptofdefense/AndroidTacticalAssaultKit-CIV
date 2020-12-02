@@ -2,6 +2,9 @@
 package com.atakmap.android.image;
 
 import android.content.Context;
+
+import com.atakmap.annotations.DeprecatedApi;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.maps.conversion.GeomagneticField;
 import androidx.exifinterface.media.ExifInterface;
 import android.view.Display;
@@ -430,9 +433,9 @@ public class ExifHelper {
                     }
                 }
                 JSONObject jo = new JSONObject(json);
-                Iterator iter = jo.keys();
+                Iterator<String> iter = jo.keys();
                 while (iter.hasNext()) {
-                    String key = (String) iter.next();
+                    String key = iter.next();
                     bundle.put(key, jo.get(key));
                 }
             } catch (Exception e) {
@@ -463,8 +466,15 @@ public class ExifHelper {
         }
     }
 
+    /**
+     * @deprecated Use {@link #putExtras(Map, TiffOutputSet)} directly
+     * @param exif
+     * @param bundle - unused
+     * @param tos
+     */
     // No reason to pass TiffImageMetadata in here...
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static void putExtras(TiffImageMetadata exif,
             Map<String, Object> bundle, TiffOutputSet tos) {
         putExtras(bundle, tos);
@@ -598,7 +608,7 @@ public class ExifHelper {
         // Obtain unmodified image byte array first
         try {
             byte[] imageData = FileSystemUtils.read(imageFile);
-            bos = new BufferedOutputStream(new FileOutputStream(imageFile));
+            bos = new BufferedOutputStream(FileIOProviderFactory.getOutputStream(imageFile));
             // Then update and save
             new ExifRewriter().updateExifMetadataLossless(imageData, bos, tos);
             bos.close();
@@ -866,7 +876,7 @@ public class ExifHelper {
         FileInputStream fis = null;
         FileOutputStream fos = null;
         try {
-            fis = new FileInputStream(f);
+            fis = FileIOProviderFactory.getInputStream(f);
 
             // Make sure the file isn't empty
             int fileLen = fis.available();
@@ -965,8 +975,8 @@ public class ExifHelper {
             }
 
             // Copy and update
-            fis = new FileInputStream(f);
-            fos = new FileOutputStream(fOut);
+            fis = FileIOProviderFactory.getInputStream(f);
+            fos = FileIOProviderFactory.getOutputStream(fOut);
 
             int read;
             pos = 0;
@@ -1022,7 +1032,7 @@ public class ExifHelper {
             fis.close();
             fos.close();
             FileSystemUtils.delete(f);
-            if (!fOut.renameTo(f))
+            if (!FileIOProviderFactory.renameTo(fOut, f))
                 Log.e(TAG, "Failed to rename " + fOut + " to " + f);
         } catch (Exception e) {
             Log.e(TAG, "Failed to write PNG description", e);
@@ -1039,7 +1049,7 @@ public class ExifHelper {
                 } catch (Exception ignore) {
                 }
             }
-            if (fOut.exists())
+            if (FileIOProviderFactory.exists(fOut))
                 FileSystemUtils.delete(fOut);
         }
     }

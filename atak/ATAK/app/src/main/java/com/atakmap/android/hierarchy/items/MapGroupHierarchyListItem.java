@@ -7,6 +7,7 @@ import android.widget.BaseAdapter;
 import com.atakmap.android.hierarchy.HierarchyListAdapter;
 import com.atakmap.android.hierarchy.HierarchyListFilter;
 import com.atakmap.android.hierarchy.HierarchyListItem;
+import com.atakmap.android.hierarchy.HierarchyListItem2;
 import com.atakmap.android.hierarchy.action.Delete;
 import com.atakmap.android.hierarchy.action.Export;
 import com.atakmap.android.hierarchy.action.Search;
@@ -30,8 +31,10 @@ import com.ekito.simpleKML.model.Folder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class MapGroupHierarchyListItem extends AbstractHierarchyListItem2
@@ -63,6 +66,8 @@ public class MapGroupHierarchyListItem extends AbstractHierarchyListItem2
     protected final MapGroup.MapItemsCallback itemFilter;
 
     protected int deepCount;
+    protected final Map<MapGroup, HierarchyListItem> groupMap
+            = new HashMap<>();
 
     protected Comparator<HierarchyListItem> order;
 
@@ -87,8 +92,22 @@ public class MapGroupHierarchyListItem extends AbstractHierarchyListItem2
         this.group.addOnItemListChangedListener(this);
         this.group.addOnGroupListChangedListener(this);
         this.asyncRefresh = true;
+        this.reusable = true;
 
-        refresh(listener, filter);
+        syncRefresh(listener, filter);
+    }
+
+    @Override
+    public void dispose() {
+        synchronized (this.children) {
+            if (!isDisposed()) {
+                disposeChildren();
+                this.group.removeOnItemListChangedListener(this);
+                this.group.removeOnGroupListChangedListener(this);
+                groupMap.clear();
+                this.disposed = true;
+            }
+        }
     }
 
     protected HierarchyListItem createChild(MapGroup group) {
@@ -160,30 +179,68 @@ public class MapGroupHierarchyListItem extends AbstractHierarchyListItem2
                     ((HierarchyListItem.SortDistanceFrom) this.filter.sort).location);
 
         // Filter and sort map groups
-        List<HierarchyListItem> filtered = new ArrayList<>();
+        List<HierarchyListItem> filteredGroups = new ArrayList<>();
+
+        Map<MapGroup, HierarchyListItem> grpMap;
+        synchronized (this.children) {
+            grpMap = new HashMap<>(this.groupMap);
+        }
+
         for (MapGroup child : this.group.getChildGroups()) {
             if (!addToObjList(child, this.itemFilter))
                 continue;
-            filtered.add(this.createChild(child));
+
+            HierarchyListItem item = grpMap.get(child);
+            if (item == null) {
+                item = createChild(child);
+                if (item == null)
+                    continue;
+                grpMap.put(child, item);
+            } else if (item instanceof AbstractHierarchyListItem2)
+                ((AbstractHierarchyListItem2) item).syncRefresh(
+                        this.listener, this.filter);
+            filteredGroups.add(item);
         }
-        try {
-            Collections.sort(filtered, HierarchyListAdapter.MENU_ITEM_COMP);
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to sort groups", e);
+
+        // Update the group mapping
+        synchronized (this.children) {
+            if (disposed) {
+                disposeItems(filteredGroups);
+                return;
+            }
+            for (Map.Entry<MapGroup, HierarchyListItem> e : grpMap.entrySet()) {
+                MapGroup grp = e.getKey();
+                HierarchyListItem newList = e.getValue();
+                HierarchyListItem oldList = this.groupMap.get(grp);
+                if (oldList != null && oldList != newList) {
+                    // Group already created on another thread - dispose
+                    if (newList instanceof HierarchyListItem2)
+                        ((HierarchyListItem2) newList).dispose();
+                    int idx = filteredGroups.indexOf(newList);
+                    filteredGroups.set(idx, oldList);
+                } else if (oldList == null) {
+                    // Add new group
+                    this.groupMap.put(grp, newList);
+                }
+            }
         }
-        final int numGroups = filtered.size();
+
+        Collections.sort(filteredGroups, HierarchyListAdapter.MENU_ITEM_COMP);
 
         // Filter and sort map items
+        List<HierarchyListItem> filteredItems = new ArrayList<>();
         for (MapItem child : this.group.getItems()) {
             if (!this.itemFilter.onItemFunction(child))
                 continue;
             HierarchyListItem childItem = this.createChild(child);
             if (this.filter.accept(childItem))
-                filtered.add(childItem);
+                filteredItems.add(childItem);
         }
-        Collections.sort(
-                filtered.subList(numGroups, filtered.size()),
-                this.order);
+
+        Collections.sort(filteredItems, this.order);
+
+        List<HierarchyListItem> filtered = new ArrayList<>(filteredGroups);
+        filtered.addAll(filteredItems);
 
         // Update
         updateChildren(filtered);
@@ -192,17 +249,6 @@ public class MapGroupHierarchyListItem extends AbstractHierarchyListItem2
     @Override
     public boolean hideIfEmpty() {
         return true;
-    }
-
-    @Override
-    public void dispose() {
-        synchronized (this.children) {
-            if (!isDisposed()) {
-                super.dispose();
-                this.group.removeOnItemListChangedListener(this);
-                this.group.removeOnGroupListChangedListener(this);
-            }
-        }
     }
 
     /**************************************************************************/
@@ -478,7 +524,7 @@ public class MapGroupHierarchyListItem extends AbstractHierarchyListItem2
     }
 
     @Override
-    public boolean isSupported(Class target) {
+    public boolean isSupported(Class<?> target) {
         return Folder.class.equals(target) ||
                 KMZFolder.class.equals(target) ||
                 MissionPackageExportWrapper.class.equals(target) ||
@@ -487,7 +533,7 @@ public class MapGroupHierarchyListItem extends AbstractHierarchyListItem2
     }
 
     @Override
-    public Object toObjectOf(Class target, ExportFilters filters)
+    public Object toObjectOf(Class<?> target, ExportFilters filters)
             throws FormatNotSupportedException {
 
         if (group == null || !isSupported(target)) {

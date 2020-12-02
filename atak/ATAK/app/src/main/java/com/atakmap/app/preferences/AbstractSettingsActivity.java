@@ -2,7 +2,6 @@
 package com.atakmap.app.preferences;
 
 import android.app.ActionBar;
-import android.app.Activity;
 import android.os.Bundle;
 import androidx.core.app.NavUtils;
 import android.view.MenuItem;

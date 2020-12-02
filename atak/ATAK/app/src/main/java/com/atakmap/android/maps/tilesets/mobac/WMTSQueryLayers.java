@@ -4,6 +4,7 @@ package com.atakmap.android.maps.tilesets.mobac;
 import android.util.Xml;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.net.AtakAuthenticationHandlerHTTP;
@@ -970,7 +971,7 @@ public class WMTSQueryLayers extends QueryLayers {
                 f = new File(FileSystemUtils
                         .getItem("imagery/mobile/mapsources"),
                         FileSystemUtils.sanitizeWithSpacesAndSlashes(filename));
-                if (f.exists()) {
+                if (FileIOProviderFactory.exists(f)) {
                     suffix = String.valueOf(index++);
 
                     // give up after a while
@@ -1013,7 +1014,7 @@ public class WMTSQueryLayers extends QueryLayers {
             }
 
             // and print out the XML itself.
-            PrintWriter out = new PrintWriter(f);
+            PrintWriter out = new PrintWriter(FileIOProviderFactory.getFileWriter(f));
             out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
             out.println("<customMapSource>");
             out.println("    <name>" + title + " on "

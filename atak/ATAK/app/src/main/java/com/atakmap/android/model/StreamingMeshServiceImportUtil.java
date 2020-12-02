@@ -12,6 +12,7 @@ import com.atakmap.android.importexport.Marshal;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.comms.CommsMapComponent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -41,13 +42,13 @@ final class StreamingMeshServiceImportUtil {
         @Override
         public String marshal(Uri uri) throws IOException {
             File f = new File(uri.getPath());
-            if (!f.exists())
+            if (!FileIOProviderFactory.exists(f))
                 return null;
             try {
                 byte[] read = new byte[4096];
                 FileInputStream fis = null;
-                try {
-                    fis = new FileInputStream(f);
+                try { 
+                    fis = FileIOProviderFactory.getInputStream(f);
                     int count = fis.read(read);
                     String s = new String(read, 0, count,
                             FileSystemUtils.UTF8_CHARSET);

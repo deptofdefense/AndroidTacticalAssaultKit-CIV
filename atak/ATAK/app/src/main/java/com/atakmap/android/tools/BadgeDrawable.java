@@ -14,6 +14,8 @@ import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import androidx.annotation.NonNull;
 
+import com.atakmap.annotations.DeprecatedApi;
+
 /**
  *
  * Thanks to http://stackoverflow.com/questions/18156477/how-to-make-an-icon-in-the-action-bar-with-the-number-of-notification
@@ -145,6 +147,7 @@ public class BadgeDrawable extends Drawable {
      * the drawable and the count being displayed
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public void setTextSize(Float textSize) {
     }
 
@@ -172,6 +175,7 @@ public class BadgeDrawable extends Drawable {
      * @deprecated This is performed by default
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     void setFixedTextSize(boolean fixed) {
     }
 

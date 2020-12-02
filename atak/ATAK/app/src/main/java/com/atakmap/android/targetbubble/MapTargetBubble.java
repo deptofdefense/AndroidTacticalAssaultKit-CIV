@@ -2,8 +2,6 @@
 package com.atakmap.android.targetbubble;
 
 import com.atakmap.android.maps.MapView;
-import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.map.AtakMapController;
 import com.atakmap.map.Globe;
 import com.atakmap.map.layer.AbstractLayer;
 import com.atakmap.map.layer.Layer;

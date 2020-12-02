@@ -2,7 +2,9 @@
 
 #include <memory>
 
+#ifdef __ANDROID__
 #include <android/log.h>
+#endif
 
 #include <tinygltf/tiny_gltf.h>
 
@@ -16,7 +18,9 @@ Model *GLTF_loadV2(const unsigned char *binary, const std::size_t len, std::stri
     std::string warn;
     if(gltf.LoadBinaryFromMemory(cmodel.get(), &err, &warn, binary, len, baseDir))
         return cmodel.release();
+#ifdef __ANDROID__
     __android_log_print(ANDROID_LOG_VERBOSE, "Cesium3DTiles", "err=%s warn=%s", err.c_str(), warn.c_str());
+#endif
     return nullptr;
 }
 static bool loadExtBmp(GLTFBitmapLoader* loader, const std::string& baseUri, const std::string &uri) {

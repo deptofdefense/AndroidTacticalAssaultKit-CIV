@@ -47,6 +47,7 @@ import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -347,8 +348,8 @@ public class MetricReportMapComponent extends AbstractMapComponent
             roll++;
 
             File f = FileSystemUtils.getItem("tools/metrics/details/" + name);
-            if (!f.exists())
-                if (!f.mkdirs())
+            if (!FileIOProviderFactory.exists(f))
+                if (!FileIOProviderFactory.mkdirs(f))
                     return;
 
             f = new File(f, FileSystemUtils.sanitizeWithSpacesAndSlashes(
@@ -356,7 +357,7 @@ public class MetricReportMapComponent extends AbstractMapComponent
                             + EXT_COTDUMP));
             try {
 
-                FileSystemUtils.write(new FileOutputStream(
+                FileSystemUtils.write(FileIOProviderFactory.getOutputStream(
                         f),
                         child.toString());
             } catch (IOException ioe) {
@@ -377,14 +378,14 @@ public class MetricReportMapComponent extends AbstractMapComponent
 
         final String type = ce.getType();
         File f = FileSystemUtils.getItem("tools/metrics/cot/" + type);
-        if (!f.exists())
-            if (!f.mkdirs())
+        if (!FileIOProviderFactory.exists(f))
+            if (!FileIOProviderFactory.mkdirs(f))
                 return;
 
         f = new File(f, type + "-" + System.currentTimeMillis()
                 + EXT_COTDUMP);
         try {
-            FileSystemUtils.write(new FileOutputStream(f),
+            FileSystemUtils.write(FileIOProviderFactory.getOutputStream(f),
                     ce.toString());
         } catch (IOException ioe) {
             Log.e(TAG, "unable to write file: " + f, ioe);
@@ -863,7 +864,7 @@ public class MetricReportMapComponent extends AbstractMapComponent
                 .getItem(FileSystemUtils.SUPPORT_DIRECTORY
                         + File.separatorChar + "logs");
 
-        File[] files = logFile.listFiles();
+        File[] files = FileIOProviderFactory.listFiles(logFile);
         if (files != null) {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss",
                     LocaleUtil.getCurrent());
@@ -879,7 +880,7 @@ public class MetricReportMapComponent extends AbstractMapComponent
                         if (d != null) {
                             long lDate = d.getTime();
                             if (lDate < cutOff) {
-                                if (!f.delete())
+                                if (!FileIOProviderFactory.delete(f))
                                     Log.d(TAG, "error deleting the file: " + f);
                             }
                         }
@@ -908,13 +909,13 @@ public class MetricReportMapComponent extends AbstractMapComponent
                             + sdf.format(CoordinatedTime.currentDate())
                             + EXT_METRIC);
             if (logFile.getParentFile() != null
-                    && !logFile.getParentFile().exists()) {
-                if (!logFile.getParentFile().mkdirs()) {
+                    && !FileIOProviderFactory.exists(logFile.getParentFile())) {
+                if (!FileIOProviderFactory.mkdirs(logFile.getParentFile())) {
                     Log.e(TAG, "Failed to make dir at: "
                             + logFile.getParentFile().getPath());
                 }
             }
-            fos = new java.io.FileOutputStream(logFile);
+            fos = FileIOProviderFactory.getOutputStream(logFile);
             Log.d(TAG, "creating metrics report: " + logFile);
 
             reapLogs();

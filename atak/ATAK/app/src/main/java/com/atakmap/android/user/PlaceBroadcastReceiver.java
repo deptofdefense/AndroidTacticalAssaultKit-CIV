@@ -9,8 +9,14 @@ import android.graphics.Color;
 import com.atakmap.android.icons.UserIcon;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
+/**
+ * @deprecated use MarkerCreator to create and place markers
+ */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class PlaceBroadcastReceiver extends BroadcastReceiver {
 
     public static final String TAG = "PlaceBroadcastReceiver";
@@ -28,8 +34,10 @@ public class PlaceBroadcastReceiver extends BroadcastReceiver {
      *
      * Do Not Use "com.atakmap.android.maps.PLACE" instead use MarkerCreator to create and place
      * your markers.
-     * @deprecated
+     * @deprecated use MarkerCreator to create and place markers
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     @Override
     public void onReceive(Context context, Intent intent) {
         if ("com.atakmap.android.maps.PLACE".equals(intent.getAction())) {

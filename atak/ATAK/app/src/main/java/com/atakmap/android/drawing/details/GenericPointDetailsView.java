@@ -225,9 +225,9 @@ public class GenericPointDetailsView extends GenericDetailsView implements
                     _onCoordSelected();
                 }
             });
-            double height = _point.getMetaDouble("height", -1);
+            double height = _point.getHeight();
             Span unit = getUnitSpan(_point);
-            if (height >= 0) {
+            if (!Double.isNaN(height)) {
                 _heightButton.setText(SpanUtilities.format(height, Span.METER,
                         unit));
             } else {
@@ -475,7 +475,7 @@ public class GenericPointDetailsView extends GenericDetailsView implements
     @Override
     protected void heightSelected(double height, Span u, double h) {
         // This is always saved as a string in feet for some reason
-        _point.setMetaDouble("height", height);
+        _point.setHeight(height);
         _point.setMetaInteger("height_unit", u.getValue());
         _heightButton.setText(SpanUtilities.format(h, u, 2));
     }

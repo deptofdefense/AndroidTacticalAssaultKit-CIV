@@ -10,6 +10,7 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
@@ -272,8 +273,8 @@ public class RouteKmlIO {
      */
     public static void write(Kml kml, File file) throws Exception {
         File parent = file.getParentFile();
-        if (!parent.exists()) {
-            if (!parent.mkdirs()) {
+        if (!FileIOProviderFactory.exists(parent)) {
+            if (!FileIOProviderFactory.mkdirs(parent)) {
                 Log.d(TAG, "Failed to make dir at " + parent.getAbsolutePath());
             }
         }
@@ -363,7 +364,7 @@ public class RouteKmlIO {
         String routeName = getRouteName(kml, routeHandler.lineString);
         MapGroup group = routeGroup.addGroup(routeName);
         group.setMetaBoolean("addToObjList", false);
-        int color = Integer.valueOf(prefs.getString("defaultRouteColor",
+        int color = Integer.parseInt(prefs.getString("defaultRouteColor",
                 String.valueOf(Route.DEFAULT_ROUTE_COLOR)));
 
         Route route = new Route(mapView, routeName, color, prefix, UUID

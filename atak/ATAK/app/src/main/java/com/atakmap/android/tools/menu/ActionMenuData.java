@@ -205,7 +205,7 @@ public class ActionMenuData implements Parcelable {
 
         if (pam.baseline) {
             try {
-                Class c = com.atakmap.app.R.string.class;
+                Class<?> c = com.atakmap.app.R.string.class;
                 Field f = c.getField(pam.title);
                 int i = f.getInt(null);
                 Context ctx = com.atakmap.android.maps.MapView.getMapView()

@@ -2,7 +2,6 @@
 package com.atakmap.android.image;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -53,9 +52,11 @@ import com.atakmap.android.tools.menu.ActionBroadcastData;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.android.util.AttachmentManager;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.ATAKActivity;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.filesystem.HashingUtils;
@@ -200,12 +201,11 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                 File dir = new File(
                         FileSystemUtils
                                 .sanitizeWithSpacesAndSlashes(directory));
-
-                if (FileSystemUtils.isFile(dir) && dir.isDirectory()) {
-                    File[] fileArr = dir.listFiles();
+                if (FileSystemUtils.isFile(dir) && FileIOProviderFactory.isDirectory(dir)) {
+                    File[] fileArr = FileIOProviderFactory.listFiles(dir);
                     if (fileArr != null) {
                         for (File f : fileArr) {
-                            if (!f.isDirectory())
+                            if (!FileIOProviderFactory.isDirectory(f))
                                 fileList.add(f);
                         }
                     }
@@ -224,7 +224,7 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                         File f = new File(file);
                         // redundant check, but leaving in place because it 
                         // was the original code
-                        if (f.exists() && !f.isDirectory())
+                        if (FileIOProviderFactory.exists(f) && !FileIOProviderFactory.isDirectory(f))
                             fileList.add(f);
                     } else {
                         Log.w(TAG, "Skipping file: " + file);
@@ -264,7 +264,7 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                     + " " + context.getString(R.string.attachments);
 
             String dirPath = AttachmentManager.getFolderPath(uid, true);
-            if (dirPath != null && new File(dirPath).exists()) {
+            if (dirPath != null && FileIOProviderFactory.exists(new File(dirPath))) {
                 Log.d(TAG, "Processing directory: " + dirPath);
                 List<File> fileList = AttachmentManager.getAttachments(uid);
 
@@ -305,7 +305,7 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                                 f.getParentFile(), f.getName())) {
                             File nitfXml = new File(f.getParent(), f.getName()
                                     + ".aux.xml");
-                            if (nitfXml.exists())
+                            if (FileIOProviderFactory.exists(nitfXml))
                                 manifest.addFile(nitfXml, uid);
                         }
                     }
@@ -967,7 +967,7 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
 
         TextView sizeText = v
                 .findViewById(R.id.attachment_detail_txtSize);
-        sizeText.setText(MathUtils.GetLengthString(file.length()));
+        sizeText.setText(MathUtils.GetLengthString(FileIOProviderFactory.length(file)));
 
         TextView dateText = v
                 .findViewById(R.id.attachment_detail_txtModifiedDate);
@@ -1224,7 +1224,7 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                             }
                             final File finalAtt = att;
                             if (finalAtt != null) {
-                                if (finalAtt.exists()) {
+                                if (FileIOProviderFactory.exists(finalAtt)) {
                                     AlertDialog.Builder adb = new AlertDialog.Builder(
                                             context);
                                     adb.setTitle(R.string.overwrite_existing);
@@ -1300,9 +1300,9 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                     .openInputStream(dataUri);
             if (is != null) {
                 FileSystemUtils.copyStream(is,
-                        os = new FileOutputStream(
+                        os = FileIOProviderFactory.getOutputStream(
                                 outFile));
-                return outFile.exists();
+                return FileIOProviderFactory.exists(outFile);
             } else {
                 Log.e(TAG, "Failed to extract content from "
                         + dataUri + " to " + outFile);
@@ -1336,6 +1336,7 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
      * @deprecated Use {@link URIContentManager#getHandler(File)} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static Envelope getFeatureBounds(File f) {
         URIContentHandler h = URIContentManager.getInstance().getHandler(f);
         if (!(h instanceof FileOverlayContentHandler))
@@ -1355,6 +1356,7 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
      * @deprecated Use {@link URIContentManager#getHandler(File)} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static Envelope findRasterFeatureBounds(File f) {
         return getFeatureBounds(f);
     }
@@ -1367,6 +1369,7 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
      * @deprecated Use {@link URIContentManager#getHandler(File)} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static Envelope findVectorFeatureBounds(File f) {
         return getFeatureBounds(f);
     }

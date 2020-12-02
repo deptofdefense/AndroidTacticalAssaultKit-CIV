@@ -8,6 +8,7 @@ import android.content.Intent;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.tools.ActionBarReceiver;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.log.Log;
 
 import java.util.HashMap;
@@ -77,6 +78,7 @@ public class ToolbarBroadcastReceiver extends BroadcastReceiver {
      * @deprecated Use the ToolManagerBroadcastReceiver to register your tools
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public void registerToolbarComponent(String toolbarIdentifier,
             IToolbarExtension toolbarComponent) {
         toolbars.put(toolbarIdentifier, toolbarComponent);

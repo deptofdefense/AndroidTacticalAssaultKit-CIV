@@ -468,7 +468,7 @@ public class CoTInfoView extends RelativeLayout
             public void onClick(View v) {
                 if (_marker == null)
                     return;
-                double heightM = _marker.getMetaDouble("height", 0);
+                double heightM = _marker.getHeight();
                 Span heightUnit = Span.findFromValue(_marker.getMetaInteger(
                         "height_unit", Span.FOOT.getValue()));
                 if (heightUnit == null)
@@ -478,7 +478,7 @@ public class CoTInfoView extends RelativeLayout
                         new RangeEntryDialog.Callback() {
                             @Override
                             public void onSetValue(double valueM, Span unit) {
-                                _marker.setMetaDouble("height", valueM);
+                                _marker.setHeight(valueM);
                                 _marker.setMetaInteger("height_unit",
                                         unit.getValue());
                                 _marker.persist(
@@ -1135,12 +1135,12 @@ public class CoTInfoView extends RelativeLayout
         String myUID = _prefs.get("bestDeviceUID", "");
         _tleButton.setEnabled(parentUID == null || parentUID.equals(myUID));
 
-        double height = _marker.getMetaDouble("height", -1);
+        double height = _marker.getHeight();
         Span heightUnit = Span.findFromValue(_marker.getMetaInteger(
                 "height_unit", Span.FOOT.getValue()));
         if (heightUnit == null)
             heightUnit = Span.FOOT;
-        _heightButton.setText(height >= 0 ? SpanUtilities.format(
+        _heightButton.setText(!Double.isNaN(height) ? SpanUtilities.format(
                 height, Span.METER, heightUnit, 2)
                 : "-- " + heightUnit.getAbbrev());
 

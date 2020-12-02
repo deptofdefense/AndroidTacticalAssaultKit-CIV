@@ -112,7 +112,7 @@ public class RouteImporter extends EditablePolylineImporter {
 
         CotDetail linkAttr = event.findDetail("link_attr");
         if (linkAttr != null) {
-            route.setColor(Integer.valueOf(linkAttr
+            route.setColor(Integer.parseInt(linkAttr
                     .getAttribute("color")));
             route.setTransportationType(linkAttr.getAttribute("type"));
 

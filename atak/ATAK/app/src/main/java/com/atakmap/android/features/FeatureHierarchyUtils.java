@@ -1,7 +1,6 @@
 
 package com.atakmap.android.features;
 
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.elevation.ElevationData;

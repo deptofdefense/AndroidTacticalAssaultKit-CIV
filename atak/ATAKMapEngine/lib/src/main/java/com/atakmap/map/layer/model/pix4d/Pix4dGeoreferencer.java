@@ -1,6 +1,7 @@
 package com.atakmap.map.layer.model.pix4d;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.model.Georeferencer;
@@ -29,7 +30,7 @@ public final class Pix4dGeoreferencer implements Georeferencer {
                     f = new ZipVirtualFile(model.uri);
                 } catch(IllegalArgumentException ignored) {}
             }
-            if(!f.exists())
+            if(!FileIOProviderFactory.exists(f))
                 return false;
 
             // derive the base filename

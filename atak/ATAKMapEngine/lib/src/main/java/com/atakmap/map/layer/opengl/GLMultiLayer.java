@@ -130,7 +130,7 @@ public class GLMultiLayer extends GLAbstractLayer2 implements
     protected void refreshLayers2() {
         final List<Layer> layers = this.subject.getLayers();
 
-        if(GLMapSurface.isGLThread()) {
+        if(this.renderContext.isRenderThread()) {
             this.refreshLayersImpl2(layers, this.renderers);
         } else {
             final Map<Layer, GLLayer2> renderers = new IdentityHashMap<Layer, GLLayer2>(this.renderers);

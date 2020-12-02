@@ -1,6 +1,7 @@
 package com.atakmap.map.layer.model.obj;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -8,7 +9,6 @@ import com.atakmap.coremap.locale.LocaleUtil;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -87,7 +87,7 @@ public final class ObjUtils {
         if(inToken)
             tokens.add(sb.toString());
 
-        return tokens.toArray(new String[tokens.size()]);
+        return tokens.toArray(new String[0]);
     }
 
     static Map<String, String> extractMaterialTextures(File material) throws IOException {
@@ -96,7 +96,7 @@ public final class ObjUtils {
             if(material instanceof ZipVirtualFile)
                 reader = new BufferedReader(new InputStreamReader(((ZipVirtualFile)material).openStream()));
             else
-                reader = new BufferedReader(new FileReader(material));
+                reader = new BufferedReader(FileIOProviderFactory.getFileReader(material));
             StringBuilder line = new StringBuilder();
             String newmtl = null;
             Map<String, String> retval = new HashMap<String, String>();
@@ -140,10 +140,10 @@ public final class ObjUtils {
      */
     static Reader open(final String uri) throws IOException {
         File f = new File(uri);
-        if(f.exists())
-            return new FileReader(f);
+        if(FileIOProviderFactory.exists(f))
+            return FileIOProviderFactory.getFileReader(f);
         ZipVirtualFile zf = new ZipVirtualFile(uri);
-        if(zf.exists())
+        if(FileIOProviderFactory.exists(zf))
             return new InputStreamReader(zf.openStream());
         return null;
     }
@@ -162,7 +162,7 @@ public final class ObjUtils {
            return null;
 
         try {
-            final File[] children = f.listFiles();
+            final File[] children = FileIOProviderFactory.listFiles(f);
             if (children != null) {
                 for (File c : children) {
                     if (c.getName().toLowerCase(LocaleUtil.US).
@@ -179,8 +179,8 @@ public final class ObjUtils {
     }
 
     public static File findObj(ZipVirtualFile f) {
-        if(f.isDirectory()) {
-            File[] children = f.listFiles();
+        if(FileIOProviderFactory.isDirectory(f)) {
+            File[] children = FileIOProviderFactory.listFiles(f);
             if (children != null) { 
                 for(File c : children) {
                     File r = findObj((ZipVirtualFile)c);
@@ -222,7 +222,7 @@ public final class ObjUtils {
         if (exts != null && base != null) {
             for (String ext : exts) {
                 File f = new ZipVirtualFile(directory, base + ext);
-                if (f.exists())
+                if (FileIOProviderFactory.exists(f))
                     return f;
             }
         }
@@ -246,7 +246,7 @@ public final class ObjUtils {
         try {
             byte[] mtlBytes = "mtllib ".getBytes(FileSystemUtils.UTF8_CHARSET);
             int mtlLength = mtlBytes.length;
-            fis = new FileInputStream(obj);
+            fis = FileIOProviderFactory.getInputStream(obj);
             int numRead;
             boolean stopAtNL = false;
             byte[] buf = new byte[FileSystemUtils.BUF_SIZE * 8];
@@ -298,7 +298,7 @@ public final class ObjUtils {
         Set<File> ret = new HashSet<>();
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader(mtl));
+            br = new BufferedReader(FileIOProviderFactory.getFileReader(mtl));
             String line;
             while ((line = br.readLine()) != null) {
                 if (line.startsWith("map_")
@@ -313,7 +313,7 @@ public final class ObjUtils {
                     if (FileSystemUtils.isEmpty(name))
                         continue;
                     File f = new File(mtl.getParent(), name);
-                    if (f.exists())
+                    if (FileIOProviderFactory.exists(f))
                         ret.add(f);
                 }
             }

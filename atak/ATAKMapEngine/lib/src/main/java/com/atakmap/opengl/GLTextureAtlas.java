@@ -15,8 +15,6 @@ import android.graphics.Canvas;
 import android.graphics.RectF;
 import android.opengl.GLUtils;
 
-import com.atakmap.coremap.log.Log;
-
 public class GLTextureAtlas {
 
     private final static Comparator<Rect> HORIZONTAL_FREE_COMPARATOR = new Comparator<Rect>() {
@@ -220,7 +218,7 @@ public class GLTextureAtlas {
         if (this.fixedIconSize) {
             final int index = this.getIndex(key);
             final int numIconCols = (this.texSize / this.iconSize);
-            rect.top = (index / numIconCols) * this.iconSize;
+            rect.top = (index / (float)numIconCols) * this.iconSize;
             rect.left = (index % numIconCols) * this.iconSize;
             rect.bottom = rect.top + this.iconSize - 1;
             rect.right = rect.left + this.iconSize - 1;

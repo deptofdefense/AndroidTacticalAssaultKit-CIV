@@ -14,13 +14,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.atakmap.android.drawing.mapItems.DrawingRectangle;
-import com.atakmap.android.editableShapes.EditablePolyline;
 import com.atakmap.android.editableShapes.Rectangle;
 import com.atakmap.android.gui.RangeEntryDialog;
 import com.atakmap.android.layers.MobileLayerSelectionAdapter.MobileImagerySpec;
 import com.atakmap.android.layers.wms.DownloadAndCacheService;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.missionpackage.MapItemSelectTool;
 import com.atakmap.android.routes.Route;
@@ -42,6 +42,7 @@ import com.atakmap.map.layer.raster.tilematrix.TileClient;
 import com.atakmap.map.layer.raster.tilematrix.TileClientFactory;
 import com.atakmap.map.layer.raster.tilematrix.TileMatrix;
 import com.atakmap.map.projection.Projection;
+import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
 
 import java.util.ArrayList;
@@ -293,7 +294,8 @@ public class OnlineLayersDownloadManager {
                     R.string.region_shape_select_prompt));
             b.putBoolean("multiSelect", false);
             b.putStringArray("allowTypes", new String[] {
-                    "u-d-f", "u-d-r", "b-m-r", "u-d-c-c", "u-r-b-c-c"
+                    "u-d-f", "u-d-r", "b-m-r", "u-d-c-c", "u-r-b-c-c",
+                    "u-d-feature"
             });
         } else
             return;
@@ -346,7 +348,7 @@ public class OnlineLayersDownloadManager {
     }
 
     private GeoPoint[] getPoints() {
-        if (this.shape == null || shape.getGroup() == null)
+        if (this.shape == null)
             return new GeoPoint[0];
 
         GeoPoint[] points = shape.getPoints();
@@ -370,11 +372,12 @@ public class OnlineLayersDownloadManager {
             return new GeoPoint[0];
 
         boolean closed = this.shape instanceof DrawingRectangle
-                || this.shape instanceof EditablePolyline
-                        && ((EditablePolyline) this.shape).isClosed();
+                || MathUtils.hasBits(shape.getStyle(),
+                Polyline.STYLE_CLOSED_MASK)
+                || points[0].equals(points[points.length - 1]);
 
         // Extrude route by a certain meter distance
-        if (!closed && this.shapeDistance > 0 && this.shape instanceof Route) {
+        if (!closed && this.shapeDistance > 0) {
             double d = this.shapeDistance;
             double lastDist = 0;
             double lb = 0;
@@ -516,6 +519,8 @@ public class OnlineLayersDownloadManager {
         if (this.shapeGeom == null) {
             LineString ls = new LineString(2);
             GeoPoint[] geometry = getPoints();
+            if (FileSystemUtils.isEmpty(geometry))
+                return 0;
             for (GeoPoint gp : geometry)
                 ls.addPoint(gp.getLongitude(), gp.getLatitude());
             this.shapeGeom = new Polygon(ls);

@@ -51,7 +51,7 @@ public class GLNinePatch {
     private float lastTextureWidth;
     private float lastTextureHeight;
 
-    private float radius;
+    protected float radius;
 
     private GLImageCache.Entry texEntry;
     private int textureId;

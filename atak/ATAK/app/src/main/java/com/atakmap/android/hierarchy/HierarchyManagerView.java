@@ -3,6 +3,7 @@ package com.atakmap.android.hierarchy;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
@@ -12,9 +13,13 @@ import android.widget.ListView;
 
 import com.atakmap.app.R;
 
+/**
+ * The main view used for Overlay Manager
+ */
 public class HierarchyManagerView extends LinearLayout {
 
     private ListView _hierarchyList;
+    private boolean _touchEventActive;
 
     public HierarchyManagerView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -47,5 +52,22 @@ public class HierarchyManagerView extends LinearLayout {
                     R.id.hierarchy_manager_list);
         }
         return _hierarchyList;
+    }
+
+    public boolean isTouchActive() {
+        return _touchEventActive;
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        int action = event.getActionMasked();
+
+        // Track if touch event is active
+        if (action == MotionEvent.ACTION_DOWN)
+            _touchEventActive = true;
+        else if (action == MotionEvent.ACTION_UP)
+            _touchEventActive = false;
+
+        return super.dispatchTouchEvent(event);
     }
 }

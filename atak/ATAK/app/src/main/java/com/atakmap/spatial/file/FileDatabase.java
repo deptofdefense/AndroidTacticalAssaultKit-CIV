@@ -14,6 +14,7 @@ import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.importexport.ImportReceiver;
 import com.atakmap.android.importexport.Importer;
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
 import com.atakmap.android.maps.DefaultMapGroup;
@@ -239,7 +240,7 @@ public abstract class FileDatabase extends CatalogDatabase implements
                                 + geospatialDirInExternalStorage
                                         .getAbsolutePath());
                 if (geospatialDirInExternalStorage != null &&
-                        geospatialDirInExternalStorage.isDirectory()) {
+                        FileIOProviderFactory.isDirectory(geospatialDirInExternalStorage)) {
                     List<File> geospatialFileList = addExistingFilesToDbInDir(
                             geospatialDirInExternalStorage);
                     Log.d(TAG, "Found files: " + geospatialFileList + " in: "
@@ -273,8 +274,8 @@ public abstract class FileDatabase extends CatalogDatabase implements
     protected final List<File> addExistingFilesToDbInDir(File fileDir) {
         List<File> filesAdded = new LinkedList<>();
         try {
-            if (fileDir != null && fileDir.listFiles() != null) {
-                for (File fileToRead : fileDir.listFiles()) {
+            if (fileDir != null && FileIOProviderFactory.listFiles(fileDir) != null) {
+                for (File fileToRead : FileIOProviderFactory.listFiles(fileDir)) {
                     if (fileToRead != null && fileToRead.isFile()
                             && fileToRead.canRead() && accept(fileToRead)) {
                         try {

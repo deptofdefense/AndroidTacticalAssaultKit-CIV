@@ -339,30 +339,10 @@
                 android:inputType="textNoSuggestions|textMultiLine"
                 android:visibility="gone"/>
 
-            <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/remarks"/>
-
-                <com.atakmap.android.gui.EditText
-                    android:id="@+id/remarks_text"
-                    android:layout_width="fill_parent"
-                    android:layout_height="0dp"
-                    android:minHeight="25dp"
-                    android:layout_weight="1"
-                    android:gravity="start"
-                    android:hint="@string/remarks_hint"
-                    android:inputType="textMultiLine"
-                    android:minLines="1"
-                    android:textSize="@dimen/fontSize" />
-
-            </LinearLayout>
+            <com.atakmap.android.hashtags.view.RemarksLayout
+                android:id="@+id/remarksLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
 
             <View
                 android:minHeight="1dp"

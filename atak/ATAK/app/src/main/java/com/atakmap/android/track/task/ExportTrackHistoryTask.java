@@ -37,6 +37,7 @@ import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
@@ -459,7 +460,7 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
         ZipOutputStream zos = null;
         try {
 
-            FileOutputStream fos = new FileOutputStream(kmz);
+            FileOutputStream fos = FileIOProviderFactory.getOutputStream(kmz);
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             //and doc.kml
@@ -502,7 +503,7 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
         ZipOutputStream zos = null;
         try {
 
-            FileOutputStream fos = new FileOutputStream(kmz);
+            FileOutputStream fos = FileIOProviderFactory.getOutputStream(kmz);
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             //and doc.kml
@@ -919,7 +920,7 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
                 group.setMetaBoolean("addToObjList", false);
             }
         }
-        int color = Integer.valueOf(prefs.getString("defaultRouteColor",
+        int color = Integer.parseInt(prefs.getString("defaultRouteColor",
                 String.valueOf(Route.DEFAULT_ROUTE_COLOR)));
 
         // get points from each track log
@@ -1027,7 +1028,7 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
         Writer fileWriter = null;
         try {
             fileWriter = new OutputStreamWriter(
-                    new FileOutputStream(exportFile),
+                    FileIOProviderFactory.getOutputStream(exportFile),
                     FileSystemUtils.UTF8_CHARSET);
 
             if (bExportHeaders) {

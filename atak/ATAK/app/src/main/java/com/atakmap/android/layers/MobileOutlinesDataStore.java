@@ -161,7 +161,6 @@ class MobileOutlinesDataStore extends OutlinesFeatureDataStore {
             result = ((AbstractDataStoreRasterLayer2) this.layer)
                     .getDataStore().queryDatasets(params);
             Map<String, Geometry> retval = new HashMap<>();
-            Collection<String> types;
             while (result.moveToNext()) {
                 final String type = result.get().getName();
                 Geometry geom = retval.get(type);

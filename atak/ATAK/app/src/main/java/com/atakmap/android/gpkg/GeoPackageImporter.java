@@ -29,6 +29,7 @@ import com.atakmap.content.CatalogCurrencyRegistry;
 import com.atakmap.content.CatalogDatabase;
 import com.atakmap.content.CatalogDatabase.CatalogCursor;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.StatementIface;
@@ -117,7 +118,7 @@ public class GeoPackageImporter implements Importer {
             importPool.execute(new Runnable() {
                 @Override
                 public void run() {
-                    if (importFile.exists() && importFile(importFile)) {
+                    if (FileIOProviderFactory.exists(importFile) && importFile(importFile)) {
                         importDB.updateCurrency(importFile);
                     } else {
                         Log.w(TAG, "Failed to import " + importFile.getName());
@@ -130,8 +131,8 @@ public class GeoPackageImporter implements Importer {
 
     public void loadOverlays(File[] overlayDirs) {
         for (File overlayDir : overlayDirs) {
-            if (overlayDir.exists()) {
-                File[] overlayFiles = overlayDir.listFiles();
+            if (FileIOProviderFactory.exists(overlayDir)) {
+                File[] overlayFiles = FileIOProviderFactory.listFiles(overlayDir);
                 if (overlayFiles != null) {
                     for (File file : overlayFiles) {
                         if (importResolver.match(file))

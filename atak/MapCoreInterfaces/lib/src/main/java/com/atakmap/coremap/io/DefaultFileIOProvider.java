@@ -1,7 +1,10 @@
 
 package com.atakmap.coremap.io;
 
+import com.atakmap.coremap.filesystem.SecureDelete;
+
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -11,6 +14,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.URI;
+import java.nio.channels.FileChannel;
 
 /**
  * The Default unencrypted file IO provider
@@ -42,14 +46,14 @@ public class DefaultFileIOProvider extends FileIOProvider {
     /**
      * Returns a well formed output stream implementation that utilizes the file provided.
      *
-     * @param f the file to use as the basis for the input stream
+     * @param f      the file to use as the basis for the input stream
+     * @param append true if file should be appended, false if truncating should occur
      * @return the input stream based on the file
      * @throws FileNotFoundException an exception if the file is not found.
      */
     @Override
-    public FileOutputStream getOutputStream(File f)
-            throws FileNotFoundException {
-        return new FileOutputStream(f);
+    public FileOutputStream getOutputStream(File f, boolean append) throws FileNotFoundException {
+        return new FileOutputStream(f, append);
     }
 
     /**
@@ -106,10 +110,14 @@ public class DefaultFileIOProvider extends FileIOProvider {
      * Delete a file.
      *
      * @param f the file to delete
+     * @param flag the flags to apply during the deletion.  At this time only
+     * FileIOProvider.SECURE_DELETE is honored.
      * @return true if the deletion was successful otherwise false if it failed.
      */
     @Override
-    public boolean delete(File f) {
+    public boolean delete(File f, int flag) {
+        if(flag == SECURE_DELETE)
+            return SecureDelete.delete(f);
         return f.delete();
     }
 
@@ -270,5 +278,16 @@ public class DefaultFileIOProvider extends FileIOProvider {
     @Override
     public boolean setReadable(File f, boolean readable, boolean ownerOnly) {
         return f.setReadable(readable, ownerOnly);
+    }
+
+    /**
+     * Returns the unique FileChannel object associated with this file.
+     *
+     * @param f The file
+     * @return The file channel associated with the file
+     */
+    @Override
+    public FileChannel getChannel(File f, String mode) throws FileNotFoundException {
+        return (new RandomAccessFile(f, mode)).getChannel();
     }
 }

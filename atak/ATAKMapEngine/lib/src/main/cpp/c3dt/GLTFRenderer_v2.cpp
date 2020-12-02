@@ -3,7 +3,9 @@
 #include <iostream>
 #include <memory>
 
+#ifdef __ANDROID__
 #include <android/log.h>
+#endif
 
 #include <tinygltf/tiny_gltf.h>
 

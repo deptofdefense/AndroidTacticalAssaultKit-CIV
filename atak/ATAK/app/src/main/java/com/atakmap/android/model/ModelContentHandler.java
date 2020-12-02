@@ -22,6 +22,7 @@ import com.atakmap.android.missionpackage.export.MissionPackageExportWrapper;
 import com.atakmap.android.model.viewer.DetailedModelViewerDropdownReceiver;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.FeatureDataStore2;
@@ -87,6 +88,8 @@ public class ModelContentHandler extends FileOverlayContentHandler implements
 
     @Override
     public boolean isVisible() {
+        if (!isConditionVisible())
+            return false;
         FeatureSetQueryParameters params = new FeatureSetQueryParameters();
         params.ids = Collections.singleton(_fsid);
         params.visibleOnly = true;
@@ -98,7 +101,7 @@ public class ModelContentHandler extends FileOverlayContentHandler implements
     }
 
     @Override
-    public boolean setVisible(boolean visible) {
+    public boolean setVisibleImpl(boolean visible) {
         FeatureSetQueryParameters params = new FeatureSetQueryParameters();
         params.ids = Collections.singleton(_fsid);
         try {
@@ -109,18 +112,18 @@ public class ModelContentHandler extends FileOverlayContentHandler implements
     }
 
     @Override
-    public boolean isActionSupported(Class action) {
+    public boolean isActionSupported(Class<?> action) {
         // GoTo is allowed when bounds are missing
         return action != null && action.isInstance(this);
     }
 
     @Override
-    public boolean isSupported(Class target) {
+    public boolean isSupported(Class<?> target) {
         return MissionPackageExportWrapper.class.equals(target);
     }
 
     @Override
-    public Object toObjectOf(Class target, ExportFilters filters)
+    public Object toObjectOf(Class<?> target, ExportFilters filters)
             throws FormatNotSupportedException {
         if (MissionPackageExportWrapper.class.equals(target)) {
             MissionPackageExportWrapper mp = new MissionPackageExportWrapper();
@@ -229,7 +232,7 @@ public class ModelContentHandler extends FileOverlayContentHandler implements
         // Add all the dependencies to a temp zip
         File dest = FileSystemUtils.getItemOnSameRoot(_file, "tmp");
         dest = new File(dest, base + ".zip");
-        if (dest.exists())
+        if (FileIOProviderFactory.exists(dest))
             FileSystemUtils.delete(dest);
         try {
             FileSystemUtils.zipDirectory(new ArrayList<>(dependencies),

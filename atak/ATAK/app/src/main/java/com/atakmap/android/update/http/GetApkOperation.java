@@ -17,6 +17,7 @@ import com.atakmap.comms.http.TakHttpClient;
 import com.atakmap.comms.http.TakHttpException;
 import com.atakmap.comms.http.TakHttpResponse;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
@@ -131,12 +132,12 @@ public final class GetApkOperation extends HTTPOperation {
             }
 
             File contentFile = fileRequest.getFile();
-            if (contentFile.exists()) {
+            if (FileIOProviderFactory.exists(contentFile)) {
                 Log.d(TAG, "File already exists, checking if current: "
                         + contentFile.getAbsolutePath());
 
                 //file already exists, is it complete and unchanged?
-                if (contentFile.length() == contentLength) {
+                if (FileIOProviderFactory.length(contentFile) == contentLength) {
                     if (fileRequest.hasHash()) {
                         //check hash based on value provided in product.inf
                         String sha256 = HashingUtils.sha256sum(contentFile);
@@ -145,7 +146,7 @@ public final class GetApkOperation extends HTTPOperation {
                             //file already here and current
                             Log.d(TAG, "File: " + contentFile.getAbsolutePath()
                                     + " of size: "
-                                    + contentFile.length()
+                                    + FileIOProviderFactory.length(contentFile)
                                     + " already exists. SHA256: " + sha256);
 
                             Bundle output = new Bundle();
@@ -157,14 +158,14 @@ public final class GetApkOperation extends HTTPOperation {
                             //same file size, but different hash
                             Log.d(TAG, "File: " + contentFile.getAbsolutePath()
                                     + " of size: "
-                                    + contentFile.length()
+                                    + FileIOProviderFactory.length(contentFile)
                                     + " has new hash. SHA256: " + sha256);
                         }
                     } else {
                         //no hash available to reference
                         Log.d(TAG, "File: " + contentFile.getAbsolutePath()
                                 + " of size: "
-                                + contentFile.length()
+                                + FileIOProviderFactory.length(contentFile)
                                 + " has no available hash");
                     }
                 } else {
@@ -172,7 +173,7 @@ public final class GetApkOperation extends HTTPOperation {
                             "Overwriting file: "
                                     + contentFile.getAbsolutePath()
                                     + " of size: "
-                                    + contentFile.length() + " with new size: "
+                                    + FileIOProviderFactory.length(contentFile) + " with new size: "
                                     + contentLength);
                 }
             }
@@ -241,7 +242,7 @@ public final class GetApkOperation extends HTTPOperation {
                 FileOutputStream fos = null;
                 InputStream in = null;
                 try {
-                    fos = new FileOutputStream(contentFile);
+                    fos = FileIOProviderFactory.getOutputStream(contentFile);
                     in = resEntity.getContent();
                     while ((len = in.read(buf)) > 0) {
                         fos.write(buf, 0, len);
@@ -344,7 +345,7 @@ public final class GetApkOperation extends HTTPOperation {
                 throw new ConnectionException("Failed to download data");
             }
 
-            long downloadSize = contentFile.length();
+            long downloadSize = FileIOProviderFactory.length(contentFile);
             long stopTime = SystemClock.elapsedRealtime();
 
             Log.d(TAG, String.format(LocaleUtil.getCurrent(),

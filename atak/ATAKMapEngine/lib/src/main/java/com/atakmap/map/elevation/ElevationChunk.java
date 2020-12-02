@@ -13,7 +13,6 @@ import com.atakmap.map.layer.feature.geometry.LineString;
 import com.atakmap.map.layer.feature.geometry.Polygon;
 import com.atakmap.map.layer.model.MeshBuilder;
 import com.atakmap.map.layer.model.Mesh;
-import com.atakmap.map.layer.model.ModelBuilder;
 import com.atakmap.map.layer.model.Models;
 import com.atakmap.map.layer.raster.DatasetProjection2;
 import com.atakmap.map.layer.raster.DefaultDatasetProjection2;

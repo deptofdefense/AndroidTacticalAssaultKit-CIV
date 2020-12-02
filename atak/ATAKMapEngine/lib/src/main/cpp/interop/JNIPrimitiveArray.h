@@ -1,6 +1,8 @@
 #ifndef TAKENGINEJNI_INTEROP_JNIPRIMITIVEARRAY_H_INCLUDED
 #define TAKENGINEJNI_INTEROP_JNIPRIMITIVEARRAY_H_INCLUDED
 
+#include <cstdlib>
+
 #include <jni.h>
 
 #include <port/Platform.h>

@@ -2,6 +2,7 @@
 package com.atakmap.coremap.io;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.FileNotFoundException;
@@ -11,11 +12,17 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.URI;
+import java.nio.channels.FileChannel;
 
 /**
  * Abstracted File IO Operations
  */
 public abstract class FileIOProvider {
+
+    /**
+     * Flag to indicate secure deletion of files
+     */
+    public static final int SECURE_DELETE= 1;
 
     /**
      * A human readable name describing this FileIOProvider.
@@ -36,17 +43,17 @@ public abstract class FileIOProvider {
 
     /**
      * Returns a well formed output stream implementation that utilizes the file provided.
-     * 
+     *
      * @param f the file to use as the basis for the input stream
+     * @param append true if file should be appended, false if truncating should occur
      * @return the input stream based on the file
      * @throws FileNotFoundException an exception if the file is not found.
      */
-    public abstract FileOutputStream getOutputStream(File f)
-            throws FileNotFoundException;
+    public abstract FileOutputStream getOutputStream(File f, boolean append) throws FileNotFoundException;
 
     /**
      * Returns a well formed FileWriter implementation that utilizes the file provided
-     * 
+     *
      * @param f the file to use as the basis for this FileWriter
      * @return the file writer based on the file
      * @throws IOException an exception if the FileWriter cannot be created from the provided file.
@@ -86,12 +93,14 @@ public abstract class FileIOProvider {
     public abstract boolean renameTo(File f1, File f2);
 
     /**
-     * Delete a file.
-     * 
+     * Delete a file using a set of flag.
+     *
      * @param f the file to delete
+     * @param flag the flags to apply during the deletion.  At this time only
+     * FileIOProvider.SECURE_DELETE is honored.
      * @return true if the deletion was successful otherwise false if it failed.
      */
-    public abstract boolean delete(File f);
+    public abstract boolean delete(File f, int flag);
 
     /**
      * Returns the length of the file.
@@ -220,4 +229,15 @@ public abstract class FileIOProvider {
      */
     public abstract boolean setReadable(File f, boolean readable,
             boolean ownerOnly);
+
+    /**
+     * Returns the unique FileChannel object associated with this file.
+     * 
+     * @param f The file
+     * @return The file channel associated with the file
+     * @throws FileNotFoundException an exception if the RandomAccessFile cannot be created from the
+     *             provided file.
+     */
+    public abstract FileChannel getChannel(File f, String mode)
+            throws FileNotFoundException;
 }

@@ -32,7 +32,7 @@ bool Plane2::intersect(Point2<double> *isectPoint, const Ray2<double> &ray) cons
     const double n = normal.dot(&originV);
     const double d = (n / ldotn);
 
-    if (std::abs(d) >= 0) {
+    if (d >= 0) {
         isectPoint->x = ray.origin.x + (ray.direction.x*d);
         isectPoint->y = ray.origin.y + (ray.direction.y*d);
         isectPoint->z = ray.origin.z + (ray.direction.z*d);

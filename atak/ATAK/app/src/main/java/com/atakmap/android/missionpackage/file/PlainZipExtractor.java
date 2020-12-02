@@ -7,11 +7,11 @@ import com.atakmap.android.importfiles.sort.ImportCotSort;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.MissionPackageUtils;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringBufferInputStream;
@@ -73,11 +73,11 @@ public class PlainZipExtractor implements IMissionPackageExtractor {
         ZipOutputStream zos = null;
         try {
             // read in from plain old zip
-            zin = new ZipInputStream(new FileInputStream(inZip));
+            zin = new ZipInputStream(FileIOProviderFactory.getInputStream(inZip));
             ZipEntry zinEntry = null;
 
             // write out to mission package zip
-            FileOutputStream fos = new FileOutputStream(outZip);
+            FileOutputStream fos = FileIOProviderFactory.getOutputStream(outZip);
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             // iterate all zip entries
@@ -195,7 +195,7 @@ public class PlainZipExtractor implements IMissionPackageExtractor {
             zos = null;
 
             // now see if out zip was created successfully
-            if (!FileSystemUtils.isFile(outZip) || outZip.length() < 1) {
+            if (!FileSystemUtils.isFile(outZip) || FileIOProviderFactory.length(outZip) < 1) {
                 Log.e(TAG,
                         "Failed to create file: " + outZip.getAbsolutePath());
                 return null;

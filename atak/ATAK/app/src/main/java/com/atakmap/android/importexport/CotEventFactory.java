@@ -6,6 +6,7 @@ import com.atakmap.android.cot.detail.CotDetailHandler;
 import com.atakmap.android.cot.detail.CotDetailManager;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.Marker;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.cot.event.CotPoint;
@@ -62,10 +63,10 @@ public class CotEventFactory {
      * within default CotEvent.
     
      * @param handler is the detailhandler associated with parsing the detail.
-     * @deprecated
-     * See {@link CotDetailManager#registerHandler(CotDetailHandler)}
+     * @deprecated See {@link CotDetailManager#registerHandler(CotDetailHandler)}
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static void addMarkerDetailHandler(MarkerDetailHandler handler) {
     }
 
@@ -76,6 +77,8 @@ public class CotEventFactory {
      *
      * @deprecated
      **/
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = false, removeAt = "4.4")
     private static CotEvent createDefaultEvent(final Marker marker) {
         CotEvent cotEvent = new CotEvent();
 

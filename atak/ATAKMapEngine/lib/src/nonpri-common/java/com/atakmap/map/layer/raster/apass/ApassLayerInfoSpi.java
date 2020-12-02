@@ -40,6 +40,9 @@ import com.atakmap.map.projection.EquirectangularMapProjection;
 import com.atakmap.math.PointD;
 import com.atakmap.math.Matrix;
 import com.atakmap.spi.InteractiveServiceProvider;
+
+import com.atakmap.coremap.io.FileIOProviderFactory;
+
 /**
  * {@link DatasetDescriptorSpi} implementation for APASS datasets. Expected input is
  * the APASS catalog file (images.pfiva.sqlite3).
@@ -273,7 +276,7 @@ public class ApassLayerInfoSpi extends AbstractDatasetDescriptorSpi {
                     Log.w(TAG, "validity check failed for: " + apassDataDir + "/" + path);
                     frame = null;
                 }
-                if (frame == null || !frame.exists())
+                if (frame == null || !FileIOProviderFactory.exists(frame))
                     continue;
 
                 ul.set(result.getDouble(colULLat), result.getDouble(colULLng));

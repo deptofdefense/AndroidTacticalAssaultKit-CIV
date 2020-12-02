@@ -18,6 +18,7 @@ import com.atakmap.comms.http.TakHttpClient;
 import com.atakmap.comms.http.TakHttpException;
 import com.atakmap.comms.http.TakHttpResponse;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.kml.FeatureHandler;
@@ -152,7 +153,7 @@ public final class QueryUserTracksOperation extends HTTPOperation {
                     tempFileName);
             Log.d(TAG,
                     "processing response into file: " + temp.getAbsolutePath());
-            FileOutputStream fos = new FileOutputStream(temp);
+            FileOutputStream fos = FileIOProviderFactory.getOutputStream(temp);
 
             // stream in content, keep user notified on progress
             builder.setProgress(100, 1, false);
@@ -187,7 +188,7 @@ public final class QueryUserTracksOperation extends HTTPOperation {
                 throw new ConnectionException("Failed to download data");
             }
 
-            long downloadSize = temp.length();
+            long downloadSize = FileIOProviderFactory.length(temp);
             Log.d(TAG, "Parsing downloaded file: " + temp.getAbsolutePath());
 
             // update notification

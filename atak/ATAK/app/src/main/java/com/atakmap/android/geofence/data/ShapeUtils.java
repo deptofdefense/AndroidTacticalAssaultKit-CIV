@@ -13,6 +13,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -47,7 +48,14 @@ public class ShapeUtils {
             return null;
     }
 
+    /**
+     * @deprecated Use {@link ATAKUtilities#findAssocShape(MapItem)} and
+     * {@link ATAKUtilities#getDisplayName(MapItem)}
+     * @param item
+     * @return
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static String getShapeName(final MapItem item) {
         return ATAKUtilities.getDisplayName(ATAKUtilities.findAssocShape(item));
     }

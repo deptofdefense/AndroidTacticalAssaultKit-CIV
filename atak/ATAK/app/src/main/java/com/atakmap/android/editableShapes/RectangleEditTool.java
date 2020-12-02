@@ -28,7 +28,6 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
-import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.Stack;
 

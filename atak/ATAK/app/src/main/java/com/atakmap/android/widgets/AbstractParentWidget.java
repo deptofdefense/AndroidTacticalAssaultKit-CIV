@@ -4,6 +4,7 @@ package com.atakmap.android.widgets;
 import android.view.MotionEvent;
 
 import com.atakmap.android.config.ConfigEnvironment;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.map.AtakMapView;
 
@@ -197,7 +198,14 @@ public abstract class AbstractParentWidget extends MapWidget2 implements
         return hit;
     }
 
+    /**
+     * @deprecated use {@link #seekHit(MotionEvent, float, float)}
+     * @param x
+     * @param y
+     * @return
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     @Override
     public MapWidget seekHit(float x, float y) {
         return seekHit(null, x, y);

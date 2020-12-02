@@ -1,18 +1,16 @@
 package com.atakmap.map.layer.raster.tilematrix;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.net.URLConnection;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.contentservices.CacheRequest;
 import com.atakmap.map.contentservices.CacheRequestListener;
-import com.atakmap.net.AtakAuthenticationHandlerHTTP;
 
 public abstract class AbstractTileClient implements TileClient {
 
@@ -42,7 +40,7 @@ public abstract class AbstractTileClient implements TileClient {
         // the file and create a new cache
         if(forceCreate &&
            this.offlineCache == null &&
-           (new File(path)).exists()) {
+           FileIOProviderFactory.exists(new File(path))) {
 
             FileSystemUtils.delete(path);
             this.offlineCache = openOrCreateCache(path, this, preferredProvider);

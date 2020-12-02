@@ -19,6 +19,7 @@ import com.atakmap.android.imagecapture.Capturable;
 import com.atakmap.android.imagecapture.CapturePP;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
+import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.rubbersheet.data.ModelProjection;
@@ -35,12 +36,16 @@ import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
+import com.atakmap.coremap.maps.coords.Vector2D;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
+import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.ModelInfo;
@@ -111,6 +116,7 @@ public class VehicleModel extends RubberModel implements Capturable,
 
     public VehicleModel(VehicleModelData data) {
         super(data);
+        getCenterMarker().setPoint(data.center);
         setType(COT_TYPE);
         setSharedModel(true);
         showLines(false);
@@ -223,8 +229,8 @@ public class VehicleModel extends RubberModel implements Capturable,
     }
 
     @Override
-    public void setVisible(boolean visible) {
-        super.setVisible(visible);
+    protected void onVisibleChanged() {
+        super.onVisibleChanged();
         for (PointMapItem pmi : getAnchorMarkers())
             pmi.setVisible(false);
     }
@@ -300,6 +306,84 @@ public class VehicleModel extends RubberModel implements Capturable,
                 break;
         }
         setMetaString(UserIcon.IconsetPath, iconPath);
+    }
+
+    @Override
+    protected boolean orthoHitModel(int x, int y, GeoPoint point, MapView view) {
+        return showOutline() && orthoHitOutline(x, y, view)
+                || super.orthoHitModel(x, y, point, view);
+    }
+
+    private boolean orthoHitOutline(int x, int y, MapView view) {
+        List<PointF> points = _info.getOutline(null);
+        if (points == null || view.getMapTilt() > 0)
+            return false;
+
+        // The outline points are in meters offset from the center, so
+        // for performance we apply transformations to the touch point
+        // rather than the outline
+        double res = view.getMapResolution();
+        GeoPoint centerGP = getCenterPoint();
+        PointF center = view.forward(centerGP);
+
+        // X and Y click point in meters offset from center
+        float mx = (float) ((x - center.x) * res);
+        float my = (float) ((center.y - y) * res);
+
+        // Apply reverse rotation to click (instead of rotating the entire outline)
+        double a = Math.toRadians(getAzimuth(NorthReference.TRUE)
+                - view.getMapRotation());
+        double aCos = Math.cos(-a), aSin = Math.sin(-a);
+        float rmx = (float) (mx * aCos + my * aSin);
+        float rmy = (float) (my * aCos - mx * aSin);
+        mx = rmx;
+        my = rmy;
+
+        // Convert hit radius to meters
+        float mr = (float) (getHitRadius(view) * res);
+        float mr2 = mr / 2f, mrSq = mr * mr;
+
+        // Perform hit test on vertices and lines
+        PointF lp = null;
+        Vector2D touch = new Vector2D(mx, my);
+        PointF hit = null;
+        for (PointF p : points) {
+            // Test hit on vertex
+            if (Math.abs(p.x - mx) < mr2 && Math.abs(p.y - my) < mr2) {
+                hit = p;
+                break;
+            }
+            // Test hit on last line
+            if (lp != null) {
+                Vector2D nearest = Vector2D.nearestPointOnSegment(touch,
+                        new Vector2D(p.x, p.y),
+                        new Vector2D(lp.x, lp.y));
+                double dist = nearest.distanceSq(touch);
+                if (mrSq > dist) {
+                    hit = new PointF((float) nearest.x,
+                            (float) nearest.y);
+                    break;
+                }
+            }
+            lp = p;
+        }
+
+        if (hit == null)
+            return false;
+
+        // Found a hit
+        double azimuth = Math.toDegrees(Math.atan2(hit.x, hit.y) + a)
+                + view.getMapRotation();
+        double dist = Math.hypot(hit.x, hit.y);
+        GeoPoint point = new GeoPoint(GeoCalculations.pointAtDistance(
+                centerGP, azimuth, dist),
+                GeoPoint.Access.READ_WRITE);
+        double alt = ElevationManager.getElevation(
+                point.getLatitude(), point.getLongitude(), null);
+        point.set(alt);
+        setTouchPoint(point);
+        setMetaString("menu_point", point.toString());
+        return true;
     }
 
     @Override
@@ -456,7 +540,7 @@ public class VehicleModel extends RubberModel implements Capturable,
         File cacheFile = new File(cacheDir, _info.name + ".bmp");
 
         // Check if cached screenshot already exists we can quickly read from
-        if (cacheFile.exists()) {
+        if (FileIOProviderFactory.exists(cacheFile)) {
             try {
                 // XXX - BitmapFactory doesn't take bytes as input,
                 // for some (probably stupid) reason
@@ -508,7 +592,7 @@ public class VehicleModel extends RubberModel implements Capturable,
         }
 
         // Save bitmap data straight to file (no header data needed)
-        if (cacheDir.exists() || cacheDir.mkdirs()) {
+        if (FileIOProviderFactory.exists(cacheDir) || FileIOProviderFactory.mkdirs(cacheDir)) {
             int width = image[0].getWidth();
             int height = image[0].getHeight();
             FileOutputStream fos = null;
@@ -528,7 +612,7 @@ public class VehicleModel extends RubberModel implements Capturable,
                     b[i + 3] = (byte) (p & 0xFF);
                     i += 4;
                 }
-                fos = new FileOutputStream(cacheFile);
+                fos = FileIOProviderFactory.getOutputStream(cacheFile);
                 fos.write(b);
             } catch (Exception e) {
                 FileSystemUtils.delete(cacheFile);

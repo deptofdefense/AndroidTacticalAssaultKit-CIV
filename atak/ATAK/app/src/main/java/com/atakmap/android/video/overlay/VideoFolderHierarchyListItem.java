@@ -212,7 +212,7 @@ class VideoFolderHierarchyListItem extends VideoBrowserHierarchyListItem
     }
 
     @Override
-    public Object toObjectOf(Class target, ExportFilters filters)
+    public Object toObjectOf(Class<?> target, ExportFilters filters)
             throws FormatNotSupportedException {
 
         // Get exportable videos

@@ -12,13 +12,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import android.app.DownloadManager;
 import android.os.SystemClock;
 
 import com.atakmap.coremap.log.Log;

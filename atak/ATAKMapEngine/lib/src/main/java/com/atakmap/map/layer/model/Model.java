@@ -1,13 +1,13 @@
 package com.atakmap.map.layer.model;
 
-import com.atakmap.map.layer.feature.geometry.Envelope;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.math.Matrix;
-import com.atakmap.math.PointD;
-import com.atakmap.util.Disposable;
 
-import java.nio.Buffer;
-
-/** @deprecated EXPERIMENTAL CODE; SUBJECT TO CHANGE OR BE REMOVED AT ANY TIME */
+/**
+ * @deprecated use {@link Mesh}
+ */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public interface Model extends Mesh {
 
     public final static int INSTANCE_ID_NONE = 0;

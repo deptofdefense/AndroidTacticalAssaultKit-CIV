@@ -11,6 +11,7 @@ import com.atakmap.android.hierarchy.HierarchyListItem;
 import com.atakmap.android.hierarchy.action.Search;
 import com.atakmap.android.hierarchy.filters.FOVFilter;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 
@@ -524,7 +525,14 @@ public class GroupContact extends Contact implements Search {
         return getUnreadCount(true);
     }
 
+    /**
+     * @deprecated Use {@link #getUnreadCount(boolean)}
+     * @param filtered
+     * @param unused
+     * @return
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public int getUnreadCount(boolean filtered, boolean unused) {
         return getUnreadCount(filtered);
     }

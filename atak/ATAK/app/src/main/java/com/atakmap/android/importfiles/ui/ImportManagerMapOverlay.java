@@ -46,6 +46,7 @@ import com.atakmap.app.ATAKActivity;
 import com.atakmap.app.R;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.kml.KMLUtil;
@@ -53,7 +54,6 @@ import com.atakmap.spatial.kml.KMLUtil;
 import org.simpleframework.xml.core.Persister;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -307,7 +307,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
                 return null;
             String localPath = _resource.getLocalPath();
             int icon = !FileSystemUtils.isEmpty(localPath)
-                    && new File(localPath).exists()
+                    && FileIOProviderFactory.exists(new File(localPath))
                             ? R.drawable.importmgr_status_green
                             : R.drawable.importmgr_status_red;
             return _context.getDrawable(icon);
@@ -392,7 +392,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
                 File tmp = FileSystemUtils
                         .getItem(FileSystemUtils.TMP_DIRECTORY);
                 if (event == null || !event.isValid()
-                        || !tmp.exists() && !tmp.mkdirs()) {
+                        || !FileIOProviderFactory.exists(tmp) && !FileIOProviderFactory.mkdirs(tmp)) {
                     Log.w(TAG, "Faild to send Remote Resource CoT");
                     Toast.makeText(_context,
                             R.string.importmgr_failed_to_send_resource,
@@ -403,7 +403,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
                 File cotFile = new File(tmp, FileSystemUtils
                         .sanitizeFilename(event.getUID() + ".cot"));
                 try {
-                    FileSystemUtils.write(new FileOutputStream(cotFile),
+                    FileSystemUtils.write(FileIOProviderFactory.getOutputStream(cotFile),
                             event.toString());
                 } catch (Exception e) {
                     Log.e(TAG, "Failed to write remote resource CoT", e);
@@ -518,7 +518,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
         List<RemoteResource> ret = new ArrayList<>();
         boolean bInternal = isInternal(dir);
         File resourceFile = new File(dir, ImportManagerView.XML_FILEPATH);
-        if (!resourceFile.exists()) {
+        if (!FileIOProviderFactory.exists(resourceFile)) {
             Log.d(TAG,
                     "Did not find resource file: "
                             + resourceFile.getAbsolutePath());
@@ -569,7 +569,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
     private void flush(String dir, boolean onlyIfExists) {
         boolean bInternal = isInternal(dir);
         File resourceFile = new File(dir, ImportManagerView.XML_FILEPATH);
-        if (onlyIfExists && !resourceFile.exists())
+        if (onlyIfExists && !FileIOProviderFactory.exists(resourceFile))
             return;
 
         RemoteResources rs = new RemoteResources();

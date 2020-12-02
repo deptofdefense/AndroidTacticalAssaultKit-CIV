@@ -2074,9 +2074,10 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
             final SharedPreferences prefs = PreferenceManager
                     .getDefaultSharedPreferences(c);
             String lastEntry = prefs.getString("pref_wms_add_last_entry", "");
-            input.setText(lastEntry);
-            input.setSelection(lastEntry.length());
-
+            if (lastEntry != null) {
+                input.setText(lastEntry);
+                input.setSelection(lastEntry.length());
+            }
             // pop up a dialog requesting the user to enter a URL to
             // a WMS or WMTS server
             AlertDialog.Builder b = new AlertDialog.Builder(c);

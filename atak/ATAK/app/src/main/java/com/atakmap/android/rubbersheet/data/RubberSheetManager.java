@@ -17,6 +17,7 @@ import com.atakmap.android.rubbersheet.maps.RubberModel;
 import com.atakmap.android.rubbersheet.maps.RubberSheetMapGroup;
 import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import org.json.JSONArray;
@@ -56,7 +57,7 @@ public class RubberSheetManager implements MapGroup.OnItemListChangedListener {
         _group = group;
 
         // Create the working plugin directory
-        if (!DIR.exists() && !DIR.mkdirs())
+        if (!FileIOProviderFactory.exists(DIR) && !FileIOProviderFactory.mkdirs(DIR))
             Log.e(TAG, "Failed to make tools directory: " + DIR);
 
         // Clear content listener
@@ -73,7 +74,7 @@ public class RubberSheetManager implements MapGroup.OnItemListChangedListener {
     public void shutdown() {
         _group.removeOnItemListChangedListener(this);
         AtakBroadcast.getInstance().unregisterReceiver(_ccReceiver);
-        if (SAVE_FILE.exists())
+        if (FileIOProviderFactory.exists(SAVE_FILE))
             saveSheets();
         _workers.shutdown();
     }
@@ -86,7 +87,7 @@ public class RubberSheetManager implements MapGroup.OnItemListChangedListener {
     @Override
     public void onItemRemoved(MapItem item, MapGroup group) {
         File dir = new File(DIR, item.getUID());
-        if (dir.exists())
+        if (FileIOProviderFactory.exists(dir))
             FileSystemUtils.deleteDirectory(dir, false);
         saveSheets();
     }
@@ -117,7 +118,7 @@ public class RubberSheetManager implements MapGroup.OnItemListChangedListener {
                     continue;
                 arr.put(o);
             }
-            fos = new FileOutputStream(SAVE_FILE);
+            fos = FileIOProviderFactory.getOutputStream(SAVE_FILE);
             FileSystemUtils.write(fos, arr.toString());
         } catch (Exception e) {
             Log.e(TAG, "Failed to write rubber sheet data to: "
@@ -133,7 +134,7 @@ public class RubberSheetManager implements MapGroup.OnItemListChangedListener {
     }
 
     private void loadSheets() {
-        if (_saveLoadBusy || !SAVE_FILE.exists())
+        if (_saveLoadBusy || !FileIOProviderFactory.exists(SAVE_FILE))
             return;
         _saveLoadBusy = true;
         String json = null;

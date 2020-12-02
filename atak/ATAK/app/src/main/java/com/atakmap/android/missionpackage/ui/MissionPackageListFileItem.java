@@ -8,6 +8,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.file.MissionPackageContent;
 import com.atakmap.android.missionpackage.file.NameValuePair;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.maps.assets.Icon;
 
 import java.io.File;
@@ -91,7 +92,7 @@ public class MissionPackageListFileItem extends MissionPackageListItem {
         if (!FileSystemUtils.isFile(path))
             return 0;
 
-        return new File(path).length();
+        return FileIOProviderFactory.length(new File(path));
     }
 
     @Override

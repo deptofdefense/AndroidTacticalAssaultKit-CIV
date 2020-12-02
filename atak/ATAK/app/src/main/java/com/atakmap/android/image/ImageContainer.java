@@ -39,6 +39,7 @@ import com.atakmap.android.image.nitf.NITFReader;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.SensorFOV;
 import com.atakmap.android.util.AltitudeUtilities;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.conversions.CoordinateFormat;
@@ -357,7 +358,14 @@ public abstract class ImageContainer implements OnTouchListener,
         return readNITF(nitfFile, 0);
     }
 
+    /**
+     * @deprecated Use {@link #readNITF(File)} directly
+     * @param nitfFile
+     * @param res - unused
+     * @return
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static Bitmap readNITF(File nitfFile, Resources res) {
         return readNITF(nitfFile);
     }

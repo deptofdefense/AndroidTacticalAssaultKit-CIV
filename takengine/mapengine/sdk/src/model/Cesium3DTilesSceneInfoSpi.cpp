@@ -15,6 +15,7 @@
 #include "formats/cesium3dtiles/B3DM.h"
 #include "model/MeshTransformer.h"
 #include "port/Collection.h"
+#include "util/URI.h"
 
 using namespace TAK::Engine::Model;
 using namespace TAK::Engine::Util;
@@ -25,15 +26,6 @@ using namespace TAK::Engine::Feature;
 using namespace TAK::Engine::Port;
 
 namespace {
-	bool isExt(const char *URI, const char *ext) NOTHROWS;
-
-	bool isFileSystemTileset(
-		TAK::Engine::Port::String *dirPath,
-		TAK::Engine::Port::String *tilesetPath,
-		bool *isB3DM,
-		const char *URI) NOTHROWS;
-
-	bool isStreamingTileset(const char *URI);
 	TAKErr rootVisitor(void *opaque, const C3DTTileset *tileset, const C3DTTile *root) NOTHROWS;
 }
 
@@ -56,30 +48,49 @@ const char* Cesium3DTilesSceneInfoSpi::getName() const NOTHROWS {
 }
 
 bool Cesium3DTilesSceneInfoSpi::isSupported(const char* URI) NOTHROWS {
-	bool result = false;
-	C3DTTileset_isSupported(&result, URI);
-	return result || isExt(URI, ".b3dm");
+	return C3DT_probeSupport(nullptr, nullptr, nullptr, nullptr, nullptr, URI) == TE_Ok;
 }
 
 TAK::Engine::Util::TAKErr Cesium3DTilesSceneInfoSpi::create(TAK::Engine::Port::Collection<SceneInfoPtr>& scenes, const char* URI) NOTHROWS {
 
-	TAK::Engine::Port::String tilesetPath;
-	TAK::Engine::Port::String dirPath;
-	bool isB3DM = false;
+	TAKErr code = TE_Unsupported;
+	TAK::Engine::Port::String tilesetURI;
+	TAK::Engine::Port::String fileURI;
+	TAK::Engine::Port::String baseURI;
+	C3DTFileType type;
+	bool isStreamingValue = false;
 
-	if (!isFileSystemTileset(&dirPath, &tilesetPath, &isB3DM, URI) &&
-		!isStreamingTileset(URI))
-		return TE_Unsupported;
+	// catches nullptr URI
+	code = C3DT_probeSupport(&type, &fileURI, &tilesetURI, &baseURI, &isStreamingValue, URI);
+	if (code != TE_Ok)
+		return code;
 
-	if (isB3DM) {
+	DataInput2Ptr input(nullptr, nullptr);
+	code = URI_open(input, fileURI);
+	if (code != TE_Ok)
+		return code;
 
+	if (type == C3DTFileType_TilesetJSON) {
+
+		SceneInfoPtr model(new (std::nothrow) SceneInfo());
+		if (!model)
+			return TE_OutOfMemory;
+
+		model->type = getStaticName();
+		model->altitudeMode = TAK::Engine::Feature::TEAM_Absolute;
+		model->minDisplayResolution = std::numeric_limits<double>::max();
+		model->maxDisplayResolution = 0.0;
+		model->srid = 4326;
+		model->uri = baseURI;
+
+		code = C3DTTileset_parse(input.get(), model.get(), rootVisitor);
+		if (code != TE_Ok)
+			return code;
+
+		code = scenes.add(model);
+	} else if (type == C3DTFileType_B3DM) {
 		ScenePtr scenePtr(nullptr, nullptr);
-		DataInput2Ptr inputPtr(nullptr, nullptr);
-
-		// XXX-- URI_open()
-		TAKErr code = IO_openFileV(inputPtr, URI);
-		TE_CHECKRETURN_CODE(code);
-		code = B3DM_parse(scenePtr, inputPtr.get(), dirPath);
+		code = B3DM_parse(scenePtr, input.get(), baseURI);
 		TE_CHECKRETURN_CODE(code);
 
 		Matrix2 localFrame;
@@ -95,7 +106,7 @@ TAK::Engine::Util::TAKErr Cesium3DTilesSceneInfoSpi::create(TAK::Engine::Port::C
 		aabb_src.localFrame = Matrix2Ptr(new Matrix2(localFrame), Memory_deleter_const<Matrix2>);
 
 		MeshTransformOptions aabb_dst;
-		aabb_dst.srid = B3DM_getSRID();
+		aabb_dst.srid = 4978;
 
 		Envelope2 aabbSrc = scenePtr->getAABB();
 		Mesh_transform(&aabb, aabbSrc, aabb_src, aabb_dst);
@@ -116,129 +127,26 @@ TAK::Engine::Util::TAKErr Cesium3DTilesSceneInfoSpi::create(TAK::Engine::Port::C
 		model->altitudeMode = TAK::Engine::Feature::TEAM_ClampToGround;
 		model->minDisplayResolution = 1.0;//std::numeric_limits<double>::max();
 		model->maxDisplayResolution = 0.0;
-		model->srid = B3DM_getSRID();
+		model->srid = 4978;
 		model->uri = URI;
 		model->aabb = Envelope2Ptr(new Envelope2(aabb), Memory_deleter_const<Envelope2>);
 		model->localFrame = Matrix2Ptr(new Matrix2(), Memory_deleter_const<Matrix2>);
 		model->location =
 			TAK::Engine::Core::GeoPoint2Ptr(new TAK::Engine::Core::GeoPoint2(locPoint), Memory_deleter_const<TAK::Engine::Core::GeoPoint2>);
 
-		return scenes.add(model);
+		code = scenes.add(model);
+	} else {
+		code = TE_Unsupported;
+	}
+
+	if (input) {
+		input->close();
 	}
 	
-	SceneInfoPtr model(new (std::nothrow) SceneInfo());
-	if (!model)
-		return TE_OutOfMemory;
-
-	model->type = getStaticName();
-	model->altitudeMode = TAK::Engine::Feature::TEAM_Absolute;
-	model->minDisplayResolution = std::numeric_limits<double>::max();
-	model->maxDisplayResolution = 0.0;
-	model->srid = 4326;
-
-	if (tilesetPath != "") {
-		model->uri = dirPath;
-		IO_getName(model->name, dirPath.get());
-
-		// offline type
-		DataInput2Ptr inputPtr(nullptr, nullptr);
-		TAKErr code = IO_openFileV(inputPtr, tilesetPath.get());
-		TE_CHECKRETURN_CODE(code);
-		code = C3DTTileset_parse(inputPtr.get(), model.get(), rootVisitor);
-		if (code != TE_Ok)
-			return code;
-
-	} else {
-		//TODO-- streaming type
-		return TE_Unsupported;
-	}
-
-	return scenes.add(model);
+	return code;
 }
 
 namespace {
-	bool isExt(const char* URI, const char* ext) NOTHROWS {
-		const char* uriExt = strrchr(URI, '.');
-		if (uriExt) {
-			int cmp = -1;
-			TAK::Engine::Port::String_compareIgnoreCase(&cmp, uriExt, ext);
-			if (cmp == 0) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	bool testB3DM(TAK::Engine::Port::String* dirPath,
-		TAK::Engine::Port::String* tilesetPath,
-		TAK::Engine::Port::String &name,
-		const char* URI) NOTHROWS {
-
-		if (isExt(name, ".b3dm")) {
-			TAK::Engine::Port::String dir;
-			IO_getParentFile(dir, URI);
-			TAK::Engine::Port::String ts;
-			TAK::Engine::Port::StringBuilder sb;
-			TAK::Engine::Port::StringBuilder_combine(sb, dir, TAK::Engine::Port::Platform_pathSep(), "tileset.json");
-			*dirPath = dir;
-			*tilesetPath = ts;
-			return true;
-		}
-
-		return false;
-	}
-
-	bool isFileSystemTileset(
-		TAK::Engine::Port::String *dirPath,
-		TAK::Engine::Port::String *tilesetPath,
-		bool* isB3DM,
-		const char* URI) NOTHROWS {
-
-		TAK::Engine::Port::String dir;
-		TAK::Engine::Port::String ts;
-
-		bool isDir = false;
-		IO_isDirectoryV(&isDir, URI);
-		if (isDir) {
-			dir = URI;
-			TAK::Engine::Port::StringBuilder sb;
-			if (TAK::Engine::Port::StringBuilder_combine(sb, URI, TAK::Engine::Port::Platform_pathSep(), "tileset.json")
-				!= TE_Ok) {
-				return false;
-			}
-			bool exists = false;
-			IO_existsV(&exists, sb.c_str());
-			if (!exists)
-				return false;
-			ts = sb.c_str();
-		} else {
-			TAK::Engine::Port::String name;
-			IO_getName(name, URI);
-			int cmp = -1;
-			TAK::Engine::Port::String_compareIgnoreCase(&cmp, name.get(), "tileset.json");
-			if (cmp != 0) {
-				*isB3DM = testB3DM(dirPath, tilesetPath, name, URI);
-				return *isB3DM;
-			}
-			ts = URI;
-			IO_getParentFile(dir, URI);
-			IO_isDirectoryV(&isDir, dir.get());
-			if (!isDir)
-				return false;
-		}
-
-		if (dirPath)
-			*dirPath = std::move(dir);
-		if (tilesetPath)
-			*tilesetPath = std::move(ts);
-		return true;
-	}
-
-	bool isStreamingTileset(const char* URI) {
-		//TODO--
-		return false;
-	}
-
 	TAKErr setLocTransform(SceneInfo* sceneInfo, TAK::Engine::Math::Point2<double> &center, const C3DTTile* root) {
 		TAK::Engine::Math::Matrix2 transform(
 			root->transform[0], root->transform[4], root->transform[8], root->transform[12],
@@ -258,7 +166,7 @@ namespace {
 
 	TAKErr rootVisitor(void* opaque, const C3DTTileset* tileset, const C3DTTile* root) NOTHROWS {
 
-		auto *sceneInfo = static_cast<SceneInfo *>(opaque);
+		SceneInfo *sceneInfo = static_cast<SceneInfo *>(opaque);
 
 		tileset->extras.getString(&sceneInfo->name, "name");
 		sceneInfo->localFrame = TAK::Engine::Math::Matrix2Ptr_const(new TAK::Engine::Math::Matrix2(), Memory_deleter_const<TAK::Engine::Math::Matrix2>);

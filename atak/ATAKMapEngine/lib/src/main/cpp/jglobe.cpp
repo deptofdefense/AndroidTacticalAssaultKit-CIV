@@ -242,7 +242,7 @@ JNIEXPORT jdouble JNICALL Java_com_atakmap_map_Globe_getElevationExaggerationFac
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_Globe_forward
   (JNIEnv *env, jclass jclazz, jlong ptr, jdouble latitude, jdouble longitude, jdouble alt, jboolean altIsHae, jobject mresult)
 {
-
+    return false;
 }
 JNIEXPORT jdouble JNICALL Java_com_atakmap_map_Globe_getMinLatitude
   (JNIEnv *env, jclass jclazz, jlong ptr)

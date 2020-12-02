@@ -1,8 +1,14 @@
 
 package com.atakmap.android.warning;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.preference.Preference;
+import android.view.View;
 
+import com.atakmap.android.emergency.tool.EmergencyManager;
+import com.atakmap.android.maps.MapView;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.app.R;
 
@@ -22,5 +28,15 @@ public class AlertPreferenceFragment extends AtakPreferenceFragment {
     public void onCreate(Bundle savedInstanceBundle) {
         super.onCreate(savedInstanceBundle);
         addPreferencesFromResource(getResourceID());
+
+
+        try {
+            int res = MapView.getMapView().getContext().checkCallingOrSelfPermission(Manifest.permission.SEND_SMS);
+            if (res != PackageManager.PERMISSION_GRANTED && !EmergencyManager.hasSmsSendPlugin()) {
+                Preference p = findPreference("sms_numbers");
+                p.setEnabled(false);
+            }
+        } catch (Exception ignored) {
+        }
     }
 }

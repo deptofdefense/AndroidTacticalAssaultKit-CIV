@@ -11,7 +11,7 @@
 namespace TAK {
     namespace Engine {
         namespace Model {
-            struct MeshTransformOptions
+            struct ENGINE_API MeshTransformOptions
             {
             public :
                 MeshTransformOptions() NOTHROWS;
@@ -46,9 +46,9 @@ namespace TAK {
              *
              * @return  TE_Ok on success, various codes on failure
              */
-            Util::TAKErr Mesh_transform(MeshPtr &value, MeshTransformOptions *valueOpts, const Mesh &src, const MeshTransformOptions &srcOpts, const MeshTransformOptions &dstOpts, Util::ProcessingCallback *callback) NOTHROWS;
+            ENGINE_API Util::TAKErr Mesh_transform(MeshPtr &value, MeshTransformOptions *valueOpts, const Mesh &src, const MeshTransformOptions &srcOpts, const MeshTransformOptions &dstOpts, Util::ProcessingCallback *callback) NOTHROWS;
 
-            Util::TAKErr Mesh_transform(Feature::Envelope2 *value, const Feature::Envelope2 &src, const MeshTransformOptions &srcOpts, const MeshTransformOptions &dstOpts) NOTHROWS;
+            ENGINE_API Util::TAKErr Mesh_transform(Feature::Envelope2 *value, const Feature::Envelope2 &src, const MeshTransformOptions &srcOpts, const MeshTransformOptions &dstOpts) NOTHROWS;
         }
     }
 }

@@ -7,7 +7,6 @@ import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Iterator;
 
 /**
  * Key for storing generic item metadata

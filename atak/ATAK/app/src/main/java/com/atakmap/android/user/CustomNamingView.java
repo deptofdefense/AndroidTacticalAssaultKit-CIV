@@ -3,7 +3,6 @@ package com.atakmap.android.user;
 
 import android.app.Activity;
 
-import android.app.Service;
 import android.content.Context;
 import android.text.Editable;
 
@@ -167,7 +166,7 @@ public class CustomNamingView
         } else {
             int count = 0;
             try {
-                count = Integer.valueOf(_startNumberET.getText().toString());
+                count = Integer.parseInt(_startNumberET.getText().toString());
             } catch (NumberFormatException nfe) {
                 Log.e(TAG, "Start Index edit text did not contain a number.",
                         nfe);

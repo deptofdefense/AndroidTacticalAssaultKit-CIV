@@ -56,6 +56,7 @@ import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.NotificationIdRecycler;
 import com.atakmap.android.util.NotificationUtil;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.comms.CommsMapComponent;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
@@ -125,6 +126,8 @@ public class CotMapComponent extends AbstractMapComponent implements
      * Only in place so that SiteExploitation can compile.
      * @deprecated
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public ContactListAdapter getContactListAdapter() {
         return contactAdapter;
     }
@@ -640,10 +643,10 @@ public class CotMapComponent extends AbstractMapComponent implements
      *
      * @param name is the name of the detail to be handled.
      * @param handler the detailhandler associated with parsing the detail.
-     * @deprecated
-     * Use {@link CotDetailManager#registerHandler(CotDetailHandler)} instead
+     * @deprecated Use {@link CotDetailManager#registerHandler(CotDetailHandler)}
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public void setMarkerDetailHandler(final String name,
             final MarkerDetailHandler handler) {
         _adapter.setMarkerDetailHandler(name, handler);

@@ -3,6 +3,7 @@ package com.atakmap.android.gdal.layers;
 
 import com.atakmap.android.layers.GenericLayerScanner;
 import com.atakmap.android.layers.LayerScanner;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.map.layer.raster.mosaic.MosaicUtils;
 import com.atakmap.map.layer.raster.pfps.PfpsLayerInfoSpi;
 
@@ -39,7 +40,7 @@ public class GdalMosaicScanner extends GenericLayerScanner {
     protected int checkFile(int depth, File f) {
         if (f.isFile()) {
             return REJECT;
-        } else if (f.isDirectory() && !MosaicUtils.isMosaicDir(f)) {
+        } else if (FileIOProviderFactory.isDirectory(f) && !MosaicUtils.isMosaicDir(f)) {
             return DELAY;
         } else {
             return ACCEPT;

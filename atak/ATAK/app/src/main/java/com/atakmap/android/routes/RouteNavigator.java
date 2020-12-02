@@ -416,7 +416,7 @@ public class RouteNavigator {
             // Attempt to update our current bubble radius to that which was been stored as a
             // preference
             if (rawBubbleRadius != null) {
-                return Integer.valueOf(rawBubbleRadius);
+                return Integer.parseInt(rawBubbleRadius);
             }
         } catch (NumberFormatException nfe) {
             Log.e(TAG, "Found a " + radiusPrefKey + " preference of '"

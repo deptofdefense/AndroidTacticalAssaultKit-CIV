@@ -61,8 +61,9 @@ void TileScraper::run() {
 
 Util::TAKErr TAK::Engine::Raster::TileMatrix::TileScraper_estimateTileCount(int &value, TileClient *client, CacheRequest *request)
 {
-    TileScraper::ScrapeContext ctx(client, nullptr, request);
-    value = ctx.totalTiles;
+    std::unique_ptr<TileScraper::ScrapeContext> v;
+    TileScraper::ScrapeContext::create(v, client, nullptr, request);
+    value = v->totalTiles;
     return Util::TE_Ok;
 }
 
@@ -127,7 +128,7 @@ Util::TAKErr TileScraper::ScrapeContext::create(std::unique_ptr<TileScraper::Scr
     TE_CHECKRETURN_CODE(code);
 
     std::map<int, bool> lvlArray;
-    for (int i = 0; i < ret->zooms.size(); i++) {
+    for (std::size_t i = 0u; i < ret->zooms.size(); i++) {
         if (ret->zooms[i].resolution <= request->minResolution
                     && ret->zooms[i].resolution >= request->maxResolution)
             lvlArray[ret->zooms[i].level] = true;
@@ -232,7 +233,7 @@ void TileScraper::ScrapeContext::getTiles(int col, int row, int level, int max)
         for (int i = 0; i < 4 && !breakOuter; i++) {
             const Math::Point2<double> &s = this->tp[i];
             const Math::Point2<double> &e = this->tp[i == 3 ? 0 : i + 1];
-            for (int j = 0; j < this->points.size() - 1; j++) {
+            for (std::size_t j = 0u; j < this->points.size() - 1; j++) {
                 if (segmentIntersects(s, e, this->points[j], this->points[j + 1])) {
                     add = true;
 
@@ -279,7 +280,7 @@ bool TileScraper::ScrapeContext::segmentIntersects(Math::Point2<double> seg10,
     tmpSeg[1].x = seg11.x - seg10.x;
     tmpSeg[1].y = seg11.y - seg10.y;
     Math::Point2<double> c;
-    Math::Vector2_cross(&c, tmpSeg[1], tmpSeg[2]);
+    Math::Vector2_cross(&c, tmpSeg[1], tmpSeg[0]);
     double c1 = c.z;
     if (c1 != 0.0) {
         tmpSeg[2].x = seg00.x - seg10.x;
@@ -378,8 +379,8 @@ bool TileScraper::Downloader::download(ScrapeContext *downloadContext)
     this->onDownloadEnter(downloadContext);
 
     Util::TAKErr code = Util::TE_Ok;
-    for (int l = 0; code == Util::TE_Ok && l < downloadContext->levels.size(); l++) {
-        downloadContext->currentLevelIdx = l;
+    for (std::size_t l = 0u; code == Util::TE_Ok && l < downloadContext->levels.size(); l++) {
+        downloadContext->currentLevelIdx = static_cast<int>(l);
         int currentLevel = downloadContext->levels[l];
 
         TileMatrix::ZoomLevel zoom;
@@ -496,7 +497,7 @@ void TileScraper::MultiThreadDownloader::onDownloadExit(ScrapeContext *context, 
 bool TileScraper::MultiThreadDownloader::checkReadyForDownload(ScrapeContext *context)
 {
     Thread::Monitor::Lock mLock(queueMonitor);
-    return (this->queue.size() < (3 * poolSize));
+    return (this->queue.size() < (3u * static_cast<std::size_t>(poolSize)));
 }
 
 void TileScraper::MultiThreadDownloader::onLevelDownloadComplete(ScrapeContext *downloadContext) {

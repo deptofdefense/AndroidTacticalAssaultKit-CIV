@@ -1,6 +1,7 @@
 package com.atakmap.map.layer.feature.datastore.caching;
 
 import java.io.EOFException;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -11,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.map.layer.feature.AttributeSet;
 import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.Feature;
@@ -253,7 +255,7 @@ public final class CacheFile implements Disposable {
         FileOutputStream stream = null;
         FileChannel channel = null;
         try {
-            stream = new FileOutputStream(path);
+            stream = FileIOProviderFactory.getOutputStream(new File(path));
             channel = stream.getChannel();
             
             ByteBuffer buf = ByteBuffer.allocate(24);
@@ -283,7 +285,7 @@ public final class CacheFile implements Disposable {
         FileInputStream stream = null;
         FileChannel channel = null;
         try {
-            stream = new FileInputStream(path);
+            stream = FileIOProviderFactory.getInputStream(new File(path));
             channel = stream.getChannel();
             
             ByteBuffer buf = ByteBuffer.allocate(24);

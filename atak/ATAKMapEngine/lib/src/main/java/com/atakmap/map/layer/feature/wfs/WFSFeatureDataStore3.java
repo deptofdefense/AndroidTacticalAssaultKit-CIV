@@ -23,6 +23,7 @@ import org.gdal.osr.CoordinateTransformation;
 import org.gdal.osr.SpatialReference;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
@@ -51,6 +52,7 @@ import com.atakmap.map.layer.feature.geometry.Polygon;
 import com.atakmap.map.layer.feature.ogr.OgrFeatureDataSource;
 import com.atakmap.map.layer.feature.ogr.style.FeatureStyleParser;
 import com.atakmap.map.layer.raster.osm.OSMUtils;
+import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
 import com.atakmap.util.ReferenceCount;
 
@@ -94,7 +96,7 @@ public class WFSFeatureDataStore3 extends AbstractFeatureDataStore implements Ru
         
         this.uri = uri;
 
-        if(workingDir.exists() && workingDir.isFile())
+        if(FileIOProviderFactory.exists(workingDir) && workingDir.isFile())
             FileSystemUtils.delete(workingDir);
 
         // XXX - 
@@ -102,8 +104,8 @@ public class WFSFeatureDataStore3 extends AbstractFeatureDataStore implements Ru
             if (!workingDir.delete()) { 
                 Log.d(TAG, "could not delete: " + workingDir);
             }
-        if(!workingDir.exists()) {
-            if (!workingDir.mkdirs()) { 
+        if(!FileIOProviderFactory.exists(workingDir)) {
+            if (!FileIOProviderFactory.mkdirs(workingDir)) {
                 Log.d(TAG, "could not mkdir: " + workingDir);
             }
         }
@@ -210,7 +212,7 @@ public class WFSFeatureDataStore3 extends AbstractFeatureDataStore implements Ru
             File indexDbFile = new File(this.workingDir, "index.sqlite");
             boolean checkSchema;
             do {
-                checkSchema = indexDbFile.exists();
+                checkSchema = FileIOProviderFactory.exists(indexDbFile);
                 // try to open the database. if the database somehow became
                 // corrupted, delete the file and start anew
                 try {
@@ -218,7 +220,7 @@ public class WFSFeatureDataStore3 extends AbstractFeatureDataStore implements Ru
                     indexDatabase.execute("PRAGMA journal_mode = WAL", null);
                     break;
                 } catch(Throwable t) {
-                    if(indexDbFile.exists() && !indexDbFile.delete())
+                    if(FileIOProviderFactory.exists(indexDbFile) && !indexDbFile.delete())
                         throw new RuntimeException("Unable to delete file", t);
                 }
             } while(true);
@@ -981,7 +983,7 @@ public class WFSFeatureDataStore3 extends AbstractFeatureDataStore implements Ru
                 throw new RuntimeException(e);
             }
 
-            if(layerDbFile.exists())
+            if(FileIOProviderFactory.exists(layerDbFile))
                 FileSystemUtils.delete(layerDbFile);
             
             Log.d(TAG, "refreshing layer " + layer.GetName() + "(" + layerDbFile.getAbsolutePath() + ")");
@@ -1097,7 +1099,7 @@ public class WFSFeatureDataStore3 extends AbstractFeatureDataStore implements Ru
     
                     // XXX - taken directly from OgrFeatureDataSource
     
-                    final int dpi = (int)Math.ceil(AtakMapView.DENSITY*240);
+                    final int dpi = (int)Math.ceil(GLRenderGlobals.getRelativeScaling()*240);
     
                     // compute LOD
                     final int threshold = (int) Math

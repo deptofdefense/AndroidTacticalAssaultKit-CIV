@@ -6,6 +6,7 @@ import com.atakmap.android.rubbersheet.data.AbstractSheetData;
 import com.atakmap.android.rubbersheet.data.ProgressTask;
 import com.atakmap.android.rubbersheet.maps.AbstractSheet;
 import com.atakmap.app.R;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -47,7 +48,7 @@ public abstract class AbstractCreationTask extends ProgressTask {
     @Override
     protected Object doInBackground(Void... params) {
         File f = _data.file;
-        if (!f.exists() || !f.isFile()) {
+        if (!FileIOProviderFactory.exists(f) || !f.isFile()) {
             Log.d(TAG, "File does not exist: " + f);
             if (!_background)
                 toast(R.string.file_does_not_exist, f.getName());

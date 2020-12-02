@@ -1,6 +1,6 @@
 #include "JNIDoubleArray.h"
 
-#include <cstdlib>
+#include <cstring>
 
 using namespace TAKEngineJNI::Interop;
 
@@ -11,7 +11,7 @@ namespace
         return env->GetDoubleArrayElements(jarr, isCopy);
     }
 
-    inline void unpin(JNIEnv *env, jdoubleArray jarr, jdouble *carr, int releaseMode)
+    inline void unpin(JNIEnv *env, jdoubleArray jarr, jdouble *carr, jint releaseMode)
     {
         env->ReleaseDoubleArrayElements(jarr, carr, releaseMode);
     }

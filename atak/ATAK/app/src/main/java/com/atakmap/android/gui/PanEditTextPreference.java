@@ -122,18 +122,20 @@ public class PanEditTextPreference extends EditTextPreference {
             }
 
             try {
-                Window window = dialog.getWindow();
-                window.setSoftInputMode(
-                        WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
-                                |
-                                WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
+                final Window window = dialog.getWindow();
+                if (window != null) {
+                    window.setSoftInputMode(
+                            WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
+                                    |
+                                    WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 
-                Rect displayRectangle = new Rect();
-                window.getDecorView()
-                        .getWindowVisibleDisplayFrame(displayRectangle);
-                dialog.getWindow().setLayout(
-                        (int) (displayRectangle.width() * 1.0f),
-                        (int) (displayRectangle.height() * 1.0f));
+                    Rect displayRectangle = new Rect();
+                    window.getDecorView()
+                            .getWindowVisibleDisplayFrame(displayRectangle);
+                    window.setLayout(
+                            (int) (displayRectangle.width() * 1.0f),
+                            (int) (displayRectangle.height() * 1.0f));
+                }
             } catch (IllegalArgumentException iae) {
                 Log.d(TAG, "error", iae);
             }
@@ -157,8 +159,8 @@ public class PanEditTextPreference extends EditTextPreference {
                             Toast.LENGTH_SHORT).show();
                     return false;
                 }
-                if (Integer.valueOf(newValue.toString()) < MIN_VALID_WIDTH
-                        || Integer.valueOf(
+                if (Integer.parseInt(newValue.toString()) < MIN_VALID_WIDTH
+                        || Integer.parseInt(
                                 newValue.toString()) > MAX_VALID_WIDTH) {
                     Toast.makeText(appContext,
                             "Invalid value: Please enter a value between "
@@ -247,9 +249,9 @@ public class PanEditTextPreference extends EditTextPreference {
             @Override
             public boolean onPreferenceChange(Preference preference,
                     Object newValue) {
-                int value = 0;
+                int value;
                 try {
-                    value = Integer.valueOf(newValue.toString());
+                    value = Integer.parseInt(newValue.toString());
                 } catch (NumberFormatException nfe) {
                     Toast.makeText(appContext, R.string.invalid_value,
                             Toast.LENGTH_SHORT).show();

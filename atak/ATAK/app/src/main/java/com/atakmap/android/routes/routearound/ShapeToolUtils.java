@@ -12,6 +12,7 @@ import com.atakmap.android.drawing.mapItems.DrawingCircle;
 import com.atakmap.android.drawing.mapItems.DrawingRectangle;
 import com.atakmap.android.drawing.tools.DrawingRectangleCreationTool;
 import com.atakmap.android.drawing.tools.ShapeCreationTool;
+import com.atakmap.android.geofence.data.ShapeUtils;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
@@ -41,7 +42,8 @@ public class ShapeToolUtils extends AbstractMapItemSelectionTool {
 
     @Override
     protected boolean isItem(MapItem mi) {
-        return mi instanceof Shape;
+        // Returns either the shape itself, or the center point of the shape.
+        return mi instanceof Shape || ShapeUtils.getShapeUID(mi) != null;
     }
 
     /** Functional interface for callbacks */
@@ -153,7 +155,7 @@ public class ShapeToolUtils extends AbstractMapItemSelectionTool {
     }
 
     /** Start the RegionSelectionTool. Returns an observable that emits the user's selected Shape */
-    public <A> void runRegionSelectionTool(final Callback<Shape, A> callback,
+    public <A> void runRegionSelectionTool(final Callback<MapItem, A> callback,
             final Callback<Error, A> onError) {
         BroadcastReceiver br = new BroadcastReceiver() {
             @Override
@@ -162,7 +164,7 @@ public class ShapeToolUtils extends AbstractMapItemSelectionTool {
                         && intent.getAction().equals(TOOL_FINISHED)) {
                     String uid = intent.getStringExtra("uid");
                     if (uid != null) {
-                        Shape selectedRoute = (Shape) mapView.getMapItem(uid);
+                        MapItem selectedRoute = mapView.getMapItem(uid);
                         callback.apply(selectedRoute);
                     }
                     AtakBroadcast.getInstance().unregisterReceiver(this);

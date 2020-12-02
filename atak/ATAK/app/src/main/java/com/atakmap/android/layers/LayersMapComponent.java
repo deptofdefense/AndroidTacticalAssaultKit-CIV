@@ -39,6 +39,7 @@ import com.atakmap.app.DeveloperOptions;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.map.AtakMapView;
@@ -85,8 +86,8 @@ public class LayersMapComponent extends AbstractMapComponent
     private static RasterDataStore.DatasetQueryParameters NATIVE_QUERY_PARAMS;
     private final static RasterDataStore.DatasetQueryParameters MOBILE_QUERY_PARAMS2;
     static {
-        if (!LAYERS_PRIVATE_DIR.exists()) {
-            if (!LAYERS_PRIVATE_DIR.mkdirs()) {
+        if (!FileIOProviderFactory.exists(LAYERS_PRIVATE_DIR)) {
+            if (!FileIOProviderFactory.mkdirs(LAYERS_PRIVATE_DIR)) {
                 Log.e(TAG, "Error creating directories");
             }
         }
@@ -241,7 +242,7 @@ public class LayersMapComponent extends AbstractMapComponent
                 view,
                 context);
         _mobileLayersAdapter2 = new MobileLayerSelectionAdapter(
-                (MobileImageryRasterLayer2) this.mobileLayers2,
+                rasterLayers, (MobileImageryRasterLayer2) this.mobileLayers2,
                 mobileOutlines,
                 view,
                 context);
@@ -948,13 +949,13 @@ public class LayersMapComponent extends AbstractMapComponent
                                         File layerJournal = new File(
                                                 layer.getAbsolutePath()
                                                         + "-journal");
-                                        if (layerJournal.exists())
+                                        if (FileIOProviderFactory.exists(layerJournal))
                                             FileSystemUtils
                                                     .delete(layerJournal);
                                     }
 
                                     // delete the physical file for the layer
-                                    if (layer != null && layer.exists())
+                                    if (layer != null && FileIOProviderFactory.exists(layer))
                                         FileSystemUtils.delete(layer);
 
                                     // rescan for new layers

@@ -1,5 +1,17 @@
 # Version History
 
+## 4.1.1.0
+
+* Video library update
+* Video list dialog can be toggled to show URLs
+* Add Edit Mode for Vehicle Models
+* Add deprecation throughout codebase with target version for removal
+* Add retry attempts for failed tile downloads during bulk map download
+* Source code updates to make Java more portable
+* Integrate filesystem abstraction layer
+* Various bug fixes
+* New gradle plugin to support ATAK plugin development
+
 ## 4.1.0.1
 
 * Adjust Android SDK to use named SDK constants instead of raw numbers

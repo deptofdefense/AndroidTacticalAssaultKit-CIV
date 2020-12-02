@@ -8,11 +8,9 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.android.maps.MapView;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 

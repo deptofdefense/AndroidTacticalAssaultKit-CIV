@@ -1,7 +1,10 @@
 
 package com.atakmap.coremap.io;
 
+import com.atakmap.io.ZipVirtualFile;
+
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -11,6 +14,8 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.URI;
+import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
@@ -69,8 +74,12 @@ public class FileIOProviderFactory {
      * @throws FileNotFoundException an exception if the file is not found.
      */
     public static FileInputStream getInputStream(File f)
-            throws FileNotFoundException {
-        return fileIOProviders.peekFirst().getInputStream(f);
+            throws IOException {
+        if (f instanceof ZipVirtualFile) {
+            throw new IOException("Unable to get Input Stream for a Zip Virtual File.");
+        } else {
+            return fileIOProviders.peekFirst().getInputStream(f);
+        }
     }
 
     /**
@@ -82,8 +91,28 @@ public class FileIOProviderFactory {
      * @throws FileNotFoundException an exception if the file is not found.
      */
     public static FileOutputStream getOutputStream(File f)
-            throws FileNotFoundException {
-        return fileIOProviders.peekFirst().getOutputStream(f);
+            throws IOException {
+        if (f instanceof ZipVirtualFile) {
+            throw new IOException("Unable to get Output Stream for a Zip Virtual File.");
+        } else {
+            return fileIOProviders.peekFirst().getOutputStream(f, false);
+        }
+    }
+
+    /**
+     * Returns a well formed output stream implementation that utilizes the file provided.
+     *
+     * @param f      the file to use as the basis for the input stream
+     * @param append true if file should be appended, false if truncating should occur
+     * @return the input stream based on the file
+     * @throws FileNotFoundException an exception if the file is not found.
+     */
+    public static FileOutputStream getOutputStream(File f, boolean append) throws IOException {
+        if (f instanceof ZipVirtualFile) {
+            throw new IOException("Unable to get Output Stream for a Zip Virtual File.");
+        } else {
+            return fileIOProviders.peekFirst().getOutputStream(f, append);
+        }
     }
 
     /**
@@ -95,7 +124,11 @@ public class FileIOProviderFactory {
      * @throws IOException an exception if the FileWriter cannot be created from the provided file.
      */
     public static FileWriter getFileWriter(File f) throws IOException {
-        return fileIOProviders.peekFirst().getFileWriter(f);
+        if (f instanceof ZipVirtualFile) {
+            throw new IOException("Unable to get File Writer for a Zip Virtual File.");
+        } else {
+            return fileIOProviders.peekFirst().getFileWriter(f);
+        }
     }
 
     /**
@@ -107,7 +140,11 @@ public class FileIOProviderFactory {
      * @throws IOException an exception if the FileReader cannot be created from the provided file.
      */
     public static FileReader getFileReader(File f) throws IOException {
-        return fileIOProviders.peekFirst().getFileReader(f);
+        if (f instanceof ZipVirtualFile) {
+            throw new IOException("Unable to get File Reader for a Zip Virtual File.");
+        } else {
+            return fileIOProviders.peekFirst().getFileReader(f);
+        }
     }
 
     /**
@@ -121,7 +158,11 @@ public class FileIOProviderFactory {
      */
     public static RandomAccessFile getRandomAccessFile(File f, String mode)
             throws FileNotFoundException {
-        return fileIOProviders.peekFirst().getRandomAccessFile(f, mode);
+        if (f instanceof ZipVirtualFile) {
+            return new RandomAccessFile(f, mode);
+        } else {
+            return fileIOProviders.peekFirst().getRandomAccessFile(f, mode);
+        }
     }
 
     /**
@@ -132,17 +173,38 @@ public class FileIOProviderFactory {
      * @return true if the rename was successful otherwise false if it failed.
      */
     public static boolean renameTo(File f1, File f2) {
-        return fileIOProviders.peekFirst().renameTo(f1, f2);
+        if (f1 instanceof ZipVirtualFile) {
+            return f1.renameTo(f2);
+        } else {
+            return fileIOProviders.peekFirst().renameTo(f1, f2);
+        }
     }
 
     /**
      * Delete a file.
-     * 
+     *
      * @param f the file to delete
      * @return true if the deletion was successful otherwise false if it failed.
      */
     public static boolean delete(File f) {
-        return fileIOProviders.peekFirst().delete(f);
+        //Passing 0 in as the absence of special handling flags
+        return delete(f, 0);
+    }
+
+    /**
+     * Delete a file.
+     *
+     * @param f the file to delete
+     * @param flag the flags to apply during the deletion.  At this time only
+     * FileIOProvider.SECURE_DELETE is honored.
+     * @return true if the deletion was successful otherwise false if it failed.
+     */
+    public static boolean delete(File f, int flag) {
+        if (f instanceof ZipVirtualFile) {
+            return f.delete();
+        } else {
+            return fileIOProviders.peekFirst().delete(f, flag);
+        }
     }
 
     /**
@@ -152,7 +214,11 @@ public class FileIOProviderFactory {
      * @return The length of the file.
      */
     public static long length(File f) {
-        return fileIOProviders.peekFirst().length(f);
+        if (f instanceof ZipVirtualFile) {
+            return f.length();
+        } else {
+            return fileIOProviders.peekFirst().length(f);
+        }
     }
 
     /**
@@ -163,7 +229,11 @@ public class FileIOProviderFactory {
      *         (Midnight, January 1 1970).
      */
     public static long lastModified(File f) {
-        return fileIOProviders.peekFirst().lastModified(f);
+        if (f instanceof ZipVirtualFile) {
+            return f.lastModified();
+        } else {
+            return fileIOProviders.peekFirst().lastModified(f);
+        }
     }
 
     /**
@@ -172,7 +242,11 @@ public class FileIOProviderFactory {
      * @return <code>true</code> if the file exists, <code>false</code> otherwise.
      */
     public static boolean exists(File f) {
-        return fileIOProviders.peekFirst().exists(f);
+        if (f instanceof ZipVirtualFile) {
+            return f.exists();
+        } else {
+            return fileIOProviders.peekFirst().exists(f);
+        }
     }
 
     /**
@@ -181,7 +255,11 @@ public class FileIOProviderFactory {
      * @return <code>true</code> if the file exists, <code>false</code> otherwise.
      */
     public static boolean isDirectory(File f) {
-        return fileIOProviders.peekFirst().isDirectory(f);
+        if (f instanceof ZipVirtualFile) {
+            return f.isDirectory();
+        } else {
+            return fileIOProviders.peekFirst().isDirectory(f);
+        }
     }
 
     /**
@@ -201,7 +279,11 @@ public class FileIOProviderFactory {
      *         abstract pathname; <code>null</code> if the specified file is not a directory.
      */
     public static String[] list(File f) {
-        return fileIOProviders.peekFirst().list(f);
+        if (f instanceof ZipVirtualFile) {
+            return f.list();
+        } else {
+            return fileIOProviders.peekFirst().list(f);
+        }
     }
 
     /**
@@ -220,7 +302,113 @@ public class FileIOProviderFactory {
      *         not a directory.
      */
     public static String[] list(File f, FilenameFilter filter) {
-        return fileIOProviders.peekFirst().list(f, filter);
+        if (f instanceof ZipVirtualFile) {
+            return f.list(filter);
+        } else {
+            return fileIOProviders.peekFirst().list(f, filter);
+        }
+    }
+
+
+    /**
+     * Converts a String[] containing filenames to a File[].
+     * Note that the filenames must not contain slashes.
+     * This method is to remove duplication in the implementation
+     * of File.list's overloads.
+     * @param dir the directory to grab files from
+     * @param filenames The names of files to pull
+     * @return an array of files or {@code null}.
+     */
+    protected static File[] filenamesToFiles(File dir, String[] filenames) {
+        if(filenames == null)
+            return null;
+        File[] files = new File[filenames.length];
+        for(int i = 0; i < filenames.length; i++) {
+            files[i] = new File(dir, filenames[i]);
+        }
+        return files;
+    }
+
+    /**
+     * Returns an array of files contained in the directory represented by this
+     * file. The result is {@code null} if this file is not a directory. The
+     * paths of the files in the array are absolute if the path of this file is
+     * absolute, they are relative otherwise.
+     *
+     * @param f The file
+     * @return an array of files or {@code null}.
+     */
+    public static File[] listFiles(File f) {
+        if (f instanceof ZipVirtualFile) {
+            return f.listFiles();
+        } else {
+            String[] children = fileIOProviders.peekFirst().list(f);
+            return filenamesToFiles(f, children);
+        }
+    }
+
+    /**
+     * Gets a list of the files in the directory represented by this file. This
+     * list is then filtered through a FilenameFilter and files with matching
+     * names are returned as an array of files. Returns {@code null} if this
+     * file is not a directory. If {@code filter} is {@code null} then all
+     * filenames match.
+     * <p>
+     * The entries {@code .} and {@code ..} representing the current and parent
+     * directories are not returned as part of the list.
+     *
+     * @param f The file
+     * @param filter The filter to match names against, may be {@code null}.
+     * @return an array of files or {@code null}.
+     */
+    public static File[] listFiles(File f, FilenameFilter filter){
+        if (f instanceof ZipVirtualFile) {
+            return f.listFiles(filter);
+        } else {
+            String[] children = fileIOProviders.peekFirst().list(f, filter);
+            return filenamesToFiles(f, children);
+        }
+    }
+
+    /**
+     * Returns an array of abstract pathnames denoting the files and
+     * directories in the directory denoted by this abstract pathname that
+     * satisfy the specified filter.  The behavior of this method is the same
+     * as that of the listFiles method, except that the pathnames in
+     * the returned array must satisfy the filter.  If the given {@code filter}
+     * is {@code null} then all pathnames are accepted.  Otherwise, a pathname
+     * satisfies the filter if and only if the value {@code true} results when
+     * the {@link FileFilter#accept FileFilter.accept(File)} method of the
+     * filter is invoked on the pathname.
+     *
+     * @param  f The file
+     * @param  filter A file filter
+     *
+     * @return  An array of abstract pathnames denoting the files and
+     *          directories in the directory denoted by this abstract pathname.
+     *          The array will be empty if the directory is empty.  Returns
+     *          {@code null} if this abstract pathname does not denote a
+     *          directory, or if an I/O error occurs.
+     *
+     * @throws  SecurityException
+     *          If a security manager exists and its {@link
+     *          SecurityManager#checkRead(String)} method denies read access to
+     *          the directory
+     */
+    public static File[] listFiles(File f, FileFilter filter) {
+        if (f instanceof ZipVirtualFile) {
+            return f.listFiles(filter);
+        } else {
+            String children[] = fileIOProviders.peekFirst().list(f);
+            if (children == null) return null;
+            ArrayList<File> childFiles = new ArrayList<>();
+            for (String child : children) {
+                File childFile = new File(f, child);
+                if ((filter == null) || filter.accept(childFile))
+                    childFiles.add(childFile);
+            }
+            return childFiles.toArray(new File[0]);
+        }
     }
 
     /**
@@ -230,7 +418,11 @@ public class FileIOProviderFactory {
      *         otherwise
      */
     public static boolean mkdir(File f) {
-        return fileIOProviders.peekFirst().mkdir(f);
+        if (f instanceof ZipVirtualFile) {
+            return f.mkdir();
+        } else {
+            return fileIOProviders.peekFirst().mkdir(f);
+        }
     }
 
     /**
@@ -242,7 +434,11 @@ public class FileIOProviderFactory {
      *         parent directories; <code>false</code> otherwise
      */
     public static boolean mkdirs(File f) {
-        return fileIOProviders.peekFirst().mkdirs(f);
+        if (f instanceof ZipVirtualFile) {
+            return f.mkdirs();
+        } else {
+            return fileIOProviders.peekFirst().mkdirs(f);
+        }
     }
 
     /**
@@ -256,7 +452,11 @@ public class FileIOProviderFactory {
      * @return A URI that represents this abstract pathname.
      */
     public static URI toURI(File f) {
-        return fileIOProviders.peekFirst().toURI(f);
+        if (f instanceof ZipVirtualFile) {
+            return f.toURI();
+        } else {
+            return fileIOProviders.peekFirst().toURI(f);
+        }
     }
 
     /**
@@ -271,8 +471,12 @@ public class FileIOProviderFactory {
      * @return true if and only if the operation succeeded. If the user does not have permission to
      *         change the access permissions of this abstract pathname the operation will fail.
      */
-    public boolean setWritable(File f, boolean writable, boolean ownerOnly) {
-        return fileIOProviders.peekFirst().setWritable(f, writable, ownerOnly);
+    public static boolean setWritable(File f, boolean writable, boolean ownerOnly) {
+        if (f instanceof ZipVirtualFile) {
+            return f.setWritable(writable, ownerOnly);
+        } else {
+            return fileIOProviders.peekFirst().setWritable(f, writable, ownerOnly);
+        }
     }
 
     /**
@@ -289,7 +493,21 @@ public class FileIOProviderFactory {
      *         the underlying file system does not support read permission and the value of readable
      *         is false, this operation will fail.
      */
-    public boolean setReadable(File f, boolean readable, boolean ownerOnly) {
-        return fileIOProviders.peekFirst().setReadable(f, readable, ownerOnly);
+    public static boolean setReadable(File f, boolean readable, boolean ownerOnly) {
+        if (f instanceof ZipVirtualFile) {
+            return f.setReadable(readable, ownerOnly);
+        } else {
+            return fileIOProviders.peekFirst().setReadable(f, readable, ownerOnly);
+        }
+    }
+
+    /**
+     * Returns the unique FileChannel object associated with this file.
+     *
+     * @param file The file
+     * @return The file channel associated with the file
+     */
+    public static FileChannel getChannel(File file, String mode) throws FileNotFoundException {
+        return fileIOProviders.peekFirst().getChannel(file, mode);
     }
 }

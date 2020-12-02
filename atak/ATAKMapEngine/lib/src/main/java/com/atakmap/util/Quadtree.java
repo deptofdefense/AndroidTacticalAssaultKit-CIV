@@ -184,8 +184,8 @@ public class Quadtree<T> {
             for(int i = 0; i < 4; i++) {
                 final double cnx = this.minX+((i%2)*halfWidth);
                 final double cxx = this.centerX+((i%2)*halfWidth);
-                final double cny = this.minY+((i/2)*halfHeight);
-                final double cxy = this.centerY+((i/2)*halfHeight);
+                final double cny = this.minY+((i/2f)*halfHeight);
+                final double cxy = this.centerY+((i/2f)*halfHeight);
                 
                 // if a child contains the object, add it to the child
                 if(cnx <= min.x &&
@@ -237,8 +237,8 @@ public class Quadtree<T> {
             for(int i = 0; i < 4; i++) {
                 cnx = this.minX+((i%2)*halfWidth);
                 cxx = this.centerX+((i%2)*halfWidth);
-                cny = this.minY+((i/2)*halfHeight);
-                cxy = this.centerY+((i/2)*halfHeight);
+                cny = this.minY+((i/2f)*halfHeight);
+                cxy = this.centerY+((i/2f)*halfHeight);
                 
                 // if a child contains the object, add it to the child
                 if(cnx <= minX &&

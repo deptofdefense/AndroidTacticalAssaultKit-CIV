@@ -7,11 +7,7 @@ import com.atakmap.map.MockRenderContext;
 import com.atakmap.map.MockSurface;
 import com.atakmap.map.RenderContext;
 
-import junit.framework.Assert;
-
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class GLMapViewTest extends ATAKInstrumentedTest {
     @Test(expected = IllegalArgumentException.class)

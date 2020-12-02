@@ -3,7 +3,6 @@ package com.atakmap.android.vehicle.model;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.drawable.Drawable;
 
@@ -16,6 +15,7 @@ import com.atakmap.android.vehicle.model.icon.VehicleModelCaptureRequest;
 import com.atakmap.android.vehicle.model.icon.VehicleOutlineCaptureRequest;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.ModelInfo;
@@ -109,7 +109,7 @@ public class VehicleModelInfo implements ModelLoader.Callback {
         String fileName = FileSystemUtils.sanitizeWithSpacesAndSlashes(
                 this.category + File.separator + this.fileName + ".png");
         File iconFile = new File(VehicleModelCache.ICON_DIR, fileName);
-        if (iconFile.exists())
+        if (FileIOProviderFactory.exists(iconFile))
             bmp = BitmapFactory.decodeFile(iconFile.getAbsolutePath());
         if (bmp != null) {
             this.icon.setBitmap(bmp);
@@ -123,7 +123,7 @@ public class VehicleModelInfo implements ModelLoader.Callback {
         req.setOutputSize(ICON_SIZE, false);
         req.setStrokeEnabled(true);
         req.setStrokeWidth(2);
-        req.setStrokeColor(Color.BLACK);
+        req.setStrokeColorContrast(true);
         req.setCallback(new VehicleModelCaptureRequest.Callback() {
             @Override
             public void onCaptureFinished(File file, final Bitmap bmp) {
@@ -200,7 +200,7 @@ public class VehicleModelInfo implements ModelLoader.Callback {
         }
 
         // Copy the file from assets if we haven't already
-        if (!file.exists()) {
+        if (!FileIOProviderFactory.exists(file)) {
             Log.d(TAG, "Copying vehicle model from assets: " + file.getName());
             if (!VehicleModelAssetUtils.copyAssetToFile(file)) {
                 Log.e(TAG, "Failed to find model file: " + file);

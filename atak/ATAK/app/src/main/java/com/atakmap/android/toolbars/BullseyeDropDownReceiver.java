@@ -29,6 +29,8 @@ import android.widget.Toast;
 
 import com.atakmap.android.cotdetails.extras.ExtraDetailsLayout;
 import com.atakmap.android.drawing.details.GenericDetailsView;
+import com.atakmap.android.hashtags.HashtagContent;
+import com.atakmap.android.hashtags.HashtagManager;
 import com.atakmap.android.hashtags.view.RemarksLayout;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.preference.UnitPreferences;
@@ -69,7 +71,7 @@ import java.text.DecimalFormat;
  */
 public class BullseyeDropDownReceiver extends DropDownReceiver implements
         OnStateListener, OnPointsChangedListener, View.OnClickListener,
-        MapItem.OnGroupChangedListener {
+        MapItem.OnGroupChangedListener, HashtagManager.OnUpdateListener {
 
     private static final String TAG = "BullseyeDropDownReceiver";
 
@@ -193,11 +195,6 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
         }
 
         createLayout();
-
-        setSelected(centerMarker, "");
-        if (centerMarker != null)
-            getMapView().getMapController().panTo(centerMarker
-                    .getPoint(), true);
 
         showDropDown(bullseyeLayout, THREE_EIGHTHS_WIDTH, FULL_HEIGHT,
                 FULL_WIDTH, HALF_HEIGHT, this);
@@ -399,12 +396,9 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
                 String newString = s.toString();
                 if (!newString.equals(aos.getTitle())) {
                     aos.setTitle(newString);
-                    if (centerMarker != null
-                            && centerMarker.getType()
-                                    .startsWith("u-r-b-bullseye")) {
-                        centerMarker.setMetaString("callsign", newString);
-                        //centerMarker.setTitle(newString);
-                    }
+                    if (centerMarker != null && centerMarker.getType()
+                            .startsWith("u-r-b-bullseye"))
+                        centerMarker.setTitle(newString);
                 }
             }
         });
@@ -620,10 +614,18 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
 
         remarksLayout = bullseyeLayout.findViewById(R.id.remarksLayout);
         remarksLayout.setText(centerMarker.getRemarks());
+        remarksLayout.addTextChangedListener(new AfterTextChangedWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
+                centerMarker.setRemarks(s.toString());
+            }
+        });
 
         extrasLayout = bullseyeLayout.findViewById(R.id.extrasLayout);
 
         bullseyeLayout.findViewById(R.id.sendLayout).setOnClickListener(this);
+
+        HashtagManager.getInstance().registerUpdateListener(this);
     }
 
     private void refresh() {
@@ -797,6 +799,7 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
 
     @Override
     public void onDropDownClose() {
+        HashtagManager.getInstance().unregisterUpdateListener(this);
         if (aos != null) {
             aos.removeOnPointsChangedListener(this);
             aos.removeOnGroupChangedListener(this);
@@ -807,7 +810,6 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
             reopenIntent = null;
         }
         if (centerMarker != null) {
-            centerMarker.setRemarks(remarksLayout.getText());
             centerMarker.persist(_mapView.getMapEventDispatcher(),
                     null, this.getClass());
         }
@@ -819,8 +821,13 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
 
     @Override
     public void onDropDownVisible(boolean v) {
-        if (v)
+        if (v) {
+            setSelected(centerMarker);
+            if (centerMarker != null)
+                getMapView().getMapController().panTo(centerMarker
+                        .getPoint(), true);
             refresh();
+        }
     }
 
     @Override
@@ -850,5 +857,17 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
     public void onItemRemoved(MapItem item, MapGroup group) {
         if (this.aos == item)
             closeDropDown();
+    }
+
+    @Override
+    public void onHashtagsUpdate(HashtagContent content) {
+        if (content == centerMarker) {
+            getMapView().post(new Runnable() {
+                @Override
+                public void run() {
+                    remarksLayout.setText(centerMarker.getRemarks());
+                }
+            });
+        }
     }
 }

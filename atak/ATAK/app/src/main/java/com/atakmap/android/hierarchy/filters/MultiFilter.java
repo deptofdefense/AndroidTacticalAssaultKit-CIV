@@ -21,7 +21,7 @@ public class MultiFilter extends HierarchyListFilter {
         this.filters = filters.toArray(new HierarchyListFilter[0]);
     }
 
-    public HierarchyListFilter find(Class filterType) {
+    public HierarchyListFilter find(Class<?> filterType) {
         for (HierarchyListFilter f : this.filters) {
             if (f.getClass() == filterType)
                 return f;

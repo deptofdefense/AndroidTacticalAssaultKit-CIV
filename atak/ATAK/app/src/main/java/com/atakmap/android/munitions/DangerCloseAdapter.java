@@ -1,6 +1,7 @@
 
 package com.atakmap.android.munitions;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
 import android.app.AlertDialog;
@@ -28,7 +29,6 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.xml.XMLUtils;
 
-import javax.xml.XMLConstants;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -41,11 +41,8 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -611,7 +608,7 @@ public class DangerCloseAdapter extends BaseAdapter
         try {
             Log.d(TAG, "load customs: " + location + item);
             File f = new File(location + item);
-            if (f.exists()) {
+            if (FileIOProviderFactory.exists(f)) {
                 try {
                     DocumentBuilderFactory docFactory = XMLUtils
                             .getDocumenBuilderFactory();
@@ -815,7 +812,7 @@ public class DangerCloseAdapter extends BaseAdapter
         try {
             File f = new File(location + item);
             boolean first = true;
-            BufferedWriter writer = new BufferedWriter(new FileWriter(f));
+            BufferedWriter writer = new BufferedWriter(FileIOProviderFactory.getFileWriter(f));
             try {
                 for (Integer i : favorites) {
                     StringBuilder sBuilder = new StringBuilder();
@@ -849,8 +846,8 @@ public class DangerCloseAdapter extends BaseAdapter
 
             Log.d(TAG, "load favorites: " + location + item);
             File f = new File(location + item);
-            if (f.exists()) {
-                BufferedReader reader = new BufferedReader(new FileReader(f));
+            if (FileIOProviderFactory.exists(f)) {
+                BufferedReader reader = new BufferedReader(FileIOProviderFactory.getFileReader(f));
 
                 try {
                     String line;
@@ -865,7 +862,7 @@ public class DangerCloseAdapter extends BaseAdapter
 
             } else {
                 File fd = new File(location);
-                if (!fd.mkdir())
+                if (!FileIOProviderFactory.mkdir(fd))
                     Log.w(TAG,
                             "Failed to create directory"
                                     + fd.getAbsolutePath());
@@ -888,7 +885,7 @@ public class DangerCloseAdapter extends BaseAdapter
         try {
             Log.d(TAG, "load customs: " + location + item);
             File f = new File(location + item);
-            if (f.exists()) {
+            if (FileIOProviderFactory.exists(f)) {
                 try {
                     DocumentBuilderFactory docFactory = XMLUtils
                             .getDocumenBuilderFactory();
@@ -915,7 +912,7 @@ public class DangerCloseAdapter extends BaseAdapter
             } else {
                 //wrap xml file
                 File fd = new File(location);
-                if (!fd.mkdir())
+                if (!FileIOProviderFactory.mkdir(fd))
                     Log.w(TAG,
                             "Failed to create directory"
                                     + fd.getAbsolutePath());
@@ -969,7 +966,7 @@ public class DangerCloseAdapter extends BaseAdapter
         try {
             Log.d(TAG, "removing customs: " + location + item);
             File f = new File(location + item);
-            if (f.exists()) {
+            if (FileIOProviderFactory.exists(f)) {
                 try {
                     //build the DOM
                     DocumentBuilderFactory docFactory = XMLUtils

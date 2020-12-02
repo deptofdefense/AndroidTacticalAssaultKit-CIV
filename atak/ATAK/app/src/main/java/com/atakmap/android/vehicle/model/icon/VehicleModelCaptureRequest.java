@@ -12,6 +12,7 @@ import com.atakmap.android.model.viewer.processing.TextureHelper;
 import com.atakmap.android.vehicle.model.VehicleModelCache;
 import com.atakmap.android.vehicle.model.VehicleModelInfo;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.layer.feature.geometry.Envelope;
@@ -24,6 +25,7 @@ import com.atakmap.opengl.GLES20FixedPipeline;
 
 import java.io.File;
 import java.nio.Buffer;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
@@ -83,6 +85,7 @@ public class VehicleModelCaptureRequest implements GLOffscreenCaptureRequest {
     private float[] _strokeColor = {
             0, 0, 0, 1
     };
+    private boolean _strokeColorContrast;
     private int _strokeWidth = 4;
     private boolean _strokeOnly;
 
@@ -175,6 +178,16 @@ public class VehicleModelCaptureRequest implements GLOffscreenCaptureRequest {
         _strokeOnly = strokeOnly;
     }
 
+    /**
+     * Set whether the stroke color is automatically calculated based on the
+     * overall color of the model, where a darker model will produce a white
+     * stroke, and a lighter model will produce a black stroke
+     * @param contrastColor True to use contrast color for the stroke
+     */
+    public void setStrokeColorContrast(boolean contrastColor) {
+        _strokeColorContrast = contrastColor;
+    }
+
     @Override
     public void onStart() {
         VehicleModelCache.getInstance().registerUsage(_vehicle, _uid);
@@ -221,7 +234,7 @@ public class VehicleModelCaptureRequest implements GLOffscreenCaptureRequest {
         if (_outFile != null) {
             // Create icon output directory
             File dir = _outFile.getParentFile();
-            if (dir == null || !dir.exists() && !dir.mkdirs()) {
+            if (dir == null || !FileIOProviderFactory.exists(dir) && !FileIOProviderFactory.mkdirs(dir)) {
                 Log.w(TAG, "Failed to create dirs: " + dir);
                 return;
             }
@@ -255,9 +268,6 @@ public class VehicleModelCaptureRequest implements GLOffscreenCaptureRequest {
         GLES30.glEnable(GLES30.GL_BLEND);
         GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA);
         GLES30.glViewport(0, 0, params.width, params.height);
-
-        //GLES30.glBlendEquationSeparate(GLES30.GL_FUNC_ADD, GLES30.GL_FUNC_ADD);
-        //GLES30.glBlendFuncSeparate(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA, GLES30.GL_ONE, GLES30.GL_ZERO);
 
         // Prepare stroke filter
         int[] strokeMask = new int[1];
@@ -322,7 +332,7 @@ public class VehicleModelCaptureRequest implements GLOffscreenCaptureRequest {
         this.aTexCoords = GLES30.glGetAttribLocation(_program, "aTexCoords");
         this.aNormals = GLES30.glGetAttribLocation(_program, "aNormals");
         int bLighting = GLES30.glGetUniformLocation(_program, "bLighting");
-        int bStroke = GLES30.glGetUniformLocation(_program, "bStroke");
+        int bStrokeOnly = GLES30.glGetUniformLocation(_program, "bStrokeOnly");
 
         GLES30.glUniform1i(bLighting, _lighting ? GLES30.GL_TRUE
                 : GLES30.GL_FALSE);
@@ -345,16 +355,54 @@ public class VehicleModelCaptureRequest implements GLOffscreenCaptureRequest {
 
         if (_stroke) {
             GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER, maskFB[0]);
+            GLES30.glFramebufferRenderbuffer(GLES30.GL_FRAMEBUFFER,
+                    GLES30.GL_DEPTH_ATTACHMENT, GLES30.GL_RENDERBUFFER,
+                    params.renderBufferID);
             GLES30.glClear(
                     GLES30.GL_DEPTH_BUFFER_BIT | GLES30.GL_COLOR_BUFFER_BIT);
         }
-        GLES30.glUniform1i(bStroke, _stroke ? GLES30.GL_TRUE : GLES30.GL_FALSE);
+        GLES30.glUniform1i(bStrokeOnly, _strokeOnly ? GLES30.GL_TRUE
+                : GLES30.GL_FALSE);
 
         // Draw meshes
         drawMeshes(meshes);
 
         // Now that the vehicle has been drawn to a texture, draw the stroke around it
         if (_stroke) {
+
+            // Stroke color is based on contrast - need to find the overall
+            // shade of the model render
+            if (_strokeColorContrast) {
+
+                // Wait until GL operations are complete before reading pixels
+                GLES30.glFinish();
+
+                int bufSize = _width * _height * 4;
+                ByteBuffer buf = Unsafe.allocateDirect(bufSize);
+                buf.order(ByteOrder.nativeOrder());
+                GLES30.glReadPixels(0, 0, _width, _height, GLES30.GL_RGBA,
+                        GLES30.GL_UNSIGNED_BYTE, buf);
+                Unsafe.free(buf);
+
+                long totalV = 0;
+                int pixelCount = 0;
+                for (int i = 0; i < bufSize; i += 4) {
+                    int r = ubyte(buf.get());
+                    int g = ubyte(buf.get());
+                    int b = ubyte(buf.get());
+                    int a = ubyte(buf.get());
+
+                    // Pixel is too transparent to count
+                    if (a < 64)
+                        continue;
+
+                    totalV += (r + g + b) / 3;
+                    pixelCount++;
+                }
+                if(pixelCount > 0)
+                    totalV /= pixelCount;
+                setStrokeColor(totalV < 40 ? Color.GRAY : Color.BLACK);
+            }
 
             // Bind original frame buffer again
             GLES30.glBindFramebuffer(GLES30.GL_FRAMEBUFFER,
@@ -370,6 +418,8 @@ public class VehicleModelCaptureRequest implements GLOffscreenCaptureRequest {
             int verticesLoc = GLES30.glGetAttribLocation(_strokeProgram, "pos");
             int strokeWidth = GLES30.glGetUniformLocation(_strokeProgram,
                     "strokeWidth");
+            int strokeOnly = GLES30.glGetUniformLocation(_strokeProgram,
+                    "strokeOnly");
 
             // Build the quad to render over the entire screen
             float[] quadVerts = {
@@ -406,6 +456,8 @@ public class VehicleModelCaptureRequest implements GLOffscreenCaptureRequest {
             GLES30.glUniform2fv(pixelSizeLoc, 1, pixelSizeArr, 0);
             GLES30.glUniform4fv(colorLoc, 1, _strokeColor, 0);
             GLES30.glUniform1i(strokeWidth, _strokeWidth);
+            GLES30.glUniform1i(strokeOnly, _strokeOnly ? GLES30.GL_TRUE
+                    : GLES30.GL_FALSE);
 
             GLES30.glDisable(GLES30.GL_DEPTH_TEST);
             GLES30.glEnable(GLES30.GL_BLEND);
@@ -419,16 +471,6 @@ public class VehicleModelCaptureRequest implements GLOffscreenCaptureRequest {
             GLES30.glDeleteTextures(1, strokeMask, 0);
             GLES30.glDeleteFramebuffers(1, maskFB, 0);
             GLES30.glDeleteBuffers(1, quadBuf, 0);
-
-            if (!_strokeOnly) {
-                // Draw vehicle again
-                // XXX - Yes this is inefficient, but for some reason the existing
-                // vehicle render looks like crap. It only looks normal when rendering
-                // to the proper buffer
-                GLES30.glUseProgram(_program);
-                GLES30.glUniform1i(bStroke, GLES30.GL_FALSE);
-                drawMeshes(meshes);
-            }
         }
 
         // Cleanup base
@@ -571,6 +613,11 @@ public class VehicleModelCaptureRequest implements GLOffscreenCaptureRequest {
                 0, 0, 0, 0, 1, 0);
     }
 
+    // Because Java doesn't support unsigned bytes
+    private static int ubyte(byte b) {
+        return b < 0 ? (b + 256) : b;
+    }
+
     private static final String VERTEX_SHADER_SOURCE = ""
             //a constant representing the combined model/view/projection matrix
             + "uniform mat4 uProjection;\n"
@@ -608,14 +655,14 @@ public class VehicleModelCaptureRequest implements GLOffscreenCaptureRequest {
             // Lighting toggle
             + "uniform bool bLighting;\n"
             // Drawing for stroke calculation
-            + "uniform bool bStroke;\n"
+            + "uniform bool bStrokeOnly;\n"
             // Main function
             + "void main()\n"
             + "{\n"
             + "  vec4 color = texture2D(uTexture, vTexCoordinate);\n"
             + "  if (color.a < 0.3)\n"
             + "    discard;\n"
-            + "  if (bStroke) {\n"
+            + "  if (bStrokeOnly) {\n"
             + "    color = vec4(0.0, 0.0, 0.0, 1.0);\n"
             + "  }\n"
             // Lighting
@@ -645,6 +692,7 @@ public class VehicleModelCaptureRequest implements GLOffscreenCaptureRequest {
             + "uniform vec2 pixelSize;\n"
             + "uniform vec4 color;\n"
             + "uniform int strokeWidth;\n"
+            + "uniform bool strokeOnly;\n"
             + "varying vec2 texCoord;\n"
             + "void main() {\n"
             + "  int w = strokeWidth;\n"
@@ -652,6 +700,7 @@ public class VehicleModelCaptureRequest implements GLOffscreenCaptureRequest {
             + "  int count = 0;\n"
             + "  float coverage = 0.0;\n"
             + "  float dist = 1e6;\n"
+            + "  vec4 sample = texture2D(texture, texCoord);\n"
             + "  for (int y = -w;  y <= w;  ++y) {\n"
             + "    for (int x = -w;  x <= w;  ++x) {\n"
             + "      vec2 dUV = vec2(float(x) * pixelSize.x, float(y) * pixelSize.y);\n"
@@ -675,9 +724,12 @@ public class VehicleModelCaptureRequest implements GLOffscreenCaptureRequest {
             + "    a = 1.0 - min(1.0, max(0.0, dist - solid));\n"
             + "  }\n"
             + "  if (a < 1.0) {\n"
-            + "    a = 0.0;\n"
-            + "  }\n"
-            + "  gl_FragColor = color;\n"
-            + "  gl_FragColor.a = a;\n"
+            + "    if (strokeOnly)\n"
+            + "      discard;\n"
+            + "    else\n"
+            + "      gl_FragColor = sample;\n"
+            + "  } else {\n"
+            + "    gl_FragColor = color;\n"
+            + "  }"
             + "}\n";
 }

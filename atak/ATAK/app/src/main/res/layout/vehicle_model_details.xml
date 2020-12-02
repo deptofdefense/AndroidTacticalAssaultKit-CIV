@@ -309,33 +309,71 @@
                 android:layout_rowSpan="1"/>
         </GridLayout>
     </ScrollView>
-        <LinearLayout
-            android:id="@+id/vehicleSendView"
-            android:layout_width="fill_parent"
-            android:layout_height="@dimen/dropdown_bottom_bar_height"
-            android:layout_alignParentBottom="true"
-            android:weightSum="1"
-            android:orientation="horizontal">
 
-            <ImageButton
-               android:id="@+id/vehicleSendButton"
-               android:layout_width="0dip"
-               android:layout_height="match_parent"
-               style="@style/darkButton"
-               android:padding="6dp"
-               android:src="@drawable/send_square"
-               android:textSize="13sp"
-               android:layout_weight="0.5" />
+    <LinearLayout
+        android:id="@+id/vehicleOptions"
+        android:layout_width="fill_parent"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:layout_alignParentBottom="true"
+        android:orientation="horizontal">
 
-           <ImageButton
-               android:id="@+id/cotInfoAttachmentsButton"
-               android:layout_width="0dip"
-               android:layout_height="match_parent"
-               style="@style/darkButton"
-               android:padding="6dp"
-               android:src="@drawable/attachment"
-               android:layout_weight="0.5" />
-        </LinearLayout>
+        <ImageButton
+           android:id="@+id/sendButton"
+           android:layout_width="0dip"
+           android:layout_height="match_parent"
+           style="@style/darkButton"
+           android:padding="6dp"
+           android:src="@drawable/send_square"
+           android:textSize="13sp"
+           android:layout_weight="1" />
 
+       <ImageButton
+           android:id="@+id/attachmentsButton"
+           android:layout_width="0dip"
+           android:layout_height="match_parent"
+           style="@style/darkButton"
+           android:padding="6dp"
+           android:src="@drawable/attachment"
+           android:layout_weight="1" />
+
+        <ImageButton
+            android:id="@+id/editButton"
+            android:layout_width="0dip"
+            android:layout_height="match_parent"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:src="@drawable/ic_edit"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/editOptions"
+        android:layout_width="fill_parent"
+        android:layout_height="@dimen/dropdown_bottom_bar_height"
+        android:layout_alignParentBottom="true"
+        android:visibility="gone"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/undoButton"
+            android:text="@string/undo"
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:padding="@dimen/auto_margin"
+            style="@style/darkButton"
+            android:textSize="@dimen/draper_title_font"/>
+
+        <Button
+            android:id="@+id/endEditButton"
+            android:text="@string/end_editing"
+            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:padding="@dimen/auto_margin"
+            style="@style/darkButton"
+            android:textSize="@dimen/draper_title_font"/>
+
+    </LinearLayout>
 
 </com.atakmap.android.vehicle.model.ui.VehicleModelDetailsView>

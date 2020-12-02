@@ -175,11 +175,11 @@ public abstract class TiledElevationSource extends ElevationSource {
                     min.tileWidth = 256;
                     min.tileHeight = 256;
                     gridBounds = new Envelope(
-                            WebMercatorProjection.INSTANCE.forward(new GeoPoint(OSMUtils.mapnikTileLng(0, 0), OSMUtils.mapnikTileLat(0, 0)), null).x,
-                            WebMercatorProjection.INSTANCE.forward(new GeoPoint(OSMUtils.mapnikTileLng(0, 0), OSMUtils.mapnikTileLat(0, 0)), null).y,
+                            WebMercatorProjection.INSTANCE.forward(new GeoPoint(OSMUtils.mapnikTileLat(0, 1), OSMUtils.mapnikTileLng(0, 0)), null).x,
+                            WebMercatorProjection.INSTANCE.forward(new GeoPoint(OSMUtils.mapnikTileLat(0, 1), OSMUtils.mapnikTileLng(0, 0)), null).y,
                             0d,
-                            WebMercatorProjection.INSTANCE.forward(new GeoPoint(OSMUtils.mapnikTileLng(0, 1), OSMUtils.mapnikTileLat(0, 1)), null).x,
-                            WebMercatorProjection.INSTANCE.forward(new GeoPoint(OSMUtils.mapnikTileLng(0, 1), OSMUtils.mapnikTileLat(0, 1)), null).y,
+                            WebMercatorProjection.INSTANCE.forward(new GeoPoint(OSMUtils.mapnikTileLat(0, 0), OSMUtils.mapnikTileLng(0, 1)), null).x,
+                            WebMercatorProjection.INSTANCE.forward(new GeoPoint(OSMUtils.mapnikTileLat(0, 0), OSMUtils.mapnikTileLng(0, 1)), null).y,
                             0d);
                     srid = 3857;
                     break;

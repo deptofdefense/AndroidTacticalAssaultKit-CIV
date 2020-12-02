@@ -13,11 +13,8 @@ import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLResolvable;
 import com.atakmap.spi.PriorityServiceProviderRegistry2;
 
-import java.lang.ref.WeakReference;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
-import java.util.Set;
 
 public final class GLLayerFactory {
     final static NativePeerManager.Cleaner layer2Cleaner = new NativePeerManager.Cleaner() {

@@ -42,6 +42,8 @@ import com.atakmap.android.editableShapes.EditablePolyline;
 import com.atakmap.android.gui.ColorPalette;
 import com.atakmap.android.gui.ColorPalette.OnColorSelectedListener;
 import com.atakmap.android.gui.NonEmptyEditTextDialog;
+import com.atakmap.android.hashtags.HashtagContent;
+import com.atakmap.android.hashtags.HashtagManager;
 import com.atakmap.android.hashtags.view.RemarksLayout;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapActivity;
@@ -90,7 +92,8 @@ public class RoutePlannerView extends LinearLayout implements
         Route.OnRouteMethodChangedListener, Route.OnEditableChangedListener,
         MapItem.OnGroupChangedListener, AdapterView.OnItemClickListener,
         DropDown.OnStateListener, MapEventDispatcher.MapEventDispatchListener,
-        SharedPreferences.OnSharedPreferenceChangeListener, Undoable {
+        SharedPreferences.OnSharedPreferenceChangeListener, Undoable,
+        HashtagManager.OnUpdateListener {
 
     public static final Comparator<String> ALPHA_SORT = new Comparator<String>() {
         @Override
@@ -222,6 +225,8 @@ public class RoutePlannerView extends LinearLayout implements
         refreshPoints();
         refresh();
 
+        HashtagManager.getInstance().registerUpdateListener(this);
+
         if (autoPlan != null && route.getNumWaypoint() >= 2) {
             PointMapItem origin = route.getMarker(0);
             PointMapItem dest = route.getMarker(route.getNumPoints() - 1);
@@ -317,6 +322,15 @@ public class RoutePlannerView extends LinearLayout implements
             if (!_receiver.isNavigating())
                 _receiver.dimRoutes(false);
 
+            // Unregister hashtags/remarks listener
+            HashtagManager.getInstance().unregisterUpdateListener(this);
+
+            // Update remarks
+            String remarks = _remarksLayout.getText();
+            if (remarks != null && !FileSystemUtils.isEquals(remarks,
+                    _route.getRemarks()))
+                _route.setRemarks(remarks);
+
             // Reset alpha to 255 temporarily so the route is persisted correctly
             int alpha = Color.alpha(_route.getColor());
             if (alpha < 255)
@@ -335,6 +349,12 @@ public class RoutePlannerView extends LinearLayout implements
                 ActionBarReceiver.getInstance().setToolView(null, false);
             _active = false;
         }
+    }
+
+    @Override
+    public void onHashtagsUpdate(HashtagContent content) {
+        if (content == _route)
+            refresh();
     }
 
     @Override
@@ -559,7 +579,7 @@ public class RoutePlannerView extends LinearLayout implements
     @Override
     public void onItemClick(AdapterView<?> parent, View v, int pos, long id) {
         if (pos > 0 && pos <= _cps.length)
-            MapTouchController.goTo(_cps[pos - 1], false);
+            MapTouchController.goTo(_cps[pos - 1], true);
     }
 
     private RouteEditTool getEditTool() {
@@ -588,7 +608,9 @@ public class RoutePlannerView extends LinearLayout implements
                 if (!_active)
                     return;
                 _routeName.setText(_route.getTitle());
-                _remarksLayout.setText(_route.getRemarks());
+                String remarks = _route.getRemarks();
+                if (!FileSystemUtils.isEquals(_remarksLayout.getText(), remarks))
+                    _remarksLayout.setText(remarks);
                 _editRoute.setSelected(_route.getEditable());
                 findViewById(R.id.edit_route_spacer).setVisibility(
                         _editRoute.getVisibility());
@@ -654,9 +676,6 @@ public class RoutePlannerView extends LinearLayout implements
                 && !FileSystemUtils.isEquals(_route.getTitle(),
                         (name = _routeName.getText().toString().trim())))
             _route.setTitle(name);
-        String remarks = _remarksLayout.getText();
-        if (remarks != null)
-            _route.setRemarks(remarks);
     }
 
     private void updateColorButton() {

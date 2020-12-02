@@ -45,13 +45,13 @@ import com.atakmap.comms.NetworkDeviceManager;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.coremap.maps.time.CoordinatedTime.SimpleDateFormatThread;
 import com.partech.mobilevid.*;
-import com.partech.pgscmedia.MediaException;
 import com.partech.pgscmedia.MediaFormat;
 import com.partech.pgscmedia.MediaProcessor;
 import com.partech.pgscmedia.VideoMediaFormat;
@@ -782,7 +782,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                     try {
                         File f = new File(
                                 FileSystemUtils.validityScan(ce.getPath()));
-                        if (f.exists()) {
+                        if (FileIOProviderFactory.exists(f)) {
                             processor = new MediaProcessor(f);
                         } else {
                             return false;
@@ -1056,14 +1056,14 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
     private void setupTmpDir() throws IOException {
         File base = context.getFilesDir();
         base = new File(base, TEMP_DIR);
-        if (!base.exists()) {
-            if (!base.mkdirs()) {
+        if (!FileIOProviderFactory.exists(base)) {
+            if (!FileIOProviderFactory.mkdirs(base)) {
                 Log.d(TAG, "could not wrap: " + base);
             }
         }
         tmpDir = File.createTempFile("stream", null, base);
         FileSystemUtils.delete(tmpDir);
-        if (!tmpDir.mkdirs()) {
+        if (!FileIOProviderFactory.mkdirs(tmpDir)) {
             Log.d(TAG, "could not wrap: " + tmpDir);
         }
     }
@@ -1074,7 +1074,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
     private void cleanTmpDirs() {
         File base = context.getFilesDir();
         base = new File(base, TEMP_DIR);
-        if (!base.exists())
+        if (!FileIOProviderFactory.exists(base))
             return;
         FileSystemUtils.deleteDirectory(base, true);
     }
@@ -1160,7 +1160,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                 LocaleUtil.getCurrent()).format(new Date(time));
         Log.i(TAG, "Taking Snapshot");
         File snapDir = FileSystemUtils.getItem(SNAPSHOT_DIRNAME);
-        if (!snapDir.exists() && !snapDir.mkdirs())
+        if (!FileIOProviderFactory.exists(snapDir) && !FileIOProviderFactory.mkdirs(snapDir))
             Log.e(TAG, "Failed to make dir at " + snapDir);
         final String pathToRecordLocation = SNAPSHOT_DIRNAME
                 + File.separator
@@ -1177,7 +1177,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
             if (!file.createNewFile()) {
                 toast("Snapshot already exists", Toast.LENGTH_SHORT);
             } else {
-                FileOutputStream ostream = new FileOutputStream(file);
+                FileOutputStream ostream = FileIOProviderFactory.getOutputStream(file);
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream);
                 ostream.close();
             }
@@ -1225,8 +1225,8 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
             final File vidDir = FileSystemUtils
                     .getItem(VIDEO_DIRNAME + File.separator
                             + recdirDateFormatter.get().format(time));
-            if (!vidDir.exists()) {
-                if (!vidDir.mkdirs()) {
+            if (!FileIOProviderFactory.exists(vidDir)) {
+                if (!FileIOProviderFactory.mkdirs(vidDir)) {
                     Log.e(TAG,
                             "Failed to make directory at "
                                     + vidDir.getAbsolutePath());
@@ -1250,7 +1250,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                             + recordLocation.getAbsolutePath());
 
                 }
-                recordingStream = new BufferedOutputStream(new FileOutputStream(
+                recordingStream = new BufferedOutputStream(FileIOProviderFactory.getOutputStream(
                         recordLocation));
             } catch (Exception e) {
                 Log.e(TAG, "error starting recording stream", e);

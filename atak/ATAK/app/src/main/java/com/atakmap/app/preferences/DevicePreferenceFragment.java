@@ -24,6 +24,7 @@ import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.preference.PreferenceSearchIndex;
 import com.atakmap.app.R;
 import com.atakmap.app.ATAKDatabaseHelper;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.android.cot.NetworkGPSPreferenceFragment;
@@ -402,7 +403,7 @@ public class DevicePreferenceFragment extends AtakPreferenceFragment {
 
         void loadFiles() {
             File configDirectory = new File(PreferenceControl.DIRPATH);
-            String[] files = configDirectory.list(new ConfigFilter());
+            String[] files = FileIOProviderFactory.list(configDirectory, new ConfigFilter());
             if (files == null || files.length == 0) {
                 SpannableString msg = new SpannableString(
                         getString(R.string.preferences_text467));
@@ -419,7 +420,7 @@ public class DevicePreferenceFragment extends AtakPreferenceFragment {
 
         void loadPartialFiles() {
             File configDirectory = new File(PreferenceControl.DIRPATH);
-            String[] files = configDirectory.list(new ConfigFilter());
+            String[] files = FileIOProviderFactory.list(configDirectory, new ConfigFilter());
             if (files == null || files.length == 0) {
                 SpannableString msg = new SpannableString(
                         getString(R.string.preferences_text467));

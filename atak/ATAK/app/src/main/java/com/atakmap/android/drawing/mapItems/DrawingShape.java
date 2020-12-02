@@ -42,6 +42,7 @@ public class DrawingShape extends EditablePolyline implements ParentMapItem {
     public DrawingShape(MapView mapView, MapGroup mapGroup, String uid) {
         super(mapView, uid);
         this.childItemMapGroup = mapGroup.addGroup();
+        this.childItemMapGroup.setMetaString("shapeUID", uid);
         this.setClickable(true);
         setMetaBoolean("editable", true);
         setMetaString("menu", getShapeMenu());
@@ -153,6 +154,14 @@ public class DrawingShape extends EditablePolyline implements ParentMapItem {
             _shapeMarkerType = "shape_marker";
         }
         return _shapeMarkerType;
+    }
+
+    @Override
+    public void setHeight(double height) {
+        super.setHeight(height);
+        Marker marker = getMarker();
+        if (marker != null)
+            marker.setHeight(height);
     }
 
     public void setMovable(boolean movable) {

@@ -2,7 +2,6 @@
 package com.atakmap.net;
 
 import android.app.Notification;
-import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Bundle;
 
@@ -15,6 +14,7 @@ import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.missionpackage.file.MissionPackageExtractorFactory;
 import com.atakmap.android.missionpackage.file.MissionPackageFileIO;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
+import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.comms.SslNetCotPort;
@@ -22,6 +22,7 @@ import com.atakmap.comms.http.TakHttpClient;
 import com.atakmap.comms.http.TakHttpException;
 import com.atakmap.comms.http.TakHttpResponse;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.foxykeep.datadroid.exception.ConnectionException;
@@ -262,7 +263,6 @@ public class DeviceProfileOperation extends HTTPOperation {
         Log.d(TAG, "processResults: " + downloaded.getAbsolutePath());
 
         //setup progress notification
-        NotificationManager notifyManager = null;
         Notification.Builder builder = null;
         DownloadProgressTracker progressTracker = null;
         long contentLength = response.getContentLength();
@@ -277,8 +277,6 @@ public class DeviceProfileOperation extends HTTPOperation {
                 url = profileRequest.toString();
 
             Log.d(TAG, "Displaying progress for: " + url);
-            notifyManager = (NotificationManager) context
-                    .getSystemService(Context.NOTIFICATION_SERVICE);
 
             if (profileRequest.hasTool()) {
                 title = context.getString(R.string.profile_downloading_content,
@@ -298,23 +296,14 @@ public class DeviceProfileOperation extends HTTPOperation {
                         (profileRequest.getFilepaths().size() + " files"));
             }
 
-            if (android.os.Build.VERSION.SDK_INT < 26) {
-                builder = new Notification.Builder(context);
-            } else {
-                builder = new Notification.Builder(context,
-                        "com.atakmap.app.def");
-            }
-            builder.setContentTitle(title)
-                    .setContentText(messageTitle)
-                    .setSmallIcon(
-                            com.atakmap.android.util.ATAKConstants.getIconId());
-
             //get a unique notification ID
             notifId = NotificationUtil.getInstance().reserveNotifyId();
 
+            NotificationUtil.getInstance().postNotification(notifId,
+                    ATAKConstants.getIconId(), title, messageTitle,
+                    messageTitle);
+            builder = NotificationUtil.getInstance().getNotificationBuilder(notifId);
             builder.setProgress(100, 1, false);
-            if (notifyManager != null)
-                notifyManager.notify(notifId, builder.build());
 
             progressTracker = new DownloadProgressTracker(contentLength);
             progressTracker.setCurrentLength(0);
@@ -322,7 +311,7 @@ public class DeviceProfileOperation extends HTTPOperation {
 
         int len;
         byte[] buf = new byte[8192];
-        FileOutputStream fos = new FileOutputStream(downloaded);
+        FileOutputStream fos = FileIOProviderFactory.getOutputStream(downloaded);
         InputStream in = null;
         try {
             in = resEntity.getContent();
@@ -354,9 +343,9 @@ public class DeviceProfileOperation extends HTTPOperation {
                         builder.setProgress(100,
                                 progressTracker.getCurrentProgress(), false);
                         builder.setContentText(message);
+                        NotificationUtil.getInstance().postNotification(notifId,
+                                builder.build(), true);
                     }
-                    if (notifyManager != null)
-                        notifyManager.notify(notifId, builder.build());
                     Log.d(TAG, message);
                     // start a new block
                     progressTracker.notified(currentTime);
@@ -393,15 +382,15 @@ public class DeviceProfileOperation extends HTTPOperation {
                     "Response last modified: " + lastMod.getValue());
         }
 
-        if (notifyManager != null && profileRequest.isDisplayNotification()) {
+        if (builder != null && profileRequest.isDisplayNotification()) {
             // update notification
             String message = context.getString(
                     R.string.profile_processing,
                     messageTitle);
             builder.setProgress(100, 99, false);
             builder.setContentText(message);
-            notifyManager.notify(notifId,
-                    builder.build());
+            NotificationUtil.getInstance().postNotification(notifId,
+                    builder.build(), true);
         }
 
         //first see if we should import as mission package
@@ -438,7 +427,7 @@ public class DeviceProfileOperation extends HTTPOperation {
                             + contentFolder.getAbsolutePath());
                 }
 
-                if (!contentFolder.exists() && !contentFolder.mkdirs()) {
+                if (!FileIOProviderFactory.exists(contentFolder)&& !FileIOProviderFactory.mkdirs(contentFolder)) {
                     Log.w(TAG, "Cannot create dir "
                             + contentFolder.getAbsolutePath());
                 }
@@ -460,8 +449,14 @@ public class DeviceProfileOperation extends HTTPOperation {
                     outputFile = new File(profileRequest.getOutputPath());
                     Log.d(TAG, "Output file: " + outputFile.getAbsolutePath());
 
-                    File parent = new File(outputFile.getParent());
-                    if (!parent.exists() && !parent.mkdirs()) {
+                    File parent = outputFile.getParentFile();
+                    if (parent == null) {
+                        Log.e(TAG, "outputfile does not have a parent: "
+                                + outputFile.getAbsolutePath());
+                        return;
+                    }
+
+                    if (!FileIOProviderFactory.exists(parent) && !FileIOProviderFactory.mkdirs(parent)) {
                         Log.w(TAG, "Cannot create dir "
                                 + parent.getAbsolutePath());
                     }
@@ -480,9 +475,7 @@ public class DeviceProfileOperation extends HTTPOperation {
             }
 
             Log.d(TAG, "Processing complete: " + notifId);
-            if (notifyManager != null) {
-                notifyManager.cancel(notifId);
-            }
+            NotificationUtil.getInstance().clearNotification(notifId);
         }
     }
 }

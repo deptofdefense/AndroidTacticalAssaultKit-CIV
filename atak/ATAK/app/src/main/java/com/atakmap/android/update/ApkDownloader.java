@@ -29,6 +29,7 @@ import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.net.AtakAuthenticationCredentials;
 import com.atakmap.net.AtakAuthenticationDatabase;
@@ -37,7 +38,6 @@ import com.foxykeep.datadroid.requestmanager.RequestManager;
 import com.foxykeep.datadroid.requestmanager.RequestManager.RequestListener;
 
 import java.io.File;
-import java.io.UnsupportedEncodingException;
 
 /**
  * HTTP download support APKs. Leverages Android Service to offload async HTTP
@@ -100,7 +100,7 @@ public class ApkDownloader implements RequestListener {
 
         File apkDir = FileSystemUtils
                 .getItem(RemoteProductProvider.REMOTE_REPO_CACHE_PATH);
-        if (!apkDir.mkdirs())
+        if (!FileIOProviderFactory.mkdirs(apkDir))
             Log.d(TAG, "could not wrap: " + apkDir);
 
         //send request w/out credentials initially

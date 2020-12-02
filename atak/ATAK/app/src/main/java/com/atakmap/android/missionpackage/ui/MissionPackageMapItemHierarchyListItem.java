@@ -386,13 +386,13 @@ class MissionPackageMapItemHierarchyListItem extends
     }
 
     @Override
-    public boolean isSupported(Class target) {
+    public boolean isSupported(Class<?> target) {
         return _item instanceof Exportable && ((Exportable) _item)
                 .isSupported(target);
     }
 
     @Override
-    public Object toObjectOf(Class target, ExportFilters filters)
+    public Object toObjectOf(Class<?> target, ExportFilters filters)
             throws FormatNotSupportedException {
         return _item instanceof Exportable ? ((Exportable) _item)
                 .toObjectOf(target, filters) : null;

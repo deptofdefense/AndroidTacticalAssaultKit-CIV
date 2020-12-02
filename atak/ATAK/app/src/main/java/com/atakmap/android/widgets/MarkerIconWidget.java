@@ -165,8 +165,10 @@ public class MarkerIconWidget extends MapWidget2 {
     }
 
     public void setRotation(float rotation) {
-        _rotation = rotation;
-        onRotationChanged();
+        if (Float.compare(rotation, _rotation) != 0) {
+            _rotation = rotation;
+            onRotationChanged();
+        }
     }
 
     public float getRotation() {

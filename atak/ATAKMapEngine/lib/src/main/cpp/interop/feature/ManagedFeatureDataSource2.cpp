@@ -107,7 +107,7 @@ namespace
         FeaturePtr_const feature;
         std::unique_ptr<RawData, void(*)(const RawData *)> rawGeom;
         std::unique_ptr<RawData, void(*)(const RawData *)> rawStyle;
-        GeometryPtr geom;
+        TAK::Engine::Feature::GeometryPtr geom;
         std::list<jobject> managedRefs;
     };
 

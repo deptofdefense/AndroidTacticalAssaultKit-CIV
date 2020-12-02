@@ -2,21 +2,12 @@
 package com.atakmap.map.layer.feature;
 
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
-import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.map.layer.feature.datastore.FeatureSetDatabase2;
-import com.atakmap.map.layer.feature.datastore.RuntimeFeatureDataStore2;
 import com.atakmap.map.layer.feature.geometry.LineString;
 import com.atakmap.map.layer.feature.geometry.Point;
-import com.atakmap.map.layer.feature.style.CompositeStyle;
-import com.atakmap.map.layer.feature.style.IconPointStyle;
-import com.atakmap.map.layer.feature.style.LabelPointStyle;
-import com.atakmap.map.layer.feature.style.Style;
 
 import junit.framework.Assert;
 
 import org.junit.Test;
-
-import java.io.File;
 
 public abstract class FeatureDataStore3Test extends ATAKInstrumentedTest {
 

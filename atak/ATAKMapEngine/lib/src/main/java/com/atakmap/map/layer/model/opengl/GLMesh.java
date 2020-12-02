@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.graphics.PointF;
 import android.opengl.GLES30;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -14,7 +15,6 @@ import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.layer.control.ColorControl;
 import com.atakmap.map.layer.control.Controls;
 import com.atakmap.map.layer.feature.geometry.Envelope;
-import com.atakmap.map.layer.model.Material;
 import com.atakmap.map.layer.model.Mesh;
 import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.ModelInfo;
@@ -29,14 +29,12 @@ import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLTexture;
-import com.atakmap.util.ReferenceCount;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -222,6 +220,7 @@ public class GLMesh implements GLMapRenderable2, Controls {
      * @param transform
      */
     @Deprecated
+    @DeprecatedApi(since="4.1", forRemoval = false)
     public final void draw(GLMapView view, int renderPass, Matrix transform) {
         if (!MathUtils.hasBits(renderPass, getRenderPass()))
             return;

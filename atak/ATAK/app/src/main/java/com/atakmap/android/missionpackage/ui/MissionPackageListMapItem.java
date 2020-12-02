@@ -1,7 +1,6 @@
 
 package com.atakmap.android.missionpackage.ui;
 
-import com.atakmap.android.hashtags.HashtagContent;
 import com.atakmap.android.hierarchy.items.MapItemUser;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;

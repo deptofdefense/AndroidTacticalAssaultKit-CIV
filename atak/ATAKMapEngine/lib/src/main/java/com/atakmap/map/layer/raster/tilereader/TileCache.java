@@ -6,9 +6,8 @@
 
 package com.atakmap.map.layer.raster.tilereader;
 
-import android.content.ContentValues;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.database.*;
 
 import java.io.*;
 
@@ -41,7 +40,7 @@ public class TileCache {
     /**************************************************************************/
 
     private TileReader reader;
-    private SQLiteDatabase tileDatabase;
+    private DatabaseIface tileDatabase;
 
     private boolean configured;
     
@@ -56,7 +55,7 @@ public class TileCache {
 
     /** Creates a new instance of TileReader */
     public TileCache(String path, TileReader reader) {
-        this.tileDatabase = SQLiteDatabase.openOrCreateDatabase(path, null);
+        this.tileDatabase = Databases.openOrCreateDatabase(path);
         ensureTileCache(this.tileDatabase);
 
         this.tableName = "tilecache";
@@ -349,13 +348,15 @@ public class TileCache {
             ReadCallback callback) {
         //long s = System.currentTimeMillis();
         // query the database for the tileparts for the requested tile
-        Cursor rs = null;
+        QueryIface rs = null;
         try {
             TileCacheData[] retval = new TileCacheData[4];
 
-            rs = this.tileDatabase.query(this.tableName, null, "tilerow = " + tileRow
-                    + " AND tilecolumn = " + tileColumn + " AND rset = " + rset, null, null, null,
-                    null, null);
+            rs = this.tileDatabase.compileQuery("SELECT * FROM " + this.tableName + " WHERE tilerow = ? AND tilecolumn = ? AND rset = ? LIMIT 1");
+            rs.bind(1, tileRow);
+            rs.bind(2, tileColumn);
+            rs.bind(3, rset);
+
             final boolean gotResult = rs.moveToNext();
             if (!gotResult)
                 return retval;
@@ -532,11 +533,12 @@ public class TileCache {
 
     private void cacheTilePart(long tileRow, long tileColumn, int rset, int dataMask, byte[] data) {
         //long s = System.currentTimeMillis();
-        Cursor rs = null;
+        QueryIface rs = null;
         try {
-            rs = this.tileDatabase.query(this.tableName, null, "tilerow = " + tileRow
-                    + " AND tilecolumn = " + tileColumn + " AND rset = " + rset, null, null, null,
-                    null, null);
+            rs = this.tileDatabase.compileQuery("SELECT * FROM " + this.tableName + " WHERE tilerow = ? AND tilecolumn = ? AND rset = ? LIMIT 1");
+            rs.bind(1, tileRow);
+            rs.bind(2, tileColumn);
+            rs.bind(3, rset);
             if (rs.moveToNext()) {
                 String tilePartName;
                 switch (dataMask) {
@@ -560,29 +562,48 @@ public class TileCache {
                     // System.err.println("attempting to cache already cached tile!!!");
                     return;
                 }
-                ContentValues values = new ContentValues();
-                values.put("datamask", Integer.valueOf(oldDataMask | dataMask));
-                values.put(tilePartName, data);
 
-                this.tileDatabase.update(this.tableName, values, "tilerow=" + tileRow
-                        + " AND tilecolumn=" + tileColumn + " AND rset=" + rset, null);
+                StatementIface stmt = null;
+                try {
+                    stmt = this.tileDatabase.compileStatement("UPDATE " + this.tableName + " SET datamask = ?, " + tilePartName + " = ? WHERE tilerow = ? AND tilecolumn = ? AND rset = ?");
+                    stmt.bind(1, oldDataMask|dataMask);
+                    stmt.bind(2, data);
+                    stmt.bind(3, tileRow);
+                    stmt.bind(4, tileColumn);
+                    stmt.bind(5, rset);
+
+                    stmt.execute();
+                } finally {
+                    if(stmt != null)
+                        stmt.close();
+                }
             } else {
                 final int tileWidth = this.reader.getTileWidth(rset, tileColumn);
                 final int tileHeight = this.reader.getTileHeight(rset, tileRow);
 
-                ContentValues values = new ContentValues();
-                values.put("tilerow", Long.valueOf(tileRow));
-                values.put("tilecolumn", Long.valueOf(tileColumn));
-                values.put("rset", Integer.valueOf(rset));
-                values.put("tilewidth", Integer.valueOf(tileWidth));
-                values.put("tileheight", Integer.valueOf(tileHeight));
-                values.put("datamask", Integer.valueOf(dataMask));
-                values.put("dataul", (dataMask == DATA_MASK_UL) ? data : null);
-                values.put("dataur", (dataMask == DATA_MASK_UR) ? data : null);
-                values.put("datalr", (dataMask == DATA_MASK_LR) ? data : null);
-                values.put("datall", (dataMask == DATA_MASK_LL) ? data : null);
+                StatementIface stmt = null;
+                try {
+                    stmt = this.tileDatabase.compileStatement(
+                            "INSERT INTO " + this.tableName +
+                                " tilerow, tilecolumn, rset, tilewidth, tileheight, datamask, dataul, dataur, datalr, datall " +
+                                "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-                this.tileDatabase.insert(this.tableName, null, values);
+                    stmt.bind(1, tileRow);
+                    stmt.bind(2, tileColumn);
+                    stmt.bind(3, rset);
+                    stmt.bind(4, tileWidth);
+                    stmt.bind(5, tileHeight);
+                    stmt.bind(6, dataMask);
+                    stmt.bind(7, (dataMask == DATA_MASK_UL) ? data : null);
+                    stmt.bind(8, (dataMask == DATA_MASK_UR) ? data : null);
+                    stmt.bind(8, (dataMask == DATA_MASK_LR) ? data : null);
+                    stmt.bind(10, (dataMask == DATA_MASK_LL) ? data : null);
+
+                    stmt.execute();
+                } finally {
+                    if(stmt != null)
+                        stmt.close();
+                }
             }
         } finally {
             //System.out.println("tilepart cached in " + (System.currentTimeMillis() - s) + "ms");
@@ -593,60 +614,18 @@ public class TileCache {
 
     private void cacheTileParts(long tileRow, long tileColumn, int rset, int dataMask,
             TileCacheData[] parts) {
-        //long s = System.currentTimeMillis();
-        Cursor rs = null;
-        try {
-            TileSpec[] tileSpecs = new TileSpec[] {
-                    new TileSpec(DATA_MASK_UL, "dataul", 0, 0), // UL
-                    new TileSpec(DATA_MASK_UR, "dataur", 0, 0), // UR
-                    new TileSpec(DATA_MASK_LL, "datall", 0, 0), // LL
-                    new TileSpec(DATA_MASK_LR, "datalr", 0, 0), // LR
-            };
 
-            rs = this.tileDatabase.query(this.tableName, null, "tilerow = " + tileRow
-                    + " AND tilecolumn = " + tileColumn + " AND rset = " + rset, null, null, null,
-                    null, null);
-            if (rs.moveToNext()) {
-                final int oldDataMask = rs.getInt(rs.getColumnIndex("datamask"));
-                if ((oldDataMask & dataMask) == dataMask) {
-                    // System.err.println("attempting to cache already cached tile!!!");
-                    return;
-                }
-                ContentValues values = new ContentValues();
-                values.put("datamask", Integer.valueOf(oldDataMask | dataMask));
-                for (int i = 0; i < 4; i++)
-                    if ((dataMask & tileSpecs[i].mask) == tileSpecs[i].mask)
-                        values.put(tileSpecs[i].field, this.serializer.serialize(parts[i]));
+        TileSpec[] tileSpecs = new TileSpec[] {
+                new TileSpec(DATA_MASK_UL, "dataul", 0, 0), // UL
+                new TileSpec(DATA_MASK_UR, "dataur", 0, 0), // UR
+                new TileSpec(DATA_MASK_LL, "datall", 0, 0), // LL
+                new TileSpec(DATA_MASK_LR, "datalr", 0, 0), // LR
+        };
 
-                this.tileDatabase.update(this.tableName, values, "tilerow=" + tileRow
-                        + " AND tilecolumn=" + tileColumn + " AND rset=" + rset, null);
-            } else {
-                final int tileWidth = this.reader.getTileWidth(rset, tileColumn);
-                final int tileHeight = this.reader.getTileHeight(rset, tileRow);
-
-                ContentValues values = new ContentValues();
-                values.put("tilerow", Long.valueOf(tileRow));
-                values.put("tilecolumn", Long.valueOf(tileColumn));
-                values.put("rset", Integer.valueOf(rset));
-                values.put("tilewidth", Integer.valueOf(tileWidth));
-                values.put("tileheight", Integer.valueOf(tileHeight));
-                values.put("datamask", Integer.valueOf(dataMask));
-
-                byte[] data;
-                for (int i = 0; i < 4; i++) {
-                    if (parts[i] != null)
-                        data = this.serializer.serialize(parts[i]);
-                    else
-                        data = null;
-                    values.put(tileSpecs[i].field, data);
-                }
-
-                this.tileDatabase.insert(this.tableName, null, values);
-            }
-        } finally {
-            //System.out.println("tileparts cached in " + (System.currentTimeMillis() - s) + "ms");
-            if (rs != null)
-                rs.close();
+        // XXX - not the most efficient implementation
+        for(int i = 0; i < 4; i++) {
+            if((dataMask&tileSpecs[i].mask) == tileSpecs[i].mask)
+                cacheTilePart(tileRow, tileColumn, rset, tileSpecs[i].mask, this.serializer.serialize(parts[i]));
         }
     }
 
@@ -658,9 +637,9 @@ public class TileCache {
     }
 
     public static void createTileCacheDatabase(String tilecacheDatabasePath) {
-        SQLiteDatabase database = null;
+        DatabaseIface database = null;
         try {
-            database = SQLiteDatabase.openOrCreateDatabase(tilecacheDatabasePath, null);
+            database = Databases.openOrCreateDatabase(tilecacheDatabasePath);
             ensureTileCache(database);
         } finally {
             if (database != null)
@@ -668,14 +647,14 @@ public class TileCache {
         }
     }
 
-    public static void ensureTileCache(SQLiteDatabase database) {
+    public static void ensureTileCache(DatabaseIface database) {
         final int cacheVersion = database.getVersion();
         final boolean cacheInvalid = (cacheVersion != DATABASE_VERSION);
 
         if(cacheInvalid)
-            database.execSQL("DROP TABLE IF EXISTS tilecache");
+            database.execute("DROP TABLE IF EXISTS tilecache", null);
 
-        database.execSQL("CREATE TABLE IF NOT EXISTS tilecache" +
+        database.execute("CREATE TABLE IF NOT EXISTS tilecache" +
                             " (tilerow INTEGER, " +
                               "tilecolumn INTEGER, " +
                               "rset INTEGER, " +
@@ -685,7 +664,7 @@ public class TileCache {
                               "dataul BLOB, " +
                               "dataur BLOB, " +
                               "datalr BLOB, " +
-                              "datall BLOB);");
+                              "datall BLOB);", null);
 
         database.setVersion(DATABASE_VERSION);
     }

@@ -10,6 +10,7 @@ import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.Databases;
@@ -114,7 +115,7 @@ public class GLMapComponent extends AbstractMapComponent {
         final String outputPath = "Databases" + File.separatorChar
                 + "iconcache.sqlite";
         final File output = FileSystemUtils.getItem(outputPath);
-        if (output.exists()) {
+        if (FileIOProviderFactory.exists(output)) {
             // try to open the icon cache and check its version. if the version
             // does not match the version provided by the application, replace
             DatabaseIface db = null;

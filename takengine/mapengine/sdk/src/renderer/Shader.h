@@ -53,7 +53,7 @@ namespace TAK {
                 std::string vsh_;
                 std::string fsh_;
 
-                friend ENGINE_API void Shader_get(std::shared_ptr<const Shader> &, const TAK::Engine::Core::RenderContext &, const RenderAttributes &attrs) NOTHROWS;
+                friend void Shader_get(std::shared_ptr<const Shader> &, const TAK::Engine::Core::RenderContext &, const RenderAttributes &attrs) NOTHROWS;
             };
 
             /**
@@ -63,7 +63,7 @@ namespace TAK {
                 * @param flags
                 * @return
                 */
-            ENGINE_API void Shader_get(std::shared_ptr<const Shader> &value, const TAK::Engine::Core::RenderContext &ctx, const RenderAttributes &attrs) NOTHROWS;
+            void Shader_get(std::shared_ptr<const Shader> &value, const TAK::Engine::Core::RenderContext &ctx, const RenderAttributes &attrs) NOTHROWS;
         }
     }
 }

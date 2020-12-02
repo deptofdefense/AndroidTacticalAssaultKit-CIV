@@ -5,6 +5,7 @@
 #ifdef MSVC
 #include <sys/timeb.h>
 #include "vscompat.h"
+#include <windows.h>
 #endif
 
 #include <cpl_vsi.h>
@@ -74,6 +75,7 @@ namespace
         static TAK::Engine::Port::String tempDir(getTempDirImpl());
         return tempDir;
     }
+    TAKErr getFileCountImpl_Windows(std::size_t *result, std::string path, const std::size_t limit) NOTHROWS;
 
 #endif
 
@@ -247,8 +249,13 @@ TAKErr TAK::Engine::Util::IO_createTempFile(TAK::Engine::Port::String &value, co
 
 TAKErr TAK::Engine::Util::IO_getFileCount(std::size_t *result, const char *path, const std::size_t limit) NOTHROWS
 {
+#ifdef MSVC
+    *result =0;
+    return getFileCountImpl_Windows(result, path, limit);
+#else
     *result = 0;
     return getFileCountImpl(result, path, limit);
+#endif
 }
 
 TAKErr TAK::Engine::Util::IO_getFileCount(std::size_t *result, const char *path) NOTHROWS
@@ -1002,6 +1009,45 @@ namespace
 
         return code;
     }
+
+#ifdef MSVC
+    TAKErr getFileCountImpl_Windows(std::size_t *result, std::string path, const std::size_t limit) NOTHROWS
+    {
+        TAKErr code(TE_Ok);
+        std::string strFilePath;          // Filepath
+        std::string strPattern;           // Pattern
+        HANDLE hFile;                     // Handle to file
+        WIN32_FIND_DATA FileInformation;  // File information
+
+        strPattern = path + "\\*.*";
+        hFile = ::FindFirstFile(strPattern.c_str(), &FileInformation);
+        if (hFile != INVALID_HANDLE_VALUE) {
+            do {
+                if (!(FileInformation.cFileName[0] == '.' &&
+                      (FileInformation.cFileName[1] == '.' || FileInformation.cFileName[1] == '\0'))) {
+                    if (FileInformation.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+                        strFilePath.erase();
+                        strFilePath = path + "\\" + FileInformation.cFileName;
+                        // Search subdirectory
+                        code = getFileCountImpl_Windows(result, strFilePath, limit);
+                        TE_CHECKBREAK_CODE(code);
+                    } else {
+                        (*result)++;
+                    }
+                }
+            } while ((*result) < limit && ::FindNextFile(hFile, &FileInformation) == TRUE);
+
+            // Close handle
+            ::FindClose(hFile);
+        } else if (platformstl::filesystem_traits<char>::is_file(path.c_str())) {
+            (*result)++;
+        } else {
+            return TE_InvalidArg;
+        }
+
+        return code;
+    }
+#endif
 
     TAKErr getFileCountImpl(std::size_t *result, const char *path, const std::size_t limit) NOTHROWS
     {

@@ -7,13 +7,14 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.toolbar.Tool;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.log.Log;
 
 /**
- * 
- * TODO: REMOVE - Completely unnecessary use of a tool
+ * @deprecated - Completely unnecessary use of a tool
  */
 @Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class DangerCloseTool extends Tool {
 
     public static final String TAG = "DangerCloseTool";

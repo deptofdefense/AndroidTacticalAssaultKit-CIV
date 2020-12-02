@@ -203,7 +203,8 @@ public class FocusBroadcastReceiver extends BroadcastReceiver {
             _focusPoint.addOnPointChangedListener(_pointChangedListener);
             AtakMapController ctrl = _mapView.getMapController();
             GeoPoint panTo = _focusPoint.getPoint();
-            panTo = _mapView.getRenderElevationAdjustedPoint(panTo);
+            panTo = _mapView.getRenderElevationAdjustedPoint(panTo,
+                    pointItem.getHeight());
             // if the map is tilted and the point is in view, do a relative
             // pan/zoom
             PointF focusXY = _mapView.forward(panTo);

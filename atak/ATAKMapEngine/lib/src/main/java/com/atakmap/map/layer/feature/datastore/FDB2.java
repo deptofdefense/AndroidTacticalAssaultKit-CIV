@@ -21,6 +21,7 @@ import android.util.Pair;
 
 import com.atakmap.content.BindArgument;
 import com.atakmap.content.WhereClauseBuilder;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.CursorWrapper;
@@ -37,7 +38,6 @@ import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureCursor;
 import com.atakmap.map.layer.feature.FeatureDataSource;
 import com.atakmap.map.layer.feature.FeatureDataStore;
-import com.atakmap.map.layer.feature.FeatureDataStore3;
 import com.atakmap.map.layer.feature.FeatureDefinition;
 import com.atakmap.map.layer.feature.FeatureDefinition2;
 import com.atakmap.map.layer.feature.FeatureDefinition3;
@@ -129,7 +129,7 @@ abstract class FDB2 extends AbstractFeatureDataStore3 {
         super(modificationFlags, visibilityFlags);
 
         this.databaseFile = (dbFile != null) ? dbFile.getAbsolutePath() : ":memory:";
-        if(dbFile == null || !dbFile.exists() || dbFile.length() == 0L) {
+        if(dbFile == null || !FileIOProviderFactory.exists(dbFile) || FileIOProviderFactory.length(dbFile) == 0L) {
             this.database = Databases.openOrCreateDatabase(this.databaseFile);
             
             this.buildTables(buildIndices);

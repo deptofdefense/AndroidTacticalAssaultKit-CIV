@@ -90,7 +90,7 @@ public abstract class ExportMarshal extends HierarchyListFilter {
      * Target class this implementation exports to
      * @return
      */
-    public abstract Class getTargetClass();
+    public abstract Class<?> getTargetClass();
 
     /**
      * UI type and icon

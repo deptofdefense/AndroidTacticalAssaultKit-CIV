@@ -33,11 +33,11 @@ class NotificationFader implements
             SharedPreferences prefs, String key) {
         if (key.equals("fade_notification")) {
             String s = prefs.getString(key, "" + DEFAULT_FADE);
+            fadeTimeout = DEFAULT_FADE * 1000;
             try {
-                fadeTimeout = Long.parseLong(s) * 1000;
-            } catch (Exception e) {
-                fadeTimeout = DEFAULT_FADE * 1000;
-            }
+                if (s != null)
+                    fadeTimeout = Long.parseLong(s) * 1000;
+            } catch (Exception ignored) { }
             Log.d(TAG,
                     "changing the fade timeout for notifications (cotservice) to "
                             + fadeTimeout);
@@ -57,11 +57,13 @@ class NotificationFader implements
             @Override
             public void run() {
                 synchronized (idMap) {
-                    Iterator it = idMap.keySet().iterator();
+                    Iterator<Integer> it = idMap.keySet().iterator();
                     while (it.hasNext()) {
-                        Integer id = (Integer) it.next();
+                        Integer id = it.next();
                         long curr = SystemClock.elapsedRealtime();
-                        if (idMap.get(id) + fadeTimeout < curr) {
+
+                        Long time = idMap.get(id);
+                        if (time != null && time + fadeTimeout < curr) {
                             nm.cancel(id);
                             it.remove();
                         }

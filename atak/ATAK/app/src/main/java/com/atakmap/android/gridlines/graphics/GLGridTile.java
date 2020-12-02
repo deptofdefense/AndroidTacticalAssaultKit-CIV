@@ -10,9 +10,11 @@ import com.atakmap.coremap.maps.coords.MGRSPoint;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.coremap.maps.coords.MutableMGRSPoint;
 import com.atakmap.coremap.maps.coords.Vector2D;
+import com.atakmap.lang.Unsafe;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
+import com.atakmap.opengl.GLAntiAliasedLine;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
@@ -93,6 +95,7 @@ class GLGridTile {
     GeoPoint[] setActualPolygon(GeoPoint[] value) {
         _actualPolygon = value;
         updatePolyBuf();
+        _antiAliasedLineRenderer.setLineData(_polyBuf);
         return _actualPolygon;
     }
 
@@ -211,26 +214,8 @@ class GLGridTile {
                         bottomLeft, swv, sev);
             }
 
-            GLES20FixedPipeline
-                    .glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-            GLES20FixedPipeline.glVertexPointer(2,
-                    GLES20FixedPipeline.GL_FLOAT, 0,
-                    _polyBufProjected);
-
-            GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 1f);
-            GLES20FixedPipeline.glLineWidth(3f);
-            GLES20FixedPipeline.glDrawArrays(GLES20FixedPipeline.GL_LINE_LOOP,
-                    0,
-                    _actualPolygon.length);
-
-            GLES20FixedPipeline.glColor4f(red, green, blue, 1f);
-            GLES20FixedPipeline.glLineWidth(1f);
-            GLES20FixedPipeline.glDrawArrays(GLES20FixedPipeline.GL_LINE_LOOP,
-                    0,
-                    _actualPolygon.length);
-
-            GLES20FixedPipeline
-                    .glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
+            _antiAliasedLineRenderer.draw(ortho, 0f, 0f, 0f, 3f);
+            _antiAliasedLineRenderer.draw(ortho, red, green, blue, 1f);
 
             String text;
 
@@ -385,7 +370,8 @@ class GLGridTile {
                 .allocateDirect(_actualPolygon.length * 2
                         * (Float.SIZE / 8));
         bb.order(ByteOrder.nativeOrder());
-        _polyBufProjected = bb.asFloatBuffer();
+//        _polyBufProjected = bb.asFloatBuffer();
+        _polyBufProjected = Unsafe.allocateDirect(_polyBuf.limit(), FloatBuffer.class);//bb.asFloatBuffer();
         _polyBuf.rewind();
         AbstractGLMapItem2.forward(map, _polyBuf, _polyBufProjected,
                 getBounds());
@@ -484,4 +470,5 @@ class GLGridTile {
 
     private GLGridTile[][] _subs; // 10x10, except near zone boundaries
     private Future<GLGridTile[][]> _loadingSubs;
+    private GLAntiAliasedLine _antiAliasedLineRenderer = new GLAntiAliasedLine();
 }

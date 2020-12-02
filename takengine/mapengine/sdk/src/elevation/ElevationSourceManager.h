@@ -9,7 +9,7 @@
 namespace TAK {
     namespace Engine {
         namespace Elevation {
-            class ElevationSourcesChangedListener
+            class ENGINE_API ElevationSourcesChangedListener
             {
             public :
                 virtual ~ElevationSourcesChangedListener() NOTHROWS = 0;
@@ -18,12 +18,14 @@ namespace TAK {
                 virtual Util::TAKErr onSourceDetached(const ElevationSource &src) NOTHROWS = 0;
             };
 
-            Util::TAKErr ElevationSourceManager_addOnSourcesChangedListener(ElevationSourcesChangedListener *listener) NOTHROWS;
-            Util::TAKErr ElevationSourceManager_removeOnSourcesChangedListener(ElevationSourcesChangedListener *listener) NOTHROWS;
-            Util::TAKErr ElevationSourceManager_attach(const std::shared_ptr<ElevationSource> &source) NOTHROWS;
-            Util::TAKErr ElevationSourceManager_detach(const ElevationSource &source) NOTHROWS;
-            Util::TAKErr ElevationSourceManager_findSource(std::shared_ptr<ElevationSource> &value, const char *name) NOTHROWS;
-            Util::TAKErr ElevationSourceManager_getSources(Port::Collection<std::shared_ptr<ElevationSource>> &value) NOTHROWS;
+            ENGINE_API Util::TAKErr ElevationSourceManager_addOnSourcesChangedListener(ElevationSourcesChangedListener *listener) NOTHROWS;
+            ENGINE_API Util::TAKErr ElevationSourceManager_removeOnSourcesChangedListener(ElevationSourcesChangedListener *listener) NOTHROWS;
+            ENGINE_API Util::TAKErr ElevationSourceManager_attach(const std::shared_ptr<ElevationSource> &source) NOTHROWS;
+            ENGINE_API Util::TAKErr ElevationSourceManager_detach(const ElevationSource &source) NOTHROWS;
+            ENGINE_API Util::TAKErr ElevationSourceManager_findSource(std::shared_ptr<ElevationSource> &value, const char *name) NOTHROWS;
+            ENGINE_API Util::TAKErr ElevationSourceManager_getSources(Port::Collection<std::shared_ptr<ElevationSource>> &value) NOTHROWS;
+            ENGINE_API Util::TAKErr ElevationSourceManager_visitSources(Util::TAKErr(*visitor)(void *opaque, ElevationSource &src) NOTHROWS, void *opaque) NOTHROWS;
+            Util::TAKErr ElevationSourceManager_visitSources(Util::TAKErr(*visitor)(void *opaque, ElevationSource &src) NOTHROWS, void *opaque) NOTHROWS;
             Util::TAKErr ElevationSourceManager_visitSources(Util::TAKErr(*visitor)(void *opaque, ElevationSource &src) NOTHROWS, void *opaque) NOTHROWS;
         }
     }

@@ -56,7 +56,7 @@ public class CertificateConfigOperation extends HTTPOperation {
             throws ConnectionException {
 
         TakHttpClient httpClient = null;
-        CertificateManager.ExtendedSSLSocketFactory sslSocketFactory = null;
+        CertificateManager.ExtendedSSLSocketFactory sslSocketFactory;
 
         try {
             // Get request data
@@ -87,7 +87,7 @@ public class CertificateConfigOperation extends HTTPOperation {
 
             HttpGet httpget = new HttpGet(baseUrl + path);
             TakHttpResponse response = null;
-            X509Certificate[] serverCerts = null;
+            X509Certificate[] serverCerts;
 
             Bundle output = new Bundle();
             output.putParcelable(PARAM_CONFIG_REQUEST, configRequest);
@@ -100,9 +100,12 @@ public class CertificateConfigOperation extends HTTPOperation {
             } catch (SSLException sslException) {
 
                 // TODO is there a better way to identify the exception?
-                if (sslException.getMessage()
+                final String message = sslException.getMessage();
+                if (message != null && message
                         .contains("hostname in certificate didn't match")) {
                     hostnameMismatch = true;
+                    if (sslSocketFactory == null)
+                        throw sslException;
                     serverCerts = sslSocketFactory.getServerCerts();
                     Bundle certBundle = CertificateManager
                             .certArrayToBundle(serverCerts);

@@ -11,7 +11,6 @@ import com.atakmap.coremap.log.Log;
 import java.io.DataInput;
 import java.io.EOFException;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

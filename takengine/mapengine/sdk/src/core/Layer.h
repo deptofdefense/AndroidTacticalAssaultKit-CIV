@@ -32,6 +32,8 @@
 
 #include <memory>
 
+#include "port/Platform.h"
+
 ////========================================================================////
 ////                                                                        ////
 ////    FORWARD DECLARATIONS                                                ////
@@ -60,7 +62,7 @@ namespace core                          // Open core namespace.
 ///=============================================================================
 
 
-class Layer
+class ENGINE_API Layer
   {
                                         //====================================//
   public:                               //                      PUBLIC        //

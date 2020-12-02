@@ -105,7 +105,7 @@ public class AnalysisPanelPresenter implements View.OnClickListener {
                 if (altitudeET.getText().length() > 0) {
                     int heightAboveGround = 0;
                     try {
-                        heightAboveGround = Integer.valueOf(altitudeET
+                        heightAboveGround = Integer.parseInt(altitudeET
                                 .getText()
                                 .toString());
                     } catch (Exception e) {
@@ -132,7 +132,7 @@ public class AnalysisPanelPresenter implements View.OnClickListener {
                     return;
                 int radius = 0;
                 try {
-                    radius = Integer.valueOf(radiusET.getText().toString());
+                    radius = Integer.parseInt(radiusET.getText().toString());
                 } catch (Exception e) {
                     Toast.makeText(
                             mapView.getContext(),

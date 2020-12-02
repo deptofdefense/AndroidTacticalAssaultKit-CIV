@@ -22,7 +22,9 @@ public class GeoChatConnector extends Connector {
 
     @Override
     public String getConnectionString() {
-        return connectionEndpoint.toString();
+        if (connectionEndpoint != null) 
+            return connectionEndpoint.toString();
+        return "";
     }
 
     @Override

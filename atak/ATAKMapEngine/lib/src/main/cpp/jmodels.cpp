@@ -142,14 +142,15 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_model_Models_transform__Lco
     dstLayout.interleaved = interleaved;
 
     MeshPtr dst(NULL, NULL);
-    TAKErr code = Mesh_transform(dst, src, dstLayout);
+    MeshTransformOptions dstOut;
+    TAKErr code = Mesh_transform(dst, &dstOut, src, MeshTransformOptions(src.getVertexDataLayout()), MeshTransformOptions(dstLayout), nullptr);
     if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return NULL;
     return NewPointer(env, std::move(dst));
 }
 
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_model_Models_transform__Lcom_atakmap_interop_Pointer_2I_3DIZ_3DLcom_atakmap_interop_ProgressCallback_2
-  (JNIEnv *env, jclass clazz, jobject jpointer, int srcSrid, jdoubleArray jsrcMx, jint dstSrid, jboolean dstMxDefined, jdoubleArray jdstMx, jobject jcallback)
+  (JNIEnv *env, jclass clazz, jobject jpointer, jint srcSrid, jdoubleArray jsrcMx, jint dstSrid, jboolean dstMxDefined, jdoubleArray jdstMx, jobject jcallback)
 {
     const Mesh &src = *Pointer_get<Mesh>(env, jpointer);
     std::unique_ptr<MeshTransformOptions> srcOpts;

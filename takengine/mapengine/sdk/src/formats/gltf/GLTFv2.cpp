@@ -210,7 +210,7 @@ TAKErr TAK::Engine::Formats::GLTF::GLTF_createMesh(MeshPtr &result, const Vertex
     TAKErr code = TE_Ok;
     if (vertLayout.interleaved) {
         if (indices) {
-            code = MeshBuilder_buildInterleavedMeshWithBuffers(
+            code = MeshBuilder_buildInterleavedMesh(
                 result,
                 drawMode,
                 TEWO_Undefined,
@@ -225,7 +225,7 @@ TAKErr TAK::Engine::Formats::GLTF::GLTF_createMesh(MeshPtr &result, const Vertex
                 std::unique_ptr<const void, void(*)(const void*)>(indices, Memory_leaker_const<void>),
                 buffers.size(), buffers.size() ? &buffers[0] : nullptr);
         } else {
-            code = MeshBuilder_buildInterleavedMeshWithBuffers(
+            code = MeshBuilder_buildInterleavedMesh(
                 result,
                 drawMode,
                 TEWO_CounterClockwise,
@@ -242,10 +242,17 @@ TAKErr TAK::Engine::Formats::GLTF::GLTF_createMesh(MeshPtr &result, const Vertex
 }
 
 void TAK::Engine::Formats::GLTF::GLTF_setMaterialColor(Material& mat, const std::vector<double>& color) NOTHROWS {
-    double r = std::max(0.0, std::min(1.0, color[0]));
-    double g = std::max(0.0, std::min(1.0, color[1]));
-    double b = std::max(0.0, std::min(1.0, color[2]));
-    double a = std::max(0.0, std::min(1.0, color[3]));
+
+    double r = 1.0;
+    double g = 1.0;
+    double b = 1.0; 
+    double a = 1.0; 
+    if (color.size() == 4) {
+        r = std::max(0.0, std::min(1.0, color[0]));
+        g = std::max(0.0, std::min(1.0, color[1]));
+        b = std::max(0.0, std::min(1.0, color[2]));
+        a = std::max(0.0, std::min(1.0, color[3]));
+    }
     mat.color = (static_cast<uint32_t>(r * 255.0) << 24)
         | (static_cast<uint32_t>(g * 255.0) << 16)
         | (static_cast<uint32_t>(b * 255.0) << 8)
@@ -591,7 +598,7 @@ namespace {
         } else {
             const tinygltf::BufferView &bv = model.bufferViews[image.bufferView];
             const tinygltf::Buffer &b = model.buffers[bv.buffer];
-            auto *bufCopy = new uint8_t[bv.byteLength];
+            uint8_t *bufCopy = new uint8_t[bv.byteLength];
             memcpy(bufCopy, &b.data[0] + bv.byteOffset, bv.byteLength);
             state.meshBufferArgs.push_back(MemBufferArg{
                     std::unique_ptr<const void, void (*)(const void*)>(bufCopy, Memory_deleter_const<void>),

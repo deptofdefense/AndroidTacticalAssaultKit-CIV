@@ -6,6 +6,7 @@ import android.util.Pair;
 
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.raster.DatasetDescriptorFactory2;
@@ -114,7 +115,7 @@ public class ImportKMZSort extends ImportInPlaceResolver {
             return false;
         }
 
-        if (!file.exists()) {
+        if (!FileIOProviderFactory.exists(file)) {
             Log.d(TAG, "KMZ does not exist: " + file.getAbsolutePath());
             return false;
         }

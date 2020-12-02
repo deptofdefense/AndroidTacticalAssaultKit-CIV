@@ -11,14 +11,14 @@ import com.atakmap.app.R;
 import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.filesystem.SecureDelete;
+import com.atakmap.coremap.io.FileIOProvider;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Collections;
@@ -56,8 +56,8 @@ public class ImportCotSort extends ImportResolver {
         // it is a .cot, now lets see if it contains reasonable CoT
         FileInputStream fis = null;
         try {
-            return isCoT(fis = new FileInputStream(file), _charBuffer);
-        } catch (FileNotFoundException e) {
+            return isCoT(fis = FileIOProviderFactory.getInputStream(file), _charBuffer);
+        } catch (IOException e) {
             Log.e(TAG, "Error checking if CoT: " + file.getAbsolutePath(), e);
         } finally {
             if (fis != null) {
@@ -126,7 +126,7 @@ public class ImportCotSort extends ImportResolver {
         FileInputStream fis = null;
         try {
             event = FileSystemUtils.copyStreamToString(
-                    fis = new FileInputStream(file), true,
+                    fis = FileIOProviderFactory.getInputStream(file), true,
                     FileSystemUtils.UTF8_CHARSET, _charBuffer);
         } catch (Exception e) {
             Log.e(TAG, "Failed to load CoT Event: " + file.getAbsolutePath(),
@@ -155,7 +155,7 @@ public class ImportCotSort extends ImportResolver {
         File atakdata = new File(_context.getCacheDir(),
                 FileSystemUtils.ATAKDATA);
         if (file.getAbsolutePath().startsWith(atakdata.getAbsolutePath())
-                && SecureDelete.delete(file))
+                && FileIOProviderFactory.delete(file, FileIOProvider.SECURE_DELETE))
             Log.d(TAG, "Deleted import CoT: " + file.getAbsolutePath());
 
         return true;

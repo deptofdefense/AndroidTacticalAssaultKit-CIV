@@ -89,7 +89,7 @@
             android:inputType="numberDecimal"
             android:key="bloodhound_reroute_distance_pref"
             android:summary="@string/bloodhoundRerouteDistanceDescription"
-            android:defaultValue="150.0"
+            android:defaultValue="20.0"
             android:title="@string/bloodhoundRerouteDistance" />
 
         <com.atakmap.android.gui.PanEditTextPreference
@@ -97,7 +97,7 @@
             android:inputType="numberDecimal"
             android:key="bloodhound_reroute_timer_pref"
             android:summary="@string/bloodhoundRerouteTimerDescription"
-            android:defaultValue="1.0"
+            android:defaultValue="3.0"
             android:title="@string/bloodhoundRerouteTimer" />
     </PreferenceCategory>
 

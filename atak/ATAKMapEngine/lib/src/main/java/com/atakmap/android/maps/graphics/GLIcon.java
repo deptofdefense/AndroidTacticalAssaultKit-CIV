@@ -4,22 +4,23 @@ package com.atakmap.android.maps.graphics;
 import android.graphics.Color;
 
 import com.atakmap.map.AtakMapView;
+import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.coremap.maps.assets.Icon;
 
 public class GLIcon {
 
     public GLIcon(int iconWidth, int iconHeight, int anchorx, int anchory) {
-        _iconWidth = Math.round(iconWidth * AtakMapView.DENSITY);
-        _iconHeight = Math.round(iconHeight * AtakMapView.DENSITY);
+        _iconWidth = Math.round(iconWidth * GLRenderGlobals.getRelativeScaling());
+        _iconHeight = Math.round(iconHeight * GLRenderGlobals.getRelativeScaling());
         if (anchorx < 0)
             _anchorx = anchorx;
         else
-            _anchorx = Math.round(anchorx * AtakMapView.DENSITY);
+            _anchorx = Math.round(anchorx * GLRenderGlobals.getRelativeScaling());
         if (anchory < 0)
             _anchory = anchory;
         else
-            _anchory = Math.round(anchory * AtakMapView.DENSITY);
+            _anchory = Math.round(anchory * GLRenderGlobals.getRelativeScaling());
         this.entryInvalid = false;
     }
 
@@ -47,10 +48,10 @@ public class GLIcon {
             float iconWidth = _currentEntry.getImageWidth();
             float iconHeight = _currentEntry.getImageHeight();
             if (_iconWidth < 0) {
-                _iconWidth = Math.round(iconWidth * AtakMapView.DENSITY);
+                _iconWidth = Math.round(iconWidth * GLRenderGlobals.getRelativeScaling());
             }
             if (_iconHeight < 0) {
-                _iconHeight = Math.round(iconHeight * AtakMapView.DENSITY);
+                _iconHeight = Math.round(iconHeight * GLRenderGlobals.getRelativeScaling());
             }
 
             _iconImage = new GLImage(_currentEntry.getTextureId(),

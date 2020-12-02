@@ -25,8 +25,6 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.UUID;
 
 /**

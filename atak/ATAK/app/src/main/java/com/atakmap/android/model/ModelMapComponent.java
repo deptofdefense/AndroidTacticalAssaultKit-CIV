@@ -36,6 +36,7 @@ import com.atakmap.android.model.viewer.DetailedModelViewerDropdownReceiver;
 import com.atakmap.android.overlay.AbstractMapOverlay2;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
@@ -66,7 +67,6 @@ import com.atakmap.map.layer.opengl.GLLayerFactory;
 import com.atakmap.map.layer.opengl.GLLayerSpi2;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -82,6 +82,9 @@ import com.atakmap.util.Visitor;
 
 import jassimp.AiBufferAllocator;
 import jassimp.Jassimp;
+
+// XXX - post 3.10
+//import com.atakmap.android.image.GalleryItemFactory;
 
 public class ModelMapComponent extends AbstractMapComponent {
 
@@ -150,8 +153,8 @@ public class ModelMapComponent extends AbstractMapComponent {
         //GalleryItemFactory.registerSpi(ModelGalleryItem.SPI);
         File dbFile = FileSystemUtils
                 .getItem("Databases/models.db/catalog.sqlite");
-        if (!dbFile.getParentFile().exists()) {
-            if (!dbFile.getParentFile().mkdirs()) {
+        if (!FileIOProviderFactory.exists(dbFile.getParentFile())) {
+            if (!FileIOProviderFactory.mkdirs(dbFile.getParentFile())) {
                 Log.d(TAG, "could not make the directory: "
                         + dbFile.getParentFile());
             }
@@ -162,8 +165,7 @@ public class ModelMapComponent extends AbstractMapComponent {
                 .getItem("Databases/models.db/catalog.version");
         boolean reimport = true;
         try {
-            try (RandomAccessFile ver = new RandomAccessFile(versionFile,
-                    "rw")) {
+            try (RandomAccessFile ver = FileIOProviderFactory.getRandomAccessFile(versionFile, "rw")) {
                 do {
                     // if there's at least 4 bytes, compare the version
                     if (ver.length() >= 4) {
@@ -295,12 +297,12 @@ public class ModelMapComponent extends AbstractMapComponent {
                             File f = new File(fs.getName());
                             if (!fs.getName().startsWith("http:")
                                     && !fs.getName().startsWith("https:")
-                                    && !f.exists()) {
+                                    && !FileIOProviderFactory.exists(f)) {
                                 modelDataStore.deleteFeatureSet(fs.getId());
                             } else if (reimport) {
                                 try {
                                     final Uri uri;
-                                    if (f.exists())
+                                    if (FileIOProviderFactory.exists(f))
                                         uri = Uri.fromFile(f);
                                     else
                                         uri = Uri.parse(fs.getName());
@@ -331,11 +333,11 @@ public class ModelMapComponent extends AbstractMapComponent {
             }
 
             private void loadFiles(File dir, Bundle b) {
-                File[] listing = dir.listFiles();
+                File[] listing = FileIOProviderFactory.listFiles(dir);
                 if (listing == null)
                     return;
                 for (final File f : listing) {
-                    if (f.isDirectory())
+                    if (FileIOProviderFactory.isDirectory(f))
                         loadFiles(f, b);
                     else
                         importImpl(Uri.fromFile(f), b);
@@ -357,12 +359,12 @@ public class ModelMapComponent extends AbstractMapComponent {
     @SuppressLint("ResourceType")
     static String getPointIconUri(Context ctx) {
         File f = new File(ctx.getCacheDir(), "icon_3d_map.png");
-        if (!f.exists()) {
+        if (!FileIOProviderFactory.exists(f)) {
             try {
                 FileSystemUtils.copyStream(
                         ctx.getResources()
                                 .openRawResource(R.drawable.icon_3d_map),
-                        true, new FileOutputStream(f), true);
+                        true, FileIOProviderFactory.getOutputStream(f), true);
             } catch (Throwable t) {
                 return "resource://" + R.drawable.icon_3d_map;
             }
@@ -444,7 +446,7 @@ public class ModelMapComponent extends AbstractMapComponent {
             }
 
             final File scanDir = FileSystemUtils.getItem("Databases/models.db");
-            if (scanDir.exists() && scanDir.isDirectory())
+            if (FileIOProviderFactory.exists(scanDir) && FileIOProviderFactory.isDirectory(scanDir))
                 FileSystemUtils.deleteDirectory(scanDir, true);
         }
     };

@@ -21,6 +21,7 @@ import com.atakmap.android.tilecapture.reader.NativeTileReader;
 import com.atakmap.android.tilecapture.reader.TileBitmap;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -102,8 +103,13 @@ public class TileCapture extends DatasetTileReader {
             DatasetTileReader r = createTileReader(info);
             if (r == null)
                 return null;
+
+            int srid = info.getSpatialReferenceID();
+            if (srid == -1)
+                srid = 4326; // Default
+
             tc = new TileCapture(r);
-            tc._srid = info.getSpatialReferenceID();
+            tc._srid = srid;
             tc._levelTransitionAdj = 0.5d - ConfigOptions.getOption(
                     "imagery.relative-scale", 0d);
 
@@ -116,10 +122,10 @@ public class TileCapture extends DatasetTileReader {
                 int width = info.getWidth() * (1 << tc._levelOffset);
                 int height = info.getHeight() * (1 << tc._levelOffset);
                 tc._imprecise = new DefaultDatasetProjection2(
-                        info.getSpatialReferenceID(), width, height,
+                        srid, width, height,
                         ul, ur, lr, ll);
             } else
-                tc._imprecise = new DefaultProjection(info);
+                tc._imprecise = new DefaultProjection(srid);
 
             // GSD
             tc._gsd = info.getMaxResolution(null);
@@ -212,7 +218,7 @@ public class TileCapture extends DatasetTileReader {
 
         File bmFile = new File(FileSystemUtils.getItem(
                 FileSystemUtils.TMP_DIRECTORY), "worldmap_4326.png");
-        if (!bmFile.exists()) {
+        if (!FileIOProviderFactory.exists(bmFile)) {
             try {
                 GLCapture.compress(bmp, 100, Bitmap.CompressFormat.PNG,
                         bmFile, false);
@@ -427,24 +433,36 @@ public class TileCapture extends DatasetTileReader {
         if (!cb.onStartCapture(tiles.size(), _tileWidth, _tileHeight, fw, fh))
             return;
 
-        // Clamp tile extents
-        _imprecise.groundToImage(new GeoPoint(0, 180), pd);
-        getTilePoint(level, pd, cr);
-        int eastLimit = cr.x;
+        // Check if this SRID corresponds to a world projection
+        // If it doesn't, we don't need to clamp to IDL
+        boolean worldProjection = _srid == 4326 || _srid == 3857
+                || _srid == 900913 || _srid == 90094326;
 
-        _imprecise.groundToImage(new GeoPoint(0, -180), pd);
-        getTilePoint(level, pd, cr);
-        int westLimit = cr.x;
+        int eastLimit = 0, westLimit = 0, unwrap = 0;
+        if (worldProjection) {
+            // Get tile extents
+            _imprecise.groundToImage(new GeoPoint(0, 180), pd);
+            getTilePoint(level, pd, cr);
+            eastLimit = cr.x;
 
-        int unwrap = (eastLimit - westLimit) + 1;
+            _imprecise.groundToImage(new GeoPoint(0, -180), pd);
+            getTilePoint(level, pd, cr);
+            westLimit = cr.x;
+
+            unwrap = (eastLimit - westLimit) + 1;
+        }
+
         int maxLevels = getMaxLevels() + getLevelOffset();
         for (int i = 0; i < tiles.size(); i++) {
             TilePoint tp = tiles.get(i);
             int col = tp.c;
-            if (col < westLimit)
-                col += unwrap;
-            else if (col > eastLimit)
-                col -= unwrap;
+            if (worldProjection) {
+                // Unwrap column overflow
+                if (col < westLimit)
+                    col += unwrap;
+                else if (col > eastLimit)
+                    col -= unwrap;
+            }
             TileBitmap tile = getTile(maxLevels - level - 1, col, tp.r);
             if (tile == null || tile.bmp == null)
                 Log.w(TAG, "Tile at " + tp.c + ", " + tp.r + " is null");
@@ -702,10 +720,6 @@ public class TileCapture extends DatasetTileReader {
 
         public DefaultProjection(int srid) {
             this(MobileImageryRasterLayer2.getProjection(srid));
-        }
-
-        public DefaultProjection(ImageDatasetDescriptor info) {
-            this(info.getSpatialReferenceID());
         }
 
         @Override

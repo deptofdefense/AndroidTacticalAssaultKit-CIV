@@ -346,7 +346,9 @@ public final class Feature implements Disposable {
         Style style = null;
         switch(def.getStyleCoding()) {
             case FeatureDefinition.STYLE_OGR :
-                style = FeatureStyleParser.parse2((String)def.getRawStyle());
+                final String rawStyle = (String)def.getRawStyle();
+                if (rawStyle != null)
+                      style = FeatureStyleParser.parse2((String)def.getRawStyle());
                 break;
             case FeatureDefinition.STYLE_ATAK_STYLE :
                 style = (Style)def.getRawStyle();

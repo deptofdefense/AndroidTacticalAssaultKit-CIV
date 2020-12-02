@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 
 import com.atakmap.android.maps.MapTextFormat;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.map.AtakMapView;
 
@@ -17,8 +18,8 @@ public class TextWidget extends MapWidget2 {
     private String _text;
     private int _lineCount = 0;
     private int[] _colors;
-    private MapTextFormat _textFormat;
-    private int background;
+    protected MapTextFormat _textFormat;
+    protected int background;
 
     public static final int TRANSLUCENT_BLACK = 0x99000000;
     public static final int TRANSLUCENT = 0x00000000;
@@ -128,10 +129,12 @@ public class TextWidget extends MapWidget2 {
      * Set the size of the text container
      * To be removed - redundant to setSize and unnecessary since size is
      * now calculated automatically based on text
+     * @deprecated Use {@link #setSize(float, float)}
      * @param width Bounds width
      * @param height Bounds height
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public void setTextBounds(float width, float height) {
         setSize(width, height);
     }

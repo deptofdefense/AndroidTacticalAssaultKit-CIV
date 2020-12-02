@@ -309,7 +309,7 @@ public class MissionPackageHierarchyListItem extends
     }
 
     @Override
-    public boolean isSupported(Class target) {
+    public boolean isSupported(Class<?> target) {
         return Folder.class.equals(target)
                 || KMZFolder.class.equals(target)
                 || GPXExportWrapper.class.equals(target)
@@ -317,7 +317,7 @@ public class MissionPackageHierarchyListItem extends
     }
 
     @Override
-    public Object toObjectOf(Class target, ExportFilters filters)
+    public Object toObjectOf(Class<?> target, ExportFilters filters)
             throws FormatNotSupportedException {
         List<HierarchyListItem> items = getChildren();
         if (Folder.class.equals(target))

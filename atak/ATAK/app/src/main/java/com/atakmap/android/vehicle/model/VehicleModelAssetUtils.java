@@ -3,12 +3,12 @@ package com.atakmap.android.vehicle.model;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -98,8 +98,8 @@ public class VehicleModelAssetUtils {
         if (is == null)
             return false;
         try {
-            FileSystemUtils.copyStream(is, new FileOutputStream(f));
-            return f.exists();
+            FileSystemUtils.copyStream(is, FileIOProviderFactory.getOutputStream(f));
+            return FileIOProviderFactory.exists(f);
         } catch (Exception e) {
             Log.e(TAG, "Failed to copy asset to file: " + f, e);
         }

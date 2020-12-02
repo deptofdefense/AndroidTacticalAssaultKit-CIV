@@ -17,7 +17,8 @@ import com.atakmap.android.importfiles.sort.ImportResolver;
 import com.atakmap.android.importfiles.sort.ImportResolver.SortFlags;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.filesystem.SecureDelete;
+import com.atakmap.coremap.io.FileIOProvider;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
 
@@ -250,7 +251,7 @@ public class ImportFileTask extends
         if (file == null)
             return new Result(String.format(_context.getString(
                     R.string.importmgr_import_file_not_found), filePath));
-        if (!file.exists()) {
+        if (!FileIOProviderFactory.exists(file)) {
             Log.w(TAG, "Import file not found: " + file.getAbsolutePath());
             return new Result(
                     String.format(_context.getString(
@@ -258,7 +259,7 @@ public class ImportFileTask extends
                             file.getName()));
         }
 
-        boolean isDirectory = file.isDirectory();
+        boolean isDirectory = FileIOProviderFactory.isDirectory(file);
 
         final List<ImportResolver> matchingSorters = new ArrayList<>();
         for (ImportResolver sorter : sorters) {
@@ -350,7 +351,7 @@ public class ImportFileTask extends
                 sameFile = false;
             }
 
-            if (destPath.exists() && !sameFile) {
+            if (FileIOProviderFactory.exists(destPath) && !sameFile) {
                 newMD5 = HashingUtils.md5sum(file);
                 // see if we should compare MD5 since file will be overwritten
                 if (checkFlag(FlagSkipDeleteOnMD5Match)) {
@@ -361,7 +362,7 @@ public class ImportFileTask extends
                                         + ", File has not been updated, discarding: "
                                         + file.getAbsolutePath()
                                         + " based on MD5: " + newMD5);
-                        if (!SecureDelete.delete(file))
+                        if (!FileIOProviderFactory.delete(file, FileIOProvider.SECURE_DELETE))
                             Log.w(TAG,
                                     sorter.toString()
                                             + ", Failed to delete un-updated file: "

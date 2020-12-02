@@ -2,7 +2,6 @@ package com.atakmap.map.layer.raster.mosaic.opengl;
 
 import java.util.HashSet;
 import java.util.IdentityHashMap;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 

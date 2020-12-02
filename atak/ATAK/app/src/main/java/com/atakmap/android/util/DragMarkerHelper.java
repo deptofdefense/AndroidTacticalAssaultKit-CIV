@@ -1,10 +1,13 @@
 
 package com.atakmap.android.util;
 
+import android.content.Context;
+
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.coremap.maps.assets.Icon;
+import com.atakmap.android.widgets.MarkerDrawableWidget;
+import com.atakmap.android.widgets.RootLayoutWidget;
 import com.atakmap.app.R;
 import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapGroup;
@@ -14,19 +17,19 @@ import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
 import java.util.UUID;
 
-public class DragMarkerHelper implements Marker.OnIconChangedListener {
+public class DragMarkerHelper {
 
     private static final String TAG = "DragMarkerHelper";
 
     private MapView mapView;
     private Marker marker;
-    private int markerIconVis;
     private boolean dragging = false, draggable = false;
     private MapEventDispatcher.MapEventDispatchListener dropEvent;
     private Marker dragMarker;
 
     private final MapGroup rootGroup;
     private final MapEventDispatcher dispatcher;
+    private final MarkerDrawableWidget reticle;
 
     private static DragMarkerHelper _instance;
 
@@ -35,6 +38,18 @@ public class DragMarkerHelper implements Marker.OnIconChangedListener {
         dragMarker = createDragMarker();
         rootGroup = mapView.getRootGroup();
         dispatcher = mapView.getMapEventDispatcher();
+
+        // Reticle widget (drawn over map)
+        Context ctx = mapView.getContext();
+        float retSize = (float) (80f * ctx.getResources()
+                .getDisplayMetrics().density);
+        RootLayoutWidget root = (RootLayoutWidget) mapView.getComponentExtra(
+                "rootLayoutWidget");
+        reticle = new MarkerDrawableWidget(ctx.getDrawable(
+                R.drawable.large_reticle_red));
+        reticle.setSize(retSize, retSize);
+        reticle.setVisible(false);
+        root.addWidgetAt(0, reticle);
     }
 
     public synchronized static DragMarkerHelper getInstance() {
@@ -44,15 +59,45 @@ public class DragMarkerHelper implements Marker.OnIconChangedListener {
     }
 
     public static Marker createDragMarker() {
-        MapView mv = MapView.getMapView();
-        Icon ico = null;
-        if (mv != null)
-            ico = new Icon.Builder().setImageUri(0, "android.resource://"
-                    + mv.getContext().getPackageName() + "/"
-                    + R.drawable.large_reticle_red).build();
         Marker marker = new Marker(UUID.randomUUID().toString());
-        marker.setIcon(ico);
+        marker.addOnPointChangedListener(new PointMapItem.OnPointChangedListener() {
+            @Override
+            public void onPointChanged(PointMapItem item) {
+                getInstance().updateWidget(item);
+            }
+        });
+        marker.addOnGroupChangedListener(new MapItem.OnGroupChangedListener() {
+            @Override
+            public void onItemAdded(MapItem item, MapGroup group) {
+                getInstance().updateWidget(item);
+            }
+
+            @Override
+            public void onItemRemoved(MapItem item, MapGroup group) {
+                getInstance().hideWidget();
+            }
+        });
         return marker;
+    }
+
+    /**
+     * Update the reticle widget's target marker
+     * @param mi Marker
+     */
+    public void updateWidget(MapItem mi) {
+        if (!(mi instanceof PointMapItem))
+            return;
+        PointMapItem pmi = (PointMapItem) mi;
+        reticle.setMarker(pmi);
+        reticle.setVisible(true);
+    }
+
+    /**
+     * Hide the reticle widget
+     */
+    public void hideWidget() {
+        reticle.setMarker(null);
+        reticle.setVisible(false);
     }
 
     /**
@@ -108,12 +153,8 @@ public class DragMarkerHelper implements Marker.OnIconChangedListener {
     private void startDragIcon() {
         // just in case an external entity sets the icon
         // while it is showing the drag icon
-        marker.addOnIconChangedListener(this);
         dragging = true;
         // show the drag icon
-        markerIconVis = marker.getIconVisibility();
-        if (markerIconVis == Marker.ICON_VISIBLE)
-            marker.setIconVisibility(Marker.ICON_INVISIBLE);
         draggable = marker.getMetaBoolean("drag", false);
         marker.setMetaBoolean("drag", true);
     }
@@ -124,19 +165,7 @@ public class DragMarkerHelper implements Marker.OnIconChangedListener {
     private void stopDragIcon() {
         dragging = false;
         // restore the current icon
-        marker.setIconVisibility(markerIconVis);
         marker.setMetaBoolean("drag", draggable);
-        marker.removeOnIconChangedListener(this);
-    }
-
-    @Override
-    public void onIconChanged(final Marker marker) {
-        int iconVis = marker.getIconVisibility();
-        if (iconVis != Marker.ICON_INVISIBLE) {
-            markerIconVis = iconVis;
-            if (dragging)
-                marker.setIconVisibility(Marker.ICON_INVISIBLE);
-        }
     }
 
     private final MapEventDispatcher.MapEventDispatchListener longPressDrag = new MapEventDispatcher.MapEventDispatchListener() {
@@ -168,5 +197,4 @@ public class DragMarkerHelper implements Marker.OnIconChangedListener {
             }
         }
     };
-
 }

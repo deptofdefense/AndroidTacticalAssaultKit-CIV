@@ -160,10 +160,23 @@ public class MultiPolyline extends DrawingShape implements Exportable {
     public void setPoints() {
         List<GeoPointMetaData> all = new ArrayList<>();
         synchronized (lock) {
-            for (DrawingShape shape : _lines)
+            for (DrawingShape shape : _lines) {
                 all.addAll(shape._points);
+                shape.setHeight(getHeight());
+                shape.setHeightStyle(HEIGHT_STYLE_POLYGON
+                        | HEIGHT_STYLE_OUTLINE_SIMPLE);
+            }
         }
         super.setPoints(all.toArray(new GeoPointMetaData[0]));
+    }
+
+    @Override
+    public void setHeight(double height) {
+        super.setHeight(height);
+        synchronized (lock) {
+            for (DrawingShape shape : _lines)
+                shape.setHeight(height);
+        }
     }
 
     public void move(GeoPointMetaData oldPoint, GeoPointMetaData newPoint) {
@@ -184,7 +197,7 @@ public class MultiPolyline extends DrawingShape implements Exportable {
     @Override
     public boolean testOrthoHit(int xpos, int ypos, GeoPoint point,
             MapView view) {
-        if (!getMetaBoolean("touchable", true))
+        if (!isTouchable())
             return false;
         synchronized (lock) {
             for (DrawingShape shape : _lines) {
@@ -433,7 +446,7 @@ public class MultiPolyline extends DrawingShape implements Exportable {
      * target format
      */
     @Override
-    public boolean isSupported(Class target) {
+    public boolean isSupported(Class<?> target) {
         return CotEvent.class.equals(target) ||
                 Folder.class.equals(target) ||
                 KMZFolder.class.equals(target) ||
@@ -451,7 +464,7 @@ public class MultiPolyline extends DrawingShape implements Exportable {
      * @return the multipolyline in the form of the target
      */
     @Override
-    public Object toObjectOf(Class target, ExportFilters filters) {
+    public Object toObjectOf(Class<?> target, ExportFilters filters) {
 
         if (filters != null && filters.filter(this))
             return null;

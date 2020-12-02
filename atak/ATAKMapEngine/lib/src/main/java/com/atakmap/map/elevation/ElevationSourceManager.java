@@ -1,9 +1,6 @@
 package com.atakmap.map.elevation;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.Set;
 
 public final class ElevationSourceManager {
     public static interface OnSourcesChangedListener {

@@ -1,7 +1,6 @@
 
 package com.atakmap.android.maps;
 
-import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.Intent;
@@ -23,6 +22,7 @@ import com.atakmap.android.update.AppMgmtUtils;
 import com.atakmap.app.ATAKActivity;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -74,7 +74,7 @@ public class ImportFileActivity extends MetricActivity {
         final Intent intent = getIntent();
         String action = intent.getAction();
         File destDir = new File(this.getCacheDir(), FileSystemUtils.ATAKDATA);
-        if (!destDir.mkdirs()) {
+        if (!FileIOProviderFactory.mkdirs(destDir)) {
             Log.e(TAG, "Error creating directories");
         }
         File destFile = null;
@@ -103,7 +103,7 @@ public class ImportFileActivity extends MetricActivity {
                             destFile = new File(destDir,
                                     FileSystemUtils.validityScan(name));
                             FileSystemUtils.copy(input,
-                                    fos = new FileOutputStream(
+                                    fos = FileIOProviderFactory.getOutputStream(
                                             destFile));
                         }
                     }
@@ -151,7 +151,7 @@ public class ImportFileActivity extends MetricActivity {
                         if (input != null && name != null) {
                             destFile = new File(destDir, name);
                             FileSystemUtils.copy(input,
-                                    fos = new FileOutputStream(
+                                    fos = FileIOProviderFactory.getOutputStream(
                                             destFile));
                         }
                     } catch (IOException e) {

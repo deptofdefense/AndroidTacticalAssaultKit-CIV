@@ -89,13 +89,13 @@ import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -510,7 +510,7 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
                     .getMissionPackageFilesPath(FileSystemUtils.getRoot()
                             .getAbsolutePath());
             File dir = new File(filesDir, group.getManifest().getUID());
-            if (dir.exists())
+            if (FileIOProviderFactory.exists(dir))
                 FileSystemUtils.deleteDirectory(dir, false);
             if (bToast)
                 toast(R.string.deleting_mission_package);
@@ -754,8 +754,8 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
                             File f2 = new File(existing.getGroup()
                                     .getManifest()
                                     .getPath());
-                            if (!f1.exists() || (f2.exists() &&
-                                    f1.lastModified() < f2.lastModified())) {
+                            if (!FileIOProviderFactory.exists(f1) || (FileIOProviderFactory.exists(f2) &&
+                                    FileIOProviderFactory.lastModified(f1) < FileIOProviderFactory.lastModified(f2))) {
                                 // Don't replace existing package
                                 Log.d(TAG, "Skipping older package: " + f1);
                                 continue;
@@ -961,7 +961,7 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
         }
 
         @Override
-        public boolean isSupported(Class target) {
+        public boolean isSupported(Class<?> target) {
             return Folder.class.equals(target)
                     || KMZFolder.class.equals(target)
                     || GPXExportWrapper.class.equals(target)
@@ -969,7 +969,7 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
         }
 
         @Override
-        public Object toObjectOf(Class target, ExportFilters filters)
+        public Object toObjectOf(Class<?> target, ExportFilters filters)
                 throws FormatNotSupportedException {
             List<HierarchyListItem> items = getChildren();
             if (Folder.class.equals(target))
@@ -1228,7 +1228,7 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
         Log.d(TAG, "Deleting " + mpm.getName() + "@" + src);
         // see if its worth the overhead of an async task
         if (onUI && FileSystemUtils.isFile(src)
-                && src.length() > SMALLMISSIONPACKAGE_SIZE_INBYTES)
+                && FileIOProviderFactory.length(src) > SMALLMISSIONPACKAGE_SIZE_INBYTES)
             new DeleteFileTask(mpm, _receiver, null).execute();
         else {
             if (toast)

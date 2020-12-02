@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 
 import com.atakmap.android.data.DataMgmtReceiver;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import android.util.Pair;
@@ -71,8 +72,8 @@ public class WFSMapComponent extends AbstractMapComponent {
     public void onCreate(final Context context, Intent compIntent,
             final MapView view) {
         File wfsDir = FileSystemUtils.getItem("wfs");
-        if (!wfsDir.exists()) {
-            if (!wfsDir.mkdir()) {
+        if (!FileIOProviderFactory.exists(wfsDir)) {
+            if (!FileIOProviderFactory.mkdir(wfsDir)) {
                 Log.e(TAG, "Error creating directories");
             }
         }
@@ -95,7 +96,7 @@ public class WFSMapComponent extends AbstractMapComponent {
                 "Delete WFS configs when clear content is invoked"));
 
         // import the installed configs and their corresponding WFS content
-        File[] configs = wfsDir.listFiles(new FilenameFilter() {
+        File[] configs = FileIOProviderFactory.listFiles(wfsDir, new FilenameFilter() {
             @Override
             public boolean accept(File dir, String filename) {
                 return filename.endsWith(".xml");

@@ -58,7 +58,7 @@ public class NITFHelper {
             if (tre != null) {
                 if (!tre.containsKey(key)) {
                     // Try adding whitespace
-                    StringBuilder keyBuilder = new StringBuilder(key);
+                    final StringBuilder keyBuilder = new StringBuilder(key);
                     while (keyBuilder.length() < TRE_KEY_LEN)
                         keyBuilder.append(" ");
                     key = keyBuilder.toString();

@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.elevation.AbstractElevationData;
@@ -23,7 +24,7 @@ public class Dt2ElevationData extends AbstractElevationData {
             if (fmt == null)
                 return null;
             final File file = new File(object.path);
-            if (!file.exists())
+            if (!FileIOProviderFactory.exists(file))
                 return null;
             return new Dt2ElevationData(file, fmt, object);
         }

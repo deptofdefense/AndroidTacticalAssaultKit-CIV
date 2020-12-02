@@ -2,7 +2,6 @@
 package com.atakmap.android.metrics.activity;
 
 import android.app.ListActivity;
-import android.app.TabActivity;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.MotionEvent;

@@ -17,7 +17,7 @@ public class DefaultMetaDataHolder implements MetaDataHolder {
     private static final String TAG = "DefaultMetaDataHolder";
 
     public DefaultMetaDataHolder() {
-        this(new HashMap());
+        this(new HashMap<String, Object>());
     }
 
     public DefaultMetaDataHolder(final Map<String, Object> bundle) {
@@ -117,7 +117,7 @@ public class DefaultMetaDataHolder implements MetaDataHolder {
 
     @Override
     public final Map<String, Object> getMetaMap(final String key) {
-        Map b = typedGet(_data, key, Map.class, null);
+        Map<String, Object> b = typedGet(_data, key, Map.class, null);
         if (b == null)
             return null;
         return new HashMap<String, Object>(b);

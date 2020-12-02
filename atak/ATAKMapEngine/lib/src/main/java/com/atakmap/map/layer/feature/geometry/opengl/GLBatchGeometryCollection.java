@@ -17,7 +17,6 @@ import com.atakmap.map.layer.feature.geometry.Polygon;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.MathUtils;
-import com.atakmap.opengl.GLRenderBatch;
 import com.atakmap.opengl.GLRenderBatch2;
 import com.atakmap.util.Collections2;
 

@@ -14,7 +14,10 @@ import android.view.Window;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.tools.ActionBarReceiver;
+import com.atakmap.app.ATAKActivity;
+import com.atakmap.app.R;
 import com.atakmap.map.AtakMapView;
+import com.atakmap.math.MathUtils;
 
 import java.util.List;
 import java.util.Timer;
@@ -23,7 +26,8 @@ import java.util.TimerTask;
 public class RootLayoutWidget extends LayoutWidget implements
         AtakMapView.OnMapViewResizedListener, View.OnTouchListener,
         MapWidget2.OnWidgetSizeChangedListener,
-        SharedPreferences.OnSharedPreferenceChangeListener {
+        SharedPreferences.OnSharedPreferenceChangeListener,
+        View.OnLayoutChangeListener {
 
     private static final String TAG = "RootLayoutWidget";
     private static final String PREF_CURVED_SCREEN = "atakAdjustCurvedDisplay";
@@ -35,15 +39,16 @@ public class RootLayoutWidget extends LayoutWidget implements
     public static final int RIGHT_EDGE = 4;
     public static final int BOTTOM_LEFT = 5;
     public static final int BOTTOM_RIGHT = 6;
+    public static final int BOTTOM_EDGE = 7;
     private static final String[] LAYOUT_NAMES = new String[] {
             "Top Left", "Top Edge", "Top Right", "Left Edge", "Right Edge",
-            "Bottom Left", "Bottom Right"
+            "Bottom Left", "Bottom Right", "Bottom Edge"
     };
 
     // Background colors used for debugging purposes
     private static final int[] LAYOUT_COLORS = new int[] {
             0x40FF0000, 0x4000FF00, 0x40FFFF00, 0x400000FF, 0x40FF00FF,
-            0x4000FFFF, 0x40FFFFFF
+            0x4000FFFF, 0x40FFFFFF, 0x4000FF00
     };
 
     private final MapView _mapView;
@@ -53,11 +58,12 @@ public class RootLayoutWidget extends LayoutWidget implements
     private WidTimerTask widTask;
 
     // Padding for curved screens
-    private float _curvePadding = 0f, _curveTol = 0f;
+    private float _curvePadding = 0f;
     private RectF _usableArea = new RectF();
     private View _content;
+    private View _ddHandleLS, _ddHandlePT;
 
-    private final LinearLayoutWidget[] _layouts = new LinearLayoutWidget[BOTTOM_RIGHT
+    private final LinearLayoutWidget[] _layouts = new LinearLayoutWidget[BOTTOM_EDGE
             + 1];
 
     private class WidTimerTask extends TimerTask {
@@ -79,8 +85,9 @@ public class RootLayoutWidget extends LayoutWidget implements
         setSize(_mapView.getWidth(), _mapView.getHeight());
 
         // Initialize corner and side widgets
-        for (int i = TOP_LEFT; i <= BOTTOM_RIGHT; i++) {
+        for (int i = TOP_LEFT; i <= BOTTOM_EDGE; i++) {
             _layouts[i] = new LinearLayoutWidget();
+            _layouts[i].setAlpha(255);
             _layouts[i].setName(LAYOUT_NAMES[i]);
             int gravity = 0;
             gravity |= (i == TOP_RIGHT || i == BOTTOM_RIGHT || i == RIGHT_EDGE)
@@ -89,7 +96,7 @@ public class RootLayoutWidget extends LayoutWidget implements
                             : Gravity.START);
             gravity |= (i == BOTTOM_LEFT || i == BOTTOM_RIGHT)
                     ? Gravity.BOTTOM
-                    : (i == LEFT_EDGE || i == RIGHT_EDGE
+                    : (i == LEFT_EDGE || i == RIGHT_EDGE || i == BOTTOM_EDGE
                             ? Gravity.CENTER_VERTICAL
                             : Gravity.TOP);
             _layouts[i].setGravity(gravity);
@@ -115,6 +122,15 @@ public class RootLayoutWidget extends LayoutWidget implements
         _prefs.edit().putBoolean(PREF_CURVED_SCREEN, _prefs.getBoolean(
                 PREF_CURVED_SCREEN, defValue)).apply();
         onSharedPreferenceChanged(_prefs, PREF_CURVED_SCREEN);
+
+        // The drop-down handles which overlap edges of the widget's usable area
+        ATAKActivity act = (ATAKActivity) _mapView.getContext();
+        _ddHandleLS = act.findViewById(R.id.sidepanehandle_background);
+        _ddHandlePT = act.findViewById(R.id.sidepanehandle_background_portrait);
+        if (_ddHandleLS != null)
+            _ddHandleLS.addOnLayoutChangeListener(this);
+        if (_ddHandlePT != null)
+            _ddHandlePT.addOnLayoutChangeListener(this);
     }
 
     /**
@@ -123,8 +139,9 @@ public class RootLayoutWidget extends LayoutWidget implements
      * @return Corner layout
      */
     public LinearLayoutWidget getLayout(int corner) {
-        return corner >= TOP_LEFT && corner <= BOTTOM_RIGHT ? _layouts[corner]
-                : null;
+        return (corner >= TOP_LEFT && corner <= BOTTOM_RIGHT)
+                || corner == BOTTOM_EDGE ? _layouts[corner]
+                        : null;
     }
 
     @Override
@@ -142,10 +159,17 @@ public class RootLayoutWidget extends LayoutWidget implements
     }
 
     @Override
+    public void onLayoutChange(View v, int left, int top, int right, int bottom,
+            int oldLeft, int oldTop, int oldRight, int oldBottom) {
+        // Drop down handles changed visibility or size
+        onSizeChanged();
+    }
+
+    @Override
     public void onWidgetSizeChanged(MapWidget2 widget) {
         if (_content != null)
-            _usableArea.set(_curveTol, 0f, _content.getWidth() - _curveTol,
-                    _content.getHeight() - _curveTol);
+            _usableArea.set(_curvePadding, 0f, _content.getWidth() - _curvePadding,
+                    _content.getHeight() - _curvePadding);
 
         LinearLayoutWidget w = (LinearLayoutWidget) widget;
         float[] wMargin = w.getMargins();
@@ -161,6 +185,20 @@ public class RootLayoutWidget extends LayoutWidget implements
         float[] trSize = getFullSize(_layouts[TOP_RIGHT]);
         float[] blSize = getFullSize(_layouts[BOTTOM_LEFT]);
         float[] brSize = getFullSize(_layouts[BOTTOM_RIGHT]);
+        float[] bSize = getFullSize(_layouts[BOTTOM_EDGE]);
+
+        // Offset by bottom edge
+        if (w != _layouts[BOTTOM_EDGE])
+            bottom -= bSize[1];
+
+        // Offset by right-side drop-down in landscape mode
+        if (w == _layouts[RIGHT_EDGE] && _ddHandleLS != null
+                && _ddHandleLS.getVisibility() == View.VISIBLE)
+            right -= _ddHandleLS.getWidth() / 2f;
+
+        // Offset by bottom drop-down in portrait mode
+        if (_ddHandlePT != null && _ddHandlePT.getVisibility() == View.VISIBLE)
+            bottom -= _ddHandlePT.getHeight() / 2f;
 
         // Align layouts
         if (w == _layouts[TOP_LEFT]) {
@@ -187,22 +225,24 @@ public class RootLayoutWidget extends LayoutWidget implements
             onWidgetSizeChanged(_layouts[RIGHT_EDGE]);
         } else if (w == _layouts[BOTTOM_LEFT]) {
             // Adjust padding based on screen curve (if any)
-            float cPad = 0f;
-            if (left < _usableArea.left
-                    && bottom + wSize[1] > _usableArea.bottom)
-                cPad = _curvePadding;
-            if (w.setPadding(cPad, 0f, 0f, cPad))
+            float pad = MathUtils.clamp(Math.min(
+                    _usableArea.left - left,
+                    (bottom + wSize[1]) - _usableArea.bottom),
+                    0, _curvePadding);
+
+            if (w.setPadding(pad, 0f, 0f, pad))
                 return;
 
             w.setPoint(left, bottom);
             onWidgetSizeChanged(_layouts[LEFT_EDGE]);
         } else if (w == _layouts[BOTTOM_RIGHT]) {
             // Adjust padding based on screen curve (if any)
-            float cPad = 0f;
-            if (right + wSize[0] > _usableArea.right
-                    && bottom + wSize[1] > _usableArea.bottom)
-                cPad = _curvePadding;
-            if (w.setPadding(0f, 0f, cPad, cPad))
+            float pad = MathUtils.clamp(Math.min(
+                    (right + wSize[0]) - _usableArea.right,
+                    (bottom + wSize[1]) - _usableArea.bottom),
+                    0, _curvePadding);
+
+            if (w.setPadding(0f, 0f, pad, pad))
                 return;
 
             w.setPoint(right, bottom);
@@ -235,6 +275,27 @@ public class RootLayoutWidget extends LayoutWidget implements
             w.setLayoutParams(LinearLayoutWidget.WRAP_CONTENT,
                     (int) (bottom - top));
         }
+
+        //Bottom edge - fill full bottom area
+        else if (w == _layouts[BOTTOM_EDGE]) {
+            float bPad = (bottom + wSize[1]) - _usableArea.bottom;
+            float lPad = MathUtils.clamp(Math.min(
+                    _usableArea.left - left, bPad),
+                    0, _curvePadding);
+            float rPad = MathUtils.clamp(Math.min(
+                    (right + wSize[0]) - _usableArea.right, bPad),
+                    0, _curvePadding);
+            bPad = Math.max(lPad, rPad);
+
+            if (w.setPadding(lPad, 0f, rPad, bPad))
+                return;
+
+            w.setLayoutParams(LinearLayoutWidget.MATCH_PARENT,
+                    LinearLayoutWidget.WRAP_CONTENT);
+            w.setPoint(left, bottom);
+            onWidgetSizeChanged(_layouts[BOTTOM_LEFT]);
+            onWidgetSizeChanged(_layouts[BOTTOM_RIGHT]);
+        }
     }
 
     private float[] getFullSize(MapWidget2 w) {
@@ -264,12 +325,11 @@ public class RootLayoutWidget extends LayoutWidget implements
 
         // Make sure widgets aren't cut off on curved-screen devices (ATAK-8160)
         if (key.equals(PREF_CURVED_SCREEN)) {
-            _curvePadding = _curveTol = 0f;
+            _curvePadding = 0f;
             if (sp.getBoolean(PREF_CURVED_SCREEN, false)) {
                 float dp = _mapView.getContext().getResources()
                         .getDisplayMetrics().density;
                 _curvePadding = 7f * dp;
-                _curveTol = 12f * dp;
             }
             onSizeChanged();
         }

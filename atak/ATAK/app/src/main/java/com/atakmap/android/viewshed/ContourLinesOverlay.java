@@ -30,6 +30,7 @@ import com.atakmap.android.maps.graphics.GLQuadtreeNode2;
 import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.maps.coords.GeoBounds;
@@ -149,8 +150,8 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
         File programDataContourLinesDirectory = new File(
                 FileSystemUtils.getItem(FileSystemUtils.TMP_DIRECTORY),
                 "ContourLinesWorkingDirectory");
-        if (!programDataContourLinesDirectory.exists()) {
-            if (!programDataContourLinesDirectory.mkdirs())
+        if (!FileIOProviderFactory.exists(programDataContourLinesDirectory))
+            if (!FileIOProviderFactory.mkdirs(programDataContourLinesDirectory)) {
                 Log.d(TAG, "could not make the contour lines directory: "
                         + programDataContourLinesDirectory);
         }
@@ -183,17 +184,17 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
         File dir = new File(FileSystemUtils
                 .getItem(FileSystemUtils.EXPORT_DIRECTORY).getPath()
                 + "/testContourDir/" + "Files");
-        if (!dir.exists() && !dir.mkdirs()) {
+        if (!FileIOProviderFactory.exists(dir)&& !FileIOProviderFactory.mkdirs(dir)) {
             toast("failed to create the directory");
         }
 
         //clear out any files added to DS to reduce size of DS when re generating
-        File[] files = dir.listFiles();
+        File[] files = FileIOProviderFactory.listFiles(dir);
         if (files != null) {
             for (File f : files) {
                 try {
                     contourDataStore.remove(f);
-                    if (!f.delete()) {
+                    if (!FileSystemUtils.deleteFile(f)) {
                         Log.d(TAG, "error deleting the file: " + f);
                     }
                 } catch (Exception e) {
@@ -327,10 +328,10 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
         File folder = new File(
                 FileSystemUtils.getItem(FileSystemUtils.EXPORT_DIRECTORY)
                         .getPath() + "/testContourDir/" + "Files");
-        if (!folder.exists() && !folder.mkdirs()) {
+        if (!FileIOProviderFactory.exists(folder) && !FileIOProviderFactory.mkdirs(folder)) {
             toast("failed to create the folder");
         }
-        File[] files = new File(filePath).listFiles();
+        File[] files = FileIOProviderFactory.listFiles(new File(filePath));
 
         if (files != null) {
             for (File f : files) {
@@ -356,12 +357,12 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
         File folder = new File(
                 FileSystemUtils.getItem(FileSystemUtils.EXPORT_DIRECTORY)
                         .getPath() + "/testContourDir/" + "Files");
-        if (!folder.exists() && !folder.mkdirs()) {
+        if (!FileIOProviderFactory.exists(folder) && !FileIOProviderFactory.mkdirs(folder)) {
             //Failed
             toast("failed to create the folder");
         }
 
-        final File[] files = folder.listFiles();
+        final File[] files = FileIOProviderFactory.listFiles(folder);
         if (files != null) {
             for (File f : files) {
                 try {
@@ -912,7 +913,7 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
             //create a temp file to store of created shape file
             String tempFileName = UUID.randomUUID().toString();
             File myDir2 = new File(_myDirectory + "/" + tempFileName);
-            if (!myDir2.exists() && !myDir2.mkdirs()) {
+            if (!FileIOProviderFactory.exists(myDir2) && !FileIOProviderFactory.mkdirs(myDir2)) {
                 toast("failed to create the directory");
                 return;
             }

@@ -129,6 +129,7 @@ LOCAL_SRC_FILES += $(SRCDIR)/math/AABB.cpp \
                    $(SRCDIR)/math/Ellipsoid2.cpp \
                    $(SRCDIR)/math/GeometryModel.cpp \
                    $(SRCDIR)/math/GeometryModel2.cpp \
+                   $(SRCDIR)/math/Frustum2.cpp \
                    $(SRCDIR)/math/Matrix.cpp \
                    $(SRCDIR)/math/Matrix2.cpp \
                    $(SRCDIR)/math/Mesh.cpp \

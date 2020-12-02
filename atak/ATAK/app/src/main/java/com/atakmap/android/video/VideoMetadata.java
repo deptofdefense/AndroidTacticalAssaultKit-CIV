@@ -1,7 +1,6 @@
 
 package com.atakmap.android.video;
 
-import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.log.Log;
 import com.partech.pgscmedia.frameaccess.DecodedMetadataItem;
 import com.atakmap.map.elevation.ElevationManager;

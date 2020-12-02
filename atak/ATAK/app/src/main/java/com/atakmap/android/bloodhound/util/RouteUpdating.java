@@ -5,6 +5,7 @@ import android.util.Pair;
 
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.routes.Route;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -17,6 +18,8 @@ import java.util.UUID;
 /** Utility class with methods for calculating updates to the
  *  bloodhound route based on where the start/end points have moved. */
 public class RouteUpdating {
+
+    private static String TAG = "com.atakmap.android.bloodhound.RouteUpdating";
 
     /** Update a route by truncating both the beginning and ending of the route. */
     private static void updateRoute(GeoPoint origin, GeoPoint dest,
@@ -54,6 +57,7 @@ public class RouteUpdating {
     public synchronized static void truncateRouteBeginning(GeoPoint origin,
             Route route) {
         synchronized (route) {
+            Log.d(TAG, "Truncating route beginning");
             if (route.getNumPoints() > 2) {
                 Pair<GeoPoint, Integer> pair = closestPointOnRoute(origin,
                         route, true);
@@ -78,6 +82,7 @@ public class RouteUpdating {
      *  being navigated to, to the closest point on the route to the point being navigated to. */
     public synchronized static void truncateRouteEnding(GeoPoint dest,
             Route route) {
+        Log.d(TAG, "Truncating route ending");
         synchronized (route) {
             if (route.getNumPoints() > 2) {
                 Pair<GeoPoint, Integer> pair = closestPointOnRoute(dest, route,

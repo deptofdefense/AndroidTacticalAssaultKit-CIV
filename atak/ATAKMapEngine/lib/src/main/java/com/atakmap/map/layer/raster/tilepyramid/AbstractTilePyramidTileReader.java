@@ -319,7 +319,7 @@ outer:      for(long ty = sty; ty <= fty; ty++) {
         
         p.setStyle(Paint.Style.FILL);
         p.setTextSize(16f);
-        g.drawText("[" + String.valueOf(level) + "," + String.valueOf(tileCol) + "," + String.valueOf(tileRow) + "]", 10, height/2, p);
+        g.drawText("[" + String.valueOf(level) + "," + String.valueOf(tileCol) + "," + String.valueOf(tileRow) + "]", 10, height/2f, p);
     }
 
     @Override

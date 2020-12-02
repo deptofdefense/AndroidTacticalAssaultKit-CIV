@@ -107,7 +107,7 @@ public class DrwFileDatabase extends
             msaccessDb = db.open();
             Table msaccessTable = msaccessDb.getTable("Main");
 
-            Integer currentItemNum = -1;
+            int currentItemNum = -1;
             String currentShpType = "";
             ArrayList<Map<String, Object>> currentShapeRows = null;
 
@@ -115,6 +115,9 @@ public class DrwFileDatabase extends
                 // read each row and build shapes from groups of rows
                 for (Map<String, Object> row : msaccessTable) {
                     Integer itemNum = (Integer) row.get("ItemNum");
+                    if (itemNum == null)
+                        continue;
+
 
                     // if new shape number
                     if (!itemNum.equals(currentItemNum)) {
@@ -219,6 +222,8 @@ public class DrwFileDatabase extends
         for (int i = 0; i < shapeRows.size(); i++) {
             Short dataType = (Short) shapeRows.get(i).get("DataType");
             String data = (String) shapeRows.get(i).get("Data");
+            if (dataType == null || data == null)
+                continue;
 
             if (dataType == 1) { // type
                 shp.setStrokeWeight(Double.parseDouble(data.substring(2, 4)));
@@ -268,6 +273,9 @@ public class DrwFileDatabase extends
             Short dataType = (Short) shapeRows.get(i).get("DataType");
             String data = (String) shapeRows.get(i).get("Data");
 
+            if (dataType == null || data == null)
+                continue;
+
             if (dataType == 1) { // type
                 if (data.substring(11, 12).equals("Y")) { // if it's a polygon
                     shp.setStyle(shp.getStyle() | Polyline.STYLE_CLOSED_MASK);
@@ -301,7 +309,7 @@ public class DrwFileDatabase extends
                     // //line width in decimal meters!!!
                 }
             } else if (dataType == 24) { // text
-                if (title != null && title.length() == 0) {
+                if (title.length() == 0) {
                     title = data;
                     shp.setTitle(data);
                 }
@@ -345,6 +353,9 @@ public class DrwFileDatabase extends
             Short dataType = (Short) shapeRows.get(i).get("DataType");
             String data = (String) shapeRows.get(i).get("Data");
 
+            if (dataType == null || data == null)
+                continue;
+
             if (dataType == 1) { // type
                 // 030300009.269260
                 //Log.d(TAG, "debug info: " + data);
@@ -378,7 +389,7 @@ public class DrwFileDatabase extends
             } else if (dataType == 5) { // center
                 shp.setCenter(convDrwPtToGeoPt(data));
             } else if (dataType == 24) { // text
-                if (title != null && title.length() == 0) {
+                if (title.length() == 0) {
                     title = data;
                     shp.setTitle(data);
                 }
@@ -415,6 +426,9 @@ public class DrwFileDatabase extends
             Short dataType = (Short) shapeRows.get(i).get("DataType");
             String data = (String) shapeRows.get(i).get("Data");
 
+            if (dataType == null || data == null)
+                continue;
+
             if (dataType == 1) { // type
                 shp.setAngle(Double.parseDouble(data.substring(6, 9)));
 
@@ -435,7 +449,7 @@ public class DrwFileDatabase extends
             } else if (dataType == 5) { // center
                 shp.setCenter(convDrwPtToGeoPt(data));
             } else if (dataType == 24) { // text
-                if (title != null && title.length() == 0) {
+                if (title.length() == 0) {
                     title = data;
                     shp.setTitle(data);
                 }
@@ -489,10 +503,12 @@ public class DrwFileDatabase extends
             Short dataType = (Short) shapeRows.get(i).get("DataType");
             String data = (String) shapeRows.get(i).get("Data");
 
-            if (dataType == 6 && data != null
-                    && !data.equals("null")) { // title
+            if (dataType == null || data == null)
+                continue;
+
+            if (dataType == 6 && !data.equals("null")) { // title
                 shp.setTitle(shp.getTitle() + data);
-            } else if (dataType == 5 && data != null) { // center
+            } else if (dataType == 5) { // center
                 shp.setPoint(convDrwPtToGeoPt(data));
             }
         }

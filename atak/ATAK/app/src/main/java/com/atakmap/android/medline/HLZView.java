@@ -467,7 +467,7 @@ public class HLZView extends LinearLayout
                             }
                         });
 
-        zoneProtCoord.setSelection(Integer.valueOf(
+        zoneProtCoord.setSelection(Integer.parseInt(
                 _marker.getMetaString("zone_prot_selection", "0")));
     }
 

@@ -5,9 +5,13 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.geometry.GeometryCollection;
 
+/** @deprecated use the batch feature renderering framework */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public final class GLGeometryCollection extends GLGeometry {
 
     private List<GLGeometry> geometries;

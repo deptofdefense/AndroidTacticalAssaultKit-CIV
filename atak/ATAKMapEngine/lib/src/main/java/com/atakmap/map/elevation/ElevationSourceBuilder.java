@@ -1,7 +1,5 @@
 package com.atakmap.map.elevation;
 
-import android.app.DownloadManager;
-
 import com.atakmap.database.IteratorCursor;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;

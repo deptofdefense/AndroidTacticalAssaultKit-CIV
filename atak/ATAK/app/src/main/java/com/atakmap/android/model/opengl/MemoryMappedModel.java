@@ -3,7 +3,9 @@ package com.atakmap.android.model.opengl;
 
 import android.graphics.Color;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.lang.Unsafe;
@@ -42,6 +44,8 @@ import java.util.List;
 import java.util.Map;
 
 /** @deprecated NAME SUBJECT TO CHANGE !!!! */
+@Deprecated
+@DeprecatedApi(since = "4.1")
 public class MemoryMappedModel {
 
     private static final String TAG = "MemoryMappedModel";
@@ -56,11 +60,11 @@ public class MemoryMappedModel {
         @Override
         public Model create(ModelInfo object, ModelSpi.Callback callback) {
             File f = new File(object.uri);
-            if (!f.exists())
+            if (!FileIOProviderFactory.exists(f))
                 return null;
             FileInputStream fis = null;
             try {
-                fis = new FileInputStream(f);
+                fis = FileIOProviderFactory.getInputStream(f);
                 return read(fis.getChannel(), Integer.MAX_VALUE);
             } catch (Throwable t) {
                 Log.e(TAG, "error", t);

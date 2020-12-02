@@ -1,6 +1,7 @@
 
 package com.atakmap.database;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collection;
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.impl.DatabaseImpl;
 import com.atakmap.util.Collections2;
@@ -30,7 +32,7 @@ public final class Databases {
         Set<String> retval = new HashSet<String>();
 
         Cursor result;
-        
+
         result = null;
         try {
             result = database.query("sqlite_master", new String[] {"name"}, "type = \'table\'", null, null, null, null);
@@ -40,7 +42,7 @@ public final class Databases {
             if (result != null)
                 result.close();
         }
-        
+
         result = null;
         try {
             result = database.query("sqlite_master", new String[] {"name"}, "type = \'view\'", null, null, null, null);
@@ -50,7 +52,7 @@ public final class Databases {
             if (result != null)
                 result.close();
         }
-        
+
         return retval;
     }
 
@@ -80,11 +82,11 @@ public final class Databases {
             result = database.rawQuery("PRAGMA table_info(" + tableName + ")", null);
             if(!result.moveToNext())
                 return null;
-            
+
             final int idx = result.getColumnIndex("name");
             if(idx < 0)
                 return null;
-            
+
             Set<String> retval = new HashSet<String>();
             do {
                 retval.add(result.getString(idx));
@@ -113,12 +115,12 @@ public final class Databases {
                 tableInfoResult = null;
                 try {
                     try {
-                        // Note:   This query uses specifically the return from 
-                        //       SELECT name FROM sqlite_master WHERE type='table' 
+                        // Note:   This query uses specifically the return from
+                        //       SELECT name FROM sqlite_master WHERE type='table'
                         // and does not take any other input.
-                        // Executing a rawQuery with a PRAGMA table_info(?) 
+                        // Executing a rawQuery with a PRAGMA table_info(?)
                         // passing in a String[] { table } is not valid in Android.
-                        
+
                         // use of the table name here is implicitly whitelisted
                         // as it comes directly from 'sqlite_master' and not
                         // from an untrusted source
@@ -148,7 +150,7 @@ public final class Databases {
     public static boolean isSQLiteDatabase(String path) {
         FileInputStream fis = null;
         try {
-            fis = new FileInputStream(path);
+            fis = FileIOProviderFactory.getInputStream(new File(path));
             byte[] buf = new byte[16];
             if (fis.read(buf) < 16)
                 return false;
@@ -169,7 +171,7 @@ public final class Databases {
     /**
      * Returns the next auto-increment ID for the specified table. If the specified table does not
      * contain an AUTOINCREMENT column, <code>0L</code> will be returned.
-     * 
+     *
      * @param database A SQLite database
      * @param table The name of the table
      * @return The next auto-increment ID or <code>0L</code> if there is no AUTOINCREMENT column for
@@ -180,7 +182,7 @@ public final class Databases {
         try {
             result = database.rawQuery("SELECT seq FROM sqlite_sequence WHERE name = ?",
                     new String[] {
-                        table
+                            table
                     });
             if (!result.moveToNext())
                 return 1L;
@@ -195,7 +197,7 @@ public final class Databases {
         Set<String> retval = new HashSet<String>();
 
         CursorIface result;
-        
+
         result = null;
         try {
             result = database.query("SELECT tbl_name FROM sqlite_master WHERE type=\'table\'",
@@ -207,7 +209,7 @@ public final class Databases {
             if (result != null)
                 result.close();
         }
-        
+
         result = null;
         try {
             result = database.query("SELECT tbl_name FROM sqlite_master WHERE type=\'view\'",
@@ -219,7 +221,7 @@ public final class Databases {
             if (result != null)
                 result.close();
         }
-        
+
         return retval;
     }
 
@@ -233,11 +235,11 @@ public final class Databases {
             result = database.query("PRAGMA table_info(" + tableName + ")", null);
             if(!result.moveToNext())
                 return null;
-            
+
             final int idx = result.getColumnIndex("name");
             if(idx < 0)
                 return null;
-            
+
             Set<String> retval = new HashSet<String>();
             do {
                 retval.add(result.getString(idx));
@@ -288,7 +290,7 @@ public final class Databases {
     /**
      * Returns the next auto-increment ID for the specified table. If the specified table does not
      * contain an AUTOINCREMENT column, <code>0L</code> will be returned.
-     * 
+     *
      * @param database A SQLite database
      * @param table The name of the table
      * @return The next auto-increment ID or <code>0L</code> if there is no AUTOINCREMENT column for
@@ -351,7 +353,7 @@ public final class Databases {
                 result.close();
         }
     }
-    
+
     public static Map<String, Pair<String, String>> foreignKeyList(DatabaseIface database, String table) {
         if(!tableExists(database, table))
             return Collections.<String, Pair<String, String>>emptyMap();
@@ -367,17 +369,17 @@ public final class Databases {
             Map<String, Pair<String, String>> retval = new HashMap<String, Pair<String, String>>();
             while (result.moveToNext()) {
                 retval.put(result.getString(tableIdx),
-                           Pair.create(
-                                   result.getString(fromIdx),
-                                   result.getString(toIdx)));
+                        Pair.create(
+                                result.getString(fromIdx),
+                                result.getString(toIdx)));
             }
             return retval;
         } finally {
             if (result != null)
                 result.close();
-        }        
+        }
     }
-    
+
     public static boolean matchesSchema(DatabaseIface db, Map<String, Collection<String>> schema, boolean exact) {
         for(Map.Entry<String, Collection<String>> tableDef : schema.entrySet()) {
             Set<String> dbCols = getColumnNames(db, tableDef.getKey());
@@ -387,26 +389,26 @@ public final class Databases {
                 if(!Collections2.containsIgnoreCase(dbCols, col))
                     return false;
             }
-            
+
             if(exact) {
                 for(String col : dbCols)
                     if(!Collections2.containsIgnoreCase(tableDef.getValue(), col))
                         return false;
             }
         }
-        
+
         return true;
     }
-    
+
     /**
      * Returns <code>true</code> if the specified table exists for the given
      * database, <code>false</code>. This method should be used to
      * <I>whitelist</I> table names that will be concatenated into raw queries
      * (e.g. PRAGMA statements).
-     * 
+     *
      * @param database  The database
      * @param tableName The table name
-     * 
+     *
      * @return  <code>true</code> if the table exists for the database,
      *          <code>false</code> otherwise.
      */
@@ -421,56 +423,42 @@ public final class Databases {
                 result.close();
         }
     }
-    
+
     /**
      * Returns <code>true</code> if the specified table exists for the given
      * database, <code>false</code>. This method should be used to
      * <I>whitelist</I> table names that will be concatenated into raw queries
      * (e.g. PRAGMA statements).
-     * 
+     *
      * @param database  The database
      * @param tableName The table name
-     * 
+     *
      * @return  <code>true</code> if the table exists for the database,
      *          <code>false</code> otherwise.
      */
     private static boolean tableExists(SQLiteDatabase database, String tableName) {
         Cursor result;
-        
+
         result = null;
         try {
-            result = database.query("sqlite_master",
-                                    new String[] {"name"},
-                                    "type=\'table\' AND name = ?",
-                                    new String[] {tableName},
-                                    null,
-                                    null,
-                                    null,
-                                    "1");
+            result = database.rawQuery("SELECT name FROM sqlite_master WHERE type=\'table\' AND name = ? LIMIT 1", new String[] {tableName});
             if(result.moveToNext())
                 return true;
         } finally {
             if(result != null)
                 result.close();
         }
-        
+
         result = null;
         try {
-            result = database.query("sqlite_master",
-                                    new String[] {"name"},
-                                    "type=\'view\' AND name = ?",
-                                    new String[] {tableName},
-                                    null,
-                                    null,
-                                    null,
-                                    "1");
+            result = database.rawQuery("SELECT name FROM sqlite_master WHERE type=\'view\' AND name = ? LIMIT 1", new String[] {tableName});
             if(result.moveToNext())
                 return true;
         } finally {
             if(result != null)
                 result.close();
         }
-        
+
         return false;
     }
 
@@ -481,7 +469,7 @@ public final class Databases {
      *                  an in-memory database
      * @param readOnly  <code>true</code> if the database should be opened as
      *                  read-only, <code>false</code> otherwise
-     * @return
+     * @return the database interface
      */
     public static DatabaseIface openDatabase(String path, boolean readOnly) {
         return DatabaseImpl.open(path, readOnly);
@@ -493,7 +481,7 @@ public final class Databases {
      *
      * @param path      The path to the database, or <code>null</code> to open
      *                  an in-memory database
-     * @return
+     * @return the database interface
      */
     public static DatabaseIface openOrCreateDatabase(String path) {
         return DatabaseImpl.openOrCreate(path);

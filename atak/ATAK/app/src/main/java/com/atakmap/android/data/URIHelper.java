@@ -11,6 +11,7 @@ import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.video.ConnectionEntry;
 import com.atakmap.android.video.manager.VideoManager;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -146,7 +147,7 @@ public class URIHelper {
 
         // Read the manifest from the file, if it exists
         File file = new File(path);
-        if (!file.exists())
+        if (!FileIOProviderFactory.exists(file))
             return null;
         return MissionPackageExtractor.GetManifest(file);
     }

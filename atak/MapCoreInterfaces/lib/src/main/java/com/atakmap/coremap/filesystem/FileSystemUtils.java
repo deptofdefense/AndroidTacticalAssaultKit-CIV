@@ -4,6 +4,9 @@ package com.atakmap.coremap.filesystem;
 import android.content.Context;
 import android.os.Environment;
 
+import com.atakmap.annotations.DeprecatedApi;
+import com.atakmap.coremap.io.FileIOProvider;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 
@@ -18,12 +21,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -122,19 +123,19 @@ public class FileSystemUtils {
             //delete left over temp files, but leave tmp directory in place
             File tmp = FileSystemUtils.getItem(TMP_DIRECTORY);
             FileSystemUtils.deleteDirectory(tmp, false);
-            if (!tmp.exists()) {
+            if (!FileIOProviderFactory.exists(tmp)) {
                 Log.d(TAG, "creating tmp directory: " + tmp);
-                if (!tmp.mkdirs())
+                if (!FileIOProviderFactory.mkdirs(tmp))
                     Log.w(TAG, "Failed to mkdir: " + tmp);
             }
 
             //Remove any empty attachment directories
             File dir = FileSystemUtils.getItem("attachments");
-            File[] files = dir.listFiles();
+            File[] files = FileIOProviderFactory.listFiles(dir);
             if (files != null) {
                 for (File i : files) {
-                    if (i.isDirectory()) {
-                        String[] subfiles = i.list();
+                    if (FileIOProviderFactory.isDirectory(i)) {
+                        String[] subfiles = FileIOProviderFactory.list(i);
                         if (subfiles == null || subfiles.length == 0) {
                             if (!i.delete()) {
                                 Log.d(TAG, "could not clear empty directory: "
@@ -212,7 +213,7 @@ public class FileSystemUtils {
         // search all mount/roots
         File bestRoot = null;
         for (String rootPath : roots) {
-            //Log.d(TAG, "Comparing root: " + rootPath);            
+            //Log.d(TAG, "Comparing root: " + rootPath);
             // get ATAK root dir's parent e.g. /mnt/sdcard/external_sd
             File root = new File(rootPath);
             File rootParent = root.getParentFile();
@@ -248,11 +249,14 @@ public class FileSystemUtils {
     }
 
     /**
-     * Clears a cached list of mount points. (Do not call unless you know what you are doing).
+     * Fully resets the caches used by the FileSystemUtils.   Do not call unless you know what you
+     * are doing.   This method is not synchronized and should not be considered safe to use in a
+     * case where other libraries are actively using FileSystemUtils when this is called.
      */
-    public static void clearCachedMountPoints() {
-        mountPoints = null;
-        scanned = false;
+    public static void reset() {
+            rootDirectories = null;
+            mountPoints = null;
+            scanned = false;
     }
 
     private static void legacyFindMountRootDirs(Set<File> roots) {
@@ -289,23 +293,21 @@ public class FileSystemUtils {
                                 root = root.getCanonicalFile();
                             } catch (IOException ignored) {
                             }
-                            if (root.exists() && root.isDirectory()
+                            if (FileIOProviderFactory.exists(root) && FileIOProviderFactory.isDirectory(root)
                                     && root.canWrite())
                                 roots.add(root);
                         } else {
                             Log.d(TAG, "null path encountered");
                         }
                     } else {
-                        Log.d(TAG, "unusable path: " + path);
+                        Log.d(TAG, "unusable null path provided");
                     }
                 }
             }
             is.close();
             destroyProcess(proc);
-        } catch (IOException e2) {
+        } catch (IOException | InterruptedException e2) {
             Log.e(TAG, "error: ", e2);
-        } catch (InterruptedException e) {
-            Log.e(TAG, "error: ", e);
         }
     }
 
@@ -317,14 +319,14 @@ public class FileSystemUtils {
         String android_storage = System.getenv("ANDROID_STORAGE");
         if (android_storage != null) {
             File f = new File(android_storage);
-            if (f.exists() && f.isDirectory() && f.canRead()) {
-                File[] subdirs = f.listFiles();
+            if (FileIOProviderFactory.exists(f) && FileIOProviderFactory.isDirectory(f) && f.canRead()) {
+                File[] subdirs = FileIOProviderFactory.listFiles(f);
                 if (subdirs != null) {
                     for (File subdir : subdirs) {
                         if (subdir != null) {
                             File root = new File(subdir,
                                     ATAK_ROOT_DIRECTORY);
-                            if (root.isDirectory() && root.canRead()) {
+                            if (FileIOProviderFactory.isDirectory(root) && root.canRead()) {
                                 try {
                                     root = subdir.getCanonicalFile();
                                     retval.add(root);
@@ -354,9 +356,9 @@ public class FileSystemUtils {
                 } catch (IOException ignored) {
                 }
                 Log.d(TAG, "Found env path: " + root.getAbsolutePath());
-                if (!root.isDirectory() || !root.canRead())
+                if (!FileIOProviderFactory.isDirectory(root) || !root.canRead())
                     continue;
-                children = root.list();
+                children = FileIOProviderFactory.list(root);
                 if (children == null || children.length < 1)
                     continue;
                 retval.add(root);
@@ -373,7 +375,7 @@ public class FileSystemUtils {
      * object which describes a real issue we are seeing on the Note 1's running the persistent
      * systems rom. specifically:
      * https://github.com/android/platform_bionic/blob/jb-release/libc/bionic/cpuacct.c If a
-     * non-cached version is desired, run clearCachedMountPoints() and then call findMountPoints.
+     * non-cached version is desired, run reset() and then call findMountPoints.
      * (NOT RECOMMENDED)
      *
      * @return list of mount points (ATAK data dir included in path)
@@ -392,7 +394,7 @@ public class FileSystemUtils {
                  */
                 File arrowmakerPath = new File(path + File.separator
                         + ATAK_ROOT_DIRECTORY);
-                if (arrowmakerPath.isDirectory()) {
+                if (FileIOProviderFactory.isDirectory(arrowmakerPath)) {
                     Log.d(TAG, "Mount Point: "
                             + arrowmakerPath.getAbsolutePath());
                     points.add(arrowmakerPath.getAbsolutePath());
@@ -412,7 +414,7 @@ public class FileSystemUtils {
                     // if "atakdata" directory exists, then build out com.atakmap.map/layers
                     // directory, data may be imported
                     File atakPath = new File(path + File.separator + ATAKDATA);
-                    if (atakPath.isDirectory()) {
+                    if (FileIOProviderFactory.isDirectory(atakPath)) {
                         Log.d(TAG,
                                 "Creating Mount Point: "
                                         + arrowmakerPath.getAbsolutePath());
@@ -420,7 +422,7 @@ public class FileSystemUtils {
                                 arrowmakerPath.getAbsolutePath()
                                         + File.separator
                                         + "layers");
-                        if (layersDir.mkdirs()) {
+                        if (FileIOProviderFactory.mkdirs(layersDir)) {
                             Log.d(TAG,
                                     "Mount Point: "
                                             + arrowmakerPath.getAbsolutePath());
@@ -442,7 +444,7 @@ public class FileSystemUtils {
                     .getPath()
                     + File.separatorChar + ATAK_ROOT_DIRECTORY).getPath());
 
-            mountPoints = points.toArray(new String[points.size()]);
+            mountPoints = points.toArray(new String[0]);
         }
 
         return mountPoints;
@@ -467,9 +469,9 @@ public class FileSystemUtils {
                 + FileSystemUtils.ATAK_ROOT_DIRECTORY);
 
         boolean success = false;
-        if (oldPath.exists() && oldPath.isDirectory()) {
+        if (FileIOProviderFactory.exists(oldPath) && FileIOProviderFactory.isDirectory(oldPath)) {
             Log.d(TAG, "successful migration of " + oldPath + " to " + newPath);
-            success = oldPath.renameTo(newPath);
+            success = FileIOProviderFactory.renameTo(oldPath, newPath);
         } else {
             Log.e(TAG, "failed migration of " + oldPath + " to " + newPath);
         }
@@ -492,16 +494,16 @@ public class FileSystemUtils {
             File newPath = FileSystemUtils.getItemOnSameRoot(root, newFile);
 
             File newParent = newPath.getParentFile();
-            if (newParent != null && !newParent.exists()) {
-                if (!newParent.mkdirs()) {
+            if (newParent != null && !FileIOProviderFactory.exists(newParent)) {
+                if (!FileIOProviderFactory.mkdirs(newParent)) {
                     Log.w(TAG, "Failed to create migration dir: " + newParent);
                 }
             }
 
-            if (oldPath.exists() && !newPath.exists()) {
+            if (FileIOProviderFactory.exists(oldPath) && !FileIOProviderFactory.exists(newPath)) {
                 Log.d(TAG, "Migrating " + oldPath.getAbsolutePath() + " to "
                         + newPath.getAbsolutePath());
-                if (!oldPath.renameTo(newPath)) {
+                if (!FileIOProviderFactory.renameTo(oldPath, newPath)) {
                     Log.w(TAG,
                             "Failed to migrate: " + newPath.getAbsolutePath());
                 }
@@ -555,7 +557,7 @@ public class FileSystemUtils {
 
     public static String copyStreamToString(final File file)
             throws IOException {
-        return copyStreamToString(new FileInputStream(file), true,
+        return copyStreamToString(FileIOProviderFactory.getInputStream(file), true,
                 FileSystemUtils.UTF8_CHARSET);
     }
 
@@ -603,8 +605,7 @@ public class FileSystemUtils {
                 } catch (IOException ignore) {
                 }
                 try {
-                    if (in != null)
-                        in.close();
+                    in.close();
                 } catch (IOException ignore) {
                 }
             }
@@ -626,7 +627,7 @@ public class FileSystemUtils {
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new InputStreamReader(
-                    new FileInputStream(filename), UTF8_CHARSET));
+                    FileIOProviderFactory.getInputStream(new File(filename)), UTF8_CHARSET));
             String line = reader.readLine();
             while (line != null) {
                 ret.add(line);
@@ -647,7 +648,7 @@ public class FileSystemUtils {
     }
 
     public static byte[] read(InputStream inputStream, int size,
-            boolean closeIn)
+                              boolean closeIn)
             throws IOException {
         try {
             final byte[] retval = new byte[size];
@@ -685,6 +686,12 @@ public class FileSystemUtils {
         return buffer.toByteArray();
     }
 
+    /**
+     * Write a string to an output stream
+     * @param os the output stream to write to from
+     * @param s the string to write
+     * @throws IOException if there is an issue writing to the stream
+     */
     public static void write(final OutputStream os, String s)
             throws IOException {
         try {
@@ -702,21 +709,29 @@ public class FileSystemUtils {
         return read(is);
     }
 
-    public static void deleteFile(File file) {
+    /**
+     * Delete a file securely.
+     * @param file the file to delete
+     * @return true if the file was deleted successfully.
+     */
+    public static boolean deleteFile(File file) {
         if (file == null)
-            return;
+            return false;
 
         String filepath = file.getAbsolutePath();
-        if (SecureDelete.delete(file))
+        if (FileIOProviderFactory.delete(file, FileIOProvider.SECURE_DELETE)) {
             Log.d(TAG, "Deleted file: " + filepath);
-        else
+            return true;
+        } else {
             Log.w(TAG, "Failed to delete file: " + filepath);
+            return false;
+        }
     }
 
     /**
      * Clear files in the specified directory (not recursive)
      *
-     * @param dir
+     * @param dir the directory to start from
      */
     public static void clearDirectory(File dir) {
         SecureDelete.deleteDirectory(dir, true, false);
@@ -739,7 +754,7 @@ public class FileSystemUtils {
      * @param path A path on the filesystem
      */
     public static void delete(File path) {
-        if (path.isDirectory())
+        if (FileIOProviderFactory.isDirectory(path))
             deleteDirectory(path, false);
         else
             deleteFile(path);
@@ -748,7 +763,7 @@ public class FileSystemUtils {
     /**
      * Recursively delete all files/directories in specified path
      *
-     * @param dir
+     * @param dir the directory to start from
      * @param bContentsOnly true to delete all contents but leave the entire directory structure in place
      */
     public static void deleteDirectory(File dir, boolean bContentsOnly) {
@@ -758,7 +773,7 @@ public class FileSystemUtils {
     /**
      * Recursively delete all files/directories in specified path
      *
-     * @param dir
+     * @param dir the directory to start from
      * @param ignore   [optional] filter to ignore/skip, not place matching files in the zip
      */
     public static void deleteDirectory(File dir, FilenameFilter ignore) {
@@ -768,13 +783,13 @@ public class FileSystemUtils {
     /**
      * Format file extension for UI
      *
-     * @param f
-     * @param toUpper
-     * @param truncate
-     * @return
+     * @param f the filename
+     * @param toUpper if the extension needs to be in upper case
+     * @param truncate the extension truncated to the @see MAX_EXT_LENGTH
+     * @return the extension
      */
     public static String getExtension(File f, boolean toUpper,
-            boolean truncate) {
+                                      boolean truncate) {
         String extension = "";
 
         int i = f.getName().lastIndexOf('.');
@@ -808,7 +823,7 @@ public class FileSystemUtils {
     }
 
     public static boolean isFile(final File file) {
-        return file != null && file.exists();
+        return file != null && FileIOProviderFactory.exists(file);
     }
 
     public static boolean isEmpty(String s) {
@@ -841,7 +856,7 @@ public class FileSystemUtils {
     }
 
     public static boolean isEquals(List<?> lhs,
-            List<?> rhs) {
+                                   List<?> rhs) {
         if (FileSystemUtils.isEmpty(lhs) && FileSystemUtils.isEmpty(rhs))
             return true;
 
@@ -872,8 +887,8 @@ public class FileSystemUtils {
     /**
      * Get new filepath with 8 random characters on end of file name
      *
-     * @param filePath
-     * @return
+     * @param filePath the file path to serve as the base for the generated random file path
+     * @return a randomized file path
      */
     public static String getRandomFilepath(String filePath) {
         String newDestName;
@@ -928,7 +943,7 @@ public class FileSystemUtils {
 
         if (!retval.equals(s))
             Log.e(TAG, "soft warning, file name did not pass sanity check: "
-                    + s,
+                            + s,
                     new Exception());
 
         if (!whiteListCheck(retval)) {
@@ -959,7 +974,7 @@ public class FileSystemUtils {
 
         if (!retval.equals(s))
             Log.e(TAG, "soft warning, file name did not pass sanity check: "
-                    + s,
+                            + s,
                     new Exception());
 
         if (!whiteListCheck(retval)) {
@@ -1001,13 +1016,13 @@ public class FileSystemUtils {
     }
 
     public static void ensureDataDirectory(String name,
-            boolean externalMounts) {
+                                           boolean externalMounts) {
         if (!externalMounts) {
             // just setup the internal flash
             try {
                 File f = FileSystemUtils.getItem(name);
-                if (!f.exists())
-                    if (!f.mkdirs())
+                if (!FileIOProviderFactory.exists(f))
+                    if (!FileIOProviderFactory.mkdirs(f))
                         Log.w(TAG,
                                 "Failed to create directories "
                                         + f.getAbsolutePath());
@@ -1019,8 +1034,8 @@ public class FileSystemUtils {
             for (String atakDirectory : FileSystemUtils.findMountPoints()) {
                 if (FileSystemUtils.isFile(atakDirectory)) {
                     File dir = new File(atakDirectory, name);
-                    if (!dir.exists()) {
-                        if (!dir.mkdirs())
+                    if (!FileIOProviderFactory.exists(dir)) {
+                        if (!FileIOProviderFactory.mkdirs(dir))
                             Log.w(TAG,
                                     "Failed to create directories "
                                             + dir.getAbsolutePath());
@@ -1037,7 +1052,7 @@ public class FileSystemUtils {
      * @param fileName asset filename/path
      */
     public static boolean assetExists(final Context context,
-            final String fileName) {
+                                      final String fileName) {
         InputStream in = null;
         try {
             in = context.getAssets().open(fileName);
@@ -1060,7 +1075,7 @@ public class FileSystemUtils {
      * @param fileName asset filename/path, null if it does not exist.
      */
     public static InputStream getInputStreamFromAsset(final Context context,
-            final String fileName) {
+                                                      final String fileName) {
         try {
             InputStream in = context.getAssets().open(fileName);
             return in;
@@ -1072,18 +1087,18 @@ public class FileSystemUtils {
     /**
      * Copy a single asset from the assets directory to the file system.
      *
-     * @param context
+     * @param context the context to use for the assets
      * @param fileName   asset filename/path
      * @param outputPath output filename relative to ATAK root dir
      * @param forceCopy  true to overwrite existing outputPath
      * @return true if the file already exists, or if it was successfully copied
      */
     public static boolean copyFromAssetsToStorageFile(Context context,
-            String fileName, String outputPath,
-            boolean forceCopy) {
+                                                      String fileName, String outputPath,
+                                                      boolean forceCopy) {
         File outputFile = new File(FileSystemUtils.getRoot(), outputPath);
 
-        if (outputFile.exists() && !forceCopy) {
+        if (FileIOProviderFactory.exists(outputFile) && !forceCopy) {
             Log.i(TAG, "the " + outputPath + " already exists.");
             return true;
         }
@@ -1091,16 +1106,16 @@ public class FileSystemUtils {
         InputStream in = null;
         OutputStream out = null;
 
-        // attempt to make sure that the actual directory exists 
+        // attempt to make sure that the actual directory exists
         // before attempting to write into it.
-        if (!outputFile.getParentFile().exists()) {
-            if (!outputFile.getParentFile().mkdirs())
+        if (!FileIOProviderFactory.exists(outputFile.getParentFile())) {
+            if (!FileIOProviderFactory.mkdirs(outputFile.getParentFile()))
                 Log.d(TAG, "Parent directory could not be created: " +
                         outputFile.getParentFile().getAbsolutePath());
         }
         try {
             in = context.getAssets().open(fileName);
-            out = new FileOutputStream(outputFile);
+            out = FileIOProviderFactory.getOutputStream(outputFile);
             FileSystemUtils.copyStream(in, out);
         } catch (IOException ioe) {
             Log.e(TAG, "could not copy " + fileName + " to " + outputPath, ioe);
@@ -1123,12 +1138,12 @@ public class FileSystemUtils {
     /**
      * Copy an entire assets directory to the file system.
      *
-     * @returns true if the file already exists, or if it was successfully copied
+     * @return true if the file already exists, or if it was successfully copied
      */
     public static boolean copyFromAssetsToStorageDir(final Context context,
-            final String assetDir,
-            final String outputPath,
-            final boolean forceCopy) {
+                                                     final String assetDir,
+                                                     final String outputPath,
+                                                     final boolean forceCopy) {
 
         try {
             String[] files = context.getAssets().list(assetDir);
@@ -1173,13 +1188,6 @@ public class FileSystemUtils {
     }
 
     /**
-     * Clears a cached list of mount points. (Do not call unless you know what you are doing).
-     */
-    public synchronized static void clearCachedRoots() {
-        rootDirectories = null;
-    }
-
-    /**
      * Returns the discovered root directories on the device. These directories should consist of
      * the accessible internal and external storages for the device.
      *
@@ -1221,7 +1229,7 @@ public class FileSystemUtils {
 
             if (!roots.contains(Environment.getExternalStorageDirectory()))
                 roots.add(Environment.getExternalStorageDirectory());
-            rootDirectories = roots.toArray(new File[roots.size()]);
+            rootDirectories = roots.toArray(new File[0]);
         }
 
         return rootDirectories;
@@ -1243,7 +1251,7 @@ public class FileSystemUtils {
 
         for (String specialRoot : specialRoots) {
             final File f = new File(specialRoot);
-            if (f.exists())
+            if (FileIOProviderFactory.exists(f))
                 paths.add(f);
         }
     }
@@ -1275,11 +1283,11 @@ public class FileSystemUtils {
     }
 
     /**
-     * Attempt to rename file May have to byte copy across internal vs external SD boundary, as
+     * Attempt to rename file.  May have to byte copy across internal vs external SD boundary, as
      * renameTo does not support that on Android. In that case, attempt byte for byte copy
      *
-     * @param src
-     * @param dest
+     * @param src the source file
+     * @param dest the destination file
      */
     public static boolean renameTo(File src, File dest) {
 
@@ -1288,7 +1296,7 @@ public class FileSystemUtils {
             return false;
         }
 
-        if (!src.exists()) {
+        if (!FileIOProviderFactory.exists(src)) {
             Log.w(TAG,
                     "Unable to rename missing file: " + src.getAbsolutePath());
             return false;
@@ -1301,7 +1309,7 @@ public class FileSystemUtils {
             return true;
         }
 
-        if (src.renameTo(dest)) {
+        if (FileIOProviderFactory.renameTo(src, dest)) {
             Log.d(TAG, "Successfully renamed: " + dest.getAbsolutePath());
             return true;
         } else
@@ -1324,15 +1332,15 @@ public class FileSystemUtils {
             moved = new File(c.getCacheDir(), del);
 
         //If the parent file does not exist
-        if (!moved.getParentFile().exists()) {
+        if (!FileIOProviderFactory.exists(moved.getParentFile())) {
             //Try making the directory
-            if (!moved.getParentFile().mkdirs()) {
+            if (!FileIOProviderFactory.mkdirs(moved.getParentFile())) {
                 //Log if .mkdirs() returns false
                 Log.e(TAG, "Failed to make directory "
                         + moved.getParentFile().getAbsolutePath());
             }
         }
-        if (f.renameTo(moved))
+        if (FileIOProviderFactory.renameTo(f, moved))
             f = moved;
         else {
             // Probably can't write to /tmp/ from SD card
@@ -1364,13 +1372,13 @@ public class FileSystemUtils {
             return false;
         }
 
-        if (!dest.exists()) {
+        if (!FileIOProviderFactory.exists(dest)) {
             Log.w(TAG, "Failed to copy: " + src.getAbsolutePath());
             return false;
         }
 
         // now delete original
-        if (!SecureDelete.delete(src))
+        if (!FileIOProviderFactory.delete(src, FileIOProvider.SECURE_DELETE))
             Log.w(TAG, "Failed to delete: " + src.getAbsolutePath());
 
         return true;
@@ -1387,8 +1395,8 @@ public class FileSystemUtils {
         FileInputStream fis = null;
         FileOutputStream fos = null;
         try {
-            fis = new FileInputStream(src);
-            fos = new FileOutputStream(dst);
+            fis = FileIOProviderFactory.getInputStream(src);
+            fos = FileIOProviderFactory.getOutputStream(dst);
             copyStream(fis, fos, buf);
         } finally {
             try {
@@ -1410,20 +1418,20 @@ public class FileSystemUtils {
     }
 
     public static void copyStream(final InputStream in, final OutputStream out,
-            final byte[] buf)
+                                  final byte[] buf)
             throws IOException {
         copyStream(in, true, out, true, buf);
     }
 
     public static void copyStream(final InputStream in, final boolean closeIn,
-            final OutputStream out,
-            final boolean closeOut) throws IOException {
+                                  final OutputStream out,
+                                  final boolean closeOut) throws IOException {
         copyStream(in, closeIn, out, closeOut, new byte[BUF_SIZE]);
     }
 
     public static void copyStream(final InputStream in, final boolean closeIn,
-            final OutputStream out,
-            final boolean closeOut, final byte[] buf) throws IOException {
+                                  final OutputStream out,
+                                  final boolean closeOut, final byte[] buf) throws IOException {
 
         try {
             int len;
@@ -1449,8 +1457,8 @@ public class FileSystemUtils {
     public static byte[] read(File f) throws IOException {
         FileInputStream inputStream = null;
         try {
-            inputStream = new FileInputStream(f);
-            final byte[] retval = new byte[(int) f.length()];
+            inputStream = FileIOProviderFactory.getInputStream(f);
+            final byte[] retval = new byte[(int)FileIOProviderFactory.length(f)];
 
             int numRead;
             int off = 0;
@@ -1477,13 +1485,13 @@ public class FileSystemUtils {
      * @return <code>true</code> if the directory is writable, <code>false</code> otherwise.
      */
     public static boolean canWrite(File directory) {
-        if (!directory.exists())
+        if (!FileIOProviderFactory.exists(directory))
             return false;
         File writeCheck = null;
         try {
             writeCheck = File.createTempFile(".writecheck", null, directory);
 
-            return writeCheck.exists();
+            return FileIOProviderFactory.exists(writeCheck);
         } catch (IOException ignored) {
             return false;
         } finally {
@@ -1499,7 +1507,7 @@ public class FileSystemUtils {
         File retval = File.createTempFile(prefix, suffix, dir);
         if (!retval.delete())
             throw new IOException();
-        if (!retval.mkdirs())
+        if (!FileIOProviderFactory.mkdirs(retval))
             throw new IOException();
         return retval;
     }
@@ -1526,15 +1534,15 @@ public class FileSystemUtils {
                     + "platform.xml");
 
             // Copy succeeded
-            if (platform.exists() && cp.exitValue() == 0) {
+            if (FileIOProviderFactory.exists(platform) && cp.exitValue() == 0) {
                 // Add the permission line to file
                 BufferedReader br = new BufferedReader(new InputStreamReader(
-                        new FileInputStream(platform), UTF8_CHARSET));
+                        FileIOProviderFactory.getInputStream(platform), UTF8_CHARSET));
 
                 String line;
                 StringBuilder permissions = new StringBuilder();
                 StringBuilder platformContents = new StringBuilder();
-                long fileLength = platform.length();
+                long fileLength = FileIOProviderFactory.length(platform);
                 boolean readingPermission = false;
                 boolean fileModified = false;
                 try {
@@ -1574,7 +1582,7 @@ public class FileSystemUtils {
                 if (fileModified) {
                     FileOutputStream fos = null;
                     try {
-                        fos = new FileOutputStream((platform));
+                        fos = FileIOProviderFactory.getOutputStream((platform));
                         fos.write(platformContents.toString().getBytes(
                                 UTF8_CHARSET));
                     } catch (UnsupportedEncodingException e) {
@@ -1588,7 +1596,7 @@ public class FileSystemUtils {
                     }
 
                     // Make sure there was no data lost in the process
-                    if (platform.length() > fileLength) {
+                    if (FileIOProviderFactory.length(platform) > fileLength) {
                         try {
                             // Make system temporarily writable
                             mount = Runtime.getRuntime().exec(
@@ -1638,7 +1646,11 @@ public class FileSystemUtils {
         return systemRestartRequired;
     }
 
+    /**
+     * @deprecated {@link #unzip(File, File, boolean)} instead}
+     */
     @Deprecated
+    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
     public static void extract(File zip, File destDir, boolean overwrite)
             throws IOException {
         unzip(zip, destDir, overwrite);
@@ -1661,8 +1673,8 @@ public class FileSystemUtils {
         ZipInputStream zin = null;
 
         try {
-            if (!destDir.isDirectory() || !destDir.exists()) {
-                boolean r = destDir.mkdirs();
+            if (!FileIOProviderFactory.isDirectory(destDir) || !FileIOProviderFactory.exists(destDir)) {
+                boolean r = FileIOProviderFactory.mkdirs(destDir);
                 if (!r)
                     Log.d(TAG, "could not create: " + destDir);
             }
@@ -1673,7 +1685,7 @@ public class FileSystemUtils {
             byte[] buffer = new byte[8192];
 
             // read in from zip
-            zin = new ZipInputStream(new FileInputStream(zip));
+            zin = new ZipInputStream(FileIOProviderFactory.getInputStream(zip));
             ZipEntry zinEntry;
 
             // iterate all zip entries
@@ -1686,17 +1698,17 @@ public class FileSystemUtils {
                 File f = new File(destDir,
                         sanitizeWithSpacesAndSlashes(zinEntry.getName()));
 
-                if (!f.getParentFile().exists()) {
-                    if (!f.getParentFile().mkdirs())
+                if (!FileIOProviderFactory.exists(f.getParentFile())) {
+                    if (!FileIOProviderFactory.mkdirs(f.getParentFile()))
                         Log.d(TAG, "could not create: " + f.getParentFile());
                 }
 
-                FileOutputStream fos = new FileOutputStream(f);
+                FileOutputStream fos = FileIOProviderFactory.getOutputStream(f);
 
                 // stream from in zip to out file
 
                 try {
-                    if (f.exists()) {
+                    if (FileIOProviderFactory.exists(f)) {
                         if (overwrite) {
                             Log.d(TAG,
                                     "Overwriting zip file: "
@@ -1716,7 +1728,7 @@ public class FileSystemUtils {
                 }
 
                 //see if created successfully
-                if (!f.exists()) {
+                if (!FileIOProviderFactory.exists(f)) {
                     Log.w(TAG, "Failed to extract: " + f.getAbsolutePath());
                 }
             } // end zin loop
@@ -1759,7 +1771,7 @@ public class FileSystemUtils {
      * @throws IOException in case there are any io exceptions.
      */
     public static File zipDirectory(File dir, File dest, boolean compress,
-            FilenameFilter ignore)
+                                    FilenameFilter ignore)
             throws IOException {
         if (dest == null) {
             Log.w(TAG, "Cannot zip to missing file");
@@ -1771,13 +1783,13 @@ public class FileSystemUtils {
             return null;
         }
 
-        if (!dir.isDirectory()) {
+        if (!FileIOProviderFactory.isDirectory(dir)) {
             Log.w(TAG,
                     "Cannot zip non Directory file: " + dir.getAbsolutePath());
             return null;
         }
 
-        File[] files = dir.listFiles();
+        File[] files = FileIOProviderFactory.listFiles(dir);
         if (isEmpty(files)) {
             Log.w(TAG, "Cannot zip empty Directory: " + dir.getAbsolutePath());
             return null;
@@ -1785,7 +1797,7 @@ public class FileSystemUtils {
 
         ZipOutputStream zos = null;
         try {
-            FileOutputStream fos = new FileOutputStream(dest);
+            FileOutputStream fos = FileIOProviderFactory.getOutputStream(dest);
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             // Don't compress the ZIP
@@ -1799,7 +1811,7 @@ public class FileSystemUtils {
                     continue;
                 }
 
-                if (file.isDirectory()) {
+                if (FileIOProviderFactory.isDirectory(file)) {
                     addDirectory(zos, file, null, ignore);
                 } else {
                     if (ignore != null
@@ -1851,7 +1863,7 @@ public class FileSystemUtils {
      * @throws IOException io exception if there is an exception writing the file.
      */
     public static File zipDirectory(List<File> files, File dest,
-            boolean compress) throws IOException {
+                                    boolean compress) throws IOException {
         if (dest == null) {
             Log.w(TAG, "Cannot zip to missing file");
             return null;
@@ -1865,7 +1877,7 @@ public class FileSystemUtils {
         List<String> filenames = new ArrayList<>();
         ZipOutputStream zos = null;
         try {
-            FileOutputStream fos = new FileOutputStream(dest);
+            FileOutputStream fos = FileIOProviderFactory.getOutputStream(dest);
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             // Don't compress the ZIP
@@ -1874,7 +1886,7 @@ public class FileSystemUtils {
 
             //loop and add all files
             for (File file : files) {
-                if (!FileSystemUtils.isFile(file) || file.isDirectory()) {
+                if (!FileSystemUtils.isFile(file) || FileIOProviderFactory.isDirectory(file)) {
                     Log.w(TAG, "Skipping invalid file: "
                             + (file == null ? "" : file.getAbsolutePath()));
                     continue;
@@ -2042,7 +2054,7 @@ public class FileSystemUtils {
      * @param filename File name that will show up in the ZIP
      */
     public static void addFile(ZipOutputStream zos, File file,
-            String filename) {
+                               String filename) {
         try {
             // create new zip entry
             ZipEntry entry = new ZipEntry(filename);
@@ -2053,8 +2065,8 @@ public class FileSystemUtils {
             FileInputStream fis = null;
 
             try {
-                if (!file.isDirectory()) {
-                    fis = new FileInputStream(file);
+                if (!FileIOProviderFactory.isDirectory(file)) {
+                    fis = FileIOProviderFactory.getInputStream(file);
                     FileSystemUtils.copyStream(fis, true, zos, false);
                 }
             } finally {
@@ -2085,16 +2097,16 @@ public class FileSystemUtils {
      * @param parentPath The parent directory path (null if root)
      */
     public static void addDirectory(ZipOutputStream zos, File dir,
-            String parentPath) {
+                                    String parentPath) {
         addDirectory(zos, dir, parentPath, null);
     }
 
     public static void addDirectory(ZipOutputStream zos, File dir,
-            String parentPath, FilenameFilter ignore) {
+                                    String parentPath, FilenameFilter ignore) {
         String prefix = dir.getName() + File.separator;
         if (!FileSystemUtils.isEmpty(parentPath))
             prefix = parentPath + prefix;
-        File[] files = dir.listFiles();
+        File[] files = FileIOProviderFactory.listFiles(dir);
         if (FileSystemUtils.isEmpty(files)) {
             // Create an empty directory entry
             addFile(zos, dir, prefix);
@@ -2108,7 +2120,7 @@ public class FileSystemUtils {
                 continue;
             }
 
-            if (file.isDirectory())
+            if (FileIOProviderFactory.isDirectory(file))
                 addDirectory(zos, file, prefix, ignore);
             else {
                 if (ignore != null
@@ -2157,25 +2169,27 @@ public class FileSystemUtils {
     }
 
     /**
-     *
-     * @param derivedFrom
-     * @param result
-     * @param limit
-     * @return
+     * Walk a tree recursively and grab all of the File information to come up with a total
+     * file size and most recent modified.
+     * @param derivedFrom the directory or file to start with
+     * @param result the total size of all of the files and the most recent last modified
+     * @param limit the maxinum number of file s to process
+     * @return true if the maximum number of files was not hit, false if the maximum number of files
+     * was exceeded.
      */
     public static boolean getFileData(File derivedFrom, FileTreeData result,
-            long limit) {
+                                      long limit) {
         if (derivedFrom.isFile()) {
-            result.size += derivedFrom.length();
+            result.size += FileIOProviderFactory.length(derivedFrom);
 
-            long t = derivedFrom.lastModified();
+            long t = FileIOProviderFactory.lastModified(derivedFrom);
             if (t > result.lastModified) {
                 result.lastModified = t;
             }
 
             result.numFiles++;
         } else {
-            String[] children = derivedFrom.list();
+            String[] children = FileIOProviderFactory.list(derivedFrom);
             if (children != null) {
                 for (String aChildren : children) {
                     if (!getFileData(new File(derivedFrom, aChildren),
@@ -2189,8 +2203,9 @@ public class FileSystemUtils {
 
     public static long getFileSize(File derivedFrom) {
         if (derivedFrom.isFile())
-            return derivedFrom.length();
-        File[] children = derivedFrom.listFiles();
+            return FileIOProviderFactory.length(derivedFrom);
+            
+        File[] children = FileIOProviderFactory.listFiles(derivedFrom);
         if (children == null) {
             Log.w(TAG, "No children for file " + derivedFrom.getAbsolutePath());
             return -1;
@@ -2204,10 +2219,10 @@ public class FileSystemUtils {
 
     public static long getLastModified(File derivedFrom) {
         if (derivedFrom.isFile())
-            return derivedFrom.lastModified();
+            return FileIOProviderFactory.lastModified(derivedFrom);
         long retval = -1L;
         long t;
-        File[] children = derivedFrom.listFiles();
+        File[] children = FileIOProviderFactory.listFiles(derivedFrom);
         if (children != null) {
             for (File aChildren : children) {
                 t = getLastModified(aChildren);
@@ -2228,7 +2243,7 @@ public class FileSystemUtils {
         if (derivedFrom.isFile())
             return 1;
         int retval = 0;
-        File[] children = derivedFrom.listFiles();
+        File[] children = FileIOProviderFactory.listFiles(derivedFrom);
         if (children != null) {
             for (File aChildren : children)
                 retval += getNumberOfFiles(aChildren);
@@ -2248,7 +2263,7 @@ public class FileSystemUtils {
     /**
      * Fortify Validity check for String filenames so they cannot 
      * contain path manipulation characters.
-     * 
+     *
      * If the following string is expected to have a specific 
      * extension, if no extension is specified then the file is 
      * still checked for sanity.
@@ -2256,7 +2271,7 @@ public class FileSystemUtils {
      * that are not dotted.
      */
     public static String validityScan(final String fileName,
-            final String[] exts)
+                                      final String[] exts)
             throws FileNameInvalid {
 
         //Log.d(TAG, "validity scan: " + fileName);
@@ -2289,7 +2304,7 @@ public class FileSystemUtils {
 
     }
 
-    /** 
+    /**
      * Check a filename to see if it passes the white list check.   True if it passes, false if it 
      * does not.
      */
@@ -2303,6 +2318,7 @@ public class FileSystemUtils {
             for (String r : ROOT_FS_WHITELIST) {
                 if (fileName.startsWith(r)) {
                     pass = true;
+                    break;
                 }
             }
             if (!pass) {
@@ -2328,7 +2344,7 @@ public class FileSystemUtils {
         if (exts != null && base != null && exts != null) {
             for (String ext : exts) {
                 File f = new File(directory, base + ext);
-                if (f.exists())
+                if (FileIOProviderFactory.exists(f))
                     return f;
             }
         }

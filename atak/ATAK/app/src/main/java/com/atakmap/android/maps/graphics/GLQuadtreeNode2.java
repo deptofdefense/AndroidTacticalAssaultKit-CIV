@@ -3,6 +3,7 @@ package com.atakmap.android.maps.graphics;
 
 import android.opengl.GLES30;
 
+import com.atakmap.android.importexport.handlers.ParentMapItem;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.coremap.log.Log;
@@ -390,7 +391,7 @@ public class GLQuadtreeNode2 extends
                                 / 2.0d;
 
                         final double qLat = this.bounds.getNorth()
-                                - ((halfLat) * (i / 2));
+                                - ((halfLat) * (i / 2f));
                         final double qLng = this.bounds.getWest()
                                 + ((halfLng) * (i % 2));
 
@@ -456,6 +457,7 @@ public class GLQuadtreeNode2 extends
                 for (int i = 0; i < qtn.children.length; ++i) {
                     if (qtn.children[i] != null) {
                         empty = false;
+                        break;
                     }
                 }
             }
@@ -763,8 +765,21 @@ public class GLQuadtreeNode2 extends
         @Override
         public int compare(GLMapItem2 a, GLMapItem2 b) {
             // check if the same object
-            if (a.getSubject().getSerialId() == b.getSubject().getSerialId())
+            MapItem aSub = a.getSubject(), bSub = b.getSubject();
+            if (aSub.getSerialId() == bSub.getSerialId())
                 return 0;
+
+            // Both items are part of the same shape - sort by Z always
+            MapGroup aGroup = aSub.getGroup(), bGroup = bSub.getGroup();
+            if (aGroup != null && bGroup != null) {
+                MapGroup aChildGroup = aSub instanceof ParentMapItem
+                        ? ((ParentMapItem) aSub).getChildMapGroup() : null;
+                MapGroup bChildGroup = bSub instanceof ParentMapItem
+                        ? ((ParentMapItem) bSub).getChildMapGroup() : null;
+                if (aGroup == bChildGroup || bGroup == aChildGroup
+                        || aGroup == bGroup && aGroup.hasMetaValue("shapeUID"))
+                    return ITEM_COMPARATOR.compare(a, b);
+            }
 
             // check render pass. surface only items will be sorted at the head
             // of the draw list and will undergo Z comparison; only sprites are
@@ -809,9 +824,9 @@ public class GLQuadtreeNode2 extends
                     + camera.getAltitude() * camera.getAltitude();
 
             if (aDistSq > bDistSq)
-                return -1;
-            else if (aDistSq < bDistSq)
                 return 1;
+            else if (aDistSq < bDistSq)
+                return -1;
             else
                 return ITEM_COMPARATOR.compare(a, b);
         }

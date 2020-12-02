@@ -11,6 +11,7 @@ import android.util.Pair;
 import com.atakmap.android.hierarchy.HierarchyListReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -95,7 +96,7 @@ public class ImportReceiver extends BroadcastReceiver {
                                     .validityScan(uri.getPath()));
                             if (uri.getScheme() != null
                                     && uri.getScheme().equals("file") ||
-                                    f.exists()) {
+                                    FileIOProviderFactory.exists(f)) {
                                 Log.d(TAG, "delete from file system: " + f);
                                 FileSystemUtils.deleteFile(f);
                             } else {

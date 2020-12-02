@@ -73,6 +73,7 @@ import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.tools.ActionBarView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.GpxFileSpatialDb;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
@@ -756,8 +757,8 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
                         File exportDir = FileSystemUtils
                                 .getItem(FileSystemUtils.EXPORT_DIRECTORY);
 
-                        if (exportDir != null && exportDir.exists()
-                                && exportDir.isDirectory())
+                        if (exportDir != null && FileIOProviderFactory.exists(exportDir)
+                                && FileIOProviderFactory.isDirectory(exportDir))
                             startDirectory = exportDir.getAbsolutePath();
                         else
                             startDirectory = Environment
@@ -919,6 +920,10 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
 
     int getScroll() {
         return listView.getFirstVisiblePosition();
+    }
+
+    public boolean isTouchActive() {
+        return content.isTouchActive();
     }
 
     /**
@@ -1213,7 +1218,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
                 sorts.add(new SortAlphabet());
             }
             int selectionIndex = 0;
-            Class curSort = adapter.getSortType();
+            Class<?> curSort = adapter.getSortType();
             if (showSort = sorts.size() > 1) {
                 boolean found = false;
                 for (int i = 0; i < sorts.size(); i++) {
@@ -1263,7 +1268,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
      * @param sortType Sort class
      * @return Sort instance
      */
-    public static Sort findSort(HierarchyListItem item, Class sortType) {
+    public static Sort findSort(HierarchyListItem item, Class<?> sortType) {
         List<Sort> sorts = getSortModes(item);
         if (sorts != null) {
             for (Sort s : sorts) {
@@ -1596,6 +1601,11 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
 
         @Override
         public void disposeImpl() {
+        }
+
+        @Override
+        public String getToolbarTitle() {
+            return adapter.getListTitle();
         }
 
         public void setToolbar(IToolbarExtension toolbar) {

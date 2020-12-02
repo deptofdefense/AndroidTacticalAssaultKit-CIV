@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.drawable.ShapeDrawable;
+import android.os.Bundle;
 import android.text.InputType;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -33,6 +34,8 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.rubbersheet.maps.AbstractSheet;
+import com.atakmap.android.rubbersheet.maps.RubberModel;
+import com.atakmap.android.rubbersheet.tool.RubberModelEditTool;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.user.ExpandableGridView;
 import com.atakmap.android.util.ATAKUtilities;
@@ -48,6 +51,7 @@ import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.locale.LocaleUtil;
+import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.NorthReference;
 
@@ -61,7 +65,8 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
         Rectangle.OnPointsChangedListener, View.OnClickListener,
         CompoundButton.OnCheckedChangeListener,
         AbstractSheet.OnAlphaChangedListener,
-        MapItem.OnMetadataChangedListener {
+        MapItem.OnMetadataChangedListener,
+        RubberModel.OnChangedListener {
 
     private final Context _context;
     private final LayoutInflater _inf;
@@ -73,7 +78,7 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
     private Button _azimuthButton;
     private TextView _dimensions;
     private CheckBox _outlineCB;
-    private View _sendLayout;
+    private View _optionsLayout, _editLayout;
 
     public VehicleModelDetailsView(Context context) {
         this(context, null);
@@ -109,6 +114,7 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
         AtakBroadcast.getInstance().sendBroadcast(intent);
 
         _vehicle.removeOnPointsChangedListener(this);
+        _vehicle.removeChangeListener(this);
     }
 
     /**
@@ -122,15 +128,14 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
         rabtable = new RangeAndBearingTableHandler(this);
         _centerButton = findViewById(R.id.vehicleCenterButton);
         _colorButton = findViewById(R.id.vehicleColorButton);
-        ImageButton sendButton = findViewById(
-                R.id.vehicleSendButton);
         _modelIcon = findViewById(R.id.vehicleIcon);
         _modelButton = findViewById(R.id.vehicleModel);
         _transSeek = findViewById(R.id.vehicleTransparencySeek);
         _dimensions = findViewById(R.id.vehicleDimensions);
         _azimuthButton = findViewById(R.id.vehicleAzimuth);
         _outlineCB = findViewById(R.id.vehicleOutline);
-        _sendLayout = findViewById(R.id.vehicleSendView);
+        _optionsLayout = findViewById(R.id.vehicleOptions);
+        _editLayout = findViewById(R.id.editOptions);
 
         _nameEdit.setText(_vehicle.getTitle());
 
@@ -140,9 +145,6 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
         _modelIcon.setImageDrawable(info.getIcon());
 
         _alpha = _vehicle.getAlpha();
-
-        // Update views for azimuth and dimensions
-        updateDisplay();
 
         // Save an instance of the remarks, so we know if they changed when the dropdown closes
         _remarksLayout.setText(_vehicle.getRemarks());
@@ -178,15 +180,19 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
 
         _updateColorButtonDrawable();
         _colorButton.setOnClickListener(this);
-        sendButton.setOnClickListener(this);
         _modelButton.setOnClickListener(this);
         _azimuthButton.setOnClickListener(this);
+        findViewById(R.id.sendButton).setOnClickListener(this);
+        findViewById(R.id.editButton).setOnClickListener(this);
+        findViewById(R.id.undoButton).setOnClickListener(this);
+        findViewById(R.id.endEditButton).setOnClickListener(this);
         _outlineCB.setOnCheckedChangeListener(this);
         _vehicle.addOnPointsChangedListener(this);
         _vehicle.addOnAlphaChangedListener(this);
         _vehicle.addOnMetadataChangedListener(this);
+        _vehicle.addChangeListener(this);
 
-        ImageButton attBtn = this.findViewById(R.id.cotInfoAttachmentsButton);
+        ImageButton attBtn = this.findViewById(R.id.attachmentsButton);
         if (_attManager == null)
             _attManager = new AttachmentManager(_mapView, attBtn);
         _attManager.setMapItem(_vehicle);
@@ -215,6 +221,18 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
         // Send vehicle
         else if (id == R.id.vehicleSendButton)
             sendSelected(_vehicle.getUID());
+
+        // Edit mode
+        else if (id == R.id.editButton)
+            startEditingMode();
+
+        // Undo edit
+        else if (id == R.id.undoButton)
+            undoToolEdit();
+
+        // End editing mode
+        else if (id == R.id.endEditButton)
+            endEditingMode();
     }
 
     @Override
@@ -225,6 +243,21 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
             else if (!checked && _vehicle.getAlpha() == 0)
                 _vehicle.setAlpha(255);
         }
+    }
+
+    @Override
+    protected String getEditTool() {
+        return RubberModelEditTool.TOOL_NAME;
+    }
+
+    @Override
+    protected void onEditToolBegin(Bundle extras) {
+        refresh();
+    }
+
+    @Override
+    protected void onEditToolEnd() {
+        refresh();
     }
 
     /**
@@ -365,13 +398,38 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
                 _modelButton.setText(newModel.name);
                 _modelIcon.setImageDrawable(newModel.getIcon());
                 _nameEdit.setText(newName);
-                updateDisplay();
+                refresh();
                 d.dismiss();
+            }
+        });
+
+        spinner.setSelection(categories.indexOf(model.category));
+    }
+
+    private static void setViewsEnabled(boolean enabled, View... views) {
+        for (View v : views)
+            v.setEnabled(enabled);
+    }
+
+    private void _updateColorButtonDrawable() {
+        final ShapeDrawable color = super.updateColorButtonDrawable();
+        color.getPaint().setColor(_vehicle.getStrokeColor());
+        post(new Runnable() {
+            @Override
+            public void run() {
+                _colorButton.setImageDrawable(color);
             }
         });
     }
 
-    private void updateDisplay() {
+    @Override
+    protected void _onColorSelected(int color, String label) {
+        _vehicle.setColor(color);
+        _updateColorButtonDrawable();
+    }
+
+    @Override
+    public void refresh() {
         // Center
         _centerButton
                 .setText(_unitPrefs.formatPoint(_vehicle.getCenter(), true));
@@ -401,36 +459,14 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
 
         // Whether the vehicle is read-only - not to be confused with getEditable()
         boolean editable = _vehicle.hasMetaValue("editable");
+        boolean inEditMode = editToolActive();
         setViewsEnabled(editable, _nameEdit, _centerButton, _azimuthButton,
                 _modelButton, _colorButton, _transSeek, _outlineCB,
                 _remarksLayout);
-        _sendLayout.setVisibility(editable ? View.VISIBLE : View.GONE);
-    }
-
-    private static void setViewsEnabled(boolean enabled, View... views) {
-        for (View v : views)
-            v.setEnabled(enabled);
-    }
-
-    private void _updateColorButtonDrawable() {
-        final ShapeDrawable color = super.updateColorButtonDrawable();
-        color.getPaint().setColor(_vehicle.getStrokeColor());
-        post(new Runnable() {
-            @Override
-            public void run() {
-                _colorButton.setImageDrawable(color);
-            }
-        });
-    }
-
-    @Override
-    protected void _onColorSelected(int color, String label) {
-        _vehicle.setColor(color);
-        _updateColorButtonDrawable();
-    }
-
-    @Override
-    public void refresh() {
+        _optionsLayout.setVisibility(editable && !inEditMode
+                ? View.VISIBLE : View.GONE);
+        _editLayout.setVisibility(editable && inEditMode
+                ? View.VISIBLE : View.GONE);
         _attManager.refresh();
     }
 
@@ -444,18 +480,28 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
 
     @Override
     public void onPointsChanged(Shape s) {
-        updateDisplay();
+        refresh();
+    }
+
+    @Override
+    public void onAltitudeChanged(RubberModel model, double altitude,
+                                  GeoPoint.AltitudeReference reference) {
+        refresh();
     }
 
     @Override
     public void onMetadataChanged(MapItem item, String field) {
         if (field.equals("outline"))
-            updateDisplay();
+            refresh();
     }
 
     @Override
     public void onAlphaChanged(AbstractSheet sheet, int alpha) {
         if (_alpha != alpha)
             _transSeek.setProgress(alpha);
+    }
+
+    @Override
+    public void onRotationChanged(RubberModel model, double[] rotation) {
     }
 }

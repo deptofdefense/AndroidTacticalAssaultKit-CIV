@@ -179,9 +179,9 @@ public class MarkerImporter extends MapItemImporter {
          * set the value, before the handlers do their thing, otherwise there's no way
          * to set the visibility until well after marker establishment.
          */
-        boolean visible = extras.getBoolean("visible", marker.getVisible());
+        boolean visible = extras.getBoolean("visible", marker.getVisible(true));
         //Log.d(TAG, "setting visibility of: " + marker.getUID() + " " + visible);
-        marker.setVisible(visible);
+        marker.setVisible(visible, false);
 
         CotDetailManager.getInstance().processDetails(marker, event);
 

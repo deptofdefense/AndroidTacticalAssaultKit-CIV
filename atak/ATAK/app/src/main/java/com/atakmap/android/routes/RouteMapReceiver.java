@@ -356,7 +356,7 @@ public class RouteMapReceiver extends BroadcastReceiver {
 
         String prefix = getPreferences().getString("waypointPrefix", "CP");
         int color = Integer
-                .valueOf(getPreferences().getString("defaultRouteColor",
+                .parseInt(getPreferences().getString("defaultRouteColor",
                         String.valueOf(Route.DEFAULT_ROUTE_COLOR)));
 
         final Route route = new Route(_mapView, routeName, color, prefix, uid);

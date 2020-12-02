@@ -58,9 +58,9 @@ public class ExportFilters implements ExportFilter {
      */
     public static class TargetClassFilter implements ExportFilter {
 
-        private final Class targetClass;
+        private final Class<?> targetClass;
 
-        public TargetClassFilter(Class targetClass) {
+        public TargetClassFilter(Class<?> targetClass) {
             this.targetClass = targetClass;
         }
 

@@ -12,10 +12,12 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.content.BindArgument;
 import com.atakmap.content.CatalogCurrency;
 import com.atakmap.content.CatalogCurrencyRegistry;
 import com.atakmap.content.WhereClauseBuilder;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.CursorWrapper;
 import com.atakmap.database.DatabaseIface;
@@ -31,6 +33,8 @@ import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.raster.osm.OSMUtils;
 
 /** @deprecated use {@link PersistentDataSourceFeatureDataStore2} */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class PersistentDataSourceFeatureDataStore extends AbstractDataSourceFeatureDataStore {
 
     private final static String CURRENCY_NAME = "PersistentDataSourceFeatureDataStore.Currency";
@@ -760,7 +764,7 @@ public class PersistentDataSourceFeatureDataStore extends AbstractDataSourceFeat
             }
             
             if(largs.size() > 0)
-                args = largs.toArray(new String[largs.size()]);
+                args = largs.toArray(new String[0]);
         }
 
         //System.out.println("UPDATE FEATURES VISIBILITY: " + sql);
@@ -1202,7 +1206,7 @@ public class PersistentDataSourceFeatureDataStore extends AbstractDataSourceFeat
                 f = ((com.atakmap.io.ZipVirtualFile)f).getZipFile();
 
             final boolean isDirectory = ((parse.get()&0x01) == 0x01);
-            if(f.isDirectory() != isDirectory) {
+            if(FileIOProviderFactory.isDirectory(f) != isDirectory) {
                 return false;
             }
             final long length = parse.getLong();
@@ -1258,7 +1262,7 @@ public class PersistentDataSourceFeatureDataStore extends AbstractDataSourceFeat
                 retval.putShort((short)spi.parseVersion());
                 putString(retval, spi.getName());
             }
-            retval.put(file.isDirectory() ? (byte)0x01 : (byte)0x00);
+            retval.put(FileIOProviderFactory.isDirectory(file) ? (byte)0x01 : (byte)0x00);
             retval.putLong(FileSystemUtils.getFileSize(file));
             retval.putLong(FileSystemUtils.getLastModified(file));
             

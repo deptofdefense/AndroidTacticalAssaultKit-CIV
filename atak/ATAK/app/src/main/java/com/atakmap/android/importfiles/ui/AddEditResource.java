@@ -35,6 +35,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.MRUStringCache;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.kml.KMLUtil;
 
@@ -316,7 +317,7 @@ public class AddEditResource {
                 iconStatus.setImageResource(R.drawable.importmgr_status_red);
             } else {
                 File local = new File(resource.getLocalPath());
-                if (local.exists()) {
+                if (FileIOProviderFactory.exists(local)) {
                     iconStatus
                             .setImageResource(
                                     R.drawable.importmgr_status_green);
@@ -372,9 +373,9 @@ public class AddEditResource {
                         .getLastRefreshed()));
             else if (resource != null
                     && FileSystemUtils.isFile(resource.getLocalPath())) {
-                txtDetailsLastRefreshed.setText(getModifiedDate(new File(
-                        resource.getLocalPath())
-                                .lastModified()));
+                txtDetailsLastRefreshed.setText(getModifiedDate(FileIOProviderFactory
+                                .lastModified(new File(
+                        resource.getLocalPath()))));
             }
 
             if (RemoteResource.isKML(type.toString())) {

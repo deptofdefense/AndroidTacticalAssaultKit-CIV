@@ -8,13 +8,17 @@ import android.util.Pair;
 import com.atakmap.android.filesystem.ResourceFile;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProvider;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
-import com.atakmap.coremap.filesystem.SecureDelete;
+import com.atakmap.coremap.locale.LocaleUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -26,6 +30,11 @@ public class ImportVideoSort extends ImportResolver {
 
     private static final String CONTENT_TYPE = "Video File";
 
+    public final static Set<String> VIDEO_EXTENSIONS = new HashSet<>(
+            Arrays.asList("mpeg", "mpg", "ts", "avi", "mp4",
+                    "264", "265", "wmv", "mov", "webm",
+                    "mov", "mkv", "flv"));
+
     private final Context _context;
 
     public ImportVideoSort(Context context, String ext, boolean validateExt,
@@ -34,9 +43,25 @@ public class ImportVideoSort extends ImportResolver {
         _context = context;
     }
 
+    public ImportVideoSort(Context context, boolean validateExt,
+                           boolean copyFile) {
+        this(context, null, validateExt, copyFile);
+    }
+
     @Override
     public boolean match(File file) {
-        if (!super.match(file))
+
+        // Check against default video extensions if this sorter does not
+        // specify a single extension
+        if (_bValidateExt && _ext == null) {
+            String ext = FileSystemUtils.getExtension(file, false, false)
+                    .toLowerCase(LocaleUtil.getCurrent());
+            if (!VIDEO_EXTENSIONS.contains(ext))
+                return false;
+        }
+
+        // Default matching
+        else if (!super.match(file))
             return false;
 
         // TODO: Check if the file is actually a video - otherwise this sorter
@@ -74,7 +99,7 @@ public class ImportVideoSort extends ImportResolver {
         File atakdata = new File(_context.getCacheDir(),
                 FileSystemUtils.ATAKDATA);
         if (file.getAbsolutePath().startsWith(atakdata.getAbsolutePath())
-                && SecureDelete.delete(file))
+                && FileIOProviderFactory.delete(file, FileIOProvider.SECURE_DELETE))
             Log.d(TAG,
                     "deleted imported video: " + file.getAbsolutePath());
 

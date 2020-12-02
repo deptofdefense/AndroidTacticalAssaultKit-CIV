@@ -13,6 +13,7 @@ import com.atakmap.android.missionpackage.file.MissionPackageExtractorFactory;
 import com.atakmap.android.missionpackage.file.MissionPackageFileIO;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -152,7 +153,7 @@ public class ExtractMissionPackageTask extends MissionPackageBaseTask {
                                                                         R.string.mission_package_name))
                                                         + " imported from SD card: "
                                                         + _manifest.getPath(),
-                                                zipFile.length()));
+                                                FileIOProviderFactory.length(zipFile)));
                     }
                 }
             }

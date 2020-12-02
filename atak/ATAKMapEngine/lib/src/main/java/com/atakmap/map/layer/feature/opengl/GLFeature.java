@@ -2,6 +2,7 @@ package com.atakmap.map.layer.feature.opengl;
 
 import android.util.Pair;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.style.Style;
@@ -15,6 +16,9 @@ import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.opengl.GLRenderBatch;
 
+/** @deprecated use the batch feature renderering framework */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public final class GLFeature implements GLMapRenderable, GLMapBatchable {
 
     private MapRenderer surface;

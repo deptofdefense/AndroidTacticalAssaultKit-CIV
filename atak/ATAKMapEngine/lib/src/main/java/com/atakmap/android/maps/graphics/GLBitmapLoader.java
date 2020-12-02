@@ -18,6 +18,7 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.EnumMap;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -27,7 +28,14 @@ import java.util.concurrent.ThreadFactory;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.database.CursorIface;
+import com.atakmap.database.DatabaseIface;
+import com.atakmap.database.Databases;
+import com.atakmap.database.QueryIface;
+import com.atakmap.database.StatementIface;
 import com.atakmap.map.RenderContext;
 import com.atakmap.net.AsynchronousInetAddressResolver;
 import com.atakmap.util.ReferenceCount;
@@ -35,18 +43,11 @@ import com.atakmap.map.opengl.GLMapSurface;
 
 import android.util.Base64;
 import android.content.Context;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteDoneException;
-import android.database.sqlite.SQLiteStatement;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.ParcelFileDescriptor;
 
 import com.atakmap.coremap.log.Log;
-import com.atakmap.database.CursorIface;
-import com.atakmap.database.DatabaseIface;
-import com.atakmap.database.android.AndroidDatabaseAdapter;
 
 /**
  *  Due to an issue with Android Zip on ICS and potentially other platforms
@@ -59,48 +60,48 @@ import com.atakmap.database.android.AndroidDatabaseAdapter;
  */
 public class GLBitmapLoader {
 
-   static public enum QueueType { ICON("Icon"), 
+        public enum QueueType { ICON("Icon"),
                                   LOCAL("Local"), 
                                   LOCAL_COMPRESSED("Local Compressed"), 
                                   REMOTE("Remote"), 
                                   GENERIC("Generic"); 
         private String name;
 
-        private QueueType(final String name) { 
+        QueueType(final String name) {
             this.name = name;
         }
-        public String toString() { 
+        public String toString() {
             return name;
         }
 
-   };
+   }
 
-   private static class LoaderSpec implements Comparable<LoaderSpec> {
-       private static int instances = 0;
+    private static class LoaderSpec implements Comparable<LoaderSpec> {
+        private static int instances = 0;
 
-       public final LoaderSpi loader;
-       public final QueueType queue;
-       private final int insert;
-       
-       public LoaderSpec(LoaderSpi loader, QueueType queue) {
-           this.loader = loader;
-           this.queue = queue;
-           
-           synchronized(LoaderSpec.class) {
-               this.insert = instances++;
-           }
-       }
-       
-       @Override
-       public int compareTo(LoaderSpec other) {
-           int retval = other.loader.getPriority()-this.loader.getPriority();
-           if(retval == 0) {
-               retval = System.identityHashCode(this.loader)-System.identityHashCode(other.loader);
-               if((retval == 0) && (this.loader != other.loader))
-                   retval = this.insert-other.insert;
-           }
-           return retval;
-       }
+        public final LoaderSpi loader;
+        public final QueueType queue;
+        private final int insert;
+
+        public LoaderSpec(LoaderSpi loader, QueueType queue) {
+            this.loader = loader;
+            this.queue = queue;
+
+            synchronized (LoaderSpec.class) {
+                this.insert = instances++;
+            }
+        }
+
+        @Override
+        public int compareTo(LoaderSpec other) {
+            int retval = other.loader.getPriority() - this.loader.getPriority();
+            if (retval == 0) {
+                retval = System.identityHashCode(this.loader) - System.identityHashCode(other.loader);
+                if ((retval == 0) && (this.loader != other.loader))
+                    retval = this.insert - other.insert;
+            }
+            return retval;
+        }
 
        @Override
        public boolean equals(Object o) {
@@ -110,7 +111,7 @@ public class GLBitmapLoader {
            LoaderSpec that = (LoaderSpec) o;
 
            if (insert != that.insert) return false;
-           if (loader != null ? !loader.equals(that.loader) : that.loader != null) return false;
+           if (!Objects.equals(loader, that.loader)) return false;
            return queue == that.queue;
        }
 
@@ -121,7 +122,7 @@ public class GLBitmapLoader {
            result = 31 * result + insert;
            return result;
        }
-   }
+    }
 
     public GLBitmapLoader(RenderContext surface, int threadCount,
                           final int threadPriority) {
@@ -164,14 +165,24 @@ public class GLBitmapLoader {
         this.registerLoader("http", new UrlBitmapLoaderSpi(), QueueType.REMOTE);
         this.registerLoader("https", new UrlBitmapLoaderSpi(), QueueType.REMOTE);
     }
-    
+
+    /**
+     * Register a loader for a specific scheme and what type of queue they will be put in during
+     * execution.
+     * @param scheme  the uri scheme
+     * @param loader the loader to call
+     * @param queue the queue to execute the loader on.  @see QueueType.
+     */
     public void registerLoader(String scheme, LoaderSpi loader, QueueType queue) {
-        // XXX - 
         synchronized(this.loaders) {
             this.loaders.put(scheme, new LoaderSpec(loader, queue));
         }
     }
-    
+
+    /**
+     * Unregister a loader for all schemes.
+     * @param loader the loader to call
+     */
     public void unregisterLoader(LoaderSpi loader) {
         synchronized(this.loaders) {
             Iterator<Map.Entry<String, LoaderSpec>> iter = this.loaders.entrySet().iterator();
@@ -189,7 +200,7 @@ public class GLBitmapLoader {
      * @param type is the queue type to be used for loading the bitmap.   No programatic
      * restrictions are placed on the queue type that is chosen, however poor selections will
      * potentially result in poor performance.   Loading all of the queues with remotely loaded
-     * objects for example could cause a backlog due to network I/O. 
+     * objects for example could cause a backlog due to network I/O.
      */
     public void loadBitmap(final FutureTask<Bitmap> r, final QueueType type) {
         loadAsync(r, type);
@@ -213,9 +224,9 @@ public class GLBitmapLoader {
 
     public void shutdown() {
         if (_executor != null) {
-            for (QueueType t : QueueType.values()) { 
-                 _executor.get(t).shutdown();
-                 if (!_executor.get(t).isTerminated())
+            for (QueueType t : QueueType.values()) {
+                _executor.get(t).shutdown();
+                if (!_executor.get(t).isTerminated())
                     Log.e(TAG, "failed to shutdown future tasks for the bitmap loader: " + t);
             }
         }
@@ -223,7 +234,7 @@ public class GLBitmapLoader {
         for (ReferenceCount<ZipFile> value : _zipCache.values()) {
             try {
                 value.value.close();
-            } catch (Exception ignored) {
+            } catch (Exception e) {
             }
         }
         _zipCache.clear();
@@ -231,7 +242,7 @@ public class GLBitmapLoader {
         for (ReferenceCount<DatabaseIface> value : _dbCache.values()) {
             try {
                 value.value.close();
-            } catch (Exception ignored) {
+            } catch (Exception e) {
             }
         }
         _dbCache.clear();
@@ -250,25 +261,25 @@ public class GLBitmapLoader {
     }
 
     public FutureTask<Bitmap> loadBitmap(final String uri,
-            final BitmapFactory.Options opts) {
+                                         final BitmapFactory.Options opts) {
 
         FutureTask<Bitmap> r = null;
         Uri u = Uri.parse(uri);
         // Check if the scheme is null. This can happen if the uri is relative
         // only.
         if (u == null)
-            return r;
+            return null;
 
         final String scheme = u.getScheme();
         final LoaderSpec s = this.loaders.get(scheme);
         if(s != null) {
-            r = new FutureTask<Bitmap>(new Callable<Bitmap>() {
+            r = new FutureTask<>(new Callable<Bitmap>() {
                 @Override
-                public Bitmap call() throws Exception {
+                public Bitmap call() {
                     try {
                         return s.loader.loadBitmap(uri, opts);
-                    } catch(Exception e) {
-                        Log.e(TAG, "error: " +  e, e);
+                    } catch (Exception e) {
+                        Log.e(TAG, "error: " + e, e);
                         return null;
                     }
                 }
@@ -294,7 +305,7 @@ public class GLBitmapLoader {
             if (zEntry == null) {
                 try {
                     zf.close();
-                } catch (Exception ignored) {
+                } catch (Exception e) {
                 }
                 return false;
             } else {
@@ -309,7 +320,7 @@ public class GLBitmapLoader {
      * Mount a zip archive for use, it is unmounted. If it is already mounted, the mount reference
      * count will be increased by one. The mounted zip file is made available by a call to
      * getMountedArchive and guaranteed to remain open until the reference count goes to zero.
-     * 
+     *
      * @param arcPath the archive to mount in zip format.
      */
     static public void mountArchive(final String arcPath) {
@@ -317,7 +328,7 @@ public class GLBitmapLoader {
             ReferenceCount<ZipFile> zip = _zipCache.get(arcPath);
             if (zip == null || !validZip(zip.value)) {
                 try {
-                    zip = new ReferenceCount<>(new ZipFile(arcPath));
+                    zip = new ReferenceCount<ZipFile>(new ZipFile(arcPath));
                     Log.d(TAG, "archive: " + arcPath + " add to cache.");
                     _zipCache.put(arcPath, zip);
                 } catch (IOException e) {
@@ -332,7 +343,7 @@ public class GLBitmapLoader {
     /**
      * Unmount a zip archive. If the reference is zero, the zip archive is closed and no longer made
      * available through a call to getMountedArchive.
-     * 
+     *
      * @param arcPath the archive to mount in zip format.
      */
     static public void unmountArchive(final String arcPath) {
@@ -357,7 +368,7 @@ public class GLBitmapLoader {
      * Provides the requested archive if it has been sucessfully mounted otherwise it will return
      * null. The callee should not attempt to close the mounted archive as it will make it unusable
      * by future users. XXX: You have been warned.
-     * 
+     *
      * @param path the archive to mount in zip format.
      */
     static public ZipFile getMountedArchive(String path) {
@@ -375,7 +386,7 @@ public class GLBitmapLoader {
      * mount reference count will be increased by one. The mounted database is made available by a
      * call to getMountedDatabase and guaranteed to remain open until the reference count goes
      * to zero.
-     * 
+     *
      * @param arcPath the archive to mount in zip format.
      */
     static public void mountDatabase(String arcPath) {
@@ -386,13 +397,12 @@ public class GLBitmapLoader {
                 return;
             }
             File f = new File(arcPath);
-            if (!f.exists()) {
+            if (!FileIOProviderFactory.exists(f)) {
                 Log.w(TAG, "SQLite Database " + arcPath + " could not be mounted.");
                 return;
             }
-            int flags = (SQLiteDatabase.OPEN_READONLY | SQLiteDatabase.NO_LOCALIZED_COLLATORS);
             db = new ReferenceCount<DatabaseIface>(
-                    AndroidDatabaseAdapter.openDatabase(arcPath, flags));
+                    Databases.openDatabase(arcPath, true));
             Log.d(TAG, "archive: " + arcPath + " add to cache.");
             _dbCache.put(arcPath, db);
 
@@ -404,7 +414,7 @@ public class GLBitmapLoader {
     /**
      * Unmount a database. If the reference is zero, the database is closed and no longer made
      * available through a call to getMountedDatabase.
-     * 
+     *
      * @param arcPath the database to mount.
      */
     static public void unmountDatabase(String arcPath) {
@@ -426,15 +436,17 @@ public class GLBitmapLoader {
     /**
      * @deprecated  always returns null, use {@link #getMountedDatabase2(String)}
      */
-    static public SQLiteDatabase getMountedDatabase(String path) {
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
+    static public android.database.sqlite.SQLiteDatabase getMountedDatabase(String path) {
         return null;
     }
-    
+
     /**
      * Provides the requested database if it has been sucessfully mounted otherwise it will return
      * null. The callee should not attempt to close the mounted database as it will make it unusable
      * by future users. XXX: You have been warned.
-     * 
+     *
      * @param path the archive to mount in zip format.
      */
     static public DatabaseIface getMountedDatabase2(String path) {
@@ -463,10 +475,10 @@ public class GLBitmapLoader {
         public Bitmap loadBitmap(String uri, BitmapFactory.Options opts) throws Exception;
         public int getPriority();
     }
-    
+
     public static abstract class AbstractInputStreamLoaderSpi implements LoaderSpi {
         private final int priority;
-        
+
         protected AbstractInputStreamLoaderSpi(int priority) {
             this.priority = priority;
         }
@@ -482,14 +494,14 @@ public class GLBitmapLoader {
                     stream.close();
             }
         }
-        
+
         @Override
         public final int getPriority() {
             return this.priority;
         }
 
         protected abstract InputStream openStream(String uri) throws Exception;
-        
+
         protected Bitmap loadBitmapImpl(String uri, InputStream stream, BitmapFactory.Options opts) throws Exception {
             return BitmapFactory.decodeStream(stream, null, opts);
         }
@@ -500,7 +512,7 @@ public class GLBitmapLoader {
         private static Map<Context, LoaderSpi> instances = new IdentityHashMap<Context, LoaderSpi>();
 
         private final Context context;
-        
+
         private AssetBitmapLoaderSpi(Context context) {
             super(-1);
 
@@ -521,7 +533,7 @@ public class GLBitmapLoader {
 
             return this.context.getAssets().open(assetPath);
         }
-        
+
         public synchronized static LoaderSpi getInstance(Context context) {
             LoaderSpi retval = instances.get(context);
             if(retval == null)
@@ -529,7 +541,7 @@ public class GLBitmapLoader {
             return retval;
         }
     }
-    
+
     private final static class Base64BitmapLoaderSpi extends AbstractInputStreamLoaderSpi {
 
         public final static LoaderSpi INSTANCE = new Base64BitmapLoaderSpi();
@@ -550,13 +562,13 @@ public class GLBitmapLoader {
             return new ByteArrayInputStream(buf);
         }
     }
-    
+
     private final static class ResourceBitmapLoaderSpi extends AbstractInputStreamLoaderSpi {
 
         private static Map<Context, LoaderSpi> instances = new IdentityHashMap<Context, LoaderSpi>();
 
         private final Context context;
-        
+
         private ResourceBitmapLoaderSpi(Context context) {
             super(-1);
 
@@ -575,17 +587,17 @@ public class GLBitmapLoader {
                 throw new IllegalArgumentException();
 
             final String scheme = u.getScheme();
-            
+
             int resourceId;
             String packageName = null;
-            if (scheme != null && scheme.equals("resource")) {
+            if (scheme.equals("resource")) {
                 resourceId = Integer.parseInt(uri.substring(11));
-            } else if (scheme != null && scheme.equals("android.resource")) {
+            } else if (scheme.equals("android.resource")) {
                 String[] parts = uri.substring(19).split("/");
                 packageName = parts[0];
                 resourceId = Integer.parseInt(parts[1]);
             } else {
-                throw new IllegalArgumentException("scheme not supported " + scheme);
+                throw new IllegalArgumentException();
             }
 
             if (packageName != null) {
@@ -597,7 +609,7 @@ public class GLBitmapLoader {
                         .openRawResource(resourceId);
             }
         }
-        
+
         public synchronized static LoaderSpi getInstance(Context context) {
             LoaderSpi retval = instances.get(context);
             if(retval == null)
@@ -626,14 +638,11 @@ public class GLBitmapLoader {
         protected InputStream openStream(String uriStr) throws Exception {
             Uri uri = Uri.parse(uriStr);
             final String path = uri.getPath();
-            if (path == null)
-                return null;
-
             int entryPathIdx = path.indexOf('!');
-            
+
             final String arcPath = path.substring(0, entryPathIdx);
             final String entryPath = path.substring(entryPathIdx + 2);
-            
+
             ZipFile zip = getMountedArchive(arcPath);
             if (zip == null) {
                 mountArchive(arcPath);
@@ -665,13 +674,13 @@ public class GLBitmapLoader {
             String filePath = uri.substring((scheme != null) ? scheme.length()+3 : 0);
             return BitmapFactory.decodeFile(filePath, opts);
         }
-        
+
         @Override
         public int getPriority() {
             return -1;
         }
     }
-    
+
     private static class SqliteBitmapLoaderSpi extends AbstractInputStreamLoaderSpi {
         public final static LoaderSpi INSTANCE = new SqliteBitmapLoaderSpi();
 
@@ -688,14 +697,14 @@ public class GLBitmapLoader {
                 final String queryString = u.getQueryParameter("query");
 
                 if (queryString == null)
-                     throw new IllegalStateException("null query string");
+                    throw new IllegalStateException("null query string");
 
                 query = URLDecoder.decode(queryString, FileSystemUtils.UTF8_CHARSET.name());
             } catch (UnsupportedEncodingException e) {
                 throw new IllegalStateException(e);
             }
             final String filePath = u.getPath();
-            
+
             ReferenceCount<DatabaseIface> database;
             synchronized(_dbCache) {
                 database = _dbCache.get(filePath);
@@ -704,7 +713,7 @@ public class GLBitmapLoader {
                 Log.w(TAG, "SQLite Database " + filePath + " is not mounted.");
                 return null;
             }
-            
+
             CursorIface result = null;
             try {
                 result = database.value.query(query, null);
@@ -727,7 +736,7 @@ public class GLBitmapLoader {
         if(file == null)
             iconCacheTempFileError = false;
         iconCacheFile = file;
-        
+
     }
     public synchronized static File getIconCacheDb() {
         if(iconCacheFile == null && !iconCacheTempFileError) {
@@ -747,13 +756,13 @@ public class GLBitmapLoader {
             if (GLBitmapLoader.this.urlIconCacheDatabase == null) {
                 final File iconCacheDbFile = getIconCacheDb();
                 if(iconCacheDbFile != null) {
-                    GLBitmapLoader.this.urlIconCacheDatabase = SQLiteDatabase.openOrCreateDatabase(
-                            iconCacheDbFile, null);
+                    GLBitmapLoader.this.urlIconCacheDatabase = Databases.openOrCreateDatabase(
+                            iconCacheDbFile.getAbsolutePath());
                     if (GLBitmapLoader.this.urlIconCacheDatabase.getVersion() != ICON_CACHE_DB_VERSION) {
                         GLBitmapLoader.this.urlIconCacheDatabase
-                                .execSQL("DROP TABLE IF EXISTS cache");
+                                .execute("DROP TABLE IF EXISTS cache", null);
                         GLBitmapLoader.this.urlIconCacheDatabase
-                                .execSQL("CREATE TABLE cache (url TEXT, bitmap BLOB)");
+                                .execute("CREATE TABLE cache (url TEXT, bitmap BLOB)", null);
                         GLBitmapLoader.this.urlIconCacheDatabase.setVersion(ICON_CACHE_DB_VERSION);
                     }
                 }
@@ -775,37 +784,23 @@ public class GLBitmapLoader {
                 if (GLBitmapLoader.this.urlIconCacheDatabase != null) {
                     if (queryUrlIconBitmapStatement == null)
                         queryUrlIconBitmapStatement = urlIconCacheDatabase
-                                .compileStatement("SELECT bitmap FROM cache WHERE url = ?");
+                                .compileQuery("SELECT bitmap FROM cache WHERE url = ?");
 
-                    InputStream is = null;
-                    ParcelFileDescriptor fd = null;
                     try {
-                        queryUrlIconBitmapStatement.bindString(1, url);
-
-                        try {
-                            fd = queryUrlIconBitmapStatement.simpleQueryForBlobFileDescriptor();
-                        } catch (SQLiteDoneException e) {
-                            fd = null;
-                        }
-
+                        queryUrlIconBitmapStatement.bind(1, url);
+                        if(!queryUrlIconBitmapStatement.moveToNext())
+                            return null;
+                        byte[] fd = queryUrlIconBitmapStatement.getBlob(0);
                         if (fd != null) {
-                            is = new FileInputStream(fd.getFileDescriptor());
-
-                            return BitmapFactory.decodeStream(is, null, opts);
+                            return BitmapFactory.decodeByteArray(fd, 0, fd.length, opts);
                         }
                     } finally {
                         queryUrlIconBitmapStatement.clearBindings();
-
-                        if (is != null)
-                            is.close();
-
-                        if (fd != null) 
-                            fd.close();
                     }
                 }
             }
 
-            URLConnection connection = null;
+            URLConnection connection;
             InputStream is = null;
             try {
                 URL u = new URL(url);
@@ -852,21 +847,21 @@ public class GLBitmapLoader {
 
                     FileOutputStream fos = null;
 
-                    try { 
-                        FileSystemUtils.copyStream(is, fos = new FileOutputStream(cacheFile));
-                    } finally { 
+                    try {
+                        FileSystemUtils.copyStream(is, fos = FileIOProviderFactory.getOutputStream(cacheFile));
+                    } finally {
                         // if during construction of the FileOutputStream, there is an
                         // exception thrown, is will not be closed right away.
                         if (fos != null)
-                           try { 
-                               fos.close();
-                           } catch (Exception ignored) {}
-                        if (is != null) 
-                           try { 
-                               is.close();
-                           } catch (Exception ignored) {}
+                            try {
+                                fos.close();
+                            } catch (Exception e) {}
+                        if (is != null)
+                            try {
+                                is.close();
+                            } catch (Exception e) {}
                     }
-                    is = new FileInputStream(cacheFile);
+                    is = FileIOProviderFactory.getInputStream(cacheFile);
                 }
 
                 final Bitmap urlBitmap = BitmapFactory.decodeStream(is, null, opts);
@@ -884,10 +879,10 @@ public class GLBitmapLoader {
                                         .compileStatement("INSERT INTO cache (url, bitmap) VALUES (?, ?)");
 
                             try {
-                                insertUrlIconStatement.bindString(1, url);
-                                insertUrlIconStatement.bindBlob(2, FileSystemUtils.read(cacheFile));
+                                insertUrlIconStatement.bind(1, url);
+                                insertUrlIconStatement.bind(2, FileSystemUtils.read(cacheFile));
 
-                                insertUrlIconStatement.executeInsert();
+                                insertUrlIconStatement.execute();
                             } finally {
                                 insertUrlIconStatement.clearBindings();
                             }
@@ -911,22 +906,22 @@ public class GLBitmapLoader {
     }
 
     private static final String TAG = "GLBitmapLoader";
-    private static final HashMap<String, ReferenceCount<ZipFile>> _zipCache = new HashMap<String, ReferenceCount<ZipFile>>();
-    private static final HashMap<String, ReferenceCount<DatabaseIface>> _dbCache = new HashMap<String, ReferenceCount<DatabaseIface>>();
-    private static final Map<String, AsynchronousInetAddressResolver> dnsLookup = new HashMap<String, AsynchronousInetAddressResolver>();
+    private static final HashMap<String, ReferenceCount<ZipFile>> _zipCache = new HashMap<>();
+    private static final HashMap<String, ReferenceCount<DatabaseIface>> _dbCache = new HashMap<>();
+    private static final Map<String, AsynchronousInetAddressResolver> dnsLookup = new HashMap<>();
     private static final Set<String> resolvedHosts = new HashSet<>();
     private static final Set<String> unresolvableHosts = new HashSet<>();
     private static File iconCacheFile = null;
     private static boolean iconCacheTempFileError = false;
-    
+
     public final static int ICON_CACHE_DB_VERSION = 2;
 
-    private final Map<QueueType, ExecutorService> _executor = new EnumMap<>(QueueType.class);
-    private Map<String, LoaderSpec> loaders;
+    private Map<QueueType, ExecutorService> _executor = new EnumMap<QueueType, ExecutorService>(QueueType.class);
+    private final Map<String, LoaderSpec> loaders;
 
     private RenderContext _renderContext;
-    private SQLiteDatabase urlIconCacheDatabase;
+    private DatabaseIface urlIconCacheDatabase;
 
-    private SQLiteStatement insertUrlIconStatement;
-    private SQLiteStatement queryUrlIconBitmapStatement;
+    private StatementIface insertUrlIconStatement;
+    private QueryIface queryUrlIconBitmapStatement;
 }

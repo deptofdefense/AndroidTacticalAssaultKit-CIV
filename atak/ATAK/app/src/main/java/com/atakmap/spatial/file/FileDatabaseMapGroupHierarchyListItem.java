@@ -160,9 +160,12 @@ public class FileDatabaseMapGroupHierarchyListItem extends
             if (filenameFromMapGroup == null) {
                 String filename = new File(FileSystemUtils
                         .sanitizeWithSpacesAndSlashes(getTitle())).getName();
-                return FILE_TYPE_TO_DIRECTORY_MAP.get(
-                        getFileExtention(filename)).getAbsolutePath()
-                        + File.separatorChar + filename;
+                final File f = FILE_TYPE_TO_DIRECTORY_MAP.get(
+                        getFileExtention(filename));
+                if (f != null) {
+                    return f.getAbsolutePath()
+                            + File.separatorChar + filename;
+                }
             }
 
             // Otherwise, if we got the filepath from the MapGroup's
@@ -256,7 +259,7 @@ public class FileDatabaseMapGroupHierarchyListItem extends
 
     /**
      * Get list of child files (match appName for this contentSource)
-     * @return
+     * @return the list of files
      */
     private ArrayList<String> getChildFiles() {
         ArrayList<String> paths = new ArrayList<>();
@@ -280,7 +283,7 @@ public class FileDatabaseMapGroupHierarchyListItem extends
     }
 
     @Override
-    public boolean isSupported(Class target) {
+    public boolean isSupported(Class<?> target) {
         if (!this.exportable)
             return false;
 
@@ -288,7 +291,7 @@ public class FileDatabaseMapGroupHierarchyListItem extends
     }
 
     @Override
-    public Object toObjectOf(Class target, ExportFilters filters) {
+    public Object toObjectOf(Class<?> target, ExportFilters filters) {
 
         if (group == null || !isSupported(target)) {
             //nothing to export

@@ -19,7 +19,9 @@ import com.atakmap.android.track.maps.TrackPolyline;
 import com.atakmap.android.track.task.TrackProgress;
 import com.atakmap.android.track.ui.TrackUser;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
@@ -163,7 +165,7 @@ public class CrumbDatabase implements ProviderChangeRequestedListener {
         if (newCrumbDb == null) {
             try {
                 final File f = CRUMB_DB_FILE2;
-                if (!f.renameTo(new File(CRUMB_DB_FILE2 + ".corrupt."
+                if (!FileIOProviderFactory.renameTo(f, new File(CRUMB_DB_FILE2 + ".corrupt."
                         + new CoordinatedTime().getMilliseconds()))) {
                     Log.d(TAG, "could not move corrupt db out of the way");
                 } else {
@@ -200,9 +202,9 @@ public class CrumbDatabase implements ProviderChangeRequestedListener {
     }
 
     private CrumbDatabase() {
-        if (!CRUMB_DB_FILE2.getParentFile().exists())
+        if (!FileIOProviderFactory.exists(CRUMB_DB_FILE2.getParentFile()))
 
-            if (!CRUMB_DB_FILE2.getParentFile().mkdirs()) {
+            if (!FileIOProviderFactory.mkdirs(CRUMB_DB_FILE2.getParentFile())) {
                 Log.e(TAG, "Failed to make Directory at " +
                         CRUMB_DB_FILE2.getParentFile().getAbsolutePath());
             }
@@ -483,6 +485,8 @@ public class CrumbDatabase implements ProviderChangeRequestedListener {
      *
      * @deprecated
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1")
     public void deleteAll() {
         deleteAll(crumbdb);
         crumbdb.close();
@@ -833,10 +837,12 @@ public class CrumbDatabase implements ProviderChangeRequestedListener {
 
     /**
      * NOTE: Each Crumb is a map item and not as memory efficient as CrumbPoint
+     * @deprecated
      * @param trackDbId Track database ID
      * @return List of crumbs
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = false)
     public synchronized List<Crumb> getCrumbs(int trackDbId) {
         List<Crumb> crumbs = new ArrayList<>();
         if (trackDbId < 0) {

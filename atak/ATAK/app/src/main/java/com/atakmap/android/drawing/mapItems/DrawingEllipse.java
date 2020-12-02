@@ -68,6 +68,7 @@ public class DrawingEllipse extends Shape implements AnchoredMapItem,
         _mapView = mapView;
         _childGroup = childGroup;
         _childGroup.setMetaBoolean("addToObjList", false);
+        _childGroup.setMetaString("shapeUID", uid);
         setType(COT_TYPE);
         setMetaBoolean("removable", true);
         setMetaBoolean("movable", true);
@@ -152,9 +153,9 @@ public class DrawingEllipse extends Shape implements AnchoredMapItem,
     }
 
     @Override
-    public void setVisible(boolean visible) {
-        super.setVisible(visible);
-        _childGroup.setVisible(visible);
+    protected void onVisibleChanged() {
+        _childGroup.setVisible(getVisible());
+        super.onVisibleChanged();
     }
 
     /**

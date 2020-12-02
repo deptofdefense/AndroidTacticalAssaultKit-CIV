@@ -10,12 +10,10 @@ import com.atakmap.map.layer.feature.geometry.LineString;
 import com.atakmap.map.layer.feature.geometry.Point;
 import com.atakmap.map.layer.feature.geometry.Polygon;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Collection;
 import java.util.Iterator;
 
 import static org.junit.Assert.assertNotNull;
@@ -23,7 +21,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.hamcrest.CoreMatchers.instanceOf;
 
 public class GeometryFactoryTests extends ATAKInstrumentedTest {
     private void geometry_wkb_roundtrip(Geometry original, ByteOrder order) {
@@ -494,7 +491,7 @@ public class GeometryFactoryTests extends ATAKInstrumentedTest {
                 new Point(0, 1, 2), 1, 1, 1,
                 GeometryFactory.Algorithm.cartesian.ordinal());
         assert (result != null);
-        assertThat(result, instanceOf(Polygon.class));
+        assertTrue(result instanceof Polygon);
 
         Polygon polygon = (Polygon) result;
         LineString lineString = polygon.getExteriorRing();
@@ -520,7 +517,7 @@ public class GeometryFactoryTests extends ATAKInstrumentedTest {
                 new Envelope(-1, -2, -3, 1, 2, 3),
                 GeometryFactory.Algorithm.wgs84.ordinal());
         assert (result != null);
-        assertThat(result, instanceOf(Polygon.class));
+        assertTrue(result instanceof Polygon);
 
         Polygon polygon = (Polygon) result;
         LineString lineString = polygon.getExteriorRing();

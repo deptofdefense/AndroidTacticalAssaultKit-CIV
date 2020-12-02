@@ -154,7 +154,7 @@ public abstract class Shape extends MapItem implements Capturable {
     }
 
     /**
-     * Add a strokeWeight property listener
+     * Remove a strokeWeight property listener
      * 
      * @param listener the listener
      */
@@ -163,10 +163,22 @@ public abstract class Shape extends MapItem implements Capturable {
         _onStrokeWeightChanged.remove(listener);
     }
 
+
+    /**
+     * Add a point changed property listener
+     *
+     * @param listener the listener
+     */
     public void addOnPointsChangedListener(OnPointsChangedListener listener) {
         _onPointsChanged.add(listener);
     }
 
+
+    /**
+     * Remove a point changed property listener
+     *
+     * @param listener the listener
+     */
     public void removeOnPointsChangedListener(
             OnPointsChangedListener listener) {
         _onPointsChanged.remove(listener);
@@ -319,6 +331,7 @@ public abstract class Shape extends MapItem implements Capturable {
      * Usually this is the stroke color or the "iconColor" meta int
      * @return Icon color
      */
+    @Override
     public int getIconColor() {
         if (hasMetaValue("iconColor")) {
             try {

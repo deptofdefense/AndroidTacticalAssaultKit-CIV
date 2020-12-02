@@ -291,13 +291,20 @@ public class DrawingRectangle extends Rectangle implements Exportable {
             MapView mv = MapView.getMapView();
             boolean idlWrap180 = mv != null && mv.isContinuousScrollEnabled()
                     && GeoCalculations.crossesIDL(points, 0, points.length);
+
+            boolean clampToGroundKMLElevation = Double.isNaN(getHeight()) || Double.compare(getHeight(), 0.0)  == 0;
+
+
+            // if getHeight is not known, then ignore the altitude otherwise pass in
+            // false so that the point is created retative to ground with the appropriate height
+            // passed in to the linear ring method.
             Polygon polygon = KMLUtil.createPolygonWithLinearRing(points,
-                    getUID(), true, idlWrap180);
+                    getUID(), clampToGroundKMLElevation, idlWrap180, getHeight());
             if (polygon == null) {
                 Log.w(TAG, "Unable to create KML Polygon");
                 return null;
             }
-            polygon.setAltitudeMode("clampToGround");
+
 
             List<Geometry> outerGeomtries = new ArrayList<>();
             outerPlacemark.setGeometryList(outerGeomtries);
@@ -312,6 +319,7 @@ public class DrawingRectangle extends Rectangle implements Exportable {
             edata.setDataList(dataList);
             outerPlacemark.setExtendedData(edata);
             folderFeatures.add(outerPlacemark);
+
 
             Coordinate coord = KMLUtil.convertKmlCoord(this.getCenter(), true);
             if (coord == null) {
@@ -446,7 +454,7 @@ public class DrawingRectangle extends Rectangle implements Exportable {
     }
 
     @Override
-    public boolean isSupported(Class target) {
+    public boolean isSupported(Class<?> target) {
         return CotEvent.class.equals(target) ||
                 Folder.class.equals(target) ||
                 KMZFolder.class.equals(target) ||
@@ -456,7 +464,7 @@ public class DrawingRectangle extends Rectangle implements Exportable {
     }
 
     @Override
-    public Object toObjectOf(Class target, ExportFilters filters)
+    public Object toObjectOf(Class<?> target, ExportFilters filters)
             throws FormatNotSupportedException {
         if (filters != null && filters.filter(this))
             return null;

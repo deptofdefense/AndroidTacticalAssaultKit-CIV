@@ -16,6 +16,7 @@ import android.os.Bundle;
 
 import com.atakmap.android.importexport.AbstractImporter;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.filesystem.HashingUtils;
@@ -105,8 +106,8 @@ public class WFSImporter extends AbstractImporter {
         final File workingDir;
         try {
             workingDir = getWorkingDir(HashingUtils.md5sum(config));
-            if (!workingDir.exists()) {
-                boolean s = workingDir.mkdirs();
+            if (!FileIOProviderFactory.exists(workingDir)) {
+                boolean s = FileIOProviderFactory.mkdirs(workingDir);
                 if (!s)
                     Log.e(TAG, "could not make wfs working directory: "
                             + workingDir);

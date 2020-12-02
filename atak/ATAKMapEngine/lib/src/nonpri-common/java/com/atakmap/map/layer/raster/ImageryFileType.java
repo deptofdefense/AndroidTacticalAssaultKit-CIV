@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import com.atakmap.coremap.locale.LocaleUtil;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
@@ -252,10 +253,10 @@ public class ImageryFileType {
          */
         @Override
         public String getPath(File file) {
-            if (file == null || !file.exists())
+            if (file == null || !FileIOProviderFactory.exists(file))
                 return null;
 
-            /*if (file.length() <= MAX_GRG_SIZE)
+            /*if (FileIOProviderFactory.length(file) <= MAX_GRG_SIZE)
                 return "grg";
             else
                 return "native";*/

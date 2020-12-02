@@ -2,6 +2,7 @@
 package com.atakmap.android.elev.srtm1;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.maps.conversion.EGM96;
@@ -9,7 +10,6 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -65,12 +65,12 @@ public class Srtm1ElevationModel {
         for (String a_rootPath : _rootPath) {
 
             File file = new File(a_rootPath + fileName);
-            if (file.exists()) {
+            if (FileIOProviderFactory.exists(file)) {
                 return _fromHgtFile(file, latitude, longitude);
             }
 
             file = new File(a_rootPath + fileName + ".zip");
-            if (file.exists()) {
+            if (FileIOProviderFactory.exists(file)) {
                 return _fromZippedHgtFile(file, fileName, latitude, longitude);
             }
         }
@@ -103,9 +103,9 @@ public class Srtm1ElevationModel {
         FileInputStream fis = null;
 
         try {
-            fis = new FileInputStream(file);
+            fis = FileIOProviderFactory.getInputStream(file);
             result = _getHeightFromInputStream(fis, latitude, longitude);
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             Log.e(TAG, "error: ", e);
         } finally {
             if (fis != null) {

@@ -47,29 +47,8 @@ TAKErr TAK::Engine::Renderer::BitmapFactory2_decode(BitmapPtr &result, DataInput
 
     return code;
 }
-TAKErr TAK::Engine::Renderer::BitmapFactory2_decode(BitmapPtr &result, const uint8_t *data, const std::size_t dataLen, const BitmapDecodeOptions *opts) NOTHROWS
-{
-    TAKErr code(TE_Ok);
 
-    std::ostringstream os;
-    os << "/vsimem/";
-    os << (intptr_t)data;
 
-    const std::string gdalMemoryFile(os.str().c_str());
-
-    VSILFILE *fpMem = VSIFileFromMemBuffer(gdalMemoryFile.c_str(), (GByte*) data , (vsi_l_offset) dataLen, FALSE);
-    if (nullptr == fpMem)
-        return TE_IllegalState;
-
-    int gdalCode = VSIFCloseL(fpMem);
-    code = 0 == gdalCode ?
-        BitmapFactory2_decode(result, gdalMemoryFile.c_str(), opts) :
-        TE_IllegalState;
-
-    VSIUnlink(gdalMemoryFile.c_str());
-
-    return code;
-}
 TAKErr TAK::Engine::Renderer::BitmapFactory2_decode(BitmapPtr &result, const char *bitmapFilePath, const BitmapDecodeOptions *opts) NOTHROWS
 {
     TAKErr code(TE_Ok);
@@ -93,66 +72,40 @@ TAKErr TAK::Engine::Renderer::BitmapFactory2_decode(BitmapPtr &result, const cha
         dstHeight = static_cast<int>((double)dstHeight * sample);
     }
 #endif
-    Bitmap2::Format bitmapFormat;
-    switch(reader.getFormat()) {
-    case GdalBitmapReader::MONOCHROME:
-        bitmapFormat = Bitmap2::MONOCHROME;
-        break;
-    case GdalBitmapReader::MONOCHROME_ALPHA:
-        bitmapFormat = Bitmap2::MONOCHROME_ALPHA;
-        break;
-    case GdalBitmapReader::RGB:
-        bitmapFormat = Bitmap2::RGB24;
-        break;
-    case GdalBitmapReader::RGBA:
-        bitmapFormat = Bitmap2::RGBA32;
-        break;
-    case GdalBitmapReader::ARGB:
-        bitmapFormat = Bitmap2::ARGB32;
-        break;
-    default:
-        return TE_IllegalState;
-    }
 
     int numDataElements(0);
     code = reader.getPixelSize(numDataElements);
     TE_CHECKRETURN_CODE(code);
     const auto byteCount = static_cast<std::size_t>(numDataElements * dstWidth * dstHeight);
 
-    do {
-        // check for data emplacement
-        if (opts && (opts->emplaceData != BitmapDecodeOptions::None) && result.get()) {
-            if (opts->emplaceData == BitmapDecodeOptions::Coerce) {
-                // set the output dimensions
-                dstWidth = (int)result->getWidth();
-                dstHeight = (int)result->getHeight();
-                if ((dstWidth*numDataElements) == (int)result->getStride() &&
-                    bitmapFormat == result->getFormat()) {
-
-                    break;
-                }
-
-                // XXX - coerce format/stride
-            } else if (opts->emplaceData == BitmapDecodeOptions::IfMatches) {
-                // if everything matches, emplace the data
-                if (srcWidth == (int)result->getWidth() &&
-                    srcHeight == (int)result->getHeight() &&
-                    (srcWidth*numDataElements) == (int)result->getStride() &&
-                    bitmapFormat == result->getFormat()) {
-
-                    break;
-                }
-            }
+    Bitmap2::DataPtr data(new(std::nothrow) uint8_t[byteCount], Util::Memory_array_deleter_const<uint8_t>);
+    if (!data.get())
+        return TE_OutOfMemory;
+    code = reader.read(0, 0, srcWidth, srcHeight, dstWidth, dstHeight, data.get(), byteCount);
+    if (TE_Ok == code) {
+        Bitmap2::Format bitmapFormat;
+        switch(reader.getFormat()) {
+        case GdalBitmapReader::MONOCHROME:
+            bitmapFormat = Bitmap2::MONOCHROME;
+            break;
+        case GdalBitmapReader::MONOCHROME_ALPHA:
+            bitmapFormat = Bitmap2::MONOCHROME_ALPHA;
+            break;
+        case GdalBitmapReader::RGB:
+            bitmapFormat = Bitmap2::RGB24;
+            break;
+        case GdalBitmapReader::RGBA:
+            bitmapFormat = Bitmap2::RGBA32;
+            break;
+        case GdalBitmapReader::ARGB:
+            bitmapFormat = Bitmap2::ARGB32;
+            break;
+        default:
+            return TE_IllegalState;
         }
+        result = BitmapPtr(new Bitmap2(std::move(data), dstWidth, dstHeight, bitmapFormat), Memory_deleter_const<Bitmap2>);
+    }
 
-        Bitmap2::DataPtr data(new(std::nothrow) uint8_t[byteCount], Util::Memory_array_deleter_const<uint8_t>);
-        if (!data.get())
-            return TE_OutOfMemory;
-        result = BitmapPtr(new(std::nothrow) Bitmap2(std::move(data), dstWidth, dstHeight, bitmapFormat), Memory_deleter_const<Bitmap2>);
-        if (!result.get())
-            return TE_OutOfMemory;
-    } while (false);
-
-    return reader.read(0, 0, srcWidth, srcHeight, dstWidth, dstHeight, result->getData(), byteCount);
+    return code;
 }
 

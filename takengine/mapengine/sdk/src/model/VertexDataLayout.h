@@ -45,14 +45,15 @@ namespace TAK {
             typedef std::unique_ptr<VertexDataLayout, void(*)(const VertexDataLayout *)> VertexDataLayoutPtr;
             typedef std::unique_ptr<const VertexDataLayout, void(*)(const VertexDataLayout *)> VertexDataLayoutPtr_const;
 
-            Util::TAKErr VertexDataLayout_createDefaultInterleaved(VertexDataLayout *value, const unsigned int attrs) NOTHROWS;
-            Util::TAKErr VertexDataLayout_requiredDataSize(std::size_t *value, const VertexDataLayout &layout, const VertexAttribute attr, const std::size_t numVertices) NOTHROWS;
-            Util::TAKErr VertexDataLayout_requiredInterleavedDataSize(std::size_t *value, const VertexDataLayout &layout, const std::size_t numVertices) NOTHROWS;
+            ENGINE_API Util::TAKErr VertexDataLayout_createDefaultInterleaved(VertexDataLayout *value, const unsigned int attrs) NOTHROWS;
+            ENGINE_API Util::TAKErr VertexDataLayout_requiredDataSize(std::size_t *value, const VertexDataLayout &layout, const VertexAttribute attr, const std::size_t numVertices) NOTHROWS;
+            ENGINE_API Util::TAKErr VertexDataLayout_requiredInterleavedDataSize(std::size_t *value, const VertexDataLayout &layout, const std::size_t numVertices) NOTHROWS;
+
 
             /**
              * @param texCoordIndex The texture coordinate index. Valid values are 0 through 7 (inclusive)
              */
-            Util::TAKErr VertexDataLayout_getTexCoordArray(VertexArray *value, const VertexDataLayout &layout, const int texCoordIndex) NOTHROWS;
+            ENGINE_API Util::TAKErr VertexDataLayout_getTexCoordArray(VertexArray *value, const VertexDataLayout &layout, const int texCoordIndex) NOTHROWS;
         }
     }
 }

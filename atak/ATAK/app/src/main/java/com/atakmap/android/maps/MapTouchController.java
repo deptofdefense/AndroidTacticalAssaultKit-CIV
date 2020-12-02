@@ -38,7 +38,6 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.AtakMapController;
-import com.atakmap.map.AtakMapView;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -323,15 +322,8 @@ public class MapTouchController implements OnTouchListener,
             cancelMotionEvents();
         }
 
-        if (isFreeForm3DEnabled()) {
-            GeoPoint point = null;
-            if (item instanceof PointMapItem)
-                point = ((PointMapItem) item).getPoint();
-            else if (item instanceof Shape)
-                point = ((Shape) item).findTouchPoint();
-            if (point != null)
-                setFreeForm3DPoint(new GeoPointMetaData(point));
-        }
+        if (isFreeForm3DEnabled())
+            setFreeForm3DItem(item);
     }
 
     /**
@@ -1146,7 +1138,7 @@ public class MapTouchController implements OnTouchListener,
             drawEventDispatcher.dispatch(drawEventBuilder.build());
 
             // Move focus point
-            if (isFreeForm3DEnabled())
+            if (isFreeForm3DEnabled() && _freeFormItem == null)
                 setFreeForm3DEnabled(true);
         }
 
@@ -1182,7 +1174,29 @@ public class MapTouchController implements OnTouchListener,
 
     // Free-form 3D mode
     private boolean _freeForm3DEnabled = false;
-    private GeoPointMetaData _freeFormPoint;
+    private GeoPoint _freeFormPoint;
+    private PointMapItem _freeFormItem;
+    private PointMapItem.OnPointChangedListener _ffPointListener
+            = new PointMapItem.OnPointChangedListener() {
+        @Override
+        public void onPointChanged(PointMapItem item) {
+            if (_freeFormItem == item) {
+                _mapView.getMapController().panTo(item.getPoint(), true);
+                setFreeForm3DPoint(item.getPoint());
+            }
+        }
+    };
+    private MapItem.OnGroupChangedListener _ffRemoveListener
+            = new MapItem.OnGroupChangedListener() {
+        @Override
+        public void onItemAdded(MapItem item, MapGroup group) {
+        }
+        @Override
+        public void onItemRemoved(MapItem item, MapGroup group) {
+            if (_freeFormItem == item)
+                setFreeForm3DEnabled(false);
+        }
+    };
 
     private float _originalFocusX;
     private float _originalFocusY;
@@ -1222,33 +1236,86 @@ public class MapTouchController implements OnTouchListener,
 
     public void setFreeForm3DEnabled(boolean enabled) {
 
-        if (DeveloperOptions.getIntOption(
-                "disable-3D-mode", 0) == 1)
+        if (DeveloperOptions.getIntOption("disable-3D-mode", 0) == 1)
             return;
 
         double tilt = _mapView.getMapTilt();
         GeoPointMetaData focus = _mapView.inverseWithElevation(
                 _mapView.getMapController().getFocusX(),
                 _mapView.getMapController().getFocusY());
-        GeoPointMetaData ffPoint = _freeFormPoint;
+        GeoPoint ffPoint = _freeFormPoint;
         if (ffPoint == null)
-            ffPoint = focus;
+            ffPoint = focus.get();
         _freeForm3DEnabled = enabled;
-        setFreeForm3DPoint(enabled ? focus : null);
+        setFreeForm3DPoint(enabled ? focus.get() : null);
         if (!enabled) {
             if (getTiltEnabledState() != STATE_TILT_ENABLED)
-                _mapView.getMapController().tiltBy(-tilt, ffPoint.get(), true);
+                _mapView.getMapController().tiltBy(-tilt, ffPoint, true);
             if (!isUserOrientationEnabled())
                 _mapView.getMapController().rotateTo(0, true);
+            setFreeForm3DItem(null);
         }
     }
 
-    public void setFreeForm3DPoint(GeoPointMetaData point) {
+    /**
+     * Set the focused map item in free form 3D mode
+     * @param item Map item
+     */
+    public void setFreeForm3DItem(MapItem item) {
+
+        // Remove listener on existing point
+        if (_freeFormItem != null) {
+            _freeFormItem.removeOnGroupChangedListener(_ffRemoveListener);
+            _freeFormItem.removeOnPointChangedListener(_ffPointListener);
+        }
+
+        // Associate with anchor item
+        _freeFormItem = getAnchorItem(item);
+
+        if (_freeFormItem != null) {
+            GeoPoint point = _freeFormItem.getPoint();
+            double height = item.getHeight();
+            if (item instanceof Marker && !Double.isNaN(height)) {
+                // Apply height offset to marker
+                point = new GeoPoint(point, GeoPoint.Access.READ_WRITE);
+                double alt = point.getAltitude();
+                if (Double.isNaN(alt))
+                    alt = 0;
+                alt += height;
+                point.set(alt);
+            } else if (item instanceof Shape)
+                point = ((Shape) item).findTouchPoint();
+            if (point != null)
+                setFreeForm3DPoint(point);
+            _freeFormItem.addOnGroupChangedListener(_ffRemoveListener);
+            _freeFormItem.addOnPointChangedListener(_ffPointListener);
+        }
+    }
+
+    public PointMapItem getFreeForm3DItem() {
+        return _freeFormItem;
+    }
+
+    public void setFreeForm3DPoint(GeoPoint point) {
         _freeFormPoint = point;
+    }
+
+    public GeoPoint getFreeForm3DPoint() {
+        return _freeFormPoint;
     }
 
     public boolean isFreeForm3DEnabled() {
         return _freeForm3DEnabled;
+    }
+
+    private PointMapItem getAnchorItem(MapItem item) {
+        if (item == null)
+            return null;
+        if (item instanceof PointMapItem)
+            return (PointMapItem) item;
+        if (item instanceof AnchoredMapItem)
+            return ((AnchoredMapItem) item).getAnchorItem();
+        return null;
     }
 
     @Override
@@ -1262,8 +1329,8 @@ public class MapTouchController implements OnTouchListener,
         int focusy = (int) detector.getFocusY();
 
         GeoPoint focusPoint = _originalFocusPoint.get();
-        if (isFreeForm3DEnabled() && _freeFormPoint != null) {
-            focusPoint = _freeFormPoint.get();
+        if (_freeFormPoint != null) {
+            focusPoint = _freeFormPoint;
             PointF p = _mapView.forward(focusPoint);
             focusx = (int) p.x;
             focusy = (int) p.y;
@@ -1314,7 +1381,7 @@ public class MapTouchController implements OnTouchListener,
                 } else {
                     cont.rotateBy((_originalMapAngle + (angle - _originalAngle))
                             - _mapView.getMapRotation(),
-                            detector.getFocusX(), detector.getFocusY(), true);
+                            focusx, focusy, true);
                 }
             }
         }

@@ -14,6 +14,7 @@ import com.atakmap.android.update.AppVersionUpgrade;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -154,8 +155,8 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
                     MissionPackageFileIO.getMissionPackageFilesPath(atakRoot
                             .getAbsolutePath()),
                     manifest.getUID());
-            if (unzipDir.exists() && unzipDir.isDirectory()) {
-                File[] files = unzipDir.listFiles();
+            if (FileIOProviderFactory.exists(unzipDir) && FileIOProviderFactory.isDirectory(unzipDir)) {
+                File[] files = FileIOProviderFactory.listFiles(unzipDir);
                 if (files == null || files.length < 1)
                     FileSystemUtils.deleteDirectory(unzipDir, false);
             }
@@ -221,8 +222,8 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
             boolean renameIfExists, byte[] buffer)
             throws IOException {
         // be sure parent dirs exist
-        if (!file.getParentFile().exists()) {
-            if (!file.getParentFile().mkdirs())
+        if (!FileIOProviderFactory.exists(file.getParentFile())) {
+            if (!FileIOProviderFactory.mkdirs(file.getParentFile()))
                 throw new IOException("Unable to create directory: "
                         + file.getParent());
         }
@@ -231,7 +232,7 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
         // Also make sure if a legacy location is used, translate it to the new location
         // com.atakmap.map -> atak
         String filepath = AppVersionUpgrade.translate(file.getAbsolutePath());
-        if (file.exists()) {
+        if (FileIOProviderFactory.exists(file)) {
             if (renameIfExists) {
                 filepath = FileSystemUtils.getRandomFilepath(filepath);
                 Log.d(TAG, "File already exists, renaming to: " + filepath);
@@ -241,7 +242,7 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
         }
 
         Log.d(TAG, "Unzipping file to: " + filepath);
-        FileOutputStream dest = new FileOutputStream(filepath);
+        FileOutputStream dest = FileIOProviderFactory.getOutputStream(new File(filepath));
         FileSystemUtils.copyStream(zis, false, dest, true, buffer);
     }
 

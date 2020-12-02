@@ -115,8 +115,8 @@ class LifecycleMapComponent implements MapComponent {
                     if (icon == null)
                         builder.setIcon(R.drawable.ic_menu_error);
                     else
-                        builder.setIcon(AppMgmtUtils.scaleImage(
-                                view.getContext(), icon, 48));
+                        builder.setIcon(AppMgmtUtils.getDialogIcon(
+                                view.getContext(), icon));
 
                     builder.show();
                 }

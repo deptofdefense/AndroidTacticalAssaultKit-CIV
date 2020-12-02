@@ -2,6 +2,8 @@
 package com.atakmap.io;
 
 import java.io.ByteArrayInputStream;
+import java.util.Collection;
+import java.util.Collections;
 
 public final class MockProtocolHandler implements ProtocolHandler {
     final String uri;
@@ -36,5 +38,10 @@ public final class MockProtocolHandler implements ProtocolHandler {
     @Override
     public long getContentLength(String uri) {
         return this.knownContentLength ? data.length : 0;
+    }
+
+    @Override
+    public Collection<String> getSupportedSchemes() {
+        return Collections.singleton("mock");
     }
 }

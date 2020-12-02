@@ -15,6 +15,7 @@ import com.atakmap.android.update.http.RepoIndexRequest;
 import com.atakmap.app.R;
 import com.atakmap.comms.http.TakHttpClient;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
@@ -95,8 +96,8 @@ public class RemoteProductProvider extends BaseProductProvider {
         Log.d(TAG, "rebuild: Remote repo URL: " + updateUrl);
 
         File repoDir = FileSystemUtils.getItem(REMOTE_REPO_CACHE_PATH);
-        if (!repoDir.exists()) {
-            if (!repoDir.mkdirs()) {
+        if (!FileIOProviderFactory.exists(repoDir)) {
+            if (!FileIOProviderFactory.mkdirs(repoDir)) {
                 Log.e(TAG, "failed to wrap" + repoDir);
             }
         }
@@ -278,7 +279,7 @@ public class RemoteProductProvider extends BaseProductProvider {
                         .getMapView().getContext(), infz, true);
 
                 FileSystemUtils.delete(dest);
-                if (!dest.mkdirs()) {
+                if (!FileIOProviderFactory.mkdirs(dest)) {
                     Log.w(TAG,
                             "Cannot create repo index "
                                     + dest.getAbsolutePath());
@@ -311,7 +312,7 @@ public class RemoteProductProvider extends BaseProductProvider {
             return false;
         }
 
-        if (!dest.exists() && !dest.mkdirs()) {
+        if (!FileIOProviderFactory.exists(dest) && !FileIOProviderFactory.mkdirs(dest)) {
             Log.w(TAG, "Cannot create repo index " + dest.getAbsolutePath());
         }
 

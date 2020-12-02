@@ -6,6 +6,7 @@ import com.atakmap.android.layers.GenericLayerScanner;
 import com.atakmap.android.layers.LayerScanner;
 import com.atakmap.android.layers.ScanLayersService;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.database.Databases;
 import com.atakmap.map.gpkg.GeoPackage;
 import com.atakmap.map.layer.raster.gpkg.GeoPackageLayerInfoSpi;
@@ -35,8 +36,8 @@ public class TilesetLayerScanner extends GenericLayerScanner {
     private final static FilenameFilter _dirFilter = new FilenameFilter() {
         @Override
         public boolean accept(File dir, String filename) {
-            return new File(FileSystemUtils.sanitizeWithSpacesAndSlashes(
-                    dir + File.separator + filename)).isDirectory();
+            return FileIOProviderFactory.isDirectory(new File(FileSystemUtils.sanitizeWithSpacesAndSlashes(
+                    dir + File.separator + filename)));
         }
 
     };
@@ -54,8 +55,8 @@ public class TilesetLayerScanner extends GenericLayerScanner {
 
     // XXX - next 2 legacy; remove
     private static void _deleteContentsXmlAndRecurse(File dir) {
-        File[] subDirs = dir.listFiles(_dirFilter);
-        File[] contentXmlFiles = dir.listFiles(_contentsXmlFilter);
+        File[] subDirs = FileIOProviderFactory.listFiles(dir, _dirFilter);
+        File[] contentXmlFiles = FileIOProviderFactory.listFiles(dir, _contentsXmlFilter);
         if (contentXmlFiles != null) {
             for (File cf : contentXmlFiles) {
                 FileSystemUtils.deleteFile(cf);
@@ -71,7 +72,7 @@ public class TilesetLayerScanner extends GenericLayerScanner {
     private void _removeContentsFiles() {
         for (String dir : ScanLayersService.getRootDirs()) {
             File f = new File(dir + File.separator + "layers");
-            if (f.exists() && f.isDirectory()) {
+            if (FileIOProviderFactory.exists(f) && FileIOProviderFactory.isDirectory(f)) {
                 _deleteContentsXmlAndRecurse(f);
             }
         }
@@ -94,13 +95,13 @@ public class TilesetLayerScanner extends GenericLayerScanner {
     @Override
     protected int checkFile(int depth, File f) {
         int retval;
-        if ((depth == 0 && f.isDirectory()) ||
+        if ((depth == 0 && FileIOProviderFactory.isDirectory(f)) ||
                 GeoPackage.isGeoPackage(f) ||
                 Databases.isSQLiteDatabase(f.getAbsolutePath()) ||
                 TilesetInfo.isZipArchive(f.getAbsolutePath()) ||
                 f.getName().endsWith(".kmz")) {
 
-            if (f.isDirectory())
+            if (FileIOProviderFactory.isDirectory(f))
                 retval = checkDir(f);
             else
                 retval = ACCEPT;
@@ -111,7 +112,7 @@ public class TilesetLayerScanner extends GenericLayerScanner {
     }
 
     private int checkDir(File dir) {
-        File[] children = dir.listFiles();
+        File[] children = FileIOProviderFactory.listFiles(dir);
         if (children != null) {
             for (File aChildren : children) {
                 // XXX - spi only supports single recursion, should we allow full

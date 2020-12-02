@@ -20,9 +20,6 @@ import com.atakmap.map.layer.raster.RasterLayer2;
 import com.atakmap.math.MathUtils;
 import com.atakmap.util.Disposable;
 
-import java.text.DecimalFormat;
-
-import com.atakmap.coremap.locale.LocaleUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,7 +54,6 @@ public abstract class LayerSelectionAdapter extends BaseAdapter implements
     protected final int selectedBackgroundColor = Color.argb(255, 0, 0, 102);
     protected final int normalBackgroundColor = Color.argb(0, 0, 0, 0);
 
-    static final DecimalFormat _DEC_FORMAT = LocaleUtil.getDecimalFormat("0.0");
     protected final MapView _mapView;
     final ArrayList<LayerSelection> _selections = new ArrayList<>();
     protected final Context _context;

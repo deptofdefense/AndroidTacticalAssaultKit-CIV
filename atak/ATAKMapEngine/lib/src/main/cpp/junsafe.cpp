@@ -47,7 +47,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_lang_Unsafe_memset
   (JNIEnv *env, jclass clazz, jlong jptr, jbyte jv, jint len)
 {
     void *ptr = JLONG_TO_INTPTR(void, jptr);
-    unsigned char v = (unsigned char)v;
+    unsigned char v = (unsigned char)jv;
 
     memset(ptr, v, len);
 }

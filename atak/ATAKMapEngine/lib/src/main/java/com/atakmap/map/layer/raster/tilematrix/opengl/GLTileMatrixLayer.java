@@ -13,11 +13,9 @@ import com.atakmap.map.layer.control.Controls;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.controls.TileClientControl;
 import com.atakmap.map.layer.raster.opengl.GLMapLayer3;
-import com.atakmap.map.layer.raster.tilematrix.TileClient;
 import com.atakmap.map.layer.raster.tilematrix.TileMatrix;
 import com.atakmap.map.layer.raster.tilematrix.opengl.GLTiledLayerCore;
 import com.atakmap.map.layer.raster.tilematrix.opengl.GLZoomLevel;
-import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
@@ -239,7 +237,7 @@ public class GLTileMatrixLayer implements GLMapLayer3 {
     private class ColorControlImpl implements ColorControl {
         @Override
         public void setColor(final int color) {
-            if(GLMapSurface.isGLThread()) {
+            if(GLTileMatrixLayer.this.renderer.isRenderThread()) {
                 core.r = Color.red(color)/255f;
                 core.g = Color.green(color)/255f;
                 core.b = Color.blue(color)/255f;

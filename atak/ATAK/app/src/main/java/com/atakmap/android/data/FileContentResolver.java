@@ -2,6 +2,9 @@
 package com.atakmap.android.data;
 
 import com.atakmap.android.hierarchy.filters.FOVFilter;
+import com.atakmap.android.maps.visibility.VisibilityCondition;
+import com.atakmap.android.maps.visibility.VisibilityListener;
+import com.atakmap.android.maps.visibility.VisibilityManager;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -17,7 +20,7 @@ import com.atakmap.coremap.locale.LocaleUtil;
  * Content resolver specifically for file URIs
  */
 public class FileContentResolver implements URIContentResolver,
-        URIQueryInterface {
+        URIQueryInterface, VisibilityListener {
 
     private static final String TAG = "FileContentResolver";
 
@@ -27,14 +30,16 @@ public class FileContentResolver implements URIContentResolver,
     // File path -> handler map for quick lookup
     protected final Map<String, FileContentHandler> _handlers = new HashMap<>();
 
-    public FileContentResolver(final Set<String> validExts) {
+    public FileContentResolver(Set<String> validExts) {
         if (validExts != null) {
             for (String ext : validExts)
                 _validExts.add(ext.toLowerCase(LocaleUtil.getCurrent()));
         }
+        VisibilityManager.getInstance().addListener(this);
     }
 
     public synchronized void dispose() {
+        VisibilityManager.getInstance().removeListener(this);
         _handlers.clear();
     }
 
@@ -65,16 +70,24 @@ public class FileContentResolver implements URIContentResolver,
      * Add a new handler to the cache and notify listeners
      *
      * @param handler File-based content handler
+     * @param allowUpdate True to update existing handlers, false to ignore add
+     * @return True if new handler added
      */
-    public void addHandler(FileContentHandler handler) {
+    public boolean addHandler(FileContentHandler handler, boolean allowUpdate) {
         if (handler == null)
-            return;
+            return false;
+
+        // Add or update
         boolean updated;
         String path = handler.getFile().getAbsolutePath();
         synchronized (this) {
             updated = _handlers.containsKey(path);
+            if (updated && !allowUpdate)
+                return false;
             _handlers.put(path, handler);
         }
+
+        // Notify listeners
         if (updated) {
             Log.d(TAG, handler.getContentType() + ": Updated handler for "
                     + handler.getTitle());
@@ -84,6 +97,16 @@ public class FileContentResolver implements URIContentResolver,
                     + handler.getTitle());
             URIContentManager.getInstance().notifyContentImported(handler);
         }
+
+        // Run through visibility conditions
+        handler.onVisibilityConditions(VisibilityManager.getInstance()
+                .getConditions());
+
+        return true;
+    }
+
+    public void addHandler(FileContentHandler handler) {
+        addHandler(handler, true);
     }
 
     /**
@@ -105,13 +128,13 @@ public class FileContentResolver implements URIContentResolver,
         }
     }
 
+    protected synchronized List<FileContentHandler> getHandlers() {
+        return new ArrayList<>(_handlers.values());
+    }
+
     @Override
     public List<URIContentHandler> query(URIQueryParameters params) {
-        List<FileContentHandler> handlers;
-        synchronized (this) {
-            handlers = new ArrayList<>(_handlers.values());
-        }
-
+        List<FileContentHandler> handlers = getHandlers();
         List<URIContentHandler> ret = new ArrayList<>();
         for (FileContentHandler h : handlers) {
             // Name/title filter
@@ -135,5 +158,12 @@ public class FileContentResolver implements URIContentResolver,
         }
 
         return ret;
+    }
+
+    @Override
+    public void onVisibilityConditions(List<VisibilityCondition> conditions) {
+        List<FileContentHandler> handlers = getHandlers();
+        for (FileContentHandler h : handlers)
+            h.onVisibilityConditions(conditions);
     }
 }

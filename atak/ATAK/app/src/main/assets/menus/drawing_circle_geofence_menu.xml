@@ -2,7 +2,7 @@
 <menu
     buttonBg='bgs/button.xml'
     buttonRadius='65'
-    buttonSpan='51.42857'
+    buttonSpan='45'
     buttonWidth='90' >
 
     <button
@@ -23,6 +23,12 @@
         icon='icons/geofence.png'
         selected='${geofence_tracking_menustate}'
         onClick='actions/geofence.xml' />
+
+    <button
+        icon='icons/3d_free_look.png'
+        onClick='actions/compass_toggle_free_look.xml'
+        dependsOnCapability='capability.3d'
+        selected='${freeLook}'/>
         
     <button
         icon='icons/pairing_line.png'

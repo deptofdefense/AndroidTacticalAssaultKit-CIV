@@ -13,6 +13,9 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import java.util.List;
 
 public class ZoomToLayerReceiver extends BroadcastReceiver {
+    private final MapView _mapView;
+    private final LayerSelectionAdapter _layersAdapter;
+
 
     public ZoomToLayerReceiver(MapView mapView, LayerSelectionAdapter mobile) {
         _mapView = mapView;
@@ -117,6 +120,5 @@ public class ZoomToLayerReceiver extends BroadcastReceiver {
         mapView.getMapController().zoomTo(scale, true);
     }
 
-    private final MapView _mapView;
-    private final LayerSelectionAdapter _layersAdapter;
+
 }

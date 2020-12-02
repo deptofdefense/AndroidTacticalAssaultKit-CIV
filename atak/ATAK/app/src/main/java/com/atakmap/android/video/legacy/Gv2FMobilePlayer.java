@@ -1,7 +1,6 @@
 
 package com.atakmap.android.video.legacy;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 
 import android.content.DialogInterface;
@@ -24,6 +23,7 @@ import com.atakmap.android.video.ConnectionEntry;
 import com.atakmap.app.R;
 import com.atakmap.comms.NetworkDeviceManager;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.partech.pgscmedia.MediaException;
 import com.partech.pgscmedia.MediaFormat;
@@ -171,7 +171,7 @@ public class Gv2FMobilePlayer extends MetricActivity
                                     File f = new File(
                                             FileSystemUtils.validityScan(
                                                     ce.getPath()));
-                                    if (f.exists()) {
+                                    if (FileIOProviderFactory.exists(f)) {
                                         processor = new MediaProcessor(f);
                                     } else {
                                         throw new MediaException("");
@@ -705,12 +705,12 @@ public class Gv2FMobilePlayer extends MetricActivity
     private void setupTmpDir() throws IOException {
         File base = getFilesDir();
         base = new File(base, TEMP_DIR);
-        if (!base.mkdirs()) {
+        if (!FileIOProviderFactory.mkdirs(base)) {
             Log.d(TAG, "could not make the directory: " + base);
         }
         tmpDir = File.createTempFile("stream", null, base);
         FileSystemUtils.delete(tmpDir);
-        if (tmpDir.mkdirs()) {
+        if (FileIOProviderFactory.mkdirs(tmpDir)) {
             Log.d(TAG, "could not make the directory: " + tmpDir);
         }
     }
@@ -719,7 +719,7 @@ public class Gv2FMobilePlayer extends MetricActivity
     private void cleanTmpDirs() {
         File base = getFilesDir();
         base = new File(base, TEMP_DIR);
-        if (!base.exists())
+        if (!FileIOProviderFactory.exists(base))
             return;
         FileSystemUtils.deleteDirectory(base, true);
     }

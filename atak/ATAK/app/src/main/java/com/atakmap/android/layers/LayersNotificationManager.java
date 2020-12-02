@@ -122,10 +122,11 @@ public final class LayersNotificationManager {
             NotificationSpec notification = fileStatus.remove(file);
 
             this.notifyUpdate(context, false);
-            if (notification.notifyId != -1)
-                NotificationUtil.getInstance().clearNotification(
-                        notification.notifyId);
-
+            if (notification != null) {
+                if (notification.notifyId != -1)
+                    NotificationUtil.getInstance().clearNotification(
+                            notification.notifyId);
+            }
             // if the load failed, post as a new, individual notification 
             if (!success) {
                 NotificationUtil.getInstance().postNotification(
@@ -238,7 +239,7 @@ public final class LayersNotificationManager {
             }
         }
 
-        private void notifyUpdate(Context context, boolean important) {
+        private void notifyUpdate(Context ignored, boolean important) {
             if (this.notificationId == -1) {
                 this.notificationId = NotificationUtil.getInstance()
                         .reserveNotifyId();

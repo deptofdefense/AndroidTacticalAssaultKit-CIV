@@ -28,8 +28,8 @@ public class Arrow extends Shape {
 
     protected MapView _mapView;
 
-    protected float _hitRadius = 32 * MapView.DENSITY;
-    protected float _hitRadiusSq = _hitRadius * _hitRadius;
+    protected float _hitRadius = Float.NaN;
+    protected float _hitRadiusSq = Float.NaN;
     protected GeoPoint _touchPoint;
 
     protected String text;
@@ -61,8 +61,12 @@ public class Arrow extends Shape {
         final boolean tilted = view.getMapTilt() != 0d;
         // Let the endpoints bleed through so they can be repositioned or otherwise interacted with
 
+        float hitRadius = !Float.isNaN(_hitRadius)
+                ? _hitRadius : getHitRadius(view);
+        float hitRadiusSq = !Float.isNaN(_hitRadiusSq)
+                ? _hitRadiusSq : (hitRadius * hitRadius);
         final GeoBounds hitBox = view.createHitbox(
-                view.getRenderElevationAdjustedPoint(point), _hitRadius);
+                view.getRenderElevationAdjustedPoint(point), hitRadius);
 
         // if the map is not tilted, we can do a quick check against the
         // surface bounds
@@ -97,10 +101,10 @@ public class Arrow extends Shape {
             return false;
         // bleed through on endpoint item
         if (tilted &&
-                com.atakmap.math.Rectangle.contains(xpos - _hitRadius,
-                        ypos - _hitRadius,
-                        xpos + _hitRadius,
-                        ypos + _hitRadius,
+                com.atakmap.math.Rectangle.contains(xpos - hitRadius,
+                        ypos - hitRadius,
+                        xpos + hitRadius,
+                        ypos + hitRadius,
                         temp.x, temp.y)) {
 
             return false;
@@ -109,10 +113,10 @@ public class Arrow extends Shape {
         if (Float.isNaN(temp2.x) || Float.isNaN(temp2.y))
             return false;
         if (tilted &&
-                com.atakmap.math.Rectangle.contains(xpos - _hitRadius,
-                        ypos - _hitRadius,
-                        xpos + _hitRadius,
-                        ypos + _hitRadius,
+                com.atakmap.math.Rectangle.contains(xpos - hitRadius,
+                        ypos - hitRadius,
+                        xpos + hitRadius,
+                        ypos + hitRadius,
                         temp2.x, temp2.y)) {
 
             return false;
@@ -120,7 +124,7 @@ public class Arrow extends Shape {
         Vector3D nearest = Vector3D.nearestPointOnSegment(touch,
                 new Vector3D(temp.x, temp.y, 0), new Vector3D(temp2.x,
                         temp2.y, 0));
-        if (_hitRadiusSq > nearest.distanceSq(touch)) {
+        if (hitRadiusSq > nearest.distanceSq(touch)) {
             _touchPoint = view.inverse(nearest.x, nearest.y,
                     MapView.InverseMode.RayCast).get();
             if (!p1.isAltitudeValid() || !p2.isAltitudeValid()) {

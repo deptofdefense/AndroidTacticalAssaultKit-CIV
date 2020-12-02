@@ -1,6 +1,7 @@
 #ifndef ATAKMAP_MATH_FRUSTUM2_H_INCLUDED
 #define ATAKMAP_MATH_FRUSTUM2_H_INCLUDED
 
+#include "math/AABB.h"
 #include "math/Matrix2.h"
 #include "math/Sphere2.h"
 
@@ -23,12 +24,13 @@ namespace TAK
                     double dist;
                 };
             public:
-                Frustum2(Matrix2 &proj, Matrix2 &model) NOTHROWS;
-                Frustum2(Matrix2 &clip) NOTHROWS;
-                void update(Matrix2 &matrix_clip) NOTHROWS;
-                void update(Matrix2 &proj, Matrix2 &model) NOTHROWS;
-                bool intersects(Sphere2 &s) NOTHROWS;
-                double depthIfInside(Sphere2 &s) NOTHROWS;
+                Frustum2(const Matrix2 &proj, const Matrix2 &model) NOTHROWS;
+                Frustum2(const Matrix2 &clip) NOTHROWS;
+                void update(const Matrix2 &matrix_clip) NOTHROWS;
+                void update(const Matrix2 &proj, const Matrix2 &model) NOTHROWS;
+                bool intersects(const Sphere2 &s) NOTHROWS;
+                bool intersects(const AABB &a) NOTHROWS;
+                double depthIfInside(const Sphere2 &s) NOTHROWS;
                 Matrix2 getClip() NOTHROWS;
             private :
                 static void normalize(Plane *dst, const Plane &src);

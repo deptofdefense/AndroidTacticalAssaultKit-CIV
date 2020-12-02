@@ -258,8 +258,8 @@ public class OutlinesFeatureDataStore extends RuntimeFeatureDataStore
     /**
      * Deterministic mapping of string s to a color
      *
-     * @param s
-     * @return
+     * @param s the string describing the color
+     * @return the integer representation of the color
      */
     public static int getColor(final String s) {
         if (FileSystemUtils.isEmpty(s))

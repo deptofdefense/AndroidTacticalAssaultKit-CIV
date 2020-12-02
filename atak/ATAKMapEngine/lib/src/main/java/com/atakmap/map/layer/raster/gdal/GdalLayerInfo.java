@@ -19,6 +19,8 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -127,7 +129,7 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
 
                 descWorkDir = new File(workingDir, String.valueOf(num));
                 num++;
-                if (!descWorkDir.mkdirs()) { 
+                if (!FileIOProviderFactory.mkdirs(descWorkDir)) {
                     Log.e(TAG, "could not make the directory: " + 
                                descWorkDir);
                 }
@@ -164,7 +166,7 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
                                                       extraData));
             }
             return retval;
-        } else if(file.isDirectory()) {
+        } else if(FileIOProviderFactory.isDirectory(file)) {
             MosaicDatabase2 database = null;
             DatasetDescriptor tsInfo = null;
             try {
@@ -225,10 +227,10 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
 
                 File tilecacheDir = new File(workingDir, "tilecache");
                 FileSystemUtils.delete(tilecacheDir);
-                if (tilecacheDir.exists()) {
+                if (FileIOProviderFactory.exists(tilecacheDir)) {
                    Log.d(TAG, "unable to remove the tile cache dir: " + tilecacheDir);
                 }
-                if(tilecacheDir.mkdirs())
+                if(FileIOProviderFactory.mkdirs(tilecacheDir))
                     extraData.put("tilecacheDir", tilecacheDir.getAbsolutePath());
 
                 Map<String, MosaicDatabase2.Coverage> dbCoverages = new HashMap<String, MosaicDatabase2.Coverage>();
@@ -293,12 +295,12 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
         // for files that can be opened by GDAL. If one is found, this
         // is probably a directory that could make a GDAL layer.
 
-        if(file.isDirectory()){
+        if(FileIOProviderFactory.isDirectory(file)){
             final String name = file.getName();
             if(name.toLowerCase(LocaleUtil.getCurrent()).equals("dted"))
                 return false;
 
-            File[] files = file.listFiles();
+            File[] files = FileIOProviderFactory.listFiles(file);
             if (files != null) { 
                 for(File child : files){
                     if(count.getAndIncrement() > callback.getProbeLimit()){
@@ -362,7 +364,7 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
             //       when dealing with very large directories.
             boolean treatAsFile = false;
             if(isZip) {
-                File[] children = file.listFiles();
+                File[] children = FileIOProviderFactory.listFiles(file);
                 if(children != null) {
                     for (int i = 0; i < children.length; i++)
                         createRecursive(children[i], isZip, retval, workingDir, count, callback);
@@ -370,7 +372,7 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
                     treatAsFile = true;
                 }
             } else {
-                String[] children = file.list();
+                String[] children = FileIOProviderFactory.list(file);
                 if(children != null) {
                     for (int i = 0; i < children.length; i++)
                         createRecursive(new File(file, children[i]), isZip, retval, workingDir, count, callback);
@@ -390,7 +392,7 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
         int type = GDAL;
 
         // check for special types
-        if (!file.isDirectory()) {
+        if (!FileIOProviderFactory.isDirectory(file)) {
             boolean subtyped = false;
 
             try {
@@ -862,7 +864,7 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
 
         @Override
         public boolean accept(File f) {
-            if (f.isDirectory() != this.isDirectory)
+            if (FileIOProviderFactory.isDirectory(f) != this.isDirectory)
                 return false;
             return this.names.contains(f.getName().toUpperCase(LocaleUtil.getCurrent()));
         }

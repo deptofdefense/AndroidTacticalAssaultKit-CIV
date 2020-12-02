@@ -322,8 +322,7 @@ public class IncompatiblePluginWizard {
         }
 
         if (plugin.icon != null) {
-            dialog.setIcon(AppMgmtUtils.scaleImage(_context,
-                    plugin.icon, 48));
+            dialog.setIcon(AppMgmtUtils.getDialogIcon(_context, plugin.icon));
         } else {
             dialog.setIcon(com.atakmap.android.util.ATAKConstants.getIconId());
         }

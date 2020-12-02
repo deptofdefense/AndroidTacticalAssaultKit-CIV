@@ -1,7 +1,5 @@
 package com.atakmap.map.layer.model.assimp;
 
-import android.net.Uri;
-
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.model.ModelInfo;
 import com.atakmap.map.layer.model.ModelInfoSpi;
@@ -9,14 +7,8 @@ import com.atakmap.coremap.log.Log;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
-import jassimp.AiBuiltInWrapperProvider;
-import jassimp.AiMesh;
-import jassimp.AiNode;
 import jassimp.AiScene;
 import jassimp.Jassimp;
 

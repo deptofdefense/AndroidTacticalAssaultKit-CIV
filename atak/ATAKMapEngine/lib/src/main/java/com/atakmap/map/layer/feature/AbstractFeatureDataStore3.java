@@ -6,6 +6,7 @@ import java.util.Set;
 
 import android.util.Pair;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.math.MathUtils;
@@ -512,119 +513,123 @@ public abstract class AbstractFeatureDataStore3 implements FeatureDataStore3 {
         Utils.internalAcquireModifyLock(dataStore, bulkModify, allowInterrupt);
     }
 
-        /**
-         * @see Utils#queryFeaturesCount(FeatureDataStore2, FeatureQueryParameters)
-         * @deprecated
-         */
+    /**
+     * @deprecated use {@link Utils#queryFeaturesCount(FeatureDataStore2, FeatureQueryParameters)} instead
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static int queryFeaturesCount(FeatureDataStore2 dataStore, FeatureDataStore2.FeatureQueryParameters params) throws DataStoreException {
         return Utils.queryFeaturesCount(dataStore, params);
     }
 
     /**
-     * @see Utils#queryFeatureSetsCount(FeatureDataStore2, FeatureSetQueryParameters)
-     * @deprecated
+     * @deprecated use {@link Utils#queryFeatureSetsCount(FeatureDataStore2, FeatureSetQueryParameters)} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static int queryFeatureSetsCount(FeatureDataStore2 dataStore, FeatureDataStore2.FeatureSetQueryParameters params) throws DataStoreException {
         return Utils.queryFeatureSetsCount(dataStore, params);
     }
 
     /**
-     * @see Utils#insertFeatures(FeatureDataStore2, FeatureCursor)
-     * @deprecated
+     * @deprecated use {@link Utils#insertFeatures(FeatureDataStore2, FeatureCursor)} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static void insertFeatures(FeatureDataStore2 dataStore, FeatureCursor features) throws DataStoreException {
         Utils.insertFeatures(dataStore, features);
     }
 
     /**
-     * @see Utils#insertFeatureSets(FeatureDataStore2, FeatureSetCursor)
-     * @deprecated
+     * @deprecated use {@link Utils#insertFeatureSets(FeatureDataStore2, FeatureSetCursor)} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static void insertFeatureSets(FeatureDataStore2 dataStore, FeatureSetCursor featureSets) throws DataStoreException {
         Utils.insertFeatureSets(dataStore, featureSets);
     }
 
     /**
-     * @see Utils#deleteFeatures(FeatureDataStore2, FeatureQueryParameters)
-     * @deprecated
+     * @deprecated use {@link Utils#deleteFeatures(FeatureDataStore2, FeatureQueryParameters)}
+     *     instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static void deleteFeatures(FeatureDataStore2 dataStore, FeatureDataStore2.FeatureQueryParameters params) throws DataStoreException {
         Utils.deleteFeatures(dataStore, params);
     }
 
     /**
-     * @see Utils#deleteFeatureSets(FeatureDataStore2, FeatureSetQueryParameters)
-     * @deprecated
+     * @deprecated use {@link Utils#deleteFeatureSets(FeatureDataStore2,
+     *     FeatureSetQueryParameters)} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static void deleteFeatureSets(FeatureDataStore2 dataStore, FeatureDataStore2.FeatureSetQueryParameters params) throws DataStoreException {
         Utils.deleteFeatureSets(dataStore, params);
     }
 
     /**
-     * @see Utils#setFeaturesVisible(FeatureDataStore2, FeatureQueryParameters, boolean)
-     * @deprecated
+     * @deprecated use {@link Utils#setFeaturesVisible(FeatureDataStore2, FeatureQueryParameters,
+     *     boolean)} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static void setFeaturesVisible(FeatureDataStore2 dataStore, FeatureDataStore2.FeatureQueryParameters params, boolean visible) throws DataStoreException {
         Utils.setFeaturesVisible(dataStore, params, visible);
     }
 
     /**
-     * @see Utils#setFeatureSetsVisible(FeatureDataStore2, FeatureSetQueryParameters, boolean)
-     * @deprecated
+     * @deprecated use {@link Utils#setFeatureSetsVisible(FeatureDataStore2,
+     *     FeatureSetQueryParameters, boolean)} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static void setFeatureSetsVisible(FeatureDataStore2 dataStore, FeatureDataStore2.FeatureSetQueryParameters params, boolean visible) throws DataStoreException {
         Utils.setFeatureSetsVisible(dataStore, params, visible);
     }
 
     /**
-     * @see Utils#getFeature(FeatureDataStore2, long)
-     * @deprecated
+     * @deprecated use {@link Utils#getFeature(FeatureDataStore2, long)} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static Feature getFeature(FeatureDataStore2 dataStore, long fid) throws DataStoreException {
         return Utils.getFeature(dataStore, fid);
     }
 
     /**
-     * @see Utils#getFeatureSet(FeatureDataStore2, long)
-     * @deprecated
+     * @deprecated use {@link Utils#getFeatureSet(FeatureDataStore2, long)} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static FeatureSet getFeatureSet(FeatureDataStore2 dataStore, long fid) throws DataStoreException {
         return Utils.getFeatureSet(dataStore, fid);
     }
 
     /**
-     * @see Utils#deleteAllFeatureSets(FeatureDataStore2)
-     * @deprecated
+     * @deprecated use {@link Utils#deleteAllFeatureSets(FeatureDataStore2)} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static void deleteAllFeatureSets(FeatureDataStore2 dataStore) throws DataStoreException {
         Utils.deleteAllFeatureSets(dataStore);
     }
 
     /**
-     * @see Utils#isFeatureSetVisible(FeatureDataStore2, long)
-     * @deprecated
+     * @deprecated use {@link Utils#isFeatureSetVisible(FeatureDataStore2, long)} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static boolean isFeatureSetVisible(FeatureDataStore2 dataStore, long fid) throws DataStoreException {
         return Utils.isFeatureSetVisible(dataStore,fid);
     }
 
     /**
-     * @see Utils#isFeatureVisible(FeatureDataStore2, long)
-     * @deprecated
+     * @deprecated use {@link Utils#isFeatureVisible(FeatureDataStore2, long)} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static boolean isFeatureVisible(FeatureDataStore2 dataStore, long fid) throws DataStoreException {
         return Utils.isFeatureVisible(dataStore, fid);
     }

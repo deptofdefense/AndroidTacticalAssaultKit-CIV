@@ -38,7 +38,8 @@ import java.util.Set;
  * GL renderer for 3D vehicle models
  */
 public class GLVehicleModelLayer extends GLRubberModelLayer implements
-        RubberModel.OnLoadListener, MapItem.OnMetadataChangedListener {
+        RubberModel.OnLoadListener, MapItem.OnMetadataChangedListener,
+        AbstractSheet.OnAlphaChangedListener {
 
     public static final boolean USE_INSTANCES = true;
 
@@ -68,6 +69,7 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
 
         VehicleModel vehicle = (VehicleModel) mdl;
         vehicle.addLoadListener(this);
+        vehicle.addOnAlphaChangedListener(this);
         vehicle.addOnMetadataChangedListener(this);
         return new GLVehicleModel(renderContext, vehicle);
     }
@@ -78,6 +80,7 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
         if (mdl instanceof VehicleModel) {
             VehicleModel vehicle = (VehicleModel) mdl;
             vehicle.removeLoadListener(this);
+            vehicle.removeOnAlphaChangedListener(this);
             vehicle.removeOnMetadataChangedListener(this);
             VehicleModelInfo info = vehicle.getVehicleInfo();
             if (info != null)
@@ -125,7 +128,7 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
             GLVehicleModel model = (GLVehicleModel) renderable;
             VehicleModel vehicle = (VehicleModel) model.getSubject();
 
-            ModelInfo info = vehicle.getInfo();
+            ModelInfo info = model.getModelInfo();
             if (info == null)
                 continue;
 
@@ -229,6 +232,12 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
     @Override
     public void onMetadataChanged(MapItem item, final String field) {
         if (USE_INSTANCES && field.equals("outline"))
+            invalidate();
+    }
+
+    @Override
+    public void onAlphaChanged(AbstractSheet sheet, int alpha) {
+        if (USE_INSTANCES)
             invalidate();
     }
 

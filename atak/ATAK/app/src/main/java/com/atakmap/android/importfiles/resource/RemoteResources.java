@@ -1,6 +1,7 @@
 
 package com.atakmap.android.importfiles.resource;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import org.simpleframework.xml.Element;
@@ -82,8 +83,8 @@ public class RemoteResources {
      * @return boolean true is serialization was successful.
      */
     public boolean save(File file, Serializer serializer) {
-        if (!file.exists() && !file.getParentFile().exists()
-                && !file.getParentFile().mkdirs()) {
+        if (!FileIOProviderFactory.exists(file) && !FileIOProviderFactory.exists(file.getParentFile())
+                && !FileIOProviderFactory.mkdirs(file.getParentFile())) {
             Log.w(TAG, "Failed to create " + file.getAbsolutePath());
             return false;
         }

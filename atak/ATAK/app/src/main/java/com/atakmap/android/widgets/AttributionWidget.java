@@ -154,7 +154,7 @@ public final class AttributionWidget extends TextWidget implements
         this.setText(s);
         this.setTextBounds(this.getTextFormat().measureTextWidth(s), this
                 .getTextFormat().measureTextHeight(s));
-        this.setPoint(MapView.getMapView().getWidth() / 4, MapView.getMapView()
+        this.setPoint(MapView.getMapView().getWidth() / 4f, MapView.getMapView()
                 .getHeight() - this.getHeight());
         this.setBackground(this.expanded ? TextWidget.TRANSLUCENT_BLACK
                 : TextWidget.TRANSLUCENT);

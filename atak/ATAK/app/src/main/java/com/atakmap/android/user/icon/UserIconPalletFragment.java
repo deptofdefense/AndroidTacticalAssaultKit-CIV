@@ -12,9 +12,6 @@ import android.graphics.Color;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.ShapeDrawable;
-import android.graphics.drawable.shapes.RectShape;
-import android.graphics.drawable.shapes.Shape;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import androidx.fragment.app.Fragment;
@@ -328,17 +325,8 @@ public class UserIconPalletFragment extends Fragment {
     }
 
     private void _updateColorButtonDrawable() {
-        Shape rect = new RectShape();
-        rect.resize(50, 50);
-        ShapeDrawable color = new ShapeDrawable();
-        color.setBounds(0, 0, 50, 50);
-        color.setIntrinsicHeight(50);
-        color.setIntrinsicWidth(50);
-        color.setShape(rect);
         curColor = _prefs.getInt("iconset.selected.color", Color.WHITE);
-        color.getPaint().setColor(curColor);
-        colorButton.setBackgroundResource(R.drawable.atak_button);
-        colorButton.setImageDrawable(color);
+        colorButton.setColorFilter(curColor, Mode.MULTIPLY);
     }
 
     protected void _onColorSelected() {

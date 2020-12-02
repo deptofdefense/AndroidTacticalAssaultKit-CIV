@@ -15,8 +15,8 @@ import com.atakmap.android.widgets.AbstractWidgetMapComponent;
  * upper right hand corner of the map display.
  */
 public class CoordOverlayMapComponent extends AbstractWidgetMapComponent {
-    private CoordOverlayMapReceiver _coordMapReceiver;
-    private SelfCoordOverlayUpdater _selfCoordUpdater;
+    protected CoordOverlayMapReceiver _coordMapReceiver;
+    protected SelfCoordOverlayUpdater _selfCoordUpdater;
 
     @Override
     protected void onCreateWidgets(Context context, Intent intent,

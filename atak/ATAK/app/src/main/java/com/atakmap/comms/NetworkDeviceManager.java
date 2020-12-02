@@ -8,7 +8,6 @@ import android.content.Intent;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -27,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 //import com.atakmap.coremap.locale.LocaleUtil;
@@ -485,7 +485,7 @@ public class NetworkDeviceManager {
      */
     static synchronized public void enable(boolean state) {
 
-        if ((directory == null) || !directory.exists())
+        if ((directory == null) || !FileIOProviderFactory.exists(directory))
             directory = new File(Environment.getExternalStorageDirectory(),
                     "atak");
 
@@ -513,9 +513,9 @@ public class NetworkDeviceManager {
         devices.clear();
         try {
             File f = new File(directory, "network.map");
-            if (f.exists()) {
+            if (FileIOProviderFactory.exists(f)) {
                 BufferedReader br = new BufferedReader(
-                        new InputStreamReader(new FileInputStream(f)));
+                        new InputStreamReader(FileIOProviderFactory.getInputStream(f)));
                 try {
                     String line;
                     while ((line = br.readLine()) != null) {
@@ -554,13 +554,13 @@ public class NetworkDeviceManager {
             return false;
         try {
             // create the directory if needed
-            if (!directory.exists())
-                if (!directory.mkdir()) {
+            if (!FileIOProviderFactory.exists(directory))
+                if (!FileIOProviderFactory.mkdir(directory)) {
                     Log.e(TAG, "Failed to make dir at " + directory.getPath());
                 }
 
             File f = new File(directory, "network.map");
-            FileWriter bw = new FileWriter(f);
+            FileWriter bw = FileIOProviderFactory.getFileWriter(f);
             try {
                 bw.write("#network map file created " + new Date() + "\r\n");
                 bw.write("#type values  " + NetworkDevice.Type.getStringList()
@@ -1185,7 +1185,7 @@ public class NetworkDeviceManager {
             Log.v(TAG, "starting dynamic configuration: " + ifaceName);
             Runtime rt = Runtime.getRuntime();
             File dhcptool = new File("/system/bin/dhcptool");
-            if (dhcptool.exists()) {
+            if (FileIOProviderFactory.exists(dhcptool)) {
                 Log.d(TAG, "using marshallow fallback");
                 proc = execSU(rt, "dhcptool", ifaceName);
             } else {

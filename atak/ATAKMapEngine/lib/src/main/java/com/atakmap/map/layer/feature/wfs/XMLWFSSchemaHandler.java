@@ -1,13 +1,14 @@
 package com.atakmap.map.layer.feature.wfs;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import java.util.Map;
 import java.util.Set;
@@ -39,7 +40,7 @@ public class XMLWFSSchemaHandler implements WFSSchemaHandler {
     private File file;
 
     public XMLWFSSchemaHandler(File schema) throws XmlPullParserException, IOException {
-        this(schema, new FileInputStream(schema), true);
+        this(schema, FileIOProviderFactory.getInputStream(schema), true);
     }
     
     public XMLWFSSchemaHandler(InputStream schema) throws XmlPullParserException, IOException {

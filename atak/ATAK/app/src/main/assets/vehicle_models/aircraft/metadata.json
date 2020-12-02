@@ -34,12 +34,24 @@
       "file": "b52.zip"
     },
     {
+      "name": "B-350",
+      "file": "b-350.zip"
+    },
+    {
       "name": "B-707",
       "file": "b-707.zip"
     },
     {
+      "name": "B-727",
+      "file": "b-727.zip"
+    },
+    {
       "name": "B-747",
       "file": "b-747.zip"
+    },
+    {
+      "name": "B-757",
+      "file": "b-757.zip"
     },
     {
       "name": "C-17",
@@ -62,8 +74,16 @@
       "file": "c-130.zip"
     },
     {
+      "name": "C-141",
+      "file": "c-141.zip"
+    },
+    {
       "name": "C-145",
       "file": "c-145.zip"
+    },
+    {
+      "name": "C-146",
+      "file": "c-146.zip"
     },
     {
       "name": "CASA-212",

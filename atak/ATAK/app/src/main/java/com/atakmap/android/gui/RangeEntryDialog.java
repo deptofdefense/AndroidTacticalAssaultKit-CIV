@@ -25,8 +25,6 @@ import com.atakmap.coremap.locale.LocaleUtil;
 
 import java.text.DecimalFormat;
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Dialog which allows user to hand-jam a range value in a variety of units
@@ -81,6 +79,9 @@ public class RangeEntryDialog implements DialogInterface.OnDismissListener {
 
         _unit = unit;
         _callback = callback;
+
+        if (Double.isNaN(valueM))
+            valueM = 0;
 
         final EditText input = _view.findViewById(
                 R.id.drawingDistanceInput);

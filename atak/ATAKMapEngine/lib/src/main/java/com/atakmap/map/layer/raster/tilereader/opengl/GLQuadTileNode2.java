@@ -18,6 +18,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 
 
@@ -27,8 +28,6 @@ import android.opengl.GLES30;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
-import com.atakmap.map.Interop;
-import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.DatasetProjection2;
 import com.atakmap.map.layer.raster.DefaultDatasetProjection2;
 import com.atakmap.map.layer.raster.ImageInfo;
@@ -38,7 +37,6 @@ import com.atakmap.map.layer.raster.RasterDataAccess2;
 import com.atakmap.map.layer.raster.gdal.GdalGraphicUtils;
 import com.atakmap.map.layer.raster.gdal.GdalTileReader;
 import com.atakmap.map.layer.raster.osm.OSMUtils;
-import com.atakmap.map.layer.raster.tilematrix.opengl.GLTiledLayerCore;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.map.layer.raster.tilereader.TileReaderFactory;
 import com.atakmap.map.opengl.GLAntiMeridianHelper;
@@ -51,7 +49,6 @@ import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLTexture;
 import com.atakmap.opengl.GLTextureCache;
 import com.atakmap.opengl.GLWireFrame;
-import com.atakmap.opengl.Shader;
 import com.atakmap.util.Collections2;
 import com.atakmap.util.ConfigOptions;
 import com.atakmap.util.Disposable;
@@ -60,8 +57,12 @@ import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
 import com.atakmap.math.RectD;
 import com.atakmap.math.Rectangle;
-import com.atakmap.util.ResourcePool;
 
+/**
+ * @deprecated use {@link GLQuadTileNode3}
+ */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class GLQuadTileNode2 implements
                                     GLResolvableMapRenderable,
                                     TileReader.AsynchronousReadRequestListener,
@@ -1662,8 +1663,8 @@ public class GLQuadTileNode2 implements
         GLES20FixedPipeline.glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
 
          com.atakmap.opengl.GLText _titleText = com.atakmap.opengl.GLText.getInstance(com.atakmap.map.AtakMapView.getDefaultTextFormat());
-         view.scratch.pointD.x = this.tileSrcX+this.tileSrcWidth/2;
-         view.scratch.pointD.y = this.tileSrcY+this.tileSrcHeight/2;
+         view.scratch.pointD.x = this.tileSrcX+this.tileSrcWidth/2f;
+         view.scratch.pointD.y = this.tileSrcY+this.tileSrcHeight/2f;
          this.core.imprecise.imageToGround(view.scratch.pointD, view.scratch.geo);
          view.forward(view.scratch.geo, view.scratch.pointF);
          GLES20FixedPipeline.glPushMatrix();
@@ -2607,6 +2608,7 @@ public class GLQuadTileNode2 implements
      * @deprecated to be removed without replacement; use {@link GLQuadTileNode3}
      */
     @Deprecated
+    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
     protected static class NodeCore extends com.atakmap.map.layer.raster.tilereader.opengl.NodeCore {
         private NodeCore(String type,
                          Initializer init,
@@ -2634,6 +2636,11 @@ public class GLQuadTileNode2 implements
     
     /**************************************************************************/
 
+    /**
+     * @deprecated to be removed without replacement; use {@link GLQuadTileNode3}
+     */
+    @Deprecated
+    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
     public static interface Initializer {
         public static class Result {
             public TileReader reader;
@@ -2646,6 +2653,11 @@ public class GLQuadTileNode2 implements
         public void dispose(Result result);
     }
 
+    /**
+     * @deprecated to be removed without replacement; use {@link GLQuadTileNode3}
+     */
+    @Deprecated
+    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
     public final static Initializer DEFAULT_INIT = new Initializer() {
         @Override
         public Result init(ImageInfo info, TileReaderFactory.Options opts) {

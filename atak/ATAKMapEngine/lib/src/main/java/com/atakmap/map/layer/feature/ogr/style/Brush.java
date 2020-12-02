@@ -22,22 +22,37 @@ public class Brush implements DrawingTool {
 
     @Override
     public void pushParam(String key, String value) {
-        if (key.equals(PARAM_BRUSH_FORE_COLOR)) {
-            this.foreColor = FeatureStyleParser.parseOgrColor(value);
-        } else if (key.equals(PARAM_BRUSH_BACK_COLOR)) {
-            this.backColor = FeatureStyleParser.parseOgrColor(value);
-        } else if (key.equals(PARAM_BRUSH_NAME)) {
-            // XXX -
-        } else if (key.equals(PARAM_ANGLE)) {
-            this.angle = Float.parseFloat(value);
-        } else if (key.equals(PARAM_SIZE)) {
-            this.size = Float.parseFloat(value);
-        } else if (key.equals(PARAM_SPACING_HORIZONTAL_DISTANCE)) {
-            this.dx = Float.parseFloat(value);
-        } else if (key.equals(PARAM_SPACING_VERTICAL_DISTANCE)) {
-            this.dy = Float.parseFloat(value);
-        } else if (key.equals(PARAM_PRIORITY_LEVEL)) {
-            this.priorityLevel = Integer.parseInt(value);
+        try{
+            switch (key) {
+                case PARAM_BRUSH_FORE_COLOR:
+                    this.foreColor = FeatureStyleParser.parseOgrColor(value);
+                    break;
+                case PARAM_BRUSH_BACK_COLOR:
+                    this.backColor = FeatureStyleParser.parseOgrColor(value);
+                    break;
+                case PARAM_BRUSH_NAME:
+                    // XXX -
+                    break;
+                case PARAM_ANGLE:
+                    this.angle = Float.parseFloat(value);
+                    break;
+                case PARAM_SIZE:
+                    this.size = Float.parseFloat(value);
+                    break;
+                case PARAM_SPACING_HORIZONTAL_DISTANCE:
+                    this.dx = Float.parseFloat(value);
+                    break;
+                case PARAM_SPACING_VERTICAL_DISTANCE:
+                    this.dy = Float.parseFloat(value);
+                    break;
+                case PARAM_PRIORITY_LEVEL:
+                    this.priorityLevel = Integer.parseInt(value);
+                    break;
+                default:
+                    break;
+            }
+        } catch (Exception ignore) {
+            // skip improperly formed value
         }
     }
 }

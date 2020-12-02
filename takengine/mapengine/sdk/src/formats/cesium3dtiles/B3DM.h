@@ -17,8 +17,6 @@ namespace TAK {
                 };
 
                 ENGINE_API Util::TAKErr B3DM_parseInfo(B3DMInfo *info, Util::DataInput2* input, const char* baseURI) NOTHROWS;
-
-                ENGINE_API int B3DM_getSRID() NOTHROWS;
             }
         }
     }

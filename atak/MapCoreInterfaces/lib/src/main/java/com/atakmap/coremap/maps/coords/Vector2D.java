@@ -417,7 +417,7 @@ public class Vector2D {
                 }
             }
         }
-        return out.toArray(new Vector2D[out.size()]);
+        return out.toArray(new Vector2D[0]);
     }
 
     private static int getPointRegion(RectF rect, float x, float y) {

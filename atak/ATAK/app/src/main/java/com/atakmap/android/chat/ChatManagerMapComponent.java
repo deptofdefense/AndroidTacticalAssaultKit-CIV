@@ -21,7 +21,6 @@ import com.atakmap.android.contact.PluginConnector;
 import com.atakmap.android.contact.TadilJContact;
 import com.atakmap.android.contact.TadilJContactDatabase;
 import com.atakmap.android.cot.CotMapComponent;
-import com.atakmap.android.dropdown.DropDown;
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.hierarchy.HierarchyListFilter;
 import com.atakmap.android.hierarchy.HierarchyListItem;

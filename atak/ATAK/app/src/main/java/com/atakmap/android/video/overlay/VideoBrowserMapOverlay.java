@@ -30,6 +30,7 @@ import com.atakmap.app.R;
 import com.atakmap.comms.TAKServer;
 import com.atakmap.comms.TAKServerListener;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 
 import java.io.File;
 import java.util.Collections;
@@ -160,8 +161,8 @@ public class VideoBrowserMapOverlay extends AbstractMapOverlay2
 
         // Show video snapshot gallery
         else if (id == R.id.gallery) {
-            File[] snapshots = new File(
-                    VideoBrowserDropDownReceiver.SNAPSHOT_DIR).listFiles();
+            File[] snapshots = FileIOProviderFactory.listFiles(new File(
+                    VideoBrowserDropDownReceiver.SNAPSHOT_DIR));
             if (FileSystemUtils.isEmpty(snapshots)) {
                 Toast.makeText(_context, R.string.gallery_no_items,
                         Toast.LENGTH_SHORT).show();

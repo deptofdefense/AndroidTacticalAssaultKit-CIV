@@ -34,6 +34,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
@@ -338,7 +339,7 @@ public class MissionPackageUtils {
         for (AndroidFileInfo fi : files) {
             // get local manifest from DB
             File f = fi.file();
-            if (!f.exists())
+            if (!FileIOProviderFactory.exists(f))
                 continue;
             MissionPackageManifest c = MissionPackageManifest.fromXml(
                     fi.fileMetadata(), f.getAbsolutePath(), true);
@@ -396,7 +397,7 @@ public class MissionPackageUtils {
      * @return Date string
      */
     public static String getModifiedDate(File file) {
-        return getModifiedDate(file.lastModified());
+        return getModifiedDate(FileIOProviderFactory.lastModified(file));
     }
 
     public static String getModifiedDate(Long time, boolean full) {

@@ -13,6 +13,7 @@ import android.widget.Toast;
 import com.atakmap.android.bluetooth.BluetoothDevicesConfig.BluetoothDeviceConfig;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -236,6 +237,8 @@ public class BluetoothManager {
      * ATSK is retired.
      * @deprecated
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1")
     synchronized public void disableForATSK() {
         Object o = DEVICE_MAP.remove("R10");
         DEVICE_MAP.remove("R8");

@@ -327,7 +327,7 @@ public class StateSaverListener implements
                 //Log.d(TAG, "saving item: " + mi.getUID() + " " + mi.getType() + " " + mi.getMetaString("callsign", "[no title]") + " ", new Exception());    // important for debug of the state saver
 
                 final Bundle bundle = (b != null) ? b : new Bundle();
-                bundle.putBoolean("visible", mi.getVisible());
+                bundle.putBoolean("visible", mi.getVisible(true));
                 bundle.putLong("lastUpdateTime",
                         mi.getMetaLong("lastUpdateTime", -1));
 

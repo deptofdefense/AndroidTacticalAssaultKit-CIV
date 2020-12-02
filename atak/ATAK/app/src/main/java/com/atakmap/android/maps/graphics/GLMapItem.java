@@ -6,6 +6,7 @@ import android.graphics.RectF;
 
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.coremap.maps.coords.Vector2D;
@@ -16,6 +17,8 @@ import com.atakmap.map.opengl.GLMapView;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /** @deprecated use {@link GLMapItem2} */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public abstract class GLMapItem implements MapItem.OnClickableChangedListener,
         MapItem.OnVisibleChangedListener, MapItem.OnZOrderChangedListener,
         GLMapRenderable {

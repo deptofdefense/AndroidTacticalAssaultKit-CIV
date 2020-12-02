@@ -11,13 +11,15 @@ import java.util.Map;
  * Serves as a data class to provide pertinent details for the points that were generated for a route.
  *
  * A RoutePointPackage can either denote that a route was generated successfully, in which case it holds
- * a list of points, and the point cues for the generated route, or that route generation failes, in which
+ * a list of points, and the point cues for the generated route, or that route generation fails, in which
  * case it holds an error message to be displayed to the user explaining why the route generation has failed.
  */
 public class RoutePointPackage {
     //-------------------- Fields and Properties ---------------------------
 
     private List<PointMapItem> routePoints;
+    // A map from UIDs of point map items to navigation cues associated with
+    // that item.
     private Map<String, NavigationCue> pointCues;
     private String errorMessage;
 
@@ -26,7 +28,9 @@ public class RoutePointPackage {
         return routePoints;
     }
 
-    /** Returns the point cues if this is successful route point package. Returns null otherwise. */
+    /** Returns the point cues if this is successful route point package. Returns null otherwise. The format of
+     * the returned point cues is a map from point map items on the route to the navigation cue associated
+     * with that point map item on the route. */
     public Map<String, NavigationCue> getPointCues() {
         return pointCues;
     }
@@ -38,7 +42,10 @@ public class RoutePointPackage {
 
     //-------------------- Ctor ---------------------------
 
-    /** Constructor for a successful route point package */
+    /** Constructor for a successful route point package
+     * @param routePoints list of point map items of the route, in order.
+     * @param pointCues map from UIDs of point map items on the route to the navigation
+     * cues set for those points. */
     public RoutePointPackage(List<PointMapItem> routePoints,
             Map<String, NavigationCue> pointCues) {
         this.routePoints = routePoints;

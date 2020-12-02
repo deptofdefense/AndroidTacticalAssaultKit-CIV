@@ -3,7 +3,6 @@ package com.atakmap.io;
 import android.util.Base64;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
@@ -40,8 +39,8 @@ public class WebProtocolHandler implements ProtocolHandler {
          * Get the user User-Agent for a URI. Return null to use
          * default "TAK"
          *
-         * @param uri
-         * @return
+         * @param uri the provided uri
+         * @return the corresponding user agent
          */
         String getUserAgent(String uri);
 
@@ -49,9 +48,9 @@ public class WebProtocolHandler implements ProtocolHandler {
          * Determine if basic authentication is needed for a uri, and
          * if this is from a previous failure to authenticate (401)
          *
-         * @param uri
+         * @param uri the uri
          * @param failedCount the number of previously 401 failures (starting at 0 for first attempt)
-         * @return
+         * @return true if basic authentication is needed
          */
         boolean shouldAuthenticateURI(String uri, int failedCount);
 
@@ -59,16 +58,17 @@ public class WebProtocolHandler implements ProtocolHandler {
          * Get the future for basic authentication credentials (from user prompt or cache provided
          * by application code).
          *
-         * @param uri
-         * @return
+         * @param uri the uri used for retrieving the authentication credentials
+         * @return the authentication credentials
          */
         Future<AuthCreds> getAuthenticationCreds(String uri, boolean previousFailure);
 
         /**
          * Called when authentication succeeds
          *
-         * @param uri
-         * @param authCreds
+         * @param uri the uri
+         * @param authCreds the authentication credentials used
+         * @param previousFailure true if this is called after previous failures
          */
         void authCredsSuccess(String uri, AuthCreds authCreds, boolean previousFailure);
 
@@ -111,11 +111,11 @@ public class WebProtocolHandler implements ProtocolHandler {
      * Default handler
      */
     public WebProtocolHandler() {
-        this.callbacks = new DefaultCallbacks();
+        WebProtocolHandler.callbacks = new DefaultCallbacks();
     }
 
     public WebProtocolHandler(Callbacks callbacks) {
-        this.callbacks = callbacks;
+        WebProtocolHandler.callbacks = callbacks;
     }
 
     @Override
@@ -175,7 +175,7 @@ public class WebProtocolHandler implements ProtocolHandler {
     private UriFactory.OpenResult doURLRequest(String uri) {
         try {
             boolean connecting = true;
-            AuthCreds authCreds = null;
+            AuthCreds authCreds;
             int authFailedCount = 0;
             URL url = new URL(uri);
             do {

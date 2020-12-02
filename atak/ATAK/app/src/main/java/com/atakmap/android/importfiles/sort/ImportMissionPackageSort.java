@@ -9,6 +9,7 @@ import com.atakmap.android.gui.ImportFileBrowserDialog;
 import com.atakmap.android.missionpackage.file.MissionPackageExtractorFactory;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
@@ -140,7 +141,7 @@ public class ImportMissionPackageSort extends ImportInternalSDResolver {
     @Override
     public boolean beginImport(File file, Set<SortFlags> flags) {
         File dest = getDestinationPath(file);
-        if (dest.exists() && dest.isFile()) {
+        if (FileIOProviderFactory.exists(dest) && dest.isFile()) {
             // Delete existing to be overwritten
             File f = FileSystemUtils.moveToTemp(_context, dest);
             FileSystemUtils.deleteFile(f);

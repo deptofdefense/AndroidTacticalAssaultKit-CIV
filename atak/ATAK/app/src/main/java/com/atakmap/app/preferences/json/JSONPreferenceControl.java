@@ -5,6 +5,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.app.preferences.PreferenceControl;
 import com.atakmap.comms.TAKServerSerializer;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import org.json.JSONObject;
@@ -114,7 +115,7 @@ public class JSONPreferenceControl {
         JSONObject root = null;
         FileReader fr = null;
         try {
-            fr = new FileReader(file);
+            fr = FileIOProviderFactory.getFileReader(file);
             root = new JSONObject(new String(FileSystemUtils.read(file),
                     FileSystemUtils.UTF8_CHARSET));
         } catch (Exception e) {
@@ -161,13 +162,13 @@ public class JSONPreferenceControl {
 
     public static boolean writeJSONFile(File file, JSONObject root) {
         File dir = file.getParentFile();
-        if (!dir.exists() && !dir.mkdirs()) {
+        if (!FileIOProviderFactory.exists(dir) && !FileIOProviderFactory.mkdirs(dir)) {
             Log.d(TAG, "Failed to create directory: " + dir);
             return false;
         }
         FileWriter fw = null;
         try {
-            fw = new FileWriter(file);
+            fw = FileIOProviderFactory.getFileWriter(file);
             fw.write(root.toString(2));
         } catch (Exception e) {
             Log.e(TAG, "Failed to write preferences to file: " + file, e);

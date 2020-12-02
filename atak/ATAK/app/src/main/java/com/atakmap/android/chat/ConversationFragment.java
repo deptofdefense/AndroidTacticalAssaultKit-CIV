@@ -359,7 +359,7 @@ public class ConversationFragment extends Fragment implements
                         // get the value that button should output
                         String valueString = modes.get(_picker
                                 .getCurrentIndex()).buttons
-                                        .get(Integer.valueOf(
+                                        .get(Integer.parseInt(
                                                 (String) btn.getHint())).value;
                         if (valueString != null)
                             buttonValue.setText(valueString);
@@ -438,10 +438,10 @@ public class ConversationFragment extends Fragment implements
                                                             modes.get(_picker
                                                                     .getCurrentIndex()).buttons
                                                                             .set(
-                                                                                    Integer.valueOf(
+                                                                                    Integer.parseInt(
                                                                                             btnLoc),
                                                                                     new ButtonHolder(
-                                                                                            Integer.valueOf(
+                                                                                            Integer.parseInt(
                                                                                                     btnLoc),
                                                                                             text,
                                                                                             msg));
@@ -607,13 +607,13 @@ public class ConversationFragment extends Fragment implements
                             chat_modes.getAttributeValue(null, "name").equals(
                                     modeName)) {
                         // Log.e(TAG, "Found Mode");
-                        modeIndex = Integer.valueOf(chat_modes
+                        modeIndex = Integer.parseInt(chat_modes
                                 .getAttributeValue(null, "index"));
                         modeFound = true;
                     } else if (chat_modes.getName().equals("button") &&
                             modeFound) {
                         // Log.e(TAG, "Found button");
-                        int buttonIndex = Integer.valueOf(chat_modes
+                        int buttonIndex = Integer.parseInt(chat_modes
                                 .getAttributeValue(null,
                                         "index"));
                         output.set(

@@ -48,33 +48,40 @@ public abstract class MapDataRef {
             scheme = "file";
         }
 
-        if (scheme.equals("file")) {
-            return new FileMapDataRef(u.getPath());
-        } else if (scheme.equals("arc")) {
-            try {
-                String arcUri = u.getPath();
-                String[] parts = arcUri.split("!/");
-                return new ArchiveEntryMapDataRef(parts[0], parts[1]);
-            } catch (Exception ex) {
-                Log.e(TAG, "error: ", ex);
+        switch (scheme) {
+            case "file":
+                return new FileMapDataRef(u.getPath());
+            case "arc":
+                try {
+                    String arcUri = u.getPath();
+                    if (arcUri != null) {
+                        String[] parts = arcUri.split("!/");
+                        return new ArchiveEntryMapDataRef(parts[0], parts[1]);
+                    }
+                } catch (Exception ex) {
+                    Log.e(TAG, "error: ", ex);
+                }
+                break;
+            case "asset": {
+                String path = u.getHost() + u.getPath();
+                if (path.startsWith("/")) {
+                    path = path.substring(1);
+                }
+                return new AssetMapDataRef(path);
             }
-        } else if (scheme.equals("asset")) {
-            String path = u.getHost() + u.getPath();
-            if (path.startsWith("/")) {
-                path = path.substring(1);
+            case "android.resource": {
+                String pack = u.getHost();
+                String path = u.getPath();
+                return new ResourceMapDataRef(pack + path);
             }
-            return new AssetMapDataRef(path);
-        } else if (scheme.equals("android.resource")) {
-            String pack = u.getHost();
-            String path = u.getPath();
-            return new ResourceMapDataRef(pack + path);
-        } else if (scheme.equals("base64")) { 
-            // Make it into a base64MapDataRef
-            String path = u.getHost() + u.getPath();
-            if (path.startsWith("/")) {
-                path = path.substring(1);
+            case "base64": {
+                // Make it into a base64MapDataRef
+                String path = u.getHost() + u.getPath();
+                if (path.startsWith("/")) {
+                    path = path.substring(1);
+                }
+                return new Base64MapDataRef(path);
             }
-            return new Base64MapDataRef(path);
         }
         return null;
     }

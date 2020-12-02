@@ -1,7 +1,6 @@
 
 package com.atakmap.android.metrics.activity;
 
-import android.app.Activity;
 import android.app.TabActivity;
 import android.os.Bundle;
 import android.view.KeyEvent;

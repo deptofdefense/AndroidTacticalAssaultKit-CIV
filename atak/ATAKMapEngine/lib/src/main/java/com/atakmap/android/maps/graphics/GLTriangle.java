@@ -6,6 +6,7 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
+import com.atakmap.lang.Unsafe;
 import com.atakmap.opengl.GLES20FixedPipeline;
 
 public abstract class GLTriangle extends GLArray {
@@ -17,6 +18,13 @@ public abstract class GLTriangle extends GLArray {
             int pointCount) {
         super(elementSize, pointSize, pointCount);
         this.defaultMode = defaultMode;
+    }
+
+    public void release() {
+        if (_buffer != null) {
+            Unsafe.free(_buffer);
+            _buffer = null;
+        }
     }
 
     protected void resizeBuffer(int newCount) {

@@ -1,10 +1,14 @@
 package com.atakmap.map.layer.feature.style.opengl;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.opengl.GLGeometry;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.opengl.GLRenderBatch;
 
+/** @deprecated use the batch feature renderering framework */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public abstract class GLStyle {
 
     protected final Style style;

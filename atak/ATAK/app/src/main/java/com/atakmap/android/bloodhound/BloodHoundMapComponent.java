@@ -15,7 +15,7 @@ public class BloodHoundMapComponent extends AbstractMapComponent {
 
     public static final String TAG = "BloodHoundMapComponent";
 
-    private BloodHoundTool _buttonTool;
+    protected BloodHoundTool _buttonTool;
     private BloodHoundLinkReceiver _linkReceiver;
     private BloodHoundLinkManager _linkManager;
 

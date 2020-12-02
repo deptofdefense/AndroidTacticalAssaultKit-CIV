@@ -2,6 +2,7 @@
 package com.atakmap.spatial.wkt;
 
 import com.atakmap.coremap.concurrent.NamedThreadFactory;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
 import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore;
@@ -119,7 +120,7 @@ final class OverlaysScanner {
 
         // if we have anything to recurse on, drop into the directory
         if (!recurseSources.isEmpty()) {
-            File[] children = file.listFiles();
+            File[] children = FileIOProviderFactory.listFiles(file);
             if (children != null) {
                 for (File aChildren : children) {
                     scanImpl(ex, dataStore, aChildren, depth + 1,

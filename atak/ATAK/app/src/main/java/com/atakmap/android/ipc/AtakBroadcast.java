@@ -11,6 +11,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.metrics.MetricsApi;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.util.ArrayList;
@@ -126,7 +127,7 @@ public final class AtakBroadcast {
 
         if (DOC_INTENTS) {
             try {
-                bw = new java.io.BufferedWriter(new java.io.FileWriter(
+                bw = new java.io.BufferedWriter(FileIOProviderFactory.getFileWriter(
                         FileSystemUtils.getItem("intents.txt")));
             } catch (java.io.IOException ioe) {
                 Log.e(TAG, "error occured writing out the intents.");

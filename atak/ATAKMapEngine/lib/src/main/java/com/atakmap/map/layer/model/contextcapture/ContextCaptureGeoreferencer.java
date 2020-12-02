@@ -3,23 +3,20 @@ package com.atakmap.map.layer.model.contextcapture;
 import android.content.res.XmlResourceParser;
 import android.util.Xml;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.coremap.maps.coords.UTMPoint;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.model.Georeferencer;
 import com.atakmap.map.layer.model.ModelInfo;
-import com.atakmap.map.layer.raster.mobac.MobacMapSource;
 import com.atakmap.map.projection.ProjectionFactory;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 
 import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -40,7 +37,7 @@ final class ContextCaptureGeoreferencer implements Georeferencer {
             if(path instanceof  ZipVirtualFile)
                 stream = ((ZipVirtualFile)path).openStream();
             else
-                stream = new FileInputStream(path);
+                stream = FileIOProviderFactory.getInputStream(path);
             parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
             parser.setFeature(Xml.FEATURE_RELAXED, true);
@@ -177,7 +174,7 @@ final class ContextCaptureGeoreferencer implements Georeferencer {
                 f = new ZipVirtualFile(f);
             } catch(Throwable ignored) {}
         }
-        if(!f.exists())
+        if(!FileIOProviderFactory.exists(f))
             return null;
         return f.getParentFile();
     }

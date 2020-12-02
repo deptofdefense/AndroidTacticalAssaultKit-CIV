@@ -11,6 +11,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -20,6 +21,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.URI;
+import java.nio.channels.FileChannel;
 
 /**
  * Test class for FileIoProviderFactory
@@ -29,12 +31,12 @@ public class FileIOProviderFactoryTest extends ATAKInstrumentedTest {
 
     private FileIOProvider createDummyProvider() {
         return new FileIOProvider() {
-            private File ensureCreate(File f) {
+            private File resolve(File f, boolean ensure) {
 
                 // very simple implementation that just creates the file in the /sdcard/encrypted
                 // directory.
                 File nf = new File("/sdcard/encrypted/" + f);
-                if (!nf.getParentFile().exists())
+                if (!nf.getParentFile().exists() && ensure)
                     nf.getParentFile().mkdirs();
                 return nf;
             }
@@ -47,39 +49,46 @@ public class FileIOProviderFactoryTest extends ATAKInstrumentedTest {
             @Override
             public FileInputStream getInputStream(File f)
                     throws FileNotFoundException {
-                return new FileInputStream(ensureCreate(f));
+                return new FileInputStream(resolve(f, true));
             }
 
+            /**
+             * Returns a well formed output stream implementation that utilizes the file provided.
+             *
+             * @param f      the file to use as the basis for the input stream
+             * @param append true if file should be appended, false if truncating should occur
+             * @return the input stream based on the file
+             * @throws FileNotFoundException an exception if the file is not found.
+             */
             @Override
-            public FileOutputStream getOutputStream(File f)
-                    throws FileNotFoundException {
-                return new FileOutputStream(ensureCreate(f));
+            public FileOutputStream getOutputStream(File f, boolean append) throws FileNotFoundException {
+                return new FileOutputStream(resolve(f, true), append);
             }
 
             @Override
             public FileWriter getFileWriter(File f) throws IOException {
-                return new FileWriter(ensureCreate(f));
+                return new FileWriter(resolve(f, true));
             }
 
             @Override
             public FileReader getFileReader(File f) throws IOException {
-                return new FileReader(ensureCreate(f));
+                return new FileReader(resolve(f, true));
             }
 
             @Override
             public RandomAccessFile getRandomAccessFile(File f, String mode)
                     throws FileNotFoundException {
-                return new RandomAccessFile(ensureCreate(f), mode);
+                return new RandomAccessFile(resolve(f, true), mode);
             }
 
             @Override
             public boolean renameTo(File f1, File f2) {
-                return ensureCreate(f1).renameTo(ensureCreate(f2));
+                return resolve(f1, false).renameTo(resolve(f2, true));
             }
 
             @Override
-            public boolean delete(File f) {
-                return ensureCreate(f).delete();
+            public boolean delete(File f, int flag) {
+                return resolve(f, true).delete();
             }
 
             /**
@@ -90,7 +99,7 @@ public class FileIOProviderFactoryTest extends ATAKInstrumentedTest {
              */
             @Override
             public long length(File f) {
-                return 0;
+                return resolve(f, false).length();
             }
 
             /**
@@ -103,7 +112,7 @@ public class FileIOProviderFactoryTest extends ATAKInstrumentedTest {
              */
             @Override
             public long lastModified(File f) {
-                return 0;
+                return resolve(f, false).lastModified();
             }
 
             /**
@@ -114,7 +123,7 @@ public class FileIOProviderFactoryTest extends ATAKInstrumentedTest {
              */
             @Override
             public boolean exists(File f) {
-                return false;
+                return resolve(f, false).exists();
             }
 
             /**
@@ -125,7 +134,7 @@ public class FileIOProviderFactoryTest extends ATAKInstrumentedTest {
              */
             @Override
             public boolean isDirectory(File f) {
-                return false;
+                return resolve(f, false).isDirectory();
             }
 
             /**
@@ -149,7 +158,7 @@ public class FileIOProviderFactoryTest extends ATAKInstrumentedTest {
              */
             @Override
             public String[] list(File f) {
-                return new String[0];
+                return resolve(f, false).list();
             }
 
             /**
@@ -171,7 +180,7 @@ public class FileIOProviderFactoryTest extends ATAKInstrumentedTest {
              */
             @Override
             public String[] list(File f, FilenameFilter filter) {
-                return new String[0];
+                return resolve(f, false).list(filter);
             }
 
             /**
@@ -183,7 +192,7 @@ public class FileIOProviderFactoryTest extends ATAKInstrumentedTest {
              */
             @Override
             public boolean mkdir(File f) {
-                return false;
+                return resolve(f, false).mkdir();
             }
 
             /**
@@ -197,7 +206,7 @@ public class FileIOProviderFactoryTest extends ATAKInstrumentedTest {
              */
             @Override
             public boolean mkdirs(File f) {
-                return false;
+                return resolve(f, false).mkdirs();
             }
 
             /**
@@ -213,7 +222,7 @@ public class FileIOProviderFactoryTest extends ATAKInstrumentedTest {
              */
             @Override
             public URI toURI(File f) {
-                return null;
+                return resolve(f, false).toURI();
             }
 
             /**
@@ -232,7 +241,7 @@ public class FileIOProviderFactoryTest extends ATAKInstrumentedTest {
             @Override
             public boolean setWritable(File f, boolean writable,
                     boolean ownerOnly) {
-                return false;
+                return resolve(f, false).setWritable(writable, ownerOnly);
             }
 
             /**
@@ -252,9 +261,45 @@ public class FileIOProviderFactoryTest extends ATAKInstrumentedTest {
             @Override
             public boolean setReadable(File f, boolean readable,
                     boolean ownerOnly) {
-                return false;
+                return resolve(f, false).setReadable(readable, ownerOnly);
+            }
+
+            /**
+             * Returns the unique FileChannel object associated with this file.
+             *
+             * @param f The file
+             * @return The file channel associated with the file
+             * @throws FileNotFoundException an exception if the file is not found
+             */
+            @Override
+            public FileChannel getChannel(File f, String mode)
+                    throws FileNotFoundException {
+                return (new RandomAccessFile(resolve(f, true), mode)).getChannel();
             }
         };
+    }
+
+    /**
+     * Test File Filter
+     */
+    class TestFileFilter implements FileFilter {
+        @Override
+        public boolean accept(File file) {
+            String filename = file.getName();
+            boolean retval = filename.contains(".txt");
+            return retval;
+        }
+    }
+
+    /**
+     * Helper method to write an empty file
+     * @param f File to be written
+     * @param fileText Text to be written to File
+     */
+    private void writeFile(File f, String fileText) throws IOException  {
+        FileWriter fw = FileIOProviderFactory.getFileWriter(f);
+        fw.write(fileText);
+        fw.close();
     }
 
     @Test
@@ -266,31 +311,117 @@ public class FileIOProviderFactoryTest extends ATAKInstrumentedTest {
 
     @Test
     public void test_stream() throws IOException {
-        FileIOProviderFactory.registerProvider(createDummyProvider());
-        File f = new File("test.txt");
-        FileOutputStream fos = FileIOProviderFactory.getOutputStream(f);
-        fos.write("test_stream".getBytes());
-        fos.close();
-        FileInputStream fis = FileIOProviderFactory.getInputStream(f);
-        String result = FileSystemUtils.copyStreamToString(fis, true,
-                FileSystemUtils.UTF8_CHARSET);
-        Assert.assertEquals("test_stream", result);
-        Assert.assertTrue(new File("/sdcard/encrypted/test.txt").exists());
-        Assert.assertTrue(FileIOProviderFactory.delete(f));
+        final FileIOProvider provider = createDummyProvider();
+        try {
+            FileIOProviderFactory.registerProvider(provider);
+            File f = new File("test.txt");
+            FileOutputStream fos = FileIOProviderFactory.getOutputStream(f);
+            fos.write("test_stream".getBytes());
+            fos.close();
+            FileInputStream fis = FileIOProviderFactory.getInputStream(f);
+            String result = FileSystemUtils.copyStreamToString(fis, true,
+                    FileSystemUtils.UTF8_CHARSET);
+            Assert.assertEquals("test_stream", result);
+            Assert.assertTrue(new File("/sdcard/encrypted/test.txt").exists());
+            Assert.assertTrue(FileIOProviderFactory.delete(f, 0));
+        } finally {
+            FileIOProviderFactory.unregisterProvider(provider);
+        }
     }
 
     @Test
     public void test_writer() throws IOException {
-        FileIOProviderFactory.registerProvider(createDummyProvider());
-        File f = new File("test.txt");
-        FileWriter fw = FileIOProviderFactory.getFileWriter(f);
-        fw.write("test_writer");
-        fw.close();
-        FileInputStream fis = FileIOProviderFactory.getInputStream(f);
-        String result = FileSystemUtils.copyStreamToString(fis, true,
-                FileSystemUtils.UTF8_CHARSET);
-        Assert.assertEquals("test_writer", result);
-        Assert.assertTrue(new File("/sdcard/encrypted/test.txt").exists());
-        Assert.assertTrue(FileIOProviderFactory.delete(f));
+        final FileIOProvider provider = createDummyProvider();
+        try {
+            FileIOProviderFactory.registerProvider(provider);
+            File f = new File("test.txt");
+            writeFile(f, "test_writer");
+
+            FileInputStream fis = FileIOProviderFactory.getInputStream(f);
+            String result = FileSystemUtils.copyStreamToString(fis, true,
+                    FileSystemUtils.UTF8_CHARSET);
+            Assert.assertEquals("test_writer", result);
+            Assert.assertTrue(new File("/sdcard/encrypted/test.txt").exists());
+            Assert.assertTrue(FileIOProviderFactory.delete(f, 0));
+        } finally {
+            FileIOProviderFactory.unregisterProvider(provider);
+        }
+    }
+
+    /**
+     * Tests filenamesToFiles calls
+     */
+    @Test
+    public void filenamesToFiles_multipleFiles() throws IOException {
+        // ARRANGE
+        final FileIOProvider provider = createDummyProvider();
+        try {
+            FileIOProviderFactory.registerProvider(provider);
+            String fileName1 = "filenamesToFiles1.txt";
+            String fileName2 = "filenamesToFiles2.txt";
+            String fileName3 = "filenamesToFiles3.txt";
+            String[] fileNames = {fileName1, fileName2, fileName3};
+            File f1 = new File(fileName1);
+            File f2 = new File(fileName2);
+            File f3 = new File(fileName3);
+            File dir = new File(".");
+
+            String file2Text = "Some Text 2";
+            writeFile(f1, "Some Text 1");
+            writeFile(f2, file2Text);
+            writeFile(f3, "Some Text 3");
+
+            // ACT
+            File[] files = FileIOProviderFactory.filenamesToFiles(dir, fileNames);
+
+            // ASSERT
+            Assert.assertEquals(files.length, 3);
+            Assert.assertEquals(fileName1, files[0].getName());
+            Assert.assertEquals(fileName2, files[1].getName());
+            Assert.assertEquals(fileName3, files[2].getName());
+
+            FileInputStream fis = FileIOProviderFactory.getInputStream(f2);
+            String result = FileSystemUtils.copyStreamToString(fis, true,
+                    FileSystemUtils.UTF8_CHARSET);
+            Assert.assertEquals(file2Text, result);
+        } finally {
+            FileIOProviderFactory.unregisterProvider(provider);
+        }
+    }
+
+    /**
+     * Tests filenamesToFiles calls
+     */
+    @Test
+    public void listFiles_FilterReturnsSome() throws IOException {
+        // ARRANGE
+        final FileIOProvider provider = createDummyProvider();
+        try {
+            FileIOProviderFactory.registerProvider(provider);
+            File dir = new File("/sdcard/encrypted/listFiles_FilterReturnsSome");
+            dir.mkdir();
+
+            File f1 = new File(dir, "listFiles1.txt");
+            File f2 = new File(dir, "listFiles2.dat");
+            File f3 = new File(dir, "listFiles3.log");
+            File f4 = new File(dir, "listFiles4.txt");
+
+            writeFile(f1, "Some Text 1");
+            writeFile(f2, "Some Text 2");
+            writeFile(f3, "Some Text 3");
+            writeFile(f4, "Some Text 4");
+
+            FileFilter filter = new TestFileFilter();
+
+            // ACT
+            File[] files = FileIOProviderFactory.listFiles(dir, filter);
+
+            // ASSERT
+            Assert.assertEquals(2, files.length);
+            Assert.assertEquals("listFiles1.txt", files[0].getName());
+            Assert.assertEquals("listFiles4.txt", files[1].getName());
+        } finally {
+            FileIOProviderFactory.unregisterProvider(provider);
+        }
     }
 }

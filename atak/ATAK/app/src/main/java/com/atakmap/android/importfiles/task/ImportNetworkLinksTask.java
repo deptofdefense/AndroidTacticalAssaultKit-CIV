@@ -16,7 +16,8 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.filesystem.SecureDelete;
+import com.atakmap.coremap.io.FileIOProvider;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
 import com.atakmap.spatial.kml.FeatureHandler;
@@ -108,7 +109,7 @@ public class ImportNetworkLinksTask extends
         // move all files (the current 'childRequests' and any ancestors that
         // were already downloaded, move them into ATAK kml folder
 
-        if (!dir.exists() || !dir.isDirectory()) {
+        if (!FileIOProviderFactory.exists(dir) || !FileIOProviderFactory.isDirectory(dir)) {
             Log.w(TAG,
                     "KML download folder is not a directory: "
                             + dir.getAbsolutePath());
@@ -119,7 +120,7 @@ public class ImportNetworkLinksTask extends
                             dir.getName()));
         }
 
-        File[] downloads = dir.listFiles();
+        File[] downloads = FileIOProviderFactory.listFiles(dir);
         if (downloads == null || downloads.length < 1) {
             Log.w(TAG,
                     "Remote KML Download Failed - No KML files downloaded: "
@@ -161,7 +162,7 @@ public class ImportNetworkLinksTask extends
                         // has special handling by the UI code
                         _resource.setLocalPath(destPath.getAbsolutePath());
                         _resource.setMd5(newMD5);
-                        _resource.setLastRefreshed(file.lastModified());
+                        _resource.setLastRefreshed(FileIOProviderFactory.lastModified(file));
                         Log.d(TAG, "Found match on updated resource: "
                                 + _resource.toString());
                     } else {
@@ -175,7 +176,7 @@ public class ImportNetworkLinksTask extends
                                 "Adding child resource: " + child.toString());
                     }
 
-                    if (destPath.exists()) {
+                    if (FileIOProviderFactory.exists(destPath)) {
                         String existingMD5 = HashingUtils.md5sum(destPath);
                         if (existingMD5 != null && existingMD5.equals(newMD5)) {
                             Log.d(TAG,
@@ -184,7 +185,7 @@ public class ImportNetworkLinksTask extends
                                             + file.getAbsolutePath()
                                             + " based on MD5: " + newMD5);
                             // now delete file rather than move
-                            if (!SecureDelete.delete(file))
+                            if (!FileIOProviderFactory.delete(file, FileIOProvider.SECURE_DELETE))
                                 Log.w(TAG,
                                         sorter.toString()
                                                 + ", Failed to delete un-updated file: "
@@ -223,7 +224,7 @@ public class ImportNetworkLinksTask extends
 
         // delete UID folder if all went well. If files left over, they will cleaned up by
         // DirectoryCleanup task/timer
-        downloads = dir.listFiles();
+        downloads = FileIOProviderFactory.listFiles(dir);
         if (downloads == null || downloads.length < 1) {
             FileSystemUtils.delete(dir);
         } else
@@ -344,7 +345,7 @@ public class ImportNetworkLinksTask extends
         try {
             // Open file in non-strict mode to ignore folks' non-standard or deprecated KML
             Kml kml = serializer.read(Kml.class, new BufferedInputStream(
-                    fis = new FileInputStream(
+                    fis = FileIOProviderFactory.getInputStream(
                             fileToParse)),
                     false);
 

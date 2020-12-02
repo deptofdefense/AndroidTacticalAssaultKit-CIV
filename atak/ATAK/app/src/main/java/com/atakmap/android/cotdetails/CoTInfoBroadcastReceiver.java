@@ -194,20 +194,6 @@ public class CoTInfoBroadcastReceiver extends DropDownReceiver implements
                 setType(type);
                 _prefs.edit().putString("lastCoTTypeSet", type).apply();
                 break;
-            case "com.atakmap.android.cotdetails.SENSORDETAILS":
-                if (!intent.hasExtra("targetUID"))
-                    return;
-                if (!isClosed())
-                    closeDropDown();
-                String sensorUID = intent.getStringExtra("targetUID");
-                LayoutInflater inflater = LayoutInflater
-                        .from(getMapView().getContext());
-                SensorDetailsView sdv = (SensorDetailsView) inflater.inflate(
-                        R.layout.sensor_details_view, null);
-                sdv.setSensorMarker(sensorUID);
-                showDropDown(sdv, THREE_EIGHTHS_WIDTH, FULL_HEIGHT, FULL_WIDTH,
-                        HALF_HEIGHT, this);
-                break;
         }
     }
 

@@ -1,5 +1,6 @@
 #include "math/Sphere2.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include "util/Memory.h"
@@ -27,7 +28,18 @@ bool Sphere2::intersect(Point2<double> *isectPoint, const Ray2<double> &ray) con
     const double d = b*b - c;
     if (d>0)
     {
-        const double scale = -b - sqrt(d);
+        const double r = sqrt(d);
+        const double t0 = -b - r;
+        const double t1 = -b + r;
+        if (t0 < 0.0 && t1 < 0.0)
+            return false;
+        double scale;
+        if (t0 < 0.0)
+            scale = t1;
+        else if (t1 < 0.0)
+            scale = t0;
+        else
+            scale = std::min(t0, t1);
         isectPoint->x = ray.origin.x + (ray.direction.x*scale);
         isectPoint->y = ray.origin.y + (ray.direction.y*scale);
         isectPoint->z = ray.origin.z + (ray.direction.z*scale);

@@ -209,7 +209,7 @@ public class DeviceProfileRequest implements Parcelable {
 
     /**
      * Check if request has at least one pah
-     * @return
+     * @return returns true if the request has at least one path.
      */
     public boolean hasFilepath() {
         return hasTool() && !FileSystemUtils.isEmpty(filepaths);
@@ -217,7 +217,7 @@ public class DeviceProfileRequest implements Parcelable {
 
     /**
      * Check if request has more than one path
-     * @return
+     * @return returns true if the request has more than 1 path.
      */
     public boolean hasFilepaths() {
         return hasFilepath() && filepaths.size() > 1;
@@ -355,7 +355,7 @@ public class DeviceProfileRequest implements Parcelable {
         ifModifiedSince = in.readString();
         outputPath = in.readString();
 
-        filepaths = new ArrayList<String>();
+        filepaths = new ArrayList<>();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             filepaths.add(in.readString());

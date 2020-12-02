@@ -283,7 +283,7 @@ public class ATAKConstants {
                                                         + "license"
                                                         + File.separatorChar
                                                         + "LICENSE.txt");
-                                WebViewer.show(file.toURI().toURL().toString(),
+                                WebViewer.show(file,
                                         context, 250);
                             } catch (Exception e) {
                                 Log.e(TAG, "error loading license.txt", e);

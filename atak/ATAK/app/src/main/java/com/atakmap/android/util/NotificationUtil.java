@@ -13,6 +13,7 @@ import android.os.Bundle;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.app.R;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.android.metrics.MetricsApi;
 import java.util.HashMap;
@@ -132,7 +133,7 @@ public class NotificationUtil {
          */
         final String model = android.os.Build.MODEL;
         final File f = new File("/proc/NettWarrior/nwplatform");
-        if (model.equals("SM-G900T") && f.exists()) {
+        if (model.equals("SM-G900T") && FileIOProviderFactory.exists(f)) {
             nwDevice = true;
             Log.d(TAG,
                     "NettWarrior S5 Detected with possible notification bug.");

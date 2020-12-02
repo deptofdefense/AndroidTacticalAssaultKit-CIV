@@ -3,6 +3,7 @@ package com.atakmap.map.formats.c3dt;
 import android.net.Uri;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.io.UriFactory;
 import com.atakmap.map.layer.model.ModelInfo;
@@ -15,7 +16,6 @@ import com.atakmap.math.PointD;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.net.URI;
 import java.util.Collections;
@@ -52,17 +52,17 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
 
         // fallback on File test
         File f = new File(s);
-        if(f.isDirectory())
+        if(FileIOProviderFactory.isDirectory(f))
             f = new File(f, "tileset.json");
         else
             return false; // XXX - workaround for ATAK-12324
-        return f.exists() && f.getName().equals("tileset.json");
+        return FileIOProviderFactory.exists(f) && f.getName().equals("tileset.json");
     }
 
     @Override
     public Set<ModelInfo> create(String s) {
         File f = new File(s);
-        if(!f.exists()) {
+        if(!FileIOProviderFactory.exists(f)) {
             UriFactory.OpenResult uriOpenResult = UriFactory.open(s);
             if (uriOpenResult != null) {
                 try {
@@ -82,9 +82,9 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
             }
         }
 
-        if (f.isDirectory())
+        if (FileIOProviderFactory.isDirectory(f))
             f = new File(f, "tileset.json");
-        if (!f.exists() || !f.getName().equals("tileset.json"))
+        if (!FileIOProviderFactory.exists(f) || !f.getName().equals("tileset.json"))
             return null;
 
         try {

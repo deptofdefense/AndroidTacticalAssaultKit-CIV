@@ -4,10 +4,6 @@ import android.util.Pair;
 
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.Layer;
-import com.atakmap.map.layer.feature.FeatureDataStore;
-import com.atakmap.map.layer.feature.FeatureLayer;
-import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore;
-import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore2;
 import com.atakmap.map.layer.opengl.GLLayer2;
 import com.atakmap.map.layer.opengl.GLLayerSpi2;
 

@@ -21,6 +21,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
+import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.math.RectD;
 
 import java.util.HashMap;
@@ -30,9 +31,6 @@ import java.util.UUID;
 public class Circle extends Polyline {
     private static final int RESOLUTION = 31; //Changing this value will impact the label
     public static final double MAX_RADIUS = 40075160.0 / 4.0 + 10.0; //10 is an error value to make SG/WinTAK happy
-
-    protected final float _hitRadius = 32 * MapView.DENSITY;
-    protected final float _hitRadiusSq = _hitRadius * _hitRadius;
 
     private boolean touchable = true;
     private GeoPointMetaData _center;
@@ -91,6 +89,7 @@ public class Circle extends Polyline {
                 (_center != null) ? _center.get() : GeoPoint.ZERO_POINT);
 
         createCircle();
+        setHeightStyle(HEIGHT_STYLE_POLYGON | HEIGHT_STYLE_OUTLINE_SIMPLE);
     }
 
     public double getRadius() {
@@ -114,16 +113,19 @@ public class Circle extends Polyline {
         if (getCenter() == null || !touchable)
             return false;
 
-        GeoBounds bounds = view.createHitbox(point, _hitRadius);
+        GeoBounds bounds = view.createHitbox(point, getHitRadius(view));
         if (!bounds.intersects(getBounds(null)))
             return false;
 
         double bearing = DistanceCalculations.bearingFromSourceToTarget(
                 getCenter().get(), point);
-        GeoPoint hitPoint = DistanceCalculations.computeDestinationPoint(
+        GeoPoint p = DistanceCalculations.computeDestinationPoint(
                 getCenter().get(), bearing, getRadius());
-        if (bounds.contains(hitPoint)) {
-            setTouchPoint(hitPoint);
+        if (bounds.contains(p)) {
+            GeoPointMetaData gpmd = new GeoPointMetaData(p);
+            ElevationManager.getElevation(p.getLatitude(), p.getLongitude(),
+                    null, gpmd);
+            setTouchPoint(gpmd.get());
             return true;
         }
         return false;

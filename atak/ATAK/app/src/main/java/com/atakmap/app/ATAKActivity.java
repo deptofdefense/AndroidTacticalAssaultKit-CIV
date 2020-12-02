@@ -66,8 +66,10 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.conversion.UnitChangeReceiver;
 import com.atakmap.android.metrics.MetricsApi;
+import com.atakmap.android.navigation.NavigationCompat;
 import com.atakmap.android.network.AtakAuthenticatedConnectionCallback;
 import com.atakmap.android.network.AtakWebProtocolHandlerCallbacks;
+import com.atakmap.android.network.TakServerHttpsProtocolHandler;
 import com.atakmap.android.overlay.DefaultMapGroupOverlay;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
@@ -96,6 +98,7 @@ import com.atakmap.comms.NetworkDeviceManager;
 import com.atakmap.comms.app.KeyManagerFactory;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.filesystem.SecureDelete;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -126,7 +129,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -193,7 +195,7 @@ public class ATAKActivity extends MapActivity implements
     public void onCreate(final Bundle savedInstanceState) {
 
         _controlPrefs = PreferenceManager.getDefaultSharedPreferences(this);
-        _controlPrefs.registerOnSharedPreferenceChangeListener(this);
+
 
         // please note - this should never be set to false unless being called as part of 
         // automatated testing.
@@ -254,7 +256,10 @@ public class ATAKActivity extends MapActivity implements
             return;
         }
 
-        FileSystemUtils.clearCachedMountPoints();
+        _controlPrefs.registerOnSharedPreferenceChangeListener(this);
+
+        
+        FileSystemUtils.reset();
 
         AtakBroadcast.init(this);
 
@@ -285,6 +290,7 @@ public class ATAKActivity extends MapActivity implements
                 .setCallback(authCallback);
         UriFactory.registerProtocolHandler(new WebProtocolHandler(
                 new AtakWebProtocolHandlerCallbacks(authCallback)));
+        UriFactory.registerProtocolHandler(new TakServerHttpsProtocolHandler());
 
         LocaleUtil.setLocale(getResources().getConfiguration().locale);
 
@@ -316,8 +322,13 @@ public class ATAKActivity extends MapActivity implements
 
         super.onCreate(null);
 
-        // set up visual splash screen 
-        setContentView(R.layout.atak_frag_main);
+        // set up visual splash screen
+        if (BuildConfig.FLAVOR.equals("civUIMods")) {
+            _newNavView = NavigationCompat.setContentView(this);
+            _newNavView.setVisibility(View.GONE);
+        } else {
+            NavigationCompat.setContentView(this);
+        }
 
         final LinearLayout v = findViewById(R.id.splash);
 
@@ -333,6 +344,8 @@ public class ATAKActivity extends MapActivity implements
 
         setupSplash(splash);
         v.addView(splash);
+
+        NavigationCompat.startSplashProgress(this);
 
         final Intent launchIntent = getIntent();
 
@@ -392,26 +405,30 @@ public class ATAKActivity extends MapActivity implements
         // need to show the actionbar, but since it was hidden during
         // mapView initialization, we will need to do a bit of fixup
         // after showing it.
-        final ActionBar actionBar = this.getActionBar();
-        actionBar.show();
+        if (_newNavView != null) {
+            _newNavView.setVisibility(View.VISIBLE);
+        } else {
+            final ActionBar actionBar = this.getActionBar();
+            actionBar.show();
 
-        // fix up the action bar.
-        v.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                final int actionBarHeight = actionBar.getHeight();
-                Log.d(TAG, "onCreate actionBar height: "
-                        + actionBarHeight);
-                setupActionBar(false);
-                try {
-                    onResume();
-                } catch (IllegalArgumentException ignored) {
-                    // explicit call to on resume in this thread may fail if the app is shutting
-                    // down due to another error.   should be benign just to catch and finish the 
-                    // thread properly.
+            // fix up the action bar.
+            v.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    final int actionBarHeight = actionBar.getHeight();
+                    Log.d(TAG, "onCreate actionBar height: "
+                            + actionBarHeight);
+                    setupActionBar(false);
+                    try {
+                        onResume();
+                    } catch (IllegalArgumentException ignored) {
+                        // explicit call to on resume in this thread may fail if the app is shutting
+                        // down due to another error.   should be benign just to catch and finish the
+                        // thread properly.
+                    }
                 }
-            }
-        }, 1);
+            }, 1);
+        }
 
         DocumentedIntentFilter filter = new DocumentedIntentFilter();
         filter.addAction(
@@ -456,7 +473,7 @@ public class ATAKActivity extends MapActivity implements
         // force redeployment of the wms sources.   Needs to happen before
         // AppVersionUpgrade which tries to create the imagery/mobile directory.
 
-        if (!FileSystemUtils.getItem("imagery/mobile").exists()) {
+        if (!FileIOProviderFactory.exists(FileSystemUtils.getItem("imagery/mobile"))) {
             Log.d(TAG,
                     "imagery/mobile directory missing, redeploying the map sources");
             _controlPrefs.edit().putBoolean("wms_deployed", false).apply();
@@ -511,7 +528,7 @@ public class ATAKActivity extends MapActivity implements
                 Log.e(TAG, "could not monitor the file: " + networkMap);
             }
 
-        } else if (networkMap.exists()) {
+        } else if (FileIOProviderFactory.exists(networkMap)) {
             Log.d(TAG,
                     "cowardly refusing to enable the NetworkDeviceManager device list because NetworkMonitor is not configured");
             AlertDialog.Builder alertBuilder = new AlertDialog.Builder(
@@ -640,7 +657,7 @@ public class ATAKActivity extends MapActivity implements
         String sSU = getString(R.string.FalconSA_su);
         File su = new File(sSU);
 
-        if (product.startsWith("cm_") || su.exists()) {
+        if (product.startsWith("cm_") || FileIOProviderFactory.exists(su)) {
             HintDialogHelper
                     .showHint(
                             _mapView.getContext(),
@@ -677,16 +694,16 @@ public class ATAKActivity extends MapActivity implements
     @SuppressLint("PrivateApi")
     private void setWarningShown() {
         try {
-            final Class clazz = Class
+            final Class<?> clazz = Class
                     .forName("android.content.pm.PackageParser$Package");
-            final Constructor c = clazz.getDeclaredConstructor(String.class);
+            final Constructor<?> c = clazz.getDeclaredConstructor(String.class);
             c.setAccessible(true);
         } catch (Exception e) {
             Log.e(TAG, "unable to find the constructor", e);
         }
 
         try {
-            final Class clazz = Class.forName("android.app.ActivityThread");
+            final Class<?> clazz = Class.forName("android.app.ActivityThread");
             final Method m = clazz.getDeclaredMethod("currentActivityThread");
             m.setAccessible(true);
             final Object activityThread = m.invoke(null);
@@ -802,7 +819,12 @@ public class ATAKActivity extends MapActivity implements
         filter.addAction(ActionBarReceiver.ADD_NEW_TOOLS);
         filter.addAction(ActionBarReceiver.REMOVE_TOOLS);
         filter.addAction(ActionBarReceiver.DISABLE_ACTIONBAR);
-        filter.addAction(ActionBarReceiver.TOGGLE_ACTIONBAR);
+        //Hide main toolbar if this is a civUIMods release build. Otherwise let it show,
+        if (!BuildConfig.FLAVOR.equals("civUIMods")
+                || (BuildConfig.FLAVOR.equals("civUIMods")
+                        && BuildConfig.DEBUG)) {
+            filter.addAction(ActionBarReceiver.TOGGLE_ACTIONBAR);
+        }
         AtakBroadcast.getInstance()
                 .registerReceiver(_actionBarReceiver, filter);
 
@@ -953,8 +975,8 @@ public class ATAKActivity extends MapActivity implements
                 orientationFilter);
 
         final File basemapDir = FileSystemUtils.getItem("basemap");
-        if (basemapDir.exists()) {
-            File[] children = basemapDir.listFiles();
+        if (FileIOProviderFactory.exists(basemapDir)) {
+            File[] children = FileIOProviderFactory.listFiles(basemapDir);
             if (children != null) {
                 for (File aChildren : children) {
                     Set<DatasetDescriptor> descs = DatasetDescriptorFactory2
@@ -1007,7 +1029,7 @@ public class ATAKActivity extends MapActivity implements
 
             File cofFile = new File(this.getFilesDir(), resourceName);
             FileSystemUtils.copyStream(stream, false,
-                    new FileOutputStream(cofFile), true);
+                    FileIOProviderFactory.getOutputStream(cofFile), true);
             long e = SystemClock.uptimeMillis();
 
             Log.v(TAG, "Extracted resource [" + resourceName + "] in " + (e - s)
@@ -1426,9 +1448,9 @@ public class ATAKActivity extends MapActivity implements
         if (actionBarView != null) {
             try {
                 //set action bar height via reflection
-                Class c = actionBarView.getClass();
+                Class<?> c = actionBarView.getClass();
                 if (c != null) {
-                    Class sc = c.getSuperclass();
+                    Class<?> sc = c.getSuperclass();
                     if (sc != null) {
                         Field f;
                         if (Build.VERSION.SDK_INT < 29) {
@@ -2656,17 +2678,17 @@ public class ATAKActivity extends MapActivity implements
                                 + File.separatorChar + "logs"
                                 + File.separatorChar + "logcat" + index
                                 + ".txt");
-                if (!logFile.getParentFile().mkdir()) {
+                if (!FileIOProviderFactory.mkdir(logFile.getParentFile())) {
                     Log.e(TAG, "Failed to make dir at: "
                             + logFile.getParentFile().getPath());
                 }
                 if (logFile.getParentFile() != null)
-                    if (!logFile.getParentFile().mkdirs()) {
+                    if (!FileIOProviderFactory.mkdirs(logFile.getParentFile())) {
                         Log.e(TAG, "Failed to make dir at: "
                                 + logFile.getParentFile().getPath());
                     }
 
-                fileLogger.setLogFile(new FileOutputStream(logFile));
+                fileLogger.setLogFile(FileIOProviderFactory.getOutputStream(logFile));
                 Log.registerLogListener(fileLogger);
                 fileLogger.setWriteOnlyErrors(_controlPrefs.getBoolean(
                         "loggingfile_error_only", false));
@@ -2943,6 +2965,7 @@ public class ATAKActivity extends MapActivity implements
     private ShutDownReceiver shutdownReceiver;
 
     private MapView _mapView;
+    private View _newNavView;
     private LinkLineReceiver _linkLineReceiver;
 
     // default state for the map behavior on start.

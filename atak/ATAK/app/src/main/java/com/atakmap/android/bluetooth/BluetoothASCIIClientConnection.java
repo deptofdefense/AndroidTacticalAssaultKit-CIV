@@ -9,7 +9,6 @@ import com.atakmap.coremap.log.Log;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.util.UUID;
 
 public class BluetoothASCIIClientConnection extends BluetoothClientConnection {

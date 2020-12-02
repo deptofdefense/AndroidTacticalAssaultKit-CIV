@@ -8,13 +8,18 @@ import android.os.Bundle;
 import com.atakmap.android.geofence.component.GeoFenceReceiver;
 import com.atakmap.android.importexport.AbstractCotEventImporter;
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.comms.CommsMapComponent;
 
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * @deprecated
+ */
 @Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class GeoFenceImporter extends AbstractCotEventImporter {
 
     private final static String TAG = "GeoFenceImporter";

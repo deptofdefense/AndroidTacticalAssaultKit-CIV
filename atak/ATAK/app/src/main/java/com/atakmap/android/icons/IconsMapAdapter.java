@@ -22,6 +22,7 @@ import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
@@ -74,7 +75,7 @@ public class IconsMapAdapter extends BroadcastReceiver {
     public static synchronized UserIconDatabase initializeUserIconDB(
             Context context, SharedPreferences prefs) {
         File iconDB = new File(UserIconDatabase.DATABASE_NAME);
-        boolean iconDBexists = iconDB.exists();
+        boolean iconDBexists = FileIOProviderFactory.exists(iconDB);
 
         //check if the latest default iconset is loaded
         String versionCode = String.valueOf(ATAKConstants.getVersionCode());
@@ -276,7 +277,7 @@ public class IconsMapAdapter extends BroadcastReceiver {
         UserIconSet iconset;
         long start = android.os.SystemClock.elapsedRealtime();
 
-        if (file == null || !file.exists()) {
+        if (file == null || !FileIOProviderFactory.exists(file)) {
             Log.w(TAG,
                     "ZIP does not exist: "
                             + (file == null ? "null" : file.getAbsolutePath()));

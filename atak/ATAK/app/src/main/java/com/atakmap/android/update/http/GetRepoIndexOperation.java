@@ -18,6 +18,7 @@ import com.atakmap.comms.http.TakHttpClient;
 import com.atakmap.comms.http.TakHttpException;
 import com.atakmap.comms.http.TakHttpResponse;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.foxykeep.datadroid.exception.ConnectionException;
@@ -166,14 +167,14 @@ public final class GetRepoIndexOperation extends HTTPOperation {
 
             File contentFile = new File(fileRequest.getDir(),
                     fileRequest.getFileName());
-            if (contentFile.exists()) {
+            if (FileIOProviderFactory.exists(contentFile)) {
                 //For now we just re-download since we don't currently have a way to get the HASH
                 //of the server side file
                 Log.d(TAG,
                         "Overwriting file: "
                                 + contentFile.getAbsolutePath()
                                 + " of size: "
-                                + contentFile.length() + " with new size: "
+                                + FileIOProviderFactory.length(contentFile) + " with new size: "
                                 + contentLength);
             }
 
@@ -243,7 +244,7 @@ public final class GetRepoIndexOperation extends HTTPOperation {
                 FileOutputStream fos = null;
                 InputStream in = null;
                 try {
-                    fos = new FileOutputStream(contentFile);
+                    fos = FileIOProviderFactory.getOutputStream(contentFile);
                     in = resEntity.getContent();
                     while ((len = in.read(buf)) > 0) {
                         fos.write(buf, 0, len);
@@ -357,7 +358,7 @@ public final class GetRepoIndexOperation extends HTTPOperation {
                 throw new ConnectionException("Failed to download data");
             }
 
-            long downloadSize = contentFile.length();
+            long downloadSize = FileIOProviderFactory.length(contentFile);
             long stopTime = System.currentTimeMillis();
 
             Log.d(TAG, String.format(LocaleUtil.getCurrent(),

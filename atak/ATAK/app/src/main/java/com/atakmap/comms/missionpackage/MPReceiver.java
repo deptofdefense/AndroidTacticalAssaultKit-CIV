@@ -2,6 +2,7 @@
 package com.atakmap.comms.missionpackage;
 
 import java.io.File;
+import java.io.IOException;
 
 public interface MPReceiver {
 
@@ -14,9 +15,9 @@ public interface MPReceiver {
      * progress callbacks will be made, nor will receiveComplete() be called.
      * 
      * @return File to write the received MP out to
-     * @throw IOException if an error occurs
+     * @throws IOException if an error occurs
      */
-    File getDestinationFile();
+    File getDestinationFile() throws IOException;
 
     /**
      * Called by the transfer engine to indicate progress on receiving the MP.

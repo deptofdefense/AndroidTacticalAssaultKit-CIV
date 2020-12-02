@@ -6,7 +6,6 @@ import com.atakmap.interop.Pointer;
 import com.atakmap.lang.ref.Cleaner;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.opengl.GLMapView;
-import com.atakmap.opengl.GLResolvable;
 import com.atakmap.util.Disposable;
 import com.atakmap.util.ReadWriteLock;
 

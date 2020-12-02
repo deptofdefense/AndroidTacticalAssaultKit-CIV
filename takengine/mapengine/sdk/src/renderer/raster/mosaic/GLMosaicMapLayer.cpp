@@ -426,7 +426,10 @@ Util::TAKErr GLMosaicMapLayer::updateRenderableLists(QueryContext &pendingDataOp
     // set visible to the swap map
     this->visibleFrames.swap(swap);
 
-    this->surface_->queueEvent(renderThreadCleaner, std::unique_ptr<void, void(*)(const void *)>(releaseList.release(), Memory_leaker_const<void>));
+    if (releaseList->size() > 0) {
+        this->surface_->queueEvent(renderThreadCleaner,
+                                   std::unique_ptr<void, void (*)(const void *)>(releaseList.release(), Memory_leaker_const<void>));
+    }
 
     // long e = android.os.SystemClock.elapsedRealtime();
     // System.out.println("GLGdalMosaicMapLayer@" + Integer.toString(this.hashCode(), 16) + " updateRenderableList in " + (e-s) + "ms");

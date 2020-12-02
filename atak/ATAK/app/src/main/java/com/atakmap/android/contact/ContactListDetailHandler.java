@@ -10,6 +10,7 @@ import com.atakmap.android.chat.GeoChatConnector;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.missionpackage.export.MissionPackageConnector;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.comms.NetConnectString;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
@@ -38,6 +39,8 @@ public class ContactListDetailHandler
     /**
      * @deprecated
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1")
     @Override
     public String getName() {
         return name;
@@ -46,6 +49,8 @@ public class ContactListDetailHandler
     /**
      * @deprecated
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1")
     @Override
     public void onReceive(Context context, Intent intent) {
     }

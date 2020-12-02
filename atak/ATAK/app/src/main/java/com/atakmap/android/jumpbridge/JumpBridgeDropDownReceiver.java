@@ -1,7 +1,6 @@
 
 package com.atakmap.android.jumpbridge;
 
-import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -42,8 +41,6 @@ public class JumpBridgeDropDownReceiver extends DropDownReceiver implements
 
     @Override
     protected void disposeImpl() {
-        // TODO Auto-generated method stub
-
     }
 
     @Override

@@ -27,6 +27,7 @@ import com.atakmap.android.update.AppMgmtUtils;
 import com.atakmap.android.update.FileSystemProductProvider;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.net.AtakCertificateDatabaseIFace;
 
@@ -328,14 +329,14 @@ public class AppMgmtPreferenceFragment extends AtakPreferenceFragment {
     }
 
     private void setApkDir(final Activity context, final File selected) {
-        if (!FileSystemUtils.isFile(selected) || !selected.isDirectory()) {
+        if (!FileSystemUtils.isFile(selected) || !FileIOProviderFactory.isDirectory(selected)) {
             Toast.makeText(context,
                     R.string.no_import_directory,
                     Toast.LENGTH_SHORT).show();
             return;
         }
 
-        File[] list = selected.listFiles(AppMgmtUtils.APK_FilenameFilter);
+        File[] list = FileIOProviderFactory.listFiles(selected, AppMgmtUtils.APK_FilenameFilter);
         if (list == null || list.length < 1) {
             Log.w(TAG, "setApkDir no APKs: " + selected.getAbsolutePath());
             new AlertDialog.Builder(getActivity())

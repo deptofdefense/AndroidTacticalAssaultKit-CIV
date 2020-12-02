@@ -29,6 +29,7 @@ import com.atakmap.app.R;
 import com.atakmap.comms.CotServiceRemote;
 import com.atakmap.comms.TAKServer;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.net.AtakAuthenticationCredentials;
 import com.atakmap.net.AtakAuthenticationDatabase;
@@ -646,7 +647,7 @@ public class AddNetInfoActivity extends MetricActivity {
 
                 FileOutputStream fos = null;
                 try {
-                    fos = new FileOutputStream(new File(
+                    fos = FileIOProviderFactory.getOutputStream(new File(
                             absolutePath));
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     if (clientCertificate != null) {
@@ -720,7 +721,7 @@ public class AddNetInfoActivity extends MetricActivity {
 
         final String directory;
 
-        if (certDir != null && certDir.exists() && certDir.isDirectory())
+        if (certDir != null && FileIOProviderFactory.exists(certDir) && FileIOProviderFactory.isDirectory(certDir))
             directory = certDir.getAbsolutePath();
         else
             directory = Environment.getExternalStorageDirectory().getPath();

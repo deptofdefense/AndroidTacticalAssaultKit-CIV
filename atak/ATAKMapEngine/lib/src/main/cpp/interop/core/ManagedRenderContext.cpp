@@ -91,6 +91,7 @@ TAKErr ManagedRenderContext::setFrameRate(const float rate) NOTHROWS
 {
     LocalJNIEnv env;
     env->CallVoidMethod(impl, RenderContext_class.setFrameRate, rate);
+    return TE_Ok;
 }
 float ManagedRenderContext::getFrameRate() const NOTHROWS
 {

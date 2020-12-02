@@ -12,6 +12,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.util.Pair;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.AtakMapView;
 import com.atakmap.map.RenderContext;
@@ -24,13 +25,15 @@ import com.atakmap.map.layer.feature.geometry.opengl.GLPoint;
 import com.atakmap.map.layer.feature.geometry.opengl.GLPolygon;
 import com.atakmap.map.layer.feature.style.BasicPointStyle;
 import com.atakmap.map.layer.feature.style.IconPointStyle;
-import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLRenderBatch;
 import com.atakmap.opengl.GLTextureAtlas;
 
+/** @deprecated use the batch feature renderering framework */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public abstract class GLIconPointStyle extends GLStyle {
     public final static GLStyleSpi SPI = new GLStyleSpi() {
 
@@ -149,17 +152,19 @@ public abstract class GLIconPointStyle extends GLStyle {
             return;
         
         final float textureSize = ICON_ATLAS.getTextureSize();
-        
+
+        final float density = (float)GLRenderGlobals.getRelativeScaling();
+
         final float renderWidth;
         if(this.iconWidth == 0.0f)
-            renderWidth = context.atlasIconWidth*AtakMapView.DENSITY;
+            renderWidth = context.atlasIconWidth*density;
         else
-            renderWidth = this.iconWidth*AtakMapView.DENSITY;
+            renderWidth = this.iconWidth*density;
         final float renderHeight;
         if(this.iconHeight == 0.0f)
-            renderHeight = context.atlasIconHeight*AtakMapView.DENSITY;
+            renderHeight = context.atlasIconHeight*density;
         else
-            renderHeight = this.iconHeight*AtakMapView.DENSITY;
+            renderHeight = this.iconHeight*density;
 
         final float iconOffsetX;
         if(this.alignX < 0)
@@ -350,18 +355,20 @@ public abstract class GLIconPointStyle extends GLStyle {
                 buf.order(ByteOrder.nativeOrder());
                 this.texCoords = buf.asFloatBuffer();
 
+                final float density = (float)GLRenderGlobals.getRelativeScaling();
+
                 final float textureSize = ICON_ATLAS.getTextureSize();
                 
                 final float renderWidth;
                 if(GLIconPointStyle.this.iconWidth == 0.0f)
-                    renderWidth = this.atlasIconWidth*AtakMapView.DENSITY;
+                    renderWidth = this.atlasIconWidth*density;
                 else
-                    renderWidth = GLIconPointStyle.this.iconWidth*AtakMapView.DENSITY;
+                    renderWidth = GLIconPointStyle.this.iconWidth*density;
                 final float renderHeight;
                 if(GLIconPointStyle.this.iconHeight == 0.0f)
-                    renderHeight = this.atlasIconHeight*AtakMapView.DENSITY;
+                    renderHeight = this.atlasIconHeight*density;
                 else
-                    renderHeight = GLIconPointStyle.this.iconHeight*AtakMapView.DENSITY;
+                    renderHeight = GLIconPointStyle.this.iconHeight*density;
 
                 final float iconOffsetX;
                 if(GLIconPointStyle.this.alignX < 0)

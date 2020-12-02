@@ -2,14 +2,10 @@ package com.atakmap.map.formats.c3dt;
 
 import android.opengl.EGL14;
 import android.opengl.EGLContext;
-import android.opengl.GLSurfaceView;
 
 import com.atakmap.map.RenderContext;
 import com.atakmap.map.RenderSurface;
 import com.atakmap.map.opengl.GLMapSurface;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 final class MainRenderContext implements RenderContext {
     RenderContext impl;

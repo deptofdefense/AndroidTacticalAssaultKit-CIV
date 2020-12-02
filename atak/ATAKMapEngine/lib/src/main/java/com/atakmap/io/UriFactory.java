@@ -1,14 +1,9 @@
 package com.atakmap.io;
 
-import android.util.Pair;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class UriFactory {
 
@@ -26,8 +21,8 @@ public class UriFactory {
 
     /**
      *
-     * @param uri
-     * @return
+     * @param uri the uri to open
+     * @return the result of opening the uri based on the set of Protocol handlers.
      */
     public static OpenResult open(String uri) {
         OpenResult result = null;
@@ -43,9 +38,9 @@ public class UriFactory {
         return result;
     }
     /**
-     *
-     * @param uri
-     * @return
+      Get the content length of a URI
+     * @param uri the uri to see if content length can be determined.
+     * @return the content length, otherwise 0 if no content length can be determined.
      */
     public static long getContentLength(String uri) {
         long result = 0;
@@ -60,8 +55,8 @@ public class UriFactory {
     }
 
     /**
-     *
-     * @param handler
+     * Register a protocol handler to act on a given uri.
+     * @param handler the handler to register
      */
     public static void registerProtocolHandler(ProtocolHandler handler) {
         synchronized (handlers) {
@@ -70,12 +65,12 @@ public class UriFactory {
     }
 
     /**
-     *
-     * @param handler
+     * Unregister a protocol handler to act on a given uri.
+     * @param handler the handler to unregister
      */
     public static void unregisterProtocolHandler(ProtocolHandler handler) {
         if (handler == null)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("handler cannot be null");
         synchronized (handlers) {
             handlers.remove(handler);
         }
@@ -92,13 +87,13 @@ public class UriFactory {
     }
 
     private static ProtocolHandler[] getHandlers() {
-        ProtocolHandler[] hs = null;
+        ProtocolHandler[] hs;
         synchronized (handlers) {
-            hs = handlers.toArray(new ProtocolHandler[handlers.size()]);
+            hs = handlers.toArray(new ProtocolHandler[0]);
         }
         return hs;
     }
 
-    private static List<ProtocolHandler> handlers = new ArrayList<>();
-    private static FileProtocolHandler fileHandler = new FileProtocolHandler();
+    private static final List<ProtocolHandler> handlers = new ArrayList<>();
+    private static final FileProtocolHandler fileHandler = new FileProtocolHandler();
 }

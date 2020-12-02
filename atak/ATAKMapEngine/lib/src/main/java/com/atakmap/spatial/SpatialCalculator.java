@@ -16,6 +16,7 @@ import android.database.sqlite.SQLiteException;
 import android.os.Environment;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.Databases;
@@ -1600,16 +1601,16 @@ public final class SpatialCalculator {
      * @return
      */
     private static File getRuntimeTempDir() {
-        if(!_tmpDir.exists()) {
+        if(!FileIOProviderFactory.exists(_tmpDir)) {
             do {
-                if(_tmpDir.mkdirs())
+                if(FileIOProviderFactory.mkdirs(_tmpDir))
                     break;
                 if(_tmpDir == DEFAULT_TMP_DIR)
                     break;
                 _tmpDir = DEFAULT_TMP_DIR;
             } while(true);
             // if the temporary directory does not exist, no runtime temp dir
-            if(!_tmpDir.exists())
+            if(!FileIOProviderFactory.exists(_tmpDir))
                 return null;
 
             // try to create the runtime temp dir
@@ -1637,7 +1638,7 @@ public final class SpatialCalculator {
             @Override
             public void run() {
                 try {
-                    final String[] children = dir.list(new FilenameFilter() {
+                    final String[] children = FileIOProviderFactory.list(dir, new FilenameFilter() {
                         @Override
                         public boolean accept(File dir, String filename) {
                             return filename.startsWith("spatialcalc");

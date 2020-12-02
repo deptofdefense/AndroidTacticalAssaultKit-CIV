@@ -10,6 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -19,7 +20,6 @@ import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.raster.controls.TileClientControl;
 import com.atakmap.map.layer.raster.mobileimagery.MobileImageryRasterLayer2;
 import com.atakmap.map.layer.raster.osm.OSMDroidTileContainer;
-import com.atakmap.map.layer.raster.osm.OSMTilesetSupport;
 import com.atakmap.map.layer.raster.osm.OSMUtils;
 import com.atakmap.map.layer.raster.tilematrix.TileClient;
 import com.atakmap.map.layer.raster.tilematrix.TileClientSpi;
@@ -31,7 +31,6 @@ import com.atakmap.map.layer.raster.tilematrix.TileScraper;
 import com.atakmap.map.projection.Projection;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
-import com.atakmap.util.ConfigOptions;
 import com.atakmap.util.ReferenceCount;
 
 public class MobacTileClient2 implements TileClient, TileClientControl {
@@ -139,7 +138,7 @@ public class MobacTileClient2 implements TileClient, TileClientControl {
 
             // if no cache could be opened from the file then attempt to delete
             // the file and create a new cache
-            if(this.offlineCache == null && (new File(offlineCachePath)).exists()) {
+            if(this.offlineCache == null && FileIOProviderFactory.exists(new File(offlineCachePath))) {
                 FileSystemUtils.delete(offlineCachePath);
                 this.offlineCache = openOrCreateCache(offlineCachePath, this, hint);
             }

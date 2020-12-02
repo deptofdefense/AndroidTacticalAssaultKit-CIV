@@ -15,7 +15,6 @@ import android.graphics.Bitmap;
 
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.TranslateOptions;
-import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconst;
 
 public class GdalGraphicUtils {

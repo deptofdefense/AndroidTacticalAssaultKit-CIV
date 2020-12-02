@@ -10,6 +10,7 @@ import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.app.DeveloperOptions;
 import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
@@ -871,7 +872,7 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                         for (String dtedPath : DTED_PATHS) {
                             file = new File(dtedPath + filePathWithoutExt
                                     + queryExtension);
-                            if (!file.exists())
+                            if (!FileIOProviderFactory.exists(file))
                                 continue;
 
                             // define the MBB for the DTED cell
@@ -896,7 +897,7 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                             channel = null;
                             boolean missingElev = false;
                             try {
-                                inputStream = new FileInputStream(file);
+                                inputStream = FileIOProviderFactory.getInputStream(file);
                                 channel = inputStream.getChannel();
 
                                 dted.readHeader(
@@ -1161,7 +1162,7 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                         for (String dtedPath : DTED_PATHS) {
                             file = new File(dtedPath + filePathWithoutExt
                                     + queryExtension);
-                            if (!file.exists())
+                            if (!FileIOProviderFactory.exists(file))
                                 continue;
 
                             // define the MBB for the DTED cell
@@ -1225,7 +1226,7 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                             channel = null;
                             boolean missingElev = false;
                             try {
-                                inputStream = new FileInputStream(file);
+                                inputStream = FileIOProviderFactory.getInputStream(file);
                                 channel = inputStream.getChannel();
 
                                 dted.readHeader(channel, cellMaxLat,

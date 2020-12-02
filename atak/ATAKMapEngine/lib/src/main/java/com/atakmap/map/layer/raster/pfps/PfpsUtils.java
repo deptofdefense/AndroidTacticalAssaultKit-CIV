@@ -10,6 +10,7 @@ import android.database.*;
 import android.util.SparseArray;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.map.layer.raster.gdal.GdalDatasetProjection2;
 import com.atakmap.map.layer.raster.mosaic.MosaicDatabaseBuilder2;
 import com.atakmap.map.layer.raster.mosaic.MosaicUtils;
@@ -203,11 +204,11 @@ public class PfpsUtils {
     }
     
     public static boolean isPfpsDataDir(File f, int limit){
-        if (!f.isDirectory())
+        if (!FileIOProviderFactory.isDirectory(f))
             return false;
         String[] c;
         try {
-            c = f.list();
+            c = FileIOProviderFactory.list(f);
         } catch (NullPointerException e) {
             System.err.println("f: " + f + " " + f.getAbsolutePath());
             throw e;
@@ -232,12 +233,12 @@ public class PfpsUtils {
 
     private static boolean checkRpf(File pfpsDataDir, int limit) {
         File rpfDir = new File(pfpsDataDir, "rpf");
-        if (!rpfDir.exists())
+        if (!FileIOProviderFactory.exists(rpfDir))
             rpfDir = new File(pfpsDataDir, "RPF");
-        if (!rpfDir.exists() || rpfDir.isFile())
+        if (!FileIOProviderFactory.exists(rpfDir) || rpfDir.isFile())
             return false;
 
-        String[] c = rpfDir.list();
+        String[] c = FileIOProviderFactory.list(rpfDir);
 
         if (c == null)
             return false;
@@ -252,10 +253,10 @@ public class PfpsUtils {
 
     public static void createRpfDataDatabase2(MosaicDatabaseBuilder2 database, File d)
             throws SQLException {
-        File[] c = d.listFiles(new FileFilter() {
+        File[] c = FileIOProviderFactory.listFiles(d, new FileFilter() {
             @Override
             public boolean accept(File f) {
-                if (!f.isDirectory())
+                if (!FileIOProviderFactory.isDirectory(f))
                     return false;
                 return RPF_DIRECTORY_NAMES.containsKey(f.getName().toLowerCase(LocaleUtil.getCurrent()));
             }
@@ -276,7 +277,7 @@ public class PfpsUtils {
                 }
             }
 
-            final URI relativeUri = d.getParentFile().toURI();
+            final URI relativeUri = FileIOProviderFactory.toURI(d.getParentFile());
 
             PfpsMapType t;
             File[] subdirs;
@@ -303,10 +304,10 @@ public class PfpsUtils {
             char[] frameFileNameChars = new char[12];
             for (int i = 0; i < c.length; i++) {
                 t = RPF_DIRECTORY_NAMES.get(c[i].getName().toLowerCase(LocaleUtil.getCurrent()));
-                subdirs = c[i].listFiles(new FileFilter() {
+                subdirs = FileIOProviderFactory.listFiles(c[i], new FileFilter() {
                     @Override
                     public boolean accept(File f) {
-                        return (f.isDirectory() && f.getName().length() == 1);
+                        return (FileIOProviderFactory.isDirectory(f) && f.getName().length() == 1);
                     }
                 });
                 if(subdirs == null)
@@ -317,7 +318,7 @@ public class PfpsUtils {
                 if(type == null)
                     type = t.folderName.toUpperCase(LocaleUtil.getCurrent());
                 for (int j = 0; j < subdirs.length; j++) {
-                    frames = subdirs[j].listFiles();
+                    frames = FileIOProviderFactory.listFiles(subdirs[j]);
                     if (frames == null)
                        frames = new File[0];
 
@@ -418,7 +419,7 @@ public class PfpsUtils {
                                 throw new IllegalStateException();
                         }
 
-                        database.insertRow(relativeUri.relativize(file.toURI()).getPath(),
+                        database.insertRow(relativeUri.relativize(FileIOProviderFactory.toURI(file)).getPath(),
                                            type,
                                            false,
                                            corners[0],
@@ -474,14 +475,14 @@ public class PfpsUtils {
             ByteBuffer frame) throws IOException {
         InputStream inputStream = null;
         try {
-            if (frame == null || frame.capacity() < f.length())
-                frame = ByteBuffer.wrap(new byte[(int) f.length()]);
+            if (frame == null || frame.capacity() < FileIOProviderFactory.length(f))
+                frame = ByteBuffer.wrap(new byte[(int)FileIOProviderFactory.length(f)]);
             frame.clear();
-            frame.limit((int) f.length());
+            frame.limit((int)FileIOProviderFactory.length(f));
             if (f instanceof ZipVirtualFile)
                 inputStream = ((ZipVirtualFile) f).openStream();
             else
-                inputStream = new FileInputStream(f);
+                inputStream = FileIOProviderFactory.getInputStream(f);
 
             
             int r = inputStream.read(frame.array());

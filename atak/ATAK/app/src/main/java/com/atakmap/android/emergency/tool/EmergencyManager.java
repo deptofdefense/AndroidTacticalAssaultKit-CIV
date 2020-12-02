@@ -1,12 +1,17 @@
 
 package com.atakmap.android.emergency.tool;
 
+import android.Manifest;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.preference.PreferenceManager;
 import android.telephony.SmsManager;
 import android.telephony.TelephonyManager;
+
+import com.atakmap.app.Permissions;
 import com.atakmap.coremap.log.Log;
 import android.annotation.SuppressLint;
 import com.atakmap.android.emergency.sms.SMSGenerator;
@@ -288,8 +293,22 @@ public class EmergencyManager {
             if (!numbers.equals("")) {
                 String[] parsedNumbers = numbers.split("-");
                 for (String s : parsedNumbers) {
-                    SmsManager sms = SmsManager.getDefault();
-                    sms.sendTextMessage(s, null, alertMessage, null, null);
+                    try {
+                        if (sendSmsInterface != null) {
+                            sendSmsInterface.sendTextMessage(s, null, alertMessage, null, null);
+                        } else {
+                            int res = getContext().checkCallingOrSelfPermission(Manifest.permission.SEND_SMS);
+                            if (res == PackageManager.PERMISSION_GRANTED) {
+                                // default behavior
+                                SmsManager sms = SmsManager.getDefault();
+                                if (sms != null)
+                                    sms.sendTextMessage(s, null, alertMessage, null, null);
+                            }
+                        }
+                    } catch (Exception e) {
+
+                        Log.e(TAG, "unable to send SMS", e);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -366,5 +385,59 @@ public class EmergencyManager {
         intent.putExtra(EmergencyConstants.PLUGIN_SEND_EMERGENCY_EXTRA,
                 event.toString());
         AtakBroadcast.getInstance().sendBroadcast(intent);
+    }
+
+
+
+
+    public interface SendSmsInterface {
+        /**
+         * Send a text based SMS.
+         *
+         * @param destinationAddress the address to send the message to
+         * @param scAddress is the service center address or null to use
+         *  the current default SMSC
+         * @param text the body of the message to send
+         * @param sentIntent if not NULL this <code>PendingIntent</code> is
+         *  broadcast when the message is successfully sent, or failed.
+         *  The result code will be <code>Activity.RESULT_OK</code> for success,
+         *  or one of these errors:<br>
+         *  <code>RESULT_ERROR_GENERIC_FAILURE</code><br>
+         *  <code>RESULT_ERROR_RADIO_OFF</code><br>
+         *  <code>RESULT_ERROR_NULL_PDU</code><br>
+         *  For <code>RESULT_ERROR_GENERIC_FAILURE</code> the sentIntent may include
+         *  the extra "errorCode" containing a radio technology specific value,
+         *  generally only useful for troubleshooting.<br>
+         *  The per-application based SMS control checks sentIntent. If sentIntent
+         *  is NULL the caller will be checked against all unknown applications,
+         *  which cause smaller number of SMS to be sent in checking period.
+         * @param deliveryIntent if not NULL this <code>PendingIntent</code> is
+         *  broadcast when the message is delivered to the recipient.  The
+         *  raw pdu of the status report is in the extended data ("pdu").
+         *
+         * @throws IllegalArgumentException if destinationAddress or text are empty
+         */
+        public void sendTextMessage(
+                String destinationAddress, String scAddress, String text,
+                PendingIntent sentIntent, PendingIntent deliveryIntent);
+    }
+
+    private static SendSmsInterface sendSmsInterface;
+
+
+    /**
+     * Sets the Send SMS Interface to use instead of the default SMS Interface.
+     * @param iface the implementation to use or null if the default is to be used.
+     */
+    public static void setSendSmsInterface(SendSmsInterface iface) {
+        sendSmsInterface = iface;
+    }
+
+    /**
+     * Used to let the AlertPreferenceFragment know that there is a Sms send Plugin.
+     * @return true if one is registered.
+     */
+    public static boolean hasSmsSendPlugin() {
+        return (sendSmsInterface != null);
     }
 }

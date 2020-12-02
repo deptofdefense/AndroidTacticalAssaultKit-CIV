@@ -24,8 +24,10 @@ import com.atakmap.android.missionpackage.api.MissionPackageApi;
 import com.atakmap.android.missionpackage.event.MissionPackageShapefileHandler;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.util.NotificationUtil;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
 import com.atakmap.spatial.file.ShapefileSpatialDb;
@@ -288,7 +290,7 @@ public abstract class ExportFileMarshal extends ExportMarshal {
             return;
         }
 
-        if (!file.exists()) {
+        if (!FileIOProviderFactory.exists(file)) {
             Log.d(TAG, "Export failed: " + file.getAbsolutePath());
             NotificationUtil.getInstance().postNotification(
                     R.drawable.ic_network_error_notification_icon,
@@ -329,7 +331,7 @@ public abstract class ExportFileMarshal extends ExportMarshal {
      * Ask user which protocol, and then send file
      * Note, this could be extracted into plugin(s) and fully integrated with contact list
      * so any file type could be sent to a supported server type
-     * Deprecated - Please use {@link SendDialog} instead
+     * @deprecated - Please use {@link SendDialog} instead
      * 
      * @param context
      * @param contentType
@@ -337,6 +339,7 @@ public abstract class ExportFileMarshal extends ExportMarshal {
      * @param file
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static void promptSendFile(final Context context,
             final String contentType,
             final String mimeType, final int iconId, File file) {
@@ -538,7 +541,7 @@ public abstract class ExportFileMarshal extends ExportMarshal {
         final File file;
         try {
             file = getFile();
-            if (file.exists()) {
+            if (FileIOProviderFactory.exists(file)) {
                 FileSystemUtils.deleteFile(file);
 
             }

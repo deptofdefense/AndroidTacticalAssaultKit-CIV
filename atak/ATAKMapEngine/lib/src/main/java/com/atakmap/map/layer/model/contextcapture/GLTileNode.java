@@ -1,5 +1,6 @@
 package com.atakmap.map.layer.model.contextcapture;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.opengl.GLMapRenderable2;
 import com.atakmap.map.opengl.GLMapView;
@@ -8,6 +9,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** @deprecated PROTOTYPE CODE; SUBJECT TO REMOVAL AT ANY TIME; DO NOT CREATE DIRECT DEPENDENCIES */
+@Deprecated
+@DeprecatedApi(since = "4.1")
 interface GLTileNode extends GLMapRenderable2 {
     public enum RenderVisibility {
         None,

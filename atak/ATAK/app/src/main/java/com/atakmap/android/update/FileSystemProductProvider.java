@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.AppMgmtPreferenceFragment;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -42,8 +43,8 @@ public class FileSystemProductProvider extends BaseProductProvider {
         super(context);
         _prefs = prefs;
         File dir = FileSystemUtils.getItem(LOCAL_REPO_PATH);
-        if (dir != null && !dir.exists())
-            if (!dir.mkdirs())
+        if (dir != null && !FileIOProviderFactory.exists(dir))
+            if (!FileIOProviderFactory.mkdirs(dir))
                 Log.d(TAG, "could not wrap: " + dir);
     }
 
@@ -178,12 +179,12 @@ public class FileSystemProductProvider extends BaseProductProvider {
     }
 
     private File[] getAPKs(File dir) {
-        if (!FileSystemUtils.isFile(dir) || !dir.isDirectory()) {
+        if (!FileSystemUtils.isFile(dir) || !FileIOProviderFactory.isDirectory(dir)) {
             Log.w(TAG, "getAPKs no dir: " + dir.getAbsolutePath());
             return null;
         }
 
-        return dir.listFiles(AppMgmtUtils.APK_FilenameFilter);
+        return FileIOProviderFactory.listFiles(dir, AppMgmtUtils.APK_FilenameFilter);
     }
 
     private ProductRepository processInfz(File customInfz) {

@@ -265,6 +265,9 @@ public class GLOffscreenCaptureService implements Runnable {
         if (_pixelBuf == null)
             return bmp;
 
+        // Wait until GL operations are complete before reading pixels
+        GLES30.glFinish();
+
         _pixelBuf.clear();
         GLES30.glReadPixels(0, 0, _texWidth, _texHeight, GLES30.GL_RGBA,
                 GLES30.GL_UNSIGNED_BYTE, _pixelBuf);

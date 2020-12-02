@@ -3,6 +3,7 @@ package com.atakmap.spatial.file;
 
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
 
 import java.io.File;
@@ -49,7 +50,7 @@ public class KmlFileSpatialDb extends OgrSpatialDb {
             String lc = file.getName().toLowerCase(LocaleUtil.getCurrent());
             if (lc.endsWith(".kml") || lc.endsWith(".kmz"))
                 return PROCESS_ACCEPT;
-        } else if (file.isDirectory()) {
+        } else if (FileIOProviderFactory.isDirectory(file)) {
             return PROCESS_RECURSE;
         }
 

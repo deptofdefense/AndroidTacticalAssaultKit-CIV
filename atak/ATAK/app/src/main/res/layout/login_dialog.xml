@@ -63,7 +63,7 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/password"
             android:text="@string/show_password"
-            android:textSize="10dp"/>
+            android:textSize="10sp"/>
     </RelativeLayout>
     
 </LinearLayout>

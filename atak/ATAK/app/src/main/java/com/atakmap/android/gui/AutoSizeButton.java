@@ -67,7 +67,7 @@ public class AutoSizeButton extends Button {
     }
 
     /**
-     * @param context
+     * @param context the application context to use for the graphic
      */
     public AutoSizeButton(Context context) {
         super(context);
