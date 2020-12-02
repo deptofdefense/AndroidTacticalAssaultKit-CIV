@@ -25,13 +25,13 @@ jobs:
         sudo apt-get install cmake
         sudo apt-get install swig
         sudo apt-get install tclsh
-        echo ::set-env name=ANDROID_COMPILE_SDK::"29"
-        echo ::set-env name=ANDROID_BUILD_TOOLS::"29.0.3"
-        echo ::set-env name=ANDROID_SDK_TOOLS::"4333796"
-        echo ::set-env name=NDK_VERSION::"12b"
-        echo ::set-env name=KEYSTORE_ALIAS::"CI"
-        echo ::set-env name=KEYSTORE_STORE_PASSWORD::$(apg -a 1 -n 1 -m 16 -x 16 -E '\')
-        echo ::set-env name=KEYSTORE_KEY_PASSWORD::$(apg -a 1 -n 1 -m 16 -x 16 -E '\')
+        echo "ANDROID_COMPILE_SDK=29" >> $GITHUB_ENV
+        echo "ANDROID_BUILD_TOOLS=29.0.3" >> $GITHUB_ENV
+        echo "ANDROID_SDK_TOOLS=4333796" >> $GITHUB_ENV
+        echo "NDK_VERSION=12b" >> $GITHUB_ENV
+        echo "KEYSTORE_ALIAS=CI" >> $GITHUB_ENV
+        echo "KEYSTORE_STORE_PASSWORD=$(apg -a 1 -n 1 -m 16 -x 16 -E '\')" >> $GITHUB_ENV
+        echo "KEYSTORE_KEY_PASSWORD=$(apg -a 1 -n 1 -m 16 -x 16 -E '\')" >> $GITHUB_ENV
         mkdir $HOME/secrets
     - name: set up Android SDK
       run: |
@@ -42,8 +42,8 @@ jobs:
        echo y | android-sdk-linux/tools/bin/sdkmanager "platforms;android-${ANDROID_COMPILE_SDK}" >/dev/null;
        echo y | android-sdk-linux/tools/bin/sdkmanager "platform-tools" >/dev/null;
        echo y | android-sdk-linux/tools/bin/sdkmanager "build-tools;${ANDROID_BUILD_TOOLS}" >/dev/null;
-       echo ::set-env name=ANDROID_HOME::$PWD/android-sdk-linux
-       echo ::set-env name=PATH::$PATH:$PWD/android-sdk-linux/platform-tools/
+       echo "ANDROID_HOME=$PWD/android-sdk-linux" >> $GITHUB_ENV
+       echo "$PWD/android-sdk-linux/platform-tools/" >> $GITHUB_PATH
        set +o pipefail
        yes | android-sdk-linux/tools/bin/sdkmanager --licenses
        set -o pipefail
@@ -51,8 +51,8 @@ jobs:
       run: |
        wget --quiet --tries=0 --output-document=android-ndk.zip https://dl.google.com/android/repository/android-ndk-r${NDK_VERSION}-linux-x86_64.zip;
        unzip -qq  android-ndk.zip;
-       echo ::set-env name=ANDROID_NDK_HOME::$PWD/android-ndk-r${NDK_VERSION}
-       echo ::set-env name=ANDROID_NDK::$PWD/android-ndk-r${NDK_VERSION}
+       echo "ANDROID_NDK_HOME=$PWD/android-ndk-r${NDK_VERSION}" >> $GITHUB_ENV
+       echo "ANDROID_NDK=$PWD/android-ndk-r${NDK_VERSION}" >> $GITHUB_ENV
     - name: Build Dependencies
       run: |
         cd scripts
