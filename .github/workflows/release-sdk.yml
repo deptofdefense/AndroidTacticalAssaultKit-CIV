@@ -104,6 +104,8 @@ jobs:
         popd
         pushd .
         cd atak-gradle-takdev
+        chmod 755 gradlew
+        dos2unix gradlew
         ./gradlew jar
         cp ./build/libs/atak-gradle-takdev-*.jar ../pluginsdk/atak-gradle-takdev.jar
         popd
