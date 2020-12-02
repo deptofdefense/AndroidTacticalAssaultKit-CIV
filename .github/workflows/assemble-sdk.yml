@@ -1,7 +1,6 @@
 name: Assemble ATAK
 
 on:
-  push:
   pull_request:
 jobs:
   assemble:
