@@ -14,7 +14,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import javax.xml.XMLConstants;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;

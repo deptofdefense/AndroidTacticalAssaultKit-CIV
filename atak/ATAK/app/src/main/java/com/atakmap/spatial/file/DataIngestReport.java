@@ -30,8 +30,8 @@ final class DataIngestReport {
         public String toString() {
             if (description != null)
                 return description;
-            if (exeception != null)
-                return this.exeception.getMessage();
+            if (this.exeception != null)
+                return ""+this.exeception.getMessage();
             return "";
         }
     }

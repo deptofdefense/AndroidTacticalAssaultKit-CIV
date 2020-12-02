@@ -6,6 +6,7 @@ class Shaders
 {
 public:
 	GLuint pid;
+
 	Shaders();
 	~Shaders();
 };

@@ -146,7 +146,7 @@ public class MunitionsHelper {
     @SuppressWarnings("unchecked")
     public int getWeaponsCount() {
         int count = 0;
-        for (Map.Entry e : _map.entrySet()) {
+        for (Map.Entry<String, Object> e : _map.entrySet()) {
             Map<String, Object> categoryData = (Map<String, Object>) e
                     .getValue();
             if (categoryData != null)

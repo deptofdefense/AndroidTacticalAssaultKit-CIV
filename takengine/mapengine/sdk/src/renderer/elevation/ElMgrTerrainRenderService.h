@@ -13,7 +13,7 @@ namespace TAK {
     namespace Engine {
         namespace Renderer {
             namespace Elevation {
-                class ElMgrTerrainRenderService : public TerrainRenderService
+                class ENGINE_API ElMgrTerrainRenderService : public TerrainRenderService
                 {
                 private :
                     class QuadNode;
@@ -76,9 +76,14 @@ namespace TAK {
                     bool reset = false;
                     std::size_t numPosts;
                     double resadj;
-                    double resadj2;
 
                     bool terminate;
+
+                    struct {
+                        bool legacyElevationApi;
+                        bool constrainQueryRes;
+                        bool fillWithHiRes;
+                    } fetchOptions;
 
                     mutable Thread::Monitor monitor;
 

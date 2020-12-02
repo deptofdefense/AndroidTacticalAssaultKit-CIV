@@ -4,6 +4,7 @@ package com.atakmap.android.rubbersheet.data.create;
 import android.util.Xml;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -14,7 +15,6 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -43,7 +43,7 @@ public class KMLParser implements ContentHandler {
         _file = docKml;
         InputStream is = null;
         try {
-            is = new FileInputStream(docKml);
+            is = FileIOProviderFactory.getInputStream(docKml);
             Xml.parse(is, Xml.Encoding.UTF_8, this);
         } catch (IOException e) {
             Log.e(TAG, "Failed to read doc.kml: " + docKml);

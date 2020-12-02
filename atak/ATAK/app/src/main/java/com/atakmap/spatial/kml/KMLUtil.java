@@ -11,6 +11,7 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.track.crumb.CrumbPoint;
 import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -46,7 +47,6 @@ import org.simpleframework.xml.core.Persister;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -712,19 +712,38 @@ public class KMLUtil {
     /**
      * Create a Polygon element containing an outer LinearRing Automatically closes ring if not
      * already so
-     * 
+     *
      * @param points points making up the polygon
      * @param id shape id attribute
      * @param idlWrap180 True if this polygon crosses the IDL but requires point unwrapping
      */
     public static Polygon createPolygonWithLinearRing(GeoPointMetaData[] points,
-            String id, boolean excludeAltitude, boolean idlWrap180) {
+                                                      String id, boolean excludeAltitude, boolean idlWrap180) {
+        return createPolygonWithLinearRing(points, id, excludeAltitude, idlWrap180, Double.NaN);
+    }
+
+
+    /**
+     * Create a Polygon element containing an outer LinearRing Automatically closes ring if not
+     * already so
+     * 
+     * @param points points making up the polygon
+     * @param id shape id attribute
+     * @param idlWrap180 True if this polygon crosses the IDL but requires point unwrapping
+     * @param height the height in meters for the Polygon, Double.NaN if no height known.
+     */
+    public static Polygon createPolygonWithLinearRing(GeoPointMetaData[] points,
+            String id, boolean excludeAltitude, boolean idlWrap180, double height) {
         Polygon polygon = new Polygon();
         polygon.setId(id);
         if (excludeAltitude)
             polygon.setAltitudeMode("clampToGround");
-        else
+        else if (Double.isNaN(height)) {
             polygon.setAltitudeMode("absolute");
+        } else {
+            polygon.setAltitudeMode("relativeToGround");
+            polygon.setExtrude(true);
+        }
 
         Boundary outerBoundaryIs = new Boundary();
         polygon.setOuterBoundaryIs(outerBoundaryIs);
@@ -735,7 +754,7 @@ public class KMLUtil {
         GeoPointMetaData firstPoint = points[0];
         GeoPointMetaData lastPoint = points[points.length - 1];
         String coordsString = convertKmlCoords(points, excludeAltitude,
-                idlWrap180);
+                idlWrap180, height);
         // Close shape by inserting first point again if it is not already there
         if (firstPoint.get().getLongitude() != lastPoint.get().getLongitude() ||
                 firstPoint.get().getLatitude() != lastPoint.get()
@@ -743,7 +762,7 @@ public class KMLUtil {
             double unwrap = 0;
             if (idlWrap180)
                 unwrap = firstPoint.get().getLongitude() > 0 ? 360 : -360;
-            Coordinate c = convertKmlCoord(firstPoint, excludeAltitude, unwrap);
+            Coordinate c = convertKmlCoord(firstPoint, excludeAltitude, unwrap, height);
             if (c != null)
                 coordsString += c;
         }
@@ -857,7 +876,12 @@ public class KMLUtil {
     }
 
     public static String convertKmlCoords(GeoPointMetaData[] points,
-            boolean excludeAltitude, boolean idlWrap180) {
+                                          boolean excludeAltitude, boolean idlWrap180) {
+        return convertKmlCoords(points, excludeAltitude, idlWrap180, Double.NaN);
+    }
+
+    public static String convertKmlCoords(GeoPointMetaData[] points,
+            boolean excludeAltitude, boolean idlWrap180, double height) {
         if (points == null || points.length < 1)
             return "";
 
@@ -867,7 +891,7 @@ public class KMLUtil {
 
         StringBuilder sb = new StringBuilder();
         for (GeoPointMetaData point : points) {
-            Coordinate c = convertKmlCoord(point, excludeAltitude, unwrap);
+            Coordinate c = convertKmlCoord(point, excludeAltitude, unwrap, height);
             if (c != null)
                 sb.append(c);
         }
@@ -875,25 +899,60 @@ public class KMLUtil {
         return sb.toString();
     }
 
-    public static String convertKmlCoords(GeoPointMetaData[] points,
-            boolean excludeAltitude) {
-        return convertKmlCoords(points, excludeAltitude, false);
+    /**
+     * Convert a geopoint with height into a KML Coordinate.  With KML, the representation is the
+     * top of the item so the altitude used is actually the altitude + height which differs from
+     * TAK where the altitude is the bottom and the height is relative to the altitude.
+     * @param point the point to use for the latitude, longitude, and altitude.
+     * @param excludeAltitude the boolean to exclude the altitude from the kml string
+     * @param unwrap if the idl wrap is to be applied
+     * @return the KML Coordinate
+     */
+    public static Coordinate convertKmlCoord(GeoPointMetaData point,
+                                             boolean excludeAltitude, double unwrap) {
+        return convertKmlCoord(point, excludeAltitude, unwrap, Double.NaN);
     }
 
-    public static Coordinate convertKmlCoord(GeoPointMetaData point,
-            boolean excludeAltitude, double unwrap) {
+
+    /**
+     * Convert a geopoint with height into a KML Coordinate.  With KML, the representation is the
+     * top of the item so the altitude used is actually the altitude + height which differs from
+     * TAK where the altitude is the bottom and the height is relative to the altitude.
+     * @param point the point to use for the latitude, longitude, and altitude.
+     * @param excludeAltitude the boolean to exclude the altitude from the kml string.  If the altitude
+     *                        is not excluded, then the result will be either the altitude
+     *                        or the height if the height is specified.
+     * @param unwrap if the idl wrap is to be applied
+     * @param height the height to be used as the altitude if the altitude is not excluded.
+     *               Double.NaN is to be used when the height is not known.
+     * @return the KML Coordinate
+     */
+    private static Coordinate convertKmlCoord(GeoPointMetaData point,
+            boolean excludeAltitude, double unwrap, double height) {
         if (point == null)
             return null;
 
         double alt = point.get().getAltitude();
         double lng = point.get().getLongitude();
+        double lat = point.get().getLatitude();
+
         if (unwrap > 0 && lng < 0 || unwrap < 0 && lng > 0)
             lng += unwrap;
-        if (!point.get().isAltitudeValid() || Double.isNaN(alt)
-                || excludeAltitude) {
-            return new Coordinate(lng, point.get().getLatitude(), null);
+
+        if (excludeAltitude) {
+            // do not include any altitude
+            return new Coordinate(lng, lat, null);
         } else {
-            return new Coordinate(lng, point.get().getLatitude(), alt);
+            if (!Double.isNaN(height))
+                // height is set, use that instead of altitude
+                return new Coordinate(lng, lat, height);
+            else if (point.get().isAltitudeValid()) {
+                // height is not set, but altitude is valid
+                return new Coordinate(lng, lat, alt);
+            } else {
+                // altitude is invalid and heightr is not set
+                return new Coordinate(lng, lat, null);
+            }
         }
     }
 
@@ -1088,7 +1147,7 @@ public class KMLUtil {
                     try {
                         tempFile = File.createTempFile(tempName, ".kml",
                                 tmpDir);
-                        fileOutStream = new FileOutputStream(
+                        fileOutStream = FileIOProviderFactory.getOutputStream(
                                 tempFile);
                         FileSystemUtils.copy(zip.getInputStream(ze),
                                 fileOutStream);
@@ -1176,8 +1235,8 @@ public class KMLUtil {
         }
 
         File parent = file.getParentFile();
-        if (!parent.exists())
-            if (!parent.mkdirs())
+        if (!FileIOProviderFactory.exists(parent))
+            if (!FileIOProviderFactory.mkdirs(parent))
                 Log.w(TAG,
                         "Failed to create directory(s)"
                                 + parent.getAbsolutePath());
@@ -1185,7 +1244,7 @@ public class KMLUtil {
         PrintWriter out = null;
         try {
             out = new PrintWriter(new BufferedWriter(
-                    new FileWriter(file)));
+                    FileIOProviderFactory.getFileWriter(file)));
             if (!kml.startsWith("<?xml")) {
                 out.println(XML_PROLOG);
             }

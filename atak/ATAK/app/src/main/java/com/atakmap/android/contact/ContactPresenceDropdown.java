@@ -66,14 +66,13 @@ import com.atakmap.app.R;
 import com.atakmap.comms.ReportingRate;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -795,10 +794,10 @@ public class ContactPresenceDropdown extends DropDownReceiver
                 + File.separator + "contacts.txt";
         try {
             File f = new File(path);
-            if (f.isDirectory())
+            if (FileIOProviderFactory.isDirectory(f))
                 FileSystemUtils.deleteDirectory(f, false);
-            if (f.exists()) {
-                BufferedReader reader = new BufferedReader(new FileReader(f));
+            if (FileIOProviderFactory.exists(f)) {
+                BufferedReader reader = new BufferedReader(FileIOProviderFactory.getFileReader(f));
                 try {
                     String line;
                     while ((line = reader.readLine()) != null) {
@@ -815,7 +814,7 @@ public class ContactPresenceDropdown extends DropDownReceiver
 
             } else {
                 File fd = (new File(path)).getParentFile();
-                if (!fd.mkdir())
+                if (!FileIOProviderFactory.mkdir(fd))
                     Log.w(TAG,
                             "Failed to create directory: "
                                     + fd.getAbsolutePath());
@@ -845,12 +844,12 @@ public class ContactPresenceDropdown extends DropDownReceiver
         try {
             File f = new File(path);
             File fd = f.getParentFile();
-            if (!fd.exists() && !fd.mkdir()) {
+            if (!FileIOProviderFactory.exists(fd) && !FileIOProviderFactory.mkdir(fd)) {
                 Log.w(TAG, "Failed to create directory"
                         + fd.getAbsolutePath());
                 return;
             }
-            BufferedWriter writer = new BufferedWriter(new FileWriter(f));
+            BufferedWriter writer = new BufferedWriter(FileIOProviderFactory.getFileWriter(f));
             try {
                 for (String uid : _favUIDs)
                     writer.write(uid + "\n");
@@ -1751,7 +1750,7 @@ public class ContactPresenceDropdown extends DropDownReceiver
          * Remove all elements belonging to a specific class
          * @param c The class of the elements to remove
          */
-        public synchronized void clear(Class c) {
+        public synchronized void clear(Class<?> c) {
             for (int i = 0; i < size(); i++) {
                 if (c.isInstance(get(i)))
                     remove(i--);

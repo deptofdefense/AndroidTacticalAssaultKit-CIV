@@ -1,13 +1,7 @@
 package com.atakmap.map;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.map.layer.Layer2;
 import com.atakmap.math.PointD;
-import com.atakmap.util.Visitor;
-
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  * <P>All methods defined by this interface are thread-safe unless otherwise

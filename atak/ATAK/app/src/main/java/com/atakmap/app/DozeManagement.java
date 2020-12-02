@@ -11,8 +11,6 @@ import android.widget.TextView;
 
 import android.net.ConnectivityManager;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.android.gui.HintDialogHelper;
 

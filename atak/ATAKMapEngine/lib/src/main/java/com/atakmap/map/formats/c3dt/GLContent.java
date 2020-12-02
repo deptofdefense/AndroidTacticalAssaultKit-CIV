@@ -1,9 +1,6 @@
 package com.atakmap.map.formats.c3dt;
 
-import com.atakmap.io.ProtocolHandler;
 import com.atakmap.map.RenderContext;
-
-import java.util.Date;
 
 interface GLContent {
 

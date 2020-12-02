@@ -1,4 +1,3 @@
-
 package com.atakmap.coremap.filesystem;
 
 import com.atakmap.coremap.log.Log;

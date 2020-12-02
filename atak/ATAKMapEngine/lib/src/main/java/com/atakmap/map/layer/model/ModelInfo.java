@@ -1,8 +1,6 @@
 package com.atakmap.map.layer.model;
 
-import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 

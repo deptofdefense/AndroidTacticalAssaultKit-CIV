@@ -3,13 +3,10 @@ package com.atakmap.map.layer.raster.tilereader;
 import android.util.Pair;
 
 import com.atakmap.spi.PrioritizedStrategyServiceProviderRegistry2;
-import com.atakmap.spi.PriorityServiceProvider;
 import com.atakmap.spi.ServiceProvider;
 import com.atakmap.util.Visitor;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;

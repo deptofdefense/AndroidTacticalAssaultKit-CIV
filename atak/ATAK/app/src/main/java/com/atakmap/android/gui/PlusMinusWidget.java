@@ -98,7 +98,7 @@ public class PlusMinusWidget extends LinearLayout {
             public void onClick(View v) {
                 int cur = start;
                 try {
-                    cur = Integer.valueOf(et.getText().toString());
+                    cur = Integer.parseInt(et.getText().toString());
                 } catch (NumberFormatException ignore) {
                 }
 
@@ -119,7 +119,7 @@ public class PlusMinusWidget extends LinearLayout {
             public void onClick(View v) {
                 int cur = start;
                 try {
-                    cur = Integer.valueOf(et.getText().toString());
+                    cur = Integer.parseInt(et.getText().toString());
                 } catch (NumberFormatException ignore) {
                 }
                 if (cur < max) {

@@ -132,7 +132,7 @@ public abstract class URIContentHandler implements URIContent {
      * @param action Action class
      * @return True if supported
      */
-    public boolean isActionSupported(Class action) {
+    public boolean isActionSupported(Class<?> action) {
         return action != null && action.isInstance(this);
     }
 }

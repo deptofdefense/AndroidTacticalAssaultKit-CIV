@@ -13,6 +13,7 @@ import java.util.TreeSet;
 
 import android.util.Pair;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -47,6 +48,9 @@ import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.Rectangle;
 import com.atakmap.opengl.GLRenderBatch;
 
+/** @deprecated use the batch feature renderering framework */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class GLFeatureLayer extends GLAsynchronousLayer<Collection<Feature>> implements FeatureDataStore2.OnDataStoreContentChangedListener, FeatureHitTestControl {
 
     public final static GLLayerSpi2 SPI2 = new GLLayerSpi2() {

@@ -15,12 +15,14 @@ import com.atakmap.android.favorites.FavoriteListAdapter;
 import com.atakmap.android.importfiles.ui.ImportManagerView;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.video.VideoBrowserDropDownReceiver;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.app.BuildConfig;
 import com.atakmap.app.preferences.GeocoderPreferenceFragment;
 import com.atakmap.app.preferences.PreferenceControl;
 import com.atakmap.comms.SslNetCotPort;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
@@ -71,15 +73,15 @@ public class AppVersionUpgrade {
         File docFile = FileSystemUtils.getItem(
                 FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar + "docs"
                         + File.separatorChar + "ATAK_User_Guide.pdf");
-        if (docFile.length() == 0)
-            if (!docFile.delete())
+        if (FileIOProviderFactory.length(docFile) == 0)
+            if (!FileIOProviderFactory.delete(docFile))
                 Log.d(TAG, "could not delete the empty document file");
 
         docFile = FileSystemUtils.getItem(
                 FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar + "docs"
                         + File.separatorChar + "ATAK_Change_Log.pdf");
-        if (docFile.length() == 0)
-            if (!docFile.delete())
+        if (FileIOProviderFactory.length(docFile) == 0)
+            if (!FileIOProviderFactory.delete(docFile))
                 Log.d(TAG, "unable to delete empty document file");
 
         try {
@@ -87,7 +89,7 @@ public class AppVersionUpgrade {
             String s = FileSystemUtils.copyStreamToString(f);
             if (s.contains("atakmap.com")) {
                 Log.d(TAG, "removing outdated support.inf file");
-                if (!f.delete())
+                if (!FileIOProviderFactory.delete(f))
                     Log.d(TAG, "unable to delete outdated support.inf file");
             }
 
@@ -315,13 +317,13 @@ public class AppVersionUpgrade {
         }
 
         File dir = FileSystemUtils.getItem(AppMgmtUtils.APK_DIR);
-        if (dir.exists() && dir.isDirectory()) {
-            File[] list = dir.listFiles(AppMgmtUtils.APK_FilenameFilter);
+        if (FileIOProviderFactory.exists(dir) && FileIOProviderFactory.isDirectory(dir)) {
+            File[] list = FileIOProviderFactory.listFiles(dir, AppMgmtUtils.APK_FilenameFilter);  
             if (list != null) {
                 File destDir = FileSystemUtils
                         .getItem(
                                 BundledProductProvider.LOCAL_BUNDLED_REPO_PATH);
-                if (!destDir.mkdirs()) {
+                if (!FileIOProviderFactory.mkdirs(destDir)) {
                     Log.d(TAG, "could not make: " + destDir);
                 }
                 for (File aList : list) {
@@ -336,7 +338,7 @@ public class AppVersionUpgrade {
 
             // write .nomedia file so these icons don't show up in the gallery
             File nomedia = new File(dir, ".nomedia");
-            if (!nomedia.exists())
+            if (!FileIOProviderFactory.exists(nomedia))
                 try {
                     nomedia.createNewFile();
                 } catch (IOException ioe) {
@@ -348,7 +350,7 @@ public class AppVersionUpgrade {
         //In support of refactoring done in ATAK 3.8
         File geofences = FileSystemUtils.getItem(
                 "Databases" + File.separatorChar + "geofence.sqlite");
-        if (geofences.exists()) {
+        if (FileIOProviderFactory.exists(geofences)) {
             //TODO import existing geofences under new method
             FileSystemUtils.deleteFile(geofences);
         }
@@ -397,8 +399,10 @@ public class AppVersionUpgrade {
 
     /**
      * Given a Stringified path, attempts to migrate the old path to the new path.
+     * @deprecated Old path is sufficiently old that support will be dropped
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static String translate(String path) {
         if (path.indexOf(FileSystemUtils.OLD_ATAK_ROOT_DIRECTORY) > 0) {
             Log.e(TAG, "old root directory found in: " + path);
@@ -436,21 +440,21 @@ public class AppVersionUpgrade {
         boolean moved;
         for (String mountPoint : mountPoints) {
             imageryDir = new File(mountPoint, "imagery");
-            if (!imageryDir.exists()) {
-                if (!imageryDir.mkdirs())
+            if (!FileIOProviderFactory.exists(imageryDir)) {
+                if (!FileIOProviderFactory.mkdirs(imageryDir))
                     Log.e(TAG, "Error creating directories");
             }
             for (String legacyNativeDir : legacyNativeDirs) {
                 legacyDir = new File(mountPoint, legacyNativeDir);
                 Log.i(TAG, "Shuffling " + legacyDir);
-                if (!legacyDir.exists() || !legacyDir.isDirectory())
+                if (!FileIOProviderFactory.exists(legacyDir) || !FileIOProviderFactory.isDirectory(legacyDir))
                     continue;
 
-                contents = legacyDir.listFiles();
+                contents = FileIOProviderFactory.listFiles(legacyDir);
                 allMoved = true;
                 if (contents != null) {
                     for (File content : contents) {
-                        moved = content.renameTo(new File(imageryDir,
+                        moved = FileIOProviderFactory.renameTo(content, new File(imageryDir,
                                 content.getName()));
                         changed |= moved;
                         allMoved &= moved;
@@ -466,29 +470,29 @@ public class AppVersionUpgrade {
             }
 
             imageryMobileDir = new File(mountPoint, "imagery/mobile");
-            if (!imageryMobileDir.exists()) {
+            if (!FileIOProviderFactory.exists(imageryMobileDir)) {
 
-                if (!imageryMobileDir.mkdirs()) {
+                if (!FileIOProviderFactory.mkdirs(imageryMobileDir)) {
                     Log.w(TAG, "Error creating directory: " + imageryMobileDir);
                 }
             }
             for (String legacyMobileDir : legacyMobileDirs) {
                 legacyDir = new File(mountPoint, legacyMobileDir);
                 Log.i(TAG, "Shuffling " + legacyDir);
-                if (!legacyDir.exists() || !legacyDir.isDirectory())
+                if (!FileIOProviderFactory.exists(legacyDir) || !FileIOProviderFactory.isDirectory(legacyDir))
                     continue;
 
-                contents = legacyDir.listFiles();
+                contents = FileIOProviderFactory.listFiles(legacyDir);
                 allMoved = true;
                 if (contents != null) {
                     for (File content : contents) {
                         if (content.getName()
                                 .toLowerCase(LocaleUtil.getCurrent())
                                 .endsWith(".kmz"))
-                            moved = content.renameTo(new File(imageryDir,
+                            moved = FileIOProviderFactory.renameTo(content, new File(imageryDir,
                                     content.getName()));
                         else
-                            moved = content.renameTo(new File(
+                            moved = FileIOProviderFactory.renameTo(content, new File(
                                     imageryMobileDir, content.getName()));
                         changed |= moved;
                         allMoved &= moved;
@@ -531,14 +535,14 @@ public class AppVersionUpgrade {
             for (String legacyDir1 : legacyDirs) {
                 legacyDir = new File(mountPoint, legacyDir1);
                 Log.i(TAG, "Shuffling " + legacyDir);
-                if (!legacyDir.exists() || !legacyDir.isDirectory())
+                if (!FileIOProviderFactory.exists(legacyDir) || !FileIOProviderFactory.isDirectory(legacyDir))
                     continue;
 
-                contents = legacyDir.listFiles();
+                contents = FileIOProviderFactory.listFiles(legacyDir);
                 allMoved = true;
                 if (contents != null) {
                     for (File content : contents) {
-                        moved = content.renameTo(new File(overlaysDir,
+                        moved = FileIOProviderFactory.renameTo(content, new File(overlaysDir,
                                 content.getName()));
                         changed |= moved;
                         allMoved &= moved;
@@ -566,20 +570,20 @@ public class AppVersionUpgrade {
         boolean moved;
 
         Log.i(TAG, "Shuffling " + legacyDir + ", to " + newDir);
-        if (!legacyDir.exists() || !legacyDir.isDirectory())
+        if (!FileIOProviderFactory.exists(legacyDir) || !FileIOProviderFactory.isDirectory(legacyDir))
             return false;
 
-        if (!newDir.exists()) {
-            boolean r = newDir.mkdirs();
+        if (!FileIOProviderFactory.exists(newDir)) {
+            boolean r = FileIOProviderFactory.mkdirs(newDir);
             if (!r)
                 Log.d(TAG, "could not wrap: " + newDir);
         }
 
-        File[] contents = legacyDir.listFiles();
+        File[] contents = FileIOProviderFactory.listFiles(legacyDir);
         allMoved = true;
         if (contents != null) {
             for (File content : contents) {
-                moved = content.renameTo(new File(newDir,
+                moved = FileIOProviderFactory.renameTo(content, new File(newDir,
                         content.getName()));
                 changed |= moved;
                 allMoved &= moved;
@@ -605,7 +609,7 @@ public class AppVersionUpgrade {
 
         //if the file has not already been written to device attempt to copy it
         File dst = FileSystemUtils.getItem("imagery/mobile/mapsources/" + file);
-        if (!dst.exists() || (!prefs.getBoolean("wms_deployed", false))) {
+        if (!FileIOProviderFactory.exists(dst) || (!prefs.getBoolean("wms_deployed", false))) {
             Log.d(TAG, "redeploy: " + file);
             if (FileSystemUtils.copyFromAssetsToStorageFile(
                     context, "wms/" + file,

@@ -5,8 +5,6 @@ import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.graphics.GLPolyline;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
-import com.atakmap.coremap.maps.coords.MutableGeoBounds;
-import com.atakmap.map.AtakMapView;
 import com.atakmap.map.Globe;
 import com.atakmap.map.RenderSurface;
 import com.atakmap.map.opengl.GLMapRenderable;

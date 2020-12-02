@@ -55,6 +55,7 @@ public class CamLockerReceiver extends BroadcastReceiver implements
     private final MapView _mapView;
     private PointMapItem _lockedItem;
     private final AtakMapController ctrl;
+    private final MapTouchController touch;
     private Thread lock_monitor;
     private final RelockWidget _relockWidget;
     private String _lastUid;
@@ -69,6 +70,8 @@ public class CamLockerReceiver extends BroadcastReceiver implements
         _mapView.getMapEventDispatcher().addMapEventListener(
                 MapEvent.MAP_PRESS, this);
         _mapView.getMapEventDispatcher().addMapEventListener(
+                MapEvent.MAP_SCROLL, this);
+        _mapView.getMapEventDispatcher().addMapEventListener(
                 MapEvent.MAP_RELEASE, this);
         _mapView.getMapEventDispatcher().addMapEventListener(
                 MapEvent.ITEM_REMOVED, this);
@@ -76,6 +79,7 @@ public class CamLockerReceiver extends BroadcastReceiver implements
         _suppressSnapback = false;
 
         ctrl = _mapView.getMapController();
+        touch = _mapView.getMapTouchController();
 
         lock_monitor = new Thread(TAG + "-Monitor") {
             @Override
@@ -211,8 +215,7 @@ public class CamLockerReceiver extends BroadcastReceiver implements
             _lastUid = _lockedItem.getUID();
             _lockedItem = null;
 
-            MapTouchController touch = _mapView.getMapTouchController();
-            touch.unlockScaleFocus();
+            touch.setFreeForm3DPoint(null);
         }
     }
 
@@ -225,8 +228,7 @@ public class CamLockerReceiver extends BroadcastReceiver implements
             ((Marker) pointItem)
                     .addOnTrackChangedListener(this);
 
-        MapTouchController touch = _mapView.getMapTouchController();
-        touch.lockScaleFocus();
+        touch.setFreeForm3DPoint(pointItem.getPoint());
 
         String type = _lockedItem.getType();
         if (ATAKUtilities.isSelf(_mapView, _lockedItem)) {
@@ -294,8 +296,7 @@ public class CamLockerReceiver extends BroadcastReceiver implements
             item.removeOnPointChangedListener(this);
             return;
         }
-        if (!_suppressSnapback
-                && SystemClock.elapsedRealtime() > _snapbackCooldown) {
+        if (!suppressSnapback()) {
 
             GeoPoint restingPoint;
             if (!disableFloatToBottom && trackupMode
@@ -323,24 +324,53 @@ public class CamLockerReceiver extends BroadcastReceiver implements
                 restingPoint = item.getPoint();
             }
 
-            final GeoPoint center = _mapView.getPoint().get();
-            if (forceCenter)
-                ctrl.panTo(center, false, false);
-            else
-                ctrl.panTo(restingPoint, true, false);
 
+            final GeoPoint center = _mapView.getPoint().get();
+            if (forceCenter) {
+                ctrl.panTo(center, false, false);
+                touch.setFreeForm3DPoint(center);
+            } else {
+                ctrl.panTo(restingPoint, true, false);
+                touch.setFreeForm3DPoint(restingPoint);
+            }
         }
+    }
+
+    /**
+     * Check if the snapback to the locked-on target should be suppressed
+     * @return True to suppress
+     */
+    private boolean suppressSnapback() {
+        return _suppressSnapback || SystemClock.elapsedRealtime()
+                <= _snapbackCooldown;
     }
 
     @Override
     public void onMapEvent(MapEvent event) {
-        if (event.getType().equals(MapEvent.MAP_PRESS)) {
+
+        // Ignore map events when we're not locked on anything
+        if (!isLocked())
+            return;
+
+        String type = event.getType();
+
+        // Allow user to temporarily pan away from target, but keep them locked
+        // on if they're just zooming in or changing tilt
+        if (type.equals(MapEvent.MAP_SCROLL) || type.equals(MapEvent.MAP_PRESS)
+                && suppressSnapback()) {
+            touch.setFreeForm3DPoint(null);
             _suppressSnapback = true;
-        } else if (event.getType().equals(MapEvent.MAP_RELEASE)) {
-            // Give the user enough time to start scrolling farther
-            _snapbackCooldown = SystemClock.elapsedRealtime() + 400;
+        }
+
+        // Give the user enough time to start scrolling farther
+        else if (type.equals(MapEvent.MAP_RELEASE)) {
+            if (_suppressSnapback)
+                _snapbackCooldown = SystemClock.elapsedRealtime() + 400;
             _suppressSnapback = false;
-        } else if (event.getType().equals(MapEvent.ITEM_REMOVED) &&
+        }
+
+        // Stop lock on when target is removed
+        else if (type.equals(MapEvent.ITEM_REMOVED) &&
                 _lockedItem != null &&
                 event.getItem().getUID().equals(_lockedItem.getUID())) {
             final Intent toggle = new Intent();

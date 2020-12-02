@@ -102,6 +102,11 @@ jobs:
         pushd .
         cd tmp/javadoc && jar cvf ../../pluginsdk/atak-javadoc.jar .
         popd
+        pushd .
+        cd atak-gradle-takdev
+        ./gradlew jar
+        cp ./build/libs/atak-gradle-takdev-*.jar ../pluginsdk/atak-gradle-takdev.jar
+        popd
         mv pluginsdk atak-civ
         zip -qq -r atak-civ-sdk-${{ github.event.release.tag_name }}.zip atak-civ
         rm -rf atak-civ

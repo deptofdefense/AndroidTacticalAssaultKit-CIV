@@ -2,13 +2,15 @@
 package com.atakmap.android.maps;
 
 import com.atakmap.android.overlay.MapOverlay;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
 /**
  * Old location interface - has unrelated methods and is missing a bounds method
- * Use {@link ILocation} instead
+ * @deprecated Use {@link ILocation} instead
  */
 @Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public interface Location {
 
     /**

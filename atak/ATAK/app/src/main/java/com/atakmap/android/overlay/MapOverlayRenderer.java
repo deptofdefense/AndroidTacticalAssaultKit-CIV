@@ -4,6 +4,7 @@ package com.atakmap.android.overlay;
 import android.util.Pair;
 
 import com.atakmap.android.maps.MapView;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.AbstractLayer;
 import com.atakmap.map.layer.Layer;
@@ -15,7 +16,13 @@ import com.atakmap.map.opengl.GLMapRenderable;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLResolvableMapRenderable;
 
-/** @deprecated */
+/**
+ * @deprecated Use {@link GLLayerFactory} mechanism via custom
+ *             {@link com.atakmap.map.layer.Layer2 Layer2} and {@Link GLLayer2}
+ *             implementations
+ */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public final class MapOverlayRenderer extends AbstractLayer {
 
     static {

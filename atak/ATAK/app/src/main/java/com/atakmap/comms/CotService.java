@@ -155,11 +155,13 @@ public class CotService implements OnSharedPreferenceChangeListener {
                 String desc = prefs.getString("description" + i, "");
                 String connectString = prefs
                         .getString(TAKServer.CONNECT_STRING_KEY + i, "");
-                boolean isEnabled = prefs.getBoolean("enabled" + i, true);
-                Bundle input = new Bundle();
-                input.putString("description", desc);
-                input.putBoolean("enabled", isEnabled);
-                addInput(connectString, input);
+                if (connectString != null) {
+                    boolean isEnabled = prefs.getBoolean("enabled" + i, true);
+                    Bundle input = new Bundle();
+                    input.putString("description", desc);
+                    input.putBoolean("enabled", isEnabled);
+                    addInput(connectString, input);
+                }
             }
             r = true;
         }
@@ -270,7 +272,9 @@ public class CotService implements OnSharedPreferenceChangeListener {
         if (streams != null) {
             for (Bundle sb : streams) {
                 String connStr = sb.getString(CotPort.CONNECT_STRING_KEY);
-                addStreaming(connStr, sb);
+                if (connStr != null) {
+                    addStreaming(connStr, sb);
+                }
             }
         }
     }
@@ -624,11 +628,13 @@ public class CotService implements OnSharedPreferenceChangeListener {
                 String desc = prefs.getString("description" + i, "");
                 String connectString = prefs
                         .getString(TAKServer.CONNECT_STRING_KEY + i, "");
-                boolean isEnabled = prefs.getBoolean("enabled" + i, true);
-                Bundle output = new Bundle();
-                output.putString("description", desc);
-                output.putBoolean("enabled", isEnabled);
-                addOutput(connectString, output);
+                if (connectString != null) {
+                    boolean isEnabled = prefs.getBoolean("enabled" + i, true);
+                    Bundle output = new Bundle();
+                    output.putString("description", desc);
+                    output.putBoolean("enabled", isEnabled);
+                    addOutput(connectString, output);
+                }
             }
             r = true;
         }
@@ -685,16 +691,16 @@ public class CotService implements OnSharedPreferenceChangeListener {
                 input.putString("cacheCreds", cacheCreds);
 
                 // look at the policy to figure out what to apply back to stream
-                if (cacheCreds.equals(context
+                if (cacheCreds != null && (cacheCreds.equals(context
                         .getString(R.string.cache_creds_both))
                         ||
                         cacheCreds.equals(context
-                                .getString(R.string.cache_creds_username))) {
+                                .getString(R.string.cache_creds_username)))) {
                     input.putString("username", (username == null) ? ""
                             : username);
                 }
 
-                if (cacheCreds.equals(context
+                if (cacheCreds != null && cacheCreds.equals(context
                         .getString(R.string.cache_creds_both))) {
                     input.putString("password", (password == null) ? ""
                             : password);

@@ -14,14 +14,13 @@ import android.os.SystemClock;
 import com.atakmap.android.imagecapture.CanvasHelper;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -89,7 +88,7 @@ public class VehicleBlock {
 
     private static void copyAssets(AssetManager assets, String path) {
         File dir = new File(TOOL_DIR, path);
-        if (!dir.exists() && !dir.mkdirs()) {
+        if (!FileIOProviderFactory.exists(dir) && !FileIOProviderFactory.mkdirs(dir)) {
             Log.e(TAG, "Failed to copy vehicle blocks from assets.");
             return;
         }
@@ -106,7 +105,7 @@ public class VehicleBlock {
                         continue;
                     }
                     in = assets.open(path + File.separator + block);
-                    out = new FileOutputStream(new File(dir, block));
+                    out = FileIOProviderFactory.getOutputStream(new File(dir, block));
                     FileSystemUtils.copyStream(in, true, out, true);
                 }
             }
@@ -262,7 +261,7 @@ public class VehicleBlock {
     private void reload() {
         if (_file == null)
             return;
-        if (!_file.exists()) {
+        if (!FileIOProviderFactory.exists(_file)) {
             Log.e(TAG, "Vehicle block " + _file + " does not exist.");
             return;
         }
@@ -273,7 +272,7 @@ public class VehicleBlock {
         CSVReader csv = null;
         try {
             InputStreamReader isr = new InputStreamReader(
-                    new FileInputStream(_file));
+                    FileIOProviderFactory.getInputStream(_file));
             csv = new CSVReader(isr);
             //Skip the header
             csv.readNext();
@@ -368,9 +367,9 @@ public class VehicleBlock {
     private static File getBlockFile(String name, File dir) {
         name = FileSystemUtils.sanitizeWithSpacesAndSlashes(name);
 
-        if (!dir.exists() || !dir.isDirectory())
+        if (!FileIOProviderFactory.exists(dir) || !FileIOProviderFactory.isDirectory(dir))
             return null;
-        File[] files = dir.listFiles();
+        File[] files = FileIOProviderFactory.listFiles(dir);
         if (FileSystemUtils.isEmpty(files))
             return null;
         List<File> subDirs = new ArrayList<>();
@@ -379,7 +378,7 @@ public class VehicleBlock {
         for (File f : files) {
             if (ret == null && f.isFile() && f.getName().equals(fileName))
                 ret = f;
-            else if (f.isDirectory())
+            else if (FileIOProviderFactory.isDirectory(f))
                 subDirs.add(f);
         }
         for (File subDir : subDirs) {
@@ -407,8 +406,8 @@ public class VehicleBlock {
      * @return Array of block names
      */
     public static String[] getBlocks(File dir, boolean incSubDirs) {
-        if (dir.exists() && dir.isDirectory()) {
-            File[] blockFiles = dir.listFiles();
+        if (FileIOProviderFactory.exists(dir) && FileIOProviderFactory.isDirectory(dir)) {
+            File[] blockFiles = FileIOProviderFactory.listFiles(dir);
             Set<String> blocks = new HashSet<>();
             if (!FileSystemUtils.isEmpty(blockFiles)) {
                 for (File f : blockFiles) {
@@ -416,7 +415,7 @@ public class VehicleBlock {
                         String name = f.getName();
                         if (name.endsWith(".block"))
                             blocks.add(getBlockName(f));
-                    } else if (incSubDirs && f.isDirectory())
+                    } else if (incSubDirs && FileIOProviderFactory.isDirectory(f))
                         blocks.addAll(Arrays.asList(getBlocks(f, true)));
                 }
                 return blocks.toArray(new String[0]);
@@ -442,7 +441,7 @@ public class VehicleBlock {
             ret = getBlocks(getBlockDir(), false);
         else {
             File subDir = new File(getBlockDir(), group);
-            if (!subDir.exists() || !subDir.isDirectory())
+            if (!FileIOProviderFactory.exists(subDir) || !FileIOProviderFactory.isDirectory(subDir))
                 return new String[0];
             ret = getBlocks(subDir, false);
         }
@@ -453,10 +452,10 @@ public class VehicleBlock {
     public static String[] getGroups() {
         List<String> groups = new ArrayList<>();
         groups.add("default");
-        File[] files = getBlockDir().listFiles();
+        File[] files = FileIOProviderFactory.listFiles(getBlockDir());
         if (!FileSystemUtils.isEmpty(files)) {
             for (File f : files) {
-                if (f.isDirectory())
+                if (FileIOProviderFactory.isDirectory(f))
                     groups.add(f.getName());
             }
         }

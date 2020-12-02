@@ -186,7 +186,8 @@ public class RangeAndBearingImporter extends MapItemImporter {
 
         if (arrow.getGroup() == null) {
             arrow.setClickable(true);
-            arrow.setVisible(extras.getBoolean("visible", arrow.getVisible()));
+            arrow.setVisible(extras.getBoolean("visible",
+                    arrow.getVisible(true)), false);
             arrow.setZOrder(-2d);
             arrow.setMetaString("rabUUID", uid);
             addToGroup(arrow);

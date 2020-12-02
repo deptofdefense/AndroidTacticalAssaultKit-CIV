@@ -4,8 +4,6 @@ package com.atakmap.android.hashtags;
 import com.atakmap.android.hashtags.util.HashtagContentMap;
 import com.atakmap.android.hashtags.util.HashtagContentSet;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.statesaver.StateSaver;
-import com.atakmap.database.DatabaseIface;
 
 import java.util.ArrayList;
 import java.util.Collection;

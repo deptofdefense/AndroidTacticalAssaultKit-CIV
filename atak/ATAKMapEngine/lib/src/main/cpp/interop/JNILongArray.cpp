@@ -1,6 +1,6 @@
 #include "JNILongArray.h"
 
-#include <cstdlib>
+#include <cstring>
 
 using namespace TAKEngineJNI::Interop;
 
@@ -11,7 +11,7 @@ namespace
         return env->GetLongArrayElements(jarr, isCopy);
     }
 
-    inline void unpin(JNIEnv *env, jlongArray jarr, jlong *carr, int releaseMode)
+    inline void unpin(JNIEnv *env, jlongArray jarr, jlong *carr, jint releaseMode)
     {
         env->ReleaseLongArrayElements(jarr, carr, releaseMode);
     }

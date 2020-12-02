@@ -1,12 +1,12 @@
 package com.atakmap.map.layer.model.assimp;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.model.ModelSpi;
 import com.atakmap.util.Disposable;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -171,8 +171,8 @@ public class ATAKAiIOSystem implements AiIOSystem<AiIOStream>, Disposable {
     }
 
     static File findObj(File f) {
-        if(f.isDirectory()) {
-            File[] children = f.listFiles();
+        if(FileIOProviderFactory.isDirectory(f)) {
+            File[] children = FileIOProviderFactory.listFiles(f);
             if (children != null) {
                 for(File c : children) {
                     File r = findObj(c);
@@ -190,11 +190,11 @@ public class ATAKAiIOSystem implements AiIOSystem<AiIOStream>, Disposable {
 
     InputStreamAiIOStream openFile(String path) throws IOException {
         File f = new File(path);
-        if(f.exists())
-            return new InputStreamAiIOStream(new FileInputStream(f), f.length(), callback, maxProgress);
+        if(FileIOProviderFactory.exists(f))
+            return new InputStreamAiIOStream(FileIOProviderFactory.getInputStream(f), FileIOProviderFactory.length(f), callback, maxProgress);
         try {
             ZipVirtualFile zf = new ZipVirtualFile(f.getPath());
-            if (zf.exists())
+            if (FileIOProviderFactory.exists(zf))
                 return new ZipVirualFileAiIOStream(zf, callback, maxProgress);
         } catch(Throwable t) {}
         return null;
@@ -235,11 +235,11 @@ public class ATAKAiIOSystem implements AiIOSystem<AiIOStream>, Disposable {
     @Override
     public boolean exists(String path) {
         File f = new File(path);
-        if(f.exists())
+        if(FileIOProviderFactory.exists(f))
             return true;
         try {
             ZipVirtualFile zf = new ZipVirtualFile(f.getPath());
-            return zf.exists();
+            return FileIOProviderFactory.exists(zf);
         } catch(Throwable t) {
             return false;
         }

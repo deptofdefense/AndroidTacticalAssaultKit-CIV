@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import android.graphics.Bitmap;
@@ -19,6 +18,10 @@ import com.atakmap.lang.Unsafe;
 import com.atakmap.map.AtakMapView;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.feature.Feature;
+import com.atakmap.map.layer.feature.geometry.GeometryCollection;
+import com.atakmap.map.layer.feature.geometry.GeometryFactory;
+import com.atakmap.map.layer.feature.geometry.Point;
+import com.atakmap.map.layer.feature.geometry.Polygon;
 import com.atakmap.map.layer.feature.style.PatternStrokeStyle;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Envelope;
@@ -28,6 +31,7 @@ import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
 import com.atakmap.map.layer.feature.style.CompositeStyle;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLRenderBatch2;
@@ -76,9 +80,9 @@ public class GLBatchLineString extends GLBatchGeometry {
     static double thresholdxyz = GLMapView.recommendedGridSampleDistance;
 
     /** the source points, xyz triplets */
-    private DoubleBuffer points;
+    protected DoubleBuffer points;
     /** the source point count */
-    private int numPoints;
+    protected int numPoints;
 
     FloatBuffer vertices;
     long verticesPtr;
@@ -171,7 +175,7 @@ public class GLBatchLineString extends GLBatchGeometry {
         if(states.isEmpty())
             this.renderStates = null;
         else
-            this.renderStates = states.toArray(new RenderState[states.size()]);
+            this.renderStates = states.toArray(new RenderState[0]);
     }
 
     private static void getRenderStates(MapRenderer ctx, Style s, List<RenderState> states) {
@@ -394,9 +398,9 @@ public class GLBatchLineString extends GLBatchGeometry {
 
 
         // force tessellation sync
-        this.tessellated = !this.needsTessellate;
+            this.tessellated = !this.needsTessellate;
 
-        this.validateGeometry();
+            this.validateGeometry();
     }
 
     protected boolean validateGeometry() {
@@ -544,6 +548,7 @@ public class GLBatchLineString extends GLBatchGeometry {
                             break;
                         case Relative:
                             alt = points.get(i*3+2) + view.getTerrainMeshElevation(lat, lng);
+                            break;
                     }
 
                     view.scratch.geo.set(lat, lng, alt);
@@ -568,6 +573,7 @@ public class GLBatchLineString extends GLBatchGeometry {
                             break;
                         case Relative:
                             alt = points.get(i*3+2) + view.getTerrainMeshElevation(lat, lng);
+                            break;
                     }
 
                     view.scratch.geo.set(lat, lng, alt);
@@ -689,7 +695,7 @@ public class GLBatchLineString extends GLBatchGeometry {
         GLES30.glVertexAttribPointer(shader.aVertexCoords, 3, GLES30.GL_FLOAT, false, 12, vertices);
 
         // set line width
-        GLES30.glLineWidth(rs.strokeWidth*AtakMapView.DENSITY);
+        GLES30.glLineWidth(rs.strokeWidth*GLRenderGlobals.getRelativeScaling());
 
         // draw
         FloatBuffer startVertexCoord = vertices.duplicate();
@@ -730,22 +736,17 @@ public class GLBatchLineString extends GLBatchGeometry {
     public final void batch(GLMapView view, GLRenderBatch2 batch, int renderPass) {
         this.batch(view, batch, renderPass, GLGeometry.VERTICES_PIXEL);
     }
-    
+
     public final void batch(GLMapView view, GLRenderBatch2 batch, int renderPass, int vertices) {
         if(!MathUtils.hasBits(renderPass, this.getRenderPass()))
             return;
 
         this.projectVertices(view, vertices);
-        FloatBuffer v =  this.vertices;
-        if(v == null)
+        FloatBuffer v = this.vertices;
+        if (v == null)
             return;
+        this.batchImpl(view, batch, renderPass, vertices, 3, v);
 
-        this.batchImpl(view,
-                       batch,
-                       renderPass,
-                       vertices,
-                       3,
-                       v);
     }
         
     /**

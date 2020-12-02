@@ -15,6 +15,7 @@ import com.atakmap.commoncommo.CommoException;
 import com.atakmap.comms.CommsFileTransferListener;
 import com.atakmap.comms.CommsMapComponent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.foxykeep.datadroid.exception.ConnectionException;
 import com.foxykeep.datadroid.exception.DataException;
@@ -55,7 +56,7 @@ public final class FtpStoreFileOperation extends NetworkOperation {
             }
 
             File file = new File(fileUploadRequest.getFileToSend());
-            if (!file.exists()) {
+            if (!FileIOProviderFactory.exists(file)) {
                 throw new DataException(file.getName() + " does not exist");
             }
 
@@ -104,7 +105,7 @@ public final class FtpStoreFileOperation extends NetworkOperation {
             }
 
             CommsFileTransferListener listener = new NotificationStreamListener(
-                    fileUploadRequest.getNotificationId(), file.length(),
+                    fileUploadRequest.getNotificationId(), FileIOProviderFactory.length(file),
                     notifyManager, builder);
             int port = fileUploadRequest.getPort();
             if (port <= 0)
@@ -141,7 +142,7 @@ public final class FtpStoreFileOperation extends NetworkOperation {
             long stopTime = System.currentTimeMillis();
             Log.d(TAG, String.format(LocaleUtil.getCurrent(),
                     "File size %f KB sent in %f seconds",
-                    file.length() / 1024F, (stopTime - startTime) / 1000F));
+                    FileIOProviderFactory.length(file) / 1024F, (stopTime - startTime) / 1000F));
 
             Bundle bundle = new Bundle();
             bundle.putParcelable(PARAM_FILE, fileUploadRequest);

@@ -18,18 +18,25 @@ import java.io.File;
 public class GRGContentHandler extends FileOverlayContentHandler
         implements Visibility {
 
-    private final String _uid;
-    private final int _color;
     private final DatasetDescriptor _desc;
     private final DatasetRasterLayer2 _layer;
 
-    GRGContentHandler(MapView mv, File file, String uid, int color,
-            DatasetDescriptor desc, DatasetRasterLayer2 layer) {
+    private String _uid;
+    private int _color;
+
+    GRGContentHandler(MapView mv, File file, DatasetDescriptor desc,
+                      DatasetRasterLayer2 layer) {
         super(mv, file, desc.getMinimumBoundingBox());
-        _uid = uid;
-        _color = color;
         _desc = desc;
         _layer = layer;
+    }
+
+    void setUID(String uid) {
+        _uid = uid;
+    }
+
+    void setColor(int color) {
+        _color = color;
     }
 
     @Override
@@ -69,15 +76,12 @@ public class GRGContentHandler extends FileOverlayContentHandler
 
     @Override
     public boolean isVisible() {
-        return _layer.isVisible(_desc.getName());
+        return isConditionVisible() && _layer.isVisible(_desc.getName());
     }
 
     @Override
-    public boolean setVisible(boolean visible) {
-        if (visible != isVisible()) {
-            _layer.setVisible(_desc.getName(), visible);
-            return true;
-        }
-        return false;
+    public boolean setVisibleImpl(boolean visible) {
+        _layer.setVisible(_desc.getName(), visible);
+        return true;
     }
 }

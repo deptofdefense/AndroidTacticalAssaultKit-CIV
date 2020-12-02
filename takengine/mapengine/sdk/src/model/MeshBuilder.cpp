@@ -202,9 +202,9 @@ namespace
 
         friend TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &, const DrawMode, const WindingOrder, const VertexDataLayout &, const std::size_t, const Material *, const Envelope2 &, const std::size_t, const void *) NOTHROWS;
         friend TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &, const DrawMode, const WindingOrder, const VertexDataLayout &, const std::size_t, const Material *, const Envelope2 &, const std::size_t, const void *, const DataType, const std::size_t, const void *) NOTHROWS;
-        friend TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMeshWithBuffers(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, VertexArrayPtr&& vertices,
+        friend TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, VertexArrayPtr&& vertices,
             size_t numBuffers, MemBufferArg* buffers) NOTHROWS;
-        friend TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMeshWithBuffers(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, std::unique_ptr<const void, void(*)(const void*)>&& vertices, const Port::DataType indexType, const std::size_t numIndices, std::unique_ptr<const void, void(*)(const void*)>&& indices,
+        friend TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, std::unique_ptr<const void, void(*)(const void*)>&& vertices, const Port::DataType indexType, const std::size_t numIndices, std::unique_ptr<const void, void(*)(const void*)>&& indices,
             size_t numBuffers, MemBufferArg* buffers) NOTHROWS;
     };
 
@@ -441,7 +441,7 @@ TAKErr MeshBuilder::addBuffer(std::unique_ptr<const void, void(*)(const void*)>&
     TE_CHECKRETURN_CODE(initErr);
     if (!impl.get())
         return TE_IllegalState;
-    auto& mimpl = static_cast<ModelImplBase&>(*impl);
+    ModelImplBase& mimpl = static_cast<ModelImplBase&>(*impl);
     return mimpl.addBuffer(std::move(buffer), bufferSize);
 }
 
@@ -627,7 +627,7 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, c
     return code;
 }
 
-TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMeshWithBuffers(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Feature::Envelope2 &aabb, const std::size_t numVertices, VertexArrayPtr &&vertices,
+TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Feature::Envelope2 &aabb, const std::size_t numVertices, VertexArrayPtr &&vertices,
     size_t numBuffers, MemBufferArg *buffers) NOTHROWS
 {
     TAKErr code(TE_Ok);
@@ -661,14 +661,19 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMeshWithBuffers(MeshPtr &
             impl.addBuffer(std::move(buffers[i].buffer), buffers[i].bufferSize);
     }
 
+    if (buffers) {
+        for (size_t i = 0; i < numBuffers; ++i)
+            impl.addBuffer(std::move(buffers[i].buffer), buffers[i].bufferSize);
+    }
+
     return code;
 }
 
 TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, VertexArrayPtr&& vertices) NOTHROWS {
-    return MeshBuilder_buildInterleavedMeshWithBuffers(value, mode, order, layout, numMaterials, materials, aabb, numVertices, std::move(vertices), 0, nullptr);
+    return MeshBuilder_buildInterleavedMesh(value, mode, order, layout, numMaterials, materials, aabb, numVertices, std::move(vertices), 0, nullptr);
 }
 
-TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMeshWithBuffers(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, std::unique_ptr<const void, void(*)(const void*)>&& vertices, const Port::DataType indexType, const std::size_t numIndices, std::unique_ptr<const void, void(*)(const void*)>&& indices,
+TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, std::unique_ptr<const void, void(*)(const void*)>&& vertices, const Port::DataType indexType, const std::size_t numIndices, std::unique_ptr<const void, void(*)(const void*)>&& indices,
     size_t numBuffers, MemBufferArg* buffers) NOTHROWS {
     TAKErr code(TE_Ok);
     value = MeshPtr(new GenericInterleavedModel(mode, layout, indexType), Memory_deleter_const<Mesh, GenericInterleavedModel>);
@@ -703,10 +708,15 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMeshWithBuffers(MeshPtr& 
             impl.addBuffer(std::move(buffers[i].buffer), buffers[i].bufferSize);
     }
 
+    if (buffers) {
+        for (size_t i = 0; i < numBuffers; ++i)
+            impl.addBuffer(std::move(buffers[i].buffer), buffers[i].bufferSize);
+    }
+
     return code;
 }
 TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, VertexArrayPtr&& vertices, const Port::DataType indexType, const std::size_t numIndices, VertexArrayPtr&& indices) NOTHROWS {
-    return MeshBuilder_buildInterleavedMeshWithBuffers(value, mode, order, layout, numMaterials, materials, aabb, numVertices, std::move(vertices), indexType, numIndices, std::move(indices), 0, nullptr);
+    return MeshBuilder_buildInterleavedMesh(value, mode, order, layout, numMaterials, materials, aabb, numVertices, std::move(vertices), indexType, numIndices, std::move(indices), 0, nullptr);
 }
 TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Feature::Envelope2 &aabb, const std::size_t numVertices, VertexArrayPtr &&positions, VertexArrayPtr &&texCoords0, VertexArrayPtr &&texCoords1, VertexArrayPtr &&texCoords2, VertexArrayPtr &&texCoords3, VertexArrayPtr &&texCoords4, VertexArrayPtr &&texCoords5, VertexArrayPtr &&texCoords6, VertexArrayPtr &&texCoords7, VertexArrayPtr &&normals, VertexArrayPtr &&colors) NOTHROWS
 {

@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.layer.raster.AbstractDatasetDescriptorSpi;
@@ -16,7 +17,6 @@ import com.atakmap.map.layer.raster.mobileimagery.MobileImageryRasterLayer2;
 import com.atakmap.android.maps.tilesets.TilesetInfo;
 import com.atakmap.map.projection.EquirectangularMapProjection;
 import com.atakmap.map.projection.Projection;
-import com.atakmap.map.projection.WebMercatorProjection;
 import com.atakmap.spi.InteractiveServiceProvider;
 import com.atakmap.util.ConfigOptions;
 
@@ -92,11 +92,11 @@ public class MobacMapSourceLayerInfoSpi extends AbstractDatasetDescriptorSpi {
         builder.setGridOffsetX(0);
         builder.setGridOffsetY(0);
 
-        File cacheFile = new File(workingDir, "cache.sqlite");
+        File cacheFile = new File(workingDir, mapSource.getName() + ".sqlite");
         final String cacheDirPath = ConfigOptions.getOption("imagery.offline-cache-dir", null);
         if(cacheDirPath != null) {
             File cacheDir = new File(cacheDirPath);
-            if(cacheDir.exists())
+            if(FileIOProviderFactory.exists(cacheDir))
                 cacheFile = new File(cacheDir, mapSource.getName() + ".sqlite");
         }
         builder.setExtra("offlineCache", cacheFile.getAbsolutePath());

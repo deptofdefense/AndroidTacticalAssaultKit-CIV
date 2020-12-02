@@ -1,7 +1,6 @@
 package com.atakmap.map.layer.feature;
 
 import com.atakmap.coremap.log.Log;
-import com.atakmap.interop.InteropCleaner;
 import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
 import com.atakmap.lang.ref.Cleaner;

@@ -36,7 +36,7 @@ public abstract class DrawingImporter extends MapItemImporter {
 
         // Set visibility
         existing.setVisible(extras.getBoolean("visible",
-                existing.getVisible()));
+                existing.getVisible(true)), false);
 
         // Add to group (if needed)
         addToGroup(existing);

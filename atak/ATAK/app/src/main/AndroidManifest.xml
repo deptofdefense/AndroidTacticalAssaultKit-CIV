@@ -189,7 +189,7 @@
         <activity
             android:name=".ATAKActivity"
             android:launchMode="singleTask"
-            android:configChanges="orientation|screenSize|smallestScreenSize|keyboardHidden|keyboard|uiMode"
+            android:configChanges="orientation|screenSize|smallestScreenSize|navigation|keyboardHidden|keyboard|uiMode"
             android:label="@string/app_name"
             android:theme="@style/ATAKThemeActionBarOverlay"
             android:windowSoftInputMode="adjustPan"

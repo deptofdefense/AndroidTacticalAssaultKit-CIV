@@ -5,6 +5,7 @@ import android.graphics.Color;
 
 import com.atakmap.android.rubbersheet.maps.AbstractSheet;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -79,7 +80,7 @@ public class AbstractSheetData {
 
     public boolean isValid() {
         return !FileSystemUtils.isEmpty(label)
-                && file != null && file.exists() && file.isFile()
+                && file != null && FileIOProviderFactory.exists(file) && file.isFile()
                 && points != null && points.length == 4;
     }
 
@@ -143,7 +144,7 @@ public class AbstractSheetData {
             return null;
         try {
             File f = new File(o.getString("file"));
-            if (!f.exists())
+            if (!FileIOProviderFactory.exists(f))
                 return null;
             String ext = getExtension(f);
             if (RubberModelData.EXTS.contains(ext))

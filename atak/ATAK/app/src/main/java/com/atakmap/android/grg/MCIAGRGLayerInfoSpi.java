@@ -2,6 +2,7 @@
 package com.atakmap.android.grg;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -230,7 +231,7 @@ public class MCIAGRGLayerInfoSpi extends AbstractDatasetDescriptorSpi {
     }
 
     private static Map<String, File> discoverMCIAGRG(File dir, int limit) {
-        if (!dir.isDirectory())
+        if (!FileIOProviderFactory.isDirectory(dir))
             return Collections.emptyMap();
 
         final String prefix;
@@ -248,7 +249,7 @@ public class MCIAGRGLayerInfoSpi extends AbstractDatasetDescriptorSpi {
 
         Map<String, File> retval = new HashMap<>();
 
-        File[] children = dir.listFiles();
+        File[] children = FileIOProviderFactory.listFiles(dir);
         String extension;
         DataSource dataSource;
         Layer layer;

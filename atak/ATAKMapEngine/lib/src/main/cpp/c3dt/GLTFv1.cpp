@@ -2,7 +2,9 @@
 
 #include <memory>
 
+#ifdef __ANDROID__
 #include <android/log.h>
+#endif
 
 #define tinygltf tinygltfloader
 #define TAK_TINYGLTFLOADER_MODS
@@ -19,7 +21,9 @@ tinygltfloader::Scene *GLTF_loadV1(const unsigned char *binary, const std::size_
     std::string warn;
     if(gltf.LoadBinaryFromMemory(cmodel.get(), &err, binary, len, baseDir))
         return cmodel.release();
+#ifdef __ANDROID__
     __android_log_print(ANDROID_LOG_VERBOSE, "Cesium3DTiles", "err=%s warn=%s", err.c_str(), warn.c_str());
+#endif
     return nullptr;
 }
 static bool loadExtBmp(GLTFBitmapLoader* loader, const std::string& baseUri, const std::string& uri) {

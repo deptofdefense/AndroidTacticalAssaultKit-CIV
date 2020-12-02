@@ -4,6 +4,7 @@ package com.atakmap.android.routes;
 import android.content.SharedPreferences;
 
 import com.atakmap.android.maps.Marker;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.android.gpx.Gpx;
 import com.atakmap.android.gpx.GpxRoute;
@@ -116,8 +117,8 @@ public class RouteGpxIO {
      */
     public static void write(Gpx gpx, File file) throws Exception {
         File parent = file.getParentFile();
-        if (!parent.exists())
-            if (!parent.mkdirs()) {
+        if (!FileIOProviderFactory.exists(parent))
+            if (!FileIOProviderFactory.mkdirs(parent)) {
                 Log.d(TAG, "Failed to make dir at " + parent.getAbsolutePath());
             }
 
@@ -178,7 +179,7 @@ public class RouteGpxIO {
 
                 MapGroup group = routeGroup.addGroup(routeName);
                 group.setMetaBoolean("addToObjList", false);
-                int color = Integer.valueOf(prefs.getString(
+                int color = Integer.parseInt(prefs.getString(
                         "defaultRouteColor",
                         String.valueOf(Route.DEFAULT_ROUTE_COLOR)));
 
@@ -342,7 +343,7 @@ public class RouteGpxIO {
 
                 MapGroup group = routeGroup.addGroup(routeName);
                 group.setMetaBoolean("addToObjList", false);
-                int color = Integer.valueOf(prefs.getString(
+                int color = Integer.parseInt(prefs.getString(
                         "defaultRouteColor",
                         String.valueOf(Route.DEFAULT_ROUTE_COLOR)));
 

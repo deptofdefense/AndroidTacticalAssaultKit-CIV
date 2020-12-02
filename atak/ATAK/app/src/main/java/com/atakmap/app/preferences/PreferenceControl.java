@@ -10,7 +10,6 @@ import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.widget.Toast;
 import android.util.Base64;
-import java.io.UnsupportedEncodingException;
 
 import com.atakmap.app.BuildConfig;
 
@@ -19,6 +18,7 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.app.R;
 import com.atakmap.comms.TAKServer;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CotServiceRemote;
 import com.atakmap.comms.CotServiceRemote.ConnectionListener;
@@ -29,10 +29,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import javax.xml.XMLConstants;
+
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -214,7 +213,7 @@ public class PreferenceControl implements ConnectionListener {
         sb.append("</preferences>\r\n");
 
         try {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(configFile));
+            BufferedWriter bw = new BufferedWriter(FileIOProviderFactory.getFileWriter(configFile));
             try {
                 bw.write(sb.toString());
             } finally {
@@ -243,7 +242,7 @@ public class PreferenceControl implements ConnectionListener {
             File configFile = new File(mount + File.separator + DIRNAME
                     + File.separator
                     + filename);
-            if (configFile.exists()) {
+            if (FileIOProviderFactory.exists(configFile)) {
                 Log.d(TAG,
                         "default configuration file found, loading entries: "
                                 + configFile);
@@ -269,7 +268,7 @@ public class PreferenceControl implements ConnectionListener {
             return;
 
         File configFile = new File(DIRPATH, path);
-        if (!configFile.exists()) {
+        if (!FileIOProviderFactory.exists(configFile)) {
             Log.w(TAG, "File not found: " + configFile.getAbsolutePath());
             Toast.makeText(_context, "File not found", Toast.LENGTH_SHORT)
                     .show();
@@ -300,7 +299,7 @@ public class PreferenceControl implements ConnectionListener {
             return;
 
         File configFile = new File(DIRPATH, path);
-        if (!configFile.exists()) {
+        if (!FileIOProviderFactory.exists(configFile)) {
             Log.w(TAG, "File not found: " + configFile.getAbsolutePath());
             Toast.makeText(_context, "File not found", Toast.LENGTH_SHORT)
                     .show();

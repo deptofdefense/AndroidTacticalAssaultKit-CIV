@@ -1,6 +1,8 @@
 
 package com.atakmap.map.layer.feature;
 
+import com.atakmap.annotations.DeprecatedApi;
+
 import java.io.File;
 import java.io.IOException;
 
@@ -182,8 +184,10 @@ public interface FeatureDataSource {
          *                                          match the class expected for
          *                                          the respective coding.
          *                                          
-         * @deprecated
+         * @deprecated use {@link #get()}
          */
+        @Deprecated
+        @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
         public Feature getFeature() {
             return this.get();
         }

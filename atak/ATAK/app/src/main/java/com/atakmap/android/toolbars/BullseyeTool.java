@@ -325,7 +325,7 @@ public class BullseyeTool extends ButtonTool implements
         String distanceString = detail.getAttribute("distance");
         String distUnitString = detail.getAttribute("distanceUnits");
         String mils = detail.getAttribute("mils");
-        boolean hasRangeRings = Boolean.valueOf(detail
+        boolean hasRangeRings = Boolean.parseBoolean(detail
                 .getAttribute("hasRangeRings"));
         String ringDistString = detail.getAttribute("ringDist");
         String ringDistUnitString = detail.getAttribute("ringDistUnits");

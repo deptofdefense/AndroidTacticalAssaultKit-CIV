@@ -1,15 +1,14 @@
 package com.atakmap.map.layer.model;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.xml.XMLUtils;
 import com.atakmap.io.ZipVirtualFile;
 
 import org.w3c.dom.Document;
-import javax.xml.XMLConstants;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
@@ -35,9 +34,9 @@ public class ModelFileUtils {
     }
 
     public static List<File> findFiles(File f, Collection<String> exts) {
-        if(f.isDirectory()) {
+        if(FileIOProviderFactory.isDirectory(f)) {
             LinkedList<File> result = new LinkedList<File>();
-            File[] children = f.listFiles();
+            File[] children = FileIOProviderFactory.listFiles(f);
             if (children != null) {
                 for(File c : children) {
                     List<File> r = findFiles(c, exts);
@@ -76,12 +75,12 @@ public class ModelFileUtils {
         InputStream inputStream = null;
         try {
             File file = new File(uri);
-            if (!file.exists()) {
+            if (!FileIOProviderFactory.exists(file)) {
                 ZipVirtualFile zvf = new ZipVirtualFile(uri);
-                if (zvf.exists())
+                if (FileIOProviderFactory.exists(zvf))
                     inputStream = zvf.openStream();
             } else {
-                inputStream = new FileInputStream(file);
+                inputStream = FileIOProviderFactory.getInputStream(file);
             }
         } catch (IOException e) {
             // ignore

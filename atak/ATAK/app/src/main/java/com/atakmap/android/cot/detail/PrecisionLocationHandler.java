@@ -23,7 +23,7 @@ public class PrecisionLocationHandler extends CotDetailHandler {
 
     public static final String PRECISIONLOCATION = "precisionlocation";
 
-    private static final Map<String, Class> MD_KEYS = new HashMap<>();
+    private static final Map<String, Class<?>> MD_KEYS = new HashMap<>();
     static {
         MD_KEYS.put(GeoPointMetaData.GEOPOINT_SOURCE, String.class);
         MD_KEYS.put(GeoPointMetaData.ALTITUDE_SOURCE, String.class);
@@ -89,10 +89,10 @@ public class PrecisionLocationHandler extends CotDetailHandler {
         GeoPointMetaData gpm = new GeoPointMetaData();
         gpm.set(gp);
 
-        for (Map.Entry<String, Class> e : MD_KEYS.entrySet()) {
+        for (Map.Entry<String, Class<?>> e : MD_KEYS.entrySet()) {
             String k = e.getKey();
             String v = detail.getAttribute(k);
-            Class c = e.getValue();
+            Class<?> c = e.getValue();
             if (v != null) {
                 if (c == Double.class) {
                     try {

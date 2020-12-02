@@ -7,6 +7,7 @@ import com.atakmap.android.filesharing.android.service.DirectoryWatcher.FileUpda
 import com.atakmap.android.filesharing.android.service.FileInfoPersistanceHelper.TABLETYPE;
 import com.atakmap.android.filesystem.ContentTypeMapper;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -92,12 +93,12 @@ public class DirectoryWatcher extends FileObserver {
 
         // create directory if it does not exist
         final File dir = new File(absolutePath);
-        if (!dir.exists()) {
+        if (!FileIOProviderFactory.exists(dir)) {
             Log.d(TAG, "Creating directory: " + absolutePath);
-            if (!dir.mkdirs())
+            if (!FileIOProviderFactory.mkdirs(dir))
                 Log.e(TAG, "Failed to create directory: " + absolutePath);
         } else {
-            if (!dir.isDirectory())
+            if (!FileIOProviderFactory.isDirectory(dir))
                 Log.e(TAG, absolutePath + " is not a directory");
         }
 
@@ -108,13 +109,13 @@ public class DirectoryWatcher extends FileObserver {
     protected void processDirectory() {
 
         File f = new File(absolutePath);
-        File[] fileList = f.listFiles();
+        File[] fileList = FileIOProviderFactory.listFiles(f);
         if (fileList == null) {
             // Matt, couldn't this just be an empty directory?
             Log.e(TAG, "somehow watching a file instead of a directory");
         } else {
             for (File i : fileList) {
-                if (i != null && !i.isDirectory()) {
+                if (i != null && !FileIOProviderFactory.isDirectory(i)) {
                     if (_ignoreExistingFiles) {
                         // see if file is already in DB, if not add it
                         FileInfo fi = FileInfoPersistanceHelper.instance()
@@ -202,7 +203,7 @@ public class DirectoryWatcher extends FileObserver {
         // TODO remove this listener, and any sublisteners...
         // for now if directory change, ignore it
         File file = new File(getPath(), path);
-        if (file.isDirectory()) {
+        if (FileIOProviderFactory.isDirectory(file)) {
             Log.d(TAG,
                     "(" + getEventString(event)
                             + ") ignoring directory event for "

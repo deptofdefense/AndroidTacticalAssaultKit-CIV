@@ -2,6 +2,7 @@
 package com.atakmap.android.filesharing.android.service;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.filesystem.HashingUtils;
 
 import org.json.JSONException;
@@ -124,8 +125,8 @@ public class FileInfo {
         setId(-1); // use the DB to fill-out this field!
         setFileName(file.getName());
         setContentType(contentType);
-        setSizeInBytes((int) file.length());
-        setUpdateTime(file.lastModified());
+        setSizeInBytes((int) FileIOProviderFactory.length(file));
+        setUpdateTime(FileIOProviderFactory.lastModified(file));
         setDestinationPath(file.getParent());
         setSha256sum(sha256);
         setFileMetadata(fileMetadata);
@@ -137,8 +138,8 @@ public class FileInfo {
         setId(-1); // use the DB to fill-out this field!
         setFileName(file.getName());
         setContentType(contentType);
-        setSizeInBytes((int) file.length());
-        setUpdateTime(file.lastModified());
+        setSizeInBytes((int) FileIOProviderFactory.length(file));
+        setUpdateTime(FileIOProviderFactory.lastModified(file));
         setDestinationPath(file.getParent());
         computeSha256sum();
         setUserName(userName);

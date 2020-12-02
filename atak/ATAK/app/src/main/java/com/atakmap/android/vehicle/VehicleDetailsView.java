@@ -363,7 +363,10 @@ public class VehicleDetailsView extends GenericDetailsView implements
         if (unit != null) {
             double length = _shape.getMetaDouble("length", 0.0);
             double width = _shape.getMetaDouble("width", 0.0);
-            double height = _shape.getMetaDouble("height", 0.0);
+            double height = _shape.getHeight();
+            if (Double.isNaN(height))
+                height = 0.0;
+
             _dimensions.setText(String.format(getResources().getString(
                     R.string.vehicle_dimensions),
                     SpanUtilities.convert(length, Span.METER, unit),

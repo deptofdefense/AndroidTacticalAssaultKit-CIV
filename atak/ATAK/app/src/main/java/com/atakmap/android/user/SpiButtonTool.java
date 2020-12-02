@@ -143,7 +143,7 @@ public class SpiButtonTool extends SpecialPointButtonTool implements
 
     private void updateTimeout() {
         try {
-            _updateTimeout = Integer.valueOf(_prefs.getString(
+            _updateTimeout = Integer.parseInt(_prefs.getString(
                     "spiUpdateDelay", "5"));
         } catch (Exception e) {
             _updateTimeout = 0;

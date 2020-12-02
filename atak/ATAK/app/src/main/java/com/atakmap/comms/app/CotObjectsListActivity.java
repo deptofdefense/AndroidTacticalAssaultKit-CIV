@@ -1,7 +1,6 @@
 
 package com.atakmap.comms.app;
 
-import android.app.ListActivity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Parcelable;

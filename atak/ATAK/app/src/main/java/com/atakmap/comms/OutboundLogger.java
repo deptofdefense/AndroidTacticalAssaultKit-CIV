@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.coremap.cot.event.CotEvent;
@@ -14,7 +15,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 
 class OutboundLogger implements CommsLogger,
@@ -40,8 +40,8 @@ class OutboundLogger implements CommsLogger,
         prefs.registerOnSharedPreferenceChangeListener(this);
         File f = FileSystemUtils.getItem(FileSystemUtils.SUPPORT_DIRECTORY
                 + File.separatorChar + "logs");
-        if (!f.exists())
-            if (!f.mkdir())
+        if (!FileIOProviderFactory.exists(f))
+            if (!FileIOProviderFactory.mkdir(f))
                 Log.d(TAG, "could not create the support/logs directory");
 
         if (log)
@@ -102,7 +102,7 @@ class OutboundLogger implements CommsLogger,
         FileOutputStream fos = null;
         try {
             fw = new OutputStreamWriter(
-                    fos = new FileOutputStream(f),
+                    fos = FileIOProviderFactory.getOutputStream(f),
                     FileSystemUtils.UTF8_CHARSET.newEncoder());
         } catch (Exception e) {
             Log.w(TAG, "Could not open log file: " + f, e);

@@ -2,11 +2,13 @@
 #include <iostream>
 #include <vector>
 
-
 #include <GLES2/gl2.h>
+
+#include <util/Logging2.h>
 
 std::string FragmentShaderCode =
 "#version 300 es\n\
+precision mediump float;\n\
 in vec3 normal;\n\
 in vec3 position;\n\
 in vec2 texcoord;\n\
@@ -47,6 +49,8 @@ void main(){\n\
 	texcoord = in_texcoord;\n\
 }";
 
+using namespace TAK::Engine::Util;
+
 //
 Shaders::Shaders()
 {
@@ -71,6 +75,7 @@ Shaders::Shaders()
 		std::vector<char> VertexShaderErrorMessage(InfoLogLength + 1);
 		glGetShaderInfoLog(VertexShaderID, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
 		printf("%s\n", &VertexShaderErrorMessage[0]);
+		Logger_log(TELL_Error, "Failed to load vertexShader %s", &VertexShaderErrorMessage[0]);
 	}
 
 	// Compile Fragment Shader
@@ -85,7 +90,8 @@ Shaders::Shaders()
 		std::vector<char> FragmentShaderErrorMessage(InfoLogLength + 1);
 		glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
 		printf("%s\n", &FragmentShaderErrorMessage[0]);
-	}
+	    Logger_log(TELL_Error, "Failed to load fragment Shader %s", &FragmentShaderErrorMessage[0]);
+    }
 
 	// Link the program
 	printf("Linking program\n");
@@ -101,7 +107,8 @@ Shaders::Shaders()
 		std::vector<char> ProgramErrorMessage(InfoLogLength + 1);
 		glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
 		printf("%s\n", &ProgramErrorMessage[0]);
-	}
+        Logger_log(TELL_Error, "Failed to link program Shader %s", &ProgramErrorMessage[0]);
+    }
 
 	glDetachShader(ProgramID, VertexShaderID);
 	glDetachShader(ProgramID, FragmentShaderID);

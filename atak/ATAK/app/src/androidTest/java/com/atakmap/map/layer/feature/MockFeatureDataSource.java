@@ -211,7 +211,7 @@ public final class MockFeatureDataSource {
                 FeatureDataStore2.FeatureQueryParameters params = new FeatureDataStore2.FeatureQueryParameters();
                 params.featureSetFilter = new FeatureDataStore2.FeatureSetQueryParameters();
                 params.featureSetFilter.ids = Collections
-                        .singleton(Long.valueOf(this.featureSets.getId()));
+                        .singleton(this.featureSets.getId());
 
                 this.features = this.dataModel.queryFeatures(params);
                 this.features = new FeatureCursorEncoder(this.features,

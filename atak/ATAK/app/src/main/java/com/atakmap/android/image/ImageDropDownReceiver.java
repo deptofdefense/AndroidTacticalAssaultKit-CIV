@@ -39,6 +39,7 @@ import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.missionpackage.file.NameValuePair;
 import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.android.video.manager.VideoFileWatcher;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
 import org.apache.sanselan.formats.tiff.TiffImageMetadata;
@@ -171,13 +172,13 @@ public class ImageDropDownReceiver
             final File dir = new File(dirPath);
 
             Log.d(TAG, "creating an attachment directory: " + dirPath);
-            if (dir.isDirectory() || !dir.exists() && dir.mkdirs()) {
+            if (FileIOProviderFactory.isDirectory(dir) || !FileIOProviderFactory.exists(dir) && FileIOProviderFactory.mkdirs(dir)) {
                 final String name = getDateTimeString();
 
                 for (int i = 0; result == null && i < possible.length; ++i) {
                     File file = new File(dir, name + possible[i] + "." + ext);
 
-                    if (!file.exists()) {
+                    if (!FileIOProviderFactory.exists(file)) {
                         result = file;
                     }
                 }
@@ -773,7 +774,7 @@ public class ImageDropDownReceiver
             @Override
             public int compare(File f1, File f2) {
                 if (sortByTime)
-                    return Long.compare(f2.lastModified(), f1.lastModified());
+                    return Long.compare(FileIOProviderFactory.lastModified(f2), FileIOProviderFactory.lastModified(f1));
                 else
                     return f1.getName().compareTo(f2.getName());
             }
@@ -961,7 +962,7 @@ public class ImageDropDownReceiver
 
             // Store downscaled in ATAK temp directory (cleared on shutdown)
             File atakTmp = FileSystemUtils.getItemOnSameRoot(file, "tmp");
-            if (!atakTmp.exists() && !atakTmp.mkdirs()) {
+            if (!FileIOProviderFactory.exists(atakTmp) && !FileIOProviderFactory.mkdirs(atakTmp)) {
                 Log.w(TAG, "Failed to create ATAK temp dir: " + atakTmp);
                 // Fallback to system temp directory (may not be readable/writable)
                 result = new File(_context.getCacheDir(),
@@ -971,7 +972,7 @@ public class ImageDropDownReceiver
             try {
                 int jpeg_quality = 90;
 
-                fos = new FileOutputStream(result);
+                fos = FileIOProviderFactory.getOutputStream(result);
                 bmp.compress(CompressFormat.JPEG, jpeg_quality, fos);
                 fos.flush();
                 fos.close();
@@ -1081,7 +1082,7 @@ public class ImageDropDownReceiver
                 file.getParentFile(), file.getName())) {
             File nitfXml = new File(file.getParent(), file.getName()
                     + ".aux.xml");
-            if (nitfXml.exists())
+            if (FileIOProviderFactory.exists(nitfXml))
                 manifest.addFile(nitfXml, uid);
         }
 

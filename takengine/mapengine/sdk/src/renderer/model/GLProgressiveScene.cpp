@@ -76,7 +76,7 @@ GLProgressiveScene::Spi::~Spi() NOTHROWS {
 
 TAKErr GLProgressiveScene::Spi::create(GLMapRenderable2Ptr& value, RenderContext& ctx, const SceneInfo& info, const Options& opts) NOTHROWS {
     TAKErr code = TE_Unsupported;
-    if (strcmp(info.type, "Cesium3DTiles") == 0) {
+    if (info.type != nullptr && strcmp(info.type, "Cesium3DTiles") == 0) {
         value = GLMapRenderable2Ptr(new GLProgressiveScene(ctx, info, opts), Memory_deleter_const<GLMapRenderable2, GLProgressiveScene>);
         code = TE_Ok;
     }

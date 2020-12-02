@@ -11,6 +11,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Point;
 import android.os.Bundle;
+
+import com.atakmap.android.bloodhound.ui.BloodHoundNavWidget;
 import com.atakmap.android.bloodhound.ui.BloodHoundRouteWidget;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -42,6 +44,7 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.MetaMapPoint;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.overlay.DefaultMapGroupOverlay;
+import com.atakmap.android.routes.Route;
 import com.atakmap.android.routes.RouteMapReceiver;
 import com.atakmap.android.routes.RouteNavigator;
 import com.atakmap.android.toolbar.ButtonTool;
@@ -127,7 +130,8 @@ public class BloodHoundTool extends ButtonTool implements
 
     private BloodHoundHUD _bloodHoundHUD;
     private BloodHoundZoomWidget _zoomWidget;
-    private BloodHoundRouteWidget _routeWidget;
+    public BloodHoundRouteWidget _routeWidget;
+    private BloodHoundNavWidget _navWidget;
 
     private boolean spinDoNotClear = false;
 
@@ -187,6 +191,8 @@ public class BloodHoundTool extends ButtonTool implements
         _bloodHoundHUD.setToolbarButton(this);
         _zoomWidget = new BloodHoundZoomWidget(mapView, this);
         _routeWidget = new BloodHoundRouteWidget(mapView, this);
+        _navWidget = new BloodHoundNavWidget(mapView, this);
+        _routeWidget.setNavWidget(_navWidget);
 
         _linkGroup = _mapView.getRootGroup().findMapGroup("Pairing Lines");
         if (_linkGroup == null) {
@@ -458,6 +464,10 @@ public class BloodHoundTool extends ButtonTool implements
             return true;
         }
         running = true;
+
+        // Disable the nav widget incase it was enabled when the Bloodhound
+        // tool was last closed.
+        _navWidget.disableWidget();
 
         _spiGroup = _mapView.getRootGroup().findMapGroup("SPIs");
 
@@ -919,6 +929,7 @@ public class BloodHoundTool extends ButtonTool implements
         _zoomWidget.setVisible(true);
         _bloodHoundHUD.setLayoutVisible(true);
         _routeWidget.setVisible(true);
+        _navWidget.setVisible(true);
 
         _spiItem = (PointMapItem) item;
         _uid = _spiItem.getUID();
@@ -1188,7 +1199,6 @@ public class BloodHoundTool extends ButtonTool implements
         timerTask.setEta(Double.NaN);
         synchronized (_link.route) {
             _link.route.dispose();
-            _link.route = null;
         }
         _link = null;
     }
@@ -1336,10 +1346,15 @@ public class BloodHoundTool extends ButtonTool implements
         relativeBearing %= 360;
 
         RangeAndBearingMapItem line = null;
+        Route route = null;
 
         BloodHoundToolLink bloodhoundLink = getlink();
         if (bloodhoundLink != null && bloodhoundLink.line != null) {
             line = bloodhoundLink.line;
+        }
+
+        if (bloodhoundLink != null && bloodhoundLink.isRoute()) {
+            route = bloodhoundLink.route;
         }
 
         String bearingString = "---";
@@ -1372,10 +1387,15 @@ public class BloodHoundTool extends ButtonTool implements
                 if (!Double.isNaN(avgSpeed)
                         && Double.compare(avgSpeed, 0.0) != 0) {
                     remainingEta = range / avgSpeed;
+                    if (route != null) {
+                        Log.d(TAG, "Calculating eta by route");
+                        remainingEta = route.getTotalDistance() / avgSpeed;
+                    }
                 }
             } catch (Exception e) {
                 Log.e(TAG, "caught an error obtaining the user speed", e);
             }
+
             if (!Double.isNaN(remainingEta)) {
                 startPoint.setMetaDouble("bloodhoundEta", remainingEta);
 

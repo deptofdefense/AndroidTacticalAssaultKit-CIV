@@ -142,7 +142,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_Feature_getStyle
     const Style *cstyle = feature->getStyle();
     if(!cstyle)
         return NULL;
-    StylePtr retval(cstyle->clone(), Style::destructStyle);
+    TAK::Engine::Feature::StylePtr retval(cstyle->clone(), Style::destructStyle);
     return NewPointer(env, std::move(retval));
 }
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_Feature_getAttributes

@@ -311,7 +311,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_opengl_GLMapView_getTerrainRender
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return NULL;
     }
-    return NewPointer(env, &cview->getTerrainRenderService(), true);
+    return NewPointer<TAK::Engine::Renderer::Elevation::TerrainRenderService>(env, &cview->getTerrainRenderService(), true);
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_forwardD
   (JNIEnv *env, jclass clazz, jlong ptr, jlong srcBufPtr, jint srcSize, jlong dstBufPtr, jint dstSize, jint count)

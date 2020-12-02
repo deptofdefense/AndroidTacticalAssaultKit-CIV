@@ -1,5 +1,6 @@
 package com.atakmap.map.layer.feature;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.map.layer.AbstractLayer;
 
 /**
@@ -18,6 +19,8 @@ import com.atakmap.map.layer.AbstractLayer;
  * 
  * @deprecated use {@link FeatureLayer3}
  */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public final class FeatureLayer2 extends AbstractLayer {
 
     /**************************************************************************/

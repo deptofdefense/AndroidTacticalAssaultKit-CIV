@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.RectF;
 import android.util.Pair;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
@@ -85,6 +86,7 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable,
     protected final DatasetDescriptor info;
     /** @deprecated use {@link #renderable}*/
     @Deprecated
+    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
     protected GLQuadTileNode2 quadTree;
     protected GLMapRenderable2 renderable;
     protected TileReader tileReader;
@@ -331,7 +333,7 @@ public class GLTiledMapLayer2 implements GLMapLayer3, GLResolvableMapRenderable,
 
         @Override
         public void setColor(final int color) {
-            if(GLMapSurface.isGLThread()) {
+            if(GLTiledMapLayer2.this.surface.isRenderThread()) {
                 this.color = color;
                 if(GLTiledMapLayer2.this.renderable instanceof GLQuadTileNode3)
                     ((GLQuadTileNode3)GLTiledMapLayer2.this.renderable).setColor(this.color);

@@ -1,7 +1,6 @@
 
 package com.atakmap.android.update;
 
-import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -20,9 +19,8 @@ import java.io.ByteArrayInputStream;
 import java.security.cert.X509Certificate;
 import android.annotation.SuppressLint;
 
-import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
-import com.atakmap.android.maps.MapView;
+import android.util.DisplayMetrics;
 
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
@@ -139,19 +137,43 @@ public class AppMgmtUtils {
         return null;
     }
 
-    public static Drawable scaleImage(Context context, Drawable image,
-            int size) {
-
-        if (!(image instanceof BitmapDrawable)) {
+    /**
+     * Scale image to a specified size - only works for bitmap drawables
+     * Used to display alert dialog icons at a reasonable, consistent size.
+     * @param image Bitmap drawable
+     * @param size Desired size in pixels
+     *             It's recommended to pass in a dimension resource here rather
+     *             than a hardcoded size
+     * @return Scaled drawable
+     */
+    public static Drawable getDialogIcon(Drawable image, float size) {
+        // Scaling method only works for bitmap-based drawables
+        if (!(image instanceof BitmapDrawable))
             return image;
-        }
 
-        Bitmap b = ((BitmapDrawable) image).getBitmap();
-        Bitmap bitmapResized = Bitmap.createScaledBitmap(b,
-                Math.round(size * MapView.DENSITY),
-                Math.round(size * MapView.DENSITY), false);
-        image = new BitmapDrawable(context.getResources(), bitmapResized);
+        // Mutate so we don't modify the primary instance
+        BitmapDrawable b = (BitmapDrawable) image.mutate();
+
+        // Set density to a baseline we can check against for scaling
+        b.setTargetDensity(DisplayMetrics.DENSITY_HIGH);
+
+        // Get the width and height of the icon at the given density
+        float srcPixels = Math.max(b.getIntrinsicWidth(),
+                b.getIntrinsicHeight());
+
+        // Determine the scale we need to apply to the density to get the
+        // desired icon size
+        float scale = size / srcPixels;
+
+        // Set target density to scale icon
+        b.setTargetDensity(Math.round(scale * DisplayMetrics.DENSITY_HIGH));
+
         return image;
+    }
+
+    public static Drawable getDialogIcon(Context context, Drawable image) {
+        return getDialogIcon(image, context.getResources()
+                .getDimension(R.dimen.button_small));
     }
 
     /**
@@ -339,7 +361,7 @@ public class AppMgmtUtils {
     }
 
     @SuppressWarnings("NewApi")
-    public static Boolean isActivityRunning(Class activityClass,
+    public static Boolean isActivityRunning(Class<?> activityClass,
             Context context) {
         ActivityManager activityManager = (ActivityManager) context
                 .getSystemService(Context.ACTIVITY_SERVICE);

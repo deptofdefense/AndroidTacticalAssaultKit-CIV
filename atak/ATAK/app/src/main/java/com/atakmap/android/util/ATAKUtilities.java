@@ -21,6 +21,7 @@ import com.atakmap.android.image.ImageDropDownReceiver;
 import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.importfiles.sort.ImportResolver;
 import com.atakmap.android.importfiles.task.ImportFilesTask;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.maps.conversion.GeomagneticField;
 import android.net.Uri;
 import android.util.Base64;
@@ -419,6 +420,12 @@ public class ATAKUtilities {
         if (zoomFactor * modelHeight > heightPad)
             zoomFactor = heightPad / modelHeight;
 
+        // Clamp tilt to max at new zoom level
+        double maxTilt = mv.getMaxMapTilt(mv.getMapScale() * zoomFactor);
+        if (mv.getMapTilt() > maxTilt)
+            ctrl.tiltTo(maxTilt, true);
+
+        // Zoom to area
         ctrl.zoomBy(zoomFactor, ctrl.getFocusX(), ctrl.getFocusY(), true);
 
         return true;
@@ -1201,7 +1208,7 @@ public class ATAKUtilities {
      */
     public static Bitmap setIconFromFile(ImageView icon, File iconFile) {
         Bitmap bitmap = null;
-        if (iconFile.exists()) {
+        if (FileIOProviderFactory.exists(iconFile)) {
             try {
                 bitmap = BitmapFactory.decodeFile(iconFile.getAbsolutePath());
             } catch (RuntimeException ignored) {

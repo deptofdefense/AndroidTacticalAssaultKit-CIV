@@ -245,8 +245,7 @@ public class ProductInformationWizard {
 
         Drawable icon = product.getIcon();
         if (icon != null) {
-            dialog.setIcon(AppMgmtUtils.scaleImage(_context, icon,
-                    48));
+            dialog.setIcon(AppMgmtUtils.getDialogIcon(_context, icon));
         } else {
             dialog.setIcon(com.atakmap.android.util.ATAKConstants.getIconId());
         }

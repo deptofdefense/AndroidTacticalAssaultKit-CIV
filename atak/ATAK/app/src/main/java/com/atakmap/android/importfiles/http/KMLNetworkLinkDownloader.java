@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.net.AtakAuthenticationHandlerHTTP;
 import javax.net.ssl.TrustManager;
 import com.atakmap.net.CertificateManager;
@@ -150,7 +151,7 @@ public class KMLNetworkLinkDownloader implements RequestListener {
         String uid = UUID.randomUUID().toString();
         File tmpDir = new File(
                 FileSystemUtils.getItem(FileSystemUtils.TMP_DIRECTORY), uid);
-        if (!tmpDir.mkdirs()) {
+        if (!FileIOProviderFactory.mkdirs(tmpDir)) {
             Log.w(TAG,
                     "Failed to create directories: "
                             + tmpDir.getAbsolutePath());
@@ -246,7 +247,7 @@ public class KMLNetworkLinkDownloader implements RequestListener {
 
                         File fout = new File(request.getDir(),
                                 request.getFileName());
-                        FileOutputStream fos = new FileOutputStream(fout);
+                        FileOutputStream fos = FileIOProviderFactory.getOutputStream(fout);
 
                         try {
                             FileSystemUtils.copy(input, fos);

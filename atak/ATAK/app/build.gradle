@@ -8,23 +8,28 @@ import java.util.regex.Pattern
 //
 //   This is used as part of the API value
 //
-// ATAK_VERSION_SUBMINOR is the subminor version of the build that would not 
+// ATAK_VERSION_SUBMINOR is the subminor version of the build that would not
 //                       have any effect on the API version number that is used
 //   Rules for the subminor number
 //           1) Should be [development] until ATAK is released.
-//           2) When initially released it will be blank.   
-//           3) When ATAK is reissued without an API bump, the number is 
+//           2) When initially released it will be blank.
+//           3) When ATAK is reissued without an API bump, the number is
 //              incremented to ".1", ".2" etc.
-//           
-//           
+//
+//
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-def ATAK_VERSION = "4.1.0"
-def ATAK_VERSION_SUBMINOR = ".1"
+def ATAK_VERSION = "4.1.1"
+def ATAK_VERSION_SUBMINOR = ".0"
 
 buildscript {
     ext.jacocoVersion = '0.8.5'
+
+    ext.upstreamUrl = project.properties['upstream.url'] ?: 'http://localhost/'
+    ext.upstreamUser = project.properties['upstream.user'] ?: 'invalidUser'
+    ext.upstreamPassword = project.properties['upstream.password'] ?: 'invalidPassword'
+    ext.sdkDir = project.properties['sdk.dir']
 
     repositories {
         jcenter()
@@ -47,8 +52,7 @@ allprojects {
 
 apply plugin: 'com.android.application'
 apply plugin: 'jacoco'
-
-
+apply plugin: 'maven-publish'
 
 dependencies {
      implementation project(':MapCoreInterfaces:lib')
@@ -68,7 +72,6 @@ dependencies {
      implementation 'androidx.fragment:fragment:1.2.4'
      implementation 'androidx.exifinterface:exifinterface:1.2.0'
      implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
-
 
      androidTestImplementation 'androidx.test:runner:1.2.0'
      androidTestImplementation 'androidx.test:rules:1.2.0'
@@ -243,7 +246,7 @@ android {
             buildConfigField 'String', 'LEGACY_PREFERENCES_NAME', '"com.atakmap.app_preferences"'
             buildConfigField 'boolean', 'HAS_FIRES', 'false'
             buildConfigField 'boolean', 'MIL_CAPABILITIES', 'false'
-            buildConfigField 'String', 'REDEPLOY_VERSION', '"410b"'
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"410c"'
             ndk { abiFilters "arm64-v8a" }
         }
         ////////////////////////////////////////////////////////////////////////////////////////
@@ -389,10 +392,26 @@ android {
 
         }
 
+        // for civ
+        civ.java.srcDirs = ['src/civ/java', 'src/common/java']
+        civ.assets.srcDir 'src/civ/assets'
+        civ.res.srcDir 'src/civ/res'
+
         // for civSmall
-        civSmall.java.srcDir 'src/civ/java'
+        civSmall.java.srcDirs = ['src/civ/java', 'src/common/java']
         civSmall.assets.srcDir 'src/civ/assets'
         civSmall.res.srcDir 'src/civ/res'
+
+
+
+
+        // pull in the full 
+        civ.assets.srcDir 'src/full/assets'
+
+        // pull in the small 
+        civSmall.assets.srcDir 'src/small/assets'
+
+
 
         // Move the build types to build-types/<type>
         // For instance, build-types/debug/java, build-types/debug/AndroidManifest.xml, ...
@@ -570,7 +589,6 @@ afterEvaluate {
     if (assembleOdkTask != null) {
         assembleOdkTask.finalizedBy(copyFilesSdk)
     }
-
 }
 
 

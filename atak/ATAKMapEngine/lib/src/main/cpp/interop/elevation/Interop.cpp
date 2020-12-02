@@ -145,6 +145,7 @@ namespace
         NativeElevationSource_class.id = ATAKMapEngineJNI_findClass(env, "com/atakmap/map/elevation/NativeElevationSource");
         NativeElevationSource_class.pointer = env->GetFieldID(NativeElevationSource_class.id, "pointer", "Lcom/atakmap/interop/Pointer;");
         NativeElevationSource_class.ctor = env->GetMethodID(NativeElevationSource_class.id, "<init>", "(Lcom/atakmap/interop/Pointer;Ljava/lang/Object;)V");
+        return true;
     }
 
     jobject Interop_findInternedObjectNoSync(JNIEnv *env, const ElevationSource &csource) NOTHROWS

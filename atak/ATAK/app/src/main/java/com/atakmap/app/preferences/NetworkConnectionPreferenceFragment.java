@@ -2,7 +2,6 @@
 package com.atakmap.app.preferences;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
@@ -35,6 +34,7 @@ import com.atakmap.comms.app.CotInputsListActivity;
 import com.atakmap.comms.app.CotOutputsListActivity;
 import com.atakmap.comms.app.CotStreamListActivity;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.net.AtakCertificateDatabase;
 import com.atakmap.net.AtakCertificateDatabaseIFace;
@@ -211,7 +211,7 @@ public class NetworkConnectionPreferenceFragment
 
         final String directory;
 
-        if (certDir != null && certDir.exists() && certDir.isDirectory())
+        if (certDir != null && FileIOProviderFactory.exists(certDir) && FileIOProviderFactory.isDirectory(certDir))
             directory = certDir.getAbsolutePath();
         else
             directory = Environment.getExternalStorageDirectory().getPath();
@@ -362,7 +362,7 @@ public class NetworkConnectionPreferenceFragment
                                     fname + ".pref");
 
                             try {
-                                FileSystemUtils.write(new FileOutputStream(f),
+                                FileSystemUtils.write(FileIOProviderFactory.getOutputStream(f),
                                         key);
                                 Toast.makeText(
                                         NetworkConnectionPreferenceFragment.this

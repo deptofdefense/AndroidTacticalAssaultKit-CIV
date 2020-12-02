@@ -14,13 +14,11 @@ import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -130,10 +128,10 @@ public class CoTAutoBroadcaster implements
         File inputFile = new File(Environment.getExternalStorageDirectory()
                 .getAbsoluteFile()
                 + "/atak/Databases/" + FILENAME);
-        if (inputFile.exists()) {
+        if (FileIOProviderFactory.exists(inputFile)) {
             InputStream is = null;
             try {
-                is = new FileInputStream(inputFile);
+                is = FileIOProviderFactory.getInputStream(inputFile);
                 byte[] temp = new byte[is.available()];
                 int read = is.read(temp);
                 String menuString = new String(temp, 0, read,
@@ -169,7 +167,7 @@ public class CoTAutoBroadcaster implements
         final File outputFile = FileSystemUtils
                 .getItem("Databases/" + FILENAME);
 
-        if (outputFile.exists())
+        if (FileIOProviderFactory.exists(outputFile))
             FileSystemUtils.delete(outputFile);
         try {
             StringBuilder builder = new StringBuilder();
@@ -181,7 +179,7 @@ public class CoTAutoBroadcaster implements
                     }
                 }
             }
-            os = new FileOutputStream(outputFile);
+            os = FileIOProviderFactory.getOutputStream(outputFile);
             is = new ByteArrayInputStream(builder.toString()
                     .getBytes());
             FileSystemUtils.copy(is, os);

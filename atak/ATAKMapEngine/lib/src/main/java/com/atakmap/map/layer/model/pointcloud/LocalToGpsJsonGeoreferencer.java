@@ -2,6 +2,8 @@ package com.atakmap.map.layer.model.pointcloud;
 
 import android.util.JsonReader;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.io.ZipVirtualFile;
@@ -12,9 +14,13 @@ import com.atakmap.map.projection.ProjectionFactory;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Iterator;
 
 public class LocalToGpsJsonGeoreferencer implements Georeferencer {
 
@@ -51,8 +57,7 @@ public class LocalToGpsJsonGeoreferencer implements Georeferencer {
                 1);
 
         if (geoRefFile != null) {
-            JsonReader jsonReader = null;
-            FileReader fr = null;
+            InputStream fr = null;
             try {
                 double lat = 0.0;
                 double lng = 0.0;
@@ -60,32 +65,32 @@ public class LocalToGpsJsonGeoreferencer implements Georeferencer {
                 double hae = 0.0;
                 ModelInfo.AltitudeMode altMode = ModelInfo.AltitudeMode.Relative;
 
-                jsonReader = new JsonReader(fr = new FileReader(geoRefFile));
-                jsonReader.beginObject();
-                while (jsonReader.hasNext()) {
-                    String name = jsonReader.nextName();
+                fr = FileIOProviderFactory.getInputStream(geoRefFile);
+                JSONObject json = new JSONObject(FileSystemUtils.copyStreamToString(fr, true,
+                        FileSystemUtils.UTF8_CHARSET));
+                Iterator<String> keys = json.keys();
+                while(keys.hasNext()) {
+                    String name = keys.next();
                     switch (name) {
                         case "MapToGpsRotationRad":
-                            rotation = jsonReader.nextDouble();
+                            rotation = json.getDouble(name);
                             break;
                         case "ZeroLatDecDeg":
-                            lat = jsonReader.nextDouble();
+                            lat = json.getDouble(name);
                             break;
                         case "ZeroLonDecDeg":
-                            lng = jsonReader.nextDouble();
+                            lng = json.getDouble(name);
                             break;
                         case "HAE":
-                            hae = jsonReader.nextDouble();
+                            hae = json.getDouble(name);
                             altMode = ModelInfo.AltitudeMode.Absolute;
                             break;
                         default:
-                            jsonReader.skipValue();
                             break;
                     }
 
                     //TODO-- waiting on Altitude solution; potential pitch and roll
                 }
-                jsonReader.endObject();
 
                 GeoPoint origin = new GeoPoint(lat, lng, hae);
                 info.location = origin;
@@ -111,13 +116,6 @@ public class LocalToGpsJsonGeoreferencer implements Georeferencer {
             } catch(Exception e) {
                 Log.d(TAG, "failed to load or parse " + geoRefFile, e);
             } finally {
-                if (jsonReader != null) {
-                    try {
-                        jsonReader.close();
-                    } catch (IOException e) {
-                        Log.d(TAG, "failed to close " + geoRefFile, e);
-                    }
-                }
                 if (fr != null) {
                     try {
                         fr.close();

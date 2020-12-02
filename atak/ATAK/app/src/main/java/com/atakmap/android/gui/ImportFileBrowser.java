@@ -11,20 +11,27 @@ import android.graphics.drawable.Drawable;
 import android.os.Environment;
 import androidx.annotation.NonNull;
 import android.util.AttributeSet;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.atakmap.android.filesystem.ResourceFile;
 import com.atakmap.android.filesystem.ResourceFile.MIMEType;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
@@ -40,6 +47,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
@@ -56,9 +65,7 @@ public class ImportFileBrowser extends LinearLayout {
     private String[] _extensions;
     private String _userStartDirectory;
     private File _retFile;
-    private View _up;
-    private View _phoneButton;
-    private View _sdcardButton;
+    private View _up, _newFolder;
     private static final String FILE_SEPARATOR = File.separator;
     private static final String INITIAL_DIRECTORY = FileSystemUtils.getRoot()
             + FILE_SEPARATOR;
@@ -98,36 +105,65 @@ public class ImportFileBrowser extends LinearLayout {
     }
 
     public void setInternalButton(View phoneButton) {
-        _phoneButton = phoneButton;
-        _phoneButton.setOnClickListener(new OnClickListener() {
+        phoneButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View arg0) {
-                _path = Environment.getExternalStorageDirectory();
-                _parseDirectoryPath();
-                _loadFileList();
-                _adapter.notifyDataSetChanged();
-                _updateCurrentDirectoryTextView();
-                _scrollListToTop();
+                setCurrentPath(Environment.getExternalStorageDirectory());
             }
         });
     }
 
     public void setExternalButton(View sdcardButton) {
-        _sdcardButton = sdcardButton;
-        _sdcardButton.setOnClickListener(new OnClickListener() {
+        sdcardButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View arg0) {
                 String android_storage = System.getenv("ANDROID_STORAGE");
-                _path = new File(android_storage);
-                _parseDirectoryPath();
-                _loadFileList();
-                _adapter.notifyDataSetChanged();
-                _updateCurrentDirectoryTextView();
-                _scrollListToTop();
+                if (android_storage != null)
+                    setCurrentPath(new File(android_storage));
             }
         });
     }
 
+    public void setCurrentPath(File path) {
+        _path = path;
+        _parseDirectoryPath();
+        _loadFileList();
+        _adapter.notifyDataSetChanged();
+        _updateCurrentDirectoryTextView();
+        _scrollListToTop();
+    }
+
+    public void setNewFolderButton(View folderBtn) {
+        _newFolder = folderBtn;
+        _newFolder.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (FileSystemUtils.canWrite(_path)) {
+                    promptNewDirectory();
+                } else {
+                    MapView mv = MapView.getMapView();
+                    if (mv != null)
+                        Toast.makeText(mv.getContext(),
+                                R.string.read_only_location_msg,
+                                Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+    }
+
+    /**
+     * Allow for a user of the ImportFileBrowser to show the New Folder button.
+     * @param show true, shows the new folder button.
+     */
+    public void showNewFolderButton(boolean show) {
+        if (_newFolder != null)
+            _newFolder.setVisibility(show ? View.VISIBLE : View.GONE);
+    }
+
+    /**
+     * Gets the selected file.
+     * @return the file
+     */
     public File getReturnFile() {
         return _retFile;
     }
@@ -184,11 +220,10 @@ public class ImportFileBrowser extends LinearLayout {
      */
     public void setExtensionTypes(String[] extensions) {
         _extensions = extensions;
-        _init();
     }
 
     public static String getModifiedDate(File file) {
-        return getModifiedDate(file.lastModified());
+        return getModifiedDate(FileIOProviderFactory.lastModified(file));
     }
 
     public static String getModifiedDate(Long time) {
@@ -201,11 +236,9 @@ public class ImportFileBrowser extends LinearLayout {
     /*************************** PROTECTED METHODS **************************/
 
     @Override
-    protected void onFinishInflate() {
-        super.onFinishInflate();
-        if (_extensions != null) {
-            _init();
-        }
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        _init();
     }
 
     protected void _init() {
@@ -222,7 +255,7 @@ public class ImportFileBrowser extends LinearLayout {
         MapView mv = MapView.getMapView();
         Context ctx = mv != null ? mv.getContext() : getContext();
         _fileList.clear();
-        if (_path.exists() && _path.canRead()) {
+        if (FileIOProviderFactory.exists(_path) && _path.canRead()) {
             FilenameFilter filter = new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String fileName) {
@@ -233,10 +266,10 @@ public class ImportFileBrowser extends LinearLayout {
                                 .getCurrent())))
                                 && sel.canRead();
                     }
-                    return sel.canRead() && sel.isDirectory();
+                    return sel.canRead() && FileIOProviderFactory.isDirectory(sel);
                 }
             };
-            File[] fList = _path.listFiles(filter);
+            File[] fList = FileIOProviderFactory.listFiles(_path, filter);
             _directoryEmpty = false;
 
             if (fList != null) {
@@ -244,7 +277,7 @@ public class ImportFileBrowser extends LinearLayout {
                     Drawable icon = ctx
                             .getDrawable(R.drawable.import_file_icon);
                     int type = FileItem.FILE;
-                    if (f.isDirectory()) {
+                    if (FileIOProviderFactory.isDirectory(f)) {
                         icon = ctx.getDrawable(R.drawable.import_folder_icon);
                         type = FileItem.DIRECTORY;
                     } else {
@@ -296,6 +329,10 @@ public class ImportFileBrowser extends LinearLayout {
     }
 
     protected boolean _testExtension(String ext) {
+        // No extensions specified - default to allow all
+        if (FileSystemUtils.isEmpty(_extensions))
+            return true;
+
         for (String e : _extensions) {
             if (e.equals(WILDCARD) || e.equalsIgnoreCase(ext))
                 return true;
@@ -332,7 +369,7 @@ public class ImportFileBrowser extends LinearLayout {
         // first check if user provided a directory to start in
         if (_userStartDirectory != null && _userStartDirectory.length() > 0) {
             File userDir = new File(_userStartDirectory);
-            if (userDir.exists() && userDir.isDirectory()) {
+            if (FileIOProviderFactory.exists(userDir) && FileIOProviderFactory.isDirectory(userDir)) {
                 _path = userDir;
                 return;
             }
@@ -340,10 +377,10 @@ public class ImportFileBrowser extends LinearLayout {
 
         // start in default directory
         File temp = new File(INITIAL_DIRECTORY);
-        if (temp.isDirectory())
+        if (FileIOProviderFactory.isDirectory(temp))
             _path = temp;
         if (_path == null) {
-            if (Environment.getExternalStorageDirectory().isDirectory()
+            if (FileIOProviderFactory.isDirectory(Environment.getExternalStorageDirectory())
                     && Environment.getExternalStorageDirectory().canRead()) {
                 _path = Environment.getExternalStorageDirectory();
             } else {
@@ -399,6 +436,84 @@ public class ImportFileBrowser extends LinearLayout {
         }
     }
 
+    protected void promptNewDirectory() {
+        MapView mv = MapView.getMapView();
+        if (mv == null)
+            return;
+
+        final Context ctx = mv.getContext();
+        final EditText input = new EditText(ctx);
+        input.setSingleLine(true);
+
+        AlertDialog.Builder b = new AlertDialog.Builder(ctx);
+        b.setTitle(R.string.new_folder);
+        b.setView(input);
+        b.setPositiveButton(R.string.create, null);
+        b.setNegativeButton(R.string.cancel, null);
+        final AlertDialog d = b.create();
+        Window w = d.getWindow();
+        if (w != null)
+            w.setSoftInputMode(
+                    WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        d.show();
+        d.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialogInterface) {
+                InputMethodManager imm = (InputMethodManager) ctx
+                        .getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null)
+                    imm.hideSoftInputFromWindow(input.getWindowToken(), 0);
+                input.clearFocus();
+            }
+        });
+
+        final Button createBtn = d.getButton(DialogInterface.BUTTON_POSITIVE);
+        createBtn.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Check for blank name
+                String dirName = input.getText().toString();
+                if (FileSystemUtils.isEmpty(dirName)) {
+                    Toast.makeText(ctx, R.string.name_cannot_be_blank,
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Check for invalid chars
+                try {
+                    FileSystemUtils.validityScan(dirName);
+                } catch (Exception e) {
+                    Toast.makeText(ctx, R.string.name_contains_invalid_chars,
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Attempt to create new folder
+                File newDir = new File(_path, dirName);
+                if (!FileIOProviderFactory.mkdir(newDir)) {
+                    Toast.makeText(ctx, R.string.new_folder_failed,
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Open new folder and dismiss entry dialog
+                setCurrentPath(newDir);
+                d.dismiss();
+            }
+        });
+        input.requestFocus();
+        input.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int id, KeyEvent evt) {
+                if (id == EditorInfo.IME_ACTION_DONE) {
+                    createBtn.performClick();
+                    return true;
+                } else
+                    return false;
+            }
+        });
+    }
+
     /*************************** PROTECTED CLASSES **************************/
 
     public static class FileItem {
@@ -409,6 +524,7 @@ public class ImportFileBrowser extends LinearLayout {
         public final int type;
 
         @Deprecated
+        @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
         public final int icon;
 
         public FileItem(String file, Drawable icon, Integer type) {
@@ -418,7 +534,11 @@ public class ImportFileBrowser extends LinearLayout {
             this.type = type;
         }
 
+        /**
+         * @deprecated Use {@link #FileItem(String, Drawable, Integer)}
+         */
         @Deprecated
+        @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
         public FileItem(String file, Integer icon, Integer type) {
             this.file = file;
             this.icon = icon;
@@ -476,7 +596,7 @@ public class ImportFileBrowser extends LinearLayout {
         @Override
         public View getView(int position, View convertView,
                 @NonNull ViewGroup parent) {
-            ViewHolder holder = null;
+            ViewHolder holder;
             final FileItem fileItem = getItem(position);
 
             LayoutInflater mInflater = (LayoutInflater) context
@@ -497,7 +617,7 @@ public class ImportFileBrowser extends LinearLayout {
 
             File f = new File(_path, fileItem.file);
             holder.txtFilename.setText(f.getName());
-            if (f.exists())
+            if (FileIOProviderFactory.exists(f))
                 holder.txtModifiedDate.setText(getModifiedDate(f));
             else
                 holder.txtModifiedDate.setText("");
@@ -516,8 +636,8 @@ public class ImportFileBrowser extends LinearLayout {
                     null,
                     null);
             if (fileItem.type == FileItem.FILE) {
-                if (f.exists())
-                    holder.icon.setText(MathUtils.GetLengthString(f.length()));
+                if (FileIOProviderFactory.exists(f))
+                    holder.icon.setText(MathUtils.GetLengthString(FileIOProviderFactory.length(f)));
                 else {
                     holder.icon.setText("");
                     holder.txtModifiedDate.setText("");
@@ -532,10 +652,10 @@ public class ImportFileBrowser extends LinearLayout {
                         if (sel.isFile()) {
                             return (_testExtension(ext)) && sel.canRead();
                         }
-                        return sel.canRead() && sel.isDirectory();
+                        return sel.canRead() && FileIOProviderFactory.isDirectory(sel);
                     }
                 };
-                String[] children = f.list(filter);
+                String[] children = FileIOProviderFactory.list(f, filter);
                 if (children == null || children.length < 1) {
                     holder.icon.setText("");
                 } else {
@@ -554,7 +674,7 @@ public class ImportFileBrowser extends LinearLayout {
                 public void onClick(View v) {
                     _currFile = fileItem.file;
                     File sel = new File(_path, _currFile);
-                    if (sel.isDirectory()) {
+                    if (FileIOProviderFactory.isDirectory(sel)) {
                         if (sel.canRead()) {
                             _pathDirsList.add(_currFile);
                             _path = new File(sel + "");

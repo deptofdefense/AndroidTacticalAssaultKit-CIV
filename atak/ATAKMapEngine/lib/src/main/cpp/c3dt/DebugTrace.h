@@ -3,10 +3,10 @@
 #ifndef CESIUM3DTILES_DEBUGTRACE_H
 #define CESIUM3DTILES_DEBUGTRACE_H
 
-#include <android/log.h>
-
 //#define TRACE_ENABLED
 #ifdef TRACE_ENABLED
+#include <android/log.h>
+
 #define debug_trace(fn) \
     class Trace##__LINE__ \
     { \

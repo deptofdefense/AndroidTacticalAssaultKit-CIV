@@ -9,6 +9,7 @@ import com.atakmap.android.video.ConnectionEntry.Source;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.coremap.xml.XMLUtils;
@@ -30,8 +31,6 @@ import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-
-import javax.xml.XMLConstants;
 
 /**
  * Handles serialization and deserialization of connection entry XML
@@ -131,9 +130,9 @@ public class VideoXMLHandler {
             String xml = serialize(entry, null);
             if (FileSystemUtils.isEmpty(xml))
                 return null;
-            if (file.exists())
+            if (FileIOProviderFactory.exists(file))
                 FileSystemUtils.delete(file);
-            fos = new FileOutputStream(file);
+            fos = FileIOProviderFactory.getOutputStream(file);
             FileSystemUtils.write(fos, xml);
             fos = null;
 

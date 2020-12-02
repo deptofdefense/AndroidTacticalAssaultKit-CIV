@@ -5,16 +5,19 @@ import android.graphics.Point;
 import android.os.Bundle;
 import android.view.View;
 
+import com.atakmap.android.editableShapes.Rectangle;
 import com.atakmap.android.mapcompass.CompassArrowMapComponent;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.rubbersheet.maps.RubberModel;
 import com.atakmap.android.util.EditAction;
 import com.atakmap.app.R;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
+import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
 /**
  * Rotation tool for models
@@ -45,6 +48,10 @@ public class RubberModelEditTool extends RubberSheetEditTool {
 
         // Enable elevation tool
         _buttons[ELEV].setVisibility(View.VISIBLE);
+    }
+
+    public PointMapItem getMarker() {
+        return _model.getCenterMarker();
     }
 
     @Override
@@ -100,6 +107,7 @@ public class RubberModelEditTool extends RubberSheetEditTool {
                 event.getExtras().putBoolean("eventNotHandled", false);
                 Point p = event.getPoint();
                 if (_startTilt == null) {
+                    _center = _sheet.getCenter();
                     _startTilt = p;
                     return;
                 }
@@ -118,6 +126,14 @@ public class RubberModelEditTool extends RubberSheetEditTool {
                 reset();
             }
         }
+    }
+
+    @Override
+    public void onMoved(Rectangle r, GeoPointMetaData[] oldPoints,
+                        GeoPointMetaData[] newPoints) {
+        super.onMoved(r, oldPoints, newPoints);
+        if (getMode() == ELEV)
+            _mapView.getMapController().panTo(_sheet.getCenterPoint(), false);
     }
 
     @Override

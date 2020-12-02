@@ -287,9 +287,9 @@ public class RectangleDetailsView extends GenericDetailsView implements
 
         _colorButton.setOnClickListener(this);
 
-        double height = _rect.getMetaDouble("height", -1);
+        double height = _rect.getHeight();
         Span unit = getUnitSpan(_rect);
-        if (height >= 0) {
+        if (!Double.isNaN(height)) {
             _heightButton.setText(SpanUtilities.format(height, Span.METER,
                     unit));
         } else {
@@ -367,12 +367,8 @@ public class RectangleDetailsView extends GenericDetailsView implements
             startEditingMode();
         else if (v == _endButton)
             endEditingMode();
-        else if (v == _undoButton) {
-            Tool tool = ToolManagerBroadcastReceiver.getInstance()
-                    .getActiveTool();
-            if (tool instanceof DrawingRectangleEditTool)
-                ((DrawingRectangleEditTool) tool).undo();
-        }
+        else if (v == _undoButton)
+            undoToolEdit();
     }
 
     @Override
@@ -467,7 +463,7 @@ public class RectangleDetailsView extends GenericDetailsView implements
     @Override
     protected void heightSelected(double height, Span u, double h) {
         // This is always saved as a string in feet for some reason
-        _rect.setMetaDouble("height", height);
+        _rect.setHeight(height);
         _rect.setMetaInteger("height_unit", u.getValue());
         _heightButton.setText(SpanUtilities.format(h, u, 2));
     }

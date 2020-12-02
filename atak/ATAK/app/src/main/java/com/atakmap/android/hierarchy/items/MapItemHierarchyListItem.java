@@ -296,7 +296,7 @@ public class MapItemHierarchyListItem extends AbstractChildlessListItem
     }
 
     @Override
-    public boolean isSupported(Class target) {
+    public boolean isSupported(Class<?> target) {
         if (item instanceof Exportable)
             return ((Exportable) item).isSupported(target);
 
@@ -304,7 +304,7 @@ public class MapItemHierarchyListItem extends AbstractChildlessListItem
     }
 
     @Override
-    public Object toObjectOf(Class target, ExportFilters filters)
+    public Object toObjectOf(Class<?> target, ExportFilters filters)
             throws FormatNotSupportedException {
         if (item instanceof Exportable) {
             return ((Exportable) item).toObjectOf(target, filters);

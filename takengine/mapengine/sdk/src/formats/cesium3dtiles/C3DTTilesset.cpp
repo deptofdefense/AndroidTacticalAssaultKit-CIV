@@ -7,6 +7,7 @@
 #include "math/Point2.h"
 #include "math/Matrix2.h"
 #include "core/ProjectionFactory3.h"
+#include "util/URI.h"
 
 using namespace TAK::Engine::Util;
 using namespace TAK::Engine::Port;
@@ -44,11 +45,17 @@ namespace {
     TAKErr parseTile(const C3DTTileset *tileset, const C3DTTile *parent, const json& obj, void* opaque, C3DTTilesetVisitor visitor) NOTHROWS;
 
     bool isFileSystemTileset(
+        TAK::Engine::Port::String* filePath,
+        TAK::Engine::Port::String* dirPath,
+        TAK::Engine::Port::String* tilesetPath,
+        C3DTFileType* type,
+        const char* UR) NOTHROWS;
+
+    bool isStreamingTileset(C3DTFileType* type,
+        TAK::Engine::Port::String* filePath,
         TAK::Engine::Port::String* dirPath,
         TAK::Engine::Port::String* tilesetPath,
         const char* URI) NOTHROWS;
-
-    bool isStreamingTileset(const char* URI) NOTHROWS;
 }
 
 C3DTAsset::C3DTAsset()
@@ -183,34 +190,57 @@ TAKErr TAK::Engine::Formats::Cesium3DTiles::C3DTTileset_parse(DataInput2 *input,
 
 TAKErr TAK::Engine::Formats::Cesium3DTiles::C3DTTileset_isSupported(bool* result, const char* URI) NOTHROWS {
 
-    if (!result)
+    if (!result || !URI)
         return TE_InvalidArg;
 
-    *result = isFileSystemTileset(nullptr, nullptr, URI) || 
-        isStreamingTileset(URI);
+    C3DTFileType type;
+    *result = C3DT_probeSupport(&type, nullptr, nullptr, nullptr, nullptr, URI) == TE_Ok && 
+        type == C3DTFileType_TilesetJSON;
     return TE_Ok;
+}
+
+TAKErr TAK::Engine::Formats::Cesium3DTiles::C3DT_probeSupport(
+    C3DTFileType* type,
+    TAK::Engine::Port::String* fileURI,
+    TAK::Engine::Port::String* tilesetURI,
+    TAK::Engine::Port::String* baseURI,
+    bool* isStreaming,
+    const char* URI) NOTHROWS {
+
+    if (!URI)
+        return TE_InvalidArg;
+
+    bool isStreamingValue = false;
+    if (isFileSystemTileset(fileURI, baseURI, tilesetURI, type, URI) ||
+        (isStreamingValue = isStreamingTileset(type, fileURI, baseURI, tilesetURI, URI)) == true) {
+
+        if (isStreaming) *isStreaming = isStreamingValue;
+        return TE_Ok;
+    }
+
+    return TE_Unsupported;
 }
 
 TAKErr TAK::Engine::Formats::Cesium3DTiles::C3DTTileset_open(DataInput2Ptr& result, String* baseURI, bool* isStreaming, const char* URI) NOTHROWS {
 
-    TAK::Engine::Port::String tilesetPath;
-    TAK::Engine::Port::String dirPath;
     TAKErr code = TE_Ok;
+    TAK::Engine::Port::String tilesetURI;
+    TAK::Engine::Port::String fileURI;
+    TAK::Engine::Port::String baseURIValue;
+    C3DTFileType type;
+    bool isStreamingValue = false;
 
-    if (!isFileSystemTileset(&dirPath, &tilesetPath, URI) &&
-        !isStreamingTileset(URI))
+    // catches nullptr URI
+    code = C3DT_probeSupport(&type, &fileURI, &tilesetURI, &baseURIValue, &isStreamingValue, URI);
+    if (code != TE_Ok)
+        return code;
+    if (type != C3DTFileType_TilesetJSON)
         return TE_Unsupported;
 
-    if (tilesetPath != "") {
-        // offline type
-        code = IO_openFileV(result, tilesetPath.get());
-        if (code == TE_Ok) {
-            if (baseURI) *baseURI = dirPath;
-            if (isStreaming) *isStreaming = false;
-        }
-    } else {
-        //TODO-- streaming type
-        code = TE_Unsupported;
+    code = URI_open(result, fileURI);
+    if (code == TE_Ok) {
+        if (isStreaming) *isStreaming = isStreamingValue;
+        if (baseURI) *baseURI = baseURIValue;
     }
 
     return code;
@@ -480,8 +510,10 @@ namespace {
     }
 
     bool isZipTilesetWithRootFolder(
+        TAK::Engine::Port::String* filePath,
         TAK::Engine::Port::String* dirPath,
         TAK::Engine::Port::String* tilesetPath,
+        C3DTFileType *type,
         const char* zipURI) NOTHROWS {
 
         String name;
@@ -496,12 +528,48 @@ namespace {
             return false;
         }
 
-        return isFileSystemTileset(dirPath, tilesetPath, sb.c_str());
+        return isFileSystemTileset(filePath, dirPath, tilesetPath, type, sb.c_str());
+    }
+
+    bool isExt(const char* URI, const char* ext) NOTHROWS {
+        const char* uriExt = strrchr(URI, '.');
+        if (uriExt) {
+            int cmp = -1;
+            TAK::Engine::Port::String_compareIgnoreCase(&cmp, uriExt, ext);
+            if (cmp == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    TAKErr determineFileType(C3DTFileType* type, const char* name) NOTHROWS {
+
+        if (!name)
+            return TE_InvalidArg;
+
+        int cmp = -1;
+        TAK::Engine::Port::String_compareIgnoreCase(&cmp, name, "tileset.json");
+        if (cmp == 0) {
+            if (type) *type = C3DTFileType_TilesetJSON;
+            return TE_Ok;
+        }
+        
+        if (isExt(name, ".b3dm")) {
+            if (type) *type = C3DTFileType_B3DM;
+            return TE_Ok;
+        }
+
+        //TODO-- i3dm, .pnt
+
+        return TE_Unsupported;
     }
 
     bool isFileSystemTileset(
+        TAK::Engine::Port::String* filePath,
         TAK::Engine::Port::String* dirPath,
         TAK::Engine::Port::String* tilesetPath,
+        C3DTFileType *type,
         const char* URI) NOTHROWS {
 
         TAK::Engine::Port::String dir;
@@ -518,22 +586,27 @@ namespace {
             bool exists = false;
             IO_existsV(&exists, sb.c_str());
             if (!exists) {
-                return isZipURI(URI) && isZipTilesetWithRootFolder(dirPath, tilesetPath, URI);
+                return isZipURI(URI) && isZipTilesetWithRootFolder(filePath, dirPath, tilesetPath, type, URI);
             }
             ts = sb.c_str();
+            if (filePath) *filePath = ts;
+            if (type) *type = C3DTFileType_TilesetJSON;
         } else {
             TAK::Engine::Port::String name;
             IO_getName(name, URI);
-            int cmp = -1;
-            TAK::Engine::Port::String_compareIgnoreCase(&cmp, name.get(), "tileset.json");
-            if (cmp != 0) {
+            if (determineFileType(type, name) != TE_Ok)
                 return false;
-            }
+
             ts = URI;
             IO_getParentFile(dir, URI);
             IO_isDirectoryV(&isDir, dir.get());
             if (!isDir)
                 return false;
+
+            TAK::Engine::Port::StringBuilder sb;
+            TAK::Engine::Port::StringBuilder_combine(sb, dir, TAK::Engine::Port::Platform_pathSep(), "tileset.json");
+            ts = sb.c_str();
+            if (filePath) *filePath = URI;
         }
 
         if (dirPath)
@@ -543,8 +616,55 @@ namespace {
         return true;
     }
 
-    bool isStreamingTileset(const char* URI) NOTHROWS {
-        //TODO--
-        return false;
+    bool isStreamingTileset(C3DTFileType* type,
+        TAK::Engine::Port::String* filePath,
+        TAK::Engine::Port::String* dirPath,
+        TAK::Engine::Port::String* tilesetPath,
+        const char* URI) NOTHROWS {
+
+        TAK::Engine::Port::String scheme;
+        TAK::Engine::Port::String path;
+        TAK::Engine::Port::String query;
+        TAK::Engine::Port::String fragment;
+        TAK::Engine::Port::String authority;
+
+        if (URI_parse(&scheme, &authority, nullptr, &path, &query, &fragment, URI) != TE_Ok || scheme.get() == nullptr)
+            return false;
+
+        int cmp = -1;
+        TAK::Engine::Port::String_compareIgnoreCase(&cmp, "http", scheme);
+        if (cmp != 0) {
+            TAK::Engine::Port::String_compareIgnoreCase(&cmp, "https", scheme);
+            if (cmp != 0)
+                return false;
+        }
+
+        TAK::Engine::Port::String fileName;
+        TAK::Engine::Port::String filePathValue, dirPathValue, tilesetPathValue;
+
+        IO_getName(fileName, path.get());
+
+        // Assume it is a base URI
+        if (!fileName) {
+            fileName = "tileset.json";
+            StringBuilder sb;
+            StringBuilder_combine(sb, scheme, authority, path, "/tileset.json", query, fragment);
+            filePathValue = sb.c_str();
+            dirPathValue = URI;
+            tilesetPathValue = filePathValue;
+        } else {
+            filePathValue = URI;
+            URI_getParent(&dirPathValue, filePathValue);
+            tilesetPathValue = filePathValue;
+        }
+
+        if (determineFileType(type, fileName) != TE_Ok)
+            return false;
+
+        if (filePath) *filePath = filePathValue;
+        if (dirPath) *dirPath = dirPathValue;
+        if (tilesetPath) *tilesetPath = tilesetPathValue;
+
+        return true;
     }
 }

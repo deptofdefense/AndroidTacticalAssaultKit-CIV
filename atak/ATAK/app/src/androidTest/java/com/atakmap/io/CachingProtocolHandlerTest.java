@@ -2,13 +2,13 @@
 package com.atakmap.io;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
@@ -22,7 +22,7 @@ public class CachingProtocolHandlerTest {
     public void null_source_provider_throws() throws IOException {
         try (TempFile dir = new TempFile(true)) {
             ProtocolHandler handler = new CachingProtocolHandler(null,
-                    dir.file);
+                    dir.file, 0);
             fail();
         }
     }
@@ -34,7 +34,7 @@ public class CachingProtocolHandlerTest {
             data[i] = (byte) i;
         final String uri = "mock://CachingProtocolHandlerTest/provider_roundtrip_known_length";
         MockProtocolHandler mock = new MockProtocolHandler(uri, data, true);
-        ProtocolHandler handler = new CachingProtocolHandler(mock, null);
+        ProtocolHandler handler = new CachingProtocolHandler(mock, null, 0);
     }
 
     @Test
@@ -46,7 +46,7 @@ public class CachingProtocolHandlerTest {
         MockProtocolHandler mock = new MockProtocolHandler(uri, data, true);
         try (TempFile dir = new TempFile(true)) {
             ProtocolHandler handler = new CachingProtocolHandler(mock,
-                    dir.file);
+                    dir.file, 0);
 
             try (UriFactory.OpenResult result = handler
                     .handleURI("invalid://invaliduri")) {
@@ -64,7 +64,7 @@ public class CachingProtocolHandlerTest {
         MockProtocolHandler mock = new MockProtocolHandler(uri, data, true);
         try (TempFile dir = new TempFile(true)) {
             ProtocolHandler handler = new CachingProtocolHandler(mock,
-                    dir.file);
+                    dir.file, 0);
 
             final long reportedLength = handler.getContentLength(uri);
             assertEquals(data.length, reportedLength);
@@ -94,7 +94,7 @@ public class CachingProtocolHandlerTest {
         MockProtocolHandler mock = new MockProtocolHandler(uri, data, false);
         try (TempFile dir = new TempFile(true)) {
             ProtocolHandler handler = new CachingProtocolHandler(mock,
-                    dir.file);
+                    dir.file, 0);
 
             final long reportedLength = handler.getContentLength(uri);
             assertEquals(0, reportedLength);
@@ -123,7 +123,7 @@ public class CachingProtocolHandlerTest {
         MockProtocolHandler mock = new MockProtocolHandler(uri, data, false);
         try (TempFile dir = new TempFile(true)) {
             ProtocolHandler handler = new CachingProtocolHandler(mock,
-                    dir.file);
+                    dir.file, 0);
 
             // do the initial cache
             try (UriFactory.OpenResult result = handler.handleURI(uri)) {
@@ -167,13 +167,13 @@ public class CachingProtocolHandlerTest {
             file = File.createTempFile("tmp", "");
             if (directory) {
                 file.delete();
-                file.mkdir();
+                FileIOProviderFactory.mkdir(file);
             }
         }
 
         private static void delete(File file) {
-            if (file.isDirectory()) {
-                File[] children = file.listFiles();
+            if (FileIOProviderFactory.isDirectory(file)) {
+                File[] children = FileIOProviderFactory.listFiles(file);
                 if (children != null)
                     for (File c : children)
                         delete(c);

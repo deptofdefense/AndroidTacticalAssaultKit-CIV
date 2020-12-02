@@ -1,11 +1,13 @@
 package com.atakmap.map.opengl;
 
+import android.content.Context;
+import android.opengl.GLES30;
+
 import android.graphics.Bitmap;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
 
-import com.atakmap.R;
 import com.atakmap.android.maps.graphics.GLBitmapLoader;
 import com.atakmap.android.maps.graphics.GLImageCache;
 import com.atakmap.coremap.log.Log;
@@ -18,11 +20,13 @@ import com.atakmap.opengl.GLTextureCache;
 import com.atakmap.util.ConfigOptions;
 import com.atakmap.util.ReferenceCount;
 
-public final class GLRenderGlobals {
+public class GLRenderGlobals {
  
     private final static String TAG = "GLRenderGlobals";
 
-    private final static Map<RenderContext, ReferenceCount<GLRenderGlobals>> instances = new IdentityHashMap<>();
+    protected final static Map<RenderContext, ReferenceCount<GLRenderGlobals>> instances = new IdentityHashMap<>();
+
+    public static Context appContext;
 
     private RenderContext context;
 
@@ -31,11 +35,15 @@ public final class GLRenderGlobals {
     private GLTextureAtlas nominalIconAtlas;
     private GLTextureAtlas genericAtlas;
     private GLBitmapLoader bitmapLoader;
-    private GLNinePatch smallNinePatch;
-    private GLNinePatch mediumNinePatch;
+    protected GLNinePatch smallNinePatch;
+    protected GLNinePatch mediumNinePatch;
     private GLTexture pixel;
 
-    private GLRenderGlobals(RenderContext surface) {
+    private static float relativeScaling = 1f;
+    private static int maxTextureUnits = 0;
+    private static boolean limitTextureUnits = false;
+
+    protected GLRenderGlobals(RenderContext surface) {
         this.context = surface;
 
         this.textureCache = null;
@@ -96,9 +104,10 @@ public final class GLRenderGlobals {
     }
 
     public synchronized GLNinePatch getSmallNinePatch() {
-        if (this.smallNinePatch == null) {
+        if (this.smallNinePatch == null && appContext != null) {
+            int id = appContext.getResources().getIdentifier("nine_patch_small", "drawable", appContext.getPackageName());
             GLImageCache.Entry cacheEntry = getImageCache().fetchAndRetain(
-                    "resource://" + R.drawable.nine_patch_small, false);
+                    "resource://" + id, false);
             this.smallNinePatch = new GLNinePatch(cacheEntry,
                     16,
                     16,
@@ -111,16 +120,15 @@ public final class GLRenderGlobals {
     /*************************************************************************/
 
     public static synchronized GLRenderGlobals get(MapRenderer renderer) {
-        if(!(renderer instanceof GLMapView)) {
-            Log.w(TAG, "Only GLMapView renderers may have associated GLRenderGlobals");
-            return null;
-        }
-
-        final RenderContext surface = ((GLMapView)renderer).getRenderContext();
-        return get(surface);
+        if(appContext == null)
+            appContext = findContext(renderer);
+        return get(com.atakmap.map.LegacyAdapters.getRenderContext(renderer));
     }
 
     public static synchronized GLRenderGlobals get(RenderContext surface) {
+        if(appContext == null)
+            appContext = findContext(surface);
+
         ReferenceCount<GLRenderGlobals> ref = instances.get(surface);
         if(ref == null)
             instances.put(surface, ref=new ReferenceCount<GLRenderGlobals>(new GLRenderGlobals(surface)));
@@ -139,5 +147,52 @@ public final class GLRenderGlobals {
     static void dispose(RenderContext surface) {
         instances.remove(surface);
     }
-    
+
+    public static void setRelativeScaling(float v) {
+        relativeScaling = v;
+    }
+
+    public static float getRelativeScaling() {
+        return relativeScaling;
+    }
+
+    public static int getMaxTextureUnits() {
+        if (maxTextureUnits == 0) {
+            int[] i = new int[1];
+            GLES30.glGetIntegerv(GLES30.GL_MAX_TEXTURE_IMAGE_UNITS, i, 0);
+            maxTextureUnits = i[0];
+        }
+        return maxTextureUnits;
+    }
+
+    public static void setMaxTextureUnits(int lim) {
+        maxTextureUnits = lim;
+    }
+
+    public static void setLimitTextureUnits(boolean l) {
+        limitTextureUnits = l;
+    }
+
+    public static boolean isLimitTextureUnits() {
+        return limitTextureUnits;
+    }
+
+    private static Context findContext(Object o) {
+        if(o == null)
+            return null;
+        Context ctx = null;
+        do {
+            if (o instanceof GLMapSurface) {
+                ctx = ((GLMapSurface)o).getContext();
+                if(ctx == null)
+                    break;
+            } else if(o instanceof GLMapView) {
+                o = ((GLMapView)o).getSurface();
+                if(o != null)
+                    continue;
+            }
+            break;
+        } while(true);
+        return ctx;
+    }
 }

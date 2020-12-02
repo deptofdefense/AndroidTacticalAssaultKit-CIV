@@ -6,11 +6,9 @@ import android.content.Context;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
 
-import com.atakmap.app.Permissions;
 import com.atakmap.coremap.loader.NativeLoader;
 import com.atakmap.opengl.GLSLUtil;
 
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 

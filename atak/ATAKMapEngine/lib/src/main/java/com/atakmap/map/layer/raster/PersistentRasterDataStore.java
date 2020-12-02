@@ -18,6 +18,7 @@ import android.util.Pair;
 
 import com.atakmap.content.CatalogCurrency;
 import com.atakmap.content.CatalogCurrencyRegistry;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.CursorWrapper;
 import com.atakmap.lang.Objects;
@@ -750,7 +751,7 @@ public class PersistentRasterDataStore extends LocalRasterDataStore implements R
             if(appVersion != this.getAppVersion())
                 return false;
             
-            if(!f.exists())
+            if(!FileIOProviderFactory.exists(f))
                 return false;
 
             ByteBuffer parse = ByteBuffer.wrap(appData);
@@ -767,7 +768,7 @@ public class PersistentRasterDataStore extends LocalRasterDataStore implements R
             }
             
             final boolean isDirectory = ((parse.get()&0x01) == 0x01);
-            if(f.isDirectory() != isDirectory)
+            if(FileIOProviderFactory.isDirectory(f) != isDirectory)
                 return false;
             
             final long length = parse.getLong();
@@ -850,7 +851,7 @@ public class PersistentRasterDataStore extends LocalRasterDataStore implements R
                 retval.putShort((short)spi.parseVersion());
                 putString(retval, spi.getType());
             }
-            retval.put(file.isDirectory() ? (byte)0x01 : (byte)0x00);
+            retval.put(FileIOProviderFactory.isDirectory(file) ? (byte)0x01 : (byte)0x00);
             
             final FileSystemUtils.FileTreeData fdt = new FileSystemUtils.FileTreeData();
             final boolean largeDataset = (this.assumeLargeDataset || !getFileData(file, fdt, LARGE_DATASET_RECURSE_LIMIT));
@@ -962,7 +963,7 @@ public class PersistentRasterDataStore extends LocalRasterDataStore implements R
         public String[] getArgs() {
             if(this.args.size() < 1)
                 return null;
-            return this.args.toArray(new String[this.args.size()]);
+            return this.args.toArray(new String[0]);
         }
     }
 

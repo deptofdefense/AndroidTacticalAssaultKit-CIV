@@ -212,7 +212,7 @@ public class VehicleOutlineCaptureRequest extends VehicleModelCaptureRequest {
         float vw2 = vw / 2f, vh2 = vh / 2f;
         for (PointF point : _points) {
             point.x = ((point.x / _width) * vw) - vw2;
-            point.y = ((point.y / _height) * vh) - vh2;
+            point.y = vh2 - ((point.y / _height) * vh);
         }
 
         if (_callback != null)

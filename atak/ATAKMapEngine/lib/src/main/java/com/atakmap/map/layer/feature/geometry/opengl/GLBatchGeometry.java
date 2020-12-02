@@ -7,7 +7,6 @@ import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Geometry;
-import com.atakmap.map.opengl.GLMapBatchable;
 import com.atakmap.map.opengl.GLMapBatchable2;
 import com.atakmap.map.opengl.GLMapRenderable;
 import com.atakmap.opengl.GLText;

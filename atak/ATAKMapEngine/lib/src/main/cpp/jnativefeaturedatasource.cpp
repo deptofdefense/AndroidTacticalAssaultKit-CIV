@@ -325,7 +325,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_NativeFeatureDataSo
         case FeatureDefinition2::StyleStyle :
             if(!raw.object)
                 return NULL;
-            StylePtr cstyle(static_cast<const Style *>(raw.object)->clone(), Style::destructStyle);
+            TAK::Engine::Feature::StylePtr cstyle(static_cast<const Style *>(raw.object)->clone(), Style::destructStyle);
             return NewPointer(env, std::move(cstyle));
     }
     ATAKMapEngineJNI_checkOrThrow(env, TE_IllegalState);

@@ -13,6 +13,7 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.layers.LayersMapComponent;
 import com.atakmap.android.maps.tilesets.mobac.QueryLayers.Style;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.map.layer.raster.DatasetDescriptorFactory2;
@@ -244,7 +245,7 @@ public abstract class WebMapLayer {
             f = new File(FileSystemUtils
                     .getItem(subdir),
                     FileSystemUtils.sanitizeWithSpacesAndSlashes(filename));
-            if (f.exists()) {
+            if (FileIOProviderFactory.exists(f)) {
                 suffix = String.valueOf(index++);
 
                 // give up after a while
@@ -252,7 +253,7 @@ public abstract class WebMapLayer {
                     throw new IllegalStateException(
                             "Could not generate filename for map server layer output");
             } else {
-                if (!f.getParentFile().exists() && !f.getParentFile().mkdirs())
+                if (!FileIOProviderFactory.exists(f.getParentFile()) && !FileIOProviderFactory.mkdirs(f.getParentFile()))
                     Log.w(TAG,
                             "Failed to create output directory for service definition");
                 break;
@@ -285,7 +286,7 @@ public abstract class WebMapLayer {
 
         FileOutputStream stream = null;
         try {
-            stream = new FileOutputStream(f);
+            stream = FileIOProviderFactory.getOutputStream(f);
             service.generateConfigFile(stream);
         } finally {
             if (stream != null)

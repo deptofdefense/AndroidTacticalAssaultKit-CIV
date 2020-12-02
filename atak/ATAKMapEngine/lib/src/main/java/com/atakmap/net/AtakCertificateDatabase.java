@@ -8,6 +8,7 @@ import android.util.Base64;
 import com.atakmap.R;
 import com.atakmap.comms.NetConnectString;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.filesystem.HashingUtils;
@@ -16,7 +17,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.security.KeyStore;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateExpiredException;
@@ -91,9 +91,9 @@ public class AtakCertificateDatabase {
                     }
 
                     File parent = databaseFile.getParentFile();
-                    if(parent != null && !parent.exists()){
+                    if(parent != null && !FileIOProviderFactory.exists(parent)){
                         Log.d(TAG, "Creating private database directory: " + parent.getAbsolutePath());
-                        if(!parent.mkdirs()){
+                        if(!FileIOProviderFactory.mkdirs(parent)){
                             Log.w(TAG, "Failed to create private database directory: " + parent.getAbsolutePath());
                         }
                     }

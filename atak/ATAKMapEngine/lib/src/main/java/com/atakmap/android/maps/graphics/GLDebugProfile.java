@@ -15,7 +15,7 @@ public class GLDebugProfile {
         if (_ACTIVE) {
             HashSet<Object> active = _types.get(type);
             if (active == null) {
-                active = new HashSet<Object>();
+                active = new HashSet<>();
                 _types.put(type, active);
             }
             active.add(object);
@@ -57,5 +57,5 @@ public class GLDebugProfile {
         }
     }
 
-    private static HashMap<String, HashSet<Object>> _types = new HashMap<String, HashSet<Object>>();
+    private static HashMap<String, HashSet<Object>> _types = new HashMap<>();
 }

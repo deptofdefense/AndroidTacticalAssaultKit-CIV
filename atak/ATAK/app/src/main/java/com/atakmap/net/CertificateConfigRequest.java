@@ -4,6 +4,7 @@ package com.atakmap.net;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.comms.NetConnectString;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.foxykeep.datadroid.requestmanager.Request;
@@ -20,10 +21,11 @@ public class CertificateConfigRequest implements Parcelable {
     private final String password;
     private boolean hasTruststore;
 
-    /*
-        @deprecated Certificate Enrollment only stores certificates with the connection
-    */
+    /**
+     * @deprecated Certificate Enrollment only stores certificates with the connection
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1")
     private boolean saveAsDefault;
 
     private boolean allowAllHostnames;
@@ -81,18 +83,20 @@ public class CertificateConfigRequest implements Parcelable {
         this.hasTruststore = hasTruststore;
     }
 
-    /*
-        @deprecated Certificate Enrollment only stores certificates with the connection
-    */
+    /**
+     * @deprecated Certificate Enrollment only stores certificates with the connection
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1")
     public boolean getSaveAsDefault() {
         return saveAsDefault;
     }
 
-    /*
-        @deprecated Certificate Enrollment only stores certificates with the connection
-    */
+    /**
+     * @deprecated Certificate Enrollment only stores certificates with the connection
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1")
     public void setSaveAsDefault(boolean saveAsDefault) {
         this.saveAsDefault = saveAsDefault;
     }

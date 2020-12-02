@@ -31,9 +31,9 @@ public class WMSPreferenceFragment extends AtakPreferenceFragment implements
     public boolean onPreferenceClick(Preference preference) {
 
         new AlertDialog.Builder(context)
-                .setTitle("Redeploy")
+                .setTitle(R.string.redeploy)
                 .setMessage(
-                        "Are you sure you would like to redeploy the default WMS configuration files on the next restart?")
+                        R.string.sure_next_restart)
                 .setCancelable(false)
                 .setNegativeButton(R.string.cancel, null)
                 .setPositiveButton(R.string.ok,
@@ -105,7 +105,7 @@ public class WMSPreferenceFragment extends AtakPreferenceFragment implements
 
                                                 Toast.makeText(
                                                         context,
-                                                        "Setting will take effect on restart",
+                                                        R.string.next_restart,
                                                         Toast.LENGTH_SHORT)
                                                         .show();
                                             }

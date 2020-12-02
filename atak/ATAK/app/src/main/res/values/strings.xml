@@ -371,8 +371,8 @@
     <string name="preferences_text51">Prompt a dialog asking to quit instead of closing right out</string>
     <string name="preferences_text52">Action for Long pressing the Map</string>
     <string name="preferences_text53">Determines what occurs when long pressing the map.</string>
-    <string name="preferences_text56">Double tap to zoom</string>
-    <string name="preferences_text57">If checked double tap map to zoom in</string>
+    <string name="preferences_text56">Double tap to zoom 2X</string>
+    <string name="preferences_text57">If checked, double tapping the map (without dragging) will zoom in by 2X.</string>
     <string name="preferences_text58">Enable Volume Keys rotating map layers</string>
     <string name="preferences_text59">If checked, volume keys switch maps. Otherwise use device default volume behavior</string>
     <string name="preferences_text60">Disable KeyGuard</string>
@@ -4262,4 +4262,19 @@
     <string name="http_401_message">The server has refused the connection because the username or password is not correct.</string>
     <string name="http_403_message">The server has refused the connection because the user may not have the appropriate permissions.</string>
 
+    <string name="new_folder">New Folder</string>
+    <string name="read_only_location_msg">This location is read-only.</string>
+    <string name="name_cannot_be_blank">Name cannot be blank.</string>
+    <string name="name_contains_invalid_chars">Name contains invalid characters.</string>
+    <string name="new_folder_failed">Failed to create new folder.</string>
+
+    <string name="show_urls">Show URLs</string>
+    <string name="next_restart">Setting will take effect on restart</string>
+    <string name="redeploy">Redeploy</string>
+    <string name="sure_next_restart">Are you sure you would like to redeploy the default WMS configuration files on the next restart?</string>
+
+    <string name="bloodhound_must_be_hounding_start">Bloodhound must be started.</string>
+    <string name="bloodhound_must_be_in_route_mode">Must be in route mode to navigate.</string>
+    <string name="bloodhound_open_navigation">Open navigation interface.</string>
+    <string name="server_auth_error">Server Authentication Error</string>
 </resources>

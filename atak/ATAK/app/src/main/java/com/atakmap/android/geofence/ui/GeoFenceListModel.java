@@ -12,7 +12,6 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
-import com.atakmap.android.dropdown.DropDownManager;
 import com.atakmap.android.geofence.alert.GeoFenceAlerting;
 import com.atakmap.android.geofence.component.GeoFenceComponent;
 import com.atakmap.android.geofence.component.GeoFenceReceiver;

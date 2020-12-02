@@ -2,7 +2,6 @@
 package com.atakmap.map;
 
 import android.content.Context;
-import android.util.AttributeSet;
 
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 import com.atakmap.map.layer.Layer;

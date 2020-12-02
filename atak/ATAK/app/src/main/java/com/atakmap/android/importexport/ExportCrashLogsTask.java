@@ -18,6 +18,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
@@ -110,9 +111,9 @@ public class ExportCrashLogsTask extends AsyncTask<Void, Integer, Boolean>
 
         File exportDir = FileSystemUtils
                 .getItem(FileSystemUtils.EXPORT_DIRECTORY);
-        if (!exportDir.exists()) {
+        if (!FileIOProviderFactory.exists(exportDir)) {
             Log.d(TAG, "Creating export dir: " + exportDir.getAbsolutePath());
-            if (!exportDir.mkdirs()) {
+            if (!FileIOProviderFactory.mkdirs(exportDir)) {
                 Log.d(TAG,
                         "Failed to create export dir at "
                                 + exportDir.getAbsolutePath());
@@ -122,13 +123,13 @@ public class ExportCrashLogsTask extends AsyncTask<Void, Integer, Boolean>
         File logsDir = FileSystemUtils
                 .getItem(FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar
                         + "logs");
-        if (!logsDir.isDirectory()) {
+        if (!FileIOProviderFactory.isDirectory(logsDir)) {
             Log.d(TAG, "Logs directory does not exist: " + logsDir);
             _error = NO_LOGS;
             return false;
         }
 
-        String[] files = logsDir.list();
+        String[] files = FileIOProviderFactory.list(logsDir);
         if (files == null || files.length < 1) {
             Log.d(TAG, "No logs to export: " + logsDir.getAbsolutePath());
             _error = NO_LOGS;

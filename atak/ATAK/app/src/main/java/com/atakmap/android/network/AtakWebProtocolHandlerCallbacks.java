@@ -17,7 +17,6 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -110,8 +109,6 @@ public class AtakWebProtocolHandlerCallbacks
     public X509TrustManager getTrustManager() {
         ArrayList<X509TrustManager> x509TrustManagers = new ArrayList<>();
 
-        final ArrayList<TrustManagerFactory> factories = new ArrayList<TrustManagerFactory>();
-
         try {
             // The default TrustManager with default keystore
             String defaultAlg = TrustManagerFactory.getDefaultAlgorithm();
@@ -167,7 +164,7 @@ public class AtakWebProtocolHandlerCallbacks
     //
     //
 
-    private static Object androidTrustManagersLock = new Object();
+    private static final Object androidTrustManagersLock = new Object();
     private static List<X509TrustManager> androidTrustManagers;
 
     private static List<X509TrustManager> getFullAndroidTrustManagers()
@@ -196,7 +193,7 @@ public class AtakWebProtocolHandlerCallbacks
 
     private static class AggregateTrustManagerImpl implements X509TrustManager {
 
-        protected ArrayList<X509TrustManager> trustManagers = new ArrayList<X509TrustManager>();
+        protected ArrayList<X509TrustManager> trustManagers;
 
         protected AggregateTrustManagerImpl(
                 Collection<X509TrustManager> trustManagers) {
@@ -233,10 +230,10 @@ public class AtakWebProtocolHandlerCallbacks
 
         @Override
         public X509Certificate[] getAcceptedIssuers() {
-            final ArrayList<X509Certificate> list = new ArrayList<X509Certificate>();
+            final ArrayList<X509Certificate> list = new ArrayList<>();
             for (X509TrustManager tm : trustManagers)
                 list.addAll(Arrays.asList(tm.getAcceptedIssuers()));
-            return list.toArray(new X509Certificate[list.size()]);
+            return list.toArray(new X509Certificate[0]);
         }
     }
 }

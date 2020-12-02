@@ -370,12 +370,12 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
         // Export
 
         @Override
-        public boolean isSupported(Class target) {
+        public boolean isSupported(Class<?> target) {
             return MissionPackageExportWrapper.class.equals(target);
         }
 
         @Override
-        public Object toObjectOf(Class target, ExportFilters filters)
+        public Object toObjectOf(Class<?> target, ExportFilters filters)
                 throws FormatNotSupportedException {
             if (super.getChildCount() <= 0 || !isSupported(target)) {
                 //nothing to export
@@ -645,12 +645,12 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
         // Export
 
         @Override
-        public boolean isSupported(Class target) {
+        public boolean isSupported(Class<?> target) {
             return _item != null && _item.isSupported(target);
         }
 
         @Override
-        public Object toObjectOf(Class target, ExportFilters filters)
+        public Object toObjectOf(Class<?> target, ExportFilters filters)
                 throws FormatNotSupportedException {
             if (this._item == null || !isSupported(target)) {
                 return false;

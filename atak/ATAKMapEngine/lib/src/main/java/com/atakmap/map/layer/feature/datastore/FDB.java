@@ -18,6 +18,7 @@ import java.util.TreeMap;
 
 import com.atakmap.content.BindArgument;
 import com.atakmap.content.WhereClauseBuilder;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.CursorWrapper;
@@ -118,7 +119,7 @@ abstract class FDB extends AbstractFeatureDataStore2 {
         super(modificationFlags, visibilityFlags);
 
         this.databaseFile = dbFile.getAbsolutePath();
-        if(!dbFile.exists() || dbFile.length() == 0L) {
+        if(!FileIOProviderFactory.exists(dbFile) || FileIOProviderFactory.length(dbFile) == 0L) {
             this.database = Databases.openOrCreateDatabase(this.databaseFile);
             
             this.buildTables(buildIndices);

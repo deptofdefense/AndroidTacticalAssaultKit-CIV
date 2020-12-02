@@ -6,6 +6,8 @@ import com.atakmap.android.database.DatabaseInformation;
 import com.atakmap.android.database.DatabaseProvider;
 import com.atakmap.android.database.ProviderChangeRequestedListener;
 
+import com.atakmap.coremap.io.FileIOProvider;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
@@ -31,12 +33,10 @@ import com.atakmap.android.contact.IndividualContact;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.filesystem.SecureDelete;
 import com.atakmap.coremap.log.Log;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -160,7 +160,7 @@ public class ChatDatabase implements ProviderChangeRequestedListener {
         } else {
             try {
                 final File f = CHAT_DB_FILE2;
-                if (!f.renameTo(new File(CHAT_DB_FILE2 + ".corrupt."
+                if (!FileIOProviderFactory.renameTo(f, new File(CHAT_DB_FILE2 + ".corrupt."
                         + new CoordinatedTime().getMilliseconds()))) {
                     Log.d(TAG, "could not move corrupt db out of the way");
                 } else {
@@ -1021,8 +1021,7 @@ public class ChatDatabase implements ProviderChangeRequestedListener {
 
     void clearAll() {
         chatDb.close();
-        SecureDelete
-                .delete(CHAT_DB_FILE2);
+        FileIOProviderFactory.delete(CHAT_DB_FILE2, FileIOProvider.SECURE_DELETE);
 
         initDatabase();
         fireChatDatabaseChanged();
@@ -1097,11 +1096,11 @@ public class ChatDatabase implements ProviderChangeRequestedListener {
             List<List<String>> resultTable)
             throws IOException {
         File file = new File(filename);
-        if (!file.exists())
+        if (!FileIOProviderFactory.exists(file))
             if (!file.createNewFile()) {
                 Log.d(TAG, "could not wrap: " + file);
             }
-        BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+        BufferedWriter writer = new BufferedWriter(FileIOProviderFactory.getFileWriter(file));
         try {
             for (List<String> row : resultTable) {
                 String delim = "";

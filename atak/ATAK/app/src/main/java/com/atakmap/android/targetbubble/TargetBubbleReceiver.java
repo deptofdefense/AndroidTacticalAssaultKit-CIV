@@ -14,18 +14,18 @@ import android.view.View;
 import android.graphics.Color;
 
 import com.atakmap.android.drawing.mapItems.DrawingCircle;
-import com.atakmap.android.editableShapes.CircleEditTool;
-import com.atakmap.android.editableShapes.CircleEditTool.EditRadiusAction;
 import com.atakmap.android.editableShapes.EditablePolyline;
 import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapMode;
 import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdater;
+import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdaterCompat;
 import com.atakmap.android.tools.ActionBarReceiver;
 
 import com.atakmap.android.maps.MapTouchController;
 import com.atakmap.android.util.EditAction;
 import com.atakmap.android.util.Undoable;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.android.widgets.LayoutWidget;
 import com.atakmap.android.widgets.MapWidget;
@@ -42,7 +42,6 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.map.elevation.ElevationManager;
-import com.atakmap.map.elevation.ElevationData;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
@@ -304,8 +303,7 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
             _setMapDataTargetPoint();
         }
 
-        hidSelfWidget = SelfCoordOverlayUpdater.getInstance()
-                .showGPSWidget(false);
+        hidSelfWidget = SelfCoordOverlayUpdaterCompat.showGPSWidget(false);
 
         barPreviouslyHidden = _mapView.getActionBarHeight() == 0;
         Intent i = new Intent(ActionBarReceiver.TOGGLE_ACTIONBAR);
@@ -514,7 +512,7 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
                             .getItem("support/logs/point_parse_error_"
                                     + date.getTime()
                                     + ".txt");
-                    FileOutputStream fos = new FileOutputStream(file);
+                    FileOutputStream fos = FileIOProviderFactory.getOutputStream(file);
                     try {
                         fos.write(output.toString().getBytes());
                     } finally {
@@ -628,7 +626,7 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
             _editPoint = null;
         }
 
-        if (hidSelfWidget)
+        if (hidSelfWidget && _prefs.get("show_self_coordinate_overlay", true))
             SelfCoordOverlayUpdater.getInstance().showGPSWidget(true);
         Intent i = new Intent(ActionBarReceiver.TOGGLE_ACTIONBAR);
         if (barPreviouslyHidden) {
@@ -765,7 +763,7 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
 
         @Override
         public void persist(MapEventDispatcher dispatcher, Bundle extras,
-                Class clazz) {
+                Class<?> clazz) {
         }
     }
 

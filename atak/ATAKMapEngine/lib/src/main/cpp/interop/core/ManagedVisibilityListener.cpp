@@ -52,6 +52,7 @@ namespace
 
         Layer_OnLayerVisibleChangedListener_class.id = ATAKMapEngineJNI_findClass(&env, "com/atakmap/map/layer/Layer$OnLayerVisibleChangedListener");
         SET_METHOD_DEFINITION(Layer_OnLayerVisibleChangedListener_class, onLayerVisibleChanged, "(Lcom/atakmap/map/layer/Layer;)V");
-
+        
+        return true;
     }
 }

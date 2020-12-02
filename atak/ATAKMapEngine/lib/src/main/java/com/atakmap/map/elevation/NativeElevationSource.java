@@ -1,6 +1,5 @@
 package com.atakmap.map.elevation;
 
-import com.atakmap.interop.InteropCleaner;
 import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.NotifyCallback;
 import com.atakmap.interop.Pointer;

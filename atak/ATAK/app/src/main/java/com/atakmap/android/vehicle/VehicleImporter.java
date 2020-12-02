@@ -81,7 +81,8 @@ class VehicleImporter extends MapItemImporter {
 
         CotDetailManager.getInstance().processDetails(veh, cot);
         addToGroup(veh);
-        veh.setVisible(extras.getBoolean("visible", veh.getVisible()));
+        veh.setVisible(extras.getBoolean("visible",
+                veh.getVisible(true)), false);
 
         // Persist to the statesaver if needed
         persist(veh, extras);

@@ -1,16 +1,12 @@
 package com.atakmap.map.formats.c3dt;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.io.ProtocolHandler;
-import com.atakmap.io.UriFactory;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 
-import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -37,7 +33,7 @@ final class PNTS {
         return parse(ByteBuffer.wrap(bytes));
     }
     public static PNTS parse(File file) throws JSONException, IOException {
-        if(!file.exists())
+        if(!FileIOProviderFactory.exists(file))
             return null;
         return parse(ByteBuffer.wrap(FileSystemUtils.read(file)));
     }

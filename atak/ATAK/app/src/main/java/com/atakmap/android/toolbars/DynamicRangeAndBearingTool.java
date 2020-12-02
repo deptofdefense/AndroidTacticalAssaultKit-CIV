@@ -221,6 +221,7 @@ public class DynamicRangeAndBearingTool extends Tool implements
             _rab.setMetaString("menu", "menus/drab_menu.xml");
             _rab.setTitle("Dynamic R&B Line");
             _rab.setMetaBoolean("removable", true);
+            _rab.setMetaString("entry", "user");
             _mapView.getMapEventDispatcher().addMapItemEventListener(
                     _rab, _mapItemEventListener);
             RangeAndBearingMapComponent.getGroup().addItem(_rab);
@@ -263,6 +264,7 @@ public class DynamicRangeAndBearingTool extends Tool implements
                         UUID.randomUUID().toString());
                 _pt1.setClickable(true);
                 _pt1.setMetaString("menu", "menus/drab_endpoint_menu.xml");
+                _pt1.setMetaString("entry", "user");
                 _rabGroup.addItem(_pt1);
                 prompt(R.string.rb_measure_prompt);
             } else if (_pt2 == null) {
@@ -270,6 +272,7 @@ public class DynamicRangeAndBearingTool extends Tool implements
                         UUID.randomUUID().toString());
                 _pt2.setClickable(true);
                 _pt2.setMetaString("menu", "menus/drab_endpoint_menu.xml");
+                _pt2.setMetaString("entry", "user");
                 _rabGroup.addItem(_pt2);
                 _mapView.getMapEventDispatcher().addMapItemEventListener(_pt1,
                         _dragListener);

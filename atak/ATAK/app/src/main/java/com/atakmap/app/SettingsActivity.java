@@ -11,7 +11,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.Preference;
-import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.view.Menu;
@@ -418,7 +417,7 @@ public class SettingsActivity extends MetricPreferenceActivity implements
      * Start a new settings activity with a preference fragment class
      * @param clazz Preference fragment class
      */
-    public static void start(Class clazz) {
+    public static void start(Class<?> clazz) {
         start(clazz, null);
     }
 
@@ -427,7 +426,7 @@ public class SettingsActivity extends MetricPreferenceActivity implements
      * @param clazz Preference fragment class
      * @param key the preference key to scroll to.
      */
-    public static void start(Class clazz, String key) {
+    public static void start(Class<?> clazz, String key) {
         MapView mv = MapView.getMapView();
         if (mv == null || clazz == null
                 || !AtakPreferenceFragment.class.isAssignableFrom(clazz)) {

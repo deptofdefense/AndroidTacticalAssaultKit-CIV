@@ -1,8 +1,6 @@
 
 package com.atakmap.android.location;
 
-import com.atakmap.coremap.log.Log;
-
 public class AlphaBetaFilter {
 
     private final static String TAG = "AlphaBetaFilter";

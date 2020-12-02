@@ -9,6 +9,7 @@ import android.opengl.GLSurfaceView;
 import android.os.SystemClock;
 import android.os.Bundle;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.opengl.GLES20FixedPipeline;
 
@@ -47,9 +48,10 @@ public class GLMapRenderer implements GLSurfaceView.Renderer {
     }
 
     /**
-     * XXX: This is a very very bad solution to a problem.
-     * @deprecated
+     * @deprecated does nothing
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public void pauseRender(boolean state) {
     }
 

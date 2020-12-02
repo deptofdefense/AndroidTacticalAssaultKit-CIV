@@ -6,6 +6,7 @@ import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.BufferedInputStream;
@@ -89,7 +90,7 @@ public class MissionPackageBuilder {
             _wroteManifest = false;
 
             File f = new File(_contents.getPath());
-            if (f.exists()) {
+            if (FileIOProviderFactory.exists(f)) {
                 // MP already exists - copy it to a temp file in case we need to
                 // extract and pull its contents into the new package
                 tmpCopy = new File(f.getAbsolutePath() + ".tmp");
@@ -103,7 +104,7 @@ public class MissionPackageBuilder {
                 }
             }
 
-            FileOutputStream fos = new FileOutputStream(_contents.getPath());
+            FileOutputStream fos = FileIOProviderFactory.getOutputStream(new File(_contents.getPath()));
             _zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             Log.d(TAG, "Building package: " + _contents.getPath());
@@ -258,29 +259,29 @@ public class MissionPackageBuilder {
             // this is to avoid any cases of recursive archival
             boolean tmpCopy = false;
             File f = new File(p.getValue());
-            if (f.exists() && FileSystemUtils.isZip(f)) {
+            if (FileIOProviderFactory.exists(f) && FileSystemUtils.isZip(f)) {
                 File tmpDir = FileSystemUtils.getItemOnSameRoot(f, "tmp");
-                if (!tmpDir.exists() && !tmpDir.mkdirs())
+                if (!FileIOProviderFactory.exists(tmpDir) && !FileIOProviderFactory.mkdirs(tmpDir))
                     Log.e(TAG, "Failed to create tmp dir: " + tmpDir);
                 else {
                     File tmpFile = new File(tmpDir, f.getName());
                     if (!tmpFile.equals(f)) {
                         FileSystemUtils.copyFile(f, tmpFile);
-                        if (tmpFile.exists()) {
+                        if (FileIOProviderFactory.exists(tmpFile)) {
                             f = tmpFile;
                             tmpCopy = true;
                         }
                     }
                 }
             }
-            long fileSize = f.length();
+            long fileSize = FileIOProviderFactory.length(f);
 
             // create new zip entry
             ZipEntry entry = new ZipEntry(content.getManifestUid());
             _zos.putNextEntry(entry);
 
             // stream file into zipstream
-            FileInputStream fi = new FileInputStream(f);
+            FileInputStream fi = FileIOProviderFactory.getInputStream(f);
             BufferedInputStream origin = new BufferedInputStream(fi,
                     FileSystemUtils.BUF_SIZE);
             write(origin, true);

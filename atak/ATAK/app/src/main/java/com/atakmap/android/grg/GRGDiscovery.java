@@ -7,6 +7,7 @@ import android.content.Intent;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.layers.GenericLayerScanner;
 import com.atakmap.android.layers.LayerScanner;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.LocalRasterDataStore;
@@ -137,9 +138,9 @@ class GRGDiscovery implements Runnable, LayerScanner.Callback {
                     && !EXTENSION_BLACKLIST.contains(getExtension(f)
                             .toUpperCase(LocaleUtil.getCurrent())))
                 return ACCEPT;
-            else if (f.isDirectory() && MCIAGRGLayerInfoSpi.isMCIAGRG(f))
+            else if (FileIOProviderFactory.isDirectory(f) && MCIAGRGLayerInfoSpi.isMCIAGRG(f))
                 return ACCEPT;
-            else if (f.isDirectory())
+            else if (FileIOProviderFactory.isDirectory(f))
                 return DELAY;
             else
                 return REJECT;

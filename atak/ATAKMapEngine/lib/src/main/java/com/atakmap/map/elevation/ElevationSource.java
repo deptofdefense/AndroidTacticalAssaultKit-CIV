@@ -1,10 +1,7 @@
 package com.atakmap.map.elevation;
 
-import android.app.DownloadManager;
-
 import com.atakmap.database.RowIterator;
 import com.atakmap.lang.Objects;
-import com.atakmap.map.layer.feature.AbstractFeatureDataStore;
 import com.atakmap.map.layer.feature.AbstractFeatureDataStore2;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;

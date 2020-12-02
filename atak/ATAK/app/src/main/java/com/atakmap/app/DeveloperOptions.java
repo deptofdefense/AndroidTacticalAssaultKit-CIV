@@ -2,11 +2,11 @@
 package com.atakmap.app;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.util.ConfigOptions;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -23,8 +23,8 @@ public final class DeveloperOptions {
     static {
         InputStream in = null;
         try {
-            if (DEVOPTS_FILE.exists()) {
-                in = new FileInputStream(DEVOPTS_FILE);
+            if (FileIOProviderFactory.exists(DEVOPTS_FILE)) {
+                in = FileIOProviderFactory.getInputStream(DEVOPTS_FILE);
                 opts.load(in);
             }
         } catch (IOException e) {
@@ -69,7 +69,7 @@ public final class DeveloperOptions {
         return Integer.parseInt(retval);
     }
 
-    static double getDoubleOption(String name, double defVal) {
+    public static double getDoubleOption(String name, double defVal) {
         String retval = opts.getProperty(name);
         if (retval == null)
             return defVal;

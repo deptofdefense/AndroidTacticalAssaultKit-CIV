@@ -4,22 +4,26 @@ package com.atakmap.android.routes;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Toast;
 
 import java.util.UUID;
+
+import com.atakmap.android.maps.Arrow;
+import com.atakmap.android.maps.Association;
 import com.atakmap.android.maps.MapGroup;
 
-import com.atakmap.android.maps.Polyline;
+import com.atakmap.android.maps.MultiPolyline;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
-import com.atakmap.android.routes.Route;
+import com.atakmap.android.maps.Polyline;
+import com.atakmap.android.maps.Shape;
 import com.atakmap.android.toolbar.Tool;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbar.widgets.TextContainer;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.android.maps.MapTouchController.DeconflictionListener;
 
@@ -52,12 +56,22 @@ public class PolylineSelectTool extends Tool implements
     private final Context _context;
     private final TextContainer _container;
 
+    private static boolean isSupported(MapItem mi) {
+        return !(mi instanceof Route) && (mi instanceof Polyline
+                || mi instanceof Arrow || mi instanceof Association);
+    }
+
     private DeconflictionListener decon = new DeconflictionListener() {
         public void onConflict(final SortedSet<MapItem> hitItems) {
             List<MapItem> list = new ArrayList<>(hitItems);
             for (MapItem mi : list) {
-                String type = mi.getType();
-                if (!(mi instanceof Polyline) || (mi instanceof Route))
+                // Shape redirect from marker
+                if (mi instanceof PointMapItem) {
+                    mi = ATAKUtilities.findAssocShape(mi);
+                    hitItems.remove(mi);
+                    hitItems.add(mi);
+                }
+                if (!isSupported(mi))
                     hitItems.remove(mi);
             }
         }
@@ -102,36 +116,40 @@ public class PolylineSelectTool extends Tool implements
     public void onMapEvent(MapEvent event) {
         if (event.getType().equals(MapEvent.ITEM_CLICK)) {
             // Find item click point
-            MapItem _item = event.getItem();
+            MapItem mi = event.getItem();
 
-            if ((_item instanceof Polyline) && (!(_item instanceof Route))) {
-                Polyline line = (Polyline) _item;
-                final Route r = new Route(_mapView,
-                        line.getTitle() + " Route",
-                        line.getStrokeColor(), "CP",
-                        UUID.randomUUID().toString());
-                GeoPoint[] list = line.getPoints();
-                PointMapItem[] pts = new PointMapItem[list.length];
+            // Check if shape marker
+            if (mi instanceof PointMapItem)
+                mi = ATAKUtilities.findAssocShape(mi);
 
-                for (int i = 0; i < list.length; ++i) {
-                    pts[i] = Route.createControlPoint(list[i]);
-                }
-                r.addMarkers(0, pts);
-                r.setRemarks(_item.getRemarks());
-                r.setMetaString("entry", "user");
-                final MapGroup _mapGroup = _mapView.getRootGroup()
-                        .findMapGroup("Route");
-                _mapGroup.addItem(r);
-                Intent i = new Intent("com.atakmap.android.maps.ROUTE_DETAILS");
-                i.putExtra("routeUID", r.getUID());
-                AtakBroadcast.getInstance().sendBroadcast(i);
-                requestEndTool();
+            // Item is already a route or not supported
+            if (!isSupported(mi))
+                return;
+
+            Shape shape = (Shape) mi;
+            int color = shape.getStrokeColor();
+            if (shape instanceof MultiPolyline)
+                color = shape.getIconColor();
+            final Route r = new Route(_mapView,
+                    shape.getTitle() + " Route",
+                    color, "CP",
+                    UUID.randomUUID().toString());
+            GeoPoint[] list = shape.getPoints();
+            PointMapItem[] pts = new PointMapItem[list.length];
+
+            for (int i = 0; i < list.length; ++i) {
+                pts[i] = Route.createControlPoint(list[i]);
             }
+            r.addMarkers(0, pts);
+            r.setRemarks(shape.getRemarks());
+            r.setMetaString("entry", "user");
+            final MapGroup mapGroup = _mapView.getRootGroup()
+                    .findMapGroup("Route");
+            mapGroup.addItem(r);
+            Intent i = new Intent("com.atakmap.android.maps.ROUTE_DETAILS");
+            i.putExtra("routeUID", r.getUID());
+            AtakBroadcast.getInstance().sendBroadcast(i);
+            requestEndTool();
         }
-    }
-
-    private void toast(String str) {
-        Toast.makeText(_context, str,
-                Toast.LENGTH_LONG).show();
     }
 }

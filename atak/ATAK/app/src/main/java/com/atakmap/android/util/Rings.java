@@ -12,6 +12,7 @@ import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.conversions.Span;
@@ -28,9 +29,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @deprecated This class is a confusing mess that has caused problems since
- * its inception. Use {@link DrawingCircle} instead.   This will be removed in 3.15.
+ * @deprecated Use {@link DrawingCircle} instead.
  */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class Rings extends DrawingCircle {
 
     private static final String TAG = "Rings";

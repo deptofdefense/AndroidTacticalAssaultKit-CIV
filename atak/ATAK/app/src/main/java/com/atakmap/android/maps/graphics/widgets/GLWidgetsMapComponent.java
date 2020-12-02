@@ -53,6 +53,8 @@ public class GLWidgetsMapComponent extends AbstractMapComponent implements
         GLWidgetFactory.registerSpi(GLButtonWidget.SPI);
         GLWidgetFactory.registerSpi(GLRadialButtonWidget.SPI);
         GLWidgetFactory.registerSpi(GLMarkerIconWidget.SPI);
+        GLWidgetFactory.registerSpi(GLMarkerDrawableWidget.SPI);
+        GLWidgetFactory.registerSpi(GLDrawableWidget.SPI);
         GLWidgetFactory.registerSpi(GLArcWidget.SPI);
         GLWidgetFactory.registerSpi(GLIsoKeyWidget.SPI);
         GLWidgetFactory.registerSpi(GLScaleWidget.SPI);

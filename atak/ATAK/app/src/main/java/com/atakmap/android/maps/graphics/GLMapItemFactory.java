@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import android.util.Pair;
 
 import com.atakmap.android.maps.MapItem;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.map.MapRenderer;
@@ -56,6 +57,8 @@ public final class GLMapItemFactory {
      * @deprecated  always returns <code>null</code>; use
      *              {@link #create3(MapRenderer, MapItem)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static GLMapItem create2(MapRenderer surface, MapItem item) {
         return null;
     }

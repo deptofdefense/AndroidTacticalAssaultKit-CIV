@@ -1,16 +1,12 @@
 
 package com.atakmap.android.drawing;
 
-import android.app.ListActivity;
 import android.content.Intent;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.os.Bundle;
 
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.metrics.activity.MetricListActivity;
-import com.atakmap.coremap.filesystem.FileSystemUtils;
-
-import java.io.File;
 
 /**
  * (KYLE) I had to hack-up this thing to no end because it was extending the KmlListActivity which

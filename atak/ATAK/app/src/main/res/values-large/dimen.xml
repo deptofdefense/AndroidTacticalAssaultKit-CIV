@@ -18,4 +18,6 @@
     <dimen name="vehicle_icon_size">64dp</dimen>
     <dimen name="vehicle_text_size">12sp</dimen>
 
+    <dimen name="button_small">40dp</dimen>
+
 </resources>

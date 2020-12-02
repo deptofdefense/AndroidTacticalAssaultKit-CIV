@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.map.elevation.ElevationChunk;
 import com.atakmap.map.elevation.ElevationData;
 import com.atakmap.map.elevation.ElevationSource;
@@ -85,7 +86,7 @@ public final class SrtmElevationSource {
         SRTM30_TILE_MATRIX[0].tileHeight = 50; // spans 50deg lat
     }
 
-    private static Map<File, Collection<ElevationSource>> mounts = new HashMap<>();
+    private final static Map<File, Collection<ElevationSource>> mounts = new HashMap<>();
 
     private SrtmElevationSource() {}
 
@@ -182,7 +183,7 @@ public final class SrtmElevationSource {
                     return ElevationChunk.Factory.makeShared(cached);
             }
 
-            ElevationChunk chunk = null;
+            ElevationChunk chunk;
             do {
                 // check for the regular file
                 chunk = createSrtm(new File(dir, key), true);
@@ -242,7 +243,7 @@ public final class SrtmElevationSource {
             @Override
             public boolean moveToNext() {
                 // Make sure the STRM directory exists before continuing
-                return dir.exists() && super.moveToNext();
+                return FileIOProviderFactory.exists(dir) && super.moveToNext();
             }
         }
 
@@ -347,7 +348,7 @@ public final class SrtmElevationSource {
     }
 
     private static ElevationChunk createSrtm(File f, boolean srtm30) {
-        if(!f.exists())
+        if(!FileIOProviderFactory.exists(f))
             return null;
         Dataset dataset = gdal.Open(f.getAbsolutePath());
         if(dataset == null)

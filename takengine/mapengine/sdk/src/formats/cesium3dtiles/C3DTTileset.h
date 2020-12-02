@@ -154,6 +154,24 @@ namespace TAK {
                  */
                 ENGINE_API Util::TAKErr C3DTTileset_parse(Util::DataInput2 *input, void *opaque, C3DTTilesetVisitor visitor) NOTHROWS;
 
+                enum C3DTFileType {
+                    C3DTFileType_TilesetJSON,
+                    C3DTFileType_B3DM,
+                    // TODO-- i3dm, pnt
+                };
+
+                /**
+                 * 
+                 */
+                ENGINE_API Util::TAKErr C3DT_probeSupport(
+                    C3DTFileType *type, 
+                    Port::String *fileURI,
+                    Port::String *tilesetURI,
+                    Port::String *baseURI,
+                    bool *isStreaming,
+                    const char* URI) NOTHROWS;
+
+
                 ENGINE_API Util::TAKErr C3DTTileset_isSupported(bool *result, const char *URI) NOTHROWS;
 
                 ENGINE_API Util::TAKErr C3DTTileset_open(Util::DataInput2Ptr &result, Port::String *baseURI, bool *isStreaming, const char *URI) NOTHROWS;

@@ -11,6 +11,7 @@ import com.atakmap.android.http.rest.HTTPRequestManager;
 import com.atakmap.android.http.rest.NetworkOperationManager;
 import com.atakmap.android.http.rest.operation.NetworkOperation;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.comms.CommsMapComponent;
@@ -292,7 +293,6 @@ public class CertificateEnrollmentClient implements
                             .getParcelable(
                                     CertificateConfigOperation.PARAM_CONFIG_REQUEST);
                     certificateConfigRequest.setAllowAllHostnames(true);
-                    final CertificateConfigRequest finalCertificateConfigRequest = certificateConfigRequest;
 
                     StringBuilder serverDNs = new StringBuilder();
                     List<X509Certificate> serverCerts = CertificateManager
@@ -312,12 +312,12 @@ public class CertificateEnrollmentClient implements
                             ". But the server responded with " + serverDNs;
 
                     final AlertDialog dialog = new AlertDialog.Builder(context)
-                            .setIcon(com.atakmap.android.util.ATAKConstants
+                            .setIcon(ATAKConstants
                                     .getIconId())
-                            .setTitle("Server Authentication Error!")
+                            .setTitle(R.string.server_auth_error)
                             .setMessage(message)
-                            .setPositiveButton("Ok", null)
-                            .show();
+                            .setPositiveButton(R.string.ok, null).create();
+                    dialog.show();
                 }
 
             } else if (request

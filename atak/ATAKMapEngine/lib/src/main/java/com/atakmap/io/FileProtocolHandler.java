@@ -1,8 +1,8 @@
 package com.atakmap.io;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
+
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
@@ -20,8 +20,8 @@ public class FileProtocolHandler implements ProtocolHandler {
 
         try {
             UriFactory.OpenResult result = new UriFactory.OpenResult();
-            result.inputStream = new FileInputStream(file);
-            result.contentLength = file.length();
+            result.inputStream = FileIOProviderFactory.getInputStream(file);
+            result.contentLength = FileIOProviderFactory.length(file);
             return result;
         } catch (Exception e) {
             return null;
@@ -32,13 +32,13 @@ public class FileProtocolHandler implements ProtocolHandler {
     public long getContentLength(String uri) {
         File file = getFile(uri);
         if (file != null)
-            return file.length();
+            return FileIOProviderFactory.length(file);
         return 0;
     }
 
     private File getFile(String uri) {
         File f = new File(uri);
-        if(f.exists())
+        if(FileIOProviderFactory.exists(f))
             return f;
         try {
             URI uriObj = new URI(uri);

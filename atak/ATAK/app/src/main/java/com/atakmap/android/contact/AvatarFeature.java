@@ -10,6 +10,7 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
 
@@ -73,9 +74,9 @@ public abstract class AvatarFeature {
         final String avatarDirPath = FileSystemUtils.getItem(
                 FileSystemUtils.TMP_DIRECTORY).getPath();
         final File dir = new File(avatarDirPath);
-        if (!dir.exists()) {
+        if (!FileIOProviderFactory.exists(dir)) {
             Log.d(TAG, "creating avatar directory: " + dir);
-            if (!dir.mkdirs())
+            if (!FileIOProviderFactory.mkdirs(dir))
                 Log.w(TAG, "Failed to mkdir: " + dir);
         }
 
@@ -84,7 +85,7 @@ public abstract class AvatarFeature {
 
         String existingHash;
         String newHash = getHash();
-        if (avatarFile.exists()) {
+        if (FileIOProviderFactory.exists(avatarFile)) {
             //check hash prior to creating file
             existingHash = HashingUtils.sha1sum(avatarFile);
             if (!FileSystemUtils.isEquals(existingHash, newHash)) {
@@ -107,7 +108,7 @@ public abstract class AvatarFeature {
             try {
                 Log.d(TAG, "Creating avatar file: " + avatarFile + ", hash="
                         + newHash);
-                fos = new FileOutputStream(avatarFile);
+                fos = FileIOProviderFactory.getOutputStream(avatarFile);
                 fos.write(getAvatarBytes());
             } catch (IOException e) {
                 Log.w(TAG, "Failed to create avatar file", e);

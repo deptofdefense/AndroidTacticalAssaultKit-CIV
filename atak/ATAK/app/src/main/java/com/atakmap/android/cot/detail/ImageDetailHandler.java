@@ -13,6 +13,7 @@ import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -88,7 +89,7 @@ class ImageDetailHandler extends CotDetailHandler {
             linkFile = ImageDropDownReceiver.createAndGetPathToImageFromUID(
                     uid, "lnk");
             if (linkFile != null) {
-                w = new FileWriter(linkFile);
+                w = FileIOProviderFactory.getFileWriter(linkFile);
                 w.write(linkPath);
                 w.close();
             }
@@ -114,7 +115,7 @@ class ImageDetailHandler extends CotDetailHandler {
                     uid,
                     _extFromMime(mime));
 
-            FileOutputStream fos = new FileOutputStream(imageFile);
+            FileOutputStream fos = FileIOProviderFactory.getOutputStream(imageFile);
             try {
                 fos.write(bytes);
             } finally {

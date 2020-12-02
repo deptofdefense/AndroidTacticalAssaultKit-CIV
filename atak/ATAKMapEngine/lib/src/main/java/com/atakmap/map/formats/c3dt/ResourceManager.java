@@ -4,7 +4,6 @@ import android.opengl.GLES30;
 
 import com.atakmap.map.RenderContext;
 
-import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;

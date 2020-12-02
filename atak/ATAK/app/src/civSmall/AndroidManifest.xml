@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools"
+    package="com.atakmap.app" >
+    
+    <!-- for the civilian small version, do not include the SEND_SMS permission -->
+    <uses-permission android:name="android.permission.SEND_SMS" tools:node="remove"/>
+
+</manifest>

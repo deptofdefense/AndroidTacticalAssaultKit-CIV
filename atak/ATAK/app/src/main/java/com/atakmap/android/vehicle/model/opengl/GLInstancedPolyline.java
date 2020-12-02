@@ -65,7 +65,7 @@ public class GLInstancedPolyline extends GLInstancedRenderable {
         _points = createFloatBuffer(_pointBufferSize);
         for (PointF p : points) {
             _points.put(p.x);
-            _points.put(-p.y);
+            _points.put(p.y);
         }
         _points.clear();
     }

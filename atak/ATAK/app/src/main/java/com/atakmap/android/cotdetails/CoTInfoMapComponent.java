@@ -9,6 +9,7 @@ import com.atakmap.android.attachment.AttachmentBroadcastReceiver;
 import com.atakmap.android.attachment.AttachmentGalleryProvider;
 import com.atakmap.android.attachment.AttachmentMapOverlay;
 import com.atakmap.android.attachment.export.AttachmentExportMarshal;
+import com.atakmap.android.cotdetails.sensor.SensorDetailsReceiver;
 import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.dropdown.DropDownMapComponent;
 import com.atakmap.android.importexport.ExporterManager;
@@ -20,8 +21,10 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapOverlayManager;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.AttachmentManager;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -40,6 +43,7 @@ public class CoTInfoMapComponent extends DropDownMapComponent {
     private static final String TAG = "CoTInfoMapComponent";
 
     private CoTInfoBroadcastReceiver cibr;
+    private SensorDetailsReceiver sensorReceiver;
     private AttachmentBroadcastReceiver abr;
     private AttachmentMapOverlay _overlay;
     private AttachmentGalleryProvider _provider;
@@ -68,7 +72,6 @@ public class CoTInfoMapComponent extends DropDownMapComponent {
                                 "the unique identifier for the marker to be used when opening up the cot information view")
                 });
         filter.addAction("com.atakmap.android.cotdetails.COTINFO_SETTYPE");
-        filter.addAction("com.atakmap.android.cotdetails.SENSORDETAILS");
         registerDropDownReceiver(cibr, filter);
 
         filter = new DocumentedIntentFilter();
@@ -76,6 +79,10 @@ public class CoTInfoMapComponent extends DropDownMapComponent {
         filter.addAction(AttachmentBroadcastReceiver.SEND_ATTACHMENT);
         filter.addAction(AttachmentBroadcastReceiver.GALLERY);
         registerDropDownReceiver(abr, filter);
+
+        sensorReceiver = new SensorDetailsReceiver(view);
+        registerDropDownReceiver(sensorReceiver,
+                sensorReceiver.getIntentFilter());
 
         _instance = this;
 
@@ -111,7 +118,7 @@ public class CoTInfoMapComponent extends DropDownMapComponent {
                 final File dir = FileSystemUtils.getItem("attachments");
                 File f = new File(dir,
                         FileSystemUtils.sanitizeFilename(mi.getUID()));
-                if (f.exists() && added) {
+                if (FileIOProviderFactory.exists(f) && added) {
                     addAttachment(mi);
                 } else {
                     removeAttachment(mi);
@@ -156,9 +163,10 @@ public class CoTInfoMapComponent extends DropDownMapComponent {
 
     /**
      * @return markers with attachments as MapItems
-     * Deprecated - Use {@link AttachmentManager#findAttachmentItems} instead
+     * @deprecated - Use {@link AttachmentManager#findAttachmentItems} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public MapItem[] getMarkersWithAttachments() {
 
         synchronized (markerAttachment) {

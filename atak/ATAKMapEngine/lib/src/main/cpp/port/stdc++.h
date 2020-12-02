@@ -2,7 +2,7 @@
 #define CESIUM3DTILES_PORT_STDCXX_H_INCLUDED
 
 // required if using gnustl_static or gnustl_shared
-#if 1
+#ifdef __ANDROID__
 
 #include <cstdlib>
 #include <sstream>

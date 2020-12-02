@@ -6,6 +6,7 @@ import com.atakmap.android.rubbersheet.data.ProgressTask;
 import com.atakmap.android.rubbersheet.maps.AbstractSheet;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 
@@ -15,6 +16,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,7 +62,7 @@ public abstract class ExportFileTask extends ProgressTask {
     protected void onCancelled() {
         toast(R.string.export_cancelled_for, _item.getName());
         for (File f : getOutputFiles()) {
-            if (f != null && f.exists())
+            if (f != null && FileIOProviderFactory.exists(f))
                 FileSystemUtils.delete(f);
         }
     }
@@ -89,13 +91,13 @@ public abstract class ExportFileTask extends ProgressTask {
             return null;
         }
 
-        if (!dir.isDirectory()) {
+        if (!FileIOProviderFactory.isDirectory(dir)) {
             Log.w(TAG,
                     "Cannot zip non Directory file: " + dir.getAbsolutePath());
             return null;
         }
 
-        File[] files = dir.listFiles();
+        File[] files = FileIOProviderFactory.listFiles(dir);
         if (FileSystemUtils.isEmpty(files)) {
             Log.w(TAG, "Cannot zip empty Directory: " + dir.getAbsolutePath());
             return null;
@@ -103,7 +105,7 @@ public abstract class ExportFileTask extends ProgressTask {
 
         ZipOutputStream zos = null;
         try {
-            FileOutputStream fos = new FileOutputStream(dest);
+            FileOutputStream fos = FileIOProviderFactory.getOutputStream(dest);
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
             byte[] buf = new byte[FileSystemUtils.BUF_SIZE];
 
@@ -112,7 +114,7 @@ public abstract class ExportFileTask extends ProgressTask {
             if (cb != null) {
                 long totalLen = 0;
                 for (File f : files)
-                    totalLen += f.length();
+                    totalLen += FileIOProviderFactory.length(f);
                 final long fMaxProg = totalLen;
                 wrapperCB = new FileProgressCallback() {
                     int totalProg = 0;
@@ -122,7 +124,7 @@ public abstract class ExportFileTask extends ProgressTask {
                     public boolean onProgress(File file, long prog, long max) {
                         if (lastFile != file) {
                             if (lastFile != null)
-                                totalProg += lastFile.length();
+                                totalProg += FileIOProviderFactory.length(lastFile);
                             lastFile = file;
                         }
                         return cb.onProgress(dir, totalProg + prog, fMaxProg);
@@ -177,11 +179,11 @@ public abstract class ExportFileTask extends ProgressTask {
     protected static void appendStream(File file, OutputStream os, byte[] buf,
             FileProgressCallback cb) {
         FileInputStream fis = null;
-        long totalProg = file.length();
+        long totalProg = FileIOProviderFactory.length(file);
         try {
             int len;
             long prog = 0;
-            fis = new FileInputStream(file);
+            fis = FileIOProviderFactory.getInputStream(file);
             while ((len = fis.read(buf)) > 0) {
                 os.write(buf, 0, len);
                 if (cb != null) {
@@ -204,7 +206,7 @@ public abstract class ExportFileTask extends ProgressTask {
     protected static boolean writeToFile(File file, String... lines) {
         PrintWriter pw = null;
         try {
-            pw = new PrintWriter(file, FileSystemUtils.UTF8_CHARSET.name());
+            pw = new PrintWriter(new OutputStreamWriter(FileIOProviderFactory.getOutputStream(file),FileSystemUtils.UTF8_CHARSET.name()));
             for (String s : lines)
                 pw.println(s);
             return true;
@@ -224,17 +226,17 @@ public abstract class ExportFileTask extends ProgressTask {
             // Regular file
             File file = new File(filePath);
             File outFile = new File(dir, file.getName());
-            if (file.exists() && file.isFile()) {
+            if (FileIOProviderFactory.exists(file) && file.isFile()) {
                 FileSystemUtils.copyFile(file, outFile);
                 return;
             }
             // ZIP file
             if (filePath.contains(".zip/") || filePath.contains(".kmz/")) {
                 ZipVirtualFile zf = new ZipVirtualFile(filePath);
-                if (!zf.exists())
+                if (!FileIOProviderFactory.exists(zf))
                     return;
                 FileSystemUtils.copy(zf.openStream(),
-                        new FileOutputStream(outFile));
+                        FileIOProviderFactory.getOutputStream(outFile));
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to copy file: " + filePath, e);

@@ -10,13 +10,12 @@ import android.util.Pair;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.filesystem.SecureDelete;
+import com.atakmap.coremap.io.FileIOProvider;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -63,7 +62,7 @@ public class ImportAlternateContactSort extends ImportResolver {
             return false;
 
         try {
-            return isContact(new FileInputStream(file), _charBuffer);
+            return isContact(FileIOProviderFactory.getInputStream(file), _charBuffer);
         } catch (IOException e) {
             Log.e(TAG,
                     "Error checking contact info: " + file.getAbsolutePath(),
@@ -137,7 +136,7 @@ public class ImportAlternateContactSort extends ImportResolver {
         File atakdata = new File(_context.getCacheDir(),
                 FileSystemUtils.ATAKDATA);
         if (file.getAbsolutePath().startsWith(atakdata.getAbsolutePath())
-                && SecureDelete.delete(file))
+                && FileIOProviderFactory.delete(file, FileIOProvider.SECURE_DELETE))
             Log.d(TAG,
                     "Deleted imported contact info: " + file.getAbsolutePath());
 
@@ -153,7 +152,7 @@ public class ImportAlternateContactSort extends ImportResolver {
 
         BufferedReader br = null;
         try {
-            br = new BufferedReader(new FileReader(file));
+            br = new BufferedReader(FileIOProviderFactory.getFileReader(file));
             String line;
             String[] parse;
             while ((line = br.readLine()) != null) {

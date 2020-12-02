@@ -295,6 +295,14 @@ Useful Information
 3) To print out the certificate for the a specific APK
      unzip -p Name-of-apk.apk META-INF/CERT.RSA | keytool -printcert
 
+       - or -
+
+     unzip -p Name-of-apk.apk META-INF/CERT.DSA | keytool -printcert
+  
+       - or -
+ 
+     keytool -printcert -jarfile Name-of-apk.apk
+
    To sign a apk with multiple certificates or to strip the certificate and add a new one 
 
       - 26.0.2 build-tools apksigner allows for multiple key stores to be specified without using keystore

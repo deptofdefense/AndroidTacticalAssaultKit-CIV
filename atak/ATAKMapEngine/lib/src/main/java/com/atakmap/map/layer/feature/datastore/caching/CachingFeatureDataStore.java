@@ -14,6 +14,7 @@ import android.graphics.Point;
 import android.util.LruCache;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
@@ -642,7 +643,7 @@ public class CachingFeatureDataStore extends AbstractReadOnlyFeatureDataStore2 i
      */
     private static boolean loadCacheNode(int clientVersion, File cacheDir, CacheNode node, int limit, FIDBuffer fidBuffer, boolean terminalOnly) {
         File cacheFile = new File(new File(cacheDir, String.valueOf(node.level)), String.valueOf(node.index));
-        if(!cacheFile.exists())
+        if(!FileIOProviderFactory.exists(cacheFile))
             return false;
         try {
             FeatureDataStore2 swap;
@@ -799,7 +800,7 @@ public class CachingFeatureDataStore extends AbstractReadOnlyFeatureDataStore2 i
 
             if(cacheDir != null) {
                 File cacheFile = new File(new File(cacheDir, String.valueOf(node.level)), String.valueOf(node.index));
-                if (!cacheFile.getParentFile().exists() && !cacheFile.getParentFile().mkdirs()) {
+                if (!FileIOProviderFactory.exists(cacheFile.getParentFile()) && !cacheFile.getParentFile().mkdirs()) {
                      Log.d(TAG, "error creating: " + cacheFile);
                 }
 
@@ -807,7 +808,7 @@ public class CachingFeatureDataStore extends AbstractReadOnlyFeatureDataStore2 i
                 try {
                     long s = System.currentTimeMillis();
                     File cacheSwapDir = new File(cacheDir, ".swap");
-                    if (!cacheSwapDir.exists() && !cacheSwapDir.mkdirs()) { 
+                    if (!FileIOProviderFactory.exists(cacheSwapDir) && !FileIOProviderFactory.mkdirs(cacheSwapDir)) {
                        Log.d(TAG, "error creating: " + cacheSwapDir);
                     }
                     
@@ -815,9 +816,9 @@ public class CachingFeatureDataStore extends AbstractReadOnlyFeatureDataStore2 i
                     FeatureQueryParameters cacheParams = new FeatureQueryParameters();
                     cacheParams.limit = limit;
                     CacheFile.createCacheFile(clientVersion, node.level, node.index, node.timestamp, swap, cacheParams, cacheSwap.getAbsolutePath());
-                    if(cacheFile.exists())
+                    if(FileIOProviderFactory.exists(cacheFile))
                         FileSystemUtils.delete(cacheFile);
-                    if(!cacheSwap.renameTo(cacheFile))
+                    if(!FileIOProviderFactory.renameTo(cacheSwap, cacheFile))
                         throw new IOException("Unable to rename cache swap file");
                     else
                         cacheSwap = null;

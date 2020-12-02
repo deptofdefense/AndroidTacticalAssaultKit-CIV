@@ -30,29 +30,54 @@ public class Symbol implements DrawingTool {
 
     @Override
     public void pushParam(String key, String value) {
-        if (key.equals(PARAM_SYMBOL_NAME)) {
-            this.id = value;
-        } else if (key.equals(PARAM_SYMBOL_COLOR)) {
-            this.color = FeatureStyleParser.parseOgrColor(value);
-        } else if (key.equals(PARAM_SYMBOL_OUTLINE_COLOR)) {
-            this.outlineColor = FeatureStyleParser.parseOgrColor(value);
-        } else if (key.equals(PARAM_ANGLE)) {
-            this.angle = Float.parseFloat(value);
-        } else if (key.equals(PARAM_SIZE)) {
-            if(value.endsWith("px"))
-                this.size = Integer.parseInt(value.substring(0, value.length() - 2));
-            else if(value.matches("\\d+(\\.\\d+)"))
-                this.scale = Float.parseFloat(value); 
-            /*
-             * } else if(key.equals(PARAM_X_OFFSET)) { this.dx = Float.parseFloat(value); } else
-             * if(key.equals(PARAM_Y_OFFSET)) { this.dy = Float.parseFloat(value); } else
-             * if(key.equals(PARAM_SPACING_STEP)) { this.ds = Float.parseFloat(value); } else
-             * if(key.equals(PARAM_SPACING_PERPENDICULAR_DISTANCE)) { this.dp =
-             * Float.parseFloat(value); } else if(key.equals(PARAM_SPACING_INITIAL_OFFSET)) {
-             * this.di = Float.parseFloat(value);
-             */
-        } else if (key.equals(PARAM_PRIORITY_LEVEL)) {
-            this.priorityLevel = Integer.parseInt(value);
+        try {
+            switch (key) {
+                case PARAM_SYMBOL_NAME:
+                    this.id = value;
+                    break;
+                case PARAM_SYMBOL_COLOR:
+                    this.color = FeatureStyleParser.parseOgrColor(value);
+                    break;
+                case PARAM_SYMBOL_OUTLINE_COLOR:
+                    this.outlineColor = FeatureStyleParser.parseOgrColor(value);
+                    break;
+                case PARAM_ANGLE:
+                    this.angle = Float.parseFloat(value);
+                    break;
+                case PARAM_SIZE:
+                    if (value.endsWith("px"))
+                        this.size = Integer.parseInt(value.substring(0, value.length() - 2));
+                    else if (value.matches("\\d+(\\.\\d+)"))
+                        this.scale = Float.parseFloat(value);
+
+                    break;
+                /**
+                 case PARAM_X_OFFSET:
+                 this.dx = Float.parseFloat(value);
+                 break;
+                 case PARAM_Y_OFFSET:
+                 this.dy = Float.parseFloat(value);
+                 break;
+                 case PARAM_SPACING_STEP:
+                 this.ds = Float.parseFloat(value);
+                 break;
+                 case PARAM_SPACING_PERPENDICULAR_DISTANCE:
+                 this.dp =
+                 Float.parseFloat(value);
+                 break;
+                 case PARAM_SPACING_INITIAL_OFFSET:
+                 this.di = Float.parseFloat(value);
+
+                 break;
+                 **/
+                case PARAM_PRIORITY_LEVEL:
+                    this.priorityLevel = Integer.parseInt(value);
+                    break;
+                default:
+                    break;
+            }
+        } catch (Exception ignore) {
+            // skip improperly formed value
         }
     }
 

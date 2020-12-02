@@ -42,6 +42,18 @@ namespace TAKEngineJNI {
             template<class WrapperType>
             TAK::Engine::Util::TAKErr marshal(Java::JNILocalRef &value, JNIEnv &env, std::unique_ptr<T, void(*)(const T *)> &&obj) NOTHROWS;
         private :
+            template<class Ti>
+            static void onShutdown(JNIEnv &env, void *opaque) NOTHROWS
+            {
+                InterfaceMarshalContext<Ti> &ctx = *static_cast<InterfaceMarshalContext<Ti> *>(opaque);
+                for(auto it = ctx.managedImplToNativeWrapper.begin(); it != ctx.managedImplToNativeWrapper.end(); it++)
+                    env.DeleteWeakGlobalRef(it->first);
+                ctx.managedImplToNativeWrapper.clear();
+                for(auto it = ctx.nativeImplToManagedWrapper.begin(); it != ctx.nativeImplToManagedWrapper.end(); it++)
+                    env.DeleteWeakGlobalRef(it->second);
+                ctx.nativeImplToManagedWrapper.clear();
+            }
+        private :
             std::map<jweak, std::weak_ptr<T>> managedImplToNativeWrapper;
             std::map<const T *, jweak> nativeImplToManagedWrapper;
             TAK::Engine::Thread::Mutex mutex;
@@ -56,10 +68,15 @@ namespace TAKEngineJNI {
             javaWrapperType(NULL),
             javaWrapperPointerField(NULL),
             javaWrapperCtor(NULL)
-        {}
+        {
+            ATAKMapEngineJNI_registerShutdownHook(InterfaceMarshalContext<T>::onShutdown<T>, std::unique_ptr<void, void(*)(const void *)>(this, TAK::Engine::Util::Memory_leaker_const<void>));
+        }
         template<class T>
         inline InterfaceMarshalContext<T>::~InterfaceMarshalContext() NOTHROWS
         {
+            std::unique_ptr<void, void(*)(const void *)> discard(nullptr, nullptr);
+            ATAKMapEngineJNI_unregisterShutdownHook(discard, this);
+#ifdef __ANDROID__
             LocalJNIEnv env;
             for(auto it = managedImplToNativeWrapper.begin(); it != managedImplToNativeWrapper.end(); it++)
                 env->DeleteWeakGlobalRef(it->first);
@@ -72,6 +89,7 @@ namespace TAKEngineJNI {
                 env->DeleteGlobalRef(javaWrapperType);
                 javaWrapperType = NULL;
             }
+#endif
         }
         template<class T>
         void InterfaceMarshalContext<T>::init(JNIEnv &env, jclass javaWrapperType_, jfieldID javaWrapperPointerField_, jmethodID javaWrapperCtor_) NOTHROWS

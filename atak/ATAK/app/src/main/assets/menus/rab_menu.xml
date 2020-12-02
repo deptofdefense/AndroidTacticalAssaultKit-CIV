@@ -3,7 +3,7 @@
     <button angle='-90'
             icon='icons/delete.png'
             disabled='${nonremovable}'
-            onClick='actions/rab_action_delete.xml' />
+            onClick='actions/remove.xml' />
     
     <button icon='icons/details.png'
             onClick='actions/rab_drop_down.xml' />

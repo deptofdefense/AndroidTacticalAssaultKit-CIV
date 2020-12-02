@@ -24,6 +24,8 @@ import org.gdal.osr.SpatialReference;
 import android.database.DatabaseErrorHandler;
 import android.database.sqlite.SQLiteDatabase;
 
+import com.atakmap.annotations.DeprecatedApi;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.EngineLibrary;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
@@ -82,18 +84,18 @@ public class GdalLibrary {
 
         gdal.SetConfigOption("GDAL_DISABLE_READDIR_ON_OPEN", "TRUE");
 
-        if (!gdalDir.exists()) { 
-            if (!gdalDir.mkdirs()) { 
+        if (!FileIOProviderFactory.exists(gdalDir)) {
+            if (!FileIOProviderFactory.mkdirs(gdalDir)) {
                 Log.d("GdalLibrary", "XXX: bad could not make the gdalDir: " + gdalDir);
             }
         }
         File gdalDataVer = new File(gdalDir, "gdal.version");
         boolean unpackData = true;
-        if (gdalDataVer.exists()) {
-            byte[] versionBytes = new byte[(int) gdalDataVer.length()];
+        if (FileIOProviderFactory.exists(gdalDataVer)) {
+            byte[] versionBytes = new byte[(int) FileIOProviderFactory.length(gdalDataVer)];
             InputStream inputStream = null;
             try {
-                inputStream = new FileInputStream(gdalDataVer);
+                inputStream = FileIOProviderFactory.getInputStream(gdalDataVer);
                 int r = inputStream.read(versionBytes);
                 if (r != versionBytes.length) 
                     Log.d("GdalLibrary", "versionBytes, read: " + r + " expected: " + versionBytes.length);
@@ -110,11 +112,11 @@ public class GdalLibrary {
         
         // make sure all files from the last unpack are present
         File gdalDataList = new File(gdalDir, "gdaldata.list2");
-        if(!unpackData && gdalDataList.exists()) {
+        if(!unpackData && FileIOProviderFactory.exists(gdalDataList)) {
             FileInputStream inputStream = null;
             DataInputStream dataInput = null;
             try {
-                inputStream = new FileInputStream(gdalDataList);
+                inputStream = FileIOProviderFactory.getInputStream(gdalDataList);
                 dataInput = new DataInputStream(inputStream);
                 
                 final int numFiles = dataInput.readInt();
@@ -126,7 +128,7 @@ public class GdalLibrary {
                     fileName = dataInput.readUTF();
                     
                     dataFile = new File(gdalDir, FileSystemUtils.sanitizeWithSpacesAndSlashes(fileName));
-                    if(!dataFile.exists() || dataFile.length() != fileSize) {
+                    if(!FileIOProviderFactory.exists(dataFile)|| FileIOProviderFactory.length(dataFile) != fileSize) {
                         unpackData = true;
                         break;
                     }
@@ -180,7 +182,7 @@ public class GdalLibrary {
         if (url == null)
             return;
 
-        Collection<String> dataFiles = new LinkedList<String>();
+        Collection<String> dataFiles = new LinkedList<>();
 
         InputStreamReader inputStreamReader;
         BufferedReader bufferedReader;
@@ -215,7 +217,7 @@ public class GdalLibrary {
         FileOutputStream dataListFileStream = null;
         DataOutputStream dataListStream = null;
         try {
-            dataListFileStream = new FileOutputStream(gdalDataList);
+            dataListFileStream = FileIOProviderFactory.getOutputStream(gdalDataList);
             dataListStream = new DataOutputStream(dataListFileStream);
             
             dataListStream.writeInt(dataFiles.size());
@@ -229,7 +231,7 @@ public class GdalLibrary {
                     url = GdalLibrary.class.getClassLoader().getResource("gdal/data/" + dataFileName);
                     inputStream = url.openStream();
                     dataFile = new File(gdalDir, dataFileName);
-                    fileOutputStream = new FileOutputStream(dataFile);
+                    fileOutputStream = FileIOProviderFactory.getOutputStream(dataFile);
     
                     do {
                         transferSize = inputStream.read(transfer);
@@ -243,7 +245,7 @@ public class GdalLibrary {
                         inputStream.close();
                 }
                 
-                dataListStream.writeInt((int)dataFile.length());
+                dataListStream.writeInt((int)FileIOProviderFactory.length(dataFile));
                 dataListStream.writeUTF(dataFileName);
             }
         } finally {
@@ -255,7 +257,7 @@ public class GdalLibrary {
 
         // write out the gdal version that the data files correspond to
         try {
-            fileOutputStream = new FileOutputStream(gdalDataVer);
+            fileOutputStream = FileIOProviderFactory.getOutputStream(gdalDataVer);
             fileOutputStream.write(gdal.VersionInfo("VERSION_NUM").getBytes());
         } catch (IOException ignored) {
             // not really a major issue
@@ -362,6 +364,8 @@ public class GdalLibrary {
     /**
      * @deprecated use {@link TileReader#getMasterIOThread()}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static synchronized TileReader.AsynchronousIO getMasterIOThread() {
         return TileReader.getMasterIOThread();
     }

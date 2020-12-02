@@ -119,7 +119,7 @@ public class ExceptionUtils {
      * @return the given list as a <code>String[]</code>.
      */
     private static String[] toArray(List list) {
-        return (String[]) list.toArray(new String[list.size()]);
+        return (String[]) list.toArray(new String[0]);
     }
 
     /**

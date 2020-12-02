@@ -48,7 +48,6 @@ import com.atakmap.opengl.GLTexture;
 import com.atakmap.opengl.GLTextureCache;
 import com.atakmap.opengl.GLWireFrame;
 import com.atakmap.opengl.Shader;
-import com.atakmap.util.Collections2;
 import com.atakmap.util.ConfigOptions;
 import com.atakmap.util.Disposable;
 import com.atakmap.util.Releasable;
@@ -826,7 +825,9 @@ public class GLQuadTileNode3 implements
                 this.core.lowerRight,
                 this.core.lowerLeft,
                 this.core.unwrap,
-                360d / (1L<< OSMUtils.mapnikTileLevel(view.drawMapResolution)));
+                this.core.options.adaptiveTileLod ?
+                        0d :
+                        360d / (1L<< OSMUtils.mapnikTileLevel(view.drawMapResolution)));
 
         if (numRois < 1) // no intersection
             return;
@@ -1148,6 +1149,14 @@ public class GLQuadTileNode3 implements
         }
     }
 
+    private static int computeLevel(GLMapView view, double gsd, double ullat, double ullng, double lrlat, double lrlng, int maxLevel, double lvladj) {
+        final double tileGsd = GLMapView.estimateResolution(view, ullat, ullng, lrlat, lrlng, null);
+        final double scale = (gsd / tileGsd);
+        final int computed = (int) Math.ceil(Math.max((Math.log(1.0d / scale) / Math.log(2.0)) + lvladj, 0d));
+        return Math.min(maxLevel, computed);
+    }
+
+
     private boolean shouldDraw(int numRois, long minX, long minY, long maxX, long maxY) {
         for(int i = 0; i < numRois; i++) {
             if(Rectangle.intersects(core.drawROI[i].left, core.drawROI[i].top, core.drawROI[i].right, core.drawROI[i].bottom, minX, minY, maxX, maxY)) {
@@ -1166,9 +1175,14 @@ public class GLQuadTileNode3 implements
         this.view = view;
 
         // dynamically refine level based on expected nominal resolution for tile as rendered
-       final double tileGsd = GLMapView.estimateResolution(view, maxLat, minLng, minLat, maxLng, null);
-        final double scale = (this.core.gsd / tileGsd);
-        final int computed = (int) Math.ceil(Math.max((Math.log(1.0d / scale) / Math.log(2.0)) + this.core.options.levelTransitionAdjustment, 0d));
+        final int computed;
+        if(this.core.options.adaptiveTileLod) {
+            computed = computeLevel(view, this.core.gsd, maxLat, minLng, minLat, maxLng, this.level, this.core.options.levelTransitionAdjustment);
+        } else {
+            final double tileGsd = GLMapView.estimateResolution(view, maxLat, minLng, minLat, maxLng, null);
+            final double scale = (this.core.gsd / tileGsd);
+            computed = (int) Math.ceil(Math.max((Math.log(1.0d / scale) / Math.log(2.0)) + this.core.options.levelTransitionAdjustment, 0d));
+        }
         if (computed > level) {
             level = (computed > this.level) ? this.level : level;
         }
@@ -1178,7 +1192,7 @@ public class GLQuadTileNode3 implements
             this.abandon();
             this.verticesInvalid = false;
             this.descendantsRequestDraw = false;
-            switch(this.state) {
+            switch (this.state) {
                 case RESOLVED:
                     core.stateMask |= STATE_RESOLVED;
                     break;
@@ -1196,7 +1210,9 @@ public class GLQuadTileNode3 implements
                     break;
             }
             return (this.state != State.RESOLVED);
-        } else if (this.level > level) {
+        } else if(this.level < level) {
+            throw new IllegalStateException();
+        } else if (!this.core.options.adaptiveTileLod) {
             // determine children to draw
             boolean[] drawChild = new boolean[4]; // UL, UR, LL, LR
             final boolean skipr = (tileWidth <= halfTileWidth);
@@ -1242,8 +1258,79 @@ public class GLQuadTileNode3 implements
                 view.requestRefresh();
             }
             return this.descendantsRequestDraw && (this.state != State.RESOLVED);
-        } else {
-            throw new IllegalStateException();
+        } else { // adaptive LOD
+            // determine children to draw
+            int numDrawnChildren = 0;
+            int[] childLevels = new int[4]; // UL, UR, LL, LR
+            final int levelLimit = Math.min(this.level, Math.max(0, root.level-1));
+            final boolean skipr = (tileWidth <= halfTileWidth);
+            final boolean skipb = (tileHeight <= halfTileHeight);
+            final double midLat = centroid.getLatitude();
+            final double midLng = centroid.getLongitude();
+            childLevels[0] = computeLevel(view, this.core.gsd, maxLat, minLng, skipb ? minLat : midLat, skipr ? maxLng : midLng, levelLimit, this.core.options.levelTransitionAdjustment);
+            childLevels[1] = skipr ? -1 : computeLevel(view, this.core.gsd, maxLat, midLng, skipb ? minLat : midLat, maxLng, levelLimit, this.core.options.levelTransitionAdjustment);
+            childLevels[2] = skipb ? -1 : computeLevel(view, this.core.gsd, midLat, minLng, minLat, skipr ? maxLng : midLng, levelLimit, this.core.options.levelTransitionAdjustment);
+            childLevels[3] = (skipr || skipb) ? -1 : computeLevel(view, this.core.gsd, midLat, midLng, minLat, maxLng, levelLimit, this.core.options.levelTransitionAdjustment);
+
+            int numChildrenToDraw = 0;
+            int numChildrenUnresolvable = 0;
+            int quadsVisible = 0;
+            for(int i = 0; i < 4; i++) {
+                if(childLevels[i] == -1 || // no child tile present
+                        childLevels[i] >= this.level || // child should not be rendered
+                        (childLevels[i] > (this.level-1) && !core.tileReader.isMultiResolution()) // tile out of view on non-multires reader
+                ) {
+                    if(childLevels[i] >= 0)
+                        quadsVisible++;
+                    if (this.children[i] != null) {
+                        this.children[i].release();
+                        this.children[i] = null;
+                    }
+                } else {
+                    numChildrenToDraw++;
+                    if (this.children[i] == null)
+                        this.children[i] = new GLQuadTileNode3(this, i);
+                    if(this.children[i].receivedUpdate)
+                        numDrawnChildren++;
+                    switch(this.children[i].state) {
+                        case UNRESOLVABLE:
+                            numChildrenUnresolvable++;
+                            break;
+                        default :
+                            break;
+                    }
+                }
+            }
+
+            // should resolve self if:
+            // - multires and any child is unresolvable
+            // should draw self if:
+            // - texture data available and any visible descendant not resolved
+
+            final boolean multiRes = this.core.tileReader.isMultiResolution();
+            if((multiRes || this.receivedUpdate) &&
+                    ((numChildrenUnresolvable > 0) ||
+                            (quadsVisible > numChildrenToDraw) ||
+                            descendantsRequestDraw)) {
+
+                // resolution of ancestor only occurs if multi-res
+                this.drawImpl(view, multiRes);
+            }
+
+            descendantsRequestDraw = false;
+            for(int i = 0; i < 4; i++) {
+                if(this.children[i] == null)
+                    continue;
+                this.children[i].verticesInvalid = this.verticesInvalid;
+                descendantsRequestDraw |= this.children[i].drawImpl(view, level, numRois);
+            }
+            this.verticesInvalid = false;
+
+            // request refresh if the descendants need to borrow and in the unresolved state
+            if(this.descendantsRequestDraw && this.state == State.UNRESOLVED && multiRes)
+                view.requestRefresh();
+
+            return this.descendantsRequestDraw && (this.state != State.RESOLVED);
         }
     }
 
@@ -1381,17 +1468,19 @@ public class GLQuadTileNode3 implements
         if(!touched && (this.state == State.RESOLVED || this.state == State.UNRESOLVABLE)) {
             touched = true;
         }
-        if(this.state != State.RESOLVED) {
-            // borrow
-            this.validateTexCoordIndices();
-            final GLTexture borrowedTexture = this.tryBorrow();
-            if(borrowedTexture != null) {
-                this.validateVertexCoords(view);
-                this.drawTexture(view, borrowedTexture, this.borrowTextureCoordinates);
+        if(!this.core.options.adaptiveTileLod) {
+            if (this.state != State.RESOLVED) {
+                // borrow
+                this.validateTexCoordIndices();
+                final GLTexture borrowedTexture = this.tryBorrow();
+                if (borrowedTexture != null) {
+                    this.validateVertexCoords(view);
+                    this.drawTexture(view, borrowedTexture, this.borrowTextureCoordinates);
+                }
+            } else {
+                this.borrowingFrom = null;
+                this.borrowTextureCoordinates = core.resources.discardBuffer(this.borrowTextureCoordinates);
             }
-        } else {
-            this.borrowingFrom = null;
-            this.borrowTextureCoordinates = core.resources.discardBuffer(this.borrowTextureCoordinates);
         }
 
         if (this.receivedUpdate) {
@@ -1561,8 +1650,8 @@ public class GLQuadTileNode3 implements
         GLES30.glUseProgram(GLES30.GL_NONE);
 
          com.atakmap.opengl.GLText _titleText = com.atakmap.opengl.GLText.getInstance(com.atakmap.map.AtakMapView.getDefaultTextFormat());
-         view.scratch.pointD.x = this.tileSrcX+this.tileSrcWidth/2;
-         view.scratch.pointD.y = this.tileSrcY+this.tileSrcHeight/2;
+         view.scratch.pointD.x = this.tileSrcX+this.tileSrcWidth/2f;
+         view.scratch.pointD.y = this.tileSrcY+this.tileSrcHeight/2f;
          this.core.imprecise.imageToGround(view.scratch.pointD, view.scratch.geo);
          view.forward(view.scratch.geo, view.scratch.pointF);
          com.atakmap.opengl.GLES20FixedPipeline.glPushMatrix();
@@ -2402,6 +2491,7 @@ public class GLQuadTileNode3 implements
         public boolean progressiveLoad;
         public double levelTransitionAdjustment;
         public boolean textureBorrowEnabled;
+        public boolean adaptiveTileLod;
 
         public Options() {
             this.textureCopyEnabled = true;
@@ -2410,6 +2500,7 @@ public class GLQuadTileNode3 implements
             this.progressiveLoad = true;
             this.levelTransitionAdjustment = 0d;
             this.textureBorrowEnabled = true;
+            this.adaptiveTileLod = false;
         }
     }
 }

@@ -26,9 +26,9 @@ public abstract class DeviceProfileCallback
     }
 
     /**
-    * Callback for completed or errored device profile requests
+    * Callback for completed or error device profile requests
     *
-    * @param status
+    * @param status if the resultData should be considered available
     * @param resultData    Only available upon status = true
     */
     public abstract void onDeviceProfileRequestComplete(boolean status,

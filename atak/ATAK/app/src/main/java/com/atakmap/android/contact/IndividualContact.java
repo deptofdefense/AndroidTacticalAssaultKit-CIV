@@ -221,7 +221,7 @@ public class IndividualContact extends Contact
         if (!bUserOnly) {
             return Collections.unmodifiableCollection(connectors.values());
         } else {
-            List ret = new ArrayList<Connector>();
+            List<Connector> ret = new ArrayList<>();
             for (Connector c : connectors.values()) {
                 if (c != null && c.isUserConnector()) {
                     ret.add(c);

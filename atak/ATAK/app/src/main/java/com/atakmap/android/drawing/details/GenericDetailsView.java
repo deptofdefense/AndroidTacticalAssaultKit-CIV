@@ -8,9 +8,6 @@ import android.content.Intent;
 
 import com.atakmap.android.cotdetails.extras.ExtraDetailsLayout;
 import com.atakmap.android.drawing.DrawingPreferences;
-import com.atakmap.android.cotdetails.extras.ExtraDetailsListener;
-import com.atakmap.android.cotdetails.extras.ExtraDetailsManager;
-import com.atakmap.android.cotdetails.extras.ExtraDetailsProvider;
 import com.atakmap.android.gui.RangeEntryDialog;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -33,7 +30,6 @@ import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -54,14 +50,13 @@ import com.atakmap.android.toolbar.Tool;
 import com.atakmap.android.toolbar.ToolListener;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.util.AfterTextChangedWatcher;
+import com.atakmap.android.util.Undoable;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-
-import java.util.List;
 
 /**
  * Generic details view for a map item
@@ -138,8 +133,6 @@ public abstract class GenericDetailsView extends RelativeLayout implements
                             if (_item == null || _mapView == null)
                                 return;
                             _item.toggleMetaData("labels_on", isChecked);
-                            _item.persist(_mapView.getMapEventDispatcher(),
-                                    null, GenericDetailsView.class);
                         }
                     });
         }
@@ -263,7 +256,7 @@ public abstract class GenericDetailsView extends RelativeLayout implements
             Span[] acceptableValues) {
         if (item == null)
             return;
-        double heightM = item.getMetaDouble("height", 0);
+        double heightM = item.getHeight();
         Span heightUnit = getUnitSpan(item);
         if (acceptableValues == null) {
             acceptableValues = Span.values();
@@ -302,13 +295,32 @@ public abstract class GenericDetailsView extends RelativeLayout implements
             ToolManagerBroadcastReceiver.getInstance().endCurrentTool();
     }
 
+    /**
+     * Check if the edit tool this details view uses is active
+     * @return True if active
+     */
     protected boolean editToolActive() {
-        String editTool = getEditTool();
-        if (FileSystemUtils.isEmpty(editTool))
-            return false;
+        return getActiveEditTool() != null;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <T extends Tool> T getActiveEditTool() {
+        String toolID = getEditTool();
+        if (FileSystemUtils.isEmpty(toolID))
+            return null;
         Tool active = ToolManagerBroadcastReceiver.getInstance()
                 .getActiveTool();
-        return active != null && active.getIdentifier().equals(editTool);
+        return active != null && active.getIdentifier().equals(toolID)
+                ? (T) active : null;
+    }
+
+    /**
+     * Undo an edit by the current tool
+     */
+    protected void undoToolEdit() {
+        Tool t = getActiveEditTool();
+        if (t instanceof Undoable)
+            ((Undoable) t).undo();
     }
 
     /**

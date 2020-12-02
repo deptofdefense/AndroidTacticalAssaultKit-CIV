@@ -1,12 +1,12 @@
 package com.atakmap.opengl;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.util.ConfigOptions;
 
 import android.content.Context;
@@ -46,8 +46,8 @@ public final class GLSLUtil {
                 
                 shaderFile = new File(path);
                 // look up absolute path
-                if(shaderFile.exists()) {
-                    stream = new FileInputStream(shaderFile);
+                if(FileIOProviderFactory.exists(shaderFile)) {
+                    stream = FileIOProviderFactory.getInputStream(shaderFile);
                     break;
                 }
                 
@@ -57,8 +57,8 @@ public final class GLSLUtil {
                     String[] paths = additionalShaderSourcePaths.split("\\:");
                     for(int i = 0; i < paths.length; i++) {
                         shaderFile = new File(paths[i], path);
-                        if(shaderFile.exists()) {
-                            stream = new FileInputStream(shaderFile);
+                        if(FileIOProviderFactory.exists(shaderFile)) {
+                            stream = FileIOProviderFactory.getInputStream(shaderFile);
                             break;
                         }
                     }

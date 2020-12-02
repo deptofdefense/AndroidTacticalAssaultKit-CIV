@@ -1,6 +1,5 @@
 package com.atakmap.io;
 
-import java.io.InputStream;
 import java.util.Collection;
 
 public interface ProtocolHandler {

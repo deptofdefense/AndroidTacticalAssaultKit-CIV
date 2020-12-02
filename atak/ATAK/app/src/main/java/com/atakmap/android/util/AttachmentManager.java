@@ -18,11 +18,12 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import android.widget.ImageButton;
 import android.os.FileObserver;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+
 import java.io.IOException;
 import java.io.File;
 import java.io.FilenameFilter;
+
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -248,23 +249,23 @@ public class AttachmentManager {
 
         // Check if the attachments directory even exists
         File attDir = FileSystemUtils.getItem("attachments");
-        if (!attDir.exists())
+        if (!FileIOProviderFactory.exists(attDir))
             return ret;
 
         // Get all attachment sub-directories
         // Directory name corresponds to the map item UID
-        File[] subDirs = attDir.listFiles();
+        File[] subDirs = FileIOProviderFactory.listFiles(attDir);
         if (FileSystemUtils.isEmpty(subDirs))
             return ret;
 
         // Add map items for valid sub-directories
         for (File d : subDirs) {
             // Ignore regular files
-            if (!d.isDirectory())
+            if (!FileIOProviderFactory.isDirectory(d))
                 continue;
 
             // Ignore empty sub-directories
-            File[] files = d.listFiles();
+            File[] files = FileIOProviderFactory.listFiles(d);
             if (FileSystemUtils.isEmpty(files))
                 continue;
 
@@ -294,8 +295,8 @@ public class AttachmentManager {
         final String retval = getFolderPath(uid);
         if (retval != null) {
             File imageDir = new File(retval);
-            if (imageDir.isDirectory()) {
-                File[] files = imageDir.listFiles(_fileFilter);
+            if (FileIOProviderFactory.isDirectory(imageDir)) {
+                File[] files = FileIOProviderFactory.listFiles(imageDir, _fileFilter);
                 if (files == null)
                     files = new File[0];
                 ret.addAll(Arrays.asList(files));
@@ -338,8 +339,8 @@ public class AttachmentManager {
             if (attachment.getCanonicalPath().equals(f.getCanonicalPath()))
                 return null;
 
-            FileSystemUtils.copy(new FileInputStream(f),
-                    new FileOutputStream(attachment));
+            FileSystemUtils.copy(FileIOProviderFactory.getInputStream(f),
+                    FileIOProviderFactory.getOutputStream(attachment));
         } catch (IOException ioe) {
             return null;
         }
@@ -374,7 +375,7 @@ public class AttachmentManager {
         // we can not observe a folder that does not exist
         if (createDir) {
             File f = new File(fPath);
-            if (!f.exists() && !f.mkdirs())
+            if (!FileIOProviderFactory.exists(f) && !FileIOProviderFactory.mkdirs(f))
                 Log.d(TAG, "unable to create the directory: " + f);
         }
 

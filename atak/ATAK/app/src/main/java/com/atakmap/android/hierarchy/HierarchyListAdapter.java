@@ -61,6 +61,7 @@ import com.atakmap.android.overlay.MapOverlay2;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.AltitudeUtilities;
 import com.atakmap.android.util.LimitingThread;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.conversions.AngleUtilities;
@@ -156,6 +157,9 @@ public class HierarchyListAdapter extends BaseAdapter implements
     // The current list of items being displayed
     private final List<HierarchyListItem> items = new ArrayList<>();
 
+    // List of pending items to update once busy touch events are finished
+    private final List<HierarchyListItem> pendingItems = new ArrayList<>();
+
     // The back-stack of lists
     private Stack<HierarchyListItem> prevListStack = new Stack<>();
 
@@ -181,7 +185,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
     private MultiFilter currFilter;
 
     // The current sort method (alphabetic by default)
-    private Class curSort = SortAlphabet.class;
+    private Class<?> curSort = SortAlphabet.class;
 
     // Whether to perform filtering after a refresh is finished
     private boolean postFilter = true;
@@ -337,7 +341,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
                             public void run() {
                                 if (active) {
                                     receiver.setViewToMode();
-                                    HierarchyListAdapter.super.notifyDataSetChanged();
+                                    superNotifyDataSetChanged();
                                 }
                             }
                         });
@@ -535,14 +539,14 @@ public class HierarchyListAdapter extends BaseAdapter implements
      *
      * @param sortType Sort class
      */
-    public void sort(Class sortType) {
+    public void sort(Class<?> sortType) {
         if (sortType == null)
             sortType = SortAlphabet.class;
         this.curSort = sortType;
         refreshList();
     }
 
-    public Class getSortType() {
+    public Class<?> getSortType() {
         return this.curSort;
     }
 
@@ -608,6 +612,20 @@ public class HierarchyListAdapter extends BaseAdapter implements
         notifyDataSetChanged(item, true);
     }
 
+    private void superNotifyDataSetChanged() {
+        if (receiver.isTouchActive())
+            this.uiRefreshThread.exec();
+        else {
+            // Pending list update while touch was busy
+            if (!pendingItems.isEmpty()) {
+                items.clear();
+                items.addAll(pendingItems);
+                pendingItems.clear();
+            }
+            super.notifyDataSetChanged();
+        }
+    }
+
     /**
      * Toggle the post filter (culls empty lists)
      */
@@ -642,13 +660,23 @@ public class HierarchyListAdapter extends BaseAdapter implements
                 }
                 showingLocationItem = false;
                 for (HierarchyListItem item : newItems) {
-                    if (item instanceof ILocation || item instanceof Location)
+                    if (item instanceof ILocation || item instanceof Location) {
                         showingLocationItem = true;
+                        break;
+                    }
                 }
-                // 'items' not synchronized since it's only touched on UI
-                items.clear();
-                items.addAll(newItems);
-                HierarchyListAdapter.super.notifyDataSetChanged();
+
+                // Not synchronized since these lists are only touched on UI
+                pendingItems.clear();
+                if (receiver.isTouchActive()) {
+                    // Add these items to the pending list until the touch
+                    // is finished
+                    pendingItems.addAll(newItems);
+                } else {
+                    items.clear();
+                    items.addAll(newItems);
+                }
+                superNotifyDataSetChanged();
             }
         });
     }
@@ -1852,6 +1880,7 @@ public class HierarchyListAdapter extends BaseAdapter implements
      * @deprecated Just use {@link ATAKUtilities#getDisplayName(MapItem)} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static String getTitleFromMapItem(MapItem mapItem,
             String devCallsign, String devUID, MapGroup baseGroup) {
         return ATAKUtilities.getDisplayName(mapItem);

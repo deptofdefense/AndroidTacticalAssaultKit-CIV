@@ -1,80 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="wrap_content"
-              android:layout_height="wrap_content"
-              android:layout_gravity="center" >
+<TableLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="10dp">
 
-
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="10dp">
-
-        <LinearLayout
+    <TableRow>
+        <TextView
             android:layout_width="wrap_content"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal" >
-
-            <TextView
-                android:layout_width="100dp"
-                android:layout_height="fill_parent"
-                android:gravity="center_vertical"
-                android:textSize="16sp"
-                android:textColor="@color/heading_yellow"
-                android:text="@string/name" />
-
-            <EditText
-                android:id="@+id/custom_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:inputType="text"
-                android:minWidth="100dp"
-                android:maxWidth="150dp"
-                android:textSize="16sp" />
-
-        </LinearLayout>
-
-        <LinearLayout
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/auto_margin"
+            android:gravity="center_vertical"
+            android:textSize="16sp"
+            android:textColor="@color/heading_yellow"
+            android:text="@string/name" />
+        <EditText
+            android:id="@+id/custom_name"
             android:layout_width="wrap_content"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal" >
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:minWidth="100dp"
+            android:maxWidth="150dp"
+            android:textSize="16sp"/>
+    </TableRow>
 
-            <TextView
-                android:layout_width="100dp"
-                android:layout_height="fill_parent"
-                android:gravity="center_vertical"
-                android:textSize="16sp"
-                android:textColor="@color/heading_yellow"
-                android:text="@string/description" />
-
-            <EditText
-                android:id="@+id/custom_description"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:inputType="text"
-                android:minWidth="100dp"
-                android:maxWidth="150dp"
-                android:textSize="16sp" />
-
-        </LinearLayout>
-
-        <LinearLayout
+    <TableRow>
+        <TextView
             android:layout_width="wrap_content"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal" >
+            android:layout_height="fill_parent"
+            android:layout_marginEnd="@dimen/auto_margin"
+            android:gravity="center_vertical"
+            android:textSize="16sp"
+            android:textColor="@color/heading_yellow"
+            android:text="@string/description" />
+        <EditText
+            android:id="@+id/custom_description"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="text"
+            android:minWidth="100dp"
+            android:maxWidth="150dp"
+            android:textSize="16sp" />
+    </TableRow>
 
-            <TextView
-                android:layout_width="100dp"
-                android:layout_height="fill_parent"
-                android:gravity="center_vertical"
-                android:textSize="16sp"
-                android:textColor="@color/heading_yellow"
-                android:text="@string/dangerclose_text6" />
-
+    <TableRow>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:layout_marginEnd="@dimen/auto_margin"
+            android:gravity="center_vertical"
+            android:textSize="16sp"
+            android:textColor="@color/heading_yellow"
+            android:text="@string/dangerclose_text6" />
+        <LinearLayout>
             <EditText
                 android:maxLength="9"
                 android:id="@+id/custom_standing"
@@ -84,30 +63,25 @@
                 android:minWidth="50dp"
                 android:maxWidth="75dp"
                 android:textSize="16sp" />
-
             <TextView
-                android:layout_width="20dp"
-                android:layout_height="fill_parent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:textSize="16sp"
                 android:text="@string/meter_abbreviation" />
-
         </LinearLayout>
+    </TableRow>
 
-        <LinearLayout
+    <TableRow>
+        <TextView
             android:layout_width="wrap_content"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal" >
-
-            <TextView
-                android:layout_width="100dp"
-                android:layout_height="fill_parent"
-                android:gravity="center_vertical"
-                android:textSize="16sp"
-                android:textColor="@color/heading_yellow"
-                android:text="@string/prone" />
-
+            android:layout_height="fill_parent"
+            android:layout_marginEnd="@dimen/auto_margin"
+            android:gravity="center_vertical"
+            android:textSize="16sp"
+            android:textColor="@color/heading_yellow"
+            android:text="@string/prone"/>
+        <LinearLayout>
             <EditText
                 android:maxLength="9"
                 android:id="@+id/custom_prone"
@@ -117,30 +91,24 @@
                 android:minWidth="50dp"
                 android:maxWidth="75dp"
                 android:textSize="16sp" />
-
             <TextView
-                android:layout_width="20dp"
-                android:layout_height="fill_parent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:textSize="16sp"
                 android:text="@string/meter_abbreviation" />
-
         </LinearLayout>
+    </TableRow>
 
-        <LinearLayout
+    <TableRow>
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
-            android:layout_weight="1"
-            android:layout_marginBottom="10dp"
-            android:orientation="horizontal" >
-
-            <TextView
-                android:layout_width="100dp"
-                android:layout_height="fill_parent"
-                android:gravity="center_vertical"
-                android:textColor="@color/heading_yellow"
-                android:text="@string/dangerclose_text7" />
-
+            android:layout_marginEnd="@dimen/auto_margin"
+            android:gravity="center_vertical"
+            android:textColor="@color/heading_yellow"
+            android:text="@string/dangerclose_text7"/>
+        <LinearLayout>
             <EditText
                 android:maxLength="9"
                 android:id="@+id/custom_proneP"
@@ -150,18 +118,13 @@
                 android:minWidth="50dp"
                 android:maxWidth="75dp"
                 android:textSize="16sp" />
-
             <TextView
-                android:layout_width="20dp"
-                android:layout_height="fill_parent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:textSize="16sp"
                 android:text="@string/meter_abbreviation" />
-
         </LinearLayout>
+    </TableRow>
 
-    </LinearLayout>
-
-
-
-</RelativeLayout>
+</TableLayout>

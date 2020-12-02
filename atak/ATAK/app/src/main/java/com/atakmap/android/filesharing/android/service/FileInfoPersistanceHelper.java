@@ -9,6 +9,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.filesystem.SecureDelete;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -595,7 +596,7 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
                 return;
 
             for (FileInfo file : files) {
-                if (!file.file().exists()) {
+                if (!FileIOProviderFactory.exists(file.file())) {
                     this.delete(file, type);
                     Log.d(TAG, "Purged stale file: " + file.fileName());
                 }

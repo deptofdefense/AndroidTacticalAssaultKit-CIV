@@ -11,6 +11,7 @@ import com.atakmap.android.http.rest.operation.NetworkOperation;
 import com.atakmap.comms.http.TakHttpClient;
 import com.atakmap.comms.http.TakHttpException;
 import com.atakmap.comms.http.TakHttpResponse;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
@@ -94,7 +95,7 @@ public final class PostUserTracksOperation extends HTTPOperation {
             Log.d(TAG,
                     String.format(LocaleUtil.getCurrent(),
                             "User Track %s posted %d bytes in %f seconds",
-                            postRequest.toString(), postfile.length(),
+                            postRequest.toString(), FileIOProviderFactory.length(postfile),
                             (stopTime - startTime) / 1000F));
 
             Bundle output = new Bundle();

@@ -7,7 +7,6 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.KeyManagementException;

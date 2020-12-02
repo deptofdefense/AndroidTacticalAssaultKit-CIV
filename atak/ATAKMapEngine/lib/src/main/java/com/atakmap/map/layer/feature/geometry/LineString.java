@@ -1,10 +1,6 @@
 package com.atakmap.map.layer.feature.geometry;
 
 import com.atakmap.interop.Pointer;
-import com.atakmap.lang.Unsafe;
-
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 public final class LineString extends Geometry {
 

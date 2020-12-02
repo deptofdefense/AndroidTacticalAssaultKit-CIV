@@ -8,6 +8,7 @@ import android.graphics.Typeface;
 import android.util.Pair;
 
 import com.atakmap.android.maps.MapTextFormat;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.AtakMapView;
 import com.atakmap.map.layer.feature.style.Style;
@@ -26,7 +27,11 @@ import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLRenderBatch;
 import com.atakmap.opengl.GLText;
 
-// @deprecated
+/**
+ * @deprecated
+ */
+@Deprecated
+@DeprecatedApi(since = "4.1")
 public abstract class GLLabelPointStyle extends GLStyle {
 
     public final static GLStyleSpi SPI = new GLStyleSpi() {
@@ -57,7 +62,7 @@ public abstract class GLLabelPointStyle extends GLStyle {
         }
     };
 
-    private final static int MAX_TEXT_WIDTH = Math.round(80 * AtakMapView.DENSITY);
+    private final static int MAX_TEXT_WIDTH = Math.round(80 * GLRenderGlobals.getRelativeScaling());
 
     private final String text;
     private final float textSize;

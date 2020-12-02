@@ -11,6 +11,7 @@ import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.util.Rings;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 
 /**
@@ -62,6 +63,8 @@ public class DrawingCircleCreationTool extends CircleCreationTool {
      * @deprecated Drawing circles are no longer marker-centric
      * Create a new {@link DrawingCircle} instead
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.1")
     public static Rings getRingsFromMarker(MapView mapView, Marker marker) {
         return null;
     }

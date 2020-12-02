@@ -133,7 +133,11 @@ namespace TAKEngineJNI {
         inline jobject NewPointer(JNIEnv *env, T *ptr, const bool ref) NOTHROWS
         {
             typedef void(*deleter_fn)(const T *);
-            deleter_fn d = ref ? TAK::Engine::Util::Memory_leaker_const<T> : TAK::Engine::Util::Memory_deleter_const<T>;
+            deleter_fn d;
+            if (ref)
+                d = TAK::Engine::Util::Memory_leaker_const<T>;
+            else
+                d = TAK::Engine::Util::Memory_deleter_const<T>;
             return env->NewObject(Pointer_class.id,
                                   Pointer_class.ctor__JJIJ,
                                   INTPTR_TO_JLONG(ptr),

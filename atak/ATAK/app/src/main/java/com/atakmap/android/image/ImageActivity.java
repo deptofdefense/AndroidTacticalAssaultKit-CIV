@@ -6,7 +6,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import com.atakmap.android.hashtags.HashtagManager;
 import com.atakmap.android.hashtags.StickyHashtags;
 import com.atakmap.android.hashtags.attachments.AttachmentContent;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
@@ -23,6 +22,7 @@ import com.atakmap.android.tools.menu.ActionBroadcastExtraStringData;
 import com.atakmap.app.ATAKActivity;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.ByteArrayOutputStream;
@@ -118,7 +118,7 @@ public class ImageActivity {
                 if (pathList != null) {
                     for (String path : pathList) {
                         File f = new File(path);
-                        if (f.exists()) {
+                        if (FileIOProviderFactory.exists(f)) {
                             file = f;
                             insertExifLocationData(f);
                             imgCount++;
@@ -186,7 +186,7 @@ public class ImageActivity {
     public void saveImageFile(byte[] data) {
         FileOutputStream outStream = null;
         try {
-            outStream = new FileOutputStream(_output);
+            outStream = FileIOProviderFactory.getOutputStream(_output);
             try {
                 outStream.write(data);
             } finally {

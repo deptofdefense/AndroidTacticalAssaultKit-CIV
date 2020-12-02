@@ -17,6 +17,7 @@ import com.atakmap.android.maps.graphics.GLCapture;
 import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
 
@@ -307,8 +308,8 @@ public class ProductInformation {
                 Log.e(TAG, "cannot write: " + iconUri);
                 String name = f.getName();
                 File cacheDir = new File(context.getCacheDir(), "apk-icons");
-                if (!cacheDir.exists()) {
-                    if (!cacheDir.mkdir())
+                if (!FileIOProviderFactory.exists(cacheDir)) {
+                    if (!FileIOProviderFactory.mkdir(cacheDir))
                         Log.e(TAG,
                                 "could not make the app-icon cache directory");
                 }
@@ -374,7 +375,7 @@ public class ProductInformation {
                     appUri,
                     iconUri, desc, HashingUtils.sha256sum(file), osReq, takReq,
                     installedVersion);
-            p.setFileSize(file.length());
+            p.setFileSize(FileIOProviderFactory.length(file));
             return p;
         } catch (Exception ex) {
             Log.w(TAG, "Failed to parse APK: " + file.getAbsolutePath(), ex);

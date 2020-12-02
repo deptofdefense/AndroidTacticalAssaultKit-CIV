@@ -10,35 +10,50 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.preference.AtakPreferences;
 import com.atakmap.android.video.manager.VideoManager;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 /**
  * Display a list of videos
- * 
- * 
  */
 public class VideoListDialog {
 
     private static final String TAG = "VideoListDialog";
+    private static final String PREF_SHOW_URLS = "videoListDialogShowURLs";
+
+    private static final Comparator<ConnectionEntry> SORT_ALIAS
+            = new Comparator<ConnectionEntry>() {
+        @Override
+        public int compare(ConnectionEntry o1, ConnectionEntry o2) {
+            return o1.getAlias().compareTo(o2.getAlias());
+        }
+    };
 
     public interface Callback {
         void onVideosSelected(List<ConnectionEntry> selected);
     }
 
+    private final MapView _mapView;
     private final Context _context;
+    private final AtakPreferences _prefs;
 
     private VideoAdapter _adapter;
     private Callback _callback;
@@ -50,7 +65,9 @@ public class VideoListDialog {
      *                plugin developers to use the proper app context
      */
     public VideoListDialog(MapView mapView) {
+        _mapView = mapView;
         _context = mapView.getContext();
+        _prefs = new AtakPreferences(mapView);
     }
 
     /**
@@ -67,15 +84,35 @@ public class VideoListDialog {
             return false;
         }
 
+        // Sort videos by title
+        Collections.sort(entries, SORT_ALIAS);
+
         _callback = callback;
         _adapter = new VideoAdapter(entries, multiSelect);
-        AlertDialog.Builder b = new AlertDialog.Builder(_context);
-        b.setIcon(R.drawable.ic_video_alias);
+
+        View titleView = LayoutInflater.from(_context).inflate(
+                R.layout.video_list_dialog_title, _mapView, false);
+        TextView titleTxt = titleView.findViewById(R.id.title);
+
+        // Toggle URL display (ATAK-12775)
+        CheckBox showURLs = titleView.findViewById(R.id.show_urls);
+        showURLs.setChecked(_prefs.get(PREF_SHOW_URLS, true));
+        showURLs.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton cb, boolean checked) {
+                _prefs.set(PREF_SHOW_URLS, checked);
+                _adapter.notifyDataSetChanged();
+            }
+        });
+
         if (!FileSystemUtils.isEmpty(title))
-            b.setTitle(title);
+            titleTxt.setText(title);
         else // XXX - These string resource IDs are horrendous...
-            b.setTitle(multiSelect ? R.string.video_text6
+            titleTxt.setText(multiSelect ? R.string.video_text6
                     : R.string.point_dropper_text18);
+
+        AlertDialog.Builder b = new AlertDialog.Builder(_context);
+        b.setCustomTitle(titleView);
         b.setAdapter(_adapter, null);
         if (multiSelect) {
             b.setPositiveButton(R.string.ok,
@@ -149,11 +186,9 @@ public class VideoListDialog {
                 row = LayoutInflater.from(_context).inflate(
                         R.layout.videolist_select_items, parent, false);
                 h = new ViewHolder();
-                h.alias = row.findViewById(
-                        R.id.videolist_select_alias);
+                h.alias = row.findViewById(R.id.videolist_select_alias);
                 h.url = row.findViewById(R.id.videolist_select_url);
-                h.selected = row.findViewById(
-                        R.id.videolist_select_checkbox);
+                h.selected = row.findViewById(R.id.videolist_select_checkbox);
                 row.setTag(h);
             }
             ConnectionEntry ce = getItem(pos);
@@ -161,7 +196,13 @@ public class VideoListDialog {
                 return LayoutInflater.from(_context).inflate(R.layout.empty,
                         parent, false);
             h.alias.setText(ce.getAlias());
-            h.url.setText(ConnectionEntry.getURL(ce, true));
+
+            if (_prefs.get(PREF_SHOW_URLS, true)) {
+                h.url.setText(ConnectionEntry.getURL(ce, true));
+                h.url.setVisibility(View.VISIBLE);
+            } else
+                h.url.setVisibility(View.GONE);
+
             if (_multiSelect) {
                 h.selected.setVisibility(View.VISIBLE);
                 h.selected.setChecked(_selected.contains(ce));
@@ -193,7 +234,11 @@ public class VideoListDialog {
 
     // Deprecated methods/callback - ugly and not as intuitive
 
+    /**
+     * @deprecated create own instance instead
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static boolean selectVideo(Context context, String message,
             List<ConnectionEntry> videoConnections,
             final VideoSelectionCallback callback) {
@@ -212,7 +257,11 @@ public class VideoListDialog {
                 });
     }
 
+    /**
+     * @deprecated create own instance instead
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static boolean selectVideos(Context context, String message,
             List<ConnectionEntry> videoConnections,
             final VideoSelectionCallback callback) {
@@ -229,7 +278,12 @@ public class VideoListDialog {
                 });
     }
 
+    /**
+     * @deprecated Exclusive dependency of static methods, will remove removed
+     *             when static methods are removed
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public interface VideoSelectionCallback {
 
         void onSelection(HashSet<ConnectionEntry> selected);

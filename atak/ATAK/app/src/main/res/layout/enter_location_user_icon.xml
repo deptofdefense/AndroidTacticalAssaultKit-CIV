@@ -31,25 +31,21 @@
                 <Button
                     android:id="@+id/userIconGroupBtn"
                     style="@style/darkButton"
-                    android:padding="5dp"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:layout_margin="0dp"
+                    android:padding="@dimen/auto_margin"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="@string/group"
-                    android:layout_weight="4"
                     android:maxLines="1"
-                    android:drawableStart="@drawable/ic_menu_actionbar_placeholder"
-                    android:layout_gravity="center"/>
+                    android:drawableStart="@drawable/ic_menu_actionbar_placeholder"/>
 
                 <ImageButton
                     android:id="@+id/userIconColorBtn"
-                    style="@style/darkButton"
-                    android:padding="3dp"
-                    android:layout_width="0dp"
-                    android:layout_height="50dp"
-                    android:layout_margin="0dp"
-                    android:layout_gravity="center"
-                    android:layout_weight="1"/>
+                    android:layout_width="50dp"
+                    android:layout_height="match_parent"
+                    android:padding="@dimen/auto_margin"
+                    android:src="@drawable/color_rectangle"
+                    style="@style/darkButton"/>
             </LinearLayout>
 
             <com.atakmap.android.user.ExpandableGridView

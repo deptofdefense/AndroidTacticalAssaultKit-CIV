@@ -15,7 +15,7 @@ using namespace TAK::Engine::Util;
 
 namespace
 {
-    typedef std::unique_ptr<void, void(*)(OGRCoordinateTransformationH)> OGRCoordinateTransformationPtr;
+    typedef std::unique_ptr<void, void (*)(OGRCoordinateTransformationH)> OGRCoordinateTransformationPtr;
 
     class GdalProjection : public Projection2
     {
@@ -38,6 +38,15 @@ namespace
         std::unique_ptr<void, void(*)(OGRCoordinateTransformationH)> inverseImpl;
         int srid;
     }; // end class Projection
+
+    void OGRCoordinateTransformationH_deleter(const OGRCoordinateTransformationH value)
+    {
+        OCTDestroyCoordinateTransformation(value);
+    }
+    void OGRSpatialReferenceH_deleter(const OGRSpatialReferenceH value)
+    {
+        OSRDestroySpatialReference(value);
+    }
 }
 
 JNIEXPORT void JNICALL Java_com_atakmap_map_gdal_GdalLibrary_registerProjectionSpi
@@ -48,7 +57,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_gdal_GdalLibrary_registerProjectionS
     public :
         TAKErr create(Projection2Ptr &value, const int srid) NOTHROWS
         {
-            std::unique_ptr<void, void(*)(OGRSpatialReferenceH)> srs(OSRNewSpatialReference(NULL), OSRDestroySpatialReference);
+            std::unique_ptr<void, void(*)(OGRSpatialReferenceH)> srs(OSRNewSpatialReference(NULL), OGRSpatialReferenceH_deleter);
             if(!srs.get())
                 return TE_Err;
             if(OSRImportFromEPSG(srs.get(), srid) != OGRERR_NONE)
@@ -69,14 +78,14 @@ namespace
         inverseImpl(NULL, NULL),
         srid(srid_)
     {
-        std::unique_ptr<void, void(*)(OGRSpatialReferenceH)> wgs84(OSRNewSpatialReference(NULL), OSRDestroySpatialReference);
+        std::unique_ptr<void, void(*)(OGRSpatialReferenceH)> wgs84(OSRNewSpatialReference(NULL), OGRSpatialReferenceH_deleter);
         if(!wgs84.get())
             return;
         if(OSRImportFromEPSG(wgs84.get(), 4326) != OGRERR_NONE)
             return;
 
-        forwardImpl = OGRCoordinateTransformationPtr(OCTNewCoordinateTransformation(wgs84.get(), srs), OCTDestroyCoordinateTransformation);
-        inverseImpl = OGRCoordinateTransformationPtr(OCTNewCoordinateTransformation(srs, wgs84.get()), OCTDestroyCoordinateTransformation);
+        forwardImpl = OGRCoordinateTransformationPtr(OCTNewCoordinateTransformation(wgs84.get(), srs), OGRCoordinateTransformationH_deleter);
+        inverseImpl = OGRCoordinateTransformationPtr(OCTNewCoordinateTransformation(srs, wgs84.get()), OGRCoordinateTransformationH_deleter);
     }
     GdalProjection::~GdalProjection() NOTHROWS
     {}

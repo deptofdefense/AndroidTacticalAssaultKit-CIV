@@ -6,7 +6,6 @@ import com.atakmap.interop.InteropCleaner;
 import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
 import com.atakmap.lang.ref.Cleaner;
-import com.atakmap.map.Interop;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.opengl.GLMapView;

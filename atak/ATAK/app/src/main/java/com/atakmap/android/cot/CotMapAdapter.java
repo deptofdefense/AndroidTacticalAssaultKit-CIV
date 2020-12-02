@@ -20,6 +20,7 @@ import com.atakmap.android.user.FilterMapOverlay;
 import com.atakmap.android.user.icon.SpotMapReceiver;
 
 import com.atakmap.android.vehicle.VehicleMapComponent;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.log.Log;
@@ -254,13 +255,14 @@ public class CotMapAdapter {
 
     /**
      * Register a marker detail handler for the given detail element name
+     * @deprecated Use {@link CotDetailManager#registerHandler(String, MarkerDetailHandler)}
      *
      * @param detailName Detail element name
      * @param handler Marker detail handler
-     * @deprecated
      * Use {@link CotDetailManager#registerHandler(String, MarkerDetailHandler)} instead
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public void setMarkerDetailHandler(String detailName,
             MarkerDetailHandler handler) {
         CotDetailManager.getInstance().registerHandler(detailName, handler);

@@ -1,10 +1,8 @@
 package com.atakmap.android.routes;
 
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
@@ -18,18 +16,17 @@ import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapActivity;
 import com.atakmap.android.maps.MapComponent;
-import com.atakmap.android.maps.MapData;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.routes.routearound.RouteAroundRegionManager;
 import com.atakmap.android.routes.routearound.RouteAroundRegionManagerView;
 import com.atakmap.android.routes.routearound.RouteAroundRegionViewModel;
-import com.atakmap.android.routes.routearound.ShapeToolUtils;
 import com.atakmap.app.R;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +37,14 @@ import static com.atakmap.android.routes.RouteCreationDialog.setupPlanSpinner;
  */
  // TODO: This should be refactored to better share code with RouteCreationDialog.java
 public class RouteConfigurationDialog {
+
+    private static final Comparator<String> SORT_PLANNERS
+            = new Comparator<String>() {
+        @Override
+        public int compare(String o1, String o2) {
+            return o1.compareTo(o2);
+        }
+    };
 
     private final RouteAroundRegionManager _routeAroundManager;
     private final RouteAroundRegionViewModel _routeAroundVM;
@@ -62,7 +67,7 @@ public class RouteConfigurationDialog {
         _routeAroundOptions = (LinearLayout) LayoutInflater.from(_context)
                 .inflate(R.layout.route_around_layout, null);
 
-        regionManagerView = new RouteAroundRegionManagerView(
+        regionManagerView = new RouteAroundRegionManagerView(_mapView,
                 new RouteAroundRegionViewModel(_routeAroundManager));
 
         CheckBox avoidRouteAroundRegions = _routeAroundOptions
@@ -169,6 +174,8 @@ public class RouteConfigurationDialog {
         for (Map.Entry<String, RoutePlannerInterface> k : _planners)
             if (!k.getValue().isNetworkRequired() || network)
                 plannerNames.add(k.getValue().getDescriptiveName());
+
+        Collections.sort(plannerNames, SORT_PLANNERS);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(_context,
                 R.layout.spinner_text_view_dark, plannerNames);

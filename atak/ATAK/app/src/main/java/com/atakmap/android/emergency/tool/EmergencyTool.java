@@ -1,11 +1,13 @@
 
 package com.atakmap.android.emergency.tool;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import com.atakmap.coremap.log.Log;
 
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -81,10 +83,18 @@ public class EmergencyTool extends DropDownReceiver implements
                 .findViewById(R.id.repeaterChoicesSpinner);
         repeaterSwitch1 = viewRoot.findViewById(R.id.emergencySwitch1);
         repeaterSwitch2 = viewRoot.findViewById(R.id.emergencySwitch2);
+
         sendSMSCB = viewRoot.findViewById(R.id.sendSMSCB);
 
         sendSMSCB.setChecked(sharedPrefs.getBoolean(
                 EmergencyConstants.PREFERENCES_KEY_SMS_CHECKED, false));
+
+        int res = context.checkCallingOrSelfPermission(Manifest.permission.SEND_SMS);
+        if (res != PackageManager.PERMISSION_GRANTED) {
+            sendSMSCB.setChecked(false);
+            sendSMSCB.setVisibility(View.GONE);
+            viewRoot.findViewById(R.id.sendSMSTitle).setVisibility(View.GONE);
+        }
 
         repeaterSwitch1.setChecked(emergencyMgr.isEmergencyOn());
         repeaterSwitch2.setChecked(emergencyMgr.isEmergencyOn());

@@ -33,13 +33,13 @@ public class RangeAndBearingToolbar implements IToolbarExtension,
         ActionBarReceiver.ActionBarChangeListener {
 
     static public final String TAG = "RangeAndBearingToolbar";
-    private static final String TOOLBAR_NAME = "com.atakmap.android.toolbars.RangeAndBearingToolbar";
+    protected static final String TOOLBAR_NAME = "com.atakmap.android.toolbars.RangeAndBearingToolbar";
 
-    private static final String REDX_CLICK = "com.atakmap.android.user.REDX_CLICK";
-    private static final String REDX_LONG_CLICK = "com.atakmap.android.user.REDX_LONG_CLICK";
-    private static final String REDX_OFF = "com.atakmap.android.user.REDX_OFF";
+    protected static final String REDX_CLICK = "com.atakmap.android.user.REDX_CLICK";
+    protected static final String REDX_LONG_CLICK = "com.atakmap.android.user.REDX_LONG_CLICK";
+    protected static final String REDX_OFF = "com.atakmap.android.user.REDX_OFF";
 
-    private static ActionMenuData _amd;
+    protected static ActionMenuData _amd;
 
     private static RangeAndBearingToolbar _instance;
 
@@ -55,7 +55,7 @@ public class RangeAndBearingToolbar implements IToolbarExtension,
         return _instance;
     }
 
-    private RangeAndBearingToolbar(MapView mapView) {
+    protected RangeAndBearingToolbar(MapView mapView) {
         _mapView = mapView;
         _tools = new ArrayList<>();
         LayoutInflater inflater = LayoutInflater.from(mapView.getContext());

@@ -23,7 +23,8 @@ import com.atakmap.android.overlay.DefaultMapGroupOverlay;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.filesystem.SecureDelete;
+import com.atakmap.coremap.io.FileIOProvider;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.database.CursorIface;
@@ -190,7 +191,7 @@ public class StateSaver extends AbstractMapComponent
                 if (stateSaverDatabase != null)
                     stateSaverDatabase.close();
                 stateSaverDatabase = null;
-                SecureDelete.delete(STATE_SAVER_DB_FILE2);
+                FileIOProviderFactory.delete(STATE_SAVER_DB_FILE2, FileIOProvider.SECURE_DELETE);
             }
         }
     };
@@ -327,7 +328,7 @@ public class StateSaver extends AbstractMapComponent
             } else {
                 try {
                     final File f = STATE_SAVER_DB_FILE2;
-                    if (!f.renameTo(new File(STATE_SAVER_DB_FILE2 + ".corrupt."
+                    if (!FileIOProviderFactory.renameTo(f, new File(STATE_SAVER_DB_FILE2 + ".corrupt."
                             + new CoordinatedTime().getMilliseconds()))) {
                         Log.d(TAG, "could not move corrup db out of the way");
                     } else {

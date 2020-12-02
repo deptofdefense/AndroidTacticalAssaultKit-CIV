@@ -22,6 +22,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
@@ -168,14 +169,14 @@ public class GalleryFileItem extends AbstractChildlessListItem implements
                 .getHandler(this.file);
 
         TiffImageMetadata exif = null;
-        long modTime = file.lastModified();
+        long modTime = FileIOProviderFactory.lastModified(file);
         String caption = null;
         GeoPoint location = null;
 
         File dir = file.getParentFile();
         String name = file.getName();
         if (ImageDropDownReceiver.ImageFileFilter.accept(dir, name)
-                && file.exists()) {
+                && FileIOProviderFactory.exists(file)) {
             if (ImageContainer.NITF_FilenameFilter.accept(dir, name)) {
                 Dataset nitf = gdal.Open(file.getAbsolutePath());
                 if (nitf != null) {

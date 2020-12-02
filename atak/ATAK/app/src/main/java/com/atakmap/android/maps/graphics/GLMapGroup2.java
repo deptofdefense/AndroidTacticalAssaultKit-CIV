@@ -26,7 +26,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 public final class GLMapGroup2 implements MapGroup.OnItemListChangedListener,
@@ -121,8 +120,8 @@ public final class GLMapGroup2 implements MapGroup.OnItemListChangedListener,
         }
     }
 
-    private static Class lookupGLClass(Class itemClass) {
-        Class glClass = null;
+    private static Class lookupGLClass(Class<?> itemClass) {
+        Class<?> glClass = null;
 
         try {
             String packageName = itemClass.getPackage().getName();
@@ -305,7 +304,7 @@ public final class GLMapGroup2 implements MapGroup.OnItemListChangedListener,
     private final MapRenderer renderContext;
     private final GLQuadtreeNode2 renderer;
     static final Map<Class<? extends MapItem>, Class<? extends GLMapItem2>> glClasses = new HashMap<>();
-    static final Map<Class<? extends GLMapItem2>, Constructor> glCtors = new HashMap<>();
+    static final Map<Class<? extends GLMapItem2>, Constructor<?>> glCtors = new HashMap<>();
 
     public final static GLMapItemSpi3 DEFAULT_GLMAPITEM_SPI3 = new GLMapItemSpi3() {
 
@@ -384,7 +383,7 @@ public final class GLMapGroup2 implements MapGroup.OnItemListChangedListener,
 
             // If there is a GL class, instantiate it
             if (glClass != null) {
-                Constructor ctor = glCtors.get(glClass);
+                Constructor<?> ctor = glCtors.get(glClass);
                 if (ctor == null) {
                     ctor = ConstructorUtils.getMatchingAccessibleConstructor(
                             glClass,

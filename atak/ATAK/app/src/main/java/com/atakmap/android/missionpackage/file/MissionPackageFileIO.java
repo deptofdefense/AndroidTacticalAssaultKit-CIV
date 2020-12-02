@@ -22,6 +22,7 @@ import com.atakmap.android.missionpackage.ui.MissionPackageListGroup;
 import com.atakmap.android.missionpackage.ui.MissionPackageListItem;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -151,10 +152,10 @@ public class MissionPackageFileIO {
             // placed), no HTTP serving, no auto-cleanup
             // check if already in db, if not add it. DB entry to point to .zip file on disk
             File dir = new File(missionPackagePath);
-            if (!dir.exists()) {
+            if (!FileIOProviderFactory.exists(dir)) {
                 Log.d(TAG,
                         "Creating Package directory: " + dir.getAbsolutePath());
-                if (!dir.mkdirs())
+                if (!FileIOProviderFactory.mkdirs(dir))
                     Log.e(TAG,
                             "Failed to create Package directory: "
                                     + dir.getAbsolutePath());
@@ -180,11 +181,11 @@ public class MissionPackageFileIO {
 
             // Note missionPackageDir/files, no directory watching, no auto cleanup
             dir = new File(missionPackagePath + File.separatorChar + "files");
-            if (!dir.exists()) {
+            if (!FileIOProviderFactory.exists(dir)) {
                 Log.d(TAG,
                         "Creating Package Files directory: "
                                 + dir.getAbsolutePath());
-                if (!dir.mkdirs())
+                if (!FileIOProviderFactory.mkdirs(dir))
                     Log.e(TAG, "Failed to create Package Files directory: "
                             + dir.getAbsolutePath());
             }
@@ -193,11 +194,11 @@ public class MissionPackageFileIO {
             // unzipped and verified)
             dir = new File(
                     missionPackagePath + File.separatorChar + "incoming");
-            if (!dir.exists()) {
+            if (!FileIOProviderFactory.exists(dir)) {
                 Log.d(TAG,
                         "Creating Package Incoming directory: "
                                 + dir.getAbsolutePath());
-                if (!dir.mkdirs())
+                if (!FileIOProviderFactory.mkdirs(dir))
                     Log.e(TAG,
                             "Failed to create Package Incoming directory: "
                                     + dir.getAbsolutePath());
@@ -207,11 +208,11 @@ public class MissionPackageFileIO {
             // missionPackageDir/transfer, no watch, and served up via HTTP, auto clean up
             dir = new File(
                     missionPackagePath + File.separatorChar + "transfer");
-            if (!dir.exists()) {
+            if (!FileIOProviderFactory.exists(dir)) {
                 Log.d(TAG,
                         "Creating Package Transfer directory: "
                                 + dir.getAbsolutePath());
-                if (!dir.mkdirs())
+                if (!FileIOProviderFactory.mkdirs(dir))
                     Log.e(TAG,
                             "Failed to create Package Transfer directory: "
                                     + dir.getAbsolutePath());
@@ -452,9 +453,9 @@ public class MissionPackageFileIO {
         for (String mountPoint : mountPoints) {
             //delete all contents
             File dir = new File(mountPoint, MissionPackageFolder);
-            if (dir.exists() && dir.isDirectory()) {
+            if (FileIOProviderFactory.exists(dir) && FileIOProviderFactory.isDirectory(dir)) {
                 //first move packages out to avoid FileObserver issues with SecureDelete
-                File[] packages = dir.listFiles();
+                File[] packages = FileIOProviderFactory.listFiles(dir);
                 if (packages != null && packages.length > 0) {
                     for (File packageFile : packages) {
                         deletePackageFile(packageFile);
@@ -468,24 +469,24 @@ public class MissionPackageFileIO {
             //now build back out child dirs
             dir = new File(mountPoint, MissionPackageFolder
                     + File.separatorChar + "files");
-            if (!dir.exists())
-                if (!dir.mkdirs()) {
+            if (!FileIOProviderFactory.exists(dir))
+                if (!FileIOProviderFactory.mkdirs(dir)) {
                     Log.d(TAG,
                             " Faild to make dir at " + dir.getAbsolutePath());
                 }
 
             dir = new File(mountPoint, MissionPackageFolder
                     + File.separatorChar + "incoming");
-            if (!dir.exists())
-                if (!dir.mkdirs()) {
+            if (!FileIOProviderFactory.exists(dir))
+                if (!FileIOProviderFactory.mkdirs(dir)) {
                     Log.d(TAG,
                             " Failed to make dir at " + dir.getAbsolutePath());
                 }
 
             dir = new File(mountPoint, MissionPackageFolder
                     + File.separatorChar + "transfer");
-            if (!dir.exists())
-                if (!dir.mkdirs()) {
+            if (!FileIOProviderFactory.exists(dir))
+                if (!FileIOProviderFactory.mkdirs(dir)) {
                     Log.d(TAG,
                             " Failed to make dir at " + dir.getAbsolutePath());
                 }
@@ -499,7 +500,7 @@ public class MissionPackageFileIO {
      * @param packageZip Package zip file
      */
     public static void deletePackageFile(File packageZip) {
-        if (packageZip.exists() && packageZip.isFile()) {
+        if (FileIOProviderFactory.exists(packageZip) && packageZip.isFile()) {
             File f = FileSystemUtils.moveToTemp(MapView.getMapView()
                     .getContext(), packageZip);
             FileSystemUtils.deleteFile(f);

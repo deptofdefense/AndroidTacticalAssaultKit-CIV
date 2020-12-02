@@ -1,7 +1,6 @@
 
 package com.atakmap.android.update;
 
-import android.app.Activity;
 import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
@@ -43,6 +42,7 @@ import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.AppMgmtSettingsActivity;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 
@@ -121,8 +121,8 @@ public class AppMgmtActivity extends MetricActivity {
         AtakPreferenceFragment.setSoftKeyIllumination(this);
 
         File rootDir = FileSystemUtils.getItem("support/apks");
-        if (!rootDir.exists()) {
-            if (!rootDir.mkdir()) {
+        if (!FileIOProviderFactory.exists(rootDir)) {
+            if (!FileIOProviderFactory.mkdir(rootDir)) {
                 Log.d(TAG, "could not make the root support directory: " +
                         rootDir);
             }

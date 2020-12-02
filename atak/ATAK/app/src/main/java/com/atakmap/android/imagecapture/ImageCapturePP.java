@@ -23,6 +23,7 @@ import com.atakmap.android.maps.Shape;
 import com.atakmap.android.maps.graphics.AbstractGLMapItem2;
 import com.atakmap.android.tilecapture.imagery.ImageryCapturePP;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.maps.coords.Ellipsoid;
@@ -50,6 +51,7 @@ import java.util.TimeZone;
  * @deprecated See {@link ImageryCapturePP}
  */
 @Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class ImageCapturePP extends CapturePP {
 
     private static final String TAG = "ImageCapturePP";
@@ -436,7 +438,13 @@ public class ImageCapturePP extends CapturePP {
         return true;
     }
 
+    /**
+     * @deprecated Use {@link #drawElements(Canvas)} with {@link Canvas#Canvas(Bitmap)} constructor
+     * @param bmp
+     * @return
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public synchronized boolean drawElements(Bitmap bmp) {
         return drawElements(new Canvas(bmp));
     }

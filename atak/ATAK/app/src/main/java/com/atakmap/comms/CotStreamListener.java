@@ -100,7 +100,7 @@ public class CotStreamListener implements
 
     /**
      * Invoked when connection to a TAK Server is enabled or disabled by user
-     * @param port
+     * @param port the connection to enable or disable.
      */
     protected void enabled(CotPortListActivity.CotPort port, boolean enabled) {
     }
@@ -184,8 +184,8 @@ public class CotStreamListener implements
 
     /**
      * Add or Update stream and return whether stream enabled or connection state changed
-     * @param bundle
-     * @return
+     * @param bundle the bundle that describes a stream
+     * @return returns the wrapper
      */
     private synchronized CotStreamUpdateWraper updateStream(Bundle bundle) {
         if (bundle == null || bundle.size() < 1) {

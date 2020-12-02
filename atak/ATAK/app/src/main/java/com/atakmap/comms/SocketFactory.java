@@ -1,6 +1,7 @@
 
 package com.atakmap.comms;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.log.Log;
 
 import java.io.IOException;
@@ -10,9 +11,10 @@ import java.net.MulticastSocket;
 import java.net.SocketException;
 
 /**
- * @deprecated
- * Some ideas do not pan out.   This has been largely overcome by common communications.
+ * @deprecated this has been largely overcome by common communications.
  */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class SocketFactory {
 
     private final static String TAG = "SocketFactory";

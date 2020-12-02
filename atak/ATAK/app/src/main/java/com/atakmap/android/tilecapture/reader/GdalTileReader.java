@@ -7,18 +7,15 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
 
-import com.atakmap.android.imagecapture.TiledCanvas;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.tilecapture.TileCapture.DefaultProjection;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.lang.Unsafe;
 import com.atakmap.map.layer.raster.ImageDatasetDescriptor;
+import com.atakmap.map.layer.raster.tilereader.TileReader;
+import com.atakmap.map.layer.raster.tilereader.TileReader.Format;
 import com.atakmap.math.PointD;
 
 import org.gdal.gdal.Dataset;
-import org.gdal.gdalconst.gdalconstConstants;
-
-import java.nio.ByteBuffer;
 
 /**
  * Reads bitmap tiles from a GDAL-supported image
@@ -46,8 +43,12 @@ public class GdalTileReader extends DatasetTileReader {
     private final Matrix _pixelToTile = new Matrix();
 
     private final PointD[] _sizes;
-    private final ByteBuffer _buf;
+    private final byte[] _bytes;
     private final Paint _paint = new Paint();
+
+    // Underlying reader implementation (same as what the map renderer uses)
+    private final com.atakmap.map.layer.raster.gdal.GdalTileReader _reader;
+    private final Format _format;
 
     public GdalTileReader(int srid, GeoPoint[] corners, Dataset dataset) {
         _dataset = dataset;
@@ -73,9 +74,11 @@ public class GdalTileReader extends DatasetTileReader {
         }
 
         // Read buffer
-        _buf = Unsafe.allocateDirect(TILE_SIZE * TILE_SIZE * 4 * 4);
+        _bytes = new byte[TILE_SIZE * TILE_SIZE * 4 * 4];
 
         // Transformation parameters
+        if (srid == -1)
+            srid = 4326; // Default
         DefaultProjection proj = new DefaultProjection(srid);
 
         double minLng = Double.MAX_VALUE, minLat = Double.MAX_VALUE;
@@ -111,6 +114,13 @@ public class GdalTileReader extends DatasetTileReader {
 
         _tileToPixel.setPolyToPoly(srcFlt, 0, dstFlt, 0, 4);
         _pixelToTile.setPolyToPoly(dstFlt, 0, srcFlt, 0, 4);
+
+        // Underlying tile reader used to properly read all the various
+        // image formats GDAL supports
+        _reader = new com.atakmap.map.layer.raster.gdal.GdalTileReader(
+                _dataset, "", TILE_SIZE, TILE_SIZE, "",
+                new TileReader.AsynchronousIO());
+        _format = _reader.getFormat();
     }
 
     public GdalTileReader(ImageDatasetDescriptor info, Dataset dataset) {
@@ -185,10 +195,8 @@ public class GdalTileReader extends DatasetTileReader {
                 return null;
 
             // Read the bitmap tile out of the image dataset
-            _dataset.ReadRaster_Direct(x, y, srcW, srcH, dstW, dstH,
-                    gdalconstConstants.GDT_Byte, _buf, null, _channels,
-                    dstW * _channels, 1);
-            bmp = TiledCanvas.bytesToBitmap(_buf, dstW, dstH, _channels);
+            _reader.read(x, y, srcW, srcH, dstW, dstH, _bytes);
+            bmp = bytesToBitmap(_bytes, dstW, dstH, _format);
 
             // Pad edge tiles with empty space so they fit the 256x256 tile size
             if (dstW < TILE_SIZE || dstH < TILE_SIZE) {
@@ -229,10 +237,8 @@ public class GdalTileReader extends DatasetTileReader {
             if (srcW <= 0 || srcH <= 0)
                 return null;
 
-            _dataset.ReadRaster_Direct(min.x, min.y, srcW, srcH, dstW, dstH,
-                    gdalconstConstants.GDT_Byte, _buf, null, _channels,
-                    dstW * _channels, 1);
-            bmp = TiledCanvas.bytesToBitmap(_buf, dstW, dstH, _channels);
+            _reader.read(min.x, min.y, srcW, srcH, dstW, dstH, _bytes);
+            bmp = bytesToBitmap(_bytes, dstW, dstH, _format);
 
             // Transform the pixel-space bitmap back to tile-space
             Matrix m = new Matrix();
@@ -250,5 +256,81 @@ public class GdalTileReader extends DatasetTileReader {
         }
 
         return new TileBitmap(bmp, level, c, r);
+    }
+
+    private static Bitmap bytesToBitmap(byte[] bytes, int width, int height,
+                                        Format fmt) {
+        int[] pixels = new int[width * height];
+
+        switch (fmt) {
+            case MONOCHROME:
+                getMonoPixels(bytes, pixels);
+                break;
+            case MONOCHROME_ALPHA:
+                getMonoAlphaPixels(bytes, pixels);
+                break;
+            case RGB:
+                getRGBPixels(bytes, pixels);
+                break;
+            case RGBA:
+                getRGBAPixels(bytes, pixels);
+                break;
+            case ARGB:
+                getARGBPixels(bytes, pixels);
+                break;
+        }
+
+        Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        bmp.setPixels(pixels, 0, width, 0, 0, width, height);
+        return bmp;
+    }
+
+    private static int uns(byte b) {
+        return b < 0 ? b + 256 : b;
+    }
+
+    private static void getMonoPixels(byte[] from, int[] to) {
+        for (int i = 0; i < to.length; i++) {
+            int v = uns(from[i]);
+            to[i] = rgb(v, v, v);
+        }
+    }
+
+    private static void getMonoAlphaPixels(byte[] from, int[] to) {
+        int p = 0;
+        for (int i = 0; i < to.length; i++) {
+            int v = uns(from[p]);
+            to[i] = rgb(v, v, v);
+            p += 2;
+        }
+    }
+
+    private static void getRGBPixels(byte[] from, int[] to) {
+        int p = 0;
+        for (int i = 0; i < to.length; i++) {
+            to[i] = rgb(uns(from[p]), uns(from[p + 1]), uns(from[p + 2]));
+            p += 3;
+        }
+    }
+
+    private static void getRGBAPixels(byte[] from, int[] to) {
+        int p = 0;
+        for (int i = 0; i < to.length; i++) {
+            to[i] = rgb(uns(from[p]), uns(from[p + 1]), uns(from[p + 2]));
+            p += 4;
+        }
+    }
+
+    private static void getARGBPixels(byte[] from, int[] to) {
+        int p = 0;
+        for (int i = 0; i < to.length; i++) {
+            to[i] = rgb(uns(from[p + 1]), uns(from[p + 2]), uns(from[p + 3]));
+            p += 4;
+        }
+    }
+
+    // Faster than Color.rgb
+    private static int rgb(int red, int green, int blue) {
+        return -16777216 + (red * 65536) + (green * 256) + blue;
     }
 }

@@ -1,5 +1,7 @@
 package com.atakmap.map.formats.c3dt;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -40,7 +42,7 @@ final class FeatureTable {
 
         byte[] json = new byte[jsonLength];
         Util.get(buffer, jsonOff, json, 0, jsonLength);
-        featureTable.json = new JSONObject(new String(json));
+        featureTable.json = new JSONObject(new String(json, FileSystemUtils.UTF8_CHARSET));
         if(binaryLen > 0) {
             featureTable.binary = new byte[binaryLen];
             Util.get(buffer, binaryOff, featureTable.binary, 0, binaryLen);

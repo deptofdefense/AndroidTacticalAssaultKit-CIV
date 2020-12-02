@@ -1,9 +1,7 @@
 package com.atakmap.map.layer.model.assimp;
 
 import android.graphics.Color;
-import android.util.Pair;
 
-import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.feature.geometry.Envelope;
@@ -22,18 +20,13 @@ import com.atakmap.math.PointD;
 import java.io.File;
 import java.io.IOException;
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jassimp.AiBlendMode;
 import jassimp.AiColor;
 import jassimp.AiMaterial;
 import jassimp.AiMatrix4f;
@@ -41,7 +34,6 @@ import jassimp.AiMesh;
 import jassimp.AiNode;
 import jassimp.AiPostProcessSteps;
 import jassimp.AiScene;
-import jassimp.AiShadingMode;
 import jassimp.AiTextureInfo;
 import jassimp.AiTextureType;
 import jassimp.Jassimp;

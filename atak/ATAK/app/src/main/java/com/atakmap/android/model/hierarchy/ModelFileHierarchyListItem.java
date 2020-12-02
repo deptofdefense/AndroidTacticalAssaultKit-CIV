@@ -37,6 +37,7 @@ import com.atakmap.android.hierarchy.action.Visibility2;
 import com.atakmap.android.hierarchy.items.AbstractHierarchyListItem2;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.FeatureCursor;
@@ -243,7 +244,7 @@ public class ModelFileHierarchyListItem extends AbstractHierarchyListItem2
         // Send model via Mission Package
         if (id == R.id.model_send) {
             File f = new File(this.featureSet.getName());
-            if (!f.exists())
+            if (!FileIOProviderFactory.exists(f))
                 return;
 
             // Allow the handler to perform the send if available
@@ -385,16 +386,16 @@ public class ModelFileHierarchyListItem extends AbstractHierarchyListItem2
     }
 
     @Override
-    public boolean isSupported(Class target) {
+    public boolean isSupported(Class<?> target) {
         return MissionPackageExportWrapper.class.equals(target);
     }
 
     @Override
-    public Object toObjectOf(Class target, ExportFilters filters)
+    public Object toObjectOf(Class<?> target, ExportFilters filters)
             throws FormatNotSupportedException {
 
         File f = new File(this.featureSet.getName());
-        if (!f.exists())
+        if (!FileIOProviderFactory.exists(f))
             return null;
 
         URIContentHandler handler = URIContentManager.getInstance()

@@ -24,7 +24,9 @@ import com.atakmap.android.maps.graphics.GLMapItemFactory;
 import com.atakmap.android.tilecapture.imagery.ImageryCaptureTask;
 import com.atakmap.android.toolbar.ToolbarBroadcastReceiver;
 import com.atakmap.android.util.LimitingThread;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -71,6 +73,7 @@ import java.util.Map;
  * better performance and results
  */
 @Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class GLCaptureTool extends GLMapView implements GLLayer2,
         GLCapturableMapView, MapView.OnMapMovedListener,
         MapView.OnMapViewResizedListener, View.OnKeyListener,
@@ -570,7 +573,7 @@ public class GLCaptureTool extends GLMapView implements GLLayer2,
             _postDraw = postDraw;
             _tileFile = new File(_subject.getOutputDirectory(), "." +
                     (new CoordinatedTime()).getMilliseconds() + "_tiles.tiff");
-            if (_tileFile.exists())
+            if (FileIOProviderFactory.exists(_tileFile))
                 FileSystemUtils.deleteFile(_tileFile);
             _driver = gdal.GetDriverByName("GTiff");
             if (_driver == null) {
@@ -621,7 +624,7 @@ public class GLCaptureTool extends GLMapView implements GLLayer2,
             _postDraw = null;
             _postDialog = null;
             _redrawThread.dispose();
-            if (_tileFile.exists())
+            if (FileIOProviderFactory.exists(_tileFile))
                 FileSystemUtils.deleteFile(_tileFile);
             _tileCount = 0;
         }

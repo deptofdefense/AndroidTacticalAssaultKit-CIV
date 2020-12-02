@@ -293,7 +293,7 @@ public class HashtagMapOverlay extends AbstractMapOverlay2 implements
 
         @Override
         protected void refreshImpl() {
-            _vizSupported = false;
+            boolean vizSupported = false;
             List<HierarchyListItem> filtered;
             synchronized (_lists) {
                 List<String> tags = HashtagManager.getInstance().getTags(null);
@@ -306,17 +306,19 @@ public class HashtagMapOverlay extends AbstractMapOverlay2 implements
                                 HashtagMapOverlay.this, tag));
                     list.syncRefresh(_om, this.filter);
                     if (this.filter.accept(list)) {
-                        _vizSupported = list
-                                .getAction(Visibility.class) != null;
+                        if (list.getAction(Visibility.class) != null)
+                            vizSupported = true;
                         filtered.add(list);
                     }
                     removed.remove(tag);
                 }
                 for (String tag : removed) {
                     HashtagListItem list = _lists.remove(tag);
-                    list.dispose();
+                    if (list != null)
+                        list.dispose();
                 }
             }
+            _vizSupported = vizSupported;
             sortItems(filtered);
             updateChildren(filtered);
         }

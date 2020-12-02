@@ -12,6 +12,7 @@ import com.atakmap.android.rubbersheet.maps.LoadState;
 import com.atakmap.android.rubbersheet.maps.RubberImage;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -99,7 +100,7 @@ public class CreateRubberImageTask extends AbstractCreationTask {
                 // Extract KMZ content
                 FileSystemUtils.extract(f, destDir, true);
                 File doc = new File(destDir, "doc.kml");
-                if (!doc.exists()) {
+                if (!FileIOProviderFactory.exists(doc)) {
                     Log.e(TAG, "Invalid KMZ: " + f);
                     return null;
                 }
@@ -109,13 +110,13 @@ public class CreateRubberImageTask extends AbstractCreationTask {
 
                 // Move image out of temp directory
                 File img = parser.getImageFile();
-                if (img == null || !img.exists() || !ImageFileFilter.accept(
+                if (img == null || !FileIOProviderFactory.exists(img) || !ImageFileFilter.accept(
                         null, img.getName())) {
                     Log.e(TAG, "KMZ missing valid image: " + f);
                     return null;
                 }
                 File imgDest = new File(dir, img.getName());
-                if (!img.renameTo(imgDest)) {
+                if (!FileIOProviderFactory.renameTo(img, imgDest)) {
                     Log.e(TAG, "Failed to move KMZ image " + img
                             + " to " + imgDest);
                     return null;

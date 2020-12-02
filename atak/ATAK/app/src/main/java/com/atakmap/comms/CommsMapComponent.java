@@ -4,9 +4,6 @@ package com.atakmap.comms;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.net.*;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.util.*;
 import java.io.File;
@@ -15,6 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.net.CertificateManager;
 
@@ -1012,7 +1010,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
     }
 
     private Set<HwAddress> scanInterfaces(boolean input, boolean doLog) {
-        Set<HwAddress> ret = new HashSet<>();
+        final Set<HwAddress> ret = new HashSet<>();
         /**
          * Obtain the list of all of the networks that are preconfigured. For multicast address for
          * the inputs and outputs, the interface name can be specified to send traffic out the
@@ -1218,8 +1216,10 @@ public class CommsMapComponent extends AbstractMapComponent implements
                 if (inputIfaces.containsKey(portInfo.netPort)) {
                     List<PhysicalNetInterface> ifaces = inputIfaces
                             .remove(portInfo.netPort);
-                    for (PhysicalNetInterface iface : ifaces)
-                        commo.removeInboundInterface(iface);
+                    if (ifaces != null) {
+                        for (PhysicalNetInterface iface : ifaces)
+                            commo.removeInboundInterface(iface);
+                    }
                 }
 
                 // Now adjust the old port's mcast set and re-add the ifaces if needed
@@ -1270,7 +1270,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
             if (tcpInputIfaces.containsKey(uniqueKey)) {
                 // need to remove it to change parameters/disable
                 TcpInboundNetInterface iface = tcpInputIfaces.remove(uniqueKey);
-                commo.removeTcpInboundInterface(iface);
+                if (iface != null)
+                    commo.removeTcpInboundInterface(iface);
             }
 
             if (isNowEnabled) {
@@ -1310,8 +1311,10 @@ public class CommsMapComponent extends AbstractMapComponent implements
                 if (inputIfaces.containsKey(portInfo.netPort)) {
                     List<PhysicalNetInterface> ifaces = inputIfaces
                             .remove(portInfo.netPort);
-                    for (PhysicalNetInterface iface : ifaces)
-                        commo.removeInboundInterface(iface);
+                    if (ifaces != null) {
+                        for (PhysicalNetInterface iface : ifaces)
+                            commo.removeInboundInterface(iface);
+                    }
                 }
 
                 // Now adjust the old port's mcast set and re-add the ifaces if needed
@@ -1457,8 +1460,10 @@ public class CommsMapComponent extends AbstractMapComponent implements
             if (streamingIfaces.containsKey(uniqueKey)) {
                 // Need to remove it to "disable" or change params
                 StreamingNetInterface iface = streamingIfaces.remove(uniqueKey);
-                oldStreamId = iface.streamId;
-                commo.removeStreamingInterface(iface);
+                if (iface != null) {
+                    oldStreamId = iface.streamId;
+                    commo.removeStreamingInterface(iface);
+                }
             }
 
             if (isNowEnabled && !missingParams) {
@@ -2306,8 +2311,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
     }
 
     public class MasterMPIO implements MissionPackageIO {
-        private Map<Integer, MPTransferInfo> activeOutboundTransfers;
-        private Map<File, MPReceiver> activeInboundTransfers;
+        private final Map<Integer, MPTransferInfo> activeOutboundTransfers;
+        private final Map<File, MPReceiver> activeInboundTransfers;
 
         private volatile MPReceiveInitiator receiveInitiator;
 
@@ -2329,12 +2334,12 @@ public class CommsMapComponent extends AbstractMapComponent implements
         }
 
         private byte[] getHttpsServerCert() throws CommoException {
-            if (httpsCertFile.exists()) {
+            if (FileIOProviderFactory.exists(httpsCertFile)) {
                 FileInputStream fis = null;
                 try {
                     Log.d(TAG, "HttpsCert examining existing cert file");
                     KeyStore p12 = KeyStore.getInstance("pkcs12");
-                    fis = new FileInputStream(httpsCertFile);
+                    fis = FileIOProviderFactory.getInputStream(httpsCertFile);
                     p12.load(fis, "atakatak".toCharArray());
                     Enumeration<String> aliases = p12.aliases();
                     int n = 0;
@@ -2357,8 +2362,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
                     fis.close();
                     Log.d(TAG,
                             "HttpsCert existing file looks valid, re-using it");
-                    fis = new FileInputStream(httpsCertFile);
-                    long len = httpsCertFile.length();
+                    fis = FileIOProviderFactory.getInputStream(httpsCertFile);
+                    long len = FileIOProviderFactory.length(httpsCertFile);
                     if (len > Integer.MAX_VALUE)
                         throw new IllegalArgumentException(
                                 "Existing cert is way too large!");
@@ -2380,7 +2385,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
                     if (fis != null)
                         try {
                             fis.close();
-                        } catch (IOException ioe) {
+                        } catch (IOException ignored) {
                         }
                 }
             }
@@ -2388,7 +2393,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
             // Generate new cert
             byte[] cert = commo.generateSelfSignedCert("atakatak");
             try {
-                FileOutputStream fos = new FileOutputStream(httpsCertFile);
+                FileOutputStream fos = FileIOProviderFactory.getOutputStream(httpsCertFile);
                 fos.write(cert);
                 fos.close();
                 Log.d(TAG, "HttpsCert new cert stored for later use");
@@ -2436,7 +2441,9 @@ public class CommsMapComponent extends AbstractMapComponent implements
                             + " port may already be in use or certs are invalid.  Local https server is disabled.",
                             ex);
                     // Delete the https certificate in case it was invalid
-                    httpsCertFile.delete();
+                    if (!FileSystemUtils.deleteFile(httpsCertFile)) {
+                        Log.e(TAG, "could not delete certificate file: " + httpsCertFile);
+                    }
                     // Not considering this fatal error for now - it will be in the future
                 }
                 return true;
@@ -2686,8 +2693,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
     }
 
     public class MasterFileIO implements SimpleFileIO {
-        private Map<Integer, CommsFileTransferListener> clientListeners;
-        private Map<Integer, SimpleFileIOUpdate> transferResults;
+        private final Map<Integer, CommsFileTransferListener> clientListeners;
+        private final Map<Integer, SimpleFileIOUpdate> transferResults;
 
         public MasterFileIO() {
             clientListeners = new HashMap<>();

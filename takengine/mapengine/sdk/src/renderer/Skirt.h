@@ -36,7 +36,7 @@ namespace TAK {
              * @param skirtIndices  The buffer to store the generated indices for the skirt mesh geometry, may not be <code>null</code>
              */
             template<class VertexType, class IndexType>
-            inline Util::TAKErr Skirt_create(Util::MemBuffer2 &vertices, Util::MemBuffer2 &skirtIndices, const int mode, const std::size_t stride_, const Util::MemBuffer2 *edgeIndices, const std::size_t count, const VertexType height) NOTHROWS
+            ENGINE_API inline Util::TAKErr Skirt_create(Util::MemBuffer2 &vertices, Util::MemBuffer2 &skirtIndices, const int mode, const std::size_t stride_, const Util::MemBuffer2 *edgeIndices, const std::size_t count, const VertexType height) NOTHROWS
             {
                 Util::TAKErr code(Util::TE_Ok);
                 switch(mode) {
@@ -184,7 +184,7 @@ namespace TAK {
              *          buffer as a result of
              *          {@link #create(int, int, FloatBuffer, ShortBuffer, int, ShortBuffer, float)}}
              */
-            std::size_t Skirt_getNumOutputVertices(std::size_t count) NOTHROWS;
+            ENGINE_API std::size_t Skirt_getNumOutputVertices(std::size_t count) NOTHROWS;
 
             /**
              * Returns the number of indices that will be output to define the skirt mesh.
@@ -192,7 +192,7 @@ namespace TAK {
              * @param count The number of exterior edge vertices
              * @return
              */
-            Util::TAKErr Skirt_getNumOutputIndices(std::size_t *value, const int mode, const std::size_t count) NOTHROWS;
+            ENGINE_API Util::TAKErr Skirt_getNumOutputIndices(std::size_t *value, const int mode, const std::size_t count) NOTHROWS;
 
         }
     }

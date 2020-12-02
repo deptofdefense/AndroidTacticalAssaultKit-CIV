@@ -8,7 +8,6 @@ import com.atakmap.map.layer.raster.gdal.GdalTileReader;
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.gdal;
 
-import java.util.Iterator;
 import java.util.SortedMap;
 import java.util.TreeMap;
 

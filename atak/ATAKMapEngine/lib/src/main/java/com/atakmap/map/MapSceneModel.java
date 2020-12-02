@@ -2,6 +2,7 @@ package com.atakmap.map;
 
 import android.graphics.PointF;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 
@@ -54,25 +55,43 @@ public final class MapSceneModel implements Disposable {
     Object owner;
     Cleaner cleaner;
 
+    /**
+     * @deprecated Use {@link #MapSceneModel(double, int, int, Projection, GeoPoint, float, float, double, double, double, boolean)}
+     * @param view
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public MapSceneModel(AtakMapView view) {
-        this(view, view.getProjection(), view.getPoint().get(),
+        this(view, view.getProjection(), new GeoPoint(view.getLatitude(), view.getLongitude()),
                 view.getMapController().getFocusX(),
                 view.getMapController().getFocusY(),
                 view.getMapRotation(), view.getMapTilt(), view.getMapScale(),
                 view.isContinuousScrollEnabled());
+
     }
 
-    /** @deprecated use {@link #MapSceneModel(AtakMapView, Projection, GeoPoint, float, float, double, double, double, boolean)} */
+    /**
+     * @deprecated Use {@link #MapSceneModel(double, int, int, Projection, GeoPoint, float, float, double, double, double, boolean)}
+     * @param view
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public MapSceneModel(AtakMapView view, Projection proj, GeoPoint focusGeo, float focusX, float focusY, double rotation, double scale) {
         this(view, proj, focusGeo, focusX, focusY, rotation, 0d, scale, false);
     }
 
+    /**
+     * @deprecated Use {@link #MapSceneModel(double, int, int, Projection, GeoPoint, float, float, double, double, double, boolean)}
+     * @param view
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public MapSceneModel(AtakMapView view, Projection proj, GeoPoint focusGeo,
                         float focusX, float focusY, double rotation, double tilt,
                         double scale, boolean continuousScroll) {
-        this(AtakMapView.DENSITY*240f, view.getWidth(), view.getHeight(),
+        this(view.getDisplayDpi(), view.getWidth(), view.getHeight(),
             proj, focusGeo, focusX, focusY, rotation, tilt,
-            view.getMapResolution(scale), continuousScroll);
+            Globe.getMapResolution(view.getDisplayDpi(), scale), continuousScroll);
     }
 
     public MapSceneModel(double displayDPI, int width, int height,
@@ -144,10 +163,10 @@ public final class MapSceneModel implements Disposable {
 
         // Calculate east and west bounds for correct forward corrections
         // when crossing the IDL in continuous scroll mode
-        GeoPoint west = inverse(new PointF(focusx - (width / 2),
-                height / 2), null);
-        GeoPoint east = inverse(new PointF(focusx + (width / 2),
-                height / 2), null);
+        GeoPoint west = inverse(new PointF(focusx - (width / 2f),
+                height / 2f), null);
+        GeoPoint east = inverse(new PointF(focusx + (width / 2f),
+                height / 2f), null);
         if (west == null || east == null)
             return;
         this.westBound = west.getLongitude();

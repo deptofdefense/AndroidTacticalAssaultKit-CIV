@@ -339,8 +339,7 @@ public class CoordDialogView extends LinearLayout implements
         if (_currPoint != null) {
             final String p = CoordinateFormatUtilities.formatToString(
                     _currPoint.get(), _currFormat);
-            final String a = AltitudeUtilities.format(_currPoint.get(),
-                    _prefs);
+            final String a = AltitudeUtilities.format(_currPoint, _prefs);
 
             return p + "\n" + a;
         } else {

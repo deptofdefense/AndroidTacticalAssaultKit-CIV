@@ -2,7 +2,6 @@
 package com.atakmap.util;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.map.layer.model.VertexDataLayout;
 import com.atakmap.math.PointD;
 
 import org.junit.Test;

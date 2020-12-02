@@ -10,6 +10,7 @@ import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.tools.menu.AtakActionBarMenuData.Orientation;
 import com.atakmap.app.BuildConfig;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.locale.LocaleUtil;
 
@@ -257,13 +258,13 @@ public class AtakActionBarListData {
 
     public static boolean reset(Context context, boolean full) {
         File actionBarDir = FileSystemUtils.getItem(ACTION_BAR_DIR);
-        File[] files = actionBarDir.listFiles();
+        File[] files = FileIOProviderFactory.listFiles(actionBarDir);
         if (files != null) {
             for (File f : files) {
                 final String fname = f.toString();
                 if (fname.endsWith("_portrait.xml")
                         || fname.endsWith("_landscape.xml")) {
-                    if (!f.delete())
+                    if (!FileIOProviderFactory.delete(f))
                         Log.d(TAG, "could not remove: " + fname);
                 }
             }
@@ -317,7 +318,7 @@ public class AtakActionBarListData {
         File actionBarDir = FileSystemUtils.getItem(ACTION_BAR_DIR);
         final File dl = new File(actionBarDir, "default_landscape.xml");
         final File dp = new File(actionBarDir, "default_portrait.xml");
-        if (!dl.exists() || !dp.exists()) {
+        if (!FileIOProviderFactory.exists(dl) || !FileIOProviderFactory.exists(dp)) {
             rollout(context, true);
         } else {
             rollout(context, false);
@@ -334,7 +335,7 @@ public class AtakActionBarListData {
 
         Serializer serializer = new Persister();
         try {
-            File[] files = directory.listFiles();
+            File[] files = FileIOProviderFactory.listFiles(directory);
             if (files != null) {
                 for (File f : files) {
                     try {
@@ -366,13 +367,13 @@ public class AtakActionBarListData {
         //sends intent out to all receivers that need to catch
         // changes in custom action bar setups
         ActionBarReceiver.getInstance().updatePluginActionBars();
-        File[] files = actionBarDir.listFiles();
+        File[] files = FileIOProviderFactory.listFiles(actionBarDir);
         if (files != null) {
             for (File f : files) {
                 final String fname = f.toString();
                 if (fname.endsWith("_portrait.xml")
                         || fname.endsWith("_landscape.xml")) {
-                    if (!f.delete())
+                    if (!FileIOProviderFactory.delete(f))
                         Log.d(TAG, "could not remove: " + fname);
                 }
             }

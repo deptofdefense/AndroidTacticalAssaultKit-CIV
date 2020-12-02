@@ -183,6 +183,24 @@ using namespace atakmap::renderer;
     "  gl_Position = uMVP * vec4(aVertexCoords.xy, aVertexCoords.z*uElevationScale, 1.0);\n" \
     "}"
 
+#if 0
+// XXX - experimenting with distance fog
+#define OFFSCREEN_FRAG_SHADER_SRC \
+    "precision mediump float;\n" \
+    "uniform sampler2D uTexture;\n" \
+    "uniform vec4 uColor;\n" \
+    "varying vec2 vTexPos;\n" \
+    "void main(void) {\n" \
+    "  const float density = 0.000005;\n"\
+    "  const float LOG2 = 1.442695;\n"\
+    "  float z = gl_FragCoord.z / gl_FragCoord.w;\n"\
+    "  float fogFactor = exp2(-density*density*z*z*LOG2);\n"\
+    "  fogFactor = clamp(fogFactor, 0.0, 1.0);\n"\
+    "  vec4 fragColor = texture2D(uTexture, vTexPos)*uColor;\n"\
+    "  vec4 fogColor = vec4(0.6, 0.6, 0.6, 1.0);\n"\
+    "  gl_FragColor = mix(fogColor, fragColor, fogFactor);\n"\
+    "}"
+#else
 #define OFFSCREEN_FRAG_SHADER_SRC \
     "precision mediump float;\n" \
     "uniform sampler2D uTexture;\n" \
@@ -191,6 +209,7 @@ using namespace atakmap::renderer;
     "void main(void) {\n" \
     "  gl_FragColor = texture2D(uTexture, vTexPos)*uColor;\n"\
     "}"
+#endif
 //
 //"  gl_FragColor = vec4(vTexPos.xy, 0.0, 1.0);\n" \
 //
@@ -210,6 +229,8 @@ using namespace atakmap::renderer;
 */
 #define IS_TINY(v) \
     (std::abs(v) <= _EPSILON)
+#define IS_TINYF(v) \
+    (std::abs(v) <= _EPSILON_F)
 
 namespace {
 
@@ -658,6 +679,8 @@ TAKErr GLMapView2::start() NOTHROWS
 
     this->tiltSkewOffset = ConfigOptions_getDoubleOptionOrDefault("glmapview.tilt-skew-offset", DEFAULT_TILT_SKEW_OFFSET);
     this->tiltSkewMult = ConfigOptions_getDoubleOptionOrDefault("glmapview.tilt-skew-mult", DEFAULT_TILT_SKEW_MULT);
+
+    this->displayDpi = view.getDisplayDpi();
 
     return TE_Ok;
 }
@@ -1386,6 +1409,8 @@ void GLMapView2::render() NOTHROWS
     const int64_t tick = Platform_systime_millis();
     if (this->animationLastTick)
         this->animationDelta = tick - this->animationLastTick;
+    else
+        glGetError();
     this->animationLastTick = tick;
     this->renderPump++;
 
@@ -1458,10 +1483,6 @@ TAKErr GLMapView2::visitTerrainTiles(TAKErr(*visitor)(void *opaque, const std::s
 
 void GLMapView2::drawRenderables() NOTHROWS
 {
-    GLint range[2];
-    GLint prec;
-    glGetShaderPrecisionFormat(GL_VERTEX_SHADER, GL_MEDIUM_FLOAT, range, &prec);
-    glGetShaderPrecisionFormat(GL_VERTEX_SHADER, GL_HIGH_FLOAT, range, &prec);
     this->numRenderPasses = 0u;
 
     GLint currentFbo;
@@ -1509,8 +1530,6 @@ void GLMapView2::drawRenderables() NOTHROWS
         if (!this->offscreen.get()) {
             this->offscreen = std::unique_ptr<Offscreen, void(*)(const Offscreen *)>(new Offscreen(), Memory_deleter_const<Offscreen>);
             this->initOffscreenShaders();
-        } else if (this->offscreen->fbo[0] != 0){
-            glBindFramebuffer(GL_FRAMEBUFFER, this->offscreen->fbo[0]);
         }
 
         // doing offscreen rendering if tilt or perspective camera
@@ -1524,6 +1543,7 @@ void GLMapView2::drawRenderables() NOTHROWS
             glBindFramebuffer(GL_FRAMEBUFFER, this->offscreen->fbo[0]);
         else
             glBindFramebuffer(GL_FRAMEBUFFER, currentFbo);
+
     }
 
     bool terrainUpdate = !offscreen.get() || (offscreen->lastTerrainVersion != terrain->getTerrainVersion());
@@ -1619,7 +1639,11 @@ void GLMapView2::drawRenderables() NOTHROWS
 
                 // compute an adjustment to be applied to the scale based on the
                 // current tilt
-                double scaleAdj = this->tiltSkewOffset + (tiltSkew*this->tiltSkewMult);
+                double scaleAdj;
+                if(scene.camera.mode == MapCamera2::Perspective)
+                    scaleAdj = 1.0 + (tiltSkew*1.1);
+                else 
+                    scaleAdj = this->tiltSkewOffset + (tiltSkew*this->tiltSkewMult);
 
                 // we're going to stretch the capture texture vertically to try
                 // to closely match the AOI with the perspective skew. If we
@@ -1818,6 +1842,9 @@ void GLMapView2::drawRenderables() NOTHROWS
 
     // execute UI pass
     {
+        // clear the depth buffer
+        glClear(GL_DEPTH_BUFFER_BIT);
+
         State uipass(this->renderPasses[0u]);
         uipass.basemap = false;
         uipass.texture = GL_NONE;
@@ -1959,14 +1986,18 @@ void GLMapView2::drawTerrainTiles(const GLTexture2 &tex, const std::size_t drawS
     {
         // construct the MVP matrix
         Matrix2 mvp;
-        // projectino
-        float matrixF[16u];
-        atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, matrixF);
-        for(std::size_t i = 0u; i < 16u; i++)
-            mvp.set(i%4, i/4, matrixF[i]);
-        // model-view
-        mvp.concatenate(this->scene.forwardTransform);
-
+        if (this->scene.camera.mode == MapCamera2::Perspective) {
+            mvp = this->scene.camera.projection;
+            mvp.concatenate(this->scene.camera.modelView);
+        } else {
+            // projection
+            float matrixF[16u];
+            atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, matrixF);
+            for(std::size_t i = 0u; i < 16u; i++)
+                mvp.set(i%4, i/4, matrixF[i]);
+            // model-view
+            mvp.concatenate(this->scene.forwardTransform);
+        }
         drawTerrainTilesImpl(renderPasses, numRenderPasses, shader, mvp, localFrame, numLocalFrames, tex, offscreen->terrainTiles, 1.0, 1.0, 1.0, terrainBlendFactor);
     }
 
@@ -2417,6 +2448,7 @@ bool GLMapView2::animate() NOTHROWS
         drawLat = animationState.targetLat;
         drawLng = animationState.targetLng;
         drawRotation = animationState.targetRotation;
+        drawTilt = animationState.targetTilt;
         focusx = animationState.targetFocusx;
         focusy = animationState.targetFocusy;
     }
@@ -2561,12 +2593,10 @@ TAKErr GLMapView2::getTerrainMeshElevation(double *value, const double latitude,
 
     return code;
 }
-#ifdef __ANDROID__
 TerrainRenderService &GLMapView2::getTerrainRenderService() NOTHROWS
 {
     return *this->terrain;
 }
-#endif
 void GLMapView2::asyncAnimate(void *opaque) NOTHROWS
 {
     std::unique_ptr<AsyncRunnable> runnable(static_cast<AsyncRunnable *>(opaque));
@@ -2734,9 +2764,6 @@ TAKErr GLMapView2::intersectWithTerrainImpl(GeoPoint2 *value, std::shared_ptr<co
             const double dz = proj.z - loc.z;
             candidateDistSq = ((dx*dx) + (dy*dy) + (dz*dz));
 
-            candidate.altitude = NAN;
-            candidate.altitudeRef = TAK::Engine::Core::AltitudeReference::HAE;
-
             *value = candidate;
         }
     }
@@ -2793,9 +2820,6 @@ TAKErr GLMapView2::intersectWithTerrainImpl(GeoPoint2 *value, std::shared_ptr<co
         const double dz = proj.z - loc.z;
         const double distSq = ((dx*dx) + (dy*dy) + (dz*dz));
         if (isnan(candidateDistSq) || distSq < candidateDistSq) {
-            candidate.altitude = NAN;
-            candidate.altitudeRef = TAK::Engine::Core::AltitudeReference::HAE;
-
             *value = candidate;
             candidateDistSq = distSq;
             focusTile = this->offscreen->terrainTiles[i];
@@ -2928,8 +2952,8 @@ namespace
                IS_TINY(dscale) &&
                IS_TINY(drot) &&
                IS_TINY(dtilt) &&
-               IS_TINY(dfocusX) &&
-               IS_TINY(dfocusY);
+               IS_TINYF(dfocusX) &&
+               IS_TINYF(dfocusY);
     }
 
     void asyncSetBaseMap(void *opaque) NOTHROWS
@@ -3350,7 +3374,8 @@ namespace
             focusx, focusy,
             view.poleInView ? 0.0 : view.drawRotation,
             tilt,
-            offscreenResolution);
+            offscreenResolution,
+            tilt == 0.0 ? MapCamera2::Scale : MapCamera2::Perspective);
 
         // account for flipping of y-axis for OpenGL coordinate space
         retval.inverseTransform.translate(0.0, vflipHeight, 0.0);

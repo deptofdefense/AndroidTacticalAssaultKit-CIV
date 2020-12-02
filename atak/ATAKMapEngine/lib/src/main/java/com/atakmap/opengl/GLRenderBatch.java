@@ -4,6 +4,7 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 
 import com.atakmap.map.opengl.GLMapSurface;
+import com.atakmap.map.opengl.GLRenderGlobals;
 
 import android.opengl.GLES30;
 
@@ -387,10 +388,10 @@ public final class GLRenderBatch {
      *          during a single batch.
      */
     public static int getBatchTextureUnitLimit() {
-        if(GLMapSurface.SETTING_limitTextureUnits)
+        if(GLRenderGlobals.isLimitTextureUnits())
             return 2;
         else
-            return Math.min(GLMapSurface.getMaxTextureUnits(), 32);
+            return Math.min(GLRenderGlobals.getMaxTextureUnits(), 32);
     }
 
 } // GLRenderBatch

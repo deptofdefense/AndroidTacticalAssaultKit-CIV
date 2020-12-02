@@ -7,6 +7,7 @@ import android.os.Parcelable;
 
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.SslNetCotPort;
 import com.atakmap.filesystem.HashingUtils;
@@ -57,7 +58,7 @@ public class FileTransfer implements Parcelable {
         _sha256 = sha256;
 
         if (FileSystemUtils.isFile(_senderLocalPath)) {
-            _size = new File(_senderLocalPath).length();
+            _size = FileIOProviderFactory.length(new File(_senderLocalPath));
             if (FileSystemUtils.isEmpty(_sha256)) {
                 computeHash();
             }
@@ -151,7 +152,7 @@ public class FileTransfer implements Parcelable {
                         + File.separator + filename);
 
         File dest = new File(filepath);
-        if (dest.exists()) {
+        if (FileIOProviderFactory.exists(dest)) {
             filepath = FileSystemUtils.getRandomFilepath(filepath);
             Log.d(TAG, "File already exists in fileshare, renaming to: "
                     + filepath);

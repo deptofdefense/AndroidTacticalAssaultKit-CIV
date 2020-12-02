@@ -7,8 +7,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 
-import android.database.DatabaseErrorHandler;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.RectF;
@@ -16,7 +14,7 @@ import android.net.Uri;
 
 import com.atakmap.android.maps.tilesets.TilesetInfo;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.database.android.AndroidDatabaseAdapter;
+import com.atakmap.database.Databases;
 import com.atakmap.lang.Objects;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.gdal.GdalGraphicUtils;
@@ -93,15 +91,7 @@ final class MobileImageryTileReader extends TileReader {
                             } else if(type.equals("osmdroid") || type.equals("osmdroid.atak")) {
                                 reader = new OSMDroidTileReader(tsInfo.getInfo().getUri(),
                                                                 options.asyncIO,
-                                                                new AndroidDatabaseAdapter(SQLiteDatabase.openDatabase(tsInfo.getInfo().getUri(), null,
-                                                                        SQLiteDatabase.OPEN_READONLY
-                                                                        | SQLiteDatabase.NO_LOCALIZED_COLLATORS,
-                                                                new DatabaseErrorHandler() {
-                                                                    @Override
-                                                                    public void onCorruption(SQLiteDatabase dbObj) {
-                                                                        dbObj.close();
-                                                                    }
-                                                                })),
+                                                                Databases.openDatabase(tsInfo.getInfo().getUri(), true),
                                                                 0,
                                                                 maxLevel+1,
                                                                 0,

@@ -1,6 +1,6 @@
 #include "JNIIntArray.h"
 
-#include <cstdlib>
+#include <cstring>
 
 using namespace TAKEngineJNI::Interop;
 
@@ -11,7 +11,7 @@ namespace
         return env->GetIntArrayElements(jarr, isCopy);
     }
 
-    inline void unpin(JNIEnv *env, jintArray jarr, jint *carr, int releaseMode)
+    inline void unpin(JNIEnv *env, jintArray jarr, jint *carr, jint releaseMode)
     {
         env->ReleaseIntArrayElements(jarr, carr, releaseMode);
     }

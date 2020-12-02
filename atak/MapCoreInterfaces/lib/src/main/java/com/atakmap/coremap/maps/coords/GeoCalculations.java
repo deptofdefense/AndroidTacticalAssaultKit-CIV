@@ -1,8 +1,7 @@
 
 package com.atakmap.coremap.maps.coords;
 
-import android.location.Location;
-
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.conversion.EGM96;
 
 /**
@@ -91,7 +90,9 @@ public final class GeoCalculations {
 
     }
 
-    /** @deprecated  */
+    /** @deprecated use {@link #midPointCartesian(GeoPoint, GeoPoint, boolean)} */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static GeoPoint midPoint(GeoPoint a, GeoPoint b, boolean wrap180) {
         return midPointCartesian(a, b, wrap180);
     }

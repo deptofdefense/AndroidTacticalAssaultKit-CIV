@@ -1,42 +1,35 @@
 
 package com.atakmap.android.maps;
 
-import com.atakmap.android.hashtags.HashtagMapComponent;
-import com.atakmap.android.metrics.activity.MetricFragmentActivity;
-import com.atakmap.android.rubbersheet.RubberSheetMapComponent;
-import com.atakmap.android.vehicle.VehicleMapComponent;
-import com.atakmap.app.BuildConfig;
-
-import android.annotation.SuppressLint;
-import android.os.SystemClock;
-import android.content.res.Configuration;
-import android.net.Uri;
-import android.os.Bundle;
-import androidx.fragment.app.FragmentActivity;
-import android.view.KeyEvent;
-import android.view.MotionEvent;
-
-import com.atakmap.android.action.MapAction;
-import com.atakmap.android.action.MapActionFactory;
-
-import com.atakmap.android.config.ConfigEnvironment;
-import com.atakmap.android.maps.assets.MapAssets;
-
-import com.atakmap.android.maps.graphics.GLMapComponent;
-import com.atakmap.android.network.ContentResolverURIStreamHandler;
-import com.atakmap.android.network.URIStreamHandlerFactory;
-import com.atakmap.app.preferences.json.JSONPreferenceControl;
-import com.atakmap.coremap.log.Log;
-import com.atakmap.map.layer.Layer;
-
-import com.atakmap.map.opengl.GLMapSurface;
-import org.xml.sax.SAXException;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.xml.parsers.ParserConfigurationException;
+
+import org.xml.sax.SAXException;
+
+import com.atakmap.android.action.MapAction;
+import com.atakmap.android.action.MapActionFactory;
+import com.atakmap.android.config.ConfigEnvironment;
+import com.atakmap.android.maps.assets.MapAssets;
+import com.atakmap.android.maps.graphics.GLMapComponent;
+import com.atakmap.android.metrics.activity.MetricFragmentActivity;
+import com.atakmap.android.network.ContentResolverURIStreamHandler;
+import com.atakmap.android.network.URIStreamHandlerFactory;
+import com.atakmap.android.vehicle.VehicleMapComponent;
+import com.atakmap.app.BuildConfig;
+import com.atakmap.coremap.log.Log;
+import com.atakmap.map.layer.Layer;
+import com.atakmap.map.opengl.GLMapSurface;
+
+import android.annotation.SuppressLint;
+import android.content.res.Configuration;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.SystemClock;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 
 /**
  * Abstract base Activity for applications using the map engine
@@ -333,8 +326,7 @@ public abstract class MapActivity extends MetricFragmentActivity {
     synchronized protected void loadRequiredAssets() {
         if (!requiredAssetsLoaded) {
             registerMapComponent(new GLMapComponent());
-            registerMapComponent(
-                    new com.atakmap.android.maps.graphics.widgets.GLWidgetsMapComponent());
+            MapComponentLoader.loadGLWidgets(this);
             requiredAssetsLoaded = true;
         }
     }
@@ -346,149 +338,7 @@ public abstract class MapActivity extends MetricFragmentActivity {
                     "error will occur with rendering layers if the required assets are not loaded ahead of time");
         }
 
-        // location needs to be first
-        registerMapComponent(
-                new com.atakmap.android.location.LocationMapComponent());
-
-        // common communications next
-        registerMapComponent(new com.atakmap.comms.CommsMapComponent());
-
-        // JSON preference file serialization and reading
-        JSONPreferenceControl.getInstance().initDefaults(getMapView());
-
-        registerMapComponent(
-                new com.atakmap.android.brightness.BrightnessComponent());
-        registerMapComponent(
-                new com.atakmap.android.data.DataMgmtMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.importexport.ImportExportMapComponent());
-        // UserMapComponent & CotMapComponent create MapGroups used by other components
-        registerMapComponent(new com.atakmap.android.user.UserMapComponent());
-        registerMapComponent(new com.atakmap.android.cot.CotMapComponent());
-        registerMapComponent(new com.atakmap.android.menu.MenuMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.elev.ElevationMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.targetbubble.TargetBubbleMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.munitions.DangerCloseMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.warning.WarningMapComponent());
-
-        FlavorComponentLoader.loadFires(this);
-
-        registerMapComponent(new com.atakmap.android.video.VideoMapComponent());
-        // ChatManagerMapComponent after CotMapComponent
-        registerMapComponent(
-                new com.atakmap.android.chat.ChatManagerMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.toolbar.ToolbarMapComponent());
-        registerMapComponent(new com.atakmap.android.icons.IconsMapComponent());
-        registerMapComponent(new com.atakmap.android.image.ImageMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.cotdetails.CoTInfoMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.fires.HostileManagerMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.offscreenindicators.OffScreenIndicatorsMapComponent());
-
-        // Layer SPI / API components
-
-        registerMapComponent(
-                new com.atakmap.android.maps.tilesets.TilesetMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.gdal.NativeRenderingMapComponent());
-
-        // The LayersMapComponent should be created after all layer SPI components
-        // as it will kick off a layer scan.
-
-        registerMapComponent(
-                new com.atakmap.android.layers.LayersMapComponent());
-
-        registerMapComponent(new com.atakmap.android.lrf.LRFMapComponent());
-        registerMapComponent(new com.atakmap.android.fires.FiresMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.coordoverlay.CoordOverlayMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.warning.WarningComponent());
-        registerMapComponent(
-                new com.atakmap.android.gridlines.GridLinesMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.jumpbridge.JumpBridgeMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.elev.ElevationOverlaysMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.dropdown.DropDownManagerMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.pairingline.PairingLineMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.routes.RouteMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.compassring.CompassRingMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.track.TrackHistoryComponent());
-        registerMapComponent(new com.atakmap.spatial.wkt.WktMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.viewshed.ViewshedMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.hierarchy.HierarchyMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.toolbars.RangeAndBearingMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.bloodhound.BloodHoundMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.medline.MedicalLineMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.drawing.DrawingToolsMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.mapcompass.CompassArrowMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.radiolibrary.RadioMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.missionpackage.MissionPackageMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.image.quickpic.QuickPicMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.maps.MapCoreIntentsComponent());
-        registerMapComponent(
-                new com.atakmap.android.update.ApkUpdateComponent());
-        registerMapComponent(
-                new com.atakmap.android.geofence.component.GeoFenceComponent());
-        registerMapComponent(
-                new com.atakmap.android.emergency.EmergencyAlertComponent());
-        registerMapComponent(
-                new com.atakmap.android.emergency.tool.EmergencyLifecycleListener());
-        registerMapComponent(new com.atakmap.android.wfs.WFSMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.maps.MultiplePairingLineMapComponent());
-
-        FlavorComponentLoader.loadSlant(this);
-
-        // Night Vision Component must be placed after Location
-        registerMapComponent(
-                new com.atakmap.android.nightvision.NightVisionMapWidgetComponent());
-        registerMapComponent(
-                new com.atakmap.android.resection.ResectionMapComponent());
-        registerMapComponent(
-                new com.atakmap.android.metricreport.MetricReportMapComponent());
-
-        // Fire up the state saver last for the internal components.
-
-        registerMapComponent(new com.atakmap.android.statesaver.StateSaver());
-
-        registerMapComponent(
-                new com.atakmap.android.gpkg.GeopackageMapComponent());
-        registerMapComponent(new com.atakmap.android.model.ModelMapComponent());
-        registerMapComponent(new RubberSheetMapComponent());
-        registerMapComponent(new HashtagMapComponent());
-
-        // Vehicle shapes and overhead markers
-        registerMapComponent(new VehicleMapComponent());
-
-        // Load up all of the external components, when this is complete it will trigger the
-        // state saver to unroll all of the map components.
-
-        registerMapComponent(new com.atak.plugins.impl.PluginMapComponent());
+        MapComponentLoader.loadMapComponents(this);
 
         ConfigEnvironment.Builder configBuilder = new ConfigEnvironment.Builder();
         ConfigEnvironment config = configBuilder.setMapAssets(getMapAssets())

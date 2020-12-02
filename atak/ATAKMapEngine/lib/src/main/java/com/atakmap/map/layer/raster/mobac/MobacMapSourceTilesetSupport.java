@@ -6,16 +6,16 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
-import android.content.ContentValues;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import com.atakmap.android.maps.graphics.GLBitmapLoader;
+import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.Databases;
 import com.atakmap.android.maps.tilesets.OnlineTilesetSupport;
 import com.atakmap.android.maps.tilesets.TilesetInfo;
 import com.atakmap.android.maps.tilesets.TilesetSupport;
+import com.atakmap.database.StatementIface;
 import com.atakmap.map.projection.EquirectangularMapProjection;
 import com.atakmap.map.projection.WebMercatorProjection;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -69,23 +69,28 @@ public final class MobacMapSourceTilesetSupport implements OnlineTilesetSupport 
         String offlineCache = this.tsInfo.getInfo().getExtraData("offlineCache");
 
         if (offlineCache != null) {
-            SQLiteDatabase database = null;
+            DatabaseIface database = null;
             try {
-                database = SQLiteDatabase.openOrCreateDatabase(offlineCache, null);
+                database = Databases.openOrCreateDatabase(offlineCache);
                 Set<String> tables = Databases.getTableNames(database);
                 if (!tables.contains("tiles")) {
-                    database.execSQL("CREATE TABLE tiles (key INTEGER PRIMARY KEY, provider TEXT, tile BLOB)");
+                    database.execute("CREATE TABLE tiles (key INTEGER PRIMARY KEY, provider TEXT, tile BLOB)", null);
                 }
                 if (!tables.contains("ATAK_catalog")) {
-                    database.execSQL("CREATE TABLE ATAK_catalog (key INTEGER PRIMARY KEY, access INTEGER, expiration INTEGER, size INTEGER)");
+                    database.execute("CREATE TABLE ATAK_catalog (key INTEGER PRIMARY KEY, access INTEGER, expiration INTEGER, size INTEGER)", null);
                 }
                 if (!tables.contains("ATAK_metadata")) {
-                    database.execSQL("CREATE TABLE ATAK_metadata (key TEXT, value TEXT)");
-                    ContentValues values = new ContentValues();
-                    values.put("key", "srid");
-                    values.put("value",
-                            String.valueOf(this.tsInfo.getInfo().getSpatialReferenceID()));
-                    database.insert("ATAK_metadata", null, values);
+                    database.execute("CREATE TABLE ATAK_metadata (key TEXT, value TEXT)", null);
+                    StatementIface stmt = null;
+                    try {
+                        stmt = database.compileStatement("INSERT INTO ATAK_metadata (key, value) VALUES(?, ?)");
+                        stmt.bind(1, "srid");
+                        stmt.bind(2, String.valueOf(this.tsInfo.getInfo().getSpatialReferenceID()));
+                        stmt.execute();
+                    } finally {
+                        if(stmt != null)
+                            stmt.close();
+                    }
                 }
             } catch (Exception e) {
                 // received a could not open database exception and a hard crash, try to recover.

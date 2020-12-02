@@ -185,9 +185,9 @@ public class MultiPolylineDetailsView extends GenericDetailsView implements
         _centerButton.setText(_unitPrefs.formatPoint(_shape.getCenter(),
                 true));
 
-        double height = _shape.getMetaDouble("height", -1);
+        double height = _shape.getHeight();
         Span unit = getUnitSpan(_shape);
-        if (height >= 0) {
+        if (!Double.isNaN(height)) {
             _heightButton.setText(SpanUtilities.format(height, Span.METER,
                     unit));
         } else {
@@ -575,7 +575,7 @@ public class MultiPolylineDetailsView extends GenericDetailsView implements
     @Override
     protected void heightSelected(double height, Span u, double h) {
         // This is always saved as a string in feet for some reason
-        _shape.setMetaDouble("height", height);
+        _shape.setHeight(height);
         _shape.setMetaInteger("height_unit", u.getValue());
         _heightButton.setText(SpanUtilities.format(h, u, 2));
     }

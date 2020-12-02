@@ -26,7 +26,6 @@ public class ImageOverlay extends Shape implements Exportable {
     private static final String TAG = "ImageOverlay";
 
     private final DatasetDescriptor layerInfo;
-    private final float _hitRadius = 32 * MapView.DENSITY;
     private boolean bEnableMapTouch;
 
     ImageOverlay(DatasetDescriptor layerInfo, final String uid,
@@ -72,11 +71,12 @@ public class ImageOverlay extends Shape implements Exportable {
     private boolean testOrthoHit(int xpos, int ypos, MapView view,
             GeoBounds _bounds) {
 
-        scratch_ul.x = xpos - _hitRadius;
-        scratch_ul.y = ypos - _hitRadius;
+        float hitRadius = getHitRadius(view);
+        scratch_ul.x = xpos - hitRadius;
+        scratch_ul.y = ypos - hitRadius;
 
-        scratch_lr.x = xpos + _hitRadius;
-        scratch_lr.y = ypos + _hitRadius;
+        scratch_lr.x = xpos + hitRadius;
+        scratch_lr.y = ypos + hitRadius;
 
         final GeoPoint ul = view.inverse(scratch_ul,
                 MapView.InverseMode.RayCast).get();
@@ -149,12 +149,12 @@ public class ImageOverlay extends Shape implements Exportable {
     }
 
     @Override
-    public boolean isSupported(Class target) {
+    public boolean isSupported(Class<?> target) {
         return MissionPackageExportWrapper.class.equals(target);
     }
 
     @Override
-    public Object toObjectOf(Class target, ExportFilters filters)
+    public Object toObjectOf(Class<?> target, ExportFilters filters)
             throws FormatNotSupportedException {
         if (!isSupported(target)) {
             //nothing to export

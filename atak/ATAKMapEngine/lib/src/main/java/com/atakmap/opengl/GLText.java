@@ -21,7 +21,9 @@ import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.AtakMapView;
+import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
+import com.atakmap.util.ConfigOptions;
 
 public final class GLText {
 
@@ -79,10 +81,10 @@ public final class GLText {
      * @return find the best font size based on a provided text size.
      */
     private static int findBestFontSize(int textSize) {
-        if (textSize > 0) {
+        if (textSize > 0 && ConfigOptions.getOption("gltext.use-font-bins", 1) != 0) {
             // Scale input text size by factor of 2 if the screen density is lower than 2
             // This improves readability of smaller font sizes - see ATAK-12517
-            int ts = textSize * (AtakMapView.DENSITY < 2 ? 2 : 1);
+            int ts = textSize * (GLRenderGlobals.getRelativeScaling() < 2 ? 2 : 1);
             for (int i = 0; i < sizeBins.length - 1; ++i) {
                 if (textSize == sizeBins[i])
                     break;
@@ -109,11 +111,12 @@ public final class GLText {
         final int textSize = textFormat.getFontSize();
 
         // performs safe volatile double checked locking
-        GLText customGLText = glTextCache.get(Long.valueOf(((long) typeface.hashCode() << 32)
-                | (long) textSize));
+        final long key = ((long) typeface.hashCode() << 32)
+                | (long) (textSize<<1) | (long)(textFormat.isOutlined() ? 1 : 0);
+        GLText customGLText = glTextCache.get(Long.valueOf(key));
         if (customGLText == null) {
             customGLText = new GLText(textFormat, typeface, textSize);
-            glTextCache.put(Long.valueOf(((long) typeface.hashCode() << 32) | (long) textSize),
+            glTextCache.put(Long.valueOf(key),
                     customGLText);
         }
         
@@ -147,7 +150,7 @@ public final class GLText {
     private GLText(MapTextFormat textFormat, Typeface typeface, float densityAdjustedTextSize) {
         cachedFontSize = findBestFontSize(textFormat.getFontSize());
 
-        this.textFormat = new MapTextFormat(textFormat.getTypeface(), cachedFontSize);
+        this.textFormat = new MapTextFormat(textFormat.getTypeface(), textFormat.isOutlined(), cachedFontSize);
         // caches the text with a font size that can be scaled appropriately.
         fontScalar = textFormat.getFontSize() / (float)cachedFontSize;
 

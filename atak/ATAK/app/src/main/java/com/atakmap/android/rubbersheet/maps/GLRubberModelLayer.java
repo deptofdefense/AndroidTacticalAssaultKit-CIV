@@ -5,7 +5,12 @@ import android.util.LongSparseArray;
 
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
+import com.atakmap.android.maps.MapView;
+import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.graphics.GLMapItem2;
+import com.atakmap.android.rubbersheet.tool.RubberModelEditTool;
+import com.atakmap.android.toolbar.Tool;
+import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.map.MapRenderer;
@@ -98,21 +103,40 @@ public class GLRubberModelLayer extends
     @Override
     protected void query(ViewState state, Collection<GLMapRenderable2> result) {
         // Determine which models to draw
+        MapView mv = MapView.getMapView();
+        Tool tool = ToolManagerBroadcastReceiver.getInstance().getActiveTool();
+        PointMapItem focus = null;
+        if (mv != null) {
+            if (tool instanceof RubberModelEditTool)
+                focus = ((RubberModelEditTool) tool).getMarker();
+            else
+                focus = mv.getMapTouchController().getFreeForm3DItem();
+        }
         for (int i = 0; i < _modelList.size(); i++) {
             GLRubberModel glMDL = _modelList.valueAt(i);
+            RubberModel mdl = (RubberModel) glMDL.getSubject();
 
             // Model is invisible
             if (!glMDL.isVisible())
                 continue;
 
+            boolean onScreen = false;
+
+            // Free form 3D focus
+            if (focus != null && focus == mdl.getAnchorItem())
+                onScreen = true;
+
             // Check view state bounds against model render bounds
-            glMDL.getBounds(_scratchBounds);
-            if (_scratchBounds.intersects(state.northBound, state.westBound,
-                    state.southBound, state.eastBound, true)) {
-                glMDL.setOnScreen(true);
+            if (!onScreen) {
+                glMDL.getBounds(_scratchBounds);
+                onScreen = _scratchBounds.intersects(state.northBound,
+                        state.westBound, state.southBound, state.eastBound,
+                        state.crossesIDL);
+            }
+
+            if (onScreen)
                 result.add(glMDL);
-            } else
-                glMDL.setOnScreen(false);
+            glMDL.setOnScreen(onScreen);
         }
     }
 

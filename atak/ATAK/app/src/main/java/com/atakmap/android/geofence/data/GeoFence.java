@@ -9,6 +9,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.user.FilterMapOverlay;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.cot.event.CotDetail;
@@ -33,9 +34,10 @@ public class GeoFence {
     private static final String TAG = "GeoFence";
 
     /**
-     * Deprecated. Used prior to ATAK 3.8. See GeofenceDetailHandler.java
+     * @deprecated . Used prior to ATAK 3.8. See {@link com.atakmap.android.geofence.data.GeoFenceDetailHandler}
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static final String COT_TYPE = "t-x-a-m-Geofence";
     private static final String COT_HOW = "h-g-i-g-o";
 
@@ -144,8 +146,8 @@ public class GeoFence {
     private double getHeightElevation(final MapItem item) {
         if (item == null || !item.hasMetaValue("height"))
             return Double.NaN;
-        double height = item.getMetaDouble("height", 0);
-        if (Double.compare(height, 0) == 0)
+        double height = item.getHeight();
+        if (Double.isNaN(height) || Double.compare(height, 0) == 0)
             return Double.NaN;
 
         // Height isn't always in meters

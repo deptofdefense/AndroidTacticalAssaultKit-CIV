@@ -10,6 +10,7 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.lang.Unsafe;
 
@@ -223,7 +224,7 @@ public class TiledCanvas extends Canvas {
             if (driver == null)
                 return false;
 
-            if (file.exists())
+            if (FileIOProviderFactory.exists(file))
                 FileSystemUtils.delete(file);
             dsOut = driver.CreateCopy(file.getAbsolutePath(), dsIn, options);
             return dsOut != null;

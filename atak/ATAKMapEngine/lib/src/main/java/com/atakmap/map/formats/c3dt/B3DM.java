@@ -1,7 +1,7 @@
 package com.atakmap.map.formats.c3dt;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.io.ProtocolHandler;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.io.UriFactory;
 
 import org.json.JSONArray;
@@ -10,8 +10,6 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -74,7 +72,7 @@ final class B3DM {
         return parse(ByteBuffer.wrap(bytes), Util.resolve(uri), handler);
     }
     public static B3DM parse(File file) throws JSONException, IOException {
-        if(!file.exists())
+        if(!FileIOProviderFactory.exists(file))
             return null;
         return parse(ByteBuffer.wrap(FileSystemUtils.read(file)), file.getParentFile().toString(), null);
     }

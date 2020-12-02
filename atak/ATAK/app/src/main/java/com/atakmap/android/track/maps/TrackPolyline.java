@@ -58,6 +58,7 @@ public class TrackPolyline extends Polyline implements
                 .setImageUri(0, ATAKUtilities.getResourceUri(
                         R.drawable.ic_menu_goto_nav))
                 .setAnchor(32, 32).build());
+        _startMarker.setMetaString("shapeUID", getUID());
 
         // Destination marker
         _endMarker = new Marker(GeoPoint.ZERO_POINT, getUID() + "-end");
@@ -66,6 +67,7 @@ public class TrackPolyline extends Polyline implements
                 .setImageUri(0, ATAKUtilities.getResourceUri(
                         R.drawable.ic_checkered_flag_white))
                 .setAnchor(32, 32).build());
+        _endMarker.setMetaString("shapeUID", getUID());
 
         setZOrder(-2);
         setBasicLineStyle(BASIC_LINE_STYLE_ARROWS);
@@ -93,12 +95,13 @@ public class TrackPolyline extends Polyline implements
     }
 
     @Override
-    public void setVisible(boolean visible) {
-        super.setVisible(visible);
+    protected void onVisibleChanged() {
+        boolean visible = getVisible();
         _startMarker.setVisible(visible && getStartPoint() != null);
         _endMarker.setVisible(visible && getEndPoint() != null);
         if (visible)
             fixZLevels();
+        super.onVisibleChanged();
     }
 
     @Override
@@ -148,7 +151,7 @@ public class TrackPolyline extends Polyline implements
         _endMarker.setPoint(
                 end == null ? GeoPointMetaData.wrap(GeoPoint.ZERO_POINT) : end);
 
-        setVisible(getVisible());
+        onVisibleChanged();
     }
 
     public void setCrumbSize(int crumbSize) {

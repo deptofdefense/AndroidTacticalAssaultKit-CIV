@@ -1,7 +1,6 @@
 
 package com.atakmap.comms.app;
 
-import android.app.TabActivity;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.os.Bundle;

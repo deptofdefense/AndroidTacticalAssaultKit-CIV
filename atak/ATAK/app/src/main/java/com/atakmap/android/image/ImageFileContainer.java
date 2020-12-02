@@ -3,12 +3,12 @@ package com.atakmap.android.image;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import android.app.Activity;
@@ -315,7 +315,7 @@ public class ImageFileContainer
 
         try {
             BufferedReader br = new BufferedReader(
-                    new InputStreamReader(new FileInputStream(linkFile)));
+                    new InputStreamReader(FileIOProviderFactory.getInputStream(linkFile)));
 
             try {
                 String line = br.readLine();

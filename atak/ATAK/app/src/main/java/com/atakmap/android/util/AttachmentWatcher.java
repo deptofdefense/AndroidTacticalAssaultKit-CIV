@@ -6,6 +6,7 @@ import android.os.FileObserver;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.video.manager.VideoFileWatcher;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -127,7 +128,7 @@ public class AttachmentWatcher extends Thread {
 
     private void scan() {
         // Get all attachment sub-folders
-        File[] dirs = _attDir.listFiles();
+        File[] dirs = FileIOProviderFactory.listFiles(_attDir);
         if (dirs == null)
             dirs = new File[0];
 
@@ -138,7 +139,7 @@ public class AttachmentWatcher extends Thread {
                 continue;
 
             // Get all the files within each sub-directory
-            File[] files = dir.listFiles();
+            File[] files = FileIOProviderFactory.listFiles(dir);
             if (FileSystemUtils.isEmpty(files))
                 continue;
             added.addAll(Arrays.asList(files));

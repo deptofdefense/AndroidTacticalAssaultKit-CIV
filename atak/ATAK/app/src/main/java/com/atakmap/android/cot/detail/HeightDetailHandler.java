@@ -48,7 +48,7 @@ class HeightDetailHandler extends CotDetailHandler {
 
     @Override
     public boolean toCotDetail(MapItem item, CotEvent event, CotDetail detail) {
-        double height = item.getMetaDouble("height", Double.NaN);
+        double height = item.getHeight();
         if (Double.isNaN(height))
             return false;
 
@@ -84,8 +84,7 @@ class HeightDetailHandler extends CotDetailHandler {
             if (FileSystemUtils.isEmpty(value))
                 value = detail.getInnerText();
             double height = parseDouble(value, Double.NaN);
-            if (!Double.isNaN(height))
-                item.setMetaDouble("height", height);
+            item.setHeight(height);
 
             String unit = detail.getAttribute("unit");
             if (!FileSystemUtils.isEmpty(unit)) {

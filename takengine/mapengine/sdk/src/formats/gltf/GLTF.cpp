@@ -20,16 +20,21 @@ TAKErr TAK::Engine::Formats::GLTF::GLTF_load(ScenePtr& scenePtr, DataInput2* inp
     if (binary.size() == 0)
         return TE_Unsupported;
 
+    return GLTF_load(scenePtr, &binary.front(), binary.size(), baseURI);
+}
+
+TAKErr TAK::Engine::Formats::GLTF::GLTF_load(ScenePtr& scenePtr, const uint8_t *data, size_t size, const char* baseURI) NOTHROWS {
+
     MemoryInput2 memInput;
-    memInput.open(&binary.front(), binary.size());
+    memInput.open(data, size);
     uint32_t version = 0;
-    code = getVersion(&version, &memInput);
+    TAKErr code = getVersion(&version, &memInput);
     if (code != TE_Ok)
         return code;
 
     switch (version) {
-    case 1: return GLTF_loadV1(scenePtr, &binary.front(), binary.size(), baseURI);
-    case 2: return GLTF_loadV2(scenePtr, &binary.front(), binary.size(), baseURI);
+    case 1: return GLTF_loadV1(scenePtr, data, size, baseURI);
+    case 2: return GLTF_loadV2(scenePtr, data, size, baseURI);
     default: return TE_Unsupported;
     }
 
@@ -69,7 +74,7 @@ namespace {
         if (inputLen > 0) {
             dst.insert(dst.end(), static_cast<size_t>(inputLen), 0);
             size_t numRead = 0;
-            TAKErr code = input->read(&dst[0], &numRead, inputLen);
+            TAKErr code = input->read(&dst[0], &numRead, static_cast<std::size_t>(inputLen));
             if (code != TE_Ok)
                 return code;
             if (numRead != inputLen)

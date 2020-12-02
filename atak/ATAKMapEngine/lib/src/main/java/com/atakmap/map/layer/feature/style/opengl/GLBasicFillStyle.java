@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.util.Pair;
 
 import com.atakmap.android.maps.graphics.GLBackground;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.geometry.GeometryCollection;
@@ -20,6 +21,9 @@ import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLRenderBatch;
 import com.atakmap.opengl.GLTriangulate;
 
+/** @deprecated use the batch feature renderering framework */
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public abstract class GLBasicFillStyle extends GLStyle {
 
     public final static GLStyleSpi SPI = new GLStyleSpi() {

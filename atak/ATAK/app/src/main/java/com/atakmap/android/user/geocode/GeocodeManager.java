@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.location.Address;
 import android.preference.PreferenceManager;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
@@ -16,7 +17,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import javax.xml.XMLConstants;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -321,8 +322,8 @@ public class GeocodeManager {
     private void loadNominatim() {
         try {
             final File dir = FileSystemUtils.getItem(ADDRESS_DIR);
-            if (dir.exists()) {
-                File[] files = dir.listFiles();
+            if (FileIOProviderFactory.exists(dir)) {
+                File[] files = FileIOProviderFactory.listFiles(dir);
                 if (files != null) {
                     for (File file : files) {
                         Log.d(TAG, "loading: " + file);

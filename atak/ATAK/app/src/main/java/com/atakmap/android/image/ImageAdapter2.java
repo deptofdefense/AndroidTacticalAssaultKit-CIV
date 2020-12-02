@@ -30,6 +30,7 @@ import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.maps.conversion.EGM96;
@@ -45,7 +46,6 @@ import org.apache.sanselan.formats.tiff.constants.TiffConstants;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -543,7 +543,7 @@ public class ImageAdapter2 extends BaseAdapter {
         File link = null;
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(
-                    new FileInputStream(linkFile)));
+                    FileIOProviderFactory.getInputStream(linkFile)));
             try {
                 String line = br.readLine();
                 link = new File(

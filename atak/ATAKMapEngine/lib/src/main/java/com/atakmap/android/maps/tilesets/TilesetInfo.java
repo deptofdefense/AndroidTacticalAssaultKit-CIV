@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
 import java.util.HashMap;
@@ -17,19 +18,17 @@ import java.util.zip.ZipEntry;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.XMLConstants;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import android.database.Cursor;
-import android.database.DatabaseErrorHandler;
-import android.database.sqlite.SQLiteDatabase;
-
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.xml.XMLUtils;
+import com.atakmap.database.CursorIface;
+import com.atakmap.database.DatabaseIface;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.raster.mobileimagery.MobileImageryRasterLayer2;
 import com.atakmap.map.layer.raster.osm.OSMDroidZipLayerInfoSpi;
@@ -122,7 +121,7 @@ public class TilesetInfo {
                 long e = android.os.SystemClock.elapsedRealtime();
     
                 Log.d(TAG, "zipvirtualfile in " + (e - s));
-                File[] children = zf.listFiles();
+                File[] children = FileIOProviderFactory.listFiles(zf);
     
                 final Set<String> supportedFormats = new HashSet<String>();
                 supportedFormats.add("MAPNIK");
@@ -160,24 +159,18 @@ public class TilesetInfo {
         if(file.getName().endsWith(".gpkg"))
             return null;
 
-        SQLiteDatabase database = null;
+        DatabaseIface database = null;
         try {
-            database = SQLiteDatabase.openDatabase(file.getAbsolutePath(), null,
-                    SQLiteDatabase.OPEN_READONLY | SQLiteDatabase.NO_LOCALIZED_COLLATORS, new DatabaseErrorHandler() {
-                @Override
-                public void onCorruption(SQLiteDatabase dbObj) {
-                    dbObj.close();
-                }
-            });
+            database = Databases.openDatabase(file.getAbsolutePath(), true);
             if (OSMUtils.isOSMDroidSQLite(database)) {
                 // OSM Droid SQLite
-                Cursor result;
+                CursorIface result;
 
                 String provider = null;
                 int minLevel = -1;
                 result = null;
                 try {
-                    result = database.rawQuery("SELECT key, provider FROM tiles ORDER BY key ASC LIMIT 1",
+                    result = database.query("SELECT key, provider FROM tiles ORDER BY key ASC LIMIT 1",
                             null);
                     if (result.moveToNext()) {
                         minLevel = OSMUtils.getOSMDroidSQLiteZoomLevel(result.getLong(0));
@@ -198,7 +191,7 @@ public class TilesetInfo {
 
                     result = null;
                     try {
-                        result = database.rawQuery(
+                        result = database.query(
                                 "SELECT value FROM ATAK_metadata WHERE key = \'srid\'", null);
                         if (result.moveToNext())
                             srid = Integer.parseInt(result.getString(0));
@@ -223,7 +216,7 @@ public class TilesetInfo {
                 int tileX;
                 int tileY;
                 try {
-                    result = database.rawQuery(
+                    result = database.query(
                             "SELECT key FROM tiles WHERE key <= "
                                     + OSMUtils.getOSMDroidSQLiteMaxIndex(minLevel), null);
                     result.moveToNext();
@@ -253,7 +246,7 @@ public class TilesetInfo {
                 int maxLevel = -1;
                 result = null;
                 try {
-                    result = database.rawQuery("SELECT key FROM tiles ORDER BY key DESC LIMIT 1",
+                    result = database.query("SELECT key FROM tiles ORDER BY key DESC LIMIT 1",
                             null);
                     if (result.moveToNext())
                         maxLevel = OSMUtils.getOSMDroidSQLiteZoomLevel(result.getLong(0));
@@ -936,17 +929,17 @@ public class TilesetInfo {
 
     }
     
-    private static DatasetDescriptor createMOMAPDataset(File file, SQLiteDatabase database) {
+    private static DatasetDescriptor createMOMAPDataset(File file, DatabaseIface database) {
         // Nett Warrior
 
-        Cursor result;
+        CursorIface result;
 
         int minLevel = -1;
         int maxLevel = -1;
         String format = "";
         result = null;
         try {
-            result = database.rawQuery("SELECT name, value FROM metadata", null);
+            result = database.query("SELECT name, value FROM metadata", null);
             String name;
             while (result.moveToNext()) {
                 name = result.getString(0);
@@ -966,7 +959,7 @@ public class TilesetInfo {
             result = null;
             try {
                 result = database
-                        .rawQuery(
+                        .query(
                                 "SELECT zoom_level FROM tiles ORDER BY zoom_level ASC LIMIT 1",
                                 null);
                 if (result.moveToNext())
@@ -980,7 +973,7 @@ public class TilesetInfo {
             result = null;
             try {
                 result = database
-                        .rawQuery(
+                        .query(
                                 "SELECT zoom_level FROM tiles ORDER BY zoom_level DESC LIMIT 1",
                                 null);
                 if (result.moveToNext())
@@ -1004,7 +997,7 @@ public class TilesetInfo {
         // do 4 queries for MBB discovery (min x,y / max x,y)
         result = null;
         try {
-            result = database.rawQuery(
+            result = database.query(
                     "SELECT tile_column FROM tiles WHERE zoom_level = "
                             + String.valueOf(minLevel)
                             + " ORDER BY tile_column ASC LIMIT 1", null);
@@ -1019,7 +1012,7 @@ public class TilesetInfo {
 
         result = null;
         try {
-            result = database.rawQuery(
+            result = database.query(
                     "SELECT tile_column FROM tiles WHERE zoom_level = "
                             + String.valueOf(minLevel)
                             + " ORDER BY tile_column DESC LIMIT 1", null);
@@ -1034,7 +1027,7 @@ public class TilesetInfo {
 
         result = null;
         try {
-            result = database.rawQuery(
+            result = database.query(
                     "SELECT tile_row FROM tiles WHERE zoom_level = "
                             + String.valueOf(minLevel)
                             + " ORDER BY tile_row ASC LIMIT 1", null);
@@ -1049,7 +1042,7 @@ public class TilesetInfo {
 
         result = null;
         try {
-            result = database.rawQuery(
+            result = database.query(
                     "SELECT tile_row FROM tiles WHERE zoom_level = "
                             + String.valueOf(minLevel)
                             + " ORDER BY tile_row DESC LIMIT 1", null);
@@ -1104,17 +1097,17 @@ public class TilesetInfo {
         return builder.build();
     }
     
-    private static DatasetDescriptor createMBTilesDataset(File file, SQLiteDatabase database) {
+    private static DatasetDescriptor createMBTilesDataset(File file, DatabaseIface database) {
         // MBTiles
 
-        Cursor result;
+        CursorIface result;
 
         int minLevel = -1;
         int maxLevel = -1;
         String format = "";
         result = null;
         try {
-            result = database.rawQuery("SELECT name, value FROM metadata", null);
+                result = database.query("SELECT name, value FROM metadata", null);
             String name;
             while (result.moveToNext()) {
                 name = result.getString(0);
@@ -1134,7 +1127,7 @@ public class TilesetInfo {
             result = null;
             try {
                 result = database
-                        .rawQuery(
+                        .query(
                                 "SELECT zoom_level FROM tiles ORDER BY zoom_level ASC LIMIT 1",
                                 null);
                 if (result.moveToNext())
@@ -1148,7 +1141,7 @@ public class TilesetInfo {
             result = null;
             try {
                 result = database
-                        .rawQuery(
+                        .query(
                                 "SELECT zoom_level FROM tiles ORDER BY zoom_level DESC LIMIT 1",
                                 null);
                 if (result.moveToNext())
@@ -1172,7 +1165,7 @@ public class TilesetInfo {
         // do 4 queries for MBB discovery (min x,y / max x,y)
         result = null;
         try {
-            result = database.rawQuery(
+            result = database.query(
                     "SELECT tile_column FROM tiles WHERE zoom_level = "
                             + String.valueOf(minLevel)
                             + " ORDER BY tile_column ASC LIMIT 1", null);
@@ -1187,7 +1180,7 @@ public class TilesetInfo {
 
         result = null;
         try {
-            result = database.rawQuery(
+            result = database.query(
                     "SELECT tile_column FROM tiles WHERE zoom_level = "
                             + String.valueOf(minLevel)
                             + " ORDER BY tile_column DESC LIMIT 1", null);
@@ -1202,7 +1195,7 @@ public class TilesetInfo {
 
         result = null;
         try {
-            result = database.rawQuery(
+            result = database.query(
                     "SELECT tile_row FROM tiles WHERE zoom_level = "
                             + String.valueOf(minLevel)
                             + " ORDER BY tile_row ASC LIMIT 1", null);
@@ -1217,7 +1210,7 @@ public class TilesetInfo {
 
         result = null;
         try {
-            result = database.rawQuery(
+            result = database.query(
                     "SELECT tile_row FROM tiles WHERE zoom_level = "
                             + String.valueOf(minLevel)
                             + " ORDER BY tile_row DESC LIMIT 1", null);

@@ -24,6 +24,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.update.AppVersionUpgrade;
 import com.atakmap.app.DeveloperOptions;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
@@ -88,7 +89,7 @@ public class WktMapComponent extends AbstractMapComponent {
         Log.d(TAG, "Initializing SpatialDb");
 
         if (DeveloperOptions.getIntOption("feature-metadata-enabled", 1) == 0) {
-            if (SPATIAL_DB_DIR.exists())
+            if (FileIOProviderFactory.exists(SPATIAL_DB_DIR))
                 FileSystemUtils.deleteDirectory(SPATIAL_DB_DIR, false);
 
             if (DeveloperOptions.getIntOption("force-overlays-rebuild",
@@ -99,7 +100,7 @@ public class WktMapComponent extends AbstractMapComponent {
             this.spatialDb = new PersistentDataSourceFeatureDataStore(
                     SPATIAL_DB_FILE);
         } else {
-            if (SPATIAL_DB_FILE.exists())
+            if (FileIOProviderFactory.exists(SPATIAL_DB_FILE))
                 FileSystemUtils.deleteFile(SPATIAL_DB_FILE);
 
             if (DeveloperOptions.getIntOption("force-overlays-rebuild", 0) == 1)
@@ -197,8 +198,8 @@ public class WktMapComponent extends AbstractMapComponent {
 
                     // see if the atak/overlays exists, and, if not, create it
                     File overlaysDir = FileSystemUtils.getItem("overlays");
-                    if (!overlaysDir.exists())
-                        if (!overlaysDir.mkdirs()) {
+                    if (!FileIOProviderFactory.exists(overlaysDir))
+                        if (!FileIOProviderFactory.mkdirs(overlaysDir)) {
                             Log.e(TAG, "Failure to make directory " +
                                     overlaysDir.getAbsolutePath());
                         }
@@ -443,14 +444,14 @@ public class WktMapComponent extends AbstractMapComponent {
                 for (String mountPoint : mountPoints) {
                     File scanDir = new File(mountPoint,
                             contentSource.getFileDirectoryName());
-                    if (scanDir.exists() && scanDir.isDirectory())
+                    if (FileIOProviderFactory.exists(scanDir) && FileIOProviderFactory.isDirectory(scanDir))
                         FileSystemUtils.deleteDirectory(scanDir, true);
                 }
             }
 
             // delete any remaining files that may have been externally imported
             for (File overlayFile : spatialDbFilesToDelete)
-                if (overlayFile.exists())
+                if (FileIOProviderFactory.exists(overlayFile))
                     FileSystemUtils.deleteFile(overlayFile);
 
             //Clean up File Databases
@@ -477,7 +478,7 @@ public class WktMapComponent extends AbstractMapComponent {
                 for (String mountPoint : mountPoints) {
                     File scanDir = new File(mountPoint, fileDatabase
                             .getFileDirectory().getName());
-                    if (scanDir.exists() && scanDir.isDirectory())
+                    if (FileIOProviderFactory.exists(scanDir) && FileIOProviderFactory.isDirectory(scanDir))
                         FileSystemUtils.deleteDirectory(scanDir, true);
                 }
             }

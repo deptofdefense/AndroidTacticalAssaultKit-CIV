@@ -4,7 +4,6 @@ import com.atakmap.android.maps.tilesets.graphics.GLPendingTexture;
 import com.atakmap.map.layer.model.Material;
 import com.atakmap.opengl.GLResolvable;
 import com.atakmap.opengl.GLTexture;
-import com.atakmap.util.Disposable;
 
 public final class GLMaterial implements GLResolvable {
 

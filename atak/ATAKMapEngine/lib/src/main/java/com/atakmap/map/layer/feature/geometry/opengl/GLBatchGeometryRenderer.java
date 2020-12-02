@@ -19,6 +19,7 @@ import android.graphics.Color;
 import android.graphics.PointF;
 import android.opengl.GLES30;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
@@ -33,9 +34,9 @@ import com.atakmap.map.opengl.GLMapRenderable;
 import com.atakmap.map.opengl.GLMapRenderable2;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Rectangle;
-import com.atakmap.math.Vector3D;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLRenderBatch2;
 import com.atakmap.opengl.GLTextureAtlas;
@@ -84,6 +85,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     /*************************************************************************/
     
     private LinkedList<GLBatchPolygon> polys = new LinkedList<GLBatchPolygon>();
+    private LinkedList<GLBatchPolygon> extrudedPolys = new LinkedList<>();
     private LinkedList<GLBatchLineString> lines = new LinkedList<GLBatchLineString>();
     private LinkedList<GLBatchPoint> batchPoints2 = new LinkedList<GLBatchPoint>();
     private LinkedList<GLBatchPoint> labels = new LinkedList<GLBatchPoint>();
@@ -127,7 +129,14 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         this.buffers = null;
     }
 
+    /**
+     * @deprecated use {@link #hitTest3(Collection, GeoPoint, double, PointF, float, int)} instead
+     * @param loc
+     * @param thresholdMeters
+     * @return
+     */
     @Deprecated
+    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
     public long hitTest(Point loc, double thresholdMeters) {
         ArrayList<Long> fid = new ArrayList<Long>();
         this.hitTest2(fid, loc, thresholdMeters, 1);
@@ -136,7 +145,15 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         return fid.get(0);
     }
 
+    /**
+     * @deprecated use {@link #hitTest3(Collection, GeoPoint, double, PointF, float, int)} instead
+     * @param fids
+     * @param loc
+     * @param metersRadius
+     * @param limit
+     */
     @Deprecated
+    @DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
     public void hitTest2(Collection<Long> fids, Point loc, double metersRadius, int limit) {
         if (glmv == null)
             return;
@@ -230,8 +247,9 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         sortedLines.clear();
 
         polys.clear();
+        extrudedPolys.clear();
         lines.clear();
-        
+
         loadingPoints.clear();
         batchPoints2.clear();
         labels.clear();
@@ -261,6 +279,12 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     
     private void fillBatchLists(Collection<GLBatchGeometry> geoms) {
         for(GLBatchGeometry g : geoms) {
+            if (g instanceof GLBatchPolygon) {
+                if (((GLBatchPolygon)g).extrude == -1.0) {
+                    extrudedPolys.add((GLBatchPolygon)g);
+                    continue;
+                }
+            }
             switch(g.zOrder) {
                 case 0: {
                     GLBatchPoint point = (GLBatchPoint)g;
@@ -337,8 +361,9 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         
         if(MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SURFACE))
             this.renderSurface(view);
-        if(MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES))
+        if(MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES)) {
             this.renderSprites(view);
+        }
     }
 
     private void renderSurface(GLMapView view) {
@@ -347,52 +372,61 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             if(this.batch == null)
                 this.batch = new GLRenderBatch2();
 
-            GLES20FixedPipeline.glPushMatrix();
-            
-            // XXX - batch currently only supports 2D vertices
-
-            final boolean hardwareTransforms = (view.drawMapResolution > view.hardwareTransformResolutionThreshold/4d);
-            
-            final int vertType;
-            if(!hardwareTransforms) {
-                // XXX - force all polygons projected as pixels as stroking does
-                //       not work properly. since vertices are in projected
-                //       coordinate space units, width also needs to be
-                //       specified as such. attempts to compute some nominal
-                //       scale factor produces reasonable results at lower map
-                //       resolutions but cause width to converge to zero (32-bit
-                //       precision?) at higher resolutions
-                vertType = GLGeometry.VERTICES_PIXEL;
-            } else {
-                vertType = GLGeometry.VERTICES_PROJECTED;
-                
-                GLES20FixedPipeline.glLoadMatrixf(view.sceneModelForwardMatrix, 0);
-            }
-
-            int hints = GLRenderBatch2.HINT_UNTEXTURED;
-            if(!(vertType == GLGeometry.VERTICES_PROJECTED && view.scene.mapProjection.is3D()))
-                hints |= GLRenderBatch2.HINT_TWO_DIMENSION;
-            
-            this.batch.begin(hints);
-            GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_PROJECTION, view.scratch.matrixF, 0);
-            this.batch.setMatrix(GLES20FixedPipeline.GL_PROJECTION, view.scratch.matrixF, 0);
-            GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_MODELVIEW, view.scratch.matrixF, 0);
-            this.batch.setMatrix(GLES20FixedPipeline.GL_MODELVIEW, view.scratch.matrixF, 0);
-            
-            GLBatchPolygon poly;
-            for(GLBatchGeometry g : this.polys) {
-                poly = (GLBatchPolygon)g;
-                poly.batch(view, this.batch, GLMapView.RENDER_PASS_SURFACE, vertType);
-            }
-            this.batch.end();
-            GLES20FixedPipeline.glPopMatrix();
+            renderPolygons(view, polys);
         }
         // lines
         if(this.lines.size() > 0)
             this.batchDrawLines(view, true);
 
     }
-    
+
+    private void renderPolygons(GLMapView view, LinkedList<GLBatchPolygon> polygons) {
+        if(this.batch == null) {
+            this.batch = new GLRenderBatch2();
+        }
+        GLES20FixedPipeline.glPushMatrix();
+
+        // XXX - batch currently only supports 2D vertices
+
+        final boolean hardwareTransforms = (view.drawMapResolution > view.hardwareTransformResolutionThreshold/4d);
+
+        int vertType;
+//        if(!hardwareTransforms) {
+//            // XXX - force all polygons projected as pixels as stroking does
+//            //       not work properly. since vertices are in projected
+//            //       coordinate space units, width also needs to be
+//            //       specified as such. attempts to compute some nominal
+//            //       scale factor produces reasonable results at lower map
+//            //       resolutions but cause width to converge to zero (32-bit
+//            //       precision?) at higher resolutions
+//            vertType = GLGeometry.VERTICES_PIXEL;
+//        } else {
+//            vertType = GLGeometry.VERTICES_PROJECTED;
+//
+//            GLES20FixedPipeline.glLoadMatrixf(view.sceneModelForwardMatrix, 0);
+//        }
+        vertType = GLGeometry.VERTICES_PIXEL;
+
+        int hints = GLRenderBatch2.HINT_UNTEXTURED;
+        if(!(vertType == GLGeometry.VERTICES_PROJECTED && view.scene.mapProjection.is3D()))
+            hints |= GLRenderBatch2.HINT_TWO_DIMENSION;
+
+        this.batch.begin(hints);
+        GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_PROJECTION, view.scratch.matrixF, 0);
+        this.batch.setMatrix(GLES20FixedPipeline.GL_PROJECTION, view.scratch.matrixF, 0);
+        GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_MODELVIEW, view.scratch.matrixF, 0);
+        this.batch.setMatrix(GLES20FixedPipeline.GL_MODELVIEW, view.scratch.matrixF, 0);
+
+        GLBatchPolygon poly;
+        for(GLBatchGeometry g : polygons) {
+            poly = (GLBatchPolygon)g;
+            poly.batch(view, this.batch, GLMapView.RENDER_PASS_SURFACE, vertType);
+        }
+        this.batch.end();
+        GLES20FixedPipeline.glPopMatrix();
+    }
+
+
     private void renderSprites(GLMapView view) {
         sortInfo.order = (view.drawTilt > 0d || view.drawSrid == 4978) ? SortInfo.DEPTH : SortInfo.FID;
         sortInfo.centerLat = view.drawLat;
@@ -410,11 +444,11 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         
         // if the relative scaling has changed we need to reset the default text
         // and clear the texture atlas
-        if(GLBatchPoint.iconAtlasDensity != AtakMapView.DENSITY) {
+        if(GLBatchPoint.iconAtlasDensity != GLRenderGlobals.getRelativeScaling()) {
             GLBatchPoint.ICON_ATLAS.release();
-            GLBatchPoint.ICON_ATLAS = new GLTextureAtlas(1024, (int)Math.ceil(32*AtakMapView.DENSITY));
+            GLBatchPoint.ICON_ATLAS = new GLTextureAtlas(1024, (int)Math.ceil(32*GLRenderGlobals.getRelativeScaling()));
             GLBatchPoint.iconLoaders.clear();
-            GLBatchPoint.iconAtlasDensity = AtakMapView.DENSITY;
+            GLBatchPoint.iconAtlasDensity = GLRenderGlobals.getRelativeScaling();
         }
 
         // check all points with loading icons and move those whose icon has
@@ -486,6 +520,9 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             for(GLBatchGeometry point : this.batchPoints2)
                 point.batch(view, this.batch, GLMapView.RENDER_PASS_SPRITES);
             this.batch.end();
+        }
+        if (!extrudedPolys.isEmpty()) {
+            renderPolygons(view, extrudedPolys);
         }
 
         // lines
@@ -776,7 +813,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                     adjustedAlt += view.drawMapResolution * (point.iconHeight / 2d);
 
                     // move up ~5 pixels from surface
-                    adjustedAlt += view.drawMapResolution * 10d * AtakMapView.DENSITY;
+                    adjustedAlt += view.drawMapResolution * 10d * GLRenderGlobals.getRelativeScaling();
 
                     alt = adjustedAlt;
                 }

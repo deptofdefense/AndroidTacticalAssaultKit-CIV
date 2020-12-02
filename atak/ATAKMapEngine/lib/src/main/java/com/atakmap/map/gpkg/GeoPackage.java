@@ -3,7 +3,6 @@ package com.atakmap.map.gpkg;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -14,20 +13,18 @@ import java.util.List;
 import java.util.Map;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.Databases;
 import com.atakmap.database.QueryIface;
 import com.atakmap.database.StatementIface;
-import com.atakmap.database.android.AndroidDatabaseAdapter;
 import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.gpkg.TileTable.TileMatrixSet;
 import com.atakmap.map.gpkg.TileTable.ZoomLevelRow;
 import com.atakmap.spatial.SpatiaLiteDB;
 
-import android.database.DatabaseErrorHandler;
-import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.graphics.Bitmap;
 
@@ -259,7 +256,7 @@ public class GeoPackage {
     // Methods related to reading data from the gpkg_contents table
     
     public static enum TableType{
-        TILES,FEATURES;
+        TILES,FEATURES
     }
     
     public static class ContentsRow {
@@ -535,13 +532,13 @@ public class GeoPackage {
      * otherwise.
      */
     public static boolean isGeoPackage(File file){
-        if(!file.exists() || file.isDirectory()){
+        if(!FileIOProviderFactory.exists(file) || FileIOProviderFactory.isDirectory(file)){
             return false;
         }
         
         InputStream is = null;
         try{
-            is = new BufferedInputStream(new FileInputStream(file));
+            is = new BufferedInputStream(FileIOProviderFactory.getInputStream(file));
             
             byte[] headerData = new byte[72];
             int r = is.read(headerData);
@@ -571,17 +568,7 @@ public class GeoPackage {
             
             DatabaseIface database = null;
             try {
-                database = new AndroidDatabaseAdapter(
-                        SQLiteDatabase.openDatabase(
-                                file.getAbsolutePath(), 
-                                null, 
-                                SQLiteDatabase.OPEN_READONLY,
-                                new DatabaseErrorHandler() {
-                                    @Override
-                                    public void onCorruption(SQLiteDatabase dbObj) {
-                                        dbObj.close();
-                                    }
-                                }));
+                database = Databases.openDatabase(file.getAbsolutePath(), true);
                 return tableExists (database, "gpkg_contents");
             }catch(Exception e){
                 return false;

@@ -9,6 +9,7 @@ import com.atakmap.android.grg.GRGMapComponent;
 import com.atakmap.android.grg.MCIAGRGLayerInfoSpi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.map.layer.raster.ImageryFileType;
 import com.atakmap.map.layer.raster.ImageryFileType.AbstractFileType;
 
@@ -34,7 +35,7 @@ public class ImportGRGSort extends ImportInPlaceResolver {
     // KML/Z files that are properly formatted, small NITF files, and MCIAGRG style directories.
     @Override
     public boolean match(File file) {
-        if (file.isDirectory()) {
+        if (FileIOProviderFactory.isDirectory(file)) {
             if (MCIAGRGLayerInfoSpi.isMCIAGRG(file)) {
                 return true;
             }
@@ -53,7 +54,7 @@ public class ImportGRGSort extends ImportInPlaceResolver {
 
             // If the file is a small nitf, it might be a GRG.
             if (type.getID() == ImageryFileType.GDAL &&
-                    file.length() < MAX_GDAL_LENGTH) {
+                    FileIOProviderFactory.length(file) < MAX_GDAL_LENGTH) {
                 return true;
             }
 

@@ -1,7 +1,8 @@
 package com.atakmap.io;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.filesystem.SecureDelete;
+import com.atakmap.coremap.io.FileIOProvider;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
@@ -10,9 +11,7 @@ import com.atakmap.database.QueryIface;
 import com.atakmap.database.StatementIface;
 import com.atakmap.math.MathUtils;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collection;
@@ -37,12 +36,12 @@ public class CachingProtocolHandler implements ProtocolHandler {
 
         this.source = source;
         this.cacheDir = cacheDir;
-        if(!this.cacheDir.exists())
-            this.cacheDir.mkdirs();
+        if(!FileIOProviderFactory.exists(this.cacheDir))
+            FileIOProviderFactory.mkdirs(this.cacheDir);
         this.maxCache = maxCache;
 
         final File dbfile = new File(cacheDir.getAbsolutePath(), "index.sqlite");
-        if(!dbfile.exists()) {
+        if(!FileIOProviderFactory.exists(dbfile)) {
             this.index = Databases.openOrCreateDatabase(dbfile.getAbsolutePath());
             this.index.execute("CREATE TABLE cacheindex (uri TEXT, path TEXT, length INTEGER, cache_datetime INTEGER)", null);
             this.index.setVersion(1);
@@ -80,7 +79,7 @@ public class CachingProtocolHandler implements ProtocolHandler {
                 if (query.moveToNext()) {
                     try {
                         UriFactory.OpenResult result = new UriFactory.OpenResult();
-                        result.inputStream = new FileInputStream(query.getString(0));
+                        result.inputStream = FileIOProviderFactory.getInputStream(new File(query.getString(0)));
                         result.contentLength = query.getLong(1);
                         return result;
                     } catch(IOException e) {
@@ -103,7 +102,7 @@ public class CachingProtocolHandler implements ProtocolHandler {
             try {
                 byte[] transfer = new byte[MathUtils.clamp((int)result.contentLength, 64*1024, 1024*1024)];
                 cached = File.createTempFile("cache", "", this.cacheDir);
-                try(FileOutputStream fos = new FileOutputStream(cached)) {
+                try(FileOutputStream fos = FileIOProviderFactory.getOutputStream(cached)) {
                     FileSystemUtils.copyStream(result.inputStream, true, fos, false, transfer);
                 }
             } catch(IOException e) {
@@ -117,7 +116,7 @@ public class CachingProtocolHandler implements ProtocolHandler {
                     stmt = this.index.compileStatement("INSERT INTO cacheindex (uri, path, length, cache_datetime) VALUES(?, ?, ?, ?)");
                     stmt.bind(1, uri);
                     stmt.bind(2, cached.getAbsolutePath());
-                    stmt.bind(3, cached.length());
+                    stmt.bind(3, FileIOProviderFactory.length(cached));
                     stmt.bind(4, System.currentTimeMillis());
 
                     stmt.execute();
@@ -127,11 +126,11 @@ public class CachingProtocolHandler implements ProtocolHandler {
                 }
 
                 try {
-                    result.inputStream = new FileInputStream(cached);
-                    result.contentLength = cached.length();
+                    result.inputStream = FileIOProviderFactory.getInputStream(cached);
+                    result.contentLength = FileIOProviderFactory.length(cached);
                 } catch(IOException e) {}
 
-                this.cacheSize += cached.length();
+                this.cacheSize += FileIOProviderFactory.length(cached);
                 if(this.maxCache > 0L && this.cacheSize > this.maxCache+(this.maxCache/20)) {
                     long deleteToRowID = 0;
                     // evict to 10% under limit
@@ -142,7 +141,7 @@ public class CachingProtocolHandler implements ProtocolHandler {
                         cursor = this.index.query("SELECT ROWID, path, length FROM cacheindex ORDER BY ROWID ASC", null);
                         while(cursor.moveToNext()) {
                             // delete the file
-                            SecureDelete.delete(new File(cursor.getString(1)));
+                            FileIOProviderFactory.delete(new File(cursor.getString(1)), FileIOProvider.SECURE_DELETE);
                             // update the cache size
                             this.cacheSize -= cursor.getLong(2);
                             // mark the row for delete

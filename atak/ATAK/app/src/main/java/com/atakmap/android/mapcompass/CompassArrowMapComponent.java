@@ -12,6 +12,8 @@ import com.atakmap.android.hierarchy.filters.FOVFilter;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.content.res.Resources;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Typeface;
@@ -22,11 +24,13 @@ import android.view.MotionEvent;
 import com.atakmap.android.gui.HintDialogHelper;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.AbstractMapComponent;
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapMode;
 import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MapTouchController;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
+import com.atakmap.android.menu.MapMenuEventListener;
 import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.menu.MapMenuWidget;
 import com.atakmap.android.menu.MenuLayoutWidget;
@@ -34,6 +38,7 @@ import com.atakmap.android.model.ModelImporter;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.AltitudeUtilities;
 import com.atakmap.android.widgets.AbstractParentWidget;
+import com.atakmap.android.widgets.DrawableWidget;
 import com.atakmap.android.widgets.LinearLayoutWidget;
 import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.android.widgets.MapWidget.OnClickListener;
@@ -73,7 +78,8 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
         OnServiceListener, AtakMapView.OnMapMovedListener,
         MapWidget.OnWidgetPointChangedListener, OnVisibleChangedListener,
         MapView.OnMapProjectionChangedListener,
-        AbstractParentWidget.OnWidgetListChangedListener {
+        AbstractParentWidget.OnWidgetListChangedListener,
+        MapMenuEventListener {
 
     public static final String TAG = "CompassArrowMapComponent";
 
@@ -83,44 +89,275 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
     public static final String LOCK_TILT = "com.atakmap.android.maps.LOCK_TILT";
     public static final String FREE_LOOK = "com.atakmap.android.maps.TOGGLE_FREE_LOOK";
 
-    private MapView mapView;
-    private MapTouchController mapTouch;
-    private Context context;
+    protected MapView mapView;
+    protected MapTouchController mapTouch;
+    protected Context context;
 
-    private MapMode mapMode = MapMode.NORTH_UP;
+    protected MapMode mapMode = MapMode.NORTH_UP;
 
     // Compass (top-left)
-    private LinearLayoutWidget compassLayout;
-    private CompassArrowWidget compass;
-    private TextWidget compassText;
+    protected LinearLayoutWidget compassLayout;
+    protected CompassArrowWidget compass;
+    protected TextWidget compassText;
+    protected LinearLayoutWidget freeLookWidget;
 
     // Scale bar
-    private LinearLayoutWidget tlLayout, brLayout;
-    private ScaleWidget scale;
+    protected LinearLayoutWidget tlLayout, brLayout;
+    protected ScaleWidget scale;
 
     // Center cross-hair
-    private CenterBeadWidget cb;
-    private TextWidget cbText;
-    private CoordinateFormat coordMode = CoordinateFormat.MGRS;
+    protected CenterBeadWidget cb;
+    protected TextWidget cbText;
+    protected CoordinateFormat coordMode = CoordinateFormat.MGRS;
 
     private float lastHeading = 0;
     private double lastTilt = 0;
 
-    private double lockedHeadingValue = Float.NaN;
-    private boolean lockedHeading = false;
+    protected double lockedHeadingValue = Float.NaN;
+    protected boolean lockedHeading = false;
 
-    private Marker selfItem = null;
-    private Marker radialFocus;
+    protected Marker selfItem = null;
+    protected Marker radialFocus;
 
     private boolean isVisible = false;
-    private SharedPreferences _prefs;
+    protected SharedPreferences _prefs;
     private Overlay cbOverlay;
 
-    private TiltLockWidgetController tlwc;
+    protected TiltLockWidgetController tlwc;
 
     private static CompassArrowMapComponent _instance;
 
-    private final BroadcastReceiver orientationReceiver = new BroadcastReceiver() {
+    public CompassArrowMapComponent() {
+        _instance = this;
+    }
+
+    /**
+     * Obtain the current instance of the CompassArrowMapComponent.
+     */
+    public static CompassArrowMapComponent getInstance() {
+        return _instance;
+    }
+
+    @Override
+    public void onCreate(Context context, Intent intent, MapView view) {
+
+        this.mapView = view;
+        this.mapTouch = view.getMapTouchController();
+        this.context = context;
+
+        Resources res = context.getResources();
+
+        RootLayoutWidget root = (RootLayoutWidget) view.getComponentExtra(
+                "rootLayoutWidget");
+        LinearLayoutWidget blLayout = root
+                .getLayout(RootLayoutWidget.BOTTOM_LEFT);
+        this.tlLayout = root.getLayout(RootLayoutWidget.TOP_LEFT);
+        this.tlLayout.addOnWidgetPointChangedListener(this);
+        this.brLayout = root.getLayout(RootLayoutWidget.BOTTOM_RIGHT);
+        this.brLayout.addOnWidgetPointChangedListener(this);
+
+        LinearLayoutWidget layoutH = this.tlLayout.getOrCreateLayout("TL_H");
+
+        LinearLayoutWidget layoutV = new LinearLayoutWidget();
+        layoutV.setOrientation(LinearLayoutWidget.VERTICAL);
+        layoutH.addWidgetAt(0, layoutV);
+
+        this.compassLayout = new LinearLayoutWidget();
+        this.compassLayout.setName("Compass Layout");
+        this.compassLayout.setPadding(16f);
+        this.compassLayout.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.TOP);
+        this.compassLayout.setVisible(false);
+        layoutV.addWidgetAt(0, this.compassLayout);
+
+        _prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        _prefs.registerOnSharedPreferenceChangeListener(this);
+
+        // Compass
+        this.compass = new CompassArrowWidget(this.mapView);
+        this.compass.addOnClickListener(this);
+        this.compass.addOnLongPressListener(this);
+        this.compass.addOnWidgetPointChangedListener(this);
+        this.compassLayout.addWidget(this.compass);
+        this.compassText = new TextWidget("", MapView.getTextFormat(
+                Typeface.DEFAULT_BOLD, -1));
+        this.compassText.setName("Compass Text");
+        this.compassText.setVisible(false);
+        this.compassText.setMargins(0f, 8f, 0f, 0f);
+        this.compassLayout.addWidget(this.compassText);
+
+        // Scale bar
+        final MapTextFormat mt = MapView.getTextFormat(Typeface.DEFAULT_BOLD,
+                -2);
+        this.scale = new ScaleWidget(view, mt);
+        this.scale.setName("Map Scale");
+        this.scale.setPadding(8f, 4f, 8f, 4f);
+        this.scale.setMargins(16f, 0f, 16f, 0f);
+
+        boolean scale_vis = _prefs.getBoolean("map_scale_visible", true);
+        boolean scale_rounding = _prefs.getBoolean("map_scale_rounding", false);
+        this.scale.setVisible(scale_vis);
+        this.scale.setRounding(scale_rounding);
+        try {
+            String s = _prefs.getString(
+                    "rab_rng_units_pref",
+                    String.valueOf(Span.METRIC));
+            if (s != null) {
+                int _rangeUnits = Integer.parseInt(s);
+                this.scale.setRangeUnits(_rangeUnits);
+            }
+        } catch (Exception e) {
+            Log.d(TAG, "number format exception occurred", e);
+        }
+        blLayout.addWidgetAt(0, this.scale);
+
+        // Center cross-hair
+        boolean cbVisible = _prefs.getBoolean("map_center_designator", false);
+        this.cb = new CenterBeadWidget();
+        this.cb.setVisible(cbVisible);
+        root.addWidget(this.cb);
+
+        tlwc = new TiltLockWidgetController(mapView, compass);
+        tlwc.setVisible(false);
+
+        // Free look widget
+        float size = res.getDimensionPixelSize(R.dimen.button_small);
+        float pd = res.getDimensionPixelSize(R.dimen.auto_margin);
+        int bgColor = res.getColor(R.color.actionbar_background_empty);
+        this.freeLookWidget = new LinearLayoutWidget();
+        this.freeLookWidget.setNinePatchBG(true);
+        this.freeLookWidget.setBackingColor(bgColor);
+        this.freeLookWidget.setPadding(pd, pd, pd, pd);
+        this.freeLookWidget.setVisible(false);
+        DrawableWidget dr = new DrawableWidget(res.getDrawable(
+                R.drawable.ic_password_show));
+        dr.setSize(size, size);
+        dr.setColor(Color.rgb(99, 198, 62));
+        dr.addOnClickListener(this);
+        this.freeLookWidget.addWidget(dr);
+        layoutV.addWidget(this.freeLookWidget);
+
+        // Center coordinate text (corresponds with center cross-hair)
+        this.coordMode = CoordinateFormat.find(_prefs.getString(
+                "coord_display_pref", res.getString(
+                        R.string.coord_display_pref_default)));
+        this.cbText = new TextWidget("", 2);
+        this.cbText.setMargins(16f, 0f, 0f, 16f);
+        this.cbText.setVisible(cbVisible);
+        blLayout.addWidgetAt(1, this.cbText);
+
+        // Add listener for changes to track up / north up map mode
+        DocumentedIntentFilter intentFilter = new DocumentedIntentFilter();
+        intentFilter.addAction(HIDE_ACTION);
+        intentFilter.addAction(SHOW_ACTION);
+        intentFilter.addAction(TOGGLE_3D);
+        intentFilter.addAction(LOCK_TILT);
+        intentFilter.addAction(FREE_LOOK);
+        for (MapMode mode : MapMode.values())
+            intentFilter.addAction(mode.getIntent());
+        AtakBroadcast.getInstance().registerReceiver(orientationReceiver,
+                intentFilter);
+
+        synchronized (this) {
+            selfItem = ATAKUtilities.findSelfUnplaced(mapView);
+
+            // Add listener for changes to track heading
+            if (selfItem != null)
+                selfItem.addOnTrackChangedListener(this);
+        }
+
+        mapView.getMapController().tiltTo(0, true);
+
+        // Add arrow compass to the map
+        toggleWidget(true);
+
+        Intent sharedOverlayServiceIntent = new Intent();
+        sharedOverlayServiceIntent
+                .setAction("com.atakmap.android.overlay.SHARED");
+
+        if (!OverlayManager.aquireService(context, sharedOverlayServiceIntent,
+                this)) {
+
+            // try again but embed locally
+            OverlayManager
+                    .aquireService(context, null, this);
+        }
+        mapView.addOnMapMovedListener(CompassArrowMapComponent.this);
+        onMapMoved(mapView, false);
+
+        MapMode mm = MapMode.NORTH_UP;
+        double direction = Double.NaN;
+
+        final String status_mapmode_heading = _prefs
+                .getString("status_mapmode_heading_value", null);
+
+        if (status_mapmode_heading != null) {
+            try {
+                lockedHeadingValue = Double.parseDouble(status_mapmode_heading);
+            } catch (Exception e) {
+                Log.e(TAG, "error restoring status_mapmode_heading");
+            }
+        }
+
+        lockedHeading = _prefs.getBoolean("status_mapmode_heading_locked",
+                false);
+
+        final String status_mapmode = _prefs.getString("status_mapmode", null);
+
+        if (status_mapmode != null) {
+            try {
+                mm = MapMode.findFromValue(Integer.parseInt(status_mapmode));
+            } catch (Exception e) {
+                Log.e(TAG, "error restoring status_mapmode");
+            }
+        }
+
+        setMapMode(mm);
+
+        // fix up the unlocked map
+        if (mm == MapMode.USER_DEFINED_UP) {
+            if (!Double.isNaN(lockedHeadingValue)) {
+                mapView.getMapController().rotateTo(lockedHeadingValue,
+                        true);
+            }
+            if (!Double.isNaN(lockedHeadingValue)) {
+                updateDegDisplay(lockedHeadingValue);
+            }
+        }
+
+        // set the current state of globe vs flat
+        onSharedPreferenceChanged(_prefs, "atakGlobeModeEnabled");
+        mapView.addOnMapProjectionChangedListener(this);
+
+        // need to notify the rest of the system components
+        // so they are not out of sync.
+        Intent sync = new Intent(mm.getIntent());
+        AtakBroadcast.getInstance().sendBroadcast(sync);
+
+        // For free-look radial action on regular map items
+        MapMenuReceiver.getInstance().addEventListener(this);
+    }
+
+    @Override
+    protected void onDestroyImpl(Context context, MapView view) {
+
+        // Restore tilt to zero if we were in free look mode w/out 3D mode
+        // explicitly toggled on
+        if (mapTouch.isFreeForm3DEnabled() && !_prefs.getBoolean("status_3d_enabled", false))
+            view.getMapController().tiltTo(0, false);
+
+        // record the heading value at the time the app is being shut down.
+        _prefs.edit().putString("status_mapmode_heading_value",
+                Double.toString(mapView.getMapRotation())).apply();
+
+        mapView.removeOnMapMovedListener(CompassArrowMapComponent.this);
+        AtakBroadcast.getInstance().unregisterReceiver(orientationReceiver);
+        view.removeOnMapMovedListener(this);
+        brLayout.removeOnWidgetPointChangedListener(this);
+        compass.removeOnWidgetPointChangedListener(this);
+        MapMenuReceiver.getInstance().removeEventListener(this);
+    }
+
+    protected final BroadcastReceiver orientationReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(final Context context, final Intent intent) {
             String action = intent.getAction();
@@ -174,11 +411,21 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
                     }
                     break;
 
-                case FREE_LOOK:
+                case FREE_LOOK: {
                     boolean freeLook = !mapTouch.isFreeForm3DEnabled();
                     mapTouch.setFreeForm3DEnabled(freeLook);
-                    showCompassText(freeLook);
+                    freeLookWidget.setVisible(freeLook);
+                    updateCompassWidget();
+
+                    // Set proper focus point on item
+                    String uid = intent.getStringExtra("uid");
+                    if (freeLook && !FileSystemUtils.isEmpty(uid)) {
+                        MapItem mi = mapView.getMapItem(uid);
+                        mapTouch.setFreeForm3DItem(mi);
+                    }
+
                     break;
+                }
 
                 // Set/toggle map rotation mode
                 default:
@@ -206,18 +453,7 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
         }
     };
 
-    public CompassArrowMapComponent() {
-        _instance = this;
-    }
-
-    /**
-     * Obtain the current instance of the CompassArrowMapComponent.
-     */
-    public static CompassArrowMapComponent getInstance() {
-        return _instance;
-    }
-
-    private Runnable gpsLockCallback = null;
+    protected Runnable gpsLockCallback = null;
 
     /** 
      * Set the gps lock symbol if the callback r is not null.
@@ -231,12 +467,11 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
         if (r != null && mapMode == MapMode.TRACK_UP) {
             // show the lock button
             compass.setMode(MapMode.USER_DEFINED_UP, true);
-            showCompassText(true);
             compassText.setText("GPS");
         } else {
             compass.setMode(mapMode, lockedHeading);
-            showCompassText(false);
         }
+        updateCompassWidget();
     }
 
     /**
@@ -248,7 +483,6 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
 
     synchronized public void setMapMode(final MapMode action) {
         mapView.getMapTouchController().setUserOrientation(false);
-        showCompassText(false);
 
         if (action == MapMode.NORTH_UP) {
             mapMode = MapMode.NORTH_UP;
@@ -276,17 +510,14 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
                 mapView.getMapController().rotateTo(lockedHeadingValue,
                         true);
             }
-            showCompassText(true);
-            if (!Double.isNaN(lockedHeadingValue)) {
-                updateDegDisplay(lockedHeadingValue);
-            } else {
-                updateDegDisplay(0.0);
-            }
+            updateDegDisplay(!Double.isNaN(lockedHeadingValue)
+                    ? lockedHeadingValue : 0.0);
             onMapMoved(mapView, false);
         }
         compass.setMode(mapMode, lockedHeading);
         if (tlwc != null)
             tlwc.refresh();
+        updateCompassWidget();
     }
 
     @Override
@@ -319,9 +550,11 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
     @Override
     public void onMapMoved(AtakMapView view, boolean animate) {
         // Update compass degree display
-        if (mapMode == MapMode.USER_DEFINED_UP
-                || mapTouch.isFreeForm3DEnabled())
-            updateDegDisplay(view.getMapRotation());
+        boolean freeForm3D = mapTouch.isFreeForm3DEnabled();
+        double rot = view.getMapRotation();
+        if (mapMode == MapMode.USER_DEFINED_UP || freeForm3D)
+            updateDegDisplay(rot);
+        compass.setRotation((float) rot);
 
         // Update center coordinate text
         if (this.cbText != null && this.cbText.isVisible()) {
@@ -332,14 +565,20 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
                     + AltitudeUtilities.format(p,
                             _prefs, true));
         }
+
+        // Toggle off free look if map moved
+        if (freeLookWidget != null && freeLookWidget.isVisible() != freeForm3D) {
+            freeLookWidget.setVisible(freeForm3D);
+            updateCompassWidget();
+        }
     }
 
-    private void updateDegDisplay(double deg) {
+    protected void updateDegDisplay(double deg) {
         compass.setRotation((float) deg);
         String degString = AngleUtilities.format(deg);
         int charCount = degString.length();
-        //forgo using StringFormatter to improve efficiency since this needs to be updated 
-        //fairly quickly if the user is actively rotating the map 
+        //forgo using StringFormatter to improve efficiency since this needs to be updated
+        //fairly quickly if the user is actively rotating the map
         if (charCount <= 2)
             compassText.setText("00" + degString);
         else if (charCount <= 3)
@@ -387,14 +626,22 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
     @Override
     public void onMapWidgetClick(final MapWidget widget,
             final MotionEvent event) {
+
+        // Toggle off free look
+        if (widget.getParent() == freeLookWidget) {
+            freeLookWidget.setVisible(false);
+            mapTouch.setFreeForm3DEnabled(false);
+            updateCompassWidget();
+            return;
+        }
+
         synchronized (this) {
             // tapped to unlock the GPS lock
             if (gpsLockCallback != null) {
                 gpsLockCallback.run();
                 gpsLockCallback = null;
-                showCompassText(false);
-                CompassArrowMapComponent.this.compass.setMode(mapMode,
-                        lockedHeading);
+                compass.setMode(mapMode, lockedHeading);
+                updateCompassWidget();
                 return;
             }
         }
@@ -509,9 +756,12 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
             case "rab_rng_units_pref":
                 if (scale != null) {
                     try {
-                        scale.setRangeUnits(
-                                Integer.parseInt(prefs.getString(key,
-                                        String.valueOf(Span.METRIC))));
+                        String s = prefs.getString(key,
+                                String.valueOf(Span.METRIC));
+                        if (s != null) {
+                            scale.setRangeUnits(
+                                    Integer.parseInt(s));
+                        }
                     } catch (Exception e) {
                         Log.d(TAG, "number format exception occurred", e);
                     }
@@ -555,181 +805,6 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
                         p.y + compass.getHeight() / 2);
             }
         }
-    }
-
-    @Override
-    public void onCreate(Context context, Intent intent, MapView view) {
-
-        this.mapView = view;
-        this.mapTouch = view.getMapTouchController();
-        this.context = context;
-
-        RootLayoutWidget root = (RootLayoutWidget) view.getComponentExtra(
-                "rootLayoutWidget");
-        LinearLayoutWidget blLayout = root
-                .getLayout(RootLayoutWidget.BOTTOM_LEFT);
-        this.tlLayout = root.getLayout(RootLayoutWidget.TOP_LEFT);
-        this.tlLayout.addOnWidgetPointChangedListener(this);
-        this.brLayout = root.getLayout(RootLayoutWidget.BOTTOM_RIGHT);
-        this.brLayout.addOnWidgetPointChangedListener(this);
-
-        LinearLayoutWidget layoutH = this.tlLayout.getOrCreateLayout("TL_H");
-
-        LinearLayoutWidget layoutV = new LinearLayoutWidget();
-        layoutV.setOrientation(LinearLayoutWidget.VERTICAL);
-        layoutH.addWidgetAt(0, layoutV);
-
-        this.compassLayout = new LinearLayoutWidget();
-        this.compassLayout.setName("Compass Layout");
-        this.compassLayout.setPadding(16f);
-        this.compassLayout.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.TOP);
-        this.compassLayout.setVisible(false);
-        layoutV.addWidgetAt(0, this.compassLayout);
-
-        _prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        _prefs.registerOnSharedPreferenceChangeListener(this);
-
-        // Compass
-        this.compass = new CompassArrowWidget(this.mapView);
-        this.compass.addOnClickListener(this);
-        this.compass.addOnLongPressListener(this);
-        this.compass.addOnWidgetPointChangedListener(this);
-        this.compassLayout.addWidget(this.compass);
-        this.compassText = new TextWidget("", MapView.getTextFormat(
-                Typeface.DEFAULT_BOLD, -1));
-        this.compassText.setName("Compass Text");
-        this.compassText.setVisible(false);
-        this.compassText.setMargins(0f, 8f, 0f, 0f);
-        this.compassLayout.addWidget(this.compassText);
-
-        // Scale bar
-        final MapTextFormat mt = MapView.getTextFormat(Typeface.DEFAULT_BOLD,
-                -2);
-        this.scale = new ScaleWidget(view, mt);
-        this.scale.setName("Map Scale");
-        this.scale.setPadding(8f, 4f, 8f, 4f);
-        this.scale.setMargins(16f, 0f, 16f, 0f);
-
-        boolean scale_vis = _prefs.getBoolean("map_scale_visible", true);
-        boolean scale_rounding = _prefs.getBoolean("map_scale_rounding", false);
-        this.scale.setVisible(scale_vis);
-        this.scale.setRounding(scale_rounding);
-        try {
-            int _rangeUnits = Integer.parseInt(_prefs.getString(
-                    "rab_rng_units_pref",
-                    String.valueOf(Span.METRIC)));
-            this.scale.setRangeUnits(_rangeUnits);
-        } catch (Exception e) {
-            Log.d(TAG, "number format exception occurred", e);
-        }
-        blLayout.addWidgetAt(0, this.scale);
-
-        // Center cross-hair
-        boolean cbVisible = _prefs.getBoolean("map_center_designator", false);
-        this.cb = new CenterBeadWidget();
-        this.cb.setVisible(cbVisible);
-        root.addWidget(this.cb);
-
-        tlwc = new TiltLockWidgetController(mapView, compass);
-        tlwc.setVisible(false);
-
-        // Center coordinate text (corresponds with center cross-hair)
-        this.coordMode = CoordinateFormat.find(_prefs.getString(
-                "coord_display_pref", context.getString(
-                        R.string.coord_display_pref_default)));
-        this.cbText = new TextWidget("", 2);
-        this.cbText.setMargins(16f, 0f, 0f, 16f);
-        this.cbText.setVisible(cbVisible);
-        blLayout.addWidgetAt(1, this.cbText);
-
-        // Add listener for changes to track up / north up map mode
-        DocumentedIntentFilter intentFilter = new DocumentedIntentFilter();
-        intentFilter.addAction(HIDE_ACTION);
-        intentFilter.addAction(SHOW_ACTION);
-        intentFilter.addAction(TOGGLE_3D);
-        intentFilter.addAction(LOCK_TILT);
-        intentFilter.addAction(FREE_LOOK);
-        for (MapMode mode : MapMode.values())
-            intentFilter.addAction(mode.getIntent());
-        AtakBroadcast.getInstance().registerReceiver(orientationReceiver,
-                intentFilter);
-
-        synchronized (this) {
-            selfItem = ATAKUtilities.findSelfUnplaced(mapView);
-
-            // Add listener for changes to track heading
-            if (selfItem != null)
-                selfItem.addOnTrackChangedListener(this);
-        }
-
-        mapView.getMapController().tiltTo(0, true);
-
-        // Add arrow compass to the map
-        toggleWidget(true);
-
-        Intent sharedOverlayServiceIntent = new Intent();
-        sharedOverlayServiceIntent
-                .setAction("com.atakmap.android.overlay.SHARED");
-
-        if (!OverlayManager.aquireService(context, sharedOverlayServiceIntent,
-                this)) {
-
-            // try again but embed locally
-            OverlayManager
-                    .aquireService(context, null, this);
-        }
-        mapView.addOnMapMovedListener(CompassArrowMapComponent.this);
-        onMapMoved(mapView, false);
-
-        MapMode mm = MapMode.NORTH_UP;
-        double direction = Double.NaN;
-
-        final String status_mapmode_heading = _prefs
-                .getString("status_mapmode_heading_value", null);
-
-        if (status_mapmode_heading != null) {
-            try {
-                lockedHeadingValue = Double.parseDouble(status_mapmode_heading);
-            } catch (Exception e) {
-                Log.e(TAG, "error restoring status_mapmode_heading");
-            }
-        }
-
-        lockedHeading = _prefs.getBoolean("status_mapmode_heading_locked",
-                false);
-
-        final String status_mapmode = _prefs.getString("status_mapmode", null);
-
-        if (status_mapmode != null) {
-            try {
-                mm = MapMode.findFromValue(Integer.parseInt(status_mapmode));
-            } catch (Exception e) {
-                Log.e(TAG, "error restoring status_mapmode");
-            }
-        }
-
-        setMapMode(mm);
-
-        // fix up the unlocked map
-        if (mm == MapMode.USER_DEFINED_UP) {
-            if (!Double.isNaN(lockedHeadingValue)) {
-                mapView.getMapController().rotateTo(lockedHeadingValue,
-                        true);
-            }
-            if (!Double.isNaN(lockedHeadingValue)) {
-                updateDegDisplay(lockedHeadingValue);
-            }
-        }
-
-        // set the current state of globe vs flat
-        onSharedPreferenceChanged(_prefs, "atakGlobeModeEnabled");
-        mapView.addOnMapProjectionChangedListener(this);
-
-        // need to notify the rest of the system components 
-        // so they are not out of sync.  
-        Intent sync = new Intent(mm.getIntent());
-        AtakBroadcast.getInstance().sendBroadcast(sync);
-
     }
 
     /**
@@ -787,7 +862,7 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
         }
     }
 
-    synchronized private void toggleWidget(boolean show) {
+    protected synchronized void toggleWidget(boolean show) {
         if (show == isVisible)
             return;
         if (this.scale != null)
@@ -799,27 +874,8 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
         isVisible = show;
     }
 
-    @Override
-    protected void onDestroyImpl(Context context, MapView view) {
-
-        // Restore tilt to zero if we were in free look mode w/out 3D mode
-        // explicitly toggled on
-        if (mapTouch.isFreeForm3DEnabled() && !_prefs.getBoolean("status_3d_enabled", false))
-            view.getMapController().tiltTo(0, false);
-
-        // record the heading value at the time the app is being shut down.
-        _prefs.edit().putString("status_mapmode_heading_value",
-                Double.toString(mapView.getMapRotation())).apply();
-
-        mapView.removeOnMapMovedListener(CompassArrowMapComponent.this);
-        AtakBroadcast.getInstance().unregisterReceiver(orientationReceiver);
-        view.removeOnMapMovedListener(this);
-        brLayout.removeOnWidgetPointChangedListener(this);
-        compass.removeOnWidgetPointChangedListener(this);
-    }
-
     // Toggles between the available map modes based on the current map mode
-    private void toggleMapMode() {
+    protected void toggleMapMode() {
         Intent intent = new Intent();
 
         // XXX - This is where user defined up will go.
@@ -848,8 +904,29 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
 
     }
 
-    private void showCompassText(boolean show) {
+    protected void showCompassText(boolean show) {
         compassText.setVisible(show);
         updateDegDisplay(mapView.getMapRotation());
+    }
+
+    private void updateCompassWidget() {
+        showCompassText(mapMode == MapMode.USER_DEFINED_UP
+                || mapTouch.isFreeForm3DEnabled());
+        if (tlwc != null)
+            tlwc.refresh();
+    }
+
+    @Override
+    public boolean onShowMenu(MapItem item) {
+        if (item != null) {
+            // Highlight the free-look radial action when active, if there is one
+            boolean freeLook = mapTouch.isFreeForm3DEnabled();
+            item.toggleMetaData("freeLook", freeLook);
+        }
+        return false;
+    }
+
+    @Override
+    public void onHideMenu(MapItem item) {
     }
 }

@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.ActivityInfo;
-import android.graphics.PointF;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -30,9 +29,11 @@ import com.atakmap.android.widgets.AttributionWidget;
 import com.atakmap.android.widgets.LayoutWidget;
 import com.atakmap.android.widgets.TextWidget;
 import com.atakmap.android.widgets.WidgetsLayer;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.BuildConfig;
 import com.atakmap.app.DeveloperOptions;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
@@ -45,13 +46,9 @@ import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.MapTouchHandler;
 import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.layer.Layer;
-import com.atakmap.map.layer.Layer2;
-import com.atakmap.map.layer.LayerFilter;
-import com.atakmap.map.layer.Layers;
 import com.atakmap.map.layer.MultiLayer;
 import com.atakmap.map.layer.ProxyLayer;
 import com.atakmap.map.layer.feature.ogr.OgrFeatureDataSource;
-import com.atakmap.map.layer.model.ModelHitTestControl;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
 import com.atakmap.map.layer.raster.PrecisionImageryUtil;
 import com.atakmap.map.layer.raster.RasterDataAccess2;
@@ -68,8 +65,6 @@ import com.atakmap.util.ConfigOptions;
 import com.atakmap.util.Visitor;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -196,9 +191,9 @@ public class MapView extends AtakMapView {
                         int oldTop, int oldRight, int oldBottom) {
 
                     text.setPoint(
-                            left + (right - left) / 2
+                            left + (right - left) / 2f
                                     - text.getTextFormat()
-                                            .measureTextWidth(banner) / 2,
+                                            .measureTextWidth(banner) / 2f,
                             getHeight() - (text.getTextFormat()
                                     .measureTextHeight(banner) + 5f));
                 }
@@ -327,7 +322,7 @@ public class MapView extends AtakMapView {
 
     @Override
     protected void initGLSurface() {
-        if (FileSystemUtils.getItem("opengl.broken").exists())
+        if (FileIOProviderFactory.exists(FileSystemUtils.getItem("opengl.broken")))
             System.setProperty("USE_GENERIC_EGL_CONFIG", "true");
 
         GLBitmapLoader.setIconCacheDb(FileSystemUtils.getItem(
@@ -838,15 +833,20 @@ public class MapView extends AtakMapView {
 
     private final MapGroup.OnGroupListChangedListener groupListChangedListener = _mapGroupItemsChangedEventForwarder;
 
-    /***
+    // XXX - recommend static utility as transition plan
+
+    /**
      * Computes the corresponding geodetic coordinate for the specified screen coordinate with the 
      * addition of looking up the elevation data.
      * @param x the x value for the screen coordinate
      * @param y the y value for the screen coordinate
      * @returns the corresponding geopoint for a given screen location, 
      * null if there is no corresponding point.
-     * @deprecated
+     * @deprecated See {@link MapRenderer2#inverse(PointD, GeoPoint, MapRenderer2.InverseMode, int, MapRenderer2.DisplayOrigin)}
+     *             and {@link ElevationManager#getElevation(double, double, ElevationManager.QueryParameters, GeoPointMetaData)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = false)
     public GeoPointMetaData inverseWithElevation(final float x, final float y) {
         GeoPointMetaData p = new GeoPointMetaData();
         if (getGLSurface().getGLMapView() == null)
@@ -1021,7 +1021,7 @@ public class MapView extends AtakMapView {
      */
     public double getMaxMapTilt(double mapScale) {
         final double level = (Math.log(156543.034 * Math.cos(0d)
-                / getMapResolution()) / Math.log(2));
+                / getMapResolution(mapScale)) / Math.log(2));
 
         final double minTilt = this.getMinMapTilt();
         final double maxTilt = this.getMaxMapTilt();

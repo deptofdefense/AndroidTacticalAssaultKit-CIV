@@ -1,5 +1,6 @@
 package com.atakmap.map.layer.model.contextcapture;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.log.Log;
 
 import java.util.ArrayList;
@@ -15,6 +16,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** @deprecated PROTOTYPE CODE; SUBJECT TO REMOVAL AT ANY TIME; DO NOT CREATE DIRECT DEPENDENCIES */
+@Deprecated
+@DeprecatedApi(since = "4.1")
 final class TileNodeLoader {
     private final static String TAG = "TileNodeLoader";
 

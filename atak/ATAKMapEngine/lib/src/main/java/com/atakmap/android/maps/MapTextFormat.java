@@ -4,12 +4,12 @@ package com.atakmap.android.maps;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.map.AtakMapView;
+import com.atakmap.map.opengl.GLRenderGlobals;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Paint.Align;
-import android.graphics.Paint.FontMetricsInt;
 import android.graphics.Typeface;
 
 /**
@@ -21,13 +21,17 @@ public final class MapTextFormat {
     private final static int COMMON_CHAR_START = 32; // first character (ASCII Code)
     private final static int COMMON_CHAR_END = 126; // last character (ASCII Code)
 
-    private final static Map<Long, Impl> SHARED_IMPL = new HashMap<Long, Impl>();
+    private final static Map<Long, Impl> SHARED_IMPL = new HashMap<>();
 
     private final Impl impl;
 
-    /** @deprecated */
+    /**
+     * @deprecated use {@link #MapTextFormat(Typeface, int)} instead
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public MapTextFormat(Typeface typeface, float densityAdjustedTextSize, boolean legacy) {
-        this(typeface, (int) (densityAdjustedTextSize / AtakMapView.DENSITY));
+        this(typeface, (int) (densityAdjustedTextSize / GLRenderGlobals.getRelativeScaling()));
     }
 
     public MapTextFormat(Typeface typeface, int textSize) {
@@ -40,11 +44,11 @@ public final class MapTextFormat {
         synchronized (MapTextFormat.class) {
             if (typeface != null) {
                 key = ((long) typeface.hashCode() << 32L) | (long) ((textSize & 0x7FFFFFFF) << 1) | (outlined ? 0x1L : 0x0L);
-                i = SHARED_IMPL.get(Long.valueOf(key));
+                i = SHARED_IMPL.get(key);
 
             }
             if (i == null) {
-                SHARED_IMPL.put(Long.valueOf(key), i = new Impl(typeface, textSize, outlined));
+                SHARED_IMPL.put(key, i = new Impl(typeface, textSize, outlined));
             }
         }
 
@@ -143,7 +147,7 @@ public final class MapTextFormat {
     }
 
     /**
-     * @return
+     * @return the height of the largest font glyph
      */
     public int getTallestGlyphHeight() {
         return this.impl.fontHeight;
@@ -206,7 +210,7 @@ public final class MapTextFormat {
 
         Paint _textPaint;
         Paint _outlinePaint;
-        FontMetricsInt _fontMetricsInt;
+        Paint.FontMetricsInt _fontMetricsInt;
 
         private Impl(Typeface typeface, int textSize, boolean outlined) {
             this.face = typeface;
@@ -219,7 +223,7 @@ public final class MapTextFormat {
         }
         
         void init() {
-            final float relativeScale = AtakMapView.DENSITY;
+            final float relativeScale = GLRenderGlobals.getRelativeScaling();
             if(Float.compare(this.densityAdjustedSize,this.fontSize*relativeScale) == 0)
                 return;
 
@@ -227,7 +231,7 @@ public final class MapTextFormat {
 
             final Paint textPaint = new Paint();
             textPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-            textPaint.setTextAlign(Align.LEFT);
+            textPaint.setTextAlign(Paint.Align.LEFT);
             textPaint.setTypeface(this.face);
             textPaint.setTextSize(this.densityAdjustedSize);
             textPaint.setAntiAlias(true);

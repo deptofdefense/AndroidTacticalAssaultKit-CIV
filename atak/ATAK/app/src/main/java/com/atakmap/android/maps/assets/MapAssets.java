@@ -6,9 +6,10 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Resources;
 import android.net.Uri;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
-import java.io.FileInputStream;
+import java.io.File;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,8 +40,8 @@ public class MapAssets {
             // assume it's an asset
             in = _context.getAssets().open(assetUri.getPath());
         } else if (scheme.equals("file")) {
-            return new FileInputStream(FileSystemUtils.validityScan(assetUri
-                    .getPath()));
+            return FileIOProviderFactory.getInputStream(new File(FileSystemUtils.validityScan(assetUri
+                    .getPath())));
         } else if (scheme.equals("arc")) {
             String path = assetUri.getPath();
             String[] parts = path.split("!/");

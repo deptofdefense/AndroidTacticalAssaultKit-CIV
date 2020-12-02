@@ -1,7 +1,6 @@
 
 package com.atakmap.android.maps;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -16,6 +15,7 @@ import android.widget.ListView;
 
 import com.atakmap.android.location.LocationMapComponent;
 import com.atakmap.android.metrics.activity.MetricActivity;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.net.AtakAuthenticationDatabase;
 import com.atakmap.net.AtakCertificateDatabase;
 
@@ -29,8 +29,6 @@ import com.atakmap.database.CursorIface;
 import org.xml.sax.InputSource;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -218,8 +216,8 @@ public class ImageAcceptActivity extends MetricActivity {
 
         try {
             // Transfer bytes from in to out
-            in = new FileInputStream(srcFile);
-            out = new FileOutputStream(dst);
+            in = FileIOProviderFactory.getInputStream(srcFile);
+            out = FileIOProviderFactory.getOutputStream(dst);
             FileSystemUtils.copy(in, out);
         } finally {
             if (in != null) {

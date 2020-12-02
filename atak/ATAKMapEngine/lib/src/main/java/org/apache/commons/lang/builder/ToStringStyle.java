@@ -1622,6 +1622,7 @@ public abstract class ToStringStyle implements Serializable {
      * @deprecated Use {@link #isUseShortClassName()}
      *             Method will be removed in Commons Lang 3.0.
      */
+    @Deprecated
     protected boolean isShortClassName() {
         return useShortClassName;
     }
@@ -1643,6 +1644,7 @@ public abstract class ToStringStyle implements Serializable {
      * @deprecated Use {@link #setUseShortClassName(boolean)}
      *             Method will be removed in Commons Lang 3.0.
      */
+    @Deprecated
     protected void setShortClassName(boolean shortClassName) {
         this.useShortClassName = shortClassName;
     }

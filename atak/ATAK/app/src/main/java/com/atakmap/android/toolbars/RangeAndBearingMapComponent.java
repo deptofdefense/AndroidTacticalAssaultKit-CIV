@@ -1,20 +1,14 @@
 
 package com.atakmap.android.toolbars;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.atakmap.android.cot.importer.CotImporterManager;
 import com.atakmap.android.cot.importer.MapItemImporter;
 import com.atakmap.android.cot.importer.MarkerImporter;
-import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
-import android.view.Menu;
-import android.view.MenuItem;
-
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.DefaultMapGroup;
 import com.atakmap.android.maps.MapGroup;
@@ -24,8 +18,13 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.log.Log;
 
-import java.util.ArrayList;
-import java.util.List;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+import android.view.Menu;
+import android.view.MenuItem;
 
 public class RangeAndBearingMapComponent extends AbstractMapComponent {
 
@@ -33,7 +32,7 @@ public class RangeAndBearingMapComponent extends AbstractMapComponent {
 
     private RangeAndBearingReceiver _rabReceiver;
     private BroadcastReceiver lineUnPinReceiver;
-    private RangeAndBearingDropDown _rabLineDropDown;
+    protected RangeAndBearingDropDown _rabLineDropDown;
     private BullseyeDropDownReceiver _rabBullseyeDropDown;
     private RangeAndBearingCircleDropDown _rabCircleDropDown;
     private static MapGroup _rabGroup;

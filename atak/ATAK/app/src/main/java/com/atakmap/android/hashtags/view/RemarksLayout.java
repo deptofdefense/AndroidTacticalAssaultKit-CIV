@@ -75,6 +75,10 @@ public class RemarksLayout extends LinearLayout {
         return _rawText;
     }
 
+    public void setHint(String hint) {
+        _remarks.setHint(hint);
+    }
+
     public void addTextChangedListener(TextWatcher watcher) {
         _remarks.addTextChangedListener(watcher);
     }

@@ -33,9 +33,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.net.BindException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
 import com.atakmap.android.dropdown.DropDown.OnStateListener;
@@ -53,14 +51,13 @@ import com.atakmap.android.video.AddEditAlias;
 import com.atakmap.android.video.ConnectionEntry;
 import com.atakmap.android.video.StreamManagementUtils;
 import com.atakmap.app.R;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.Socket;
 import java.text.DecimalFormat;
 
 import java.text.SimpleDateFormat;
@@ -1192,7 +1189,7 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
             public void onClick(final View v) {
 
                 final File f = new File(VideoBrowserDropDownReceiver.VIDEO_DIR);
-                if (!f.mkdirs()) {
+                if (!FileIOProviderFactory.mkdirs(f)) {
                     Log.e(TAG, "Failed to make dir at " + f.getAbsolutePath());
                 }
                 File file = new File(f, "raw_"
@@ -1635,9 +1632,9 @@ public class RoverDropDownReceiver extends DropDownReceiver implements
                             int whichButton) {
                         // get waveform
                         if (startFreq.getText().length() > 0) {
-                            int start = Integer.valueOf(startFreq.getText()
+                            int start = Integer.parseInt(startFreq.getText()
                                     .toString());
-                            int end = Integer.valueOf(endFreq.getText()
+                            int end = Integer.parseInt(endFreq.getText()
                                     .toString());
 
                             if ((validFrequency(start) != Frequency.INVALID)

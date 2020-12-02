@@ -2,7 +2,6 @@
 package com.atakmap.map.layer.raster.mosaic.opengl;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -17,7 +16,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.gdal;
@@ -25,15 +23,13 @@ import org.gdal.gdal.gdal;
 import android.net.Uri;
 import android.util.Pair;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.LegacyAdapters;
 import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
-import com.atakmap.map.RenderContext;
-import com.atakmap.map.RenderSurface;
 import com.atakmap.map.layer.control.ColorControl;
 import com.atakmap.map.layer.control.Controls;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
@@ -65,9 +61,6 @@ import com.atakmap.map.opengl.GLMapRenderable;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.map.opengl.GLResolvableMapRenderable;
-import com.atakmap.map.opengl.LegacyElMgrTerrainRenderService;
-import com.atakmap.spatial.SpatialCalculator;
-import com.atakmap.util.Collections2;
 import com.atakmap.util.ConfigOptions;
 import com.atakmap.util.Disposable;
 import com.atakmap.util.Filter;
@@ -94,7 +87,7 @@ public class GLMosaicMapLayer extends
 
             final MosaicDatasetDescriptor mosaic = (MosaicDatasetDescriptor)info;
             File dbFile = mosaic.getMosaicDatabaseFile();
-            if (dbFile == null || !dbFile.exists() || dbFile.length() < 1) {
+            if (dbFile == null || !FileIOProviderFactory.exists(dbFile) || FileIOProviderFactory.length(dbFile) < 1) {
                 Log.e(TAG, "Mosaic database does not exist for dataset " + info.getUri());
                 return null;
             }

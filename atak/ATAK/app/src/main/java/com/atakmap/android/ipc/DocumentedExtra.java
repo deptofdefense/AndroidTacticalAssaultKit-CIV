@@ -12,7 +12,7 @@ public class DocumentedExtra {
     public final String name;
     public final String description;
     public final boolean optional;
-    public final Class type;
+    public final Class<?> type;
 
     /**
      * A documented extra that is associated with the action that is required to exist.
@@ -44,7 +44,7 @@ public class DocumentedExtra {
      * @param type the class that needs to be placed into the extra.
      */
     public DocumentedExtra(final String name, final String description,
-            final boolean optional, final Class type) {
+            final boolean optional, final Class<?> type) {
         this.name = name;
         this.description = description;
         this.optional = optional;

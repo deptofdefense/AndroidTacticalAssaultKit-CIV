@@ -11,8 +11,6 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.layer.raster.mobileimagery.MobileImageryRasterLayer2;
 import com.atakmap.map.projection.EquirectangularMapProjection;
 import com.atakmap.map.projection.Projection;
-import com.atakmap.map.projection.ProjectionFactory;
-import com.atakmap.map.projection.WebMercatorProjection;
 import com.atakmap.math.PointD;
 import com.atakmap.coremap.log.Log;
 

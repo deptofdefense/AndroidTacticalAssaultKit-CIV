@@ -46,13 +46,13 @@ public class FileDatabaseContentHandler extends FileOverlayContentHandler
     }
 
     @Override
-    public boolean setVisible(boolean visible) {
+    public boolean setVisibleImpl(boolean visible) {
         _group.setVisible(visible);
         return true;
     }
 
     @Override
     public boolean isVisible() {
-        return _group.getVisible();
+        return isConditionVisible() && _group.getVisible();
     }
 }

@@ -1,19 +1,32 @@
-<menu buttonRadius='65' buttonSpan='90' buttonWidth='90' buttonBg='bgs/button.xml'>
+<menu buttonRadius='65' buttonSpan='45' buttonWidth='90' buttonBg='bgs/button.xml'>
 
     <button angle='-90'
-            icon='icons/delete.png'
-            onClick='actions/remove.xml'
-            disabled='!{${removable}}' />
+        icon='icons/delete.png'
+        onClick='actions/remove.xml'
+        disabled='!{${removable}}' />
 
     <button icon='icons/details.png'
-            onClick='actions/showdetails_sensor.xml' />
-    
-    <button icon='icons/video.png' 
-            onClick='actions/video.xml'
-            disabled='!{${videoUID}}' />
+        onClick='actions/showdetails_sensor.xml' />
+
+    <button icon='icons/eye.png'
+        onClick='actions/toggle_sensor_fov.xml'
+        selected='!{${hideFov}}'/>
+
+    <button icon='icons/color_wheel.png'
+        onClick='actions/sensor_fov_color.xml'/>
+
+    <button icon='icons/video.png'
+        onClick='actions/video.xml'
+        disabled='!{${videoUID}}' />
+
+    <button icon='icons/fov_direction.png'
+        onClick='actions/sensor_fov_direction.xml'/>
+
+    <button icon='icons/fov_size.png'
+        onClick='actions/sensor_fov_size.xml'/>
             
     <button icon='icons/pairing_line.png'
-            onClick='actions/pairingline.xml'
-            selected='${pairingline_on}' />
+        onClick='actions/pairingline.xml'
+        selected='${pairingline_on}' />
 
 </menu>

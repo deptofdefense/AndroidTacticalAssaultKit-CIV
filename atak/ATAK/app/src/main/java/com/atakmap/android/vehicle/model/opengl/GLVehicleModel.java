@@ -12,6 +12,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.layer.model.Mesh;
+import com.atakmap.map.layer.model.ModelInfo;
 import com.atakmap.map.layer.model.Models;
 import com.atakmap.map.projection.ECEFProjection;
 import com.atakmap.math.GeometryModel;
@@ -56,6 +57,10 @@ public class GLVehicleModel extends GLRubberModel {
         }
 
         return ret;
+    }
+
+    public ModelInfo getModelInfo() {
+        return _modelInfo;
     }
 
     /**

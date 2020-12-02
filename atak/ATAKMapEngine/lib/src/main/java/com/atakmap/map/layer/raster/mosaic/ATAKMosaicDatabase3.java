@@ -12,6 +12,7 @@ import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteQueryBuilder;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.database.CursorIface;
@@ -558,13 +559,13 @@ public class ATAKMosaicDatabase3 implements MosaicDatabase2 {
         private Map<String, TypeDbSpec> typeDbs;
 
         public Builder(File f) {
-            if (f.exists() || f.length() > 0)
+            if (FileIOProviderFactory.exists(f)|| FileIOProviderFactory.length(f) > 0)
                 throw new IllegalArgumentException("A mosaic database may only be created, not edited.");
             
             this.dir = f;
 
             FileSystemUtils.delete(this.dir);
-            if (!this.dir.mkdir()) { 
+            if (!FileIOProviderFactory.mkdir(this.dir)) {
                Log.e(TAG, "could not make directory: " + this.dir);
             }
 

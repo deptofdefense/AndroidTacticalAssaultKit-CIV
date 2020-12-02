@@ -19,7 +19,7 @@ public class MapEvent {
     /**
      * This is used for logging, but could be in used in conjunction or to replace "from" in the bundle
      */
-    private Class _from;
+    private Class<?> _from;
     private Bundle _extras;
 
     /**
@@ -228,7 +228,7 @@ public class MapEvent {
         return _scaleFactor;
     }
 
-    public Class getFrom() {
+    public Class<?> getFrom() {
         return _from;
     }
 
@@ -271,7 +271,7 @@ public class MapEvent {
             return this;
         }
 
-        public Builder setFrom(Class clazz) {
+        public Builder setFrom(Class<?> clazz) {
             _e._from = clazz;
             return this;
         }

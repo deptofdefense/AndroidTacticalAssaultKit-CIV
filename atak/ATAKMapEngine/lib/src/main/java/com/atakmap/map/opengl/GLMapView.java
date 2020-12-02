@@ -16,8 +16,8 @@ import java.util.Set;
 
 import android.graphics.PointF;
 import android.graphics.RectF;
-import android.view.Display;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -743,8 +743,10 @@ public class GLMapView implements
      * @param longitude
      * @return
      *
-     * @deprecated
+     * @deprecated use {@link #getTerrainMeshElevation(double, double)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public double getElevation(double latitude, double longitude) {
         return getTerrainMeshElevation(latitude, longitude);
     }
@@ -1070,6 +1072,9 @@ public class GLMapView implements
 
         render(this.pointer.raw);
         sync();
+        if(this.drawTilt > 0 && this.syncPass == RENDER_PASS_SURFACE)
+            this.syncPass = 0;
+        this.syncPass = 0;
 
         if(this.drawTilt > 0 && this.terrainBlendEnabled)
             set_terrainBlendFactor(this.pointer.raw, (float)this.terrainBlendFactor);
@@ -1083,6 +1088,7 @@ public class GLMapView implements
         setDisplayDpi(this.pointer.raw, _surface.getDpi());
         start(this.pointer.raw);
         sync(this.pointer.raw, this);
+        this.syncPass = 0;
     }
 
     public void stop() {
@@ -1112,6 +1118,8 @@ public class GLMapView implements
 
         render(this.pointer.raw);
         sync();
+        if(this.drawTilt > 0 && this.syncPass == RENDER_PASS_SURFACE)
+            this.syncPass = 0;
     }
 
     public int getLeft() {
@@ -1136,7 +1144,9 @@ public class GLMapView implements
         return _bottom;
     }
 
-    /** @deprecated */
+    /** @deprecated refactor based on {@link #drawMapScale} or {@link #drawMapResolution} */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public double getLegacyScale() {
         return ((drawMapScale * Globe.getFullEquitorialExtentPixels(_surface.getDpi())) / 360d);
     }
@@ -1667,6 +1677,8 @@ public class GLMapView implements
         private OnAnimationSettledCallback _animCallback;
 
         /** @deprecated use {@link #startAnimating(double, double, double, double, double, double)} */
+        @Deprecated
+        @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
         public final void startAnimating(double lat, double lng, double scale,
                                          double rotation, double animateFactor) {
             this.startAnimating(lat, lng, scale, rotation, _targetTilt, animateFactor);
@@ -1985,6 +1997,8 @@ public class GLMapView implements
      * @deprecated subject to be changed/removed at any time
      * @return
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1")
     public static double estimateResolution(GLMapView model, double ullat, double ullng, double lrlat, double lrlng, GeoPoint closest) {
         return estimateResolutionFromViewAABB(model.pointer.raw, ullat, ullng, lrlat, lrlng, closest);
     }
@@ -1993,6 +2007,8 @@ public class GLMapView implements
      * @deprecated subject to be changed/removed at any time
      * @return
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1")
     public static double estimateResolution(MapSceneModel model, double ullat, double ullng, double lrlat, double lrlng, GeoPoint closest) {
         return estimateResolutionFromModelAABB(MapSceneModel_interop.getPointer(model), ullat, ullng, lrlat, lrlng, closest);
     }
@@ -2001,6 +2017,8 @@ public class GLMapView implements
      * @deprecated subject to be changed/removed at any time
      * @return
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1")
     public static double estimateResolution(GLMapView model, PointD center, double radius, GeoPoint closest) {
         return estimateResolutionFromViewSphere(model.pointer.raw, center.x, center.y, center.z, radius, closest);
     }
@@ -2009,6 +2027,8 @@ public class GLMapView implements
      * @deprecated subject to be changed/removed at any time
      * @return
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1")
     public static double estimateResolution(MapSceneModel model, PointD center, double radius, GeoPoint closest) {
         return estimateResolutionFromModelSphere(MapSceneModel_interop.getPointer(model), center.x, center.y, center.z, radius, closest);
     }

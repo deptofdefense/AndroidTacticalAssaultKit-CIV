@@ -207,12 +207,12 @@ public class ModelsHierarchyListItem extends AbstractHierarchyListItem2
     }
 
     @Override
-    public boolean isSupported(Class target) {
+    public boolean isSupported(Class<?> target) {
         return MissionPackageExportWrapper.class.equals(target);
     }
 
     @Override
-    public Object toObjectOf(Class target, ExportFilters filters)
+    public Object toObjectOf(Class<?> target, ExportFilters filters)
             throws FormatNotSupportedException {
         if (getChildCount() == 0 || !isSupported(target))
             return null;

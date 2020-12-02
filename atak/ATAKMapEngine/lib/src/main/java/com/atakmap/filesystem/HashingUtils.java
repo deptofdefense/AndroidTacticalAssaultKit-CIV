@@ -2,6 +2,7 @@
 package com.atakmap.filesystem;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
@@ -9,11 +10,8 @@ import com.atakmap.io.ZipVirtualFile;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -36,7 +34,7 @@ public class HashingUtils {
      * This constructs an md5sum from the contents of the file provided.
      */
     public static String md5sum(File file) {
-        if (file == null || !file.exists())
+        if (file == null || !FileIOProviderFactory.exists(file))
             return null;
 
         if (file instanceof ZipVirtualFile) {
@@ -50,8 +48,8 @@ public class HashingUtils {
         } else {
             Log.v(TAG, "Computing MD5 for: " + file.getAbsolutePath());
             try {
-                return md5sum(new FileInputStream(file));
-            } catch (FileNotFoundException e) {
+                return md5sum(FileIOProviderFactory.getInputStream(file));
+            } catch (IOException e) {
                 Log.e(TAG, "Error computing md5sum", e);
             }
         }
@@ -113,13 +111,13 @@ public class HashingUtils {
     }
 
     public static String sha256sum(File file) {
-        if (file == null || !file.exists())
+        if (file == null || !FileIOProviderFactory.exists(file))
             return null;
 
         Log.v(TAG, "Computing SHA256 for: " + file.getAbsolutePath());
         try {
-            return sha256sum(new FileInputStream(file));
-        } catch (FileNotFoundException e) {
+            return sha256sum(FileIOProviderFactory.getInputStream(file));
+        } catch (IOException e) {
             Log.e(TAG, "Error computing sha256sum", e);
         }
 
@@ -163,9 +161,9 @@ public class HashingUtils {
             md.reset();
 
             // convert to hex
-            StringBuffer hexString = new StringBuffer();
-            for (int i = 0; i < hash.length; i++) {
-                hexString.append(String.format("%02x", 0xFF & hash[i]));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                hexString.append(String.format("%02x", 0xFF & b));
             }
 
             checksum = hexString.toString();
@@ -188,13 +186,13 @@ public class HashingUtils {
     }
 
     public static String sha1sum(File file) {
-        if (file == null || !file.exists())
+        if (file == null || !FileIOProviderFactory.exists(file))
             return null;
 
         Log.v(TAG, "Computing SHA1 for: " + file.getAbsolutePath());
         try {
-            return sha1sum(new FileInputStream(file));
-        } catch (FileNotFoundException e) {
+            return sha1sum(FileIOProviderFactory.getInputStream(file));
+        } catch (IOException e) {
             Log.e(TAG, "Error computing sha1sum", e);
         }
 
@@ -210,6 +208,11 @@ public class HashingUtils {
 
     }
 
+    /**
+     * Generate a sha1 sum based on a provided byte array
+     * @param content the byte array
+     * @return the sha1 sum
+     */
     public static String sha1sum(byte[] content) {
         if (content == null || content.length < 1)
             return null;
@@ -219,6 +222,8 @@ public class HashingUtils {
 
     /*
      * Calculate checksum of a stream using SHA1 algorithm
+     * @param input the input stream
+     * @return the sha1 sum
      */
     public static String sha1sum(InputStream input) {
         String checksum = null;
@@ -238,9 +243,9 @@ public class HashingUtils {
             md.reset();
 
             // convert to hex
-            StringBuffer hexString = new StringBuffer();
-            for (int i = 0; i < hash.length; i++) {
-                hexString.append(String.format("%02x", 0xFF & hash[i]));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                hexString.append(String.format("%02x", 0xFF & b));
             }
 
             checksum = hexString.toString();
@@ -326,7 +331,7 @@ public class HashingUtils {
             Set<String> algorithms, File file) {
         InputStream input = null;
         try {
-            input = new BufferedInputStream(new FileInputStream(file));
+            input = new BufferedInputStream(FileIOProviderFactory.getInputStream(file));
         } catch (IOException ignored) {
         }
 
@@ -382,9 +387,9 @@ public class HashingUtils {
         }
 
         // check file size
-        if (file.length() != sizeToMatch)
+        if (FileIOProviderFactory.length(file) != sizeToMatch)
         {
-            Log.w(TAG, String.format(LocaleUtil.getCurrent(), "Size mismatch: %d vs %d", file.length(),
+            Log.w(TAG, String.format(LocaleUtil.getCurrent(), "Size mismatch: %d vs %d", FileIOProviderFactory.length(file),
                     sizeToMatch));
             return false;
         }

@@ -4,7 +4,6 @@ package com.atakmap.map.layer.raster.gdal;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.BufferUnderflowException;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;

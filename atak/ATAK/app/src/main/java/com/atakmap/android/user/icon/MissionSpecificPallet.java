@@ -3,8 +3,8 @@ package com.atakmap.android.user.icon;
 
 import androidx.fragment.app.Fragment;
 
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.maps.Marker;
 import com.atakmap.app.R;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
@@ -43,7 +43,7 @@ public class MissionSpecificPallet implements IconPallet {
     }
 
     @Override
-    public Marker getPointPlacedIntent(GeoPointMetaData point, String uid)
+    public MapItem getPointPlacedIntent(GeoPointMetaData point, String uid)
             throws CreatePointException {
         return fragment.getPointPlacedIntent(point, uid);
     }

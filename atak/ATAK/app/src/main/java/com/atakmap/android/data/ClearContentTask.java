@@ -14,16 +14,16 @@ import com.atakmap.android.missionpackage.MissionPackageMapComponent;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.PreferenceControl;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProvider;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.net.AtakAuthenticationDatabase;
 import com.atakmap.net.AtakCertificateDatabase;
-import com.atakmap.coremap.filesystem.SecureDelete;
+
 import java.io.File;
 
 /**
  * Task to cleanup map and data content
- * 
- * 
  */
 public class ClearContentTask extends AsyncTask<Void, Integer, Boolean> {
     private static final String TAG = "ClearContentTask";
@@ -34,7 +34,7 @@ public class ClearContentTask extends AsyncTask<Void, Integer, Boolean> {
     private final boolean _bClearMaps;
     private final boolean _bExitWhenDone;
 
-    public ClearContentTask(Context context, boolean bClearMaps,
+    ClearContentTask(Context context, boolean bClearMaps,
             boolean bExitWhenDone) {
         _context = context;
         _bClearMaps = bClearMaps;
@@ -81,6 +81,13 @@ public class ClearContentTask extends AsyncTask<Void, Integer, Boolean> {
                 "com.atakmap.android.maps.toolbar.END_TOOL"));
         DropDownManager.getInstance().closeAllDropDowns();
 
+
+        //
+        //now notify components to clear their respective data
+        //it is expected that these will be quick operations
+
+        ClearContentRegistry.getInstance().clearContent(_bClearMaps);
+
         // Prevent errors during secure delete
         MissionPackageMapComponent mp = MissionPackageMapComponent
                 .getInstance();
@@ -98,12 +105,7 @@ public class ClearContentTask extends AsyncTask<Void, Integer, Boolean> {
                 FileSystemUtils.CONFIG_DIRECTORY
         }, true);
 
-        //now notify components to clear their respective data
-        //it is expected that these will be quick operations
-        AtakBroadcast.getInstance().sendBroadcast(
-                new Intent(DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION).putExtra(
-                        DataMgmtReceiver.ZEROIZE_CLEAR_MAPS,
-                        _bClearMaps));
+
 
         // reset all prefs and stored credentials
         AtakAuthenticationDatabase.clear();
@@ -124,7 +126,7 @@ public class ClearContentTask extends AsyncTask<Void, Integer, Boolean> {
                 PreferenceManager.getDefaultSharedPreferences(_context), true);
 
         final File databaseDir = FileSystemUtils.getItem("Databases");
-        final File[] files = databaseDir.listFiles();
+        final File[] files = FileIOProviderFactory.listFiles(databaseDir);
         if (files != null) {
             for (File file : files) {
                 if (file.isFile()) {
@@ -140,7 +142,7 @@ public class ClearContentTask extends AsyncTask<Void, Integer, Boolean> {
                     } else {
 
                         Log.d(TAG, "purging: " + name);
-                        SecureDelete.delete(file);
+                        FileIOProviderFactory.delete(file, FileIOProvider.SECURE_DELETE);
 
                     }
                 }

@@ -303,7 +303,7 @@ public class ObjectUtils {
             final Object result;
             if (o.getClass().isArray()) {
                 final Class componentType = o.getClass().getComponentType();
-                if (!componentType.isPrimitive()) {
+                if (componentType != null && !componentType.isPrimitive()) {
                     result = ((Object[])o).clone();
                 } else {
                     int length = Array.getLength(o);

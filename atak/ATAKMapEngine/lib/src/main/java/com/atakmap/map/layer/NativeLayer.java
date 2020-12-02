@@ -1,10 +1,8 @@
 package com.atakmap.map.layer;
 
-import com.atakmap.interop.InteropCleaner;
 import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
 import com.atakmap.lang.ref.Cleaner;
-import com.atakmap.map.layer.feature.geometry.Point;
 import com.atakmap.util.Disposable;
 import com.atakmap.util.ReadWriteLock;
 

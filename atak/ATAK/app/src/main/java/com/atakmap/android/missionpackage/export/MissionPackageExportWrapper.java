@@ -73,13 +73,13 @@ public class MissionPackageExportWrapper implements Exportable {
 
     // XXX - What is the point of this override?
     @Override
-    public boolean isSupported(Class target) {
+    public boolean isSupported(Class<?> target) {
         return getClass().equals(target);
     }
 
     // XXX - What is the point of this override?
     @Override
-    public Object toObjectOf(Class target, ExportFilters filters)
+    public Object toObjectOf(Class<?> target, ExportFilters filters)
             throws FormatNotSupportedException {
         return getClass().equals(target) ? this : null;
     }

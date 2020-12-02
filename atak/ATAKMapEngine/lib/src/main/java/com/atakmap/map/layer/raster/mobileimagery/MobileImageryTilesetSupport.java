@@ -13,7 +13,6 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Objects;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.ImageDatasetDescriptor;
-import com.atakmap.map.layer.raster.osm.OSMUtils;
 import com.atakmap.map.projection.Projection;
 
 final class MobileImageryTilesetSupport {

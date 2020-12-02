@@ -32,6 +32,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -238,7 +239,7 @@ abstract class AbstractSheetHierarchyListItem extends AbstractHierarchyListItem2
         msg.setText(_context.getString(R.string.export_finished_message1,
                 item.getName()));
         path.setText(FileSystemUtils.prettyPrint(file));
-        size.setText(MathUtils.GetLengthString(file.length()));
+        size.setText(MathUtils.GetLengthString(FileIOProviderFactory.length(file)));
 
         AlertDialog.Builder b = new AlertDialog.Builder(_context);
         b.setTitle(_context.getString(R.string.export_finished_title));

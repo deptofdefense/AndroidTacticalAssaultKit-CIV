@@ -4,6 +4,7 @@ package com.atakmap.android.routes.routearound;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import org.json.JSONArray;
@@ -14,8 +15,6 @@ import org.json.JSONTokener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -116,12 +115,12 @@ public class RouteAroundRegionManager {
      */
     public void restoreManagerStateFromFile(File f)
             throws IOException, JSONException {
-        if (!f.exists()) {
+        if (!FileIOProviderFactory.exists(f)) {
             return;
         }
         // Read a string from the file
         BufferedReader reader = new BufferedReader(
-                new FileReader(f.getAbsolutePath()));
+                FileIOProviderFactory.getFileReader(new File(f.getAbsolutePath())));
         StringBuilder stringBuilder = new StringBuilder();
         char[] buffer = new char[10];
         while (reader.read(buffer) != -1) {
@@ -153,9 +152,9 @@ public class RouteAroundRegionManager {
      */
     public void saveManagerStateToFile(final File f)
             throws IOException, JSONException {
-        if (!f.exists()) {
-            if (f.getParentFile() != null && !f.getParentFile().exists()) {
-                if (!f.getParentFile().mkdirs()) {
+        if (!FileIOProviderFactory.exists(f)) {
+            if (f.getParentFile() != null && !FileIOProviderFactory.exists(f.getParentFile())) {
+                if (!FileIOProviderFactory.mkdirs(f.getParentFile())) {
                     Log.e(TAG,
                             "could not create directory: " + f.getParentFile());
                 }
@@ -169,7 +168,7 @@ public class RouteAroundRegionManager {
 
         // Write the serialized state to a string.
         BufferedWriter out = new BufferedWriter(
-                new FileWriter(f.getAbsolutePath()));
+                FileIOProviderFactory.getFileWriter(new File(f.getAbsolutePath())));
         try {
             out.write(serializedState);
         } catch (IOException e) {

@@ -1,6 +1,7 @@
 
 package com.atakmap.annotations;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -15,10 +16,11 @@ import java.lang.annotation.Target;
  * annotation and the <code>@deprecated</code> Javadoc tag. Please refer to the
  * ATAK Coding Style Guide for more information on deprecated APIs.
  */
-@Retention(RetentionPolicy.CLASS)
+@Retention(RetentionPolicy.RUNTIME)
 @Target({
-        ElementType.FIELD, ElementType.METHOD, ElementType.TYPE,
+        ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.METHOD, ElementType.TYPE,
 })
+@Documented
 public @interface DeprecatedApi {
     /**
      * Specifies the version (format: MAJOR.MINOR, e.g. <code>"3.11"</code>) in

@@ -257,7 +257,7 @@ public class TadilJContactDatabase extends SQLiteOpenHelper {
                 do {
                     TadilJContact temp = new TadilJContact(cursor.getString(2),
                             cursor.getString(1),
-                            Boolean.valueOf(cursor.getString(3)),
+                            Boolean.parseBoolean(cursor.getString(3)),
                             new IpConnector(NetConnectString.fromString(cursor
                                     .getString(4))),
                             new IpConnector(NetConnectString.fromString(cursor
@@ -298,7 +298,7 @@ public class TadilJContactDatabase extends SQLiteOpenHelper {
             if (cursor.moveToFirst()) {
                 result = new TadilJContact(cursor.getString(2),
                         cursor.getString(1),
-                        Boolean.valueOf(cursor.getString(3)),
+                        Boolean.parseBoolean(cursor.getString(3)),
                         new IpConnector(NetConnectString.fromString(cursor
                                 .getString(4))));
             }

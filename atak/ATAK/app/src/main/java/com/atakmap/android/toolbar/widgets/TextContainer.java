@@ -285,9 +285,11 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
         _mapView.post(new Runnable() {
             @Override
             public void run() {
-                HintDialogHelper.showHint(_mapView.getContext(),
-                        "On Screen Hints",
-                        hint_view, "textContainer.osd");
+                if (hint_view.getParent() == null) {
+                    HintDialogHelper.showHint(_mapView.getContext(),
+                            "On Screen Hints",
+                            hint_view, "textContainer.osd");
+                }
             }
         });
 

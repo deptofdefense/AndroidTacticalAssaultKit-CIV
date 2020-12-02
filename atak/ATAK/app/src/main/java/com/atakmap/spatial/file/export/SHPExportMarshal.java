@@ -9,6 +9,7 @@ import com.atakmap.android.importfiles.sort.ImportSHPZSort;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.ShapefileSpatialDb;
 import com.atakmap.spatial.file.export.OGRFeatureExportWrapper.NamedGeometry;
@@ -82,7 +83,7 @@ public class SHPExportMarshal extends OGRExportMarshal {
      * Compress the base shapefile and all related files into a ZIP file
      * @param baseSHP the base shape file to be zipped for export
      * @return the zipped file, null if the baseSHP file is missing.
-     * @throws IOException 
+     * @throws IOException if unable to write the zip file
      */
     public static File zipShapefile(File baseSHP) throws IOException {
         if (!FileSystemUtils.isFile(baseSHP)) {
@@ -102,7 +103,7 @@ public class SHPExportMarshal extends OGRExportMarshal {
         if (files != null) {
             ZipOutputStream zos = null;
             try {
-                FileOutputStream fos = new FileOutputStream(shpz);
+                FileOutputStream fos = FileIOProviderFactory.getOutputStream(shpz);
                 zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
                 //loop and add all files
@@ -140,11 +141,11 @@ public class SHPExportMarshal extends OGRExportMarshal {
     /**
      * Compress the directory contents into a ZIP file
      * 
-     * @param dir
-     * @return
-     * @throws IOException 
+     * @param dir the directory
+     * @return the zipped file or null if there is a failure
+     * @throws IOException error if unable to create a zipped file
      */
-    public static File zipDirectory(File dir) throws IOException {
+    public static File zipDirectory(final File dir) throws IOException {
         File shpz = FileSystemUtils.zipDirectory(dir,
                 new File(dir, dir.getName() + "_shapefile.zip"));
         if (!FileSystemUtils.isFile(shpz)) {
@@ -173,7 +174,7 @@ public class SHPExportMarshal extends OGRExportMarshal {
         try {
             file = getFile();
         } catch (IOException e) {
-            Log.e(TAG, "error occured", e);
+            Log.e(TAG, "error occurred", e);
         }
         if (file != null) {
             //folder containing partially exported shapefiles
@@ -182,7 +183,7 @@ public class SHPExportMarshal extends OGRExportMarshal {
                 //shpexport folder
                 parent = file.getParentFile();
                 if (parent != null
-                        && parent.exists()
+                        && FileIOProviderFactory.exists(parent)
                         && FileSystemUtils.EXPORT_DIRECTORY.equals(parent
                                 .getName())) {
                     FileSystemUtils.deleteDirectory(parent, false);

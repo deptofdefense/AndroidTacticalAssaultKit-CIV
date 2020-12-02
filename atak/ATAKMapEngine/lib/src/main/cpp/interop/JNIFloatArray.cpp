@@ -1,6 +1,6 @@
 #include "JNIFloatArray.h"
 
-#include <cstdlib>
+#include <cstring>
 
 using namespace TAKEngineJNI::Interop;
 
@@ -13,7 +13,7 @@ namespace
         return env->GetFloatArrayElements(jarr, isCopy);
     }
 
-    inline void unpin(JNIEnv *env, jfloatArray jarr, jfloat *carr, int releaseMode)
+    inline void unpin(JNIEnv *env, jfloatArray jarr, jfloat *carr, jint releaseMode)
     {
         env->ReleaseFloatArrayElements(jarr, carr, releaseMode);
     }

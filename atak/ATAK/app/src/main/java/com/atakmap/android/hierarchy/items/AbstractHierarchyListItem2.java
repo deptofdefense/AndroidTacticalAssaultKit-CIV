@@ -29,6 +29,7 @@ import com.atakmap.android.maps.Location;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -465,11 +466,13 @@ public abstract class AbstractHierarchyListItem2 implements
      * Sort children based on filter's sort
      * To avoid UI thread slowdown avoid calling this
      * use sortItems on a separate list and copy to this.children instead
+     * @deprecated This method will become final
      * @param sort Sort object (usually this.filter.sort)
      * @return The new sort object, in case it's changed
      */
     @Override
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = false)
     public Sort refresh(Sort sort) {
         Log.w(TAG,
                 "Calling refresh(Sort) on this.children (could be slow; sort filtered copy instead)");
@@ -722,7 +725,7 @@ public abstract class AbstractHierarchyListItem2 implements
     }
 
     protected static HierarchyListFilter getFilter(
-            HierarchyListFilter filter, Class clazz) {
+            HierarchyListFilter filter, Class<?> clazz) {
         if (filter == null)
             return null;
         if (clazz.isInstance(filter))

@@ -7,6 +7,7 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.atakmap.android.cot.detail.SensorDetailHandler;
+import com.atakmap.android.cotdetails.sensor.SensorDetailsReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapEventDispatcher;
@@ -137,9 +138,7 @@ public class SensorFOVTool extends ButtonTool
                 }, showFOV);
 
         if (_showDetails) {
-            Intent detailEditor = new Intent();
-            detailEditor
-                    .setAction("com.atakmap.android.cotdetails.SENSORDETAILS");
+            Intent detailEditor = new Intent(SensorDetailsReceiver.SHOW_DETAILS);
             detailEditor.putExtra("targetUID", _marker.getUID());
             AtakBroadcast.getInstance().sendBroadcast(detailEditor);
         }

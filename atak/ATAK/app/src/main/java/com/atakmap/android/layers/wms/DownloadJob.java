@@ -23,7 +23,7 @@ public class DownloadJob implements Parcelable {
     private String destination;
     private int currentStatus;
 
-    public DownloadJob() {
+    private DownloadJob() {
     }
 
     public DownloadJob(Parcel source) {

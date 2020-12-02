@@ -80,6 +80,7 @@ import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.comms.NetworkUtils;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.missionpackage.MPReceiveInitiator;
@@ -295,7 +296,7 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
                 try {
                     new MissionPackageExportMarshal(_context,
                             _userState.isIncludeAttachments())
-                            .execute(exports);
+                                    .execute(exports);
                 } catch (Exception e) {
                     Log.e(TAG, "Failed to export map items to MP", e);
                     toast(R.string.failed_export);
@@ -574,7 +575,7 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
                     if (pathPair == null)
                         continue;
                     File f = new File(pathPair.getValue());
-                    if (!f.exists())
+                    if (!FileIOProviderFactory.exists(f))
                         continue;
                     li = MissionPackageManifestAdapter.FileContentToUI(mc, f);
                 }
@@ -1182,7 +1183,7 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
                         public void run() {
                             MissionPackageMapOverlay overlay = MissionPackageMapOverlay
                                     .getOverlay();
-                            if (overlay != null && !file.exists())
+                            if (overlay != null && !FileIOProviderFactory.exists(file))
                                 overlay.remove(file, false);
                         }
                     });
@@ -1529,9 +1530,9 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
                     fileInfo.setUserName(senderCallsign);
                     fileInfo.setUserLabel(transferName);
                     // TODO is this checked dynamically or cached when File is created?
-                    fileInfo.setSizeInBytes((int) savedMissionPackage.length());
+                    fileInfo.setSizeInBytes((int) FileIOProviderFactory.length(savedMissionPackage));
 
-                    fileInfo.setUpdateTime(savedMissionPackage.lastModified());
+                    fileInfo.setUpdateTime(FileIOProviderFactory.lastModified(savedMissionPackage));
 
                     // file size and hash was verified above, so lets use that rather than re-compute
                     if (FileSystemUtils.isEmpty(expectedSha256)) {

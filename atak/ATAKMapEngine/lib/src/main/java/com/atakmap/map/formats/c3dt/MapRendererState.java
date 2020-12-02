@@ -3,7 +3,6 @@ package com.atakmap.map.formats.c3dt;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.RenderContext;
-import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 

@@ -2,7 +2,6 @@
 package com.atakmap.android.metrics.activity;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.MotionEvent;

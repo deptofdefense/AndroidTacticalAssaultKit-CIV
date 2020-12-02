@@ -2,6 +2,7 @@
 package com.atakmap.android.toolbar;
 
 import com.atakmap.android.tools.ActionBarView;
+import com.atakmap.annotations.DeprecatedApi;
 
 import java.util.List;
 
@@ -14,6 +15,7 @@ public interface IToolbarExtension {
      * @deprecated Use getToolbarView() instead.
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     List<Tool> getTools();
 
     /***

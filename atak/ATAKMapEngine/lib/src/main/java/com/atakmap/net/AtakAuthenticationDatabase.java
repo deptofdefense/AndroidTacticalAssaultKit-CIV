@@ -6,6 +6,7 @@ import android.preference.PreferenceManager;
 import android.util.Base64;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
 
@@ -115,10 +116,10 @@ public class AtakAuthenticationDatabase {
                     }
 
                     File parent = databaseFile.getParentFile();
-                    if(parent != null && !parent.exists()){
+                    if(parent != null && !FileIOProviderFactory.exists(parent)){
                         Log.d(TAG, "Creating private database directory: "
                                 + parent.getAbsolutePath());
-                        if(!parent.mkdirs()){
+                        if(!FileIOProviderFactory.mkdirs(parent)){
                             Log.w(TAG, "Failed to create private database directory: "
                                     + parent.getAbsolutePath());
                         }

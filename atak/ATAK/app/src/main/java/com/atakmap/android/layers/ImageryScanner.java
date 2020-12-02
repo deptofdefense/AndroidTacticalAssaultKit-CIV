@@ -3,6 +3,7 @@ package com.atakmap.android.layers;
 
 import com.atakmap.android.gdal.layers.KmzLayerInfoSpi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
@@ -65,7 +66,7 @@ final class ImageryScanner extends LayerScanner {
                     "imagery");
             Log.d(TAG, "scanning: " + imageryBaseDir);
             // do a recursive scan to a depth of 4 levels
-            File[] children = imageryBaseDir.listFiles();
+            File[] children = FileIOProviderFactory.listFiles(imageryBaseDir);
             if (children != null) {
                 for (File aChildren : children) {
                     if (!aChildren.getName().equals("mobile")) {
@@ -103,7 +104,7 @@ final class ImageryScanner extends LayerScanner {
             return true;
         } else if (DatasetDescriptorFactory2.isSupported(f)) {
             if (this.tryAdd(f, null)) {
-                if (f.isDirectory())
+                if (FileIOProviderFactory.isDirectory(f))
                     postScanDirs.add(f);
                 return true;
             }
@@ -118,11 +119,11 @@ final class ImageryScanner extends LayerScanner {
             } catch (Throwable ignored) {
             }
 
-        if (f.isDirectory()) {
+        if (FileIOProviderFactory.isDirectory(f)) {
             // we've hit the limit; don't recurse further
             if (limit < 1)
                 return false;
-            File[] c = f.listFiles();
+            File[] c = FileIOProviderFactory.listFiles(f);
             if (c == null)
                 return false;
             // walk the chidren
@@ -141,10 +142,10 @@ final class ImageryScanner extends LayerScanner {
         if (DatasetDescriptorFactory2.isSupported(f)) {
             if (!this.database.contains(f)) {
                 if (f.isFile() && this.tryAdd(f, MOBILE_HINTS)) {
-                    if (f.isDirectory())
+                    if (FileIOProviderFactory.isDirectory(f))
                         postScanDirs.add(f);
                     return true;
-                } else if (depth > 0 && f.isDirectory()) {
+                } else if (depth > 0 && FileIOProviderFactory.isDirectory(f)) {
                     supportedDir = true;
                 }
             } else {
@@ -153,8 +154,8 @@ final class ImageryScanner extends LayerScanner {
         }
 
         boolean retval = false;
-        if (f.isDirectory()) {
-            File[] c = f.listFiles();
+        if (FileIOProviderFactory.isDirectory(f)) {
+            File[] c = FileIOProviderFactory.listFiles(f);
             if (c == null)
                 return false;
             // walk the chidren
@@ -182,10 +183,10 @@ final class ImageryScanner extends LayerScanner {
      * @param limit The recursion limit
      */
     private void checkKmz(File file, int limit) {
-        if (file.isDirectory()) {
+        if (FileIOProviderFactory.isDirectory(file)) {
             if (limit < 1)
                 return;
-            File[] c = file.listFiles();
+            File[] c = FileIOProviderFactory.listFiles(file);
             if (c == null)
                 return;
             for (File aC : c) {

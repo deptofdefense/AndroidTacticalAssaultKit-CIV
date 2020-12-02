@@ -1,16 +1,20 @@
-<menu buttonRadius='65' buttonSpan='90' buttonWidth='90' buttonBg='bgs/button.xml'>
+<menu buttonRadius='65' buttonSpan='72' buttonWidth='90' buttonBg='bgs/button.xml'>
+
+    <button icon='icons/green_flag.png'
+        onClick='actions/startgoto.xml'
+        angle='90'/>
+
+    <button icon='icons/edit2.png'
+        onClick='actions/edit_route.xml' />
+
+    <button icon='icons/pairing_line.png'
+        onClick='actions/pairingline.xml'
+        selected='${pairingline_on}' />
 
     <button icon='icons/details.png'
             onClick='actions/show_route_for_wp.xml' />
-            
-    <button icon='icons/edit2.png' 
-            onClick='actions/edit_route.xml' />
-              
-    <button icon='icons/green_flag.png' 
-            onClick='actions/startgoto.xml' />
 
-    <button icon='icons/pairing_line.png'
-            onClick='actions/pairingline.xml'
-            selected='${pairingline_on}' />
+    <button icon='icons/general_entry.png'
+        onClick='actions/general_entry.xml'/>
             
 </menu>

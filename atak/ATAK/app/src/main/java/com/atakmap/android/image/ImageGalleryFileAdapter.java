@@ -42,6 +42,7 @@ import com.atakmap.android.video.ConnectionEntry;
 import com.atakmap.android.video.VideoDropDownReceiver;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.AtakMapView;
 
@@ -271,8 +272,8 @@ public class ImageGalleryFileAdapter extends ImageGalleryBaseAdapter
     }
 
     public void addFile(File file, String uid) {
-        if (file.isDirectory()) {
-            File[] files = file.listFiles();
+        if (FileIOProviderFactory.isDirectory(file)) {
+            File[] files = FileIOProviderFactory.listFiles(file);
             if (FileSystemUtils.isEmpty(files))
                 return;
             for (File f : files)
@@ -860,7 +861,7 @@ public class ImageGalleryFileAdapter extends ImageGalleryBaseAdapter
         int fileCount = 0;
         for (String p : files) {
             File f = new File(p);
-            if (f.exists() && f.isFile()) {
+            if (FileIOProviderFactory.exists(f) && f.isFile()) {
                 File metadata = getMetadataFile(f);
                 if (metadata != null)
                     exports.add(new FileExportable(metadata));
@@ -1030,7 +1031,7 @@ public class ImageGalleryFileAdapter extends ImageGalleryBaseAdapter
                 f.getName())) {
             // Clean-up metadata files
             File xml = new File(f.getAbsolutePath() + METADATA_EXT);
-            if (xml.exists())
+            if (FileIOProviderFactory.exists(xml))
                 return xml;
         }
         return null;

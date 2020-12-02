@@ -23,9 +23,9 @@ public final class DoghouseViewModel {
 
     private static final String TAG = "DoghouseViewModel";
     private final MapGroup _doghouseGroup;
-    private ConcurrentHashMap<String, List<Doghouse>> _cache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, List<Doghouse>> _cache = new ConcurrentHashMap<>();
     private int _size = 0;
-    private SharedPreferences _prefs;
+    private final SharedPreferences _prefs;
 
     DoghouseViewModel(MapGroup doghouseGroup) {
         _doghouseGroup = doghouseGroup;
@@ -36,6 +36,9 @@ public final class DoghouseViewModel {
             String key = "dh_data_row_" + i;
             String value = _prefs.getString(key,
                     Doghouse.DoghouseFields.EMPTY.toString());
+            if (value == null) {
+                value = Doghouse.DoghouseFields.EMPTY.toString();
+            }
             Doghouse.DoghouseFields converted = Doghouse.DoghouseFields
                     .fromString(value);
 
@@ -321,8 +324,7 @@ public final class DoghouseViewModel {
         _cache.put(route.getUID(), doghouses);
     }
 
-    void addDoghouse(@NonNull
-    final Route route) {
+    void addDoghouse(@NonNull final Route route) {
         List<Doghouse> doghouses = getDoghousesForRoute(route);
         if (doghouses != null) {
             Doghouse dh = buildDoghouse(route.getNumPoints() - 2, route);
@@ -345,14 +347,12 @@ public final class DoghouseViewModel {
     }
 
     @Nullable
-    List<Doghouse> getDoghousesForRoute(@NonNull
-    final Route route) {
+    List<Doghouse> getDoghousesForRoute(@NonNull final Route route) {
         return _cache.get(route.getUID());
     }
 
-    void insertDoghouse(int index, @NonNull
-    final Route route) {
-        List<Doghouse> doghouses = getDoghousesForRoute(route);
+    void insertDoghouse(int index, @NonNull final Route route) {
+        final List<Doghouse> doghouses = getDoghousesForRoute(route);
         if (doghouses != null) {
             if (index >= 0 && index < doghouses.size()) {
                 Doghouse dh = buildDoghouse(index, route);

@@ -1,6 +1,7 @@
 
 package com.atakmap.android.importfiles.sort;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
 import android.content.Context;
@@ -17,7 +18,6 @@ import com.atakmap.android.util.NotificationUtil;
 import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.Enumeration;
 import java.util.Set;
@@ -121,7 +121,7 @@ public class ImportDTEDZSort extends ImportInPlaceResolver {
             return false;
         }
 
-        if (!file.exists()) {
+        if (!FileIOProviderFactory.exists(file)) {
             Log.d(TAG, "ZIP does not exist: " + file.getAbsolutePath());
             return false;
         }
@@ -201,13 +201,13 @@ public class ImportDTEDZSort extends ImportInPlaceResolver {
             // create output directory is not exists
             File folder = FileSystemUtils
                     .getItem(FileSystemUtils.DTED_DIRECTORY);
-            if (!folder.exists()) {
-                if (!folder.mkdir()) {
+            if (!FileIOProviderFactory.exists(folder)) {
+                if (!FileIOProviderFactory.mkdir(folder)) {
                     Log.d(TAG, "could not wrap: " + folder);
                 }
             }
 
-            InputStream in = new FileInputStream(dtedFile);
+            InputStream in = FileIOProviderFactory.getInputStream(dtedFile);
             // get the zip file content
             zis = new ZipInputStream(in);
 
@@ -267,12 +267,12 @@ public class ImportDTEDZSort extends ImportInPlaceResolver {
                     // create all non exists folders
                     // else you will hit FileNotFoundException 
                     // for compressed folder
-                    if (!(new File(newFile.getParent()).mkdirs())) {
+                    if (!(FileIOProviderFactory.mkdirs(new File(newFile.getParent())))) {
                         Log.d(TAG, "could not make: " + newFile.getParent());
                     }
 
                     try {
-                        fos = new FileOutputStream(newFile);
+                        fos = FileIOProviderFactory.getOutputStream(newFile);
 
                         int len;
                         while ((len = zis.read(buffer)) > 0) {

@@ -82,7 +82,7 @@ public abstract class FileOverlayContentHandler extends FileContentHandler
     }
 
     @Override
-    public boolean isActionSupported(Class action) {
+    public boolean isActionSupported(Class<?> action) {
         if (_bounds == null && (action.equals(ILocation.class)
                 || action.equals(GoTo.class)))
             return false;

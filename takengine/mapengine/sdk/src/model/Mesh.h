@@ -31,7 +31,7 @@ namespace TAK {
                 TEDM_Points,
             };
 
-            class Mesh
+            class ENGINE_API Mesh
             {
             public :
                 virtual ~Mesh() NOTHROWS = 0;

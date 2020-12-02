@@ -2,7 +2,6 @@ package com.atakmap.map.gdal;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
-import com.atakmap.map.elevation.AbstractElevationData;
 import com.atakmap.map.elevation.ElevationChunk;
 import com.atakmap.map.layer.feature.geometry.Polygon;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
@@ -34,7 +33,7 @@ public final class GdalElevationChunk extends ElevationChunk.Factory.Sampler {
         // query the "No Data Value"
         Double[] ndv = new Double[1];
         dataset.GetRasterBand(1).GetNoDataValue(ndv);
-        noDataValue = (ndv[0] != null) ? ndv[0].doubleValue() : Double.NaN;
+        noDataValue = (ndv[0] != null) ? ndv[0] : Double.NaN;
     }
 
     @Override

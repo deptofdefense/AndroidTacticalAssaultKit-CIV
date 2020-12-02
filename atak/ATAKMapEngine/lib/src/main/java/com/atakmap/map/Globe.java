@@ -1,16 +1,10 @@
 package com.atakmap.map;
 
-import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.interop.InteropCleaner;
 import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
 import com.atakmap.lang.ref.Cleaner;
 import com.atakmap.map.layer.Layer;
-import com.atakmap.map.projection.MapProjectionDisplayModel;
-import com.atakmap.map.projection.Projection;
-import com.atakmap.map.projection.ProjectionFactory;
-import com.atakmap.math.PointD;
 import com.atakmap.util.Collections2;
 import com.atakmap.util.Disposable;
 import com.atakmap.util.ReadWriteLock;
@@ -150,7 +144,7 @@ public final class Globe implements Disposable {
         this.pointer = ptr;
 
         setProjection(this.pointer.raw, 4326);
-        setMaxMapTilt(this.pointer.raw, 89d);
+        setMaxMapTilt(this.pointer.raw, 85d);
 
         this.callbackForwarder = new NativeCallbackForwarder(this);
         this.callbackForwarder.pointer = registerNativeCallbackForwarder(this.pointer.raw, this.callbackForwarder);
@@ -606,8 +600,6 @@ public final class Globe implements Disposable {
     /**************************************************************************/
 
     private NativeCallbackForwarder callbackForwarder;
-
-    private MapTouchHandler touchHandler;
 
     Pointer pointer;
     final ReadWriteLock rwlock = new ReadWriteLock();

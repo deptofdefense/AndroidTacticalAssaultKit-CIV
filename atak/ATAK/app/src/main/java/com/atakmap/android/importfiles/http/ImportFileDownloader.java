@@ -13,6 +13,7 @@ import com.atakmap.android.importfiles.task.ImportRemoteFileTask;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.SpatialDbContentSource;
 import com.foxykeep.datadroid.requestmanager.Request;
@@ -145,7 +146,7 @@ public class ImportFileDownloader implements RequestListener {
 
                     File fout = new File(request.getDir(),
                             request.getFileName());
-                    FileOutputStream fos = new FileOutputStream(fout);
+                    FileOutputStream fos = FileIOProviderFactory.getOutputStream(fout);
 
                     try {
                         FileSystemUtils.copy(input, fos);

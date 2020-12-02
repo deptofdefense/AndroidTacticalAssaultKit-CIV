@@ -22,6 +22,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import org.apache.commons.lang.StringUtils;
@@ -87,20 +88,20 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
         // handler to the up/back button next to the current directory.
         ImageButton upButton = this
                 .findViewById(R.id.importManagerFileBrowserUpButton);
-        if (upButton != null) {
+        if (upButton != null)
             setUpButton(upButton);
-        }
 
-        ImageButton internalButton = this
-                .findViewById(R.id.phone);
-        if (internalButton != null) {
+        ImageButton internalButton = this.findViewById(R.id.phone);
+        if (internalButton != null)
             setInternalButton(internalButton);
-        }
-        ImageButton externalButton = this
-                .findViewById(R.id.sdcard);
-        if (externalButton != null) {
+
+        ImageButton externalButton = this.findViewById(R.id.sdcard);
+        if (externalButton != null)
             setExternalButton(externalButton);
-        }
+
+        ImageButton newFolderBtn = findViewById(R.id.newFolderBtn);
+        if (newFolderBtn != null)
+            setNewFolderButton(newFolderBtn);
     }
 
     @Override
@@ -221,7 +222,7 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
             h.fileName.setText(f.getName());
             if (fileItem.type == FileItem.DIRECTORY) {
                 // Filter out undesired file types
-                String[] children = f.list(_fileFilter);
+                String[] children = FileIOProviderFactory.list(f, _fileFilter);
                 if (FileSystemUtils.isEmpty(children))
                     h.fileInfo.setText(_mapCtx.getString(
                             R.string.importmgr_count_empty));
@@ -229,7 +230,7 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
                     h.fileInfo.setText(_mapCtx.getString(
                             R.string.importmgr_count_items, children.length));
             } else
-                h.fileInfo.setText(MathUtils.GetLengthString(f.length()));
+                h.fileInfo.setText(MathUtils.GetLengthString(FileIOProviderFactory.length(f)));
 
             return row;
         }
@@ -243,7 +244,7 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
                     ".");
             if (sel.isFile())
                 return (_testExtension(ext)) && sel.canRead();
-            return sel.canRead() && sel.isDirectory();
+            return sel.canRead() && FileIOProviderFactory.isDirectory(sel);
         }
     };
 
@@ -300,7 +301,7 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
         }
 
         protected boolean isParent(File possibleParent, File file) {
-            if (!possibleParent.exists() || !possibleParent.isDirectory() ||
+            if (!FileIOProviderFactory.exists(possibleParent) || !FileIOProviderFactory.isDirectory(possibleParent) ||
                     possibleParent.equals(file)) {
                 // this cannot possibly be the parent
                 return false;
@@ -343,7 +344,7 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
             }
             _currFile = fileItem.file;
             File sel = new File(_path, _currFile);
-            if (sel.isDirectory()) {
+            if (FileIOProviderFactory.isDirectory(sel)) {
                 if (sel.canRead()) {
                     _pathDirsList.add(_currFile);
                     _path = new File(sel + "");

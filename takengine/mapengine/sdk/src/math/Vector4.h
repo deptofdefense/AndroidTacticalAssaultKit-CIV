@@ -14,46 +14,69 @@ namespace TAK
         namespace Math 
         {
             template<class T>
-            Util::TAKErr Vector2_add(Point2<T> *value, const Point2<T> &a, const Point2<T> &b) NOTHROWS
+            Point2<T> Vector2_add(const Point2<T> &a, const Point2<T> &b) NOTHROWS
             {
                 const T x = a.x + b.x;
                 const T y = a.y + b.y;
                 const T z = a.z + b.z;
-                value->x = x;
-                value->y = y;
-                value->z = z;
+                return Point2<T>(x, y, z);
+
+            }
+            template<class T>
+            Util::TAKErr Vector2_add(Point2<T> *value, const Point2<T> &a, const Point2<T> &b) NOTHROWS
+            {
+                if (!value)
+                    return Util::TE_InvalidArg;
+                *value = Vector2_add(a, b);
                 return Util::TE_Ok;
 
             }
             template<class T>
-            Util::TAKErr Vector2_subtract(Point2<T> *value, const Point2<T> &a, const Point2<T> &b) NOTHROWS
+            Point2<T> Vector2_subtract(const Point2<T> &a, const Point2<T> &b) NOTHROWS
             {
                 const T x = a.x - b.x;
                 const T y = a.y - b.y;
                 const T z = a.z - b.z;
-                value->x = x;
-                value->y = y;
-                value->z = z;
+                return Point2<T>(x, y, z);
+            }
+            template<class T>
+            Util::TAKErr Vector2_subtract(Point2<T> *value, const Point2<T> &a, const Point2<T> &b) NOTHROWS
+            {
+                if (!value)
+                    return Util::TE_InvalidArg;
+                *value = Vector2_subtract(a, b);
                 return Util::TE_Ok;
             }
             template<class T>
-            Util::TAKErr Vector2_multiply(Point2<T> *value, const Point2<T> &src, const T v) NOTHROWS
+            Point2<T> Vector2_multiply(const Point2<T> &src, const T v) NOTHROWS
             {
                 const T x = src.x * v;
                 const T y = src.y * v;
                 const T z = src.z * v;
-                value->x = x;
-                value->y = y;
-                value->z = z;
+                return Point2<T>(x, y, z);
+            }
+            template<class T>
+            Util::TAKErr Vector2_multiply(Point2<T> *value, const Point2<T> &src, const T v) NOTHROWS
+            {
+                if (!value)
+                    return Util::TE_InvalidArg;
+                *value = Vector2_multiply(src, v);
                 return Util::TE_Ok;
             }
             template<class T>
-            Util::TAKErr Vector2_dot(T *value, const Point2<T> &a, const Point2<T> &b) NOTHROWS
+            T Vector2_dot(const Point2<T> &a, const Point2<T> &b) NOTHROWS
             {
                 const T x = a.x * b.x;
                 const T y = a.y * b.y;
                 const T z = a.z * b.z;
-                *value = x + y + z;
+                return x + y + z;
+            }
+            template<class T>
+            Util::TAKErr Vector2_dot(T *value, const Point2<T> &a, const Point2<T> &b) NOTHROWS
+            {
+                if (!value)
+                    return Util::TE_InvalidArg;
+                *value = Vector2_dot(a, b);
                 return Util::TE_Ok;
             }
             template<class T>
@@ -74,20 +97,32 @@ namespace TAK
                 return code;
             }
             template<class T>
-            Util::TAKErr Vector2_cross(Point2<T> *value, const Point2<T> &a, const Point2<T> &b) NOTHROWS
+            Point2<T> Vector2_cross(const Point2<T> &a, const Point2<T> &b) NOTHROWS
             {
                 const double x = a.y*b.z - a.z*b.y;
                 const double y = a.z*b.x - a.x*b.z;
                 const double z = a.x*b.y - a.y*b.x;
-                value->x = x;
-                value->y = y;
-                value->z = z;
+                return Point2<T>(x, y, z);
+            }
+            template<class T>
+            Util::TAKErr Vector2_cross(Point2<T> *value, const Point2<T> &a, const Point2<T> &b) NOTHROWS
+            {
+                if (!value)
+                    return Util::TE_InvalidArg;
+                *value = Vector2_cross(a, b);
                 return Util::TE_Ok;
+            }
+            template<class T>
+            double Vector2_length(const Point2<T> &src) NOTHROWS
+            {
+                return sqrt(src.x*src.x + src.y*src.y + src.z*src.z);
             }
             template<class T>
             Util::TAKErr Vector2_length(double *value, const Point2<T> &src) NOTHROWS
             {
-                *value = sqrt(src.x*src.x + src.y*src.y + src.z*src.z);
+                if (!value)
+                    return Util::TE_InvalidArg;
+                *value = Vector2_length(src);
                 return Util::TE_Ok;
             }
             template<class T>

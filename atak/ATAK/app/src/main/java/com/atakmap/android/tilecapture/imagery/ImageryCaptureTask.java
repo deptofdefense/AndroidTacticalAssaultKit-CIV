@@ -12,6 +12,7 @@ import com.atakmap.android.tilecapture.TileCaptureBounds;
 import com.atakmap.android.tilecapture.TileCaptureParams;
 import com.atakmap.android.tilecapture.TileCaptureTask;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.lang.Unsafe;
 
@@ -82,7 +83,7 @@ public class ImageryCaptureTask extends TileCaptureTask {
         if (dir == null)
             return false;
 
-        if (!dir.exists() && !dir.mkdirs())
+        if (!FileIOProviderFactory.exists(dir) && !FileIOProviderFactory.mkdirs(dir))
             return false;
 
         _outFile = new File(dir, "." + (new CoordinatedTime())

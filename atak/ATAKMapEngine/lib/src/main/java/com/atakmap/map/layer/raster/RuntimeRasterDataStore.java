@@ -645,10 +645,10 @@ public class RuntimeRasterDataStore extends AbstractRasterDataStore {
                                                mbb2.maxY);
             }
             if(!Double.isNaN(this.maxGsd)) {
-                retval &= arg.getMinResolution(imageryType) > this.maxGsd;
+                retval &= arg.getMaxResolution(imageryType) <= this.maxGsd;
             }
             if(!Double.isNaN(this.minGsd)) {
-                retval &= arg.getMaxResolution(imageryType) > this.minGsd;
+                retval &= arg.getMinResolution(imageryType) >= this.minGsd;
             }
             
             return retval;

@@ -1,7 +1,5 @@
 package com.atakmap.map.layer.model;
 
-import android.util.Property;
-
 public final class Material {
 
     /**

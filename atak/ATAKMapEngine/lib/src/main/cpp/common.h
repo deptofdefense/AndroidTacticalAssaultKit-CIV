@@ -125,6 +125,16 @@ jclass ATAKMapEngineJNI_findClass(JNIEnv *env, const char *name) NOTHROWS;
 JavaVM *ATAKMapEngineJNI_getJVM();
 bool ATAKMapEngineJNI_equals(JNIEnv *env, jobject a, jobject b) NOTHROWS;
 
+/**
+ * Registers the specified shutdown hook.
+ */
+void ATAKMapEngineJNI_registerShutdownHook(void(*hook)(JNIEnv &, void *) NOTHROWS, std::unique_ptr<void, void(*)(const void *)> &&opaque) NOTHROWS;
+/**
+ * Unregisters a previously registered. The registered hook associated with
+ * the specified opaque context is returned.
+ */
+void ATAKMapEngineJNI_unregisterShutdownHook(std::unique_ptr<void, void(*)(const void *)> &hook, const void *opaque) NOTHROWS;
+
 TAK::Engine::Util::TAKErr ProgressCallback_dispatchProgress(jobject jcallback, jint value) NOTHROWS;
 TAK::Engine::Util::TAKErr ProgressCallback_dispatchError(jobject jcallback, const char *value) NOTHROWS;
 

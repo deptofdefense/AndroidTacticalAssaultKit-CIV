@@ -5,6 +5,7 @@ import android.opengl.GLSurfaceView;
 
 import com.atakmap.android.maps.graphics.GLCapture;
 import com.atakmap.android.tilecapture.TileCapture;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.opengl.GLES20FixedPipeline;
 
@@ -18,6 +19,7 @@ import java.nio.ByteOrder;
  * better performance and results
  */
 @Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class GLImageCapture extends GLCapture {
 
     private GLCapturableMapView imcap;

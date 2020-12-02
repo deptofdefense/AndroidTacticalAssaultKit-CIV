@@ -533,12 +533,12 @@ public class DrawingToolsMapReceiver extends DropDownReceiver implements
             _genDetailsView = null;
         }
 
+        // save/send the changes that we make to the item
         if (persist && _item != null)
             _item.persist(getMapView().getMapEventDispatcher(), null,
-                    this.getClass()); // save/send the changes that we
+                    this.getClass());
 
         prevUID = null;
-        // make to the item
         _item = null;
         if (_showToolbar) {
             Intent intent = new Intent();

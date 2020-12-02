@@ -4,11 +4,8 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Map;
 
-import android.database.MatrixCursor;
-
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.database.CursorIface;
-import com.atakmap.database.android.AndroidCursorAdapter;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.raster.ImageDatasetDescriptor;
 import com.atakmap.map.layer.raster.gdal.GdalLayerInfo;
@@ -16,8 +13,6 @@ import com.atakmap.map.layer.raster.mosaic.MosaicDatabase2;
 import com.atakmap.math.Rectangle;
 
 final class ImageDatasetDescriptorMosaicDatabase implements MosaicDatabase2 {
-
-    final static CursorIface NO_COLUMNS = new AndroidCursorAdapter(new MatrixCursor(new String[] {}));
 
     final ImageDatasetDescriptor desc;
     final String type;

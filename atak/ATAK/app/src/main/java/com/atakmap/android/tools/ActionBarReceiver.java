@@ -281,6 +281,7 @@ public class ActionBarReceiver extends BroadcastReceiver {
         for (String string : customActionBarIntents) {
             if (string.equals(intent)) {
                 add = false;
+                break;
             }
         }
         if (add) {

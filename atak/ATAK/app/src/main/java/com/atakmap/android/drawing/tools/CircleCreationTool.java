@@ -154,6 +154,7 @@ public abstract class CircleCreationTool extends Tool
             _tempCenter.setVisible(true);
             _tempCenter.setMetaInteger("color", getDefaultColor());
             _tempCenter.setMetaBoolean("nevercot", true);
+            _tempCenter.setMetaString("entry", "user");
             _mapGroup.addItem(_tempCenter);
             _circle.setCenterPoint(point);
         }

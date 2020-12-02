@@ -117,14 +117,9 @@ namespace atakmap {
         protected : // member functions
             //Deprecated now, use the version that includes the tilt
             void updateView(const GeoPoint *center, const double scale, const double rotation, const bool animate);
-#ifdef __ANDROID__
         public :
-#endif
             void updateView(const GeoPoint &c, const double mapScale, const double rot, const double ptilt, const double focusAlt, const double focusAltTerminalSlant, const bool anim);
-#ifdef __ANDROID__
         protected :
-#endif
-
             void dispatchMapResized();
 
             void dispatchMapMoved();
@@ -180,9 +175,9 @@ namespace atakmap {
             static float DENSITY;
         }; // end class AtakMapView
 
-        double AtakMapView_getFullEquitorialExtentPixels(const double dpi) NOTHROWS;
-        double AtakMapView_getMapResolution(const double dpi, const double scale) NOTHROWS;
-        double AtakMapView_getMapScale(const double dpi, const double resolution) NOTHROWS;
+        ENGINE_API double AtakMapView_getFullEquitorialExtentPixels(const double dpi) NOTHROWS;
+        ENGINE_API double AtakMapView_getMapResolution(const double dpi, const double scale) NOTHROWS;
+        ENGINE_API double AtakMapView_getMapScale(const double dpi, const double resolution) NOTHROWS;
 
         struct ENGINE_API AtakMapView::MapLayersChangedListener
         {

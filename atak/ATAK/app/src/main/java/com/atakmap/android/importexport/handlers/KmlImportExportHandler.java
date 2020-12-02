@@ -15,6 +15,7 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.ByteArrayInputStream;
@@ -186,15 +187,15 @@ public class KmlImportExportHandler {
 
         String[] theList = null;
         if (kmlFolder != null) {
-            if (!kmlFolder.exists()) {
-                if (!kmlFolder.mkdir()) {
+            if (!FileIOProviderFactory.exists(kmlFolder)) {
+                if (!FileIOProviderFactory.mkdir(kmlFolder)) {
                     Log.d(TAG,
                             " Failed to make dir at "
                                     + kmlFolder.getAbsolutePath());
                 }
             }
-            if (kmlFolder.exists() && mExternalStorageAvailable) {
-                theList = kmlFolder.list(new FilenameFilter() {
+            if (FileIOProviderFactory.exists(kmlFolder) && mExternalStorageAvailable) {
+                theList = FileIOProviderFactory.list(kmlFolder, new FilenameFilter() {
 
                     @Override
                     public boolean accept(File dir, String filename) {

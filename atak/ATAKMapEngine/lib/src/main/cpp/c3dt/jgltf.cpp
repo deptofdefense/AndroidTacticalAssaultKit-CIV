@@ -2,7 +2,9 @@
 
 #include <memory>
 
+#ifdef __ANDROID__
 #include <android/log.h>
+#endif
 
 #include <thread/Lock.h>
 #include <thread/Mutex.h>
@@ -84,7 +86,9 @@ JNIEXPORT jlong JNICALL Java_com_atakmap_map_formats_c3dt_GLTF_createFromBytes
         baseDir = cbaseDir;
     }
 
-    GLTF gltf { .v1 = nullptr, .v2 = nullptr };
+    GLTF gltf;
+    gltf.v1 = nullptr;
+    gltf.v2 = nullptr;
 
     JNIGLTFBitmapLoader bitmapLoader(*env, mhandler);
 
@@ -158,7 +162,9 @@ JNIEXPORT jlong JNICALL Java_com_atakmap_map_formats_c3dt_GLTF_bindModel
     debug_trace(Java_com_atakmap_map_formats_c3dt_GLTF_bindModel);
     GLTF *gltf = (GLTF *)(intptr_t)ptr;
     if(!gltf) {
+#ifdef __ANDROID__
         __android_log_print(ANDROID_LOG_ERROR, "Cesium3DTiles", "Cannot bind NULL model");
+#endif
         return 0LL;
     }
 

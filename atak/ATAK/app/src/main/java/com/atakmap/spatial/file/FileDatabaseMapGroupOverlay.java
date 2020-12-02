@@ -13,6 +13,7 @@ public class FileDatabaseMapGroupOverlay extends DefaultMapGroupOverlay {
 
     private static final String TAG = "FileDatabaseMapGroupOverlay";
     private final FileDatabase database;
+    private FileDatabaseMapGroupHierarchyListItem listModel;
 
     public FileDatabaseMapGroupOverlay(MapView mapView, MapGroup group,
             FileDatabase database) {
@@ -24,14 +25,14 @@ public class FileDatabaseMapGroupOverlay extends DefaultMapGroupOverlay {
     @Override
     public HierarchyListItem getListModel(BaseAdapter callback, long actions,
             HierarchyListFilter filter) {
-        if (!FileDatabaseMapGroupHierarchyListItem
-                .addToObjList(this.rootGroup)) {
+        if (!FileDatabaseMapGroupHierarchyListItem.addToObjList(this.rootGroup))
             return null;
-        }
 
-        //top level database file is exportable
-        return new FileDatabaseMapGroupHierarchyListItem(null, this.mapView,
-                this.rootGroup, this.filter, filter,
-                callback, database, true);
+        if (listModel == null || listModel.isDisposed())
+            listModel = new FileDatabaseMapGroupHierarchyListItem(null,
+                    this.mapView, this.rootGroup, this.filter, filter,
+                    callback, database, true);
+
+        return listModel;
     }
 }

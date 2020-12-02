@@ -16,7 +16,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 
 import com.atakmap.android.maps.MapTextFormat;
-import com.atakmap.coremap.log.Log;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -37,11 +37,10 @@ import com.atakmap.map.layer.raster.osm.OSMDroidMosaicDatabase;
 import com.atakmap.map.opengl.GLMapRenderer;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.map.projection.ECEFProjection;
 import com.atakmap.map.projection.EquirectangularMapProjection;
-import com.atakmap.map.projection.MapProjectionDisplayModel;
 import com.atakmap.map.projection.Projection;
-import com.atakmap.map.projection.ProjectionFactory;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 import com.atakmap.opengl.GLSLUtil;
@@ -51,12 +50,8 @@ import com.atakmap.util.ReadWriteLock;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -141,7 +136,11 @@ public class AtakMapView extends ViewGroup {
      * Display density factor relative to 240DPI. For example, 120DPI would have
      * a <code>DENSITY</code> value of 0.5f and 480DPI would have a
      * <code>DENSITY</code> value of 2.0f.
+     *
+     * @deprecated Use {@link #getDisplayDpi()}<code>*240f</code>
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static float DENSITY = 1f; // Used by map items to convert their SII-era sizes to scale
                                       // with modern devices.
 
@@ -258,6 +257,8 @@ public class AtakMapView extends ViewGroup {
     /** 
        @deprecated this does not support rotation
     */
+    @Deprecated
+    @DeprecatedApi(since = "4.1")
     public GeoBounds getBounds() {
         GeoPoint sw = this.inverse(new PointF(0, getHeight())).get();
         GeoPoint ne = this.inverse(new PointF(getWidth(), 0)).get();
@@ -278,7 +279,7 @@ public class AtakMapView extends ViewGroup {
                 .getSystemService(Context.WINDOW_SERVICE);
         windowManager.getDefaultDisplay().getMetrics(displayMetrics);
 
-        final double displayDpi = Math.sqrt(displayMetrics.xdpi*displayMetrics.ydpi);
+        final double displayDpi = Math.min(Math.sqrt(displayMetrics.xdpi*displayMetrics.ydpi), displayMetrics.densityDpi);
         this.fullEquitorialExtentPixels = Globe.getFullEquitorialExtentPixels(displayDpi);
 
         //flagged during scan - can reenable if needed for testing
@@ -321,6 +322,8 @@ public class AtakMapView extends ViewGroup {
         // Things don't scale down very well, so let's keep 1 as the minimum.
         if (DENSITY < 1.0f)
             DENSITY = 1.0f;
+
+        GLRenderGlobals.setRelativeScaling(DENSITY);
 
         preferenceManager = PreferenceManager.getDefaultSharedPreferences(getContext());
 
@@ -404,7 +407,11 @@ public class AtakMapView extends ViewGroup {
         return this.globe;
     }
 
-    /** @deprecated use {@link #updateView(double, double, double, double, double, boolean)} */
+    /**
+     * @deprecated use {@link #updateView(double, double, double, double, double, boolean)}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public void updateView (double latitude,
                              double longitude,
                              double scale,
@@ -1286,6 +1293,7 @@ public class AtakMapView extends ViewGroup {
         this.pause();
         try {
             DENSITY = d;
+            GLRenderGlobals.setRelativeScaling(d);
             this.glSurface.updateDisplayDensity();
         } finally {
             this.resume();
@@ -1295,7 +1303,10 @@ public class AtakMapView extends ViewGroup {
     /**
      * @deprecated place holder pending better API
      */
-    public GeoPoint getRenderElevationAdjustedPoint(final GeoPoint point) {
+    @Deprecated
+    @DeprecatedApi(since = "4.1")
+    public GeoPoint getRenderElevationAdjustedPoint(final GeoPoint point,
+            final double elevOffset) {
         if (point == null || this.getMapTilt() == 0d)
             return point;
 
@@ -1307,12 +1318,23 @@ public class AtakMapView extends ViewGroup {
         if (!point.isAltitudeValid())
             alt = glview
                     .getElevation(point.getLatitude(), point.getLongitude());
-        final double el = GeoPoint.isAltitudeValid(alt) ? alt : 0d;
+        double el = GeoPoint.isAltitudeValid(alt) ? alt : 0d;
+        if (!Double.isNaN(elevOffset))
+            el += elevOffset;
         return new GeoPoint(
                 point.getLatitude(),
                 point.getLongitude(),
                 (el + GLMapView.elevationOffset)
                         * this.getElevationExaggerationFactor());
+    }
+
+    /**
+     * @deprecated place holder pending better API
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.1")
+    public GeoPoint getRenderElevationAdjustedPoint(final GeoPoint point) {
+        return getRenderElevationAdjustedPoint(point, 0d);
     }
 
     /**************************************************************************/

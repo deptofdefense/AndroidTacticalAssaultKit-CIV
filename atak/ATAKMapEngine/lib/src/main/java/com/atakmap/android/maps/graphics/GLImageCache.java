@@ -247,10 +247,9 @@ public class GLImageCache {
         }
 
         /**
-         * @param bitmap
-         * @return
+         * @param bitmap the bitmap to cache
          */
-        protected abstract void updateImpl(Bitmap bitmap);
+        protected abstract void updateImpl(final Bitmap bitmap);
 
         private void _update(boolean resolve) {
             if (_pending == null && resolve) {
@@ -501,9 +500,9 @@ public class GLImageCache {
     }
 
     public static final String TAG = "GLImageCache";
-    private HashMap<String, Entry> _atlasItems = new HashMap<String, Entry>();
-    private HashMap<String, Entry> _textureItems = new HashMap<String, Entry>();
-    private List<Entry> _prefetchCache = new LinkedList<Entry>();
+    private HashMap<String, Entry> _atlasItems = new HashMap<>();
+    private HashMap<String, Entry> _textureItems = new HashMap<>();
+    private List<Entry> _prefetchCache = new LinkedList<>();
 
     private GLBitmapLoader _bitmapLoader;
     private GLTextureAtlas _atlas;

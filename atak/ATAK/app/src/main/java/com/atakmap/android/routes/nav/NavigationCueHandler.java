@@ -100,7 +100,7 @@ public class NavigationCueHandler extends RouteDetailHandler {
                 // Clean the raw fields up
                 NavigationCue.TriggerMode triggerMode = NavigationCue.TriggerMode
                         .fromValue(rawTriggerMode.charAt(0));
-                int triggerValue = Integer.valueOf(rawTriggerValue);
+                int triggerValue = Integer.parseInt(rawTriggerValue);
                 //Log.d(TAG, "shb: " + " " + voiceCue + " " + rawTriggerMode + " " + rawTriggerValue);
                 cue.addCue(triggerMode, triggerValue);
             }

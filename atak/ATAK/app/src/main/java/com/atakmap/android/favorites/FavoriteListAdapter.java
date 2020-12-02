@@ -23,6 +23,7 @@ import android.widget.TextView;
 
 import com.atakmap.android.missionpackage.api.MissionPackageApi;
 import com.atakmap.app.R;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
@@ -305,10 +306,10 @@ public class FavoriteListAdapter extends BaseAdapter {
         try {
             File f = new File(
                     FileSystemUtils.sanitizeWithSpacesAndSlashes(file));
-            if (f.exists()) {
+            if (FileIOProviderFactory.exists(f)) {
                 reader = new BufferedReader(
                         isr = new InputStreamReader(
-                                fis = new FileInputStream(f),
+                                fis = FileIOProviderFactory.getInputStream(f),
                                 FileSystemUtils.UTF8_CHARSET));
                 String line;
                 int version = 0;
@@ -485,11 +486,11 @@ public class FavoriteListAdapter extends BaseAdapter {
         BufferedWriter bufferedWriter = null;
         try {
             File parent = file.getParentFile();
-            if (parent != null && !parent.exists() && !parent.mkdirs()) {
+            if (parent != null && !FileIOProviderFactory.exists(parent)&& !FileIOProviderFactory.mkdirs(parent)) {
                 Log.w(TAG, "Failed to create dirs: " + file.getAbsolutePath());
             }
 
-            fos = new FileWriter(file);
+            fos = FileIOProviderFactory.getFileWriter(file);
             bufferedWriter = new BufferedWriter(fos);
 
             bufferedWriter.write(FAVS + "\n");

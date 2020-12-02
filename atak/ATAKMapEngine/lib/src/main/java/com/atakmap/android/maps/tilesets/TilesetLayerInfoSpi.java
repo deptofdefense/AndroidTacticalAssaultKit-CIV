@@ -8,6 +8,7 @@ import java.util.Set;
 
 import android.database.sqlite.SQLiteException;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.raster.AbstractDatasetDescriptorSpi;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
@@ -56,7 +57,7 @@ public class TilesetLayerInfoSpi extends AbstractDatasetDescriptorSpi {
 
     @Override
     public boolean probe(File file, InteractiveServiceProvider.Callback callback) {
-        if(file.isDirectory())
+        if(FileIOProviderFactory.isDirectory(file))
             return false;
 
         // Since tileset files are either an XML or database,

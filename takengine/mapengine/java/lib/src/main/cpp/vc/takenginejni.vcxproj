@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>14.0</VCProjectVersion>
+    <ProjectGuid>{569DE0A6-A114-4937-AF4D-18664F7CE160}</ProjectGuid>
+    <RootNamespace>takenginejni</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <TargetExt>.dll</TargetExt>
+    <IntDir>intermediates\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <TargetExt>.dll</TargetExt>
+    <IntDir>intermediates\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetExt>.dll</TargetExt>
+    <IntDir>intermediates\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetExt>.dll</TargetExt>
+    <IntDir>intermediates\$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\..\sdk\src;$(ProjectDir)..\..\..\..\..\..\..\thirdparty;$(ProjectDir)..\..\..\..\..\..\gl\khronos\EGL\api;$(ProjectDir)..\..\..\..\..\..\gl\khronos\OpenGL\api;$(ProjectDir)..\..\..\..\..\..\..\..\pgsc-utils\src;$(ProjectDir)..\..\..\..\..\..\cpp-cli\thirdparty\ttp-prebuilt\include;$(ProjectDir)..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp;$(JAVA32_HOME)\include;$(JAVA32_HOME)\include\win32</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\....\..\..\gl\stub\vc\$(Configuration)\$(Platform);$(ProjectDir)..\..\..\..\..\..\cpp-cli\thirdparty\ttp-prebuilt\lib;$(JAVA32_HOME)\lib;$(SolutionDir)Libraries\MapEngine\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gdal_i.lib;iconv.dll.lib;proj_i.lib;geos_c_i.lib;libxml2.lib;spatialite.lib;sqlite3_i.lib;takengine.lib;libGLESv2.lib;jvm.lib;zlibwapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy /y $(ProjectDir)..\..\..\..\..\..\cpp-cli\thirdparty\ttp-prebuilt\lib\*.dll $(ProjectDir)$(Platform)\$(Configuration)\
+
+xcopy /y $(ProjectDir)$(Platform)\$(Configuration)\*.dll $(ProjectDir)..\..\..\..\build\jniLibs\win32\
+xcopy /y $(ProjectDir)x86\$(Configuration)\*.dll $(ProjectDir)..\..\..\..\build\jniLibs\win32\</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\..\sdk\src;$(ProjectDir)..\..\..\..\..\..\..\thirdparty;$(ProjectDir)..\..\..\..\..\..\gl\khronos\EGL\api;$(ProjectDir)..\..\..\..\..\..\gl\khronos\OpenGL\api;$(ProjectDir)..\..\..\..\..\..\..\..\pgsc-utils\src;$(ProjectDir)..\..\..\..\..\..\cpp-cli\thirdparty\ttp-prebuilt\include;$(ProjectDir)..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp;$(JAVA64_HOME)\include;$(JAVA64_HOME)\include\win32</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\..\..\..\gl\stub\vc\$(Configuration)\$(Platform);$(ProjectDir)..\..\..\..\..\..\cpp-cli\thirdparty\ttp-prebuilt-win64\lib;$(JAVA64_HOME)\lib;$(SolutionDir)Libraries\MapEngine\$(Configuration)\$(Platform)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gdal_i.lib;iconv.dll.lib;proj_i.lib;geos_c_i.lib;libxml2.lib;spatialite.lib;sqlite3_i.lib;takengine.lib;libGLESv2.lib;jvm.lib;zlibwapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy /y $(ProjectDir)..\..\..\..\..\..\cpp-cli\thirdparty\ttp-prebuilt-win64\lib\*.dll $(ProjectDir)$(Platform)\$(Configuration)\
+
+xcopy /y $(ProjectDir)$(Platform)\$(Configuration)\*.dll $(ProjectDir)..\..\..\..\build\jniLibs\win64\</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\..\sdk\src;$(ProjectDir)..\..\..\..\..\..\..\thirdparty;$(ProjectDir)..\..\..\..\..\..\gl\khronos\EGL\api;$(ProjectDir)..\..\..\..\..\..\gl\khronos\OpenGL\api;$(ProjectDir)..\..\..\..\..\..\..\..\pgsc-utils\src;$(ProjectDir)..\..\..\..\..\..\cpp-cli\thirdparty\ttp-prebuilt\include;$(ProjectDir)..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp;$(JAVA32_HOME)\include;$(JAVA32_HOME)\include\win32</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\....\..\..\gl\stub\vc\$(Configuration)\$(Platform);$(ProjectDir)..\..\..\..\..\..\cpp-cli\thirdparty\ttp-prebuilt\lib;$(JAVA32_HOME)\lib;$(SolutionDir)Libraries\MapEngine\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gdal_i.lib;iconv.dll.lib;proj_i.lib;geos_c_i.lib;libxml2.lib;spatialite.lib;sqlite3_i.lib;takengine.lib;libGLESv2.lib;jvm.lib;zlibwapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy /y $(ProjectDir)..\..\..\..\..\..\cpp-cli\thirdparty\ttp-prebuilt\lib\*.dll $(ProjectDir)$(Platform)\$(Configuration)\
+
+xcopy /y $(ProjectDir)$(Platform)\$(Configuration)\*.dll $(ProjectDir)..\..\..\..\build\jniLibs\win32\
+xcopy /y $(ProjectDir)x86\$(Configuration)\*.dll $(ProjectDir)..\..\..\..\build\jniLibs\win32\</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\..\..\..\..\..\sdk\src;$(ProjectDir)..\..\..\..\..\..\..\thirdparty;$(ProjectDir)..\..\..\..\..\..\gl\khronos\EGL\api;$(ProjectDir)..\..\..\..\..\..\gl\khronos\OpenGL\api;$(ProjectDir)..\..\..\..\..\..\..\..\pgsc-utils\src;$(ProjectDir)..\..\..\..\..\..\cpp-cli\thirdparty\ttp-prebuilt\include;$(ProjectDir)..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp;$(JAVA64_HOME)\include;$(JAVA64_HOME)\include\win32</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_USE_MATH_DEFINES;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\gl\stub\vc\$(Configuration)\$(Platform);$(JAVA64_HOME)\lib;$(SolutionDir)Libraries\MapEngine\$(Configuration)\$(Platform)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gdal_i.lib;iconv.dll.lib;proj_i.lib;geos_c_i.lib;libxml2.lib;spatialite.lib;sqlite3_i.lib;takengine.lib;libGLESv2.lib;jvm.lib;zlibwapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy /y $(ProjectDir)..\..\..\..\..\..\cpp-cli\thirdparty\ttp-prebuilt-win64\lib\*.dll $(ProjectDir)$(Platform)\$(Configuration)\
+
+xcopy /y $(ProjectDir)$(Platform)\$(Configuration)\*.dll $(ProjectDir)..\..\..\..\build\jniLibs\win64\</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\atakjni.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\c3dt\GLTF.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\c3dt\GLTFRenderer.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\c3dt\GLTFRenderer_v1.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\c3dt\GLTFRenderer_v2.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\c3dt\GLTFv1.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\c3dt\GLTFv2.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\c3dt\jgltf.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\c3dt\shaders.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\c3dt\tiny_gltf.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\c3dt\tiny_gltf_loader.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\common.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\core\Interop.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\interop\core\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\interop\core\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\interop\core\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\interop\core\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\core\ManagedLayer.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\core\ManagedProjection.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\core\ManagedRenderContext.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\core\ManagedVisibilityListener.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\db\Interop.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\interop\db\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\interop\db\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\interop\db\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\interop\db\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\elevation\Interop.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\interop\elevation\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\interop\elevation\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\interop\elevation\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\interop\elevation\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\elevation\ManagedElevationChunk.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\elevation\ManagedElevationSource.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\feature\Interop.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\interop\feature\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\interop\feature\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\interop\feature\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\interop\feature\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\feature\ManagedFeatureDataSource2.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\java\JNICollection.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\java\JNILocalRef.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\java\JNIPair.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\java\JNIPrimitive.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\java\JNIRunnable.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\JNIByteArray.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\JNIDoubleArray.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\JNIFloatArray.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\JNIIntArray.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\JNILongArray.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\JNINotifyCallback.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\JNIStringUTF.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\math\Interop.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\interop\math\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\interop\math\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\interop\math\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\interop\math\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\math\ManagedGeometryModel.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\model\Interop.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)\interop\model\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)\interop\model\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)\interop\model\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)\interop\model\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\Pointer.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\renderer\core\Interop.cpp">
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)interop\renderer\core\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)interop\renderer\core\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)interop\renderer\core\</ObjectFileName>
+      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)interop\renderer\core\</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\renderer\core\ManagedGLLayer2.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\renderer\core\ManagedGLLayerSpi2.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\renderer\core\ManagedGLMapRenderable2.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jattributeset.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jconfigoptions.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jdatabaseimpl.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jdatatype.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jdrginfo.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jegm96.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jelevationmanager.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jelevationsourcemanager.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jelmgrterrainrenderservice.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jfeature.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jgdallibrary.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jgeocalculations.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jgeomagneticfield.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jgeometry.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jgeometryfactory.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jgllayerfactory.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jgllinebatch.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jglmapview.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jglninepatch.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jglobe.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jglquadtilenode2.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jglrenderbatch2.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jmapprojectiondisplaymodel.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jmapscenemodel.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jmatrix.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jmesh.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jmobacmapsourcefactory.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jmodelbuilder.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jmodels.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jnativeelevationchunk.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jnativeelevationsource.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jnativeelevationsourcecursor.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jnativefeaturecursor.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jnativefeaturedatasource.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jnativefeaturedatastore.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jnativefeaturesetcursor.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jnativefilecursor.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jnativegeometrymodel.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jnativegllayer3.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jnativegllayerspi2.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jnativeglmaprenderable2.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jnativelayer.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jnativemodel.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jnativeprojection.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jnativerunnable.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\josrutils.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jpersistentdatasourcefeaturedatastore2.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jpersistentrasterdatastore.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jprojectionfactory.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jqueryimpl.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jrendercontextinterop.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jskirt.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jstatementimpl.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jstyle.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jtessellate.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\junsafe.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jvertexdatalayout.cpp" />
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\ManagedModel.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\common.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\core\Interop.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\core\ManagedLayer.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\core\ManagedProjection.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\core\ManagedVisibilityListener.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\db\Interop.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\elevation\Interop.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\elevation\ManagedElevationChunk.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\elevation\ManagedElevationSource.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\feature\Interop.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\feature\ManagedFeatureDataSource2.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\ImplementationMarshalContext.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\InterfaceMarshalContext.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\java\JNICollection.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\java\JNILocalRef.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\java\JNIPair.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\java\JNIPrimitive.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\java\JNIRunnable.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\JNIByteArray.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\JNIDoubleArray.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\JNIFloatArray.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\JNIIntArray.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\JNILongArray.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\JNINotifyCallback.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\JNIPrimitiveArray.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\JNIStringUTF.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\math\Interop.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\math\ManagedGeometryModel.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\model\Interop.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\Pointer.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\renderer\core\Interop.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\renderer\core\ManagedGLLayer2.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\renderer\core\ManagedGLLayerSpi2.h" />
+    <ClInclude Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\renderer\ManagedRenderContext.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

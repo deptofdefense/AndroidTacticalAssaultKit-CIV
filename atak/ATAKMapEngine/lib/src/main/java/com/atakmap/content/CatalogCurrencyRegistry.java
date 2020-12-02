@@ -8,7 +8,7 @@ public final class CatalogCurrencyRegistry {
     private Map<String, CatalogCurrency> registeredInstances;
 
     public CatalogCurrencyRegistry() {
-        this.registeredInstances = new HashMap<String, CatalogCurrency>();
+        this.registeredInstances = new HashMap<>();
     }
 
     public synchronized void register(CatalogCurrency instance) {

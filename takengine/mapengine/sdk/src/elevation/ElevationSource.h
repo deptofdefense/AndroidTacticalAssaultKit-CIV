@@ -12,7 +12,7 @@ namespace TAK {
             class ENGINE_API ElevationSource
             {
             public:
-                class OnContentChangedListener
+                class ENGINE_API OnContentChangedListener
                 {
                 public:
                     virtual ~OnContentChangedListener() NOTHROWS = 0;
@@ -39,7 +39,7 @@ namespace TAK {
             ENGINE_API bool ElevationSource_leDesc(ElevationChunkCursor &a, ElevationChunkCursor &b) NOTHROWS;
             ENGINE_API bool ElevationSource_leAsc(ElevationChunkCursor &a, ElevationChunkCursor &b) NOTHROWS;
 
-            class ElevationSource::QueryParameters
+            class ENGINE_API ElevationSource::QueryParameters
             {
             public :
                 enum Order {

@@ -26,6 +26,7 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
@@ -58,7 +59,7 @@ public class AttachmentContent implements HashtagContent, GoTo, Delete,
     }
 
     private void refresh() {
-        long lastMod = _file.lastModified();
+        long lastMod = FileIOProviderFactory.lastModified(_file);
         if (lastMod == _lastMod)
             return;
 

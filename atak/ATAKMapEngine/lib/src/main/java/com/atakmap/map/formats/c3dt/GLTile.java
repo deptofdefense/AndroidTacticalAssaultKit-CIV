@@ -4,7 +4,6 @@ import android.graphics.Color;
 
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.io.ProtocolHandler;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.projection.ECEFProjection;
@@ -12,8 +11,6 @@ import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 import com.atakmap.math.Rectangle;
-
-import java.util.Date;
 
 final class GLTile implements ContentSource.OnContentChangedListener {
     final static long FAILED_CONTENT_RETRY_MILLIS = 5 /*mins*/ * 60 /*sec/min*/ * 1000 /*ms/sec*/;

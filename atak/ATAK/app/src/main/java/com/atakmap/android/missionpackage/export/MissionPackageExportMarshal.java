@@ -31,6 +31,7 @@ import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -151,7 +152,7 @@ public class MissionPackageExportMarshal extends ExportMarshal {
     }
 
     @Override
-    public Class getTargetClass() {
+    public Class<?> getTargetClass() {
         return MissionPackageExportWrapper.class;
     }
 
@@ -494,7 +495,7 @@ public class MissionPackageExportMarshal extends ExportMarshal {
                 name, path);
         File f = new File(FileSystemUtils
                 .sanitizeWithSpacesAndSlashes(manifest.getPath()));
-        if (f.exists())
+        if (FileIOProviderFactory.exists(f))
             return false;
         if (mapItemUIDArray.length > 0) {
             manifest.addMapItems(mapItemUIDArray);

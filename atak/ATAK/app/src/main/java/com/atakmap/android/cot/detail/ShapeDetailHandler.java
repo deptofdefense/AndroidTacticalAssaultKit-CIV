@@ -86,6 +86,7 @@ public class ShapeDetailHandler extends CotDetailHandler {
                 ell.setStyle(
                         Shape.STYLE_STROKE_MASK | Polyline.STYLE_CLOSED_MASK);
                 ell.setMetaString("ownerUID", event.getUID());
+                ell.setMetaBoolean("addToObjList", false);
             }
 
             double major = parseDouble(d.getAttribute("major"), 0.0);
@@ -145,6 +146,7 @@ public class ShapeDetailHandler extends CotDetailHandler {
         if (poly == null) {
             poly = new Polyline(UUID.randomUUID().toString());
             poly.setMetaString("ownerUID", event.getUID());
+            poly.setMetaBoolean("addToObjList", false);
         }
 
         int polyStyle = 0;

@@ -1,9 +1,7 @@
 
 package com.atakmap.android.bloodhound.ui;
 
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Handler;
@@ -11,6 +9,8 @@ import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.view.MotionEvent;
 import android.widget.Toast;
+
+import androidx.core.util.Consumer;
 
 import com.atakmap.android.bloodhound.BloodHoundTool;
 import com.atakmap.android.bloodhound.util.BloodHoundToolLink;
@@ -33,6 +33,8 @@ import com.atakmap.coremap.maps.assets.Icon;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * A button to press that toggles the bloodhound tool
@@ -51,7 +53,21 @@ public class BloodHoundRouteWidget extends MarkerIconWidget implements
     private RoutePlannerManager _routeManager;
     private List<Map.Entry<String, RoutePlannerInterface>> routePlanners = new ArrayList<>();
     private BloodHoundTool _bloodhoundTool;
+    private BloodHoundNavWidget _navWidget;
     private final SharedPreferences _prefs;
+
+    // Icon names
+    private final String selected;
+    private final String unselected;
+    private final String loading0;
+    private final String loading1;
+    private final String loading2;
+    private final String loading3;
+
+    private Timer timer;
+    private IconBlinkTimer blinkTimer;
+
+    private WidgetState widgetState = WidgetState.Disabled;
 
     /****************************** CONSTRUCTOR *************************/
     public BloodHoundRouteWidget(final MapView mapView,
@@ -82,99 +98,142 @@ public class BloodHoundRouteWidget extends MarkerIconWidget implements
         this.layoutWidget.setVisible(false);
         this.layoutWidget.setMargins(16f, 0f, 0f, 16f);
 
-        // Construct the widget
-        final String imageUri = "android.resource://"
+        // Construct the widget, initially unselected.
+        unselected = "android.resource://"
+                + _mapView.getContext().getPackageName() + "/"
+                + R.drawable.bloodhound_widget_route_disabled;
+
+        selected = "android.resource://"
                 + _mapView.getContext().getPackageName() + "/"
                 + R.drawable.bloodhound_widget_route;
+
+        loading0 = "android.resource://"
+                + _mapView.getContext().getPackageName() + "/"
+                + R.drawable.loading_dot_0;
+
+        loading1 = "android.resource://"
+                + _mapView.getContext().getPackageName() + "/"
+                + R.drawable.loading_dot_1;
+
+        loading2 = "android.resource://"
+                + _mapView.getContext().getPackageName() + "/"
+                + R.drawable.loading_dot_2;
+
+        loading3 = "android.resource://"
+                + _mapView.getContext().getPackageName() + "/"
+                + R.drawable.loading_dot_3;
+
+        timer = new Timer();
+        blinkTimer = new IconBlinkTimer();
 
         Icon.Builder builder = new Icon.Builder();
         builder.setAnchor(0, 0);
         builder.setColor(Icon.STATE_DEFAULT, Color.WHITE);
         builder.setSize(48, 48);
-        builder.setImageUri(Icon.STATE_DEFAULT, imageUri);
+        builder.setImageUri(Icon.STATE_DEFAULT, unselected);
         final Icon icon = builder.build();
 
         this.setIcon(icon);
         this.addOnClickListener(this);
+        this.addOnLongPressListener(this);
 
         this.layoutWidget.addWidget(this);
     }
 
+    public void setNavWidget(BloodHoundNavWidget widget) {
+        _navWidget = widget;
+    }
+
     public void stop() {
         this.layoutWidget.setVisible(false);
+        iconDisable();
     }
 
     @Override
     public void onMapWidgetClick(MapWidget widget, MotionEvent event) {
 
-        final boolean network = RouteMapReceiver.isNetworkAvailable();
+        final BloodHoundToolLink link = _bloodhoundTool.getlink();
 
-        routePlanners = new ArrayList<>();
-        for (Map.Entry<String, RoutePlannerInterface> k : _routeManager
-                .getRoutePlanners()) {
-            if (!k.getValue().isNetworkRequired() || network) {
-                routePlanners.add(k);
-            }
-        }
+        switch(widgetState) {
+            case Disabled: {
+                final boolean network = RouteMapReceiver.isNetworkAvailable();
 
-        // Get the names of pre-existing route planners.
-        final String[] plannerNames = new String[routePlanners.size()];
-        for (int i = 0; i < routePlanners.size(); i++) {
-            Map.Entry<String, RoutePlannerInterface> entry = routePlanners
-                    .get(i);
-            plannerNames[i] = entry.getValue().getDescriptiveName();
-        }
-
-        final BloodHoundToolLink listener = _bloodhoundTool.getlink();
-
-        if (listener.isLine()) {
-            if (routePlanners.size() != 0) {
-                // Prompt the user for their preferred route planner
-                new RouteConfigurationDialog(_context, _mapView, new RouteConfigurationDialog.Callback<RoutePlannerInterface>() {
-                    @Override
-                    public void accept(RoutePlannerInterface planner) {
-                        listener.setPlanner(planner);
-                        listener.toggleRoute();
+                routePlanners = new ArrayList<>();
+                for (Map.Entry<String, RoutePlannerInterface> k : _routeManager
+                        .getRoutePlanners()) {
+                    if (!k.getValue().isNetworkRequired() || network) {
+                        routePlanners.add(k);
                     }
-                }).show();
-                /*
-                AlertDialog.Builder plannerPicker = new AlertDialog.Builder(
-                        _context);
-                plannerPicker.setTitle(R.string.route_plan_select_planner);
-                plannerPicker.setItems(plannerNames,
-                        new DialogInterface.OnClickListener() {
+                }
+
+                // Get the names of pre-existing route planners.
+                final String[] plannerNames = new String[routePlanners.size()];
+                for (int i = 0; i < routePlanners.size(); i++) {
+                    Map.Entry<String, RoutePlannerInterface> entry = routePlanners
+                            .get(i);
+                    plannerNames[i] = entry.getValue().getDescriptiveName();
+                }
+
+                if (routePlanners.size() != 0) {
+                    // Prompt the user for their preferred route planner
+                    new RouteConfigurationDialog(_context, _mapView, new RouteConfigurationDialog.Callback<RoutePlannerInterface>() {
                             @Override
-                            public void onClick(DialogInterface dialog,
-                                    final int which) {
-
-
-
-                                Log.d(TAG,
-                                        "Planner \""
-                                                + planner.getDescriptiveName()
-                                                + "\" was selected");
+                            public void accept(RoutePlannerInterface planner) {
+                                startIconLoading();
+                                link.setPlanner(planner);
+                                link.toggleRoute(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        iconEnable();
+                                        if(_mapView.getSelfMarker() == _bloodhoundTool.getStartItem()) {
+                                            _navWidget.enableWidget();
+                                        } else {
+                                            _navWidget.disableWidget();
+                                        }
+                                    }
+                                }, new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        iconDisable();
+                                        _navWidget.disableWidget();
+                                    }
+                                }, new Consumer<Exception>() {
+                                    @Override
+                                    public void accept(Exception e) {
+                                        iconDisable();
+                                        _navWidget.disableWidget();
+                                    }
+                                });
                             }
-                        });
-                plannerPicker.show();
-               */
-            } else {
-                new Handler(Looper.getMainLooper()).post(
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(_context,
-                                        R.string.bloodhound_no_planners,
-                                        Toast.LENGTH_SHORT).show();
-                            }
-                        });
+                        }).show();
+                } else {
+                    new Handler(Looper.getMainLooper()).post(
+                                new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(_context,
+                                                R.string.bloodhound_no_planners,
+                                                Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                }
+                break;
             }
-        } else {
-            listener.toggleRoute();
+            case Loading:
+            case Enabled: {
+                link.toggleRoute();
+                _navWidget.disableWidget();
+                iconDisable();
+                break;
+            }
         }
     }
 
     @Override
     public void onMapWidgetLongPress(MapWidget widget) {
+        // TODO: Replace with resource
+        Toast.makeText(_mapView.getContext(), "Toggle route mode",
+                Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -186,5 +245,87 @@ public class BloodHoundRouteWidget extends MarkerIconWidget implements
     /****************************** INHERITED METHODS *************************/
 
     /****************************** PRIVATE METHODS *************************/
+
+    private void startIconLoading() {
+        widgetState = WidgetState.Loading;
+
+        timer = new Timer();
+        blinkTimer = new IconBlinkTimer();
+        timer.schedule(blinkTimer, 300, 300);
+    }
+
+    public boolean isEnabled() {
+        return widgetState.equals(WidgetState.Enabled);
+    }
+
+    private void iconEnable() {
+        if(widgetState.equals(WidgetState.Loading)) {
+            try {
+                if (timer != null && blinkTimer != null) {
+                    blinkTimer.cancel();
+                    timer.purge();
+                }
+            } catch (Exception ignored) {
+            }
+
+            widgetState = WidgetState.Enabled;
+            Icon.Builder builder = new Icon.Builder();
+            builder.setAnchor(0, 0);
+            builder.setColor(Icon.STATE_DEFAULT, Color.WHITE);
+            builder.setSize(48, 48);
+            builder.setImageUri(Icon.STATE_DEFAULT, selected);
+            final Icon icon = builder.build();
+            this.setIcon(icon);
+        }
+    }
+
+    private void iconDisable() {
+        try {
+            if (timer != null && blinkTimer != null) {
+                blinkTimer.cancel();
+                timer.purge();
+            }
+        } catch (Exception ignored) {
+        }
+
+        widgetState = WidgetState.Disabled;
+        Icon.Builder builder = new Icon.Builder();
+        builder.setAnchor(0, 0);
+        builder.setColor(Icon.STATE_DEFAULT, Color.WHITE);
+        builder.setSize(48, 48);
+        builder.setImageUri(Icon.STATE_DEFAULT, unselected);
+        final Icon icon = builder.build();
+        this.setIcon(icon);
+    }
+
+    private enum WidgetState {
+        Enabled, Disabled, Loading;
+    }
+
+    private class IconBlinkTimer extends TimerTask {
+
+        private int iconState;
+
+        @Override
+        public void run() {
+            Icon.Builder builder = new Icon.Builder();
+            builder.setAnchor(0, 0);
+            builder.setColor(Icon.STATE_DEFAULT, Color.WHITE);
+            builder.setSize(48, 48);
+            switch(iconState) {
+                case 0:
+                    builder.setImageUri(Icon.STATE_DEFAULT, loading0); break;
+                case 1:
+                    builder.setImageUri(Icon.STATE_DEFAULT, loading1); break;
+                case 2:
+                    builder.setImageUri(Icon.STATE_DEFAULT, loading2); break;
+                default: // 2
+                    builder.setImageUri(Icon.STATE_DEFAULT, loading3); break;
+            }
+            final Icon icon = builder.build();
+            setIcon(icon);
+            iconState = (iconState + 1) % 4;
+        }
+    }
 
 }

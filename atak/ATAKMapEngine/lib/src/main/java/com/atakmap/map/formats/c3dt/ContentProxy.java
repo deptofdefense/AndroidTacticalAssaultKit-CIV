@@ -1,13 +1,9 @@
 package com.atakmap.map.formats.c3dt;
 
-import android.test.InstrumentationTestRunner;
-
 import com.atakmap.util.Collections2;
 
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Set;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 

@@ -2,10 +2,7 @@
 package com.atakmap.android.targetbubble.graphics;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 import android.graphics.Color;
 import android.util.Pair;
@@ -21,8 +18,6 @@ import com.atakmap.map.Globe;
 import com.atakmap.map.LegacyAdapters;
 import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
-import com.atakmap.map.RenderContext;
-import com.atakmap.map.layer.AbstractLayer;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.feature.geometry.Polygon;
 import com.atakmap.map.layer.opengl.GLAbstractLayer2;

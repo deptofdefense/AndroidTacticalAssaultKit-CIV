@@ -1,5 +1,6 @@
 package com.atakmap.map.layer.model.obj;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.model.ModelInfo;
@@ -7,8 +8,6 @@ import com.atakmap.map.layer.model.ModelInfoSpi;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.Reader;
 import java.util.Collections;
 import java.util.Set;
@@ -56,7 +55,7 @@ public final class ObjModelInfoSpi implements ModelInfoSpi {
                 if (entry != null)
                     f[0] = entry;
             } catch(IllegalArgumentException ignored) {}
-        } else if(!f[0].exists())
+        } else if(!FileIOProviderFactory.exists(f[0]))
             return false;
         if(!f[0].getName().toLowerCase(LocaleUtil.getCurrent()).endsWith(".obj"))
             return false;

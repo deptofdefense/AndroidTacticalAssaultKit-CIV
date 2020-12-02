@@ -34,6 +34,8 @@ import android.view.Surface;
 import android.view.WindowManager;
 
 import android.annotation.SuppressLint;
+
+import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdaterCompat;
 import com.atakmap.app.Permissions;
 import com.atakmap.android.mapcompass.CompassArrowMapComponent;
 import com.atakmap.android.elev.dt2.Dt2ElevationModel;
@@ -51,7 +53,6 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.Marker.OnTrackChangedListener;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.PointMapItem.OnPointChangedListener;
-import com.atakmap.android.selfcoordoverlay.SelfCoordOverlayUpdater;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
@@ -69,7 +70,6 @@ import com.atakmap.map.AtakMapController;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import com.atakmap.coremap.locale.LocaleUtil;
 import java.util.Timer;
@@ -1208,7 +1208,7 @@ public class LocationMapComponent extends AbstractMapComponent implements
         Log.d(TAG, "adding the GpsStatus.NmeaListener listener "
                 + listener.getClass());
         try {
-            final Class c = locMgr.getClass();
+            final Class<?> c = locMgr.getClass();
             Method addNmeaListener = c.getMethod("addNmeaListener",
                     GpsStatus.NmeaListener.class);
             if (addNmeaListener != null)
@@ -1234,7 +1234,7 @@ public class LocationMapComponent extends AbstractMapComponent implements
         Log.d(TAG, "removing the GpsStatus.NmeaListener listener "
                 + listener.getClass());
         try {
-            final Class c = locMgr.getClass();
+            final Class<?> c = locMgr.getClass();
             Method removeNmeaListener = c.getMethod("removeNmeaListener",
                     GpsStatus.NmeaListener.class);
             if (removeNmeaListener != null)
@@ -1827,7 +1827,7 @@ public class LocationMapComponent extends AbstractMapComponent implements
                         .getLong(
                                 prefix + "LocationTime")) < GPS_TIMEOUT_MILLIS) {
 
-            SelfCoordOverlayUpdater.getInstance().change();
+            SelfCoordOverlayUpdaterCompat.change();
 
             GeoPoint point = data.getParcelable(prefix + "Location");
 
@@ -1925,10 +1925,10 @@ public class LocationMapComponent extends AbstractMapComponent implements
             //_locationMarker.removeMetaData("Speed");
             //avgSpeed.reset();
 
-            SelfCoordOverlayUpdater.getInstance().change();
+            SelfCoordOverlayUpdaterCompat.change();
         } else {
             //No GPS available but still need to update location/connectcion widgets
-            SelfCoordOverlayUpdater.getInstance().change();
+            SelfCoordOverlayUpdaterCompat.change();
         }
 
         /*

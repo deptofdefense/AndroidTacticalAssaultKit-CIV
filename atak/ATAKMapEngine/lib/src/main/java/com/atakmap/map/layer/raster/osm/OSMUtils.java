@@ -62,15 +62,22 @@ public class OSMUtils {
     }
 
     public static int mapnikTileX(int level, double lng) {
-        final int n = 1 << level;
-        return (int) (n * ((lng + 180.0d) / 360.0d));
+        return (int)mapnikTileXd(level, lng);
     }
 
     public static int mapnikTileY(int level, double lat) {
+        return (int)mapnikTileYd(level, lat);
+    }
+
+    public static double mapnikTileXd(int level, double lng) {
+        final int n = 1 << level;
+        return (n * ((lng + 180.0d) / 360.0d));
+    }
+
+    public static double mapnikTileYd(int level, double lat) {
         final int n = 1 << level;
         final double lat_rad = Math.toRadians(lat);
-        return (int) (n
-                * (1.0d - (Math.log(Math.tan(lat_rad) + (1.0d / Math.cos(lat_rad))) / Math.PI)) / 2.0d);
+        return (n*(1d-(Math.log(Math.tan(lat_rad)+(1d/Math.cos(lat_rad)))/Math.PI))/2d);
     }
 
     public static double mapnikPixelLat(int level, int ytile, int y) {
@@ -87,6 +94,16 @@ public class OSMUtils {
 
     public static int mapnikPixelX(int level, int xtile, double lng) {
         return mapnikTileX(level + 8, lng) - (xtile << 8);
+    }
+
+    public static double mapnikPixelYd(int level, int ytile, double lat) {
+        final double tiley = mapnikTileYd(level, lat);
+        return (tiley-ytile)*256d;
+    }
+
+    public static double mapnikPixelXd(int level, int xtile, double lng) {
+        final double tilex = mapnikTileXd(level, lng);
+        return (tilex-xtile)*256d;
     }
 
     public static double mapnikTileResolution(int level) {

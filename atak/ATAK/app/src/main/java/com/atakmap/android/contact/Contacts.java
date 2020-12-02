@@ -194,7 +194,7 @@ public class Contacts implements MapEventDispatcher.MapEventDispatchListener {
         return getAllContactsOfClass(IndividualContact.class);
     }
 
-    private List<String> getAllContactsOfClass(Class classType) {
+    private List<String> getAllContactsOfClass(Class<?> classType) {
         List<String> uuidsToReturn = new ArrayList<>();
         synchronized (contacts) {
             for (Contact contact : contacts) {

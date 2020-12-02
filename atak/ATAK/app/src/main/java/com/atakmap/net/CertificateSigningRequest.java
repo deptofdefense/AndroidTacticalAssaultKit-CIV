@@ -4,6 +4,7 @@ package com.atakmap.net;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.foxykeep.datadroid.requestmanager.Request;
 
@@ -16,10 +17,11 @@ public class CertificateSigningRequest implements Parcelable {
     private final String password;
     private boolean hasTruststore;
 
-    /*
-        @deprecated Certificate Enrollment only stores certificates with the connection
-    */
+    /**
+     * @deprecated Certificate Enrollment only stores certificates with the connection
+     */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     private boolean saveAsDefault;
 
     private boolean getProfile;
@@ -63,6 +65,7 @@ public class CertificateSigningRequest implements Parcelable {
         @deprecated Certificate Enrollment only stores certificates with the connection
     */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public boolean getSaveAsDefault() {
         return saveAsDefault;
     }

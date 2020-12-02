@@ -13,6 +13,7 @@ import com.atakmap.android.importexport.AbstractImporter;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.comms.CommsMapComponent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.feature.AttributeSet;
 import com.atakmap.map.layer.feature.DataStoreException;
@@ -97,7 +98,7 @@ public final class ModelImporter extends AbstractImporter {
                 .reserveNotifyId();
 
         try {
-            final String path = (new File(uri.getPath())).exists()
+            final String path = FileIOProviderFactory.exists(new File(uri.getPath()))
                     ? uri.getPath()
                     : uri.toString();
             FeatureSetQueryParameters params = new FeatureSetQueryParameters();

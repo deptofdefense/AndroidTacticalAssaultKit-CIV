@@ -6,6 +6,7 @@ import android.util.Pair;
 
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.DrwFileDatabase;
 import com.healthmarketscience.jackcess.Database;
@@ -49,7 +50,7 @@ public class ImportDRWSort extends ImportInPlaceResolver {
      */
     private static boolean HasDrawing(final File file) {
 
-        if (file == null || !file.exists()) {
+        if (file == null || !FileIOProviderFactory.exists(file)) {
             Log.e(TAG,
                     "DRW does not exist: "
                             + (file == null ? "null" : file.getAbsolutePath()));

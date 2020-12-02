@@ -1,7 +1,6 @@
 
 package com.atakmap.map.projection;
 
-import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import com.atakmap.math.PointD;

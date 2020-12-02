@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.PointF;
-import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.view.MotionEvent;
 import android.graphics.Typeface;
@@ -87,20 +86,20 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
 
     //TODO why does this class have _pointItem and _activeMarker?
     private PointMapItem _pointItem;
-    private final PointMapItem self;
+    protected PointMapItem self;
 
     private final MapView _mapView;
-    private final TextWidget _positionText;
+    protected TextWidget _positionText;
     private String _savedText;
-    private boolean _marker;
-    private String _activeMarkerUID;
-    private Marker _activeMarker;
+    protected boolean _marker;
+    protected String _activeMarkerUID;
+    protected Marker _activeMarker;
     private GeoPointMetaData _activePoint;
-    private final SharedPreferences _prefs;
+    protected SharedPreferences _prefs;
 
-    private Angle bearingUnits;
-    private int rangeSystem;
-    private NorthReference northRef;
+    protected Angle bearingUnits;
+    protected int rangeSystem;
+    protected NorthReference northRef;
 
     private SpeedFormatter speedFormatter;
     private String[] speedUnits;
@@ -191,7 +190,7 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
 
     }
 
-    private void initUnits() {
+    protected void initUnits() {
 
         // see the values in Span.java
         rangeSystem = Integer.parseInt(_prefs.getString(
@@ -464,7 +463,7 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
         }
     }
 
-    private void _adjustOverlay(final boolean displayRB) {
+    protected void _adjustOverlay(final boolean displayRB) {
         if (_activeMarker != null) {
             _activeMarker.removeOnPointChangedListener(this);
             _activeMarker.removeOnTrackChangedListener(this);
@@ -529,7 +528,7 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
         }
     }
 
-    private String constructCoordText(final String label,
+    protected String constructCoordText(final String label,
             final String sublabel,
             final GeoPointMetaData pointWithMetadata, final double distance,
             final double bearing,
@@ -852,7 +851,7 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
         findDistanceAndBearing(spi, spi.getPoint());
     }
 
-    private void _updatePoint(final GeoPointMetaData point, final String label,
+    private void _updatePoint(GeoPointMetaData point, final String label,
             final double speed,
             final double heading, boolean estimate, final boolean teamMate,
             ElevationDisplayInfo el) {
@@ -860,7 +859,8 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
                 teamMate, el);
     }
 
-    private void _updatePoint(final GeoPointMetaData point, final String label,
+    protected void _updatePoint(final GeoPointMetaData point,
+            final String label,
             final String sublabel, final double distance, final double bearing,
             boolean displayRB, final double speed, final double heading,
             final boolean estimate, final boolean teamMate,
@@ -913,7 +913,7 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
         }
     }
 
-    private static class ElevationDisplayInfo {
+    protected static class ElevationDisplayInfo {
         public boolean doNotDisplayAgl;
         final public GeoPointMetaData terrain = new GeoPointMetaData();
         final public GeoPointMetaData surface = new GeoPointMetaData();

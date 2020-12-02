@@ -344,7 +344,7 @@ public class MapOverlayParent extends AbstractMapOverlay2 {
         }
 
         @Override
-        public boolean isSupported(Class target) {
+        public boolean isSupported(Class<?> target) {
             return Folder.class.equals(target) ||
                     KMZFolder.class.equals(target) ||
                     MissionPackageExportWrapper.class.equals(target) ||
@@ -353,7 +353,7 @@ public class MapOverlayParent extends AbstractMapOverlay2 {
         }
 
         @Override
-        public Object toObjectOf(Class target, ExportFilters filters)
+        public Object toObjectOf(Class<?> target, ExportFilters filters)
                 throws FormatNotSupportedException {
             if (super.getChildCount() < 1 || !isSupported(target)) {
                 //nothing to export

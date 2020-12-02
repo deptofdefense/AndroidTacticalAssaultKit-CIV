@@ -1,12 +1,17 @@
 #include "common.h"
 
 #include <cstring>
+#include <list>
 #include <map>
 
 #include <sqlite3.h>
+#ifdef __ANDROID__
 #include <spatialite.h>
+#endif
 
+#ifdef __ANDROID__
 #include <android/log.h>
+#endif
 #include <interop/JNIStringUTF.h>
 #include <interop/java/JNILocalRef.h>
 
@@ -16,6 +21,7 @@
 #include "util/Memory.h"
 
 #include "interop/Pointer.h"
+#include "interop/java/JNILocalRef.h"
 
 using namespace TAK::Engine::Thread;
 using namespace TAK::Engine::Util;
@@ -41,6 +47,8 @@ namespace {
         // XXX - need additional instances for Android and library?
     } ClassLoader_class;
 
+    std::list<std::pair<std::unique_ptr<void, void(*)(const void *)>, void(*)(JNIEnv&, void *) NOTHROWS>> shutdownHooks;
+
 #define PGSC_ENV_SET_METHOD_FN_DECL(type) \
         void envSetReturns ## type (JNIEnv *env, jobject object, jmethodID methodID, ...);
 
@@ -60,7 +68,9 @@ namespace {
     int indexOf(const char *str, const char c, const int from);
 
     std::map<std::string, jclass> &classRefMap();
+#ifdef __ANDROID__
     Logger2 &getAndroidLogger();
+#endif
     Mutex &mutex();
 
     void sqliteLogCallback(void *pArg, int iErrCode, const char *zMsg);
@@ -223,13 +233,14 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm_, void *reserved)
     LOAD_EXCEPTION_CLASS(ConcurrentModificationException, util);
     LOAD_EXCEPTION_CLASS(EOFException, io);
 #undef LOAD_EXCEPTION_CLASS
-
+#ifdef __ANDROID__
     LoggerPtr androidLogger(&getAndroidLogger(), Memory_leaker_const<Logger2>);
     Logger_setLogger(std::move(androidLogger));
-
+#endif
     sqlite3_config(SQLITE_CONFIG_LOG, sqliteLogCallback, NULL);
+#ifdef __ANDROID__
     spatialite_init(1);
-
+#endif
     return JNI_VERSION_1_6;
 }
 
@@ -241,8 +252,11 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved)
         return; // really shouldn't happen, if we got through JNI_OnLoad
     env = (JNIEnv *)env_vp;
 
-    LockPtr lock(NULL, NULL);
-    Lock_create(lock, mutex());
+    Lock lock(mutex());
+
+    for (auto it = shutdownHooks.begin(); it != shutdownHooks.end(); it++)
+        (*it).second(*env, (*it).first.get());
+    shutdownHooks.clear();
 
     std::map<std::string, jclass>::iterator entry;
     for(entry = classRefMap().begin(); entry != classRefMap().end(); entry++)
@@ -289,7 +303,9 @@ JavaIntFieldAccess::JavaIntFieldAccess(JNIEnv *env,
             jmethodID langClass_getName = env->GetMethodID(langClassClass, "getName", "()Ljava/lang/String;");
             jstring jclassName = (jstring)env->CallObjectMethod(clazz, langClass_getName);
             const char *className = env->GetStringUTFChars(jclassName, 0);
+#ifdef __ANDROID__
             __android_log_print(ANDROID_LOG_ERROR, "ATAKMapEngineJNI", "Field lookup failed. Class: %s Field: %s\n", className, fieldName);
+#endif
             env->ReleaseStringUTFChars(jclassName, className);
         }
     }
@@ -301,7 +317,9 @@ JavaIntFieldAccess::JavaIntFieldAccess(JNIEnv *env,
         } else {
             // log the method lookup failure -- don't clear the exception as
             // there is no appropriate error handling at this point
+#ifdef __ANDROID__
             __android_log_print(ANDROID_LOG_ERROR, "ATAKMapEngineJNI", "Method lookup failed. Method: %s%s\n", getMethodName, getMethodSig);
+#endif
         }
     }
 
@@ -349,7 +367,9 @@ JavaIntFieldAccess::JavaIntFieldAccess(JNIEnv *env,
         } else {
             // log the method lookup failure -- don't clear the exception as
             // there is no appropriate error handling at this point
+#ifdef __ANDROID__
             __android_log_print(ANDROID_LOG_ERROR, "ATAKMapEngineJNI", "Method lookup failed. Method: %s%s\n", setMethodName, setMethodSig);
+#endif
         }
     }
 }
@@ -405,7 +425,11 @@ LocalJNIEnv::LocalJNIEnv() NOTHROWS :
             args.version = JNI_VERSION_1_6;
             args.group = NULL;
             args.name = NULL;
+#ifdef __ANDROID__
             if(vm->AttachCurrentThread(&env, &args) == 0) {
+#else
+            if(vm->AttachCurrentThread((void **)&env, &args) == 0) {
+#endif
                 detach = true;
             } else {
                 env = NULL;
@@ -562,6 +586,22 @@ bool ATAKMapEngineJNI_equals(JNIEnv *env, jobject a, jobject b) NOTHROWS
     return env->CallBooleanMethod(a, Object_equals, b);
 }
 
+void ATAKMapEngineJNI_registerShutdownHook(void(*hook)(JNIEnv &, void *) NOTHROWS, std::unique_ptr<void, void(*)(const void *)> &&opaque) NOTHROWS
+{
+    Lock lock(mutex());
+    shutdownHooks.push_back(std::make_pair(std::move(opaque), hook));
+}
+void ATAKMapEngineJNI_unregisterShutdownHook(std::unique_ptr<void, void(*)(const void *)> &hook, const void *opaque) NOTHROWS
+{
+    Lock lock(mutex());
+    for (auto it = shutdownHooks.begin(); it != shutdownHooks.end(); it++) {
+        if ((*it).first.get() == opaque) {
+            hook = std::move((*it).first);
+            break;
+        }
+    }
+}
+
 TAKErr ProgressCallback_dispatchProgress(jobject jcallback, jint value) NOTHROWS
 {
     LocalJNIEnv env;
@@ -604,7 +644,7 @@ TAK::Engine::Port::String Object_toString(jobject obj) NOTHROWS
 }
 
 namespace {
-
+#ifdef __ANDROID__
 int LogcatLogger::print(const LogLevel lvl, const char *fmt, va_list arg) NOTHROWS
 {
     android_LogPriority prio;
@@ -637,7 +677,7 @@ int LogcatLogger::print(const LogLevel lvl, const char *fmt, va_list arg) NOTHRO
     __android_log_vprint(prio, "ATAKMapEngineJNI", fmt, arg);
     return 0;
 }
-
+#endif
 #define PGSC_ENV_SET_METHOD_FN_DEFN(type)                                      \
         void envSetReturns ## type (JNIEnv *env,                               \
                                     jobject object,                            \
@@ -671,13 +711,13 @@ int indexOf(const char *str, const char c, const int from)
             return i;
     return -1;
 }
-
+#ifdef __ANDROID__
 Logger2 &getAndroidLogger()
 {
     static LogcatLogger logcatLogger;
     return logcatLogger;
 }
-
+#endif
 std::map<std::string, jclass> &classRefMap()
 {
     static std::map<std::string, jclass> m;

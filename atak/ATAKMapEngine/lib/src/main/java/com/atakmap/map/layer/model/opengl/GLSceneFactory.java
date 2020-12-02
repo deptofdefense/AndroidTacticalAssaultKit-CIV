@@ -1,14 +1,10 @@
 package com.atakmap.map.layer.model.opengl;
 
-import android.util.Pair;
-
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.model.ModelInfo;
-import com.atakmap.map.opengl.GLAsynchronousMapRenderable2;
 import com.atakmap.map.opengl.GLMapRenderable2;
 import com.atakmap.spi.PriorityServiceProviderRegistry2;
 import com.atakmap.spi.ServiceProvider;
-import com.atakmap.spi.ServiceProviderRegistry2;
 
 import java.util.IdentityHashMap;
 import java.util.Map;

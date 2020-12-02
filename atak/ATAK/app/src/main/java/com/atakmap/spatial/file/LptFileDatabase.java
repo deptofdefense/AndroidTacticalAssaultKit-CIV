@@ -113,6 +113,11 @@ public class LptFileDatabase extends FileDatabase {
                     //        + ", from link: " + link);
 
                     //Log.d(TAG, "Got LPT point: (" + lat + ", " + lng + ")");
+                    if (lat == null || lng == null)
+                        continue;
+                    if (alt == null)
+                        alt = Short.MIN_VALUE;
+
                     insertLptPoint(lptFile, name, iconUri, lat, lng, alt,
                             fileGrp);
                     bounds.add(lng, lat);

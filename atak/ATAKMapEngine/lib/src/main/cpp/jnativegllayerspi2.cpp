@@ -148,6 +148,7 @@ namespace
     bool checkInit(JNIEnv &env) NOTHROWS
     {
         static bool clinit = NativeGLLayerSpi2_class_init(env);
+        return clinit;
     }
     bool NativeGLLayerSpi2_class_init(JNIEnv &env) NOTHROWS
     {

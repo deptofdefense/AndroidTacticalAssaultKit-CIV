@@ -1,9 +1,7 @@
 package com.atakmap.map.layer.raster.drg;
 
-import android.graphics.Rect;
 import android.opengl.GLES30;
 
-import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.layer.raster.DatasetProjection2;
 import com.atakmap.map.layer.raster.gdal.GdalDatasetProjection2;

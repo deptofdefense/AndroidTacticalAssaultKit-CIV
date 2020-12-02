@@ -498,7 +498,8 @@ public class Association extends Shape implements AnchoredMapItem {
         if (_firstItem == null || _secondItem == null)
             return false;
 
-        final GeoBounds hitBox = view.createHitbox(point, _hitRadius);
+        float hitRadius = getHitRadius(view);
+        final GeoBounds hitBox = view.createHitbox(point, hitRadius);
         final GeoBounds bounds = GeoBounds.createFromPoints(new GeoPoint[] {
                 _firstItem.getPoint(), _secondItem.getPoint()
         }, view.isContinuousScrollEnabled());
@@ -541,7 +542,7 @@ public class Association extends Shape implements AnchoredMapItem {
         Vector3D nearest = Vector3D.nearestPointOnSegment(touch, new Vector3D(
                 pt1.x, pt1.y, 0),
                 new Vector3D(pt2.x, pt2.y, 0));
-        if (_hitRadiusSq > nearest.distanceSq(touch)) {
+        if (Math.pow(hitRadius, 2) > nearest.distanceSq(touch)) {
             GeoPoint _touchPoint = view.inverse(nearest.x,
                     nearest.y, MapView.InverseMode.RayCast).get();
             setTouchPoint(_touchPoint);
@@ -857,8 +858,6 @@ public class Association extends Shape implements AnchoredMapItem {
     private final ConcurrentLinkedQueue<OnStrokeWeightChangedListener> _onStrokeWeightChanged = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnClampToGroundChangedListener> _onClampToGroundChanged = new ConcurrentLinkedQueue<>();
 
-    private final float _hitRadius = 32 * MapView.DENSITY;
-    private final float _hitRadiusSq = _hitRadius * _hitRadius;
     private Marker _marker = null;
     private PointMapItem _firstItem;
     private PointMapItem _secondItem;

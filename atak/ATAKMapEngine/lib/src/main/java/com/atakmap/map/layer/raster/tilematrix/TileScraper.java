@@ -27,6 +27,7 @@ public final class TileScraper {
 
     private final static String TAG = "TileScraper";
     private static final int MAX_TILES = 300000;
+    private static final int MAX_RETRIES = 5;
 
     private final static ThreadFactory DOWNLOAD_SERVICE_THREAD_FACTORY = new ThreadFactory() {
         private final AtomicInteger cnt = new AtomicInteger(1);
@@ -172,10 +173,10 @@ public final class TileScraper {
 
             this.zooms = client.getZoomLevel();
             SparseBooleanArray lvlArray = new SparseBooleanArray();
-            for (int i = 0; i < this.zooms.length; i++) {
-                if (this.zooms[i].resolution <= request.minResolution
-                        && this.zooms[i].resolution >= request.maxResolution)
-                    lvlArray.append(this.zooms[i].level, true);
+            for (TileMatrix.ZoomLevel zoom : this.zooms) {
+                if (zoom.resolution <= request.minResolution
+                        && zoom.resolution >= request.maxResolution)
+                    lvlArray.append(zoom.level, true);
             }
             if (lvlArray.size() == 0)
                 lvlArray.append(this.zooms[this.zooms.length - 1].level, true);
@@ -338,10 +339,10 @@ public final class TileScraper {
             }            
         }
 
-        protected void onDownloadEnter(ScrapeContext context) {
+        protected void onDownloadEnter(final ScrapeContext context) {
         }
 
-        protected void onDownloadExit(ScrapeContext context, int jobStatus) {
+        protected void onDownloadExit(final ScrapeContext context, final int jobStatus) {
         }
 
         /**
@@ -368,12 +369,14 @@ public final class TileScraper {
         protected abstract void downloadTileImpl(ScrapeContext context,
                 int tileLevel, int tileX, int tileY);
 
+
+
         /**
          * kicks off a download of the selected layers at the selected levels in the selected rectangle
-         * TODO: More refined scraping for routes - currently just uses the bounds
          */
         public boolean download(ScrapeContext downloadContext) {
             Log.d(TAG, "Starting download of " + client.getName() + " cache...");
+            int retries = 0;
 
             if(callback != null)
                 callback.onRequestStarted();
@@ -401,22 +404,39 @@ public final class TileScraper {
 
                     for (TilePoint tile : tiles) {
                         while (true) {
+
+                            // check for cancel
+                            if (checkRequestCancelled())
+                                return false;
+
                             // check for error
                             if (downloadContext.downloadError()) {
-                                if (callback != null)
-                                    callback.onRequestError(null, null, true);
-
-                                Log.d(TAG,
-                                        "Lost network connection during map download.");
-
-                                return false;
-                            } else
-                                // check for cancel
-                                if (request.canceled) {
+                                retries++;
+                                if (retries > MAX_RETRIES) {
                                     if (callback != null)
-                                        callback.onRequestCanceled();
+                                        callback.onRequestError(null, null, true);
+
+                                    Log.d(TAG,
+                                            "Lost network connection during map download.");
+
                                     return false;
+                                } else {
+                                    Log.d(TAG, "attempting retry[" + retries + "], failed download for " + tile.c + ", " + tile.r +  " backing off for " + (1000 * retries) + "ms");
+                                    // don't consider it an error just yet.
+                                    downloadContext.downloadError = false;
+                                    try {
+                                        Thread.sleep(1000 * retries);
+                                    } catch (InterruptedException ignored) {
+                                    }
                                 }
+                            } else {
+                                retries = 0;
+                            }
+
+                            // Check again for cancle before potentially
+                            // sleeping another 50 ms
+                            if (checkRequestCancelled())
+                                return false;
 
                             // report status
                             this.reportStatus(downloadContext);
@@ -436,6 +456,10 @@ public final class TileScraper {
                             // proceed to download
                             break;
                         }
+
+                        // One last cancel check before starting download
+                        if (checkRequestCancelled())
+                            return false;
 
                         // download
                         if (tile180X > -1 && tile.c >= tile180X)
@@ -459,6 +483,15 @@ public final class TileScraper {
                 this.onDownloadExit(downloadContext, 0);
             }
         }
+
+        private boolean checkRequestCancelled() {
+            if (request.canceled) {
+                if (callback != null)
+                    callback.onRequestCanceled();
+                return true;
+            }
+            return false;
+        }
     }
 
     private class MultiThreadDownloader extends Downloader {
@@ -468,7 +501,7 @@ public final class TileScraper {
         public MultiThreadDownloader(int numDownloadThreads) {
             if (numDownloadThreads <= 1)
                 throw new IllegalArgumentException();
-            this.queue = new LinkedBlockingQueue<Runnable>();
+            this.queue = new LinkedBlockingQueue<>();
 
             this.downloadService = new ThreadPoolExecutor(
                     request.maxThreads,

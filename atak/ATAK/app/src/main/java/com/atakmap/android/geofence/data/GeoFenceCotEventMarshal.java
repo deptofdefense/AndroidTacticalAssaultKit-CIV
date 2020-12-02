@@ -2,13 +2,15 @@
 package com.atakmap.android.geofence.data;
 
 import com.atakmap.android.importexport.AbstractCotEventMarshal;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.log.Log;
 
 /**
- *
+ * @deprecated
  */
 @Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = false, removeAt = "4.4")
 public class GeoFenceCotEventMarshal extends AbstractCotEventMarshal {
 
     private static final String TAG = "GeoFenceCotEventMarshal";

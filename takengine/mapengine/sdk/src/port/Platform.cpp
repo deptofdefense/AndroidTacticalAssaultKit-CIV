@@ -14,6 +14,8 @@
 #include <Windows.h>
 #endif
 
+#include <cstring>
+
 using namespace TAK::Engine::Port;
 
 template <typename S, typename D>
@@ -27,6 +29,38 @@ struct Convert {
         }
     }
 };
+
+#define MEMCPY_SPEC(t, t2) \
+template <> \
+struct Convert<t, t2> { \
+    static void func(void* dst, const void* src, size_t count) NOTHROWS { \
+        memcpy(dst, src, count); \
+    } \
+};
+
+MEMCPY_SPEC(uint8_t, uint8_t);
+MEMCPY_SPEC(uint8_t, int8_t);
+MEMCPY_SPEC(int8_t, int8_t);
+MEMCPY_SPEC(int8_t, uint8_t);
+
+MEMCPY_SPEC(uint16_t, uint16_t);
+MEMCPY_SPEC(uint16_t, int16_t);
+MEMCPY_SPEC(int16_t, uint16_t);
+MEMCPY_SPEC(int16_t, int16_t);
+
+MEMCPY_SPEC(uint32_t, uint32_t);
+MEMCPY_SPEC(uint32_t, int32_t);
+MEMCPY_SPEC(int32_t, int32_t);
+MEMCPY_SPEC(int32_t, uint32_t);
+
+MEMCPY_SPEC(uint64_t, uint64_t);
+MEMCPY_SPEC(uint64_t, int64_t);
+MEMCPY_SPEC(int64_t, int64_t);
+MEMCPY_SPEC(int64_t, uint64_t);
+
+MEMCPY_SPEC(float, float);
+
+MEMCPY_SPEC(double, double);
 
 typedef void (*ConvertFunc)(void*, const void*, size_t);
 
@@ -68,9 +102,19 @@ ConvertFunc convertMatrix[] = {
     CONV_ROW(double)
 };
 
-void TAK::Engine::Port::DataType_convert(void* dst, const void* src, size_t count, DataType dstType, DataType srcType) NOTHROWS {
+size_t TAK::Engine::Port::DataType_convert(void* dst, const void* src, size_t count, DataType dstType, DataType srcType) NOTHROWS {
+
+    if (dstType < 0 || dstType > TEDT_Float64)
+        return 0;
+    if (srcType < 0 || srcType > TEDT_Float64)
+        return 0;
+
+    if (count != 0 && (dst == nullptr || src == nullptr))
+        return 0;
+
     void (*cvt)(void *, const void *, size_t) = convertMatrix[srcType * 10 + dstType];
     cvt(dst, src, count);
+    return count;
 }
 
 size_t TAK::Engine::Port::DataType_size(DataType dataType) NOTHROWS {

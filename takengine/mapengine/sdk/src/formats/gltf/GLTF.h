@@ -10,6 +10,7 @@ namespace TAK {
         namespace Formats {
             namespace GLTF {                
                 ENGINE_API Util::TAKErr GLTF_load(Model::ScenePtr &scene, Util::DataInput2 *input, const char *baseURI) NOTHROWS;
+                ENGINE_API Util::TAKErr GLTF_load(Model::ScenePtr& scene, const uint8_t* binary, size_t len, const char* baseURI) NOTHROWS;
                 ENGINE_API Util::TAKErr GLTF_loadV1(Model::ScenePtr& result, const uint8_t* binary, size_t len, const char* baseURI) NOTHROWS;
                 ENGINE_API Util::TAKErr GLTF_loadV2(Model::ScenePtr& result, const uint8_t* binary, size_t len, const char* baseURI) NOTHROWS;
             }

@@ -333,7 +333,7 @@ public class FilterMapOverlay extends AbstractMapOverlay2
         }
 
         @Override
-        public boolean isSupported(Class target) {
+        public boolean isSupported(Class<?> target) {
             return Folder.class.equals(target) ||
                     KMZFolder.class.equals(target) ||
                     MissionPackageExportWrapper.class.equals(target) ||
@@ -342,7 +342,7 @@ public class FilterMapOverlay extends AbstractMapOverlay2
         }
 
         @Override
-        public Object toObjectOf(Class target, ExportFilters filters)
+        public Object toObjectOf(Class<?> target, ExportFilters filters)
                 throws FormatNotSupportedException {
             if (super.getChildCount() < 1 || !isSupported(target)) {
                 //nothing to export
@@ -775,11 +775,8 @@ public class FilterMapOverlay extends AbstractMapOverlay2
         }
 
         if (item instanceof Marker) {
-            String iconsetPath = item.getMetaString(UserIcon.IconsetPath, null);
-            if (!FileSystemUtils.isEmpty(iconsetPath) &&
-                    !(iconsetPath.startsWith(Icon2525bPallet.COT_MAPPING_2525B)
-                            || iconsetPath.startsWith(
-                                    SpotMapPallet.COT_MAPPING_SPOTMAP))) {
+            String path = item.getMetaString(UserIcon.IconsetPath, null);
+            if (UserIcon.IsValidIconsetPath(path, false, mapView.getContext())) {
                 //this is a user icon, lets skip it here and void the expense of
                 //filter matching since it may very well match on CoT type
                 //Log.d(TAG + toString(), toString() + " not accepting usericon");

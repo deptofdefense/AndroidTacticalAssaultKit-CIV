@@ -1049,7 +1049,7 @@ public class ProductInformationAdapter extends BaseAdapter {
 
         Drawable icon = plugin.getIcon();
         if (icon != null) {
-            dialog.setIcon(AppMgmtUtils.scaleImage(_context, icon, 48));
+            dialog.setIcon(AppMgmtUtils.getDialogIcon(_context, icon));
         } else {
             dialog.setIcon(plugin.isPlugin() ? R.drawable.ic_menu_plugins
                     : R.drawable.ic_menu_apps);
@@ -1096,7 +1096,7 @@ public class ProductInformationAdapter extends BaseAdapter {
 
         Drawable icon = plugin.getIcon();
         if (icon != null) {
-            dialog.setIcon(AppMgmtUtils.scaleImage(_context, icon, 48));
+            dialog.setIcon(AppMgmtUtils.getDialogIcon(_context, icon));
         } else {
             dialog.setIcon(plugin.isPlugin() ? R.drawable.ic_menu_plugins
                     : R.drawable.ic_menu_apps);
@@ -1211,7 +1211,7 @@ public class ProductInformationAdapter extends BaseAdapter {
 
         Drawable icon = app.getIcon();
         if (icon != null) {
-            dialog.setIcon(AppMgmtUtils.scaleImage(_context, icon, 48));
+            dialog.setIcon(AppMgmtUtils.getDialogIcon(_context, icon));
         } else {
             dialog.setIcon(app.isPlugin() ? R.drawable.ic_menu_plugins
                     : R.drawable.ic_menu_apps);
@@ -1543,7 +1543,7 @@ public class ProductInformationAdapter extends BaseAdapter {
 
         Drawable icon = app.getIcon();
         if (icon != null) {
-            dialog.setIcon(AppMgmtUtils.scaleImage(_context, icon, 48));
+            dialog.setIcon(AppMgmtUtils.getDialogIcon(_context, icon));
         } else {
             dialog.setIcon(app.isPlugin() ? R.drawable.ic_menu_plugins
                     : R.drawable.ic_menu_apps);
@@ -1659,7 +1659,7 @@ public class ProductInformationAdapter extends BaseAdapter {
 
         Drawable icon = app.getIcon();
         if (icon != null)
-            dialog.setIcon(AppMgmtUtils.scaleImage(_context, icon, 48));
+            dialog.setIcon(AppMgmtUtils.getDialogIcon(_context, icon));
         else
             dialog.setIcon(app.isPlugin() ? R.drawable.ic_menu_plugins
                     : R.drawable.ic_menu_apps);
@@ -1727,7 +1727,7 @@ public class ProductInformationAdapter extends BaseAdapter {
 
         Drawable icon = app.getIcon();
         if (icon != null)
-            dialog.setIcon(AppMgmtUtils.scaleImage(_context, icon, 48));
+            dialog.setIcon(AppMgmtUtils.getDialogIcon(_context, icon));
         else
             dialog.setIcon(app.isPlugin() ? R.drawable.ic_menu_plugins
                     : R.drawable.ic_menu_apps);

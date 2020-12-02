@@ -4,13 +4,11 @@ package com.atakmap.android.update;
 import android.content.Context;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +76,7 @@ public class ProductRepository {
      * @return
      */
     public List<ProductInformation> getProducts() {
-        List ret = new ArrayList<ProductInformation>();
+        List<ProductInformation> ret = new ArrayList<>();
         if (!FileSystemUtils.isEmpty(_products))
             ret.addAll(_products);
         return ret;
@@ -132,7 +130,7 @@ public class ProductRepository {
      * @return
      */
     public List<ProductInformation> getPlugins() {
-        List ret = new ArrayList<ProductInformation>();
+        List<ProductInformation> ret = new ArrayList<>();
         if (!FileSystemUtils.isEmpty(_products)) {
             for (ProductInformation p : _products) {
                 if (p.isPlugin()) {
@@ -154,7 +152,7 @@ public class ProductRepository {
      * @return
      */
     public List<ProductInformation> getStale(Context context) {
-        List ret = new ArrayList<ProductInformation>();
+        List<ProductInformation> ret = new ArrayList<>();
         if (!FileSystemUtils.isEmpty(_products)) {
             for (ProductInformation product : _products) {
                 if (AppMgmtUtils.isInstalled(context,
@@ -378,9 +376,10 @@ public class ProductRepository {
 
         try {
             return parseRepo(context, in.getAbsolutePath(), repoType,
-                    new BufferedReader(new FileReader(in)));
-        } catch (FileNotFoundException e) {
-            Log.w(TAG, "Failed parse: " + in.getAbsolutePath(), e);
+                    new BufferedReader(FileIOProviderFactory.getFileReader(in)));
+        }
+        catch(IOException ex){
+            Log.w(TAG,"Failed parse: "+in.getAbsolutePath(), ex);
         }
 
         return null;
@@ -413,10 +412,10 @@ public class ProductRepository {
 
         try {
             final File parent = index.getParentFile();
-            if (!parent.exists() && !parent.mkdirs()) {
+            if (!FileIOProviderFactory.exists(parent) && !FileIOProviderFactory.mkdirs(parent)) {
                 Log.w(TAG, "unable to create directory: " + parent);
             }
-            FileSystemUtils.write(new FileOutputStream(index), sb.toString());
+            FileSystemUtils.write(FileIOProviderFactory.getOutputStream(index), sb.toString());
             return true;
         } catch (IOException e) {
             Log.w(TAG, "Failed to save to: " + index.getAbsolutePath(), e);

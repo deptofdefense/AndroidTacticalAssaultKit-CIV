@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.atakmap.android.maps.MapView;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.app.SettingsActivity;
 import com.atakmap.app.preferences.NetworkConnectionPreferenceFragment;
@@ -155,6 +156,7 @@ public class ServerListDialog {
      * @deprecated Pass {@link Callback instead}
      */
     @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public interface ServerSelectCallback {
         void onSelected(CotPort server);
     }

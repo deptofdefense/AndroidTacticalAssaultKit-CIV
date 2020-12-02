@@ -5,13 +5,16 @@ import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.opengl.GLES30;
 
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapTextFormat;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.Polyline.OnBasicLineStyleChangedListener;
 import com.atakmap.android.maps.Polyline.OnLabelsChangedListener;
 import com.atakmap.android.maps.Shape;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -21,12 +24,12 @@ import com.atakmap.android.maps.hittest.PartitionRect;
 import com.atakmap.android.maps.hittest.ShapeHitTestControl;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
-import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.map.layer.feature.geometry.LineString;
 import com.atakmap.map.layer.feature.geometry.Polygon;
 import com.atakmap.map.layer.feature.geometry.opengl.GLBatchLineString;
 import com.atakmap.map.layer.feature.geometry.opengl.GLBatchPolygon;
+import com.atakmap.map.layer.feature.geometry.opengl.GLExtrude;
 import com.atakmap.map.layer.feature.style.BasicFillStyle;
 import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
 import com.atakmap.map.layer.feature.style.CompositeStyle;
@@ -51,6 +54,8 @@ public class GLPolyline extends GLShape2 implements
         Shape.OnPointsChangedListener, OnBasicLineStyleChangedListener,
         OnLabelsChangedListener, Polyline.OnLabelTextSizeChanged,
         Polyline.OnAltitudeModeChangedListener,
+        Polyline.OnHeightStyleChangedListener,
+        Shape.OnHeightChangedListener,
         ShapeHitTestControl {
 
     public static final String TAG = "GLPolyline";
@@ -59,7 +64,7 @@ public class GLPolyline extends GLShape2 implements
     private static final int PARTITION_SIZE = 25;
 
     private final Polyline _subject;
-    private int _closed = 0;
+    private boolean _closed;
     private DoubleBuffer _points;
     protected int numPoints;
     protected int _pointsSize = 2;
@@ -101,35 +106,48 @@ public class GLPolyline extends GLShape2 implements
 
     protected boolean needsProjectVertices;
 
-    // For hit testing
+    // Height extrusion
+    protected DoubleBuffer _3dPointsPreForward;
+    protected FloatBuffer _3dPoints;
+    protected DoubleBuffer _outlinePointsPreForward;
+    protected FloatBuffer _outlinePoints;
+    protected boolean _shouldReextrude;
+    protected double _height = Double.NaN;
+    protected boolean _hasHeight;
+    protected int _heightStyle;
+
+    // Hit testing
     protected RectF _screenRect = new RectF();
     protected List<PartitionRect> _partitionRects = new ArrayList<>();
 
     public GLPolyline(MapRenderer surface, Polyline subject) {
-        super(surface, subject,
-                GLMapView.RENDER_PASS_SPRITES | GLMapView.RENDER_PASS_SURFACE);
+        super(surface, subject, GLMapView.RENDER_PASS_SPRITES
+                | GLMapView.RENDER_PASS_SURFACE
+                | GLMapView.RENDER_PASS_SCENES);
         this.impl = new GLBatchPolygon(surface);
 
         _subject = subject;
         GeoPoint[] points = subject.getPoints();
-        this.updatePointsImpl(points);
+        centerPoint = subject.getCenter().get();
+        this.updatePointsImpl(centerPoint, points);
+
         basicLineStyle = subject.getBasicLineStyle();
+        _heightStyle = subject.getHeightStyle();
         super.onStyleChanged(_subject);
         super.onFillColorChanged(_subject);
         super.onStrokeColorChanged(_subject);
         super.onStrokeWeightChanged(_subject);
         refreshStyle();
         segmentLabels = subject.getLabels();
-        centerPoint = subject.getCenter().get();
         _labelTextSize = subject.getLabelTextSize();
         _labelTypeface = subject.getLabelTypeface();
         onAltitudeModeChanged(subject.getAltitudeMode());
-        //synchronized(subject) {
-        //    unwrapLng = subject.getMetaBoolean("unwrapLongitude", false);
-        //}
+        // synchronized(subject) {
+        // unwrapLng = subject.getMetaBoolean("unwrapLongitude", false);
+        // }
 
         this.needsProjectVertices = (this.getClass() != GLPolyline.class);
-
+        onHeightChanged(_subject);
     }
 
     @Override
@@ -143,6 +161,8 @@ public class GLPolyline extends GLShape2 implements
         _subject.addOnLabelsChangedListener(this);
         _subject.addOnLabelTextSizeChangedListener(this);
         _subject.addOnAltitudeModeChangedListener(this);
+        _subject.addOnHeightChangedListener(this);
+        _subject.addOnHeightStyleChangedListener(this);
     }
 
     @Override
@@ -153,6 +173,8 @@ public class GLPolyline extends GLShape2 implements
         _subject.removeOnLabelsChangedListener(this);
         _subject.removeOnLabelTextSizeChangedListner(this);
         _subject.removeOnAltitudeModeChangedListener(this);
+        _subject.removeOnHeightChangedListener(this);
+        _subject.removeOnHeightStyleChangedListener(this);
     }
 
     @Override
@@ -222,8 +244,10 @@ public class GLPolyline extends GLShape2 implements
     private void refreshStyle() {
         final int style = _subject.getStyle();
         final int basicStyle = _subject.getBasicLineStyle();
+        boolean fill = this.fill && (!_hasHeight || !MathUtils.hasBits(
+                _heightStyle, Polyline.HEIGHT_STYLE_POLYGON));
 
-        int closed = ((style & Polyline.STYLE_CLOSED_MASK) != 0) ? 0x1 : 0x0;
+        boolean closed = (style & Polyline.STYLE_CLOSED_MASK) != 0;
         if (closed != _closed) {
             _closed = closed;
             updatePointsImpl(this.centerPoint, this.origPoints);
@@ -256,7 +280,7 @@ public class GLPolyline extends GLShape2 implements
                 : null;
 
         if (composite != null) {
-            if (this.fill) {
+            if (fill) {
                 composite.add(new BasicFillStyle(this.fillColor));
             }
             if (_outlineStroke) {
@@ -298,7 +322,11 @@ public class GLPolyline extends GLShape2 implements
             });
     }
 
-    /** @deprecated */
+    /**
+     * @deprecated use {@link #updatePointsImpl(GeoPoint, GeoPoint[])}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     protected void updatePointsImpl(GeoPoint[] points) {
         final GeoPoint center = GeoCalculations.centerOfExtremes(points, 0,
                 points.length);
@@ -308,9 +336,13 @@ public class GLPolyline extends GLShape2 implements
     }
 
     protected void updatePointsImpl(GeoPoint center, GeoPoint[] points) {
+
         if (points == null)
             points = new GeoPoint[0];
         _pointsSize = altitudeMode == AltitudeMode.ClampToGround ? 2 : 3;
+        if (_hasHeight) {
+            _pointsSize = 3;
+        }
         centerPoint = center;
         int pLen = points.length * _pointsSize;
         if (_points == null || _points.capacity() < pLen) {
@@ -333,10 +365,11 @@ public class GLPolyline extends GLShape2 implements
             ls.addPoint(gp.getLongitude(), gp.getLatitude(),
                     Double.isNaN(gp.getAltitude()) ? 0d : gp.getAltitude());
         }
-        if (points.length > 0 && _closed != 0)
+        if (points.length > 0 && _closed) {
             ls.addPoint(points[0].getLongitude(), points[0].getLatitude(),
-                    Double.isNaN(points[0].getAltitude()) ? 0d
-                            : points[0].getAltitude());
+                    Double.isNaN(points[0].getAltitude()) ? 0d : points[0].getAltitude());
+        }
+
         if (this.impl instanceof GLBatchPolygon)
             ((GLBatchPolygon) this.impl).setGeometry(new Polygon(ls));
         else
@@ -345,12 +378,16 @@ public class GLPolyline extends GLShape2 implements
         _points.flip();
         this.origPoints = points;
         this.numPoints = points.length;
+
         _needsUpdate = true;
 
         // force a redraw
         currentDraw = 0;
 
         this.dispatchOnBoundsChanged();
+        if (_hasHeight) {
+            _shouldReextrude = true;
+        }
     }
 
     @Override
@@ -389,8 +426,64 @@ public class GLPolyline extends GLShape2 implements
     }
 
     @Override
-    public void draw(GLMapView ortho, int renderPass) {
+    public void onHeightChanged(MapItem item) {
+        refreshHeight();
+    }
 
+    @Override
+    public void onHeightStyleChanged(Polyline p) {
+        refreshHeight();
+    }
+
+    private void refreshHeight() {
+        final double height = _subject.getHeight();
+        final int heightStyle = _subject.getHeightStyle();
+        final boolean hasHeight = !Double.isNaN(height)
+                && Double.compare(height, 0) != 0
+                && heightStyle != Polyline.HEIGHT_STYLE_NONE;
+        context.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                setHeightEnabled(hasHeight);
+                _height = height;
+                if (_heightStyle != heightStyle) {
+                    _heightStyle = heightStyle;
+                    if (_hasHeight)
+                        refreshStyle();
+                }
+                if (_hasHeight)
+                    _shouldReextrude = true;
+            }
+        });
+    }
+
+    private void setHeightEnabled(boolean hasHeight) {
+        if (_hasHeight != hasHeight) {
+            _hasHeight = hasHeight;
+
+            // Refresh fill style so we only show the terrain fill
+            // when the height extrusion hasn't already taken care of it
+            refreshStyle();
+
+            // Free unused buffers
+            if (!_hasHeight) {
+                Unsafe.free(_3dPoints);
+                _3dPoints = null;
+
+                Unsafe.free(_3dPointsPreForward);
+                _3dPointsPreForward = null;
+
+                Unsafe.free(_outlinePoints);
+                _outlinePoints = null;
+
+                Unsafe.free(_outlinePointsPreForward);
+                _outlinePointsPreForward = null;
+            }
+        }
+    }
+
+    @Override
+    public void draw(GLMapView ortho, int renderPass) {
         if ((renderPass & this.renderPass) == 0)
             return;
 
@@ -398,7 +491,116 @@ public class GLPolyline extends GLShape2 implements
                 GLMapView.RENDER_PASS_SPRITES);
         boolean surface = MathUtils.hasBits(renderPass,
                 GLMapView.RENDER_PASS_SURFACE);
+        boolean scenes = MathUtils.hasBits(renderPass,
+                GLMapView.RENDER_PASS_SCENES);
 
+        // Not in resolution to draw
+        if (ortho.drawMapResolution > _subject.getMetaDouble(
+                "maxLineRenderResolution",
+                Polyline.DEFAULT_MAX_LINE_RENDER_RESOLUTION))
+            return;
+
+        else if (ortho.drawMapResolution < _subject.getMetaDouble(
+                "minLineRenderResolution",
+                Polyline.DEFAULT_MIN_LINE_RENDER_RESOLUTION))
+            return;
+
+        if (_hasHeight && scenes && numPoints > 0) {
+
+            boolean renderPolygon = MathUtils.hasBits(_heightStyle,
+                    Polyline.HEIGHT_STYLE_POLYGON);
+            boolean simpleOutline = MathUtils.hasBits(_heightStyle,
+                    Polyline.HEIGHT_STYLE_OUTLINE_SIMPLE);
+            boolean renderOutline = MathUtils.hasBits(_heightStyle,
+                    Polyline.HEIGHT_STYLE_OUTLINE) || simpleOutline;
+
+            if (_shouldReextrude) {
+                updatePointsImpl(centerPoint, origPoints);
+                double altitude = ortho.getTerrainMeshElevation(
+                        centerPoint.getLatitude(), centerPoint.getLongitude());
+
+                if (renderPolygon) {
+                    _3dPointsPreForward = GLExtrude.extrudeRelative(
+                            altitude, _height, origPoints, _closed);
+                    _3dPoints = Unsafe.allocateDirect(
+                            _3dPointsPreForward.limit(), FloatBuffer.class);
+                    _3dPointsPreForward.rewind();
+                }
+
+                if (renderOutline) {
+                    _outlinePointsPreForward = GLExtrude.extrudeOutline(
+                            altitude, _height, origPoints,
+                            _closed, simpleOutline);
+                    _outlinePoints = Unsafe.allocateDirect(
+                            _outlinePointsPreForward.limit(), FloatBuffer.class);
+                    _outlinePointsPreForward.rewind();
+                }
+
+                _shouldReextrude = false;
+            }
+
+            GLES20FixedPipeline.glPushMatrix();
+            GLES20FixedPipeline.glLoadIdentity();
+
+            GLES20FixedPipeline.glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
+
+            GLES20FixedPipeline.glEnable(GLES20FixedPipeline.GL_BLEND);
+            GLES20FixedPipeline.glBlendFunc(GLES20FixedPipeline.GL_SRC_ALPHA,
+                    GLES20FixedPipeline.GL_ONE_MINUS_SRC_ALPHA);
+            int color = fill ? fillColor : strokeColor;
+            float r = Color.red(color) / 255.0f;
+            float g = Color.green(color) / 255.0f;
+            float b = Color.blue(color) / 255.0f;
+            float a = fill ? Color.alpha(color) / 255.0f : 0.5f;
+
+            if (renderPolygon) {
+                GLES20FixedPipeline.glColor4f(r, g, b, a);
+
+                GLES30.glEnable(GLES30.GL_POLYGON_OFFSET_FILL);
+                GLES30.glPolygonOffset(1.0f, 1.0f);
+
+                GLES20FixedPipeline.glVertexPointer(3, GLES20FixedPipeline.GL_FLOAT, 0, _3dPoints);
+
+                ortho.forward(_3dPointsPreForward, 3, _3dPoints, 3);
+                int pCount = _3dPoints.limit() / 3;
+
+                // Simple order independent transparency, only apply when needed
+                if (a < 1.0) {
+                    // Assumes shape is convex, although this also works for concave shapes that use the
+                    // same color throughout the mesh. In practice you can't tell the difference between
+                    // this and _much_ more expensive OIT implementations for _this_ use case.
+                    // Works under the assumption that back facing polygons are behind front facing,
+                    // preserving correct back to front ordering.
+                    GLES20FixedPipeline.glEnable(GLES30.GL_CULL_FACE);
+                    GLES20FixedPipeline.glCullFace(GLES30.GL_FRONT);
+                    GLES20FixedPipeline.glDrawArrays(GLES30.GL_TRIANGLES, 0, pCount);
+
+                    GLES20FixedPipeline.glCullFace(GLES30.GL_BACK);
+                    GLES20FixedPipeline.glDrawArrays(GLES30.GL_TRIANGLES, 0, pCount);
+                    GLES20FixedPipeline.glDisable(GLES30.GL_CULL_FACE);
+                } else {
+                    GLES20FixedPipeline.glDrawArrays(GLES30.GL_TRIANGLES, 0, pCount);
+                }
+
+                GLES30.glPolygonOffset(0.0f, 0.0f);
+                GLES30.glDisable(GLES30.GL_POLYGON_OFFSET_FILL);
+            }
+
+            // Outline around height polygon (only when map is tilted)
+            if (renderOutline && ortho.drawTilt > 0) {
+                ortho.forward(_outlinePointsPreForward, 3, _outlinePoints, 3);
+                GLES20FixedPipeline.glLineWidth(this.strokeWeight);
+                GLES20FixedPipeline.glVertexPointer(3, GLES30.GL_FLOAT, 0, _outlinePoints);
+                GLES20FixedPipeline.glColor4f(r * .9f, g * .9f, b * .9f, 1.0f);
+                GLES20FixedPipeline.glDrawArrays(GLES30.GL_LINES, 0, _outlinePoints.limit() / 3);
+            }
+
+            GLES20FixedPipeline.glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
+            GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_BLEND);
+            GLES20FixedPipeline.glPopMatrix();
+        }
+
+        // Altitude mode toggle
         if (sprites && altitudeMode == AltitudeMode.ClampToGround
                 || surface && altitudeMode != AltitudeMode.ClampToGround)
             return;
@@ -410,17 +612,7 @@ public class GLPolyline extends GLShape2 implements
         if (this.needsProjectVertices)
             _projectVerts(ortho);
 
-        if (ortho.drawMapResolution > _subject.getMetaDouble(
-                "maxLineRenderResolution",
-                Polyline.DEFAULT_MAX_LINE_RENDER_RESOLUTION))
-            return;
-
-        else if (ortho.drawMapResolution < _subject.getMetaDouble(
-                "minLineRenderResolution",
-                Polyline.DEFAULT_MIN_LINE_RENDER_RESOLUTION))
-            return;
-
-        if (stroke || (fill && _closed != 0)) {
+        if (stroke || (fill && _closed)) {
 
             GLES20FixedPipeline.glPushMatrix();
             GLES20FixedPipeline.glLoadIdentity();
@@ -521,7 +713,7 @@ public class GLPolyline extends GLShape2 implements
         List<List<Vector2D>> polys = Vector2D
                 .clipPolylineCohenSutherland(new RectF(ortho._left, ortho._top,
                         ortho._right, ortho._bottom), _verts2, _verts2Size);
-        double[] segLengths = new double[numPoints + _closed];
+        double[] segLengths = new double[numPoints + (_closed ? 1 : 0)];
         double xmin = Double.MAX_VALUE, ymin = Double.MAX_VALUE,
                 xmax = Double.MIN_VALUE, ymax = Double.MIN_VALUE;
         GLNinePatch ninePatch = GLRenderGlobals.get(this.context)
@@ -611,7 +803,8 @@ public class GLPolyline extends GLShape2 implements
 
     private void drawSegmentLabels(GLMapView ortho) {
 
-        //check for show middle label flag. This will signal to draw the label in the middle visible line segment
+        // check for show middle label flag. This will signal to draw the label in the middle
+        // visible line segment
         if (_subject.hasMetaValue("centerLabel")) {
             showCenterLabel(ortho);
             return;
@@ -662,9 +855,11 @@ public class GLPolyline extends GLShape2 implements
                 }
 
                 // only draw the text if the label fits within the distance between the end points
-                // of the segment.   This number is multiplied by 2.5 because circles are polylines and it 
-                // keeps it so that text can be shown when displaying circles.   
-                // 4 was chosen because of the number of polylines that make up a circle at this time.
+                // of the segment. This number is multiplied by 2.5 because circles are polylines
+                // and it
+                // keeps it so that text can be shown when displaying circles.
+                // 4 was chosen because of the number of polylines that make up a circle at this
+                // time.
                 // It would probably be a good idea to construct a GLCircle in the future?
                 // XXX - revisit for the next version
 
@@ -753,11 +948,11 @@ public class GLPolyline extends GLShape2 implements
                     }
 
                     if (ip[0] != null) {
-                        //Log.d("SHB", "bottom is clipped");
+                        // Log.d("SHB", "bottom is clipped");
                         xmid = (ip[0].x + origin.x) / 2.0f;
                         ymid = (ip[0].y + origin.y) / 2.0f;
                     } else {
-                        //Log.d("SHB", "top is clipped");
+                        // Log.d("SHB", "top is clipped");
                         xmid = (ip[1].x + origin.x) / 2.0f;
                         ymid = (ip[1].y + origin.y) / 2.0f;
                     }
@@ -780,7 +975,7 @@ public class GLPolyline extends GLShape2 implements
      * @param ortho
      */
     private void showCenterLabel(GLMapView ortho) {
-        //get the text to display, or return if there is none
+        // get the text to display, or return if there is none
 
         final String clt = centerLabelText;
 
@@ -842,15 +1037,12 @@ public class GLPolyline extends GLShape2 implements
     }
 
     /**
-     * TODO: Currently a direct copy from GLMapItem - but will be reritten / removed when
-     * the final version is done.
-     *
-     * Retrieve the bounding RectF of the current state of the Map. This accounts for the
-     * OrthoMapView's focus, so DropDowns will be accounted for.
-     *
-     * NOTE- the RectF this returns is not a valid RectF since the origin coordinate
-     * is in the lower left (ll is 0,0). Therefore the RectF.contains(PointF) method
-     * will not work to determine if a point falls inside the bounds.
+     * TODO: Currently a direct copy from GLMapItem - but will be reritten / removed when the final
+     * version is done. Retrieve the bounding RectF of the current state of the Map. This accounts
+     * for the OrthoMapView's focus, so DropDowns will be accounted for. NOTE- the RectF this
+     * returns is not a valid RectF since the origin coordinate is in the lower left (ll is 0,0).
+     * Therefore the RectF.contains(PointF) method will not work to determine if a point falls
+     * inside the bounds.
      *
      * @return The bounding RectF
      */
@@ -859,8 +1051,9 @@ public class GLPolyline extends GLShape2 implements
     }
 
     /**
-     * TODO: Currently a direct copy from GLMapItem - but will be reritten / removed when
-     * the final version is done.
+     * TODO: Currently a direct copy from GLMapItem - but will be reritten / removed when the final
+     * version is done.
+     * 
      * @param ctx
      * @return
      */
@@ -874,9 +1067,8 @@ public class GLPolyline extends GLShape2 implements
     }
 
     /**
-     * TODO: Currently a direct copy from GLMapItem - but will be reritten / removed when
-     * the final version is done.
-     * Provides the top and the bottom most intersection points.
+     * TODO: Currently a direct copy from GLMapItem - but will be reritten / removed when the final
+     * version is done. Provides the top and the bottom most intersection points.
      */
     public static PointF[] _getIntersectionPoint(RectF r, PointF cF,
             PointF vF) {
@@ -915,7 +1107,7 @@ public class GLPolyline extends GLShape2 implements
             // Check to see if it intersected
             if (rets[i] != null) {
                 if (i < 2) {
-                    //Log.d("SHB", "interesection detected entry #" + i);
+                    // Log.d("SHB", "interesection detected entry #" + i);
                     if (ret[0] == null)
                         ret[0] = new PointF((float) rets[i].x,
                                 (float) rets[i].y);
@@ -923,7 +1115,7 @@ public class GLPolyline extends GLShape2 implements
                         ret[1] = new PointF((float) rets[i].x,
                                 (float) rets[i].y);
                 } else {
-                    //Log.d("SHB", "interesection detected entry #" + i);
+                    // Log.d("SHB", "interesection detected entry #" + i);
                     if (ret[1] == null)
                         ret[1] = new PointF((float) rets[i].x,
                                 (float) rets[i].y);
@@ -938,8 +1130,8 @@ public class GLPolyline extends GLShape2 implements
     }
 
     /**
-     * Determines which line segments are currently visible and then 
-     * returns the segment in the middle.
+     * Determines which line segments are currently visible and then returns the segment in the
+     * middle.
      * 
      * @param ortho
      * @return - The index of the starting point of middle segment
@@ -1021,7 +1213,7 @@ public class GLPolyline extends GLShape2 implements
                     _verts2Size, bounds);
 
             // close the line if necessary
-            if (_closed != 0) {
+            if (_closed) {
                 _verts2.limit(_verts2.limit() + _verts2Size);
                 int idx = this.numPoints * _verts2Size;
                 _verts2.put(idx++, _verts2.get(0));
@@ -1036,7 +1228,7 @@ public class GLPolyline extends GLShape2 implements
     }
 
     protected void recomputeScreenRectangles(GLMapView ortho) {
-        int maxIdx = (this.numPoints + (_closed != 0 ? 1 : 0)) * _verts2Size;
+        int maxIdx = (this.numPoints + (_closed ? 1 : 0)) * _verts2Size;
         _verts2.clear();
         int partIdx = 0;
         int partCount = 0;
@@ -1070,7 +1262,7 @@ public class GLPolyline extends GLShape2 implements
                         Math.max(partition.bottom, y));
             }
 
-            if (partIdx == PARTITION_SIZE || i == maxIdx - _verts2Size) {
+            if (partIdx == PARTITION_SIZE - 1 || i == maxIdx - _verts2Size) {
                 if (partCount >= _partitionRects.size())
                     _partitionRects.add(partition);
                 partition.endIndex = idx;

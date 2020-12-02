@@ -30,6 +30,7 @@ import com.atakmap.android.util.LimitingThread;
 import com.atakmap.app.R;
 import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
 import com.atakmap.map.AtakMapController;
@@ -186,7 +187,7 @@ public abstract class ImageGalleryBaseAdapter
      * Remove a filter type from the list
      * @param filterClass Filter class
      */
-    public void removeFilter(Class filterClass) {
+    public void removeFilter(Class<?> filterClass) {
         synchronized (filters) {
             filters.remove(filterClass);
         }
@@ -459,7 +460,7 @@ public abstract class ImageGalleryBaseAdapter
     protected static void updateLastModified(final File f)
             throws IOException {
         if (f != null
-                && f.exists()
+                && FileIOProviderFactory.exists(f)
                 && !f.setLastModified(System.currentTimeMillis())) {
             //
             // Hack to update the lastModified time.
@@ -467,7 +468,7 @@ public abstract class ImageGalleryBaseAdapter
             RandomAccessFile raf = null;
 
             try {
-                raf = new RandomAccessFile(f, "rw");
+                raf = FileIOProviderFactory.getRandomAccessFile(f, "rw");
 
                 long length = raf.length();
 
@@ -523,7 +524,7 @@ public abstract class ImageGalleryBaseAdapter
 
         if (reservation != null) {
             try {
-                if (cacheFile.exists()) {
+                if (FileIOProviderFactory.exists(cacheFile)) {
                     // Check if the source image has been modified
                     // and if so generate a new thumbnail
                     long modTime = -1;
@@ -533,11 +534,11 @@ public abstract class ImageGalleryBaseAdapter
                         if (uri != null && FileSystemUtils.isEquals(
                                 uri.getScheme(), "file")) {
                             File f = new File(uri.getPath());
-                            if (f.exists() && f.isFile())
-                                modTime = f.lastModified();
+                            if (FileIOProviderFactory.exists(f) && f.isFile())
+                                modTime = FileIOProviderFactory.lastModified(f);
                         }
                     }
-                    if (modTime <= cacheFile.lastModified()) {
+                    if (modTime <= FileIOProviderFactory.lastModified(cacheFile)) {
                         BitmapFactory.Options opts = new BitmapFactory.Options();
                         opts.inPreferredConfig = Bitmap.Config.RGB_565;
                         thumb = BitmapFactory
@@ -574,7 +575,7 @@ public abstract class ImageGalleryBaseAdapter
                     }
                 }
             } catch (Exception e) {
-                if (cacheFile.exists())
+                if (FileIOProviderFactory.exists(cacheFile))
                     FileSystemUtils.delete(cacheFile);
             } finally {
                 if (reservation != null)
@@ -591,7 +592,7 @@ public abstract class ImageGalleryBaseAdapter
             return;
         FileOutputStream fos = null;
         try {
-            fos = new FileOutputStream(cacheFile);
+            fos = FileIOProviderFactory.getOutputStream(cacheFile);
             thumb.compress(Bitmap.CompressFormat.PNG, 100, fos);
             fos.close();
             fos = null;
@@ -609,7 +610,7 @@ public abstract class ImageGalleryBaseAdapter
                         String exifCache = cacheFile.getAbsolutePath().replace(
                                 ".png",
                                 ".exif");
-                        printWriter = new PrintWriter(exifCache);
+                        printWriter = new PrintWriter(FileIOProviderFactory.getFileWriter(new File(exifCache)));
                         printWriter.println(imageCaption);
                     }
                 } catch (IOException e) {
@@ -693,7 +694,7 @@ public abstract class ImageGalleryBaseAdapter
     private boolean disposed = false;
 
     protected ImageGalleryReceiver receiver;
-    protected final Map<Class, HierarchyListFilter> filters = new HashMap<>();
+    protected final Map<Class<?>, HierarchyListFilter> filters = new HashMap<>();
 
     protected final LimitingThread refreshThread = new LimitingThread(
             "RefreshGallery", new Runnable() {

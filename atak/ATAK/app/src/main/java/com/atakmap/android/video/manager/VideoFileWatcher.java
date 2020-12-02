@@ -1,14 +1,17 @@
 
 package com.atakmap.android.video.manager;
 
+import com.atakmap.android.importfiles.sort.ImportVideoSort;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.video.ConnectionEntry;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -37,20 +40,10 @@ public class VideoFileWatcher extends Thread {
     };
 
     // Filter for video files
-    public static final Set<String> VIDEO_EXTS = new HashSet<>();
+    public static final Set<String> VIDEO_EXTS = new HashSet<>(
+            ImportVideoSort.VIDEO_EXTENSIONS);
     static {
-        VIDEO_EXTS.add("mp4");
-        VIDEO_EXTS.add("mpeg");
-        VIDEO_EXTS.add("mpg");
-        VIDEO_EXTS.add("avi");
-        VIDEO_EXTS.add("ts");
-        VIDEO_EXTS.add("mkv");
-        VIDEO_EXTS.add("flv");
         VIDEO_EXTS.add("xml");
-        VIDEO_EXTS.add("mov");
-        VIDEO_EXTS.add("wmv");
-        VIDEO_EXTS.add("h264");
-        VIDEO_EXTS.add("h265");
     }
 
     public static final FileFilter VIDEO_FILTER = new FileFilter() {
@@ -142,7 +135,7 @@ public class VideoFileWatcher extends Thread {
      */
     private List<ConnectionEntry> scan(File root) {
         List<ConnectionEntry> entries = new ArrayList<>();
-        File[] files = root.listFiles();
+        File[] files = FileIOProviderFactory.listFiles(root);
         if (FileSystemUtils.isEmpty(files))
             return entries;
         for (File f : files) {
@@ -157,7 +150,7 @@ public class VideoFileWatcher extends Thread {
                 // can canWrite every refresh
                 if (!_canWrite.containsKey(dir))
                     _canWrite.put(dir, FileSystemUtils.canWrite(dir));
-                if (_canWrite.get(dir)) {
+                if (dir != null && _canWrite.get(dir)) {
                     // Remove the source XML
                     FileSystemUtils.delete(f);
                 } else {
@@ -168,7 +161,7 @@ public class VideoFileWatcher extends Thread {
                         ConnectionEntry ce = parsed.get(i);
                         File xml = new File(VideoManager.ENTRIES_DIR,
                                 ce.getUID() + ".xml");
-                        if (xml.exists())
+                        if (FileIOProviderFactory.exists(xml))
                             parsed.remove(i--);
                         else
                             ce.setLocalFile(xml);
@@ -177,12 +170,12 @@ public class VideoFileWatcher extends Thread {
                 entries.addAll(parsed);
                 continue;
             }
-            if (!f.isDirectory() && !VIDEO_FILTER.accept(f))
+            if (!FileIOProviderFactory.isDirectory(f) && !VIDEO_FILTER.accept(f))
                 continue;
             ConnectionEntry entry = new ConnectionEntry(f);
             entry.setLocalFile(f);
             entries.add(entry);
-            if (f.isDirectory()) {
+            if (FileIOProviderFactory.isDirectory(f)) {
                 List<ConnectionEntry> ret = scan(f);
                 entry.setChildren(ret);
                 entries.addAll(ret);

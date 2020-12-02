@@ -2,7 +2,7 @@
 <menu
     buttonBg='bgs/button.xml'
     buttonRadius='65'
-    buttonSpan='120'
+    buttonSpan='90'
     buttonWidth='90'>
 
         <button
@@ -13,6 +13,12 @@
         <button
             icon='icons/details.png'
             onClick='actions/showdetails_multipolyline.xml' />
+
+        <button
+            icon='icons/3d_free_look.png'
+            onClick='actions/compass_toggle_free_look.xml'
+            dependsOnCapability='capability.3d'
+            selected='${freeLook}'/>
 
         <button icon='icons/label.png'
                 onClick='actions/label_toggle.xml'

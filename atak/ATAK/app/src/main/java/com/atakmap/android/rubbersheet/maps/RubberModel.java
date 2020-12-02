@@ -10,6 +10,7 @@ import com.atakmap.android.rubbersheet.data.create.ModelLoader;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -247,19 +248,16 @@ public class RubberModel extends AbstractSheet implements ModelLoader.Callback {
 
     @Override
     public boolean testOrthoHit(int x, int y, GeoPoint point, MapView view) {
-        if (orthoHitImpl(x, y, point, view)) {
-            boolean freeLook = view.getMapTouchController()
-                    .isFreeForm3DEnabled();
-            toggleMetaData("freeLook", freeLook);
-            Marker center = getCenterMarker();
-            if (center != null)
-                center.toggleMetaData("freeLook", freeLook);
-            return true;
-        }
-        return false;
-    }
+        if (!isTouchable())
+            return false;
 
-    private boolean orthoHitImpl(int x, int y, GeoPoint point, MapView view) {
+        // Bounds check (2D only)
+        if (view.getMapTilt() == 0) {
+            GeoBounds hitBox = view.createHitbox(point, getHitRadius(view));
+            if (!hitBox.intersects(_bounds))
+                return false;
+        }
+
         Marker center = getCenterMarker();
         if (center != null && center.testOrthoHit(x, y, point, view))
             return true;
@@ -272,6 +270,10 @@ public class RubberModel extends AbstractSheet implements ModelLoader.Callback {
         if (!isModelVisible())
             return false;
 
+        return orthoHitModel(x, y, point, view);
+    }
+
+    protected boolean orthoHitModel(int x, int y, GeoPoint point, MapView view) {
         GeoPoint result = GeoPoint.createMutable();
         final GLRubberModel renderer = _renderer;
         if (renderer != null && renderer.hitTest(x, y, result, view)) {

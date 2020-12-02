@@ -168,9 +168,7 @@ namespace TAK
                     GLLabelManager* getLabelManager() const NOTHROWS;
                     void render() NOTHROWS;
                     Util::TAKErr getTerrainMeshElevation(double *value, const double latitude, const double longitude) const NOTHROWS;
-#ifdef __ANDROID__
                     Elevation::TerrainRenderService &getTerrainRenderService() NOTHROWS;
-#endif
                 public: // coordinate transformation functions
                     Util::TAKErr forward(Math::Point2<float> *value, const TAK::Engine::Core::GeoPoint2 &geo) const NOTHROWS;
                     Util::TAKErr forward(float *value, const size_t dstSize, const float *src, const size_t srcSize, const size_t count) const NOTHROWS;
@@ -344,12 +342,9 @@ namespace TAK
                     bool suspendMeshFetch;
                     double tiltSkewOffset;
                     double tiltSkewMult;
-#ifdef __ANDROID__
-                public :
-#endif
-                    bool continuousScrollEnabled;
 
-                public:
+                public :
+                    bool continuousScrollEnabled;
                     TAK::Engine::Core::RenderContext &context; //COVERED
                     atakmap::core::AtakMapView &view; //COVERED
                 private:
@@ -385,6 +380,7 @@ namespace TAK
 #ifdef __ANDROID__
                 public :
 #endif
+                public :
                     int sceneModelVersion; //COVERED
 #ifdef __ANDROID__
                 private :

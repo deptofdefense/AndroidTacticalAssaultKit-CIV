@@ -4,8 +4,6 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.interop.InteropCleaner;
 import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
-import com.atakmap.map.Interop;
-import com.atakmap.map.MapSceneModel;
 import com.atakmap.math.PointD;
 import com.atakmap.util.ReadWriteLock;
 

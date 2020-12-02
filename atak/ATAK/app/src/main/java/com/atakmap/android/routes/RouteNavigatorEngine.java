@@ -8,6 +8,7 @@ import android.util.Pair;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.routes.nav.NavigationCue;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.database.CursorIface;
@@ -108,8 +109,8 @@ final class RouteNavigatorEngine {
         }
 
         // Make sure the necessary directory structure exists
-        if (!_dbFile.getParentFile().exists()) {
-            if (!_dbFile.getParentFile().mkdirs()) {
+        if (!FileIOProviderFactory.exists(_dbFile.getParentFile())) {
+            if (!FileIOProviderFactory.mkdirs(_dbFile.getParentFile())) {
                 Log.d(TAG, "could not wrap: " + _dbFile.getParentFile());
             }
         }

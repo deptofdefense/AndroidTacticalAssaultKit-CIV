@@ -734,6 +734,18 @@ public abstract class MapGroup extends FilterMetaDataHolder implements
         return (item != null) && (item == this.getItemById(item.getSerialId()));
     }
 
+    /**
+     * Get a flat list of all map items in the group hierarchy
+     * @return List of map items
+     */
+    public Collection<MapItem> getItemsRecursive() {
+        List<MapItem> items = new ArrayList<>(getItems());
+        Collection<MapGroup> childGroups = getChildGroups();
+        for (MapGroup group : childGroups)
+            items.addAll(group.getItemsRecursive());
+        return items;
+    }
+
     @Override
     public Collection<HashtagContent> search(Collection<String> tags) {
         List<HashtagContent> ret = new ArrayList<>();

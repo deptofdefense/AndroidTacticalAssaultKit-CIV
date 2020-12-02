@@ -6,7 +6,6 @@ import android.graphics.Rect;
 import android.support.util.LruCache;
 import android.util.Pair;
 
-import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.maps.DeepMapItemQuery;
 import com.atakmap.android.maps.DefaultMetaDataHolder;
 import com.atakmap.android.maps.FilterMetaDataHolder;
@@ -30,7 +29,6 @@ import com.atakmap.map.AtakMapView;
 import com.atakmap.map.layer.Layer2;
 import com.atakmap.map.layer.feature.Adapters;
 import com.atakmap.map.layer.feature.AttributeSet;
-import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
 import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureCursor;

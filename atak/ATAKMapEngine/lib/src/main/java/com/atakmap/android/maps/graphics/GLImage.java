@@ -14,11 +14,11 @@ public class GLImage {
 
     private int vertexBufferId;
 
-    private int _textureId = 0;
+    private int _textureId;
     private float _width;
     private float _height;
 
-    private static Map<List<Float>, Integer> vboIdCache = new HashMap<List<Float>, Integer>();
+    private static Map<List<Float>, Integer> vboIdCache = new HashMap<>();
 
     public final float u0;
     public final float v0;

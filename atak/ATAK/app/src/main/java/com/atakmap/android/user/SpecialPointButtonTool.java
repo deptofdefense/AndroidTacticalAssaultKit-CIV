@@ -402,6 +402,7 @@ public abstract class SpecialPointButtonTool extends Tool {
             }
 
             _marker.setPoint(gp);
+            _marker.setVisible(true);
         }
     };
 
@@ -412,7 +413,7 @@ public abstract class SpecialPointButtonTool extends Tool {
 
     protected int getResourceId(String name) {
         try {
-            Class res = R.drawable.class;
+            Class<?> res = R.drawable.class;
             Field field = res.getField(name);
             int drawableId = field.getInt(null);
             return drawableId;

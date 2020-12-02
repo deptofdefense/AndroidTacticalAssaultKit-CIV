@@ -22,11 +22,11 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 
 public class SupportPreferenceFragment extends AtakPreferenceFragment {
@@ -107,7 +107,7 @@ public class SupportPreferenceFragment extends AtakPreferenceFragment {
                         + File.separatorChar
                         + "ATAK_User_Guide.pdf");
 
-        if (umFile.length() == 0)
+        if (FileIOProviderFactory.length(umFile) == 0)
             removePreference(atakDocumentation);
         if (atakDocumentation != null) {
             atakDocumentation
@@ -132,7 +132,7 @@ public class SupportPreferenceFragment extends AtakPreferenceFragment {
                         + "docs"
                         + File.separatorChar
                         + "ATAK_Change_Log.pdf");
-        if (clFile.length() == 0)
+        if (FileIOProviderFactory.length(clFile) == 0)
             removePreference(atakChangeLog);
 
         if (atakChangeLog != null) {
@@ -167,7 +167,7 @@ public class SupportPreferenceFragment extends AtakPreferenceFragment {
                                                                 + "README.txt");
 
                                         WebViewer.show(
-                                                file.toURI().toURL().toString(),
+                                                file,
                                                 context, 250);
                                     } catch (Exception e) {
                                         Log.e(TAG, "error loading readme.txt",
@@ -220,7 +220,7 @@ public class SupportPreferenceFragment extends AtakPreferenceFragment {
     static public String read(File f) {
         BufferedReader reader = null;
         try {
-            reader = new BufferedReader(new FileReader(f));
+            reader = new BufferedReader(FileIOProviderFactory.getFileReader(f));
             String line;
             StringBuilder stringBuilder = new StringBuilder();
             String ls = System.getProperty("line.separator");

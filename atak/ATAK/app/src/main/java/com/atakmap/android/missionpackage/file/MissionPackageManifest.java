@@ -13,6 +13,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.ui.MissionPackageListMapItem;
 import com.atakmap.android.routes.Route;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import org.simpleframework.xml.Attribute;
@@ -242,7 +243,7 @@ public class MissionPackageManifest implements Parcelable {
     }
 
     public boolean pathExists() {
-        return _path != null && new File(_path).exists();
+        return _path != null && FileIOProviderFactory.exists(new File(_path));
     }
 
     /**
@@ -429,8 +430,8 @@ public class MissionPackageManifest implements Parcelable {
             }
 
             File f = new File(p.getValue());
-            if (f.exists())
-                totalSizeInBytes += f.length();
+            if (FileIOProviderFactory.exists(f))
+                totalSizeInBytes += FileIOProviderFactory.length(f);
             else
                 totalSizeInBytes += file.getSize();
         }

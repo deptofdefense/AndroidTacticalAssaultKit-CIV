@@ -62,6 +62,7 @@ public class VehicleShape extends EditablePolyline implements VehicleMapItem {
         setMetaString("iconUri", ATAKUtilities.getResourceUri(
                 R.drawable.pointtype_aircraft));
         setType(COT_TYPE);
+        setHeightStyle(HEIGHT_STYLE_NONE);
     }
 
     public void setup(String model, String title, GeoPointMetaData loc,
@@ -82,7 +83,7 @@ public class VehicleShape extends EditablePolyline implements VehicleMapItem {
         setMetaString("vehicle_model", model);
         setMetaDouble("length", dimen[0]);
         setMetaDouble("width", dimen[1]);
-        setMetaDouble("height", dimen[2]);
+        setHeight(dimen[2]);
         setMetaInteger("height_unit", Span.FOOT.getValue());
         setMetaDouble("azimuth", trueDeg);
         if (fromUser)
@@ -142,11 +143,6 @@ public class VehicleShape extends EditablePolyline implements VehicleMapItem {
     }
 
     @Override
-    public double getHeight() {
-        return getMetaDouble("height", 0);
-    }
-
-    @Override
     public void setAzimuth(double deg, NorthReference ref) {
         double trueDeg = deg;
         if (ref.equals(NorthReference.MAGNETIC))
@@ -181,7 +177,7 @@ public class VehicleShape extends EditablePolyline implements VehicleMapItem {
             setMetaString("vehicle_model", model);
             setMetaDouble("length", dimen[0]);
             setMetaDouble("width", dimen[1]);
-            setMetaDouble("height", dimen[2]);
+            setHeight(dimen[2]);
             moveClosedSet(getCenter(), loc);
         }
     }

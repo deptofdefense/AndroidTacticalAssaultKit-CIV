@@ -1,8 +1,5 @@
 package com.atakmap.map.elevation;
 
-import android.app.DownloadManager;
-
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -13,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.interop.Pointer;
@@ -66,6 +64,8 @@ public final class ElevationManager {
      *
      * @deprecated use {@link #queryElevationSources(ElevationSource.QueryParameters)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static synchronized MosaicDatabase2.Cursor queryElevationData(QueryParameters params) {
         MosaicDatabase2.QueryParameters mparams = null;
         Collection<Filter<MosaicDatabase2.Cursor>> filters = null;

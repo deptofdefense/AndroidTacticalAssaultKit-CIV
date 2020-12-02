@@ -484,7 +484,7 @@ public class GLTilePatch2 implements GLMapLayer3, RasterDataAccess2, GLResolvabl
 
         @Override
         public void setColor(final int color) {
-            if(GLMapSurface.isGLThread()) {
+            if(renderContext.isRenderThread()) {
                 this.color = color;
                 if(GLTilePatch2.this._grid != null) {
                     for(int i = 0; i < _grid.length; i++) {

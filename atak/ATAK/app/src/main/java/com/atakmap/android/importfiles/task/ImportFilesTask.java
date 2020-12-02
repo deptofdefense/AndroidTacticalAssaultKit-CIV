@@ -33,6 +33,7 @@ import com.atakmap.android.importfiles.sort.ImportTilesetSort;
 import com.atakmap.android.importfiles.sort.ImportUserIconSetSort;
 import com.atakmap.android.importfiles.sort.ImportVideoSort;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.raster.ImageryFileType;
 
@@ -80,11 +81,7 @@ public class ImportFilesTask extends AsyncTask<Void, Void, Integer> {
         extensions.add("inf");
         extensions.add("infz");
         extensions.add("apk");
-        extensions.add("ts");
-        extensions.add("mpg");
-        extensions.add("mpeg");
-        extensions.add("avi");
-        extensions.add("mp4");
+        extensions.addAll(ImportVideoSort.VIDEO_EXTENSIONS);
 
         // now pull in all supported native imagery extensions
         String[] exts;
@@ -257,21 +254,14 @@ public class ImportFilesTask extends AsyncTask<Void, Void, Integer> {
         sorters.add(new ImportINFZSort(context, validateExt));
         sorters.add(new ImportAPKSort(context, validateExt));
 
+
         // TODO: Since the video sorters currently do not have a way of
         //  validating a file w/out the extension, always check the extension
         //  for now - otherwise any file that makes it this far will be
         //  considered a video if validateExt is false
         // See ATAK-10892 - Files were previously falling through and being
         // accepted by the MPEG sorter if all other matchers failed
-        sorters.add(
-                new ImportVideoSort(context, ".mpeg", true, copyFile));
-        sorters.add(
-                new ImportVideoSort(context, ".mpg", true, copyFile));
-        sorters.add(new ImportVideoSort(context, ".ts", true, copyFile));
-        sorters.add(
-                new ImportVideoSort(context, ".avi", true, copyFile));
-        sorters.add(
-                new ImportVideoSort(context, ".mp4", true, copyFile));
+        sorters.add(new ImportVideoSort(context, true, copyFile));
 
         // now add dynamically registered importers
         // TODO we could further refactor all resolvers to be dynamically registered, and add
@@ -318,24 +308,24 @@ public class ImportFilesTask extends AsyncTask<Void, Void, Integer> {
         if (dir == null) {
             Log.d(TAG, "Import directory null.");
             return 0;
-        } else if (!dir.exists()) {
+        } else if (!FileIOProviderFactory.exists(dir)) {
             Log.d(TAG, "Import dir not found: " + dir.getAbsolutePath());
             return 0;
-        } else if (!dir.isDirectory()) {
+        } else if (!FileIOProviderFactory.isDirectory(dir)) {
             Log.d(TAG, "Import path not a directory: " + dir.getAbsolutePath());
             return 0;
         }
 
         Log.d(TAG, "Importing from directory: " + dir.getAbsolutePath());
         int numberSorted = 0;
-        File[] files = dir.listFiles();
+        File[] files = FileIOProviderFactory.listFiles(dir);
         if (files != null && files.length > 0) {
             for (File file : files) {
-                if (file == null || !file.exists())
+                if (file == null || !FileIOProviderFactory.exists(file))
                     continue;
 
                 // if subdir, recurse
-                if (file.isDirectory()) {
+                if (FileIOProviderFactory.isDirectory(file)) {
                     numberSorted += sort(file, sorters);
                     continue;
                 }
@@ -392,9 +382,9 @@ public class ImportFilesTask extends AsyncTask<Void, Void, Integer> {
         }
 
         // if no files left in this directory, remove it
-        files = dir.listFiles();
+        files = FileIOProviderFactory.listFiles(dir);
 
-        if (dir.exists() && dir.isDirectory()
+        if (FileIOProviderFactory.exists(dir) && FileIOProviderFactory.isDirectory(dir)
                 && (files == null || files.length < 1)) {
             Log.i(TAG, "Cleaning up empty directory: " + dir.getAbsolutePath());
             FileSystemUtils.delete(dir);

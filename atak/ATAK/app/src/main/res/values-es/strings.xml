@@ -3658,4 +3658,20 @@
     <string name="http_401_message">The server has refused the connection because the username or password may not be correct.</string>
     <string name="http_403_message">The server has refused the connection because the user may not have the appropriate permissions.</string>
 
+    <string name="new_folder">New Folder</string>
+    <string name="read_only_location_msg">This location is read-only.</string>
+    <string name="name_cannot_be_blank">Name cannot be blank.</string>
+    <string name="name_contains_invalid_chars">Name contains invalid characters.</string>
+    <string name="new_folder_failed">Failed to create new folder.</string>
+
+    <string name="show_urls">Show URLs</string>
+    <string name="next_restart">Setting will take effect on restart</string>
+    <string name="redeploy">Redeploy</string>
+    <string name="sure_next_restart">Are you sure you would like to redeploy the default WMS configuration files on the next restart?</string>
+
+    <string name="bloodhound_must_be_hounding_start">Bloodhound must be started.</string>
+    <string name="bloodhound_must_be_in_route_mode">Must be in route mode to navigate.</string>
+    <string name="bloodhound_open_navigation">Open navigation interface.</string>
+    <string name="server_auth_error">Server Authentication Error</string>
+
 </resources>

@@ -49,13 +49,15 @@ public abstract class FeatureDbContentHandler extends FileOverlayContentHandler
     }
 
     @Override
-    public boolean setVisible(boolean visible) {
+    public boolean setVisibleImpl(boolean visible) {
         _dataStore.setFeatureSetsVisible(buildQueryParams(), visible);
         return true;
     }
 
     @Override
     public int getVisibility() {
+        if (!isConditionVisible())
+            return INVISIBLE;
         FeatureSetQueryParameters params = buildQueryParams();
         params.visibleOnly = true;
         int numVisible = _dataStore.queryFeatureSetsCount(params);
@@ -68,6 +70,8 @@ public abstract class FeatureDbContentHandler extends FileOverlayContentHandler
 
     @Override
     public boolean isVisible() {
+        if (!isConditionVisible())
+            return false;
         FeatureSetQueryParameters params = buildQueryParams();
         params.visibleOnly = true;
         params.limit = 1;

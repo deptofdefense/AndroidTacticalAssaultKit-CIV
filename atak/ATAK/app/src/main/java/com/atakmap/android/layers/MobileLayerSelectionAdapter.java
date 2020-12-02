@@ -16,12 +16,14 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.TextView;
 
 import com.atakmap.android.importexport.send.SendDialog;
+import com.atakmap.android.maps.CardLayer;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.android.layers.RangeSeekBar.OnRangeSeekBarChangeListener;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.util.LimitingThread;
 import com.atakmap.app.R;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -52,17 +54,22 @@ import java.util.List;
 import java.util.Map;
 
 class MobileLayerSelectionAdapter extends LayerSelectionAdapter
-        implements AtakMapView.OnMapMovedListener, View.OnClickListener {
+        implements AtakMapView.OnMapMovedListener, View.OnClickListener,
+        SharedPreferences.OnSharedPreferenceChangeListener {
 
     private boolean onlyViewport = true;
 
     public static final String TAG = "MobileLayerSelectionAdapter";
+
+    private static final String PREF_SELECTED = TAG + ".selected";
+    private static final String PREF_OFFLINE_ONLY = TAG + ".isOfflineOnly";
 
     // flag to show sources with slider and checkbox
     private boolean expandedLayout = false;
 
     private final LimitingThread calc;
 
+    protected final CardLayer cardLayer;
     protected final AbstractDataStoreRasterLayer2 layer;
 
     // remember the location of the slider bar for each layer
@@ -90,18 +97,18 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
         }
     };
 
-    MobileLayerSelectionAdapter(MobileImageryRasterLayer2 layer,
-            FeatureDataStore outlinesDataStore,
+    MobileLayerSelectionAdapter(CardLayer cardLayer,
+            MobileImageryRasterLayer2 layer, FeatureDataStore outlinesDataStore,
             MapView mapView, Context context) {
 
         super(layer, outlinesDataStore, mapView, context);
 
+        this.cardLayer = cardLayer;
         this.layer = layer;
 
         SharedPreferences prefs = PreferenceManager
                 .getDefaultSharedPreferences(_context);
-        final boolean offlineOnly = prefs.getBoolean(
-                "MobileLayerSelectionAdapter.isOfflineOnly", false);
+        final boolean offlineOnly = prefs.getBoolean(PREF_OFFLINE_ONLY, false);
 
         setOfflineOnly(offlineOnly);
 
@@ -128,8 +135,7 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
 
         String active = prefs.getString("lastViewedLayer.active", null);
 
-        final String selected = prefs.getString(
-                "MobileLayerSelectionAdapter.selected", null);
+        final String selected = prefs.getString(PREF_SELECTED, null);
         if (selected != null && active != null && active.equals("Mobile")) {
             if (offlineOnly) {
                 mapView.post(new Runnable() {
@@ -146,20 +152,11 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
                     }
                 });
             } else {
-                mapView.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        // probably not thread safe
-                        Log.d(TAG, "online layer selected: " + selected);
-                        visible = true;
-                        validateImpl(true);
-                        setSelected(selected);
-                        visible = false;
-                    }
-                });
-
+                postSelected(selected);
             }
         }
+
+        prefs.registerOnSharedPreferenceChangeListener(this);
     }
 
     @Override
@@ -171,15 +168,15 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
                 .getDefaultSharedPreferences(_context);
         SharedPreferences.Editor editor = prefs.edit();
 
+        prefs.unregisterOnSharedPreferenceChangeListener(this);
+
         final boolean offlineOnly = isOfflineOnly();
-        editor.putBoolean("MobileLayerSelectionAdapter.isOfflineOnly",
-                offlineOnly);
+        editor.putBoolean(PREF_OFFLINE_ONLY, offlineOnly);
 
         if (curr != null)
-            editor.putString("MobileLayerSelectionAdapter.selected",
-                    curr.toString());
+            editor.putString(PREF_SELECTED, curr.toString());
         else
-            editor.remove("MobileLayerSelectionAdapter.selected");
+            editor.remove(PREF_SELECTED);
 
         editor.apply();
         calc.dispose();
@@ -190,6 +187,17 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
     @Override
     public void onMapMoved(AtakMapView view, boolean animate) {
         calc.exec();
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences p, String key) {
+        if (key.equals(PREF_SELECTED)) {
+            String selected = p.getString(PREF_SELECTED, null);
+            if (selected != null) {
+                cardLayer.show("Mobile");
+                postSelected(selected);
+            }
+        }
     }
 
     synchronized void setOnlyViewportDisplay(final boolean ovp) {
@@ -289,7 +297,7 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
                                         FileSystemUtils
                                                 .sanitizeWithSpacesAndSlashes(
                                                         cachePath));
-                                if (file.exists())
+                                if (FileIOProviderFactory.exists(file))
                                     spec.cache = file;
                             }
                         } else {
@@ -297,8 +305,8 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
                                     FileSystemUtils
                                             .sanitizeWithSpacesAndSlashes(desc
                                                     .getUri()));
-                            if (file.exists())
-                                spec.offlineSize += file.length();
+                            if (FileIOProviderFactory.exists(file))
+                                spec.offlineSize += FileIOProviderFactory.length(file);
 
                             if (offline) {
                                 spec.parent = sel;
@@ -442,8 +450,7 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
                 sb.append(MathUtils.GetLengthString(spec.offlineSize))
                         .append(" local ");
             if (!offline) {
-                final long cacheSize = (spec.cache != null) ? spec.cache
-                        .length() : 0L;
+                final long cacheSize = (spec.cache != null) ? FileIOProviderFactory.length(spec.cache) : 0L;
                 if (cacheSize > 0L)
                     sb.append(MathUtils.GetLengthString(cacheSize))
                             .append(" cached ");
@@ -853,6 +860,22 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
                 return;
             }
         }
+    }
+
+    // Set selected layer name
+    private void postSelected(final String selected) {
+        // Delay a bit to give newly imported sources a chance to import
+        _mapView.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                // probably not thread safe
+                Log.d(TAG, "online layer selected: " + selected);
+                visible = true;
+                validateImpl(true);
+                setSelected(selected);
+                visible = false;
+            }
+        }, 500);
     }
 
     @Override

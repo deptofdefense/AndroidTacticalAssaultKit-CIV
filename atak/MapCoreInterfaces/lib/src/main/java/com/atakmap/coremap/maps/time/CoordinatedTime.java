@@ -6,7 +6,6 @@ import java.io.FileNotFoundException;
 import java.io.UnsupportedEncodingException;
 import java.io.PrintWriter;
 import java.io.IOException;
-import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -19,6 +18,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
@@ -302,8 +302,8 @@ public class CoordinatedTime implements Parcelable {
             // XXX Designate for refactoring. Should happen higher up?
             Log.e(TAG, msg);
             if (directory != null) {
-                if (!directory.exists()) {
-                    if (!directory.mkdirs()) {
+                if (!FileIOProviderFactory.exists(directory)) {
+                    if (!FileIOProviderFactory.mkdirs(directory)) {
                         Log.w(TAG, "Failed to create: " + directory);
                     }
                 }
@@ -312,7 +312,7 @@ public class CoordinatedTime implements Parcelable {
                 OutputStreamWriter osw = null;
                 try {
                     w = new PrintWriter(osw = new OutputStreamWriter(
-                            new FileOutputStream(new File(directory,
+                            FileIOProviderFactory.getOutputStream(new File(directory,
                                     "bad_time.txt"), true),
                             FileSystemUtils.UTF8_CHARSET));
                     w.append(msg).append("\r\n");
@@ -321,6 +321,10 @@ public class CoordinatedTime implements Parcelable {
                     Log.e(TAG,
                             "File not found while attempting to write bad_time.txt",
                             e1);
+                } catch (IOException e2) {
+                    Log.e(TAG,
+                            "Encountered IO issue while attempting to write bad_time.txt",
+                            e2);
                 } finally {
                     if (w != null)
                         w.close();

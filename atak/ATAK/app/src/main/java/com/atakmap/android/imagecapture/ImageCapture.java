@@ -15,9 +15,11 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.android.overlay.MapOverlayParent;
 import com.atakmap.android.tilecapture.imagery.MapItemCapturePP;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
@@ -34,6 +36,7 @@ import org.gdal.gdalconst.gdalconstConstants;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -51,6 +54,7 @@ import java.util.Set;
  * performance and results
  */
 @Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class ImageCapture extends AbstractLayer {
 
     private static final String TAG = "ImageCapture";
@@ -396,7 +400,7 @@ public class ImageCapture extends AbstractLayer {
 
     protected void saveKMZ(File outImage, File tmpDir,
             ImageCapturePP postDraw) {
-        if (tmpDir.exists() || tmpDir.mkdir()) {
+        if (FileIOProviderFactory.exists(tmpDir) || FileIOProviderFactory.mkdir(tmpDir)) {
             String name = outImage.getName();
             String path = outImage.getAbsolutePath();
             path = path.substring(0, path.lastIndexOf("."));
@@ -466,8 +470,9 @@ public class ImageCapture extends AbstractLayer {
                 + "</GroundOverlay>"
                 + "</kml>";
         try {
-            PrintWriter out = new PrintWriter(new File(dir, "doc.kml"),
-                    FileSystemUtils.UTF8_CHARSET.name());
+            PrintWriter out = new PrintWriter(new OutputStreamWriter(
+                    FileIOProviderFactory.getOutputStream(new File(dir, "doc.kml")),
+                    FileSystemUtils.UTF8_CHARSET.name()));
             out.println(docSkel);
             out.close();
         } catch (IOException ioe) {

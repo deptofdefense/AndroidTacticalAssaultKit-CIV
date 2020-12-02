@@ -78,6 +78,14 @@ public class Polyline extends Shape {
     public static final int BASIC_LINE_STYLE_DASHED = 1;
     public static final int BASIC_LINE_STYLE_DOTTED = 2;
 
+    /**
+     * Height styles (bit masks)
+     */
+    public static final int HEIGHT_STYLE_NONE = 0, // Do not draw height in 3D
+            HEIGHT_STYLE_POLYGON = 1, // Draw the 3D height polygon
+            HEIGHT_STYLE_OUTLINE = 2, // Draw an outline representing the height
+            HEIGHT_STYLE_OUTLINE_SIMPLE = 4; // Simplified height outline
+
     private Map<String, Object> labels;
 
     private int _labelTextSize = MapView.getDefaultTextFormat().getFontSize();
@@ -252,8 +260,10 @@ public class Polyline extends Shape {
     private final ConcurrentLinkedQueue<OnLabelsChangedListener> _onLabelsChanged = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnLabelTextSizeChanged> _onLabelTextSizeChanged = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnAltitudeModeChangedListener> _onAltitudeModeChanged = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<OnHeightStyleChangedListener> _onHeightStyleChanged = new ConcurrentLinkedQueue<>();
 
     private int basicLineStyle = Polyline.BASIC_LINE_STYLE_SOLID;
+    private int heightStyle = HEIGHT_STYLE_POLYGON | HEIGHT_STYLE_OUTLINE;
 
     public interface OnLabelsChangedListener {
         void onLabelsChanged(Polyline p);
@@ -273,6 +283,15 @@ public class Polyline extends Shape {
          * @param altitudeMode the altitude mode that the polyline was set to.
          */
         void onAltitudeModeChanged(Feature.AltitudeMode altitudeMode);
+    }
+
+    public interface OnHeightStyleChangedListener {
+        /**
+         * Height style flag has been modified
+         * This flag controls how 3D extruded height is drawn
+         * @param p Polyline
+         */
+        void onHeightStyleChanged(Polyline p);
     }
 
     public void setLabels(final Map<String, Object> labels) {
@@ -368,6 +387,58 @@ public class Polyline extends Shape {
     public void setAltitudeMode(AltitudeMode altitudeMode) {
         this.altitudeMode = altitudeMode;
         onAltitudeModeChanged();
+    }
+
+    public void addOnHeightStyleChangedListener(
+            OnHeightStyleChangedListener l) {
+        _onHeightStyleChanged.add(l);
+    }
+
+    public void removeOnHeightStyleChangedListener(
+            OnHeightStyleChangedListener l) {
+        _onHeightStyleChanged.remove(l);
+    }
+
+    protected void onHeightStyleChanged() {
+        for (OnHeightStyleChangedListener l : _onHeightStyleChanged)
+            l.onHeightStyleChanged(this);
+    }
+
+    /**
+     * Set the height rendering style for this shape
+     * Example: {@link #HEIGHT_STYLE_POLYGON} | {@link #HEIGHT_STYLE_OUTLINE}
+     * @param heightStyle Height style bit flags
+     */
+    public void setHeightStyle(int heightStyle) {
+        if (this.heightStyle != heightStyle) {
+            this.heightStyle = heightStyle;
+            onHeightStyleChanged();
+        }
+    }
+
+    /**
+     * Get the height rendering style for this shape
+     * @return Height style bit flags
+     */
+    public int getHeightStyle() {
+        return this.heightStyle;
+    }
+
+    /**
+     * Add a single height style bit to this shape
+     * Example: {@link #HEIGHT_STYLE_OUTLINE}
+     * @param heightStyleBit Height style bit
+     */
+    public void addHeightStyle(int heightStyleBit) {
+        setHeightStyle(heightStyle | heightStyleBit);
+    }
+
+    /**
+     * Remove a single height style bit from this shape
+     * @param heightStyleBit Height style bit
+     */
+    public void removeHeightStyle(int heightStyleBit) {
+        setHeightStyle(heightStyle & ~heightStyleBit);
     }
 
     @Override

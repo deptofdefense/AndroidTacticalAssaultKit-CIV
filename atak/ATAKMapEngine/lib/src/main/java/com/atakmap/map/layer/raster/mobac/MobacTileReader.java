@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -27,11 +26,12 @@ public class MobacTileReader extends AbstractTilePyramidTileReader {
 
         @Override
         public TileReader create(String uri, Options options) {
-            if(uri.charAt(0) != '/')
+            File file = new File(uri);
+            if(!file.exists())
                 return null;
             
             try {
-                MobacMapSource source = MobacMapSourceFactory.create(new File(uri));
+                MobacMapSource source = MobacMapSourceFactory.create(file);
                 if(source == null)
                     return null;
                 
@@ -51,11 +51,12 @@ public class MobacTileReader extends AbstractTilePyramidTileReader {
         
         @Override
         public boolean isSupported(String uri) {
-            if(uri.charAt(0) != '/')
+            File file = new File(uri);
+            if(!file.exists())
                 return false;
 
             try {
-                final MobacMapSource source = MobacMapSourceFactory.create(new File(uri));
+                final MobacMapSource source = MobacMapSourceFactory.create(file);
                 return (source != null);
             } catch(IOException e) {
                 return false;

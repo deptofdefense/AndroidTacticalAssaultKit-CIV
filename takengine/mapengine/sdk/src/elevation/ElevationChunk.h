@@ -11,7 +11,7 @@ namespace TAK {
     namespace Engine {
         namespace Elevation {
 
-            class ElevationChunk
+            class ENGINE_API ElevationChunk
             {
             public :
                 struct Data

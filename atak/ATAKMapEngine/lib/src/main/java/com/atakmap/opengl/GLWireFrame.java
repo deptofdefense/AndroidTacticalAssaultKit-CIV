@@ -3,7 +3,6 @@ package com.atakmap.opengl;
 import android.opengl.GLES30;
 
 import com.atakmap.lang.Unsafe;
-import com.atakmap.util.Disposable;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;

@@ -1,6 +1,7 @@
 
 package com.atakmap.coremap.maps.coords;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.log.Log;
 
 import java.util.ArrayList;
@@ -263,9 +264,10 @@ public class GeoPointMetaData {
     /**
      * Get a human readable representation of the GeoPoint in the format:
      *      latitude,longitude,altitudeHAE_meters,ce90,le90,altitude_source,geopoint_source
-     * @deprecated
-     *
+     * @deprecated use {@link #toString()}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public String toStringRepresentation() {
         return geopoint.getLatitude() + "," +
                 geopoint.getLongitude() + "," +
@@ -327,6 +329,8 @@ public class GeoPointMetaData {
      * @return A GeoPoint instance or null if the String cannot be parsed.
      * @deprecated
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1")
     public static GeoPointMetaData parseGeoPoint(String str) {
         if (str == null) {
             return null;

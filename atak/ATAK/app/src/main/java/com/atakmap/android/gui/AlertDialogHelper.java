@@ -3,17 +3,27 @@ package com.atakmap.android.gui;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.graphics.Point;
 import android.view.Display;
 import android.view.Window;
 import android.view.WindowManager;
 
 public class AlertDialogHelper {
+
     public static final String TAG = "AlertDialogHelper";
 
     public static final int STANDARD_MAXIMUM_WIDTH = 2160;
 
+    /**
+     * Helper method for setting the width of an AlertDialog to either be 70% of the
+     * window size capped by a maximum width of STANDARD_MAXIMUM_WIDTH.
+     * @param alertDialog the alert dialog
+     * @param percentageWidth the percentage of the screen to use as expressed by a number between 0 and 1
+     */
+    public static void adjustWidth(final AlertDialog alertDialog,
+                                   double percentageWidth) {
+        adjustWidth(alertDialog, percentageWidth, STANDARD_MAXIMUM_WIDTH);
+    }
     /**
      * Helper method for setting the width of an AlertDialog to either be 70% of the
      * window size capped by a maximum width.

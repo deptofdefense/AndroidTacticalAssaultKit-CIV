@@ -1,6 +1,7 @@
 
 package com.atakmap.spatial.file;
 
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.lang.Objects;
 import com.atakmap.map.layer.feature.FeatureDataSource;
 import com.atakmap.map.layer.feature.FeatureDataSourceContentFactory;
@@ -27,7 +28,7 @@ public class RecursiveFeatureDataSource implements FeatureDataSource {
 
     @Override
     public Content parse(File file) throws IOException {
-        if (!file.isDirectory())
+        if (!FileIOProviderFactory.isDirectory(file))
             return FeatureDataSourceContentFactory.parse(file,
                     this.targetProviderHint);
 
@@ -61,10 +62,10 @@ public class RecursiveFeatureDataSource implements FeatureDataSource {
     private static String recursiveParseContent(File file,
             FileFilter recurseFilter, String[] provider, String[] type,
             Collection<Content> content) {
-        File[] children = file.listFiles(recurseFilter);
+        File[] children = FileIOProviderFactory.listFiles(file, recurseFilter);
         if (children != null) {
             for (File aChildren : children) {
-                if (aChildren.isDirectory()) {
+                if (FileIOProviderFactory.isDirectory(aChildren)) {
                     recursiveParseContent(aChildren, recurseFilter, provider,
                             type, content);
                 } else {

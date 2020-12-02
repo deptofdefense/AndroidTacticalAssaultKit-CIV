@@ -1,8 +1,5 @@
 package com.atakmap.util;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.EngineLibrary;
 

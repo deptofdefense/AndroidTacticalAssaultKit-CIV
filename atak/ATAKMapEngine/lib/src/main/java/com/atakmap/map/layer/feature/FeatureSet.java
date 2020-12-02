@@ -2,6 +2,7 @@ package com.atakmap.map.layer.feature;
 
 import java.util.Collections;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.map.layer.feature.cursor.MultiplexingFeatureCursor;
 
 /**
@@ -95,8 +96,10 @@ public final class FeatureSet {
      * Returns a cursor to the features 
      * @return
      *
-     * @deprecated query the datastore; always return an empty cursor
+     * @deprecated query the originating datastore
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public FeatureCursor getFeatures() {
         if(this.owner == null)
             return new MultiplexingFeatureCursor(Collections.<FeatureCursor>emptySet(), null);

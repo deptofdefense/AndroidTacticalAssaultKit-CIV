@@ -1,6 +1,7 @@
 
 package com.atakmap.coremap.maps.coords;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.maps.conversion.EGM96;
 
@@ -11,7 +12,11 @@ import static java.lang.Math.sin;
 
 /**
  * Utility functions to compute distances on the Earth.
+ * @deprecated use {@link GeoCalculations} or instance methods on
+ *             {@link GeoPoint}
  */
+@Deprecated
+@DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
 public final class DistanceCalculations {
 
     private static final String TAG = "DistanceCalculations";
@@ -35,6 +40,8 @@ public final class DistanceCalculations {
      *
      * @deprecated use {@link #computeDestinationPoint(GeoPoint, double, double)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static GeoPoint metersFromAtBearing(GeoPoint start, double distance,
             double bearing) {
         final GeoPoint gp = computeDestinationPoint(start, bearing, distance,
@@ -67,6 +74,8 @@ public final class DistanceCalculations {
      *
      * @deprecated use {@link GeoCalculations#bearingTo(GeoPoint, GeoPoint)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static double bearingFromSourceToTarget(GeoPoint source,
             GeoPoint target) {
         double val = source.bearingTo(target);
@@ -156,6 +165,8 @@ public final class DistanceCalculations {
      * @param endPoint
      * @return
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static double calculateBearing(final GeoPoint startPoint,
             final GeoPoint endPoint) {
 
@@ -192,6 +203,8 @@ public final class DistanceCalculations {
      *
      * @deprecated use {@link GeoCalculations#distanceTo(GeoPoint, GeoPoint)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static double calculateRange(final GeoPoint startPoint,
             final GeoPoint endPoint) {
         return GeoCalculations.distanceTo(startPoint, endPoint);

@@ -12,6 +12,8 @@ import android.widget.ImageButton;
 import android.widget.ListView;
 
 import com.atakmap.android.drawing.mapItems.DrawingCircle;
+import com.atakmap.android.geofence.data.ShapeUtils;
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.app.R;
@@ -21,6 +23,7 @@ public class RouteAroundRegionManagerView {
 
     public static final String OPT_AVOID_GEOFENCES = "com.atakmap.android.routes.routearound.avoid_geofences";
     public static final String OPT_AVOID_ROUTE_AROUND_REGIONS = "com.atakmap.android.routes.routearound.avoid_route_around_regions";
+    private final MapView mapView;
 
     private ListView listView;
     private ImageButton addRegionButton;
@@ -29,10 +32,19 @@ public class RouteAroundRegionManagerView {
     // so that hiding the dialog can be handled.
     private AlertDialog parentDialog = null;
     private AlertDialog parentParentDialog = null;
+    RouteAroundRegionViewModel viewModel;
 
-    private ShapeToolUtils shapeUtil = new ShapeToolUtils(MapView.getMapView());
-    private RegionSelectionMethodDialog regionSelectionMethodDialog = new RegionSelectionMethodDialog(
-            MapView.getMapView().getContext(), MapView.getMapView());
+    private ShapeToolUtils shapeUtil;
+    private RegionSelectionMethodDialog regionSelectionMethodDialog;
+
+    public RouteAroundRegionManagerView(MapView mapView, RouteAroundRegionViewModel viewModel) {
+        this.viewModel = viewModel;
+        this.mapView = mapView;
+
+        shapeUtil = new ShapeToolUtils(mapView);
+        regionSelectionMethodDialog = new RegionSelectionMethodDialog(
+                mapView.getContext(), mapView);
+    }
 
     private RegionSelectionMethodDialog.MethodSelectionHandler methodSelectedHandler = new RegionSelectionMethodDialog.MethodSelectionHandler() {
         @Override
@@ -67,7 +79,7 @@ public class RouteAroundRegionManagerView {
                     break;
                 default:
                     shapeUtil.runRegionSelectionTool(
-                            (ShapeToolUtils.Callback<Shape, Object>) shapeHandler(),
+                            (ShapeToolUtils.Callback<MapItem, Object>) regionHandler(),
                             errorHandler());
                     break;
             }
@@ -79,6 +91,32 @@ public class RouteAroundRegionManagerView {
             @Override
             public Object apply(Shape selectedRegion) {
                 viewModel.addRegion(selectedRegion);
+                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (parentParentDialog != null) {
+                            parentParentDialog.show();
+                        }
+                        if (parentDialog != null) {
+                            parentDialog.show();
+                        }
+                    }
+                });
+                return null;
+            }
+        };
+    }
+
+    private ShapeToolUtils.Callback<? extends MapItem, Object> regionHandler() {
+        return new ShapeToolUtils.Callback<MapItem, Object>() {
+            @Override
+            public Object apply(MapItem selectedRegion) {
+                if (selectedRegion instanceof Shape)
+                    viewModel.addRegion((Shape) selectedRegion);
+                String shapeUid = ShapeUtils.getShapeUID(selectedRegion);
+                if (shapeUid != null) {
+                    viewModel.addRegion((Shape) mapView.getMapItem(shapeUid));
+                }
                 new Handler(Looper.getMainLooper()).post(new Runnable() {
                     @Override
                     public void run() {
@@ -114,12 +152,6 @@ public class RouteAroundRegionManagerView {
         this.parentParentDialog = parentParentDialog;
     }
 
-    RouteAroundRegionViewModel viewModel;
-
-    public RouteAroundRegionManagerView(RouteAroundRegionViewModel viewModel) {
-        this.viewModel = viewModel;
-    }
-
     /** Creates the view for the route around region manager. */
     public View createView(final Context pluginContext, ViewGroup parent) {
         LayoutInflater pluginInflater = LayoutInflater.from(pluginContext);
@@ -143,7 +175,7 @@ public class RouteAroundRegionManagerView {
             @Override
             public void onClick(View view) {
                 new RegionSelectionMethodDialog(pluginContext,
-                        MapView.getMapView())
+                        mapView)
                                 .getBuilder(methodSelectedHandler).create()
                                 .show();
             }

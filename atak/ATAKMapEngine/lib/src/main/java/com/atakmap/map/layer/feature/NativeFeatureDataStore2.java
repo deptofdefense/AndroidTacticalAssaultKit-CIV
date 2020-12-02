@@ -745,13 +745,13 @@ public class NativeFeatureDataStore2 implements FeatureDataStore2 {
             }
             String[] providers = null;
             if(mparams.featureSetFilter.providers != null)
-                providers = mparams.featureSetFilter.providers.toArray(new String[mparams.featureSetFilter.providers.size()]);
+                providers = mparams.featureSetFilter.providers.toArray(new String[0]);
             String[] types = null;
             if(mparams.featureSetFilter.types != null)
-                types = mparams.featureSetFilter.types.toArray(new String[mparams.featureSetFilter.types.size()]);
+                types = mparams.featureSetFilter.types.toArray(new String[0]);
             String[] names = null;
             if(mparams.featureSetFilter.names != null)
-                names = mparams.featureSetFilter.names.toArray(new String[mparams.featureSetFilter.names.size()]);
+                names = mparams.featureSetFilter.names.toArray(new String[0]);
 
             FeatureQueryParameters_setFeatureSetFilter(cparams,
                                                        fsids,
@@ -902,13 +902,13 @@ public class NativeFeatureDataStore2 implements FeatureDataStore2 {
         }
         String[] providers = null;
         if(mparams.providers != null)
-            providers = mparams.providers.toArray(new String[mparams.providers.size()]);
+            providers = mparams.providers.toArray(new String[0]);
         String[] types = null;
         if(mparams.types != null)
-            types = mparams.types.toArray(new String[mparams.types.size()]);
+            types = mparams.types.toArray(new String[0]);
         String[] names = null;
         if(mparams.names != null)
-            names = mparams.names.toArray(new String[mparams.names.size()]);
+            names = mparams.names.toArray(new String[0]);
 
         FeatureSetQueryParameters_set(
                 cparams,

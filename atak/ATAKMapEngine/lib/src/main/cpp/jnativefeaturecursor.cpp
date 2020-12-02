@@ -128,7 +128,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_NativeFeatureCursor
         case FeatureDefinition2::StyleStyle :
             if(!rawStyle.object)
                 return NULL;
-            StylePtr cstyle(static_cast<const Style *>(rawStyle.object)->clone(), Style::destructStyle);
+            TAK::Engine::Feature::StylePtr cstyle(static_cast<const Style *>(rawStyle.object)->clone(), Style::destructStyle);
             return NewPointer(env, std::move(cstyle));
     }
 

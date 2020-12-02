@@ -8,12 +8,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.Stack;
+
+import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
-import android.content.res.XmlResourceParser;
 import android.util.Xml;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -44,7 +45,7 @@ public class MobacMapSourceFactory {
     private static MobacMapSource parseXmlMapSource(File f) throws IOException {
         FileInputStream fileInputStream = null;
         try {
-            fileInputStream = new FileInputStream(f);
+            fileInputStream = FileIOProviderFactory.getInputStream(f);
             return parseXmlMapSource(fileInputStream);
         } finally {
             if(fileInputStream != null)
@@ -99,8 +100,10 @@ public class MobacMapSourceFactory {
             throw new IOException(e);
         } finally { 
             if (parser != null) {
-                if (parser instanceof XmlResourceParser)
-                    ((XmlResourceParser) parser).close();
+                if (parser instanceof AutoCloseable)
+                    try {
+                        ((AutoCloseable) parser).close();
+                    } catch(Exception ignored) {}
             }
         }
     }
@@ -252,7 +255,7 @@ public class MobacMapSourceFactory {
             throw new RuntimeException();
 
         return new CustomMultiLayerMobacMapSource(name,
-                layers.toArray(new MobacMapSource[layers.size()]),
+                layers.toArray(new MobacMapSource[0]),
                 layersAlpha,
                 backgroundColor);
     }
