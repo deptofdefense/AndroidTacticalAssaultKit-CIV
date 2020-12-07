@@ -131,22 +131,25 @@ public class PluginSpinner extends Spinner {
             return c.moveSharedPreferencesFrom(sourceContext, name);
         }
 
+        public boolean isUiContext() {
+            Method m;
+            try {
+                m = c.getClass().getMethod("isUIContext");
+                return (Boolean) m.invoke(c, new Object[] {});
+            } catch (SecurityException | NoSuchMethodException | IllegalArgumentException |
+                    IllegalAccessException | InvocationTargetException e) {
+                Log.e(TAG, "isUIContext failed", e);
+            }
+            return false;
+        }
+
         public void updateDisplay(int displayId) {
             Method m;
             try {
                 m = c.getClass().getMethod("updateDisplay");
-                m.invoke(c, new Object[] {
-                        displayId
-                });
-            } catch (SecurityException e) {
-                Log.e(TAG, "getExternalMediaDirs failed", e);
-            } catch (NoSuchMethodException e) {
-                Log.e(TAG, "getExternalMediaDirs failed", e);
-            } catch (IllegalArgumentException e) {
-                Log.e(TAG, "getExternalMediaDirs failed", e);
-            } catch (IllegalAccessException e) {
-                Log.e(TAG, "getExternalMediaDirs failed", e);
-            } catch (InvocationTargetException e) {
+                m.invoke(c, new Object[] { displayId });
+            } catch (SecurityException | NoSuchMethodException | IllegalArgumentException |
+                    IllegalAccessException | InvocationTargetException e) {
                 Log.e(TAG, "getExternalMediaDirs failed", e);
             }
         }
@@ -158,15 +161,8 @@ public class PluginSpinner extends Spinner {
                 return (String) m.invoke(c, new Object[] {
                         clazz
                 });
-            } catch (SecurityException e) {
-                Log.e(TAG, "getSystemServiceName failed", e);
-            } catch (NoSuchMethodException e) {
-                Log.e(TAG, "getSystemServiceName failed", e);
-            } catch (IllegalArgumentException e) {
-                Log.e(TAG, "getSystemServiceName failed", e);
-            } catch (IllegalAccessException e) {
-                Log.e(TAG, "getSystemServiceName failed", e);
-            } catch (InvocationTargetException e) {
+            } catch (SecurityException | NoSuchMethodException | IllegalArgumentException |
+                    IllegalAccessException | InvocationTargetException e) {
                 Log.e(TAG, "getSystemServiceName failed", e);
             }
             return "";
@@ -181,15 +177,8 @@ public class PluginSpinner extends Spinner {
             try {
                 m = c.getClass().getMethod("getDisplay", Class.class);
                 return (Display) m.invoke(c, new Object[] {});
-            } catch (SecurityException e) {
-                Log.e(TAG, "getSystemServiceName failed", e);
-            } catch (NoSuchMethodException e) {
-                Log.e(TAG, "getSystemServiceName failed", e);
-            } catch (IllegalArgumentException e) {
-                Log.e(TAG, "getSystemServiceName failed", e);
-            } catch (IllegalAccessException e) {
-                Log.e(TAG, "getSystemServiceName failed", e);
-            } catch (InvocationTargetException e) {
+            } catch (SecurityException | NoSuchMethodException | IllegalArgumentException |
+                    IllegalAccessException | InvocationTargetException e) {
                 Log.e(TAG, "getSystemServiceName failed", e);
             }
             return null;
@@ -204,15 +193,8 @@ public class PluginSpinner extends Spinner {
             try {
                 m = c.getClass().getMethod("getDisplayId");
                 return (Integer) m.invoke(c, new Object[] {});
-            } catch (SecurityException e) {
-                Log.e(TAG, "getUserId failed", e);
-            } catch (NoSuchMethodException e) {
-                Log.e(TAG, "getUserId failed", e);
-            } catch (IllegalArgumentException e) {
-                Log.e(TAG, "getUserId failed", e);
-            } catch (IllegalAccessException e) {
-                Log.e(TAG, "getUserId failed", e);
-            } catch (InvocationTargetException e) {
+            } catch (SecurityException | NoSuchMethodException | IllegalArgumentException |
+                    IllegalAccessException | InvocationTargetException e) {
                 Log.e(TAG, "getUserId failed", e);
             }
             return 0;
@@ -225,15 +207,8 @@ public class PluginSpinner extends Spinner {
             try {
                 m = c.getClass().getMethod("isCredentialProtectedStorage");
                 return (Boolean) m.invoke(c, new Object[] {});
-            } catch (SecurityException e) {
-                Log.e(TAG, "isCredentialProtectedStorage failed", e);
-            } catch (NoSuchMethodException e) {
-                Log.e(TAG, "isCredentialProtectedStorage failed", e);
-            } catch (IllegalArgumentException e) {
-                Log.e(TAG, "isCredentialProtectedStorage failed", e);
-            } catch (IllegalAccessException e) {
-                Log.e(TAG, "isCredentialProtectedStorage failed", e);
-            } catch (InvocationTargetException e) {
+            } catch (SecurityException | NoSuchMethodException | IllegalArgumentException |
+                    IllegalAccessException | InvocationTargetException e) {
                 Log.e(TAG, "isCredentialProtectedStorage failed", e);
             }
 
@@ -245,15 +220,8 @@ public class PluginSpinner extends Spinner {
             try {
                 m = c.getClass().getMethod("getDataDir");
                 return (File) m.invoke(c, new Object[] {});
-            } catch (SecurityException e) {
-                Log.e(TAG, "getExternalMediaDirs failed", e);
-            } catch (NoSuchMethodException e) {
-                Log.e(TAG, "getExternalMediaDirs failed", e);
-            } catch (IllegalArgumentException e) {
-                Log.e(TAG, "getExternalMediaDirs failed", e);
-            } catch (IllegalAccessException e) {
-                Log.e(TAG, "getExternalMediaDirs failed", e);
-            } catch (InvocationTargetException e) {
+            } catch (SecurityException | NoSuchMethodException | IllegalArgumentException |
+                    IllegalAccessException | InvocationTargetException e) {
                 Log.e(TAG, "getExternalMediaDirs failed", e);
             }
             // based on the ContextImpl source code
@@ -266,15 +234,8 @@ public class PluginSpinner extends Spinner {
             try {
                 m = c.getClass().getMethod("getExternalMediaDirs");
                 return (File[]) m.invoke(c, new Object[] {});
-            } catch (SecurityException e) {
-                Log.e(TAG, "getExternalMediaDirs failed", e);
-            } catch (NoSuchMethodException e) {
-                Log.e(TAG, "getExternalMediaDirs failed", e);
-            } catch (IllegalArgumentException e) {
-                Log.e(TAG, "getExternalMediaDirs failed", e);
-            } catch (IllegalAccessException e) {
-                Log.e(TAG, "getExternalMediaDirs failed", e);
-            } catch (InvocationTargetException e) {
+            } catch (SecurityException | NoSuchMethodException | IllegalArgumentException |
+                    IllegalAccessException | InvocationTargetException e) {
                 Log.e(TAG, "getExternalMediaDirs failed", e);
             }
             return new File[0];
@@ -286,15 +247,8 @@ public class PluginSpinner extends Spinner {
             try {
                 m = c.getClass().getMethod("getCodeCacheDir");
                 return (File) m.invoke(c, new Object[] {});
-            } catch (SecurityException e) {
-                Log.e(TAG, "getCodeCacheDir failed", e);
-            } catch (NoSuchMethodException e) {
-                Log.e(TAG, "getCodeCacheDir failed", e);
-            } catch (IllegalArgumentException e) {
-                Log.e(TAG, "getCodeCacheDir failed", e);
-            } catch (IllegalAccessException e) {
-                Log.e(TAG, "getCodeCacheDir failed", e);
-            } catch (InvocationTargetException e) {
+            } catch (SecurityException | NoSuchMethodException | IllegalArgumentException |
+                    IllegalAccessException | InvocationTargetException e) {
                 Log.e(TAG, "getCodeCacheDir failed", e);
             }
             return getCacheDir();
@@ -306,15 +260,8 @@ public class PluginSpinner extends Spinner {
             try {
                 m = c.getClass().getMethod("getNoBackupFilesDir");
                 return (File) m.invoke(c, new Object[] {});
-            } catch (SecurityException e) {
-                Log.e(TAG, "getNoBackupFilesDir failed", e);
-            } catch (NoSuchMethodException e) {
-                Log.e(TAG, "getNoBackupFilesDir failed", e);
-            } catch (IllegalArgumentException e) {
-                Log.e(TAG, "getNoBackupFilesDir failed", e);
-            } catch (IllegalAccessException e) {
-                Log.e(TAG, "getNoBackupFilesDir failed", e);
-            } catch (InvocationTargetException e) {
+            } catch (SecurityException | NoSuchMethodException | IllegalArgumentException |
+                    IllegalAccessException | InvocationTargetException e) {
                 Log.e(TAG, "getNoBackupFilesDir failed", e);
             }
             return getCacheDir();
@@ -325,15 +272,8 @@ public class PluginSpinner extends Spinner {
             try {
                 m = c.getClass().getMethod("getOpPackageName");
                 return (String) m.invoke(c, new Object[] {});
-            } catch (SecurityException e) {
-                Log.e(TAG, "getOpPackageName failed", e);
-            } catch (NoSuchMethodException e) {
-                Log.e(TAG, "getOpPackageName failed", e);
-            } catch (IllegalArgumentException e) {
-                Log.e(TAG, "getOpPackageName failed", e);
-            } catch (IllegalAccessException e) {
-                Log.e(TAG, "getOpPackageName failed", e);
-            } catch (InvocationTargetException e) {
+            } catch (SecurityException | NoSuchMethodException | IllegalArgumentException |
+                    IllegalAccessException | InvocationTargetException e) {
                 Log.e(TAG, "getOpPackageName failed", e);
             }
             return getBasePackageName();
@@ -345,15 +285,8 @@ public class PluginSpinner extends Spinner {
             try {
                 m = c.getClass().getMethod("getUserId");
                 return (Integer) m.invoke(c, new Object[] {});
-            } catch (SecurityException e) {
-                Log.e(TAG, "getUserId failed", e);
-            } catch (NoSuchMethodException e) {
-                Log.e(TAG, "getUserId failed", e);
-            } catch (IllegalArgumentException e) {
-                Log.e(TAG, "getUserId failed", e);
-            } catch (IllegalAccessException e) {
-                Log.e(TAG, "getUserId failed", e);
-            } catch (InvocationTargetException e) {
+            } catch (SecurityException | NoSuchMethodException | IllegalArgumentException |
+                    IllegalAccessException | InvocationTargetException e) {
                 Log.e(TAG, "getUserId failed", e);
             }
             return 0;
