@@ -50,10 +50,14 @@ final class StreamingMeshServiceImportUtil {
                 try { 
                     fis = FileIOProviderFactory.getInputStream(f);
                     int count = fis.read(read);
-                    String s = new String(read, 0, count,
-                            FileSystemUtils.UTF8_CHARSET);
-                    if (!s.contains("ModelInfo"))
+                    if (count > 0) { 
+                        String s = new String(read, 0, count,
+                                FileSystemUtils.UTF8_CHARSET);
+                        if (!s.contains("ModelInfo"))
+                            return null;
+                    } else { 
                         return null;
+                    }
                 } catch (IOException ignored) {
                     return null;
                 } finally {

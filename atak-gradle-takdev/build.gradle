@@ -1,4 +1,3 @@
-
 buildscript {
     description = 'Plugin to resolve and apply development kits for ATAK Core'
     group = 'com.atakmap.gradle'
