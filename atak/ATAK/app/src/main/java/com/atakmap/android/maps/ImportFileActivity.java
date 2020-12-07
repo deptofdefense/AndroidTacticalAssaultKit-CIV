@@ -240,6 +240,11 @@ public class ImportFileActivity extends MetricActivity {
                     return cursor.getString(nameIndex);
                 }
             }
+        } catch (SecurityException se) { 
+            Log.e(TAG, "unable to load: " + uri, se);
+            Toast.makeText(this, String.format("Unable to load %s", uri),
+                    Toast.LENGTH_LONG).show();
+            
         } finally {
             if (cursor != null)
                 cursor.close();

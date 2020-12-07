@@ -1,5 +1,9 @@
 # Version History
 
+## 4.1.1.6
+
+* Handle potential Security Exception on file import
+
 ## 4.1.1.5
 
 * Handle potential `NullPointerException` in Route Navigation
