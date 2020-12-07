@@ -1,5 +1,9 @@
 # Version History
 
+## 4.1.1.5
+
+* Handle potential `NullPointerException` in Route Navigation
+
 ## 4.1.1.4
 
 * Android 11 (API Level 30) compatibility; add `PluginSpinner.isUIContext`

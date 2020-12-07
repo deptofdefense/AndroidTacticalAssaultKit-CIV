@@ -529,7 +529,7 @@ public final class RouteNavigationManager {
 
         for (Integer p : possibleDepartures) {
             PointMapItem pmi = route.getPointMapItem(p);
-            if (getHasPointBeenDepartedFrom(pmi.getPoint(), newLocation)) {
+            if (pmi != null && getHasPointBeenDepartedFrom(pmi.getPoint(), newLocation)) {
                 pointsTargetedButNotDepartedFrom.remove(p);
                 departedPoints.add(p);
                 fireOnDepartedPoint(pmi);
