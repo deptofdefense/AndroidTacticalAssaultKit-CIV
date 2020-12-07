@@ -1,5 +1,9 @@
 # Version History
 
+## 4.1.1.2
+
+* Handle potential crash when trying to import empty file
+
 ## 4.1.1.1
 
 * Handle potential crash with grid lines overlay
