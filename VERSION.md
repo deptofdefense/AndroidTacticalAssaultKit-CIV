@@ -1,5 +1,10 @@
 # Version History
 
+## 4.1.1.3
+
+* Handle potential NullPointerException in AtakMapView in race at exit
+
+
 ## 4.1.1.2
 
 * Handle potential crash when trying to import empty file
