@@ -1,8 +1,12 @@
 # Version History
 
+## 4.1.1.4
+
+* Android 11 (API Level 30) compatibility; add `PluginSpinner.isUIContext`
+
 ## 4.1.1.3
 
-* Handle potential NullPointerException in AtakMapView in race at exit
+* Handle potential `NullPointerException` in `AtakMapView` in race at exit
 
 ## 4.1.1.2
 
