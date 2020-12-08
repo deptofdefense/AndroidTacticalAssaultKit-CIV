@@ -421,13 +421,13 @@ public class ATAKActivity extends MapActivity implements
                     setupActionBar(false);
                     try {
                         onResume();
-                    } catch (IllegalArgumentException ignored) {
+                    } catch (IllegalStateException | IllegalArgumentException ignored) {
                         // explicit call to on resume in this thread may fail if the app is shutting
                         // down due to another error.   should be benign just to catch and finish the
                         // thread properly.
                     }
                 }
-            }, 1);
+            }, 5);
         }
 
         DocumentedIntentFilter filter = new DocumentedIntentFilter();
