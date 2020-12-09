@@ -1,5 +1,22 @@
 # Version History
 
+## 4.1.1.4
+
+* Android 11 (API Level 30) compatibility; add `PluginSpinner.isUIContext`
+
+## 4.1.1.3
+
+* Handle potential `NullPointerException` in `AtakMapView` in race at exit
+
+## 4.1.1.2
+
+* Handle potential crash when trying to import empty file
+
+## 4.1.1.1
+
+* Handle potential crash with grid lines overlay
+* Layout fixes for Danger Close dialog
+
 ## 4.1.1.0
 
 * Video library update

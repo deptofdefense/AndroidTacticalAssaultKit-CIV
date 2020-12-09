@@ -437,9 +437,11 @@ public class AtakMapView extends ViewGroup {
                               double tilt,
                               boolean animate) {
 
-        final MapRenderer2 renderer = this.glSurface.getGLMapView();
-        renderer.lookAt(new GeoPoint(latitude, longitude), Globe.getMapResolution(getDisplayDpi(), scale), rotation, tilt, animate);
-        this.tMapSceneModel = renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
+        if(this.glSurface != null) {
+            final MapRenderer2 renderer = this.glSurface.getGLMapView();
+            renderer.lookAt(new GeoPoint(latitude, longitude), Globe.getMapResolution(getDisplayDpi(), scale), rotation, tilt, animate);
+            this.tMapSceneModel = renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
+        }
     }
 
     public double getDisplayDpi() {
@@ -1294,7 +1296,9 @@ public class AtakMapView extends ViewGroup {
         try {
             DENSITY = d;
             GLRenderGlobals.setRelativeScaling(d);
-            this.glSurface.updateDisplayDensity();
+            if(this.glSurface != null) {
+                this.glSurface.updateDisplayDensity();
+            }
         } finally {
             this.resume();
         }

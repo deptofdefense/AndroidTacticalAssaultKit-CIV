@@ -133,7 +133,7 @@ class TakDevPlugin implements Plugin<Project> {
         tuple.mapping = new File("${offlinePath}/mapping.txt")
 
         // mapping does not have to exist and a blank will be created with a warning.
-        return tuple.apiJar.exists() && tuple.keystore.exists() ? tuple : null
+        return tuple.apiJar.exists() ? tuple : null
     }
 
     void configureOffline(Project project, PathTuple tuple) {

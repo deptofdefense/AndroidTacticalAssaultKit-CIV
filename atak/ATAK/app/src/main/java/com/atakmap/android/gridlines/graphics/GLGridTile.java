@@ -214,9 +214,12 @@ class GLGridTile {
                         bottomLeft, swv, sev);
             }
 
-            _antiAliasedLineRenderer.draw(ortho, 0f, 0f, 0f, 3f);
-            _antiAliasedLineRenderer.draw(ortho, red, green, blue, 1f);
-
+            try {
+                _antiAliasedLineRenderer.draw(ortho, 0f, 0f, 0f, 3f);
+                _antiAliasedLineRenderer.draw(ortho, red, green, blue, 1f);
+            } catch (RuntimeException re) {
+                Log.e(TAG, "BAD: ATAK-13344 - already filed the bug" + re);
+            }
             String text;
 
             if (tiEasting != null || liEasting != null) {

@@ -1705,8 +1705,12 @@ public class LocationMapComponent extends AbstractMapComponent implements
 
             if (_accuracyEllipse == null) {
                 _accuracyEllipse = new Ellipse(UUID.randomUUID().toString());
+
+                GeoPoint gpWithoutAlt = _locationMarker.getGeoPointMetaData().get();
+                gpWithoutAlt = new GeoPoint(gpWithoutAlt.getLatitude(), gpWithoutAlt.getLongitude());
+
                 _accuracyEllipse.setCenterHeightWidth(
-                        _locationMarker.getGeoPointMetaData(), 0, 0);
+                        GeoPointMetaData.wrap(gpWithoutAlt), 0, 0);
                 _accuracyEllipse.setFillColor(Color.argb(50, 187, 238, 255));
                 _accuracyEllipse.setFillStyle(2);
                 _accuracyEllipse.setStrokeColor(Color.BLUE);
@@ -1732,7 +1736,10 @@ public class LocationMapComponent extends AbstractMapComponent implements
                                         || lastPoint.distanceTo(gp.get()) > 0.25
                                         || Double.compare(gp.get().getCE(),
                                                 lastPoint.getCE()) != 0) {
-                                    _accuracyEllipse.setCenterHeightWidth(gp,
+                                    GeoPoint gpWithoutAlt = _locationMarker.getGeoPointMetaData().get();
+                                    gpWithoutAlt = new GeoPoint(gp.get().getLatitude(), gp.get().getLongitude());
+
+                                    _accuracyEllipse.setCenterHeightWidth(GeoPointMetaData.wrap(gpWithoutAlt),
                                             (int) (gp.get().getCE() * 2),
                                             (int) (gp.get().getCE() * 2));
                                     lastPoint = gp.get();
