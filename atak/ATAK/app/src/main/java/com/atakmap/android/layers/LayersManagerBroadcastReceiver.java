@@ -518,15 +518,21 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
             final LinearLayout tabView = (LinearLayout) widget
                     .getChildTabViewAt(0);
             if (tabView != null) {
-                TextView tabTitle = (TextView) tabView.getChildAt(1);
-                if (tabName.equals(c.getString(R.string.imagery))) {
-                    // For Imagery tab = Imagery, set indicator to Imagery
-                    tabTitle.setText(c.getString(R.string.imagery));
-                    //Log.d(TAG, "Imagery tab is Imagery");
-                } else if (tabName.equals(c.getString(R.string.maps))) {
-                    // For Imagery tab = Maps, set indicator to Maps
-                    tabTitle.setText(c.getString(R.string.maps));
-                    //Log.d(TAG, "Imagery tab is Maps");
+                int count = tabView.getChildCount();
+                if (count > 1) { 
+                    final View v = tabView.getChildAt(1);
+                    if (v instanceof TextView) { 
+                        TextView tabTitle = (TextView)v;
+                        if (tabName.equals(c.getString(R.string.imagery))) {
+                            // For Imagery tab = Imagery, set indicator to Imagery
+                            tabTitle.setText(c.getString(R.string.imagery));
+                            //Log.d(TAG, "Imagery tab is Imagery");
+                        } else if (tabName.equals(c.getString(R.string.maps))) {
+                            // For Imagery tab = Maps, set indicator to Maps
+                            tabTitle.setText(c.getString(R.string.maps));
+                            //Log.d(TAG, "Imagery tab is Maps");
+                        }
+                    }
                 }
             }
         }

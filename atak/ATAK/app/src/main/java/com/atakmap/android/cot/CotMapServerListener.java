@@ -103,6 +103,11 @@ public class CotMapServerListener extends CotStreamListener implements
         super.connected(port, connected);
 
         String connectString = port.getConnectString();
+
+        // not sure how the _component can be null at this point, but received a crash where it was.
+        if (_component == null) 
+             return;
+
         _component.connected(port, connected);
 
         if (connected) {
