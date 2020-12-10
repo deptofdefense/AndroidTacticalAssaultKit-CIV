@@ -1009,9 +1009,13 @@ public class BloodHoundTool extends ButtonTool implements
                         }
 
                         linkListener.line.dispose();
-                        RouteMapReceiver.getInstance().getRouteGroup()
-                                .removeItem(_link.route);
-                        _link.route.dispose();
+
+                        if (_link != null) { 
+                            RouteMapReceiver.getInstance().getRouteGroup()
+                                    .removeItem(_link.route);
+                                _link.route.dispose();
+                                _link = null;
+                        }
 
                         if (_startItem != null) {
                             _startItem
@@ -1024,7 +1028,6 @@ public class BloodHoundTool extends ButtonTool implements
                                 ((Marker) _startItem)
                                         .removeOnTrackChangedListener(
                                                 _trackChangedListener);
-                            _link = null;
                         }
                         if (_endItem != null) {
                             _endItem.removeOnPointChangedListener(
@@ -1033,7 +1036,6 @@ public class BloodHoundTool extends ButtonTool implements
                             _endItem.removeOnVisibleChangedListener(
                                     linkListener);
 
-                            _link = null;
                         }
 
                         // set to null _startItem and _endItem after both _endItem and _startItem
@@ -1197,10 +1199,10 @@ public class BloodHoundTool extends ButtonTool implements
     public void onToolEnd() {
         super.onToolEnd();
         timerTask.setEta(Double.NaN);
-        synchronized (_link.route) {
+        if (_link != null) { 
             _link.route.dispose();
+            _link = null;
         }
-        _link = null;
     }
 
 

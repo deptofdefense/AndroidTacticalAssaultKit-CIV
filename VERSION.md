@@ -1,5 +1,10 @@
 # Version History
 
+## 4.1.1.11
+
+* Potential NullPointerException in bloodhound
+* Fix formatting issue with selected_exports_export_or_send
+
 ## 4.1.1.10
 
 * Potential ClassCastException in LayerManagerBroadcastReceiver

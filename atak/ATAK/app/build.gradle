@@ -21,24 +21,58 @@ import java.util.regex.Pattern
 ////////////////////////////////////////////////////////////////////////////////
 
 def ATAK_VERSION = "4.1.1"
-def ATAK_VERSION_SUBMINOR = ".10"
+def ATAK_VERSION_SUBMINOR = ".11"
 
 buildscript {
     ext.jacocoVersion = '0.8.5'
 
-    ext.upstreamUrl = project.properties['upstream.url'] ?: 'http://localhost/'
-    ext.upstreamUser = project.properties['upstream.user'] ?: 'invalidUser'
-    ext.upstreamPassword = project.properties['upstream.password'] ?: 'invalidPassword'
-    ext.sdkDir = project.properties['sdk.dir']
+    ext.getValueFromPropertiesFile = { propFile, key ->
+        if(!propFile.isFile() || !propFile.canRead())
+            return null
+        def prop = new Properties()
+        def reader = propFile.newReader()
+        try {
+            prop.load(reader)
+        } finally {
+            reader.close()
+        }
+        return prop.get(key)
+    }
+
+    ext.getProperty = { name, defValue ->
+        def prop = project.properties[name] ?:
+            getValueFromPropertiesFile(project.rootProject.file('local.properties'), name)
+        return (null == prop) ? defValue : prop
+    }
+
+    ext.isDevKitEnabled = { ->
+        return getProperty('maven.consume.url', null) != null
+    }
+
+    // private maven  artifacts may be resolved through mavenLocal, so idea is to keep the remote configuration well formed but obviously defaulted
+    ext.consumeUrl = getProperty('maven.consume.url', 'http://localhost/')
+    ext.mavenUser = getProperty('maven.user', 'invalid')
+    ext.mavenPassword = getProperty('maven.password', 'invalid')
 
     repositories {
         jcenter()
         google()
         mavenCentral()
+        mavenLocal()
+        maven {
+            url = consumeUrl
+            credentials {
+                username = mavenUser
+                password = mavenPassword
+    }
+        }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.6.3'
         classpath "org.jacoco:org.jacoco.core:$jacocoVersion"
+        if(isDevKitEnabled()) {
+            classpath 'com.atakmap.gradle:atak-gradle-devkit:1.0.0'
+    }
     }
 }
 
@@ -47,12 +81,23 @@ allprojects {
         google()
         jcenter()
         mavenCentral()
+        mavenLocal()
+        maven {
+            url = consumeUrl
+            credentials {
+                username = mavenUser
+                password = mavenPassword
+    }
+        }
     }
 }
 
 apply plugin: 'com.android.application'
 apply plugin: 'jacoco'
 apply plugin: 'maven-publish'
+if(isDevKitEnabled()) {
+    apply plugin: 'atak-devkit-plugin'
+}
 
 dependencies {
      implementation project(':MapCoreInterfaces:lib')
@@ -95,6 +140,13 @@ dependencies {
         testImplementation.extendsFrom androidTestImplementation
     }
 
+}
+
+if(isDevKitEnabled()) {
+    devkit {
+        atakVersion = ATAK_VERSION
+        atakVersionSubminor = ATAK_VERSION_SUBMINOR
+    }
 }
 
 // Attempt to get a suitable version name for the plugin based on
@@ -430,7 +482,7 @@ android {
          // Or, if you prefer, you can continue to check for errors in release builds,
          // but continue the build even when errors are found:
          abortOnError true
-         disable "AppCompatCustomView", "AppCompatResource" 
+         disable "AppCompatCustomView", "AppCompatResource"
      }
     touch('ATAKMapEngine/lib/src/main/jniLibs/arm64-v8a/libtakengine.so')
     touch('ATAKMapEngine/lib/src/main/jniLibs/arm64-v8a/libgdal.so')
@@ -650,18 +702,6 @@ android.applicationVariants.all { variant ->
     }
 }
 
-static def getValueFromPropertiesFile(File propFile, String key) {
-    if(!propFile.isFile() || !propFile.canRead())
-        return null
-    def prop = new Properties()
-    def reader = propFile.newReader()
-    try {
-        prop.load(reader)
-    } finally {
-        reader.close()
-    }
-    return prop.get(key)
-}
 
 static def touch(String file) {
     File f = new File(file);
