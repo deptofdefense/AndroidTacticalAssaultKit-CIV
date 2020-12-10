@@ -1,5 +1,9 @@
 # Version History
 
+## 4.1.1.14
+
+* Relax undocumented check to mitigate potential NullPointerException
+
 ## 4.1.1.12
 
 * Potential SecurityException on file import

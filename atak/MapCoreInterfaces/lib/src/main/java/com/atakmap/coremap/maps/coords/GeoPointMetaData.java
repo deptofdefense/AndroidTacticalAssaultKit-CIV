@@ -231,8 +231,11 @@ public class GeoPointMetaData {
      */
     public static GeoPoint[] unwrap(GeoPointMetaData[] pts) {
         GeoPoint[] ret = new GeoPoint[pts.length];
-        for (int i = 0; i < pts.length; ++i)
-            ret[i] = pts[i].get();
+        for (int i = 0; i < pts.length; ++i) { 
+            if (pts[i] != null) { 
+                ret[i] = pts[i].get();
+            }
+        }
         return ret;
     }
 
