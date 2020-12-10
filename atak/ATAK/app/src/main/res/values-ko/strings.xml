@@ -2332,7 +2332,7 @@
     <string name="mission_package_deleting_file">파일 삭제 중 …</string>
     <string name="mission_package_extracting">추출, 기다려 주세요 …</string>
     <string name="mission_package_sending">%1$s 전송:%2$s</string>
-    <string name="mission_package_sending2">%1$s 전송%2$s (%3$d%%의%4$s)%5$s,%6$s 나머지</string>
+    <string name="mission_package_sending2">%1$s 전송%2$s (%3$d%% 의%4$s) %5$s, %6$s 나머지</string>
     <string name="mission_package_processing">%2$s에서 처리%1$s …</string>
     <string name="mission_package_downloading_from">%2$s에서%1$s 다운로드</string>
     <string name="mission_package_uploading_to">%1$s ~%2$s 업로드 중</string>

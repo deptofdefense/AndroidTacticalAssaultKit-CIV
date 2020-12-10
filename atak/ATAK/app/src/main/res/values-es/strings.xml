@@ -2564,7 +2564,7 @@
     <string name="mission_package_deleting_file">Eliminando archivo …</string>
     <string name="mission_package_extracting">Extrayendo, por favor espera …</string>
     <string name="mission_package_sending">Envío de %1$s:%2$s</string>
-    <string name="mission_package_sending2">%1$s enviando %2$s (%3$d %%de%4$s)%5$s,%6$s restantes</string>
+    <string name="mission_package_sending2">%1$s enviando %2$s (%3$d%% de %4$s) %5$s,%6$s restantes</string>
     <string name="mission_package_processing">Procesando %1$s desde%2$s …</string>
     <string name="mission_package_downloading_from">Descargando %1$s desde%2$s</string>
     <string name="mission_package_uploading_to">Subiendo %1$s a%2$s</string>
