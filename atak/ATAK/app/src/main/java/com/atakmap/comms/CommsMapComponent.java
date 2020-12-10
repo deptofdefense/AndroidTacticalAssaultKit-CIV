@@ -2327,6 +2327,11 @@ public class CommsMapComponent extends AbstractMapComponent implements
         }
 
         public boolean reconfigFileSharing() {
+
+            if (commo == null)
+                return false;
+
+
             boolean ret = reconfigLocalWebServer();
             // Now make MPs via server match
             commo.setMissionPackageViaServerEnabled(ret);

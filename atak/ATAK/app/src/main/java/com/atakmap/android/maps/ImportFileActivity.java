@@ -107,7 +107,7 @@ public class ImportFileActivity extends MetricActivity {
                                             destFile));
                         }
                     }
-                } catch (IOException e) {
+                } catch (SecurityException | IOException e) {
                     Log.w(TAG,
                             "Failed to open content file: " + uri.toString(),
                             e);
