@@ -275,7 +275,10 @@ public class KMLExportMarshal extends ExportFileMarshal {
                 return -1;
             }
 
-            //sort by name
+            //sort by name 
+            if (lhs.getName() == null && rhs.getName() == null)
+                return 0;
+            
             if (lhs.getName() == null || rhs.getName() == null)
                 return (lhs.getName() == null ? -1 : 1);
 

@@ -189,6 +189,14 @@ public class ContactConnectorManager {
      */
     public synchronized boolean initiateContact(IndividualContact contact,
             Connector connector) {
+
+        if (contact == null || connector == null) {
+            Log.w(TAG,
+                    "Contact or Connector not set correctly, unable to initateContact " +
+                            contact   + ": " + connector);
+            return false;
+        }
+
         return initiateContact(connector.getConnectionType(), contact.getUID(),
                 connector.getConnectionString());
     }

@@ -1,5 +1,10 @@
 # Version History
 
+## 4.1.1.7
+
+* fix KML export for content with more than one item with `null` name
+* fix potential `NullPointerException` in contacts
+
 ## 4.1.1.6
 
 * Handle potential Security Exception on file import
