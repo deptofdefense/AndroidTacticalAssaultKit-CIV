@@ -21,7 +21,7 @@ import java.util.regex.Pattern
 ////////////////////////////////////////////////////////////////////////////////
 
 def ATAK_VERSION = "4.1.1"
-def ATAK_VERSION_SUBMINOR = ".16"
+def ATAK_VERSION_SUBMINOR = ".17"
 
 buildscript {
     ext.jacocoVersion = '0.8.5'
