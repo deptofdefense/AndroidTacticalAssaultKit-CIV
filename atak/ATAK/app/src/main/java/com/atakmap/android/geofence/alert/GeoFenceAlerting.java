@@ -346,7 +346,7 @@ public class GeoFenceAlerting {
     public synchronized boolean dismiss(GeoFenceMonitor monitor,
             Alert alert, boolean bStopMonitoring) {
         List<Alert> items = _ongoingAlerts.get(monitor);
-        if (alert == null || !items.remove(alert)) {
+        if (FileSystemUtils.isEmpty(items) || alert == null || !items.remove(alert)) {
             Log.w(TAG, "Unable to dismiss alert: " + alert
                     + " for fence: " + monitor.toString());
             return false;

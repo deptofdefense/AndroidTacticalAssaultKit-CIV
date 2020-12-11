@@ -1,5 +1,9 @@
 # Version History
 
+## 4.1.1.8
+
+* Handle potential `NullPointerException` on geofence dismiss
+
 ## 4.1.1.7
 
 * fix KML export for content with more than one item with `null` name
