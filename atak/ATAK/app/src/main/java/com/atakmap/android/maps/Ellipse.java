@@ -319,7 +319,7 @@ public class Ellipse extends Polyline {
             double angRad_sin = 0;
 
             if (angle != 0d) {
-                angRad = -Math.toRadians(angle);
+                angRad = Math.toRadians(angle);
                 angRad_cos = Math.cos(angRad);
                 angRad_sin = Math.sin(angRad);
             }

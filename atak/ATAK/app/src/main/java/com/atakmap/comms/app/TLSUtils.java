@@ -554,7 +554,7 @@ public class TLSUtils {
                             "TAK Certificate Issue", ticker, ticker,
                             new Intent("com.atakmap.app.NETWORK_SETTINGS"));
                 } else {
-                    new AlertDialog.Builder(context)
+                    AlertDialog.Builder builder = new AlertDialog.Builder(context)
                             .setTitle(host)
                             .setIcon(
                                     R.drawable.ic_network_error_notification_icon)
@@ -571,8 +571,12 @@ public class TLSUtils {
                                                     CotStreamListActivity.class));
                                         }
                                     })
-                            .setNegativeButton(R.string.cancel, null)
-                            .show();
+                            .setNegativeButton(R.string.cancel, null);
+                      try {
+                          builder.show();
+                      } catch (Exception ignored) {
+                          // catch a android.view.WindowManager$BadTokenException if it occurs
+                      }
                 }
             }
         });

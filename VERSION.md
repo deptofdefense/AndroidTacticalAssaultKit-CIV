@@ -1,5 +1,12 @@
 # Version History
 
+## 4.1.1.16
+
+* Handle potential WindowManager$BadTokenException in TLSUtils
+* Handle potential NullPointerException in geofence
+* Reverse intepretation of Ellipse azimuth property when recomputing the geometry
+* Handle potential NullPointerException in AddNetInfoActivity
+
 ## 4.1.1.15
 
 * Perform a double reflection to bypass google security for blacklisted reflection
