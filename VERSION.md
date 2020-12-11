@@ -1,5 +1,9 @@
 # Version History
 
+## 4.1.1.9
+
+* Handle potential `IllegalStateException` in `onResume`
+
 ## 4.1.1.8
 
 * Handle potential `NullPointerException` on geofence dismiss
