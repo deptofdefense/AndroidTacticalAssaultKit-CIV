@@ -367,17 +367,7 @@ public class AtakActionBarListData {
         //sends intent out to all receivers that need to catch
         // changes in custom action bar setups
         ActionBarReceiver.getInstance().updatePluginActionBars();
-        File[] files = FileIOProviderFactory.listFiles(actionBarDir);
-        if (files != null) {
-            for (File f : files) {
-                final String fname = f.toString();
-                if (fname.endsWith("_portrait.xml")
-                        || fname.endsWith("_landscape.xml")) {
-                    if (!FileIOProviderFactory.delete(f))
-                        Log.d(TAG, "could not remove: " + fname);
-                }
-            }
-        }
+
         for (AtakActionBarMenuData actionBar : actionbars) {
             File actionBarFile = new File(actionBarDir,
                     FileSystemUtils.sanitizeWithSpacesAndSlashes(

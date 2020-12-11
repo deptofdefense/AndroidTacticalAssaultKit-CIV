@@ -249,7 +249,8 @@ public class GeoFence {
                     ? ((AnchoredMapItem) shape).getAnchorItem()
                     : _mapItem;
             shape.toggleMetaData(menuState, _tracking);
-            marker.toggleMetaData(menuState, _tracking);
+            if (marker != null)
+                 marker.toggleMetaData(menuState, _tracking);
         }
     }
 

@@ -1453,7 +1453,7 @@ public class ATAKActivity extends MapActivity implements
                     Class<?> sc = c.getSuperclass();
                     if (sc != null) {
                         Field f;
-                        if (Build.VERSION.SDK_INT < 29) {
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                             f = sc.getDeclaredField("mContentHeight");
                         } else {
                             // the blacklist only checks to see the calling function and in this case
@@ -1461,10 +1461,9 @@ public class ATAKActivity extends MapActivity implements
                             // system and not from this application.   Warn users for future SDK's
                             // that this might not work when running debug versions - so it can be
                             // checked.
-                            if (Build.VERSION.SDK_INT > 29 && BuildConfig.DEBUG)
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && BuildConfig.DEBUG)
                                 Log.e(TAG,
-                                        "may need to revisit double reflection trick",
-                                        new Exception());
+                                        "may need to revisit double reflection trick: ATAKActivity");
                             final Method xgetDeclaredField = Class.class
                                     .getDeclaredMethod("getDeclaredField",
                                             String.class);

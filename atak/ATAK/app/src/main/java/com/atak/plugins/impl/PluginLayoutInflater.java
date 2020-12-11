@@ -2,13 +2,16 @@
 package com.atak.plugins.impl;
 
 import android.content.Context;
+import android.os.Build;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.atakmap.app.BuildConfig;
 import com.atakmap.coremap.log.Log;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Map;
 
 public class PluginLayoutInflater {
@@ -43,10 +46,28 @@ public class PluginLayoutInflater {
     public static void dispose() {
         try {
             //noinspection JavaReflectionMemberAccess
-            Field f = LayoutInflater.class.getDeclaredField("sConstructorMap");
+            Field f;
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                f = LayoutInflater.class.getDeclaredField("sConstructorMap");
+            } else {
+                // the blacklist only checks to see the calling function and in this case
+                // the reflection a second time makes the calling function is from the
+                // system and not from this application.   Warn users for future SDK's
+                // that this might not work when running debug versions - so it can be
+                // checked.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && BuildConfig.DEBUG)
+                    Log.e(TAG,
+                            "may need to revisit double reflection trick: PluginLayoutInflator");
+                final Method xgetDeclaredField = Class.class
+                        .getDeclaredMethod("getDeclaredField",
+                                String.class);
+                f = (Field) xgetDeclaredField.invoke(LayoutInflater.class,"sConstructorMap");
+            }
+            
             f.setAccessible(true);
-            Map sConstructorMap = (Map) f.get(null);
+            final Map sConstructorMap = (Map) f.get(null);
             sConstructorMap.clear();
+
             //Log.d(TAG, "cleared out the constructor map");
         } catch (Exception e) {
             // intentionally catch any and all possible exceptions

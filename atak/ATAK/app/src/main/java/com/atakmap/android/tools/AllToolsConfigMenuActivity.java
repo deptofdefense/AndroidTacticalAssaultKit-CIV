@@ -56,8 +56,10 @@ import com.atakmap.android.tools.undo.UndoStack;
 import com.atakmap.android.tools.undo.UndoStack.UndoActionResult;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -676,7 +678,18 @@ public class AllToolsConfigMenuActivity extends MetricActivity {
                                         return;
                                     }
 
-                                    if (!snapshot.save()) {
+                                    // TODO: After this is deployed to 4.1.1 as a localized fix, go ahead and
+                                    // make it more robust for 4.2.
+
+                                    File actionBarDir = FileSystemUtils.getItem("config/actionbars");
+                                    File actionBarFile = new File(actionBarDir,
+                                            FileSystemUtils.sanitizeWithSpacesAndSlashes(
+                                                    toDelete.getLabel() + "_"
+                                                            + toDelete.getOrientation()
+                                                            + ".xml".toLowerCase(
+                                                            LocaleUtil.getCurrent())));
+                                    if (!actionBarFile.delete()) {
+
                                         Log.w(TAG,
                                                 "Failed to delete/save: "
                                                         + label);
