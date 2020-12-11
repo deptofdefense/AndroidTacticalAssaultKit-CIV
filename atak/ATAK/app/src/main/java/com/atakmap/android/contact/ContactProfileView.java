@@ -283,7 +283,7 @@ public class ContactProfileView extends ContactDetailView {
                                                     _defaultConnector)) {
                                         Log.w(TAG,
                                                 "No connector handler available for: "
-                                                        + _contact.toString());
+                                                        + _contact);
                                         //TODO notify user?
                                     }
                                 }

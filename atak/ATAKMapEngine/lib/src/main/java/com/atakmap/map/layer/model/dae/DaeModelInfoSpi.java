@@ -340,8 +340,10 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
                         ZipVirtualFile zvfKmlFile = new ZipVirtualFile(kmlFile);
                         is = zvfKmlFile.openStream();
                         long start = System.currentTimeMillis();
-                        Scanner scanner = new Scanner(is);
-                        String asset = scanner.findWithinHorizon("<href>[\\s\\S]*(.dae|.DAE)<\\/href>", 0);
+                        final Scanner scanner = new Scanner(is);
+                        String asset = scanner.findWithinHorizon("<href>[\\s\\S]*(.dae|.DAE)<\\/href>", 128 * 1024);
+                        scanner.close();
+
                         Log.d(TAG, "initial scan for a referenced dae file: " + kmlFile + " " + (System.currentTimeMillis() - start) + "ms");
                         if (asset != null) {
                             Log.d(TAG, "found a reference to a dae in" + kmlFile);
@@ -397,8 +399,9 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
             inputStream = ModelFileUtils.openInputStream(uri);
             if (inputStream == null)
                 return DOES_NOT_EXIST;
-            Scanner scanner = new Scanner(inputStream);
-            String asset = scanner.findWithinHorizon("<asset>[\\s\\S]*?<\\/asset>", 5 * 1024);
+            final Scanner scanner = new Scanner(inputStream);
+            String asset = scanner.findWithinHorizon("<asset>[\\s\\S]*?<\\/asset>", 128 * 1024);
+            scanner.close();
             if (asset != null) {
                 Document doc = ModelFileUtils.parseXML(new ByteArrayInputStream(asset.getBytes()));
                 if (doc != null) {

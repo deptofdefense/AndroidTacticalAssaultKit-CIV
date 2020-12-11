@@ -1,5 +1,11 @@
 # Version History
 
+## 4.1.1.10
+
+* Potential ClassCastException in LayerManagerBroadcastReceiver
+* Potential NullPointerException in CotMapServerListener
+* Add read limits during DAE probing
+
 ## 4.1.1.9
 
 * Handle potential `IllegalStateException` in `onResume`
