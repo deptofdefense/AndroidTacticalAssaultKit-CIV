@@ -18,6 +18,7 @@ import android.graphics.drawable.Drawable;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.log.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -275,11 +276,16 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
                     });
         }
         _dialog = b.create();
-        _dialog.show();
-        _dialog.setOnDismissListener(this);
+        try { 
+           _dialog.show();
+           _dialog.setOnDismissListener(this);
+           // Dialog window doesn't size correctly for some reason...
+           forceWrapContent(cont);
 
-        // Dialog window doesn't size correctly for some reason...
-        forceWrapContent(cont);
+        } catch (Exception e) { 
+           Log.e("TileButtonDialog", "could not display the button dialog", e);
+        }
+
     }
 
     public void show() {

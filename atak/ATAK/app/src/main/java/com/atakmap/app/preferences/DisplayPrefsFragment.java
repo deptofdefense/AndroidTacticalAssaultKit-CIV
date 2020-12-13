@@ -1,6 +1,7 @@
 
 package com.atakmap.app.preferences;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,6 +11,7 @@ import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceManager;
+import android.widget.Toast;
 
 import com.atakmap.android.gridlines.GridLinesPreferenceFragment;
 import com.atakmap.android.layers.app.ImportStyleDefaultPreferenceFragment;
@@ -87,10 +89,18 @@ public class DisplayPrefsFragment extends AtakPreferenceFragment {
 
             @Override
             public boolean onPreferenceClick(Preference preference) {
-                startActivityForResult(
-                        new Intent(
-                                android.provider.Settings.ACTION_DISPLAY_SETTINGS),
-                        0);
+
+                try { 
+                    startActivityForResult(new Intent(
+                                android.provider.Settings.ACTION_DISPLAY_SETTINGS), 0);
+                } catch (ActivityNotFoundException ignored) {
+
+                    // TODO: Translate this after it has been backported to 4.1.1
+                    Toast.makeText(getActivity(),
+                            "This program was unable to launch the system level display preference.",
+                            Toast.LENGTH_SHORT).show();
+
+                }
                 return true;
             }
         });

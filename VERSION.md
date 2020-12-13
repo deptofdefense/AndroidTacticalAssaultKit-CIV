@@ -1,5 +1,13 @@
 # Version History
 
+## 4.1.1.15
+
+* Perform a double reflection to bypass google security for blacklisted reflection
+* Handle potential NullPointerException in geofence
+* Handle case where system display settings activity may not exist
+* Do not delete all persisted actionbar layouts during a save, only delete the actionbar layout that has been deleted.
+* Handle potential BadTokenException in TileButtonDialog
+
 ## 4.1.1.14
 
 * Relax undocumented check to mitigate potential NullPointerException
