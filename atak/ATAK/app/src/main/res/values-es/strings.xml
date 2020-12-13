@@ -943,7 +943,7 @@
     <string name="multiselect_dialogue">Elegir acción de selección múltiple</string>
     <string name="selection_export_dialogue">Seleccionar formato de exportación</string>
     <string name="previous_export_dialogue">Exportaciones anteriores</string>
-    <string name="selected_exports_export_or_send">% D elementos seleccionados. \ NExportar a archivo o enviar a contacto?</string>
+    <string name="selected_exports_export_or_send">%d elementos seleccionados. \ NExportar a archivo o enviar a contacto?</string>
     <string name="delete_dialog">Eliminar ítems</string>
     <string name="delete_details">¿Está seguro de que desea eliminar todos los marcadores no archivados?</string>
     <string name="delete_items_confirmation">Eliminar objetos de forma permanente los elimina de su dispositivo. ¿Continuar?</string>
