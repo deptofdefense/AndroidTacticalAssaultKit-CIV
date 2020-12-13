@@ -1,5 +1,10 @@
 # Version History
 
+## 4.1.1.12
+
+* Potential SecurityException on file import
+* Potential NullPointerException in ContactLocationView
+
 ## 4.1.1.11
 
 * Potential NullPointerException in bloodhound
