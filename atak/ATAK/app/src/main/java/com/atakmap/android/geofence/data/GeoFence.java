@@ -366,7 +366,9 @@ public class GeoFence {
                 ? ((AnchoredMapItem) shape).getAnchorItem()
                 : mapItem;
         shape.removeMetaData(menuState);
-        marker.removeMetaData(menuState);
+        
+        if (marker != null) 
+            marker.removeMetaData(menuState);
 
         if (mapItem.getGroup() != null)
             mapItem.persist(mapView.getMapEventDispatcher(), null,

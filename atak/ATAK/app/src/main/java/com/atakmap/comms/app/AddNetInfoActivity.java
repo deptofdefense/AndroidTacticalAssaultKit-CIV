@@ -23,7 +23,6 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.atakmap.android.gui.ImportFileBrowserDialog;
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.app.R;
 import com.atakmap.comms.CotServiceRemote;
@@ -334,7 +333,7 @@ public class AddNetInfoActivity extends MetricActivity {
         keystorePassword.setEnabled(!useDefaultCerts);
 
         boolean showExportKeystoreButton = PreferenceManager
-                .getDefaultSharedPreferences(MapView.getMapView().getContext())
+                .getDefaultSharedPreferences(this)
                 .getBoolean("certEnrollmentExport", false);
 
         exportKeystoreButton
@@ -665,14 +664,13 @@ public class AddNetInfoActivity extends MetricActivity {
                         }
                 }
 
-                Context context = MapView.getMapView().getContext();
                 new AlertDialog.Builder(AddNetInfoActivity.this)
                         .setTitle(String.format(
-                                context.getString(R.string.importmgr_exported),
+                                AddNetInfoActivity.this.getString(R.string.importmgr_exported),
                                 "Certificate"))
                         .setMessage(
                                 String.format(
-                                        context.getString(
+                                        AddNetInfoActivity.this.getString(
                                                 R.string.importmgr_exported_file),
                                         absolutePath))
                         .setPositiveButton(
