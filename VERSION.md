@@ -1,5 +1,9 @@
 # Version History
 
+## 4.1.1.17
+
+* Handle potential ClassCastException when a shared preference is updated while the user is in the IsrvNetworkPreferenceFragment
+
 ## 4.1.1.16
 
 * Handle potential WindowManager$BadTokenException in TLSUtils

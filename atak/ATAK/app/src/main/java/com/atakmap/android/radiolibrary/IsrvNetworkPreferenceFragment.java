@@ -65,45 +65,52 @@ public class IsrvNetworkPreferenceFragment extends AtakPreferenceFragment
     }
 
     @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
-            String key) {
+    public void onSharedPreferenceChanged(final SharedPreferences sharedPreferences,
+            final String key) {
 
-        if (key.equals("network_config")) {
-            return;
-        }
+        switch (key) {
+            case "network_dhcp":
+                boolean isDhcp = sharedPreferences.getBoolean(key, true);
 
-        if (key.equals("network_dhcp")) {
-            boolean isDhcp = sharedPreferences.getBoolean(key, true);
+                if (isDhcp) {
+                    updateDhcpDetails();
+                } else {
+                    updateStaticDetails();
+                }
 
-            if (isDhcp) {
-                updateDhcpDetails();
-            } else {
-                updateStaticDetails();
-            }
+                // update dchp summary
+                updateDhcpSummary(isDhcp);
+                break;
+            case "network_static_ip_address":
+            case "network_static_subnet_mask":
+            case "network_static_gateway":
+            case "network_static_dns1":
+            case "network_static_dns2":
 
-            // update dchp summary
-            updateDhcpSummary(isDhcp);
-        } else {
-            // get value
-            String prefValue = sharedPreferences.getString(key, "");
+                // get value
+                String prefValue = sharedPreferences.getString(key, "");
 
-            // validate
-            if (prefValue.equals("")
-                    || Patterns.IP_ADDRESS.matcher(prefValue).matches()) {
-                getPreferenceScreen().findPreference(key).setSummary(prefValue);
-            } else {
-                // set default value
-                SharedPreferences.Editor prefEditor = sharedPreferences.edit();
-                prefEditor.putString(key, "").apply();
+                // validate
+                if (prefValue.equals("")
+                        || Patterns.IP_ADDRESS.matcher(prefValue).matches()) {
+                    getPreferenceScreen().findPreference(key).setSummary(prefValue);
+                } else {
+                    // set default value
+                    SharedPreferences.Editor prefEditor = sharedPreferences.edit();
+                    prefEditor.putString(key, "").apply();
 
-                // notify invalid
-                final AlertDialog.Builder builder = new AlertDialog.Builder(
-                        this.getActivity());
-                builder.setTitle(R.string.invalid_address);
-                builder.setMessage(R.string.radio_enter_valid_address);
-                builder.setPositiveButton(android.R.string.ok, null);
-                builder.show();
-            }
+                    // notify invalid
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(
+                            this.getActivity());
+                    builder.setTitle(R.string.invalid_address);
+                    builder.setMessage(R.string.radio_enter_valid_address);
+                    builder.setPositiveButton(android.R.string.ok, null);
+                    builder.show();
+                }
+                break;
+            default:
+                break;
+
         }
     }
 
