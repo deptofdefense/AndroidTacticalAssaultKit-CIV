@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<classpath>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="var" path="M2_REPO/com/google/android/android/4.2.2_r2/android-4.2.2_r2.jar"/>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/transapps.plugins.host"/>
-	<classpathentry kind="output" path="bin/classes"/>
-</classpath>

@@ -52,7 +52,7 @@ public class SelectPointButtonTool extends SpecialPointButtonTool
     protected RangeAndBearingMapItem rb;
     private MapGroup _rootLayoutWidget;
 
-    private SharedPreferences _prefs;
+    private final SharedPreferences _prefs;
 
     // inventory of DesignatorTargetLines and the associated uid's should only be manipulated by the fetchDesignatorTargetLine
     private static final Map<String, DesignatorTargetLine> lbs = new HashMap<>();
@@ -118,7 +118,7 @@ public class SelectPointButtonTool extends SpecialPointButtonTool
             item.getFAH().setFahWidth(MathUtils.clamp(
                     Math.round(width / 10f) * 10, 10, 350));
         } catch (Exception nfe) {
-            Log.d(TAG, "error occured parsing number", nfe);
+            Log.d(TAG, "error occurred parsing number", nfe);
         }
     }
 

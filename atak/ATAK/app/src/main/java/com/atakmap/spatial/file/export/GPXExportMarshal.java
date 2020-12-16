@@ -13,7 +13,7 @@ import com.atakmap.android.importexport.Exportable;
 import com.atakmap.android.importexport.FormatNotSupportedException;
 import com.atakmap.android.routes.RouteGpxIO;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.GpxFileSpatialDb;
 
@@ -151,7 +151,7 @@ public class GPXExportMarshal extends ExportFileMarshal {
 
         // delete existing file, and then serialize KML out to file
         File file = getFile();
-        if (FileIOProviderFactory.exists(file)) {
+        if (IOProviderFactory.exists(file)) {
             FileSystemUtils.deleteFile(file);
         }
 

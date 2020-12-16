@@ -23,10 +23,10 @@ import java.net.URI;
 public class TakHttpResponse {
     private static final String TAG = "TakHttpResponse";
 
-    private HttpRequestBase _request;
-    private HttpResponse _response;
-    private StatusLine _statusLine;
-    private int _statusCode;
+    private final HttpRequestBase _request;
+    private final HttpResponse _response;
+    private final StatusLine _statusLine;
+    private final int _statusCode;
 
     public TakHttpResponse(HttpRequestBase request, HttpResponse response) {
         this._request = request;

@@ -1020,6 +1020,7 @@
     </string-array>
 
     <string-array translatable="false" name="suppFSSystem">
+        <item></item>
         <item>Air</item>
         <item>Aviation</item>
         <item>FA Cannon</item>
@@ -1028,6 +1029,7 @@
     </string-array>
 
     <string-array translatable="false" name="suppMOC">
+        <item></item>
         <item>@string/when_ready</item>
         <item>Do Not Load</item>
         <item>Repeat</item>

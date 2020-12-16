@@ -21,6 +21,7 @@ import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.android.medline.MedLineView;
 import com.atakmap.android.user.icon.SpotMapReceiver;
+import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -79,6 +80,7 @@ public class PlacePointTool {
         private boolean showMedNineLine = false;
         private boolean showFiveLine = false;
         private boolean showNewRadial = false;
+        private String action = null;
         private boolean nevercot = false;
         private boolean archive = true;
 
@@ -300,6 +302,14 @@ public class PlacePointTool {
             return this;
         }
 
+        /**
+         * The ability to perform an action on the newly created marker after it is dropped.
+         */
+        public MarkerCreator setAction(String action) {
+            this.action = action;
+            return this;
+        }
+
         public MarkerCreator setShowNewRadial(boolean showNewRadial) {
             this.showNewRadial = showNewRadial;
             if (showNewRadial) {
@@ -518,6 +528,14 @@ public class PlacePointTool {
                 AtakBroadcast.getInstance().sendIntents(intents);
             }
 
+            if (action != null) {
+                Intent intent = new Intent();
+                intent.setAction(action);
+                intent.putExtra("uid", uid);
+                intent.putExtra("targetUID", uid);
+                AtakBroadcast.getInstance().sendBroadcast(intent);
+            }
+
             // allow for setting of string, string values within a Marker prior to calling refresh 
             // and persist.
             for (Map.Entry<String, String> es : other.entrySet())
@@ -727,7 +745,8 @@ public class PlacePointTool {
         if (!legacyPointDropNaming && type != null) {
             String cType = type.toLowerCase(LocaleUtil.getCurrent());
             if (cType.startsWith("a-h")) {
-                prefix = _mapView.getContext().getString(R.string.tgtPrefix);
+                prefix = ResourceUtil.getString(_mapView.getContext(),
+                        R.string.civ_tgtPrefix, R.string.tgtPrefix);
             } else if (cType.startsWith("a-f")) {
                 prefix = "F";
             } else if (cType.startsWith("a-u")) {

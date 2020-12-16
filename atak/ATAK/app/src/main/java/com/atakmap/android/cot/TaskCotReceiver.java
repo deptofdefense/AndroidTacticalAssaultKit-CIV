@@ -39,7 +39,7 @@ public class TaskCotReceiver extends BroadcastReceiver implements
 
     private static final int TASK_REMOVER_DELAY = 10000;
 
-    private CotServiceRemote coTRemote;
+    private final CotServiceRemote coTRemote;
     private final MapGroup _taskPointGroup;
     private final MapView _mapView;
     private final Context _context;

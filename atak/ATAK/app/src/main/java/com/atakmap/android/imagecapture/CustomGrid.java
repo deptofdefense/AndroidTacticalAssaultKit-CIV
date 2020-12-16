@@ -67,7 +67,7 @@ public class CustomGrid extends AbstractLayer implements Capturable {
     private GeoPoint _topLeft, _topRight, _bottomRight, _bottomLeft;
     private Marker _centerMarker;
     private DoubleBuffer _points;
-    private MutableGeoBounds _bounds = new MutableGeoBounds(0, 0, 0, 0);
+    private final MutableGeoBounds _bounds = new MutableGeoBounds(0, 0, 0, 0);
     private int _pointCount;
     private long _pointPtr;
     private String[] _labels;

@@ -1,7 +1,7 @@
 package com.atakmap.map.layer.raster;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.map.layer.Layer;
 
 import java.io.File;
@@ -53,7 +53,7 @@ public final class Imagery {
 
         File config;
         if(cacheDir == null)
-            config = File.createTempFile("config", ".xml");
+            config = IOProviderFactory.createTempFile("config", ".xml", null);
         else
             config = new File(cacheDir, name + ".xml");
 

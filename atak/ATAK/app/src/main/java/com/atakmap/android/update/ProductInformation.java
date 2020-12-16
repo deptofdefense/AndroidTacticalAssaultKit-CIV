@@ -17,11 +17,13 @@ import com.atakmap.android.maps.graphics.GLCapture;
 import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.regex.Pattern;
 
 /**
@@ -49,7 +51,23 @@ public class ProductInformation {
 
     public enum ProductType {
         app,
-        plugin
+        plugin,
+        systemplugin;
+
+        /**
+         * Helper method to obtain a more specialized version of the plugin type.
+         * @param pkgName the package name to be used
+         * @param type the type that is currently known about the plugin
+         * @return a more specialized type if the plugin is known as a system plugin.
+         */
+        public static ProductType getSpecificPluginType(final String pkgName,
+                final ProductType type) {
+            if (type == ProductType.plugin &&
+                    (pkgName.equals("com.atakmap.app.flavor")
+                            || pkgName.equals("com.atakmap.app.encryption")))
+                return ProductType.systemplugin;
+            return type;
+        }
     }
 
     protected final Platform platform;
@@ -107,7 +125,8 @@ public class ProductInformation {
             int installedVersion) {
         this.parent = repo;
         this.platform = platform;
-        this.productType = productType;
+        this.productType = ProductType.getSpecificPluginType(packageName,
+                productType);
         this.packageName = packageName;
         this.simpleName = simpleName;
         this.version = version;
@@ -126,7 +145,8 @@ public class ProductInformation {
             String simpleName, int revision, String url, int installedVersion) {
         this.parent = repo;
         this.platform = Platform.Android;
-        this.productType = ProductType.plugin;
+        this.productType = ProductType.getSpecificPluginType(pkgName,
+                ProductType.plugin);
         this.packageName = pkgName;
         this.simpleName = simpleName;
         this.version = null;
@@ -308,8 +328,8 @@ public class ProductInformation {
                 Log.e(TAG, "cannot write: " + iconUri);
                 String name = f.getName();
                 File cacheDir = new File(context.getCacheDir(), "apk-icons");
-                if (!FileIOProviderFactory.exists(cacheDir)) {
-                    if (!FileIOProviderFactory.mkdir(cacheDir))
+                if (!IOProviderFactory.exists(cacheDir)) {
+                    if (!IOProviderFactory.mkdir(cacheDir))
                         Log.e(TAG,
                                 "could not make the app-icon cache directory");
                 }
@@ -356,7 +376,8 @@ public class ProductInformation {
                         && value instanceof String) {
                     takReq = (String) value;
                     Log.d(TAG, "plugin-api: " + takReq);
-                    productType = ProductType.plugin;
+                    productType = ProductType.getSpecificPluginType(pkgName,
+                            ProductType.plugin);
                 } else {
                     Log.d(TAG, "Not a plugin: " + info.packageName);
                 }
@@ -375,7 +396,7 @@ public class ProductInformation {
                     appUri,
                     iconUri, desc, HashingUtils.sha256sum(file), osReq, takReq,
                     installedVersion);
-            p.setFileSize(FileIOProviderFactory.length(file));
+            p.setFileSize(IOProviderFactory.length(file));
             return p;
         } catch (Exception ex) {
             Log.w(TAG, "Failed to parse APK: " + file.getAbsolutePath(), ex);
@@ -457,7 +478,8 @@ public class ProductInformation {
     }
 
     public boolean isPlugin() {
-        return productType != null && productType == ProductType.plugin;
+        return productType != null &&
+                (productType == ProductType.plugin);
     }
 
     public String getPackageName() {
@@ -488,7 +510,13 @@ public class ProductInformation {
         Bitmap bm = null;
         String iconPath = getIconPath(this);
         if (FileSystemUtils.isFile(iconPath)) {
-            bm = BitmapFactory.decodeFile(iconPath);
+            try {
+                try (FileInputStream stream = IOProviderFactory
+                        .getInputStream(new File(iconPath))) {
+                    bm = BitmapFactory.decodeStream(stream);
+                }
+            } catch (IOException ignored) {
+            }
         }
 
         if (bm != null) {

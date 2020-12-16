@@ -31,8 +31,8 @@ public final class DetailedModelViewerDropdownReceiver extends DropDownReceiver
 
     private final Context context;
 
-    private ModelRenderer modelRenderer;
-    private ModelGLSurfaceView modelGLSurfaceView;
+    private final ModelRenderer modelRenderer;
+    private final ModelGLSurfaceView modelGLSurfaceView;
 
     public DetailedModelViewerDropdownReceiver(final MapView mapView,
             final Context context) {

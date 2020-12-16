@@ -9,6 +9,7 @@ import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.map.AtakMapView;
 
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class TextWidget extends MapWidget2 {
@@ -108,11 +109,9 @@ public class TextWidget extends MapWidget2 {
      * @param text The text to be contained in the Widget.
      */
     public void setText(String text) {
-        if (text != null) {
-            // short circuit as needed
-            if (text != null && _text != null && text.equals(_text))
-                return;
-
+        if (text == null)
+            text = "";
+        if (!text.equals(_text)) {
             _text = text;
             _lineCount = _text.split("\n").length;
 
@@ -141,9 +140,7 @@ public class TextWidget extends MapWidget2 {
 
     public void setColor(int color) {
         _colors = new int[_lineCount];
-        for (int i = 0; i < _colors.length; i++) {
-            _colors[i] = color;
-        }
+        Arrays.fill(_colors, color);
         onColorChanged();
     }
 

@@ -282,7 +282,7 @@ public class LegacyTilePyramidTileReader extends AbstractTilePyramidTileReader {
             while(!bitmap.isDone())
                 try {
                     this.wait(20);
-                } catch(InterruptedException e) {}
+                } catch(InterruptedException ignored) {}
 
             final Bitmap retval = bitmap.get();
             

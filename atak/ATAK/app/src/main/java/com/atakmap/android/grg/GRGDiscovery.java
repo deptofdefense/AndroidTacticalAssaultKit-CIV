@@ -7,7 +7,7 @@ import android.content.Intent;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.layers.GenericLayerScanner;
 import com.atakmap.android.layers.LayerScanner;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.LocalRasterDataStore;
@@ -28,7 +28,6 @@ class GRGDiscovery implements Runnable, LayerScanner.Callback {
         EXTENSION_BLACKLIST.add("GIF");
         EXTENSION_BLACKLIST.add("JPG");
         EXTENSION_BLACKLIST.add("JPEG");
-        EXTENSION_BLACKLIST.add("PDF");
         EXTENSION_BLACKLIST.add("PRJ");
         EXTENSION_BLACKLIST.add("SBN");
         EXTENSION_BLACKLIST.add("SBX");
@@ -42,10 +41,20 @@ class GRGDiscovery implements Runnable, LayerScanner.Callback {
     /** Temporary file directory to use. */
     private final Context context;
     private final LocalRasterDataStore grgDatabase;
+    private LayerScanner currentScanner;
 
     GRGDiscovery(Context context, LocalRasterDataStore grgDatabase) {
         this.context = context;
         this.grgDatabase = grgDatabase;
+    }
+
+    public void cancel() {
+        LayerScanner cs = null;
+        synchronized (this) {
+            cs = currentScanner;
+        }
+        if (cs != null)
+            cs.cancel();
     }
 
     @Override
@@ -56,6 +65,9 @@ class GRGDiscovery implements Runnable, LayerScanner.Callback {
             this.grgDatabase.refresh();
 
             final LayerScanner grgScanner = new Scanner();
+            synchronized (this) {
+                currentScanner = grgScanner;
+            }
             Thread t = new Thread(grgScanner);
             t.setName(grgScanner.getName() + "-scanner");
             t.setPriority(Thread.NORM_PRIORITY);
@@ -65,6 +77,9 @@ class GRGDiscovery implements Runnable, LayerScanner.Callback {
 
             try {
                 t.join();
+                synchronized (this) {
+                    currentScanner = null;
+                }
             } catch (InterruptedException ignored) {
             }
         } finally {
@@ -134,13 +149,14 @@ class GRGDiscovery implements Runnable, LayerScanner.Callback {
 
         @Override
         protected int checkFile(int depth, File f) {
-            if (f.isFile()
+            if (IOProviderFactory.isFile(f)
                     && !EXTENSION_BLACKLIST.contains(getExtension(f)
                             .toUpperCase(LocaleUtil.getCurrent())))
                 return ACCEPT;
-            else if (FileIOProviderFactory.isDirectory(f) && MCIAGRGLayerInfoSpi.isMCIAGRG(f))
+            else if (IOProviderFactory.isDirectory(f)
+                    && MCIAGRGLayerInfoSpi.isMCIAGRG(f))
                 return ACCEPT;
-            else if (FileIOProviderFactory.isDirectory(f))
+            else if (IOProviderFactory.isDirectory(f))
                 return DELAY;
             else
                 return REJECT;

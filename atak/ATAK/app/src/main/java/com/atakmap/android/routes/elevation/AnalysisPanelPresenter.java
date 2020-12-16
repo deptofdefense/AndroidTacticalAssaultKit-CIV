@@ -51,7 +51,7 @@ public class AnalysisPanelPresenter implements View.OnClickListener {
 
     private int intensity = 50;
 
-    private LimitingThread intensityLT;
+    private final LimitingThread intensityLT;
 
     // private int _totalDistanceUnit = Span.ENGLISH;
     private UnitConverter.FORMAT _maxSlopeUnit = UnitConverter.FORMAT.GRADE;

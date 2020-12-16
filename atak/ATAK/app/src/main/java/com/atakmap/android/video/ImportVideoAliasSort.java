@@ -9,8 +9,8 @@ import com.atakmap.android.importfiles.sort.ImportResolver;
 import com.atakmap.android.video.manager.VideoManager;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProvider;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.BufferedReader;
@@ -44,7 +44,7 @@ public class ImportVideoAliasSort extends ImportResolver {
         try {
             // read first few hundred bytes and search for known strings
             char[] buffer = new char[1024];
-            br = new BufferedReader(FileIOProviderFactory.getFileReader(file));
+            br = new BufferedReader(IOProviderFactory.getFileReader(file));
             int numRead = br.read(buffer);
             br.close();
             if (numRead < 1) {
@@ -93,7 +93,7 @@ public class ImportVideoAliasSort extends ImportResolver {
         File atakdata = new File(_context.getCacheDir(),
                 FileSystemUtils.ATAKDATA);
         if (file.getAbsolutePath().startsWith(atakdata.getAbsolutePath())
-                && FileIOProviderFactory.delete(file, FileIOProvider.SECURE_DELETE))
+                && IOProviderFactory.delete(file, IOProvider.SECURE_DELETE))
             Log.d(TAG, "deleted imported video alias: "
                     + file.getAbsolutePath());
 

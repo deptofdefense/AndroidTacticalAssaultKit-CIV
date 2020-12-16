@@ -15,6 +15,9 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 
 public class MouseMapInputHandler extends MouseAdapter implements MouseWheelListener {
+    final static GeoPoint offworldCheckGeo = GeoPoint.createMutable();
+    final static int offworldCheckHints = MapRenderer2.HINT_RAYCAST_IGNORE_SURFACE_MESH|MapRenderer2.HINT_RAYCAST_IGNORE_TERRAIN_MESH;
+
     final MapRenderer2 glglobe;
 
     boolean isPan;
@@ -101,7 +104,14 @@ public class MouseMapInputHandler extends MouseAdapter implements MouseWheelList
     @Override
     public void mouseDragged(MouseEvent e) {
         if(isPan) {
-            if(this.cameraPanTo)
+            boolean doPanTo = this.cameraPanTo;
+            if(doPanTo) {
+                // don't attempt pan-to when off world
+                final MapRenderer2.InverseResult result = glglobe.inverse(new PointD(e.getX(), e.getY(), 0d), offworldCheckGeo, MapRenderer2.InverseMode.RayCast, offworldCheckHints, MapRenderer2.DisplayOrigin.UpperLeft);
+                doPanTo &= (result != MapRenderer2.InverseResult.None);
+            }
+
+            if(doPanTo)
                 CameraController.panTo(glglobe, pressLocation, e.getX(), e.getY(), false);
             else
                 CameraController.panBy(glglobe, lastX - e.getX(), lastY - e.getY(), false);

@@ -41,7 +41,7 @@ public class WMSQuery implements ServiceQuery {
 
             createServices(results, retval.services);
             return retval;
-        } catch (Throwable t) {
+        } catch (Throwable ignored) {
             return null;
         }
     }

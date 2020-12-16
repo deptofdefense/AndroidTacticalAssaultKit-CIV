@@ -39,13 +39,9 @@ public class GLTextWidget extends GLWidget2 implements OnTextChangedListener,
             final GLMapView orthoView = arg.second;
             if (subject instanceof TextWidget) {
                 TextWidget textWidget = (TextWidget) subject;
-                GLTextWidget glTextWidget = new GLTextWidget(textWidget,
-                        orthoView);
-                glTextWidget.startObserving(textWidget);
-                return glTextWidget;
-            } else {
-                return null;
+                return new GLTextWidget(textWidget, orthoView);
             }
+            return null;
         }
     };
 
@@ -54,6 +50,7 @@ public class GLTextWidget extends GLWidget2 implements OnTextChangedListener,
         onTextWidgetTextChanged(subject);
         onTextWidgetColorChanged(subject);
         onTextWidgetHasBackgroundChanged(subject);
+        startObserving(subject);
     }
 
     @Override

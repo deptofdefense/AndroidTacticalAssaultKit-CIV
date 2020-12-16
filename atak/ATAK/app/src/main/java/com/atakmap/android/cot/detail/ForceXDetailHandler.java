@@ -99,9 +99,8 @@ public class ForceXDetailHandler extends CotDetailHandler {
             double angle = Double
                     .parseDouble(ellipse.getAttribute("angle"));
 
-            ell.setCenterHeightWidthAngle(marker.getGeoPointMetaData(), minor,
-                    major,
-                    angle);
+            ell.setDimensions(marker.getGeoPointMetaData(), minor / 2,
+                    major / 2, angle);
 
             ell.setStrokeColor(stroke);
         }
@@ -119,6 +118,10 @@ public class ForceXDetailHandler extends CotDetailHandler {
         marker.addOnGroupChangedListener(new MapItem.OnGroupChangedListener() {
             @Override
             public void onItemAdded(MapItem item, MapGroup markerGroup) {
+                if (item == marker && group != null) {
+                    shape.removeFromGroup();
+                    group.addItem(shape);
+                }
             }
 
             @Override

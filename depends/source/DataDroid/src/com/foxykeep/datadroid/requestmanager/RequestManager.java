@@ -8,6 +8,9 @@
 
 package com.foxykeep.datadroid.requestmanager;
 
+import android.content.ComponentName;
+import android.content.ServiceConnection;
+import android.os.Build;
 import com.foxykeep.datadroid.service.RequestService;
 import com.foxykeep.datadroid.util.DataDroidLog;
 
@@ -17,6 +20,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Looper;
 import android.os.ResultReceiver;
 import android.support.util.LruCache;
@@ -265,7 +269,24 @@ public abstract class RequestManager {
         Intent intent = new Intent(mContext, mRequestService);
         intent.putExtra(RequestService.INTENT_EXTRA_RECEIVER, requestReceiver);
         intent.putExtra(RequestService.INTENT_EXTRA_REQUEST, request);
-        mContext.startService(intent);
+
+        try {
+            mContext.startService(intent);
+
+            // Need to bind the service in newer Android versions
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mContext.bindService(intent, new ServiceConnection() {
+                    @Override
+                    public void onServiceConnected(ComponentName name, IBinder service) {
+                    }
+                    @Override
+                    public void onServiceDisconnected(ComponentName name) {
+                    }
+                }, Context.BIND_AUTO_CREATE);
+            }
+        } catch (Exception e) { 
+            DataDroidLog.w(TAG, "unable to start the service");
+        }
     }
 
     private final class RequestReceiver extends ResultReceiver {

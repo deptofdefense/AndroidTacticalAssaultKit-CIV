@@ -152,7 +152,7 @@ public class FeatureDataStoreMapOverlay extends AbstractMapOverlay2 {
             }
 
         } catch (DataStoreException dse) {
-            Log.e(TAG, "datastore exception occured", dse);
+            Log.e(TAG, "datastore exception occurred", dse);
         } finally {
             if (result != null)
                 result.close();

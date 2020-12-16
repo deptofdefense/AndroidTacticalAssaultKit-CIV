@@ -1,5 +1,7 @@
 package com.atakmap.map.gdal;
 
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.elevation.ElevationChunk;
@@ -13,6 +15,7 @@ import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconst;
 import org.gdal.gdal.Dataset;
 
+import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -161,7 +164,11 @@ public final class GdalElevationChunk extends ElevationChunk.Factory.Sampler {
     }
 
     public static ElevationChunk create(String path, String type, double resolution, int hints) {
-        return create(gdal.Open(path), true, type, resolution, hints);
+        final File f = new File(path);
+        if(!IOProviderFactory.exists(f))
+            return null;
+        else
+            return create(GdalLibrary.openDatasetFromFile(f), true, type, resolution, hints);
     }
 
     public static ElevationChunk create(Dataset dataset, boolean deleteOnFail, String type, double resolution, int hints) {

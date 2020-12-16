@@ -6,10 +6,11 @@ import android.content.res.AssetManager;
 
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
+import java.io.FileOutputStream;
 
 /**
  * Provides products that are bundled within ATAK APK
@@ -117,8 +118,8 @@ public class BundledProductProvider extends BaseProductProvider {
 
     protected ProductRepository load(boolean bReload) {
         File dir = FileSystemUtils.getItem("support/apks");
-        if (!FileIOProviderFactory.exists(dir)) {
-            if (!FileIOProviderFactory.mkdirs(dir)) {
+        if (!IOProviderFactory.exists(dir)) {
+            if (!IOProviderFactory.mkdirs(dir)) {
                 Log.d(TAG, "unable to create support directory: " + dir);
             }
         }
@@ -144,7 +145,7 @@ public class BundledProductProvider extends BaseProductProvider {
     }
 
     /**
-     * Pull specified APK from ATAK APK resources, and place on filesystem
+     * Pull specified APK from ATAK APK resources, and place on filesystem outside of the IO abstraction
      * @param product the product information entry that describes a plugin or tool bundled with
      *                the software.
      * @return the file for the APK
@@ -155,8 +156,8 @@ public class BundledProductProvider extends BaseProductProvider {
 
         File apkroot = FileSystemUtils
                 .getItem(BundledProductProvider.LOCAL_BUNDLED_REPO_PATH);
-        if (!FileIOProviderFactory.exists(apkroot)) {
-            if (!FileIOProviderFactory.mkdirs(apkroot)) {
+        if (!apkroot.exists()) {
+            if (!apkroot.mkdirs()) {
                 Log.d(TAG,
                         " Failed to make dir at " + apkroot.getAbsolutePath());
             }
@@ -169,7 +170,7 @@ public class BundledProductProvider extends BaseProductProvider {
             // the resulting copyStream call properly closes the FileOutputStream() created 
             FileSystemUtils.copyStream(
                     assetManager.open("apks/" + product.getAppUri()),
-                    FileIOProviderFactory.getOutputStream(apkfile));
+                    new FileOutputStream(apkfile));
         } catch (Exception e) {
             Log.e(TAG, "failed to install: " + product.toString(), e);
             return null;

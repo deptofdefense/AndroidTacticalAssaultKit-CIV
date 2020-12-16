@@ -6,8 +6,8 @@ import com.atakmap.android.location.LocationMapComponent;
 import android.os.Bundle;
 import android.support.util.Base64;
 
-import com.atakmap.coremap.io.FileIOProvider;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.Databases;
 import com.atakmap.net.AtakAuthenticationCredentials;
@@ -66,14 +66,14 @@ public class ATAKDatabaseHelper {
                         "com.atakmap.app.v2");
 
         // DB doesn't exist and there is no key; create original key
-        if (!FileIOProviderFactory.exists(testDb) && (credentials == null
+        if (!IOProviderFactory.exists(testDb) && (credentials == null
                 || FileSystemUtils.isEmpty(credentials.username))) {
 
             changeKeyImpl(context, true, ksl);
             return;
         }
         // DB doesn't exist but we have key; create
-                    if (!FileIOProviderFactory.exists(testDb)) {
+                    if (!IOProviderFactory.exists(testDb)) {
             upgrade(context, ksl);
             return;
         }
@@ -146,9 +146,9 @@ public class ATAKDatabaseHelper {
     }
 
     public static void removeDatabases() {
-        FileIOProviderFactory.delete(FileSystemUtils.getItem("Databases/ChatDb2.sqlite"), FileIOProvider.SECURE_DELETE);
-        FileIOProviderFactory.delete(FileSystemUtils.getItem("Databases/statesaver2.sqlite"), FileIOProvider.SECURE_DELETE);
-        FileIOProviderFactory.delete(FileSystemUtils.getItem("Databases/crumbs2.sqlite"), FileIOProvider.SECURE_DELETE);
+        IOProviderFactory.delete(FileSystemUtils.getItem("Databases/ChatDb2.sqlite"), IOProvider.SECURE_DELETE);
+        IOProviderFactory.delete(FileSystemUtils.getItem("Databases/statesaver2.sqlite"), IOProvider.SECURE_DELETE);
+        IOProviderFactory.delete(FileSystemUtils.getItem("Databases/crumbs2.sqlite"), IOProvider.SECURE_DELETE);
     }
 
     private static void promptForRemoval(final Context context,
@@ -226,7 +226,7 @@ public class ATAKDatabaseHelper {
 
         for (String db : dbs) {
             File ctFile = FileSystemUtils.getItem(db);
-            if (!FileIOProviderFactory.exists(ctFile))
+            if (!IOProviderFactory.exists(ctFile))
                 return REKEY_FAILED;
         }
 
@@ -395,7 +395,7 @@ public class ATAKDatabaseHelper {
      * @param ctFile the file name for the encrypted database
      */
     public static void encryptDb(final File ptFile, final File ctFile) {
-        if (FileIOProviderFactory.exists(ptFile) && !FileIOProviderFactory.exists(ctFile)) {
+        if (IOProviderFactory.exists(ptFile) && !IOProviderFactory.exists(ctFile)) {
 
             DatabaseIface ptDb = Databases.openOrCreateDatabase(
                     ptFile.getAbsolutePath());
@@ -434,20 +434,20 @@ public class ATAKDatabaseHelper {
             ptDb.execute("DETACH DATABASE encrypted", null);
             ptDb.close();
 
-            FileIOProviderFactory.delete(ptFile, FileIOProvider.SECURE_DELETE);
+            IOProviderFactory.delete(ptFile, IOProvider.SECURE_DELETE);
 
         }
 
     }
 
     private static boolean checkKeyAgainstDatabase(final File dbFile) {
-        if (FileIOProviderFactory.exists(dbFile)) {
+        if (IOProviderFactory.exists(dbFile)) {
 
             final String s = "SQLite format 3";
             final byte[] b = new byte[s.length()];
             FileInputStream fis = null;
             try {
-                fis = FileIOProviderFactory.getInputStream(dbFile);
+                fis = IOProviderFactory.getInputStream(dbFile);
                 final int bytesRead = fis.read(b);
                 if (bytesRead == s.length() && s
                         .equals(new String(b, FileSystemUtils.UTF8_CHARSET))) {

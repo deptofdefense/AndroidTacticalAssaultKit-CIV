@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Implementation of SpatiaLiteDB class.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Feb 13, 2015
+////      Feb 13, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -114,7 +114,7 @@ class CursorImpl
       { }
 
     ~CursorImpl ()
-        throw () override;
+        NOTHROWS override;
 
     //
     // The compiler is unable to generate a copy constructor or assignment
@@ -264,7 +264,7 @@ class DB_Lock
       { sqlite3_mutex_enter (mutex); }
 
     ~DB_Lock ()
-        throw ()
+        NOTHROWS
       { sqlite3_mutex_leave (mutex); }
 
 
@@ -309,7 +309,7 @@ class StatementImpl
       { }
 
     ~StatementImpl ()
-        throw () override;
+        NOTHROWS override;
 
     //
     // The compiler is unable to generate a copy constructor or assignment
@@ -536,7 +536,7 @@ throwDB_Error (int response,
 
 
 CursorImpl::~CursorImpl ()
-    throw ()
+    NOTHROWS
   {
     int response (sqlite3_finalize (impl));
 
@@ -750,7 +750,7 @@ CursorImpl::moveToNext ()
 
 
 StatementImpl::~StatementImpl ()
-    throw ()
+    NOTHROWS
   {
     int response (sqlite3_finalize (impl));
 

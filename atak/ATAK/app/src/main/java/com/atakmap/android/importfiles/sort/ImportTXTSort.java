@@ -24,7 +24,7 @@ import com.atakmap.android.wfs.WFSImporter;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.GeocoderPreferenceFragment;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.feature.wfs.XMLWFSSchemaHandler;
 
@@ -66,6 +66,10 @@ final public class ImportTXTSort extends ImportInternalSDResolver {
             this.signature = signature;
             this.folder = folder;
             this.action = action;
+        }
+
+        public String toString() {
+            return signature + ": " + folder;
         }
     }
 
@@ -114,7 +118,7 @@ final public class ImportTXTSort extends ImportInternalSDResolver {
         TxtType t = null;
         FileInputStream fis = null;
         try {
-            t = getType(fis = FileIOProviderFactory.getInputStream(file));
+            t = getType(fis = IOProviderFactory.getInputStream(file));
         } catch (IOException e) {
             Log.e(TAG, "Failed to match TXT file: " + file.getAbsolutePath(),
                     e);
@@ -170,7 +174,7 @@ final public class ImportTXTSort extends ImportInternalSDResolver {
         TxtType t = null;
         FileInputStream fis = null;
         try {
-            t = getType(fis = FileIOProviderFactory.getInputStream(file));
+            t = getType(fis = IOProviderFactory.getInputStream(file));
         } catch (IOException e) {
             Log.e(TAG, "Failed to match TXT file: " + file.getAbsolutePath(),
                     e);
@@ -218,7 +222,7 @@ final public class ImportTXTSort extends ImportInternalSDResolver {
         }
     };
 
-    private TxtType.AfterAction geocoderaction = new TxtType.AfterAction() {
+    private final TxtType.AfterAction geocoderaction = new TxtType.AfterAction() {
         @Override
         public void doAction(File dst) {
             Log.d(TAG, "notify that a new geocoder file was imported: " + dst);
@@ -313,7 +317,7 @@ final public class ImportTXTSort extends ImportInternalSDResolver {
         TxtType t;
         FileInputStream fis = null;
         try {
-            t = getType(fis = FileIOProviderFactory.getInputStream(dst));
+            t = getType(fis = IOProviderFactory.getInputStream(dst));
             if (t != null && t.action != null)
                 t.action.doAction(dst);
         } catch (IOException e) {

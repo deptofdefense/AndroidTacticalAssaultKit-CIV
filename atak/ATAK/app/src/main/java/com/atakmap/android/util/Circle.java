@@ -35,9 +35,9 @@ public class Circle extends Polyline {
     private boolean touchable = true;
     private GeoPointMetaData _center;
     private double _radius;
-    private int res;
-    private boolean offset;
-    private MutableGeoBounds relativeBounds;
+    private final int res;
+    private final boolean offset;
+    private final MutableGeoBounds relativeBounds;
 
     private String _text;
     private Map<String, Object> _labels = new HashMap<>();

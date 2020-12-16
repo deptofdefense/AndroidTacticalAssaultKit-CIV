@@ -66,13 +66,13 @@ Feature::Feature(const char* name,
 
 
 Feature::~Feature()
-    throw ()
+    NOTHROWS
 { }
 
 const AttributeSet&
 Feature::getAttributes()
 const
-throw ()
+NOTHROWS
 {
     return attributes;
 }
@@ -80,7 +80,7 @@ throw ()
 int64_t
 Feature::getFeatureSetID()
 const
-throw ()
+NOTHROWS
 {
     return setID;
 }
@@ -88,7 +88,7 @@ throw ()
 const Geometry&
 Feature::getGeometry()
 const
-throw ()
+NOTHROWS
 {
     return *geometry;
 }
@@ -96,7 +96,7 @@ throw ()
 int64_t
 Feature::getID()
 const
-throw ()
+NOTHROWS
 {
     return ID;
 }
@@ -104,7 +104,7 @@ throw ()
 const char*
 Feature::getName()
 const
-throw ()
+NOTHROWS
 {
     return name;
 }
@@ -112,7 +112,7 @@ throw ()
 const Style*
 Feature::getStyle()
 const
-throw ()
+NOTHROWS
 {
     return style.get();
 }
@@ -120,7 +120,7 @@ throw ()
 unsigned long
 Feature::getVersion()
 const
-throw ()
+NOTHROWS
 {
     return version;
 }

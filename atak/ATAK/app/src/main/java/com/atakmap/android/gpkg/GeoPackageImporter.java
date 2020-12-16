@@ -2,7 +2,6 @@
 package com.atakmap.android.gpkg;
 
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -29,11 +28,12 @@ import com.atakmap.content.CatalogCurrencyRegistry;
 import com.atakmap.content.CatalogDatabase;
 import com.atakmap.content.CatalogDatabase.CatalogCursor;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.DatabaseInformation;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.StatementIface;
-import com.atakmap.database.android.AndroidDatabaseAdapter;
 import com.atakmap.map.gpkg.GeoPackage;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.MultiLayer;
@@ -74,6 +74,8 @@ public class GeoPackageImporter implements Importer {
     private final MapOverlayParent parentOverlay;
     private MultiLayer parentLayer;
 
+    private boolean isDisposed;
+
     //==================================
     //
     //  PUBLIC INTERFACE
@@ -91,13 +93,16 @@ public class GeoPackageImporter implements Importer {
                 parentName, iconURI, -1, false);
         mapView.getMapOverlayManager().addFilesOverlay(parentOverlay);
         URIContentManager.getInstance().registerResolver(contentResolver);
+        isDisposed = false;
     }
 
-    public void dispose() {
+    public synchronized void dispose() {
+        isDisposed = true;
+
         getParentLayer().removeAllLayers();
         mapView.removeLayer(RenderStack.VECTOR_OVERLAYS, getParentLayer());
         importDB.close();
-        mapView.getMapOverlayManager().removeOverlay(parentOverlay);
+        mapView.getMapOverlayManager().removeFilesOverlay(parentOverlay);
         URIContentManager.getInstance().unregisterResolver(contentResolver);
         contentResolver.dispose();
     }
@@ -113,16 +118,24 @@ public class GeoPackageImporter implements Importer {
                 TimeUnit.MILLISECONDS, new LinkedBlockingDeque<Runnable>());
 
         for (String importPath : importPaths) {
+            if (isDisposed)
+                break;
             final File importFile = new File(
                     FileSystemUtils.sanitizeWithSpacesAndSlashes(importPath));
             importPool.execute(new Runnable() {
                 @Override
                 public void run() {
-                    if (FileIOProviderFactory.exists(importFile) && importFile(importFile)) {
-                        importDB.updateCurrency(importFile);
-                    } else {
-                        Log.w(TAG, "Failed to import " + importFile.getName());
-                        importDB.deleteCatalog(importFile);
+                    synchronized (GeoPackageImporter.this) {
+                        if (isDisposed)
+                            return;
+                        if (IOProviderFactory.exists(importFile)
+                                && importFile(importFile)) {
+                            importDB.updateCurrency(importFile);
+                        } else {
+                            Log.w(TAG,
+                                    "Failed to import " + importFile.getName());
+                            importDB.deleteCatalog(importFile);
+                        }
                     }
                 }
             });
@@ -131,8 +144,8 @@ public class GeoPackageImporter implements Importer {
 
     public void loadOverlays(File[] overlayDirs) {
         for (File overlayDir : overlayDirs) {
-            if (FileIOProviderFactory.exists(overlayDir)) {
-                File[] overlayFiles = FileIOProviderFactory.listFiles(overlayDir);
+            if (IOProviderFactory.exists(overlayDir)) {
+                File[] overlayFiles = IOProviderFactory.listFiles(overlayDir);
                 if (overlayFiles != null) {
                     for (File file : overlayFiles) {
                         if (importResolver.match(file))
@@ -170,13 +183,14 @@ public class GeoPackageImporter implements Importer {
     }
 
     @Override
-    public ImportResult importData(Uri uri,
+    public synchronized ImportResult importData(Uri uri,
             String mime,
             Bundle bundle)
             throws IOException {
         ImportResult result = ImportResult.FAILURE;
 
-        if (uri != null
+        if (!isDisposed
+                && uri != null
                 && "file".equals(uri.getScheme())
                 && uri.getPath() != null) {
             File file = new File(FileSystemUtils
@@ -268,11 +282,12 @@ public class GeoPackageImporter implements Importer {
     }
 
     @Override
-    public boolean deleteData(Uri uri,
+    public synchronized boolean deleteData(Uri uri,
             String mime) {
         boolean result = false;
 
-        if (uri != null
+        if (!isDisposed
+                && uri != null
                 && "file".equals(uri.getScheme())
                 && uri.getPath() != null) {
             final File file = new File(FileSystemUtils
@@ -554,11 +569,16 @@ public class GeoPackageImporter implements Importer {
     }
 
     private static DatabaseIface openImportDatabase() {
-        return new AndroidDatabaseAdapter(SQLiteDatabase.openOrCreateDatabase(
-                FileSystemUtils.getItem("Databases"
-                        + File.separator
-                        + "GeoPackageImports.sqlite"),
-                null));
+        final File f = FileSystemUtils.getItem("Databases"
+                + File.separator
+                + "GeoPackageImports.sqlite");
+        DatabaseIface db = IOProviderFactory.createDatabase(f,
+                DatabaseInformation.OPTION_ENSURE_PARENT_DIRS);
+        if (db == null && IOProviderFactory.exists(f)) {
+            IOProviderFactory.delete(f, IOProvider.SECURE_DELETE);
+            db = IOProviderFactory.createDatabase(f);
+        }
+        return db;
     }
 
     private void removeLayer(String packageName) {

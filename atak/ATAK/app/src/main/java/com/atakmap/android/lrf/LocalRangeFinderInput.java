@@ -12,6 +12,7 @@ import android.graphics.Point;
 import android.graphics.Rect;
 
 import com.atakmap.android.util.DragMarkerHelper;
+import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.maps.conversion.GeomagneticField;
 import android.preference.PreferenceManager;
 import android.widget.Toast;
@@ -99,7 +100,7 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
     private Circle _circle = null;
 
     private SensorFOV _fov = null;
-    private Marker _formerSelf;
+    private final Marker _formerSelf;
 
     private GeoPoint origDstPoint;
     private GeoPointMetaData origSrcPoint;
@@ -385,7 +386,7 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
                     .createOrUpdateRABLine(spiUID + ".rb",
                             start, end, false);
             if (rb == null) {
-                Log.e(TAG, "error occured during creation of arrow");
+                Log.e(TAG, "error occurred during creation of arrow");
                 return;
             }
             rb.setType("rb");
@@ -644,7 +645,9 @@ public class LocalRangeFinderInput implements Runnable, RangeFinderAction,
                     HintDialogHelper.showHint(
                             context,
                             context.getString(R.string.tool_text30),
-                            context.getString(R.string.tool_text31),
+                            ResourceUtil.getString(context,
+                                    R.string.civ_tool_text31,
+                                    R.string.tool_text31),
                             "lrf_menu");
                 }
             });

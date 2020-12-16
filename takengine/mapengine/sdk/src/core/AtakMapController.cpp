@@ -562,5 +562,5 @@ void atakmap::core::AtakMapController::setFocusPointOffset(const atakmap::math::
     dispatchFocusPointChanged();
 }
 
-atakmap::core::MapControllerFocusPointChangedListener::~MapControllerFocusPointChangedListener() throw ()
+atakmap::core::MapControllerFocusPointChangedListener::~MapControllerFocusPointChangedListener() NOTHROWS
 {}

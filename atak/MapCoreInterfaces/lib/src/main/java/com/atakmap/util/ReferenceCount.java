@@ -1,3 +1,4 @@
+
 package com.atakmap.util;
 
 /**
@@ -10,7 +11,7 @@ package com.atakmap.util;
 public class ReferenceCount<T> {
     public final T value;
     private int count;
-    
+
     /**
      * Creates a new instance that claims a reference on the value (initial
      * count is set to <code>1</code>).
@@ -20,7 +21,7 @@ public class ReferenceCount<T> {
     public ReferenceCount(T value) {
         this(value, true);
     }
-    
+
     /**
      * Creates a new instance.
      * 
@@ -32,7 +33,7 @@ public class ReferenceCount<T> {
         this.value = value;
         this.count = reference ? 1 : 0;
     }
-    
+
     /**
      * Returns a flag indicating whether or not the value is currently
      * referenced.
@@ -51,19 +52,19 @@ public class ReferenceCount<T> {
         this.count++;
         return this.value;
     }
-    
+
     /**
      * Decrements the reference count. If the count reaches <code>0</code>
      * {@link #onDereferenced()} will be invoked. 
      */
     public final synchronized void dereference() {
-        if(this.count > 0) {
+        if (this.count > 0) {
             this.count--;
-            if(this.count == 0)
+            if (this.count == 0)
                 this.onDereferenced();
         }
     }
-    
+
     public final synchronized int getReferenceCount() {
         return this.count;
     }
@@ -74,5 +75,6 @@ public class ReferenceCount<T> {
      * 
      * <P>The default implementation returns immediately.
      */
-    protected void onDereferenced() {}
+    protected void onDereferenced() {
+    }
 }

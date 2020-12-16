@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Abstract base class for feature data sources.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Jan 16, 2015
+////      Jan 16, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -113,7 +113,7 @@ class ENGINE_API FeatureDataSource
 
     virtual
     ~FeatureDataSource ()
-        throw ()
+        NOTHROWS
         = 0;
 
     //
@@ -128,7 +128,7 @@ class ENGINE_API FeatureDataSource
     const char*
     getName ()
         const
-        throw ()
+        NOTHROWS
         = 0;
 
     //
@@ -175,7 +175,7 @@ class ENGINE_API FeatureDataSource
     unsigned int
     parseVersion ()
         const
-        throw ()
+        NOTHROWS
         = 0;
 
     //
@@ -216,7 +216,7 @@ class ENGINE_API FeatureDataSource::Content
 
     virtual
     ~Content ()
-        throw ()
+        NOTHROWS
         = 0;
 
     //
@@ -366,7 +366,7 @@ class ENGINE_API FeatureDataSource::FeatureDefinition
                        const util::AttributeSet&);
 
     ~FeatureDefinition ()
-        throw ();
+        NOTHROWS;
 
     //
     // The compiler is unable to generate a copy constructor or assignment
@@ -376,13 +376,13 @@ class ENGINE_API FeatureDataSource::FeatureDefinition
     const util::AttributeSet&
     getAttributes ()
         const
-        throw ()
+        NOTHROWS
       { return attributes; }
 
     Encoding
     getEncoding ()
         const
-        throw ()
+        NOTHROWS
       { return encoding; }
 
     Feature*
@@ -391,7 +391,7 @@ class ENGINE_API FeatureDataSource::FeatureDefinition
     ByteBuffer
     getGeometryByteBuffer ()            // Only valid if ByteBuffer was used to
         const                           // set geometry.
-        throw ()
+        NOTHROWS
       {
         return std::make_pair (static_cast<const unsigned char*> (rawGeometry),
                                static_cast<const unsigned char*> (bufferTail));
@@ -400,25 +400,25 @@ class ENGINE_API FeatureDataSource::FeatureDefinition
     const char*
     getName ()
         const
-        throw ()
+        NOTHROWS
       { return name; }
 
     const void*
     getRawGeometry ()
         const
-        throw ()
+        NOTHROWS
       { return rawGeometry; }
 
     const void*
     getRawStyle ()
         const
-        throw ()
+        NOTHROWS
       { return rawStyle; }
 
     Styling
     getStyling ()
         const
-        throw ()
+        NOTHROWS
       { return styling; }
 
 

@@ -324,7 +324,8 @@ public final class DoghouseViewModel {
         _cache.put(route.getUID(), doghouses);
     }
 
-    void addDoghouse(@NonNull final Route route) {
+    void addDoghouse(@NonNull
+    final Route route) {
         List<Doghouse> doghouses = getDoghousesForRoute(route);
         if (doghouses != null) {
             Doghouse dh = buildDoghouse(route.getNumPoints() - 2, route);
@@ -347,11 +348,13 @@ public final class DoghouseViewModel {
     }
 
     @Nullable
-    List<Doghouse> getDoghousesForRoute(@NonNull final Route route) {
+    List<Doghouse> getDoghousesForRoute(@NonNull
+    final Route route) {
         return _cache.get(route.getUID());
     }
 
-    void insertDoghouse(int index, @NonNull final Route route) {
+    void insertDoghouse(int index, @NonNull
+    final Route route) {
         final List<Doghouse> doghouses = getDoghousesForRoute(route);
         if (doghouses != null) {
             if (index >= 0 && index < doghouses.size()) {

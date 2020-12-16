@@ -13,8 +13,7 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProvider;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.database.CursorIface;
@@ -210,7 +209,7 @@ public class StateSaverPublisher implements Runnable {
 
         File parentDirectory = StateSaver.LEGACY_BASE_DIR;
 
-        if (!FileIOProviderFactory.exists(parentDirectory))
+        if (!IOProviderFactory.exists(parentDirectory))
             return;
 
         File routesDirectory = null;
@@ -218,7 +217,7 @@ public class StateSaverPublisher implements Runnable {
         File rangeAndBearingDirectory = null;
         File jumpMasterDirectory = null;
 
-        File[] subdirs = FileIOProviderFactory.listFiles(parentDirectory);
+        File[] subdirs = IOProviderFactory.listFiles(parentDirectory);
         if (subdirs == null) // Check to make sure there is something to iterate
                              // over
         {
@@ -235,18 +234,18 @@ public class StateSaverPublisher implements Runnable {
                 rangeAndBearingDirectory = subDirectory;
             else if (subDirectory.getName().equals(jumpMaster))
                 jumpMasterDirectory = subDirectory;
-            else if (FileIOProviderFactory.isDirectory(subDirectory))
+            else if (IOProviderFactory.isDirectory(subDirectory))
                 doDirectoryWork(subDirectory);
 
         }
 
         // For jumpmaster, create alternate DIPs if there are any
         if (jumpMasterDirectory != null) {
-            File[] files = FileIOProviderFactory.listFiles(jumpMasterDirectory);
+            File[] files = IOProviderFactory.listFiles(jumpMasterDirectory);
             doDirectoryWork(jumpMasterDirectory);
             if (files != null)
                 for (File f : files) {
-                    if (FileIOProviderFactory.isDirectory(f)
+                    if (IOProviderFactory.isDirectory(f)
                             && f.getName().contentEquals("alternate")) {
                         doDirectoryWork(f);
                         break;
@@ -262,7 +261,7 @@ public class StateSaverPublisher implements Runnable {
                                               // markers, etc.
             doDirectoryWork(rangeAndBearingDirectory);
 
-        subdirs = FileIOProviderFactory.listFiles(parentDirectory);
+        subdirs = IOProviderFactory.listFiles(parentDirectory);
         if (subdirs == null || subdirs.length < 1) {
             if (!FileSystemUtils.deleteFile(parentDirectory))
                 parentDirectory.deleteOnExit();
@@ -272,7 +271,7 @@ public class StateSaverPublisher implements Runnable {
     }
 
     private void doDirectoryWork(File directory) {
-        File[] files = FileIOProviderFactory.listFiles(directory);
+        File[] files = IOProviderFactory.listFiles(directory);
         if (files != null) {
             for (File path : files) {
                 String s = null;

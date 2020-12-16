@@ -2,6 +2,7 @@
 package com.atakmap.android.cot.detail;
 
 import android.content.Intent;
+import android.graphics.Color;
 
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapGroup;
@@ -34,6 +35,8 @@ public class SensorDetailHandler extends CotDetailHandler {
     public static final String FOV_RED = "fovRed";
     public static final String FOV_GREEN = "fovGreen";
     public static final String FOV_BLUE = "fovBlue";
+    public static final String STROKE_COLOR = "strokeColor";
+    public static final String STROKE_WEIGHT = "strokeWeight";
 
     public static final String ROLL_ATTRIBUTE = "roll";
     public static final String VFOV_ATTRIBUTE = "vfov";
@@ -97,6 +100,10 @@ public class SensorDetailHandler extends CotDetailHandler {
                 String.valueOf(item.getMetaDouble(FOV_GREEN, 1d)));
         sensor.setAttribute(FOV_BLUE,
                 String.valueOf(item.getMetaDouble(FOV_BLUE, 1d)));
+        sensor.setAttribute(STROKE_COLOR, String.valueOf(
+                item.getMetaInteger(STROKE_COLOR, Color.WHITE)));
+        sensor.setAttribute(STROKE_WEIGHT, String.valueOf(
+                item.getMetaDouble(STROKE_WEIGHT, 0)));
 
         sensor.setAttribute(VFOV_ATTRIBUTE,
                 String.valueOf(item.getMetaInteger(VFOV_ATTRIBUTE, 45)));
@@ -151,12 +158,18 @@ public class SensorDetailHandler extends CotDetailHandler {
         double green = parseDouble(detail.getAttribute(FOV_GREEN), 1);
         double blue = parseDouble(detail.getAttribute(FOV_BLUE), 1);
         double alpha = parseDouble(detail.getAttribute(FOV_ALPHA), 0.3);
+        int strokeColor = parseInt(detail.getAttribute(STROKE_COLOR),
+                Color.WHITE);
+        double strokeWeight = parseDouble(detail.getAttribute(STROKE_WEIGHT),
+                0);
 
         item.setMetaInteger(MAG_REF_ATTRIBUTE, magRef);
         item.setMetaDouble(FOV_ALPHA, alpha);
         item.setMetaDouble(FOV_RED, red);
         item.setMetaDouble(FOV_GREEN, green);
         item.setMetaDouble(FOV_BLUE, blue);
+        item.setMetaInteger(STROKE_COLOR, strokeColor);
+        item.setMetaDouble(STROKE_WEIGHT, strokeWeight);
 
         if (detail.getAttribute(HIDE_FOV) != null)
             item.setMetaBoolean(HIDE_FOV, true);
@@ -174,9 +187,15 @@ public class SensorDetailHandler extends CotDetailHandler {
             return ImportResult.SUCCESS;
         }
 
-        return addFovToMap(marker, azimuth, fov, range, color, visible)
-                ? ImportResult.SUCCESS
-                : ImportResult.FAILURE;
+        SensorFOV sens = addFovToMap(marker, azimuth, fov, range, color,
+                visible);
+        if (sens == null)
+            return ImportResult.FAILURE;
+
+        sens.setStrokeColor(strokeColor);
+        sens.setStrokeWeight(strokeWeight);
+
+        return ImportResult.SUCCESS;
     }
 
     private static MapGroup _cachedMapGroup = null;
@@ -257,7 +276,7 @@ public class SensorDetailHandler extends CotDetailHandler {
         return ret;
     }
 
-    public static boolean addFovToMap(final Marker marker, double azimuth,
+    public static SensorFOV addFovToMap(final Marker marker, double azimuth,
             double fov,
             double range, float[] color, boolean visible) {
         //Log.d(TAG, "Plotting Sensor FoV with: azimuth=" + azimuth + ", fov="
@@ -271,11 +290,11 @@ public class SensorDetailHandler extends CotDetailHandler {
             fovItem.setColor(color[0], color[1], color[2]);
             fovItem.setAlpha(color[3]);
             fovItem.setMetrics((float) azimuth, (float) fov, (float) range);
-            return true;
+            return fovItem;
         } else {
             Log.w(TAG, "Unexpectedly had a NULL map group for Field of View");
         }
-        return false;
+        return null;
     }
 
     public static void selectFOVEndPoint(final Marker m,

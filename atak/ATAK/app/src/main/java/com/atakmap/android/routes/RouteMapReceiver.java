@@ -25,6 +25,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.atakmap.android.attachment.layer.AttachmentBillboardLayer;
 import com.atakmap.android.cot.exporter.DispatchMapItemTask;
 import com.atakmap.android.dropdown.DropDownManager;
 import com.atakmap.android.dropdown.DropDownReceiver;
@@ -45,6 +46,7 @@ import com.atakmap.android.maps.MapEventDispatcher;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.maps.MapView.RenderStack;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.missionpackage.api.MissionPackageApi;
@@ -88,7 +90,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class RouteMapReceiver extends BroadcastReceiver {
+public class RouteMapReceiver extends BroadcastReceiver implements
+        SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final String TAG = "RouteMapReceiver";
 
@@ -138,13 +141,14 @@ public class RouteMapReceiver extends BroadcastReceiver {
 
     private final RouteNavigator _navigator;
     private final NavigationUxManager _uxManager;
+    private final AttachmentBillboardLayer _billboardLayer;
 
     private final SharedPreferences _navPrefs;
 
     private final ArrayList<Route> routes_ = new ArrayList<>();
     private final Map<String, Tool> _tools = new HashMap<>();
 
-    private PolylineSelectTool pst;
+    private final PolylineSelectTool pst;
     private RouteEditTool _editTool;
 
     private final static int notiIndx = 8879;
@@ -188,11 +192,15 @@ public class RouteMapReceiver extends BroadcastReceiver {
                 routes_.add((Route) item);
         }
 
-        _navigator = new RouteNavigator(mapView, navGroup);
+        _billboardLayer = new AttachmentBillboardLayer(mapView);
+        mapView.addLayer(RenderStack.RASTER_OVERLAYS, _billboardLayer);
+
+        _navigator = new RouteNavigator(mapView, navGroup, _billboardLayer);
         _uxManager = new NavigationUxManager(_navigator);
         _context = context;
         _navPrefs = PreferenceManager.getDefaultSharedPreferences(mapView
                 .getContext());
+        _navPrefs.registerOnSharedPreferenceChangeListener(this);
 
         _mapView.getMapEventDispatcher().addMapEventListener(_routeListener);
 
@@ -208,6 +216,9 @@ public class RouteMapReceiver extends BroadcastReceiver {
 
     public void dispose() {
         _navigator.stopNavigating();
+        _mapView.removeLayer(RenderStack.RASTER_OVERLAYS, _billboardLayer);
+        _billboardLayer.dispose();
+        _navPrefs.unregisterOnSharedPreferenceChangeListener(this);
     }
 
     public MapGroup getRouteGroup() {
@@ -251,6 +262,12 @@ public class RouteMapReceiver extends BroadcastReceiver {
             }
         }
     };
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+        if (isNavigating() && key.equals("route_billboard_enabled"))
+            _billboardLayer.setVisible(prefs.getBoolean(key, true));
+    }
 
     void addTools(Tool... tools) {
         _tools.clear();
@@ -462,7 +479,7 @@ public class RouteMapReceiver extends BroadcastReceiver {
                 }
 
                 if (waypoint == null) {
-                    Log.d(TAG, "error occured, waypoint was null for uid: "
+                    Log.d(TAG, "error occurred, waypoint was null for uid: "
                             + navUID);
                     return;
                 }
@@ -1075,9 +1092,7 @@ public class RouteMapReceiver extends BroadcastReceiver {
             gotoTool.putExtra("target", navUID);
             AtakBroadcast.getInstance()
                     .sendBroadcast(gotoTool);
-        } else if (_navigator.startNavigating(
-                routeToNav,
-                startIndex)) {
+        } else if (_navigator.startNavigating(routeToNav, startIndex)) {
 
             // zoom map to fit all waypoints of this route and the current device location
             // disabled because this interupts the user's flow if they already have the map
@@ -1093,8 +1108,7 @@ public class RouteMapReceiver extends BroadcastReceiver {
                             false);
                 }
             }
-            DropDownManager.getInstance()
-                    .closeAllDropDowns();
+            DropDownManager.getInstance().closeAllDropDowns();
         } else {
             if (routeToNav.getNumPoints() == 1) {
                 // Attempting to navigate to single-point route

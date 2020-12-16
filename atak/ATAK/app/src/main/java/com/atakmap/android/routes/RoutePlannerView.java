@@ -332,13 +332,15 @@ public class RoutePlannerView extends LinearLayout implements
                 _route.setRemarks(remarks);
 
             // Reset alpha to 255 temporarily so the route is persisted correctly
-            int alpha = Color.alpha(_route.getColor());
-            if (alpha < 255)
-                _route.resetAlpha();
-            _route.persist(_mapView.getMapEventDispatcher(), null,
-                    RoutePlannerView.class);
-            if (alpha < 255)
-                _route.setAlpha(alpha);
+            if (_route.hasMetaValue("archive")) {
+                int alpha = Color.alpha(_route.getColor());
+                if (alpha < 255)
+                    _route.resetAlpha();
+                _route.persist(_mapView.getMapEventDispatcher(), null,
+                        RoutePlannerView.class);
+                if (alpha < 255)
+                    _route.setAlpha(alpha);
+            }
 
             RouteElevationBroadcastReceiver.getInstance().stopProcessing();
 
@@ -609,7 +611,8 @@ public class RoutePlannerView extends LinearLayout implements
                     return;
                 _routeName.setText(_route.getTitle());
                 String remarks = _route.getRemarks();
-                if (!FileSystemUtils.isEquals(_remarksLayout.getText(), remarks))
+                if (!FileSystemUtils.isEquals(_remarksLayout.getText(),
+                        remarks))
                     _remarksLayout.setText(remarks);
                 _editRoute.setSelected(_route.getEditable());
                 findViewById(R.id.edit_route_spacer).setVisibility(

@@ -17,14 +17,14 @@ import com.atakmap.android.missionpackage.ui.MissionPackageListGroup;
 import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipFile;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import com.atakmap.coremap.locale.LocaleUtil;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * Handles special case processing for files which are attached to Map Items

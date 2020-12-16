@@ -35,6 +35,11 @@ public class AtakCertificateDatabaseAdapter implements AtakCertificateDatabaseIF
 
     @Override
     public byte[] getCertificateForType(String type) {
+        return getCertificateForType(type, true);
+    }
+
+    @Override
+    public byte[] getCertificateForType(String type, boolean validateHash) {
         synchronized (lock) {
             byte[] certificate = getCertificate(type);
             if (certificate == null) {
@@ -47,10 +52,12 @@ public class AtakCertificateDatabaseAdapter implements AtakCertificateDatabaseIF
                 Log.e(TAG, "found certificate without hash: " + type);
                 return null;
             }
-            String hashCheck = HashingUtils.sha256sum(certificate);
-            if (!hash.equals(hashCheck)) {
-                Log.e(TAG, "certificate hash validation failed!");
-                return null;
+            if(validateHash) {
+                String hashCheck = HashingUtils.sha256sum(certificate);
+                if (!hash.equals(hashCheck)) {
+                    Log.e(TAG, "certificate hash validation failed!");
+                    return null;
+                }
             }
 
             return certificate;
@@ -59,6 +66,11 @@ public class AtakCertificateDatabaseAdapter implements AtakCertificateDatabaseIF
 
     @Override
     public byte[] getCertificateForTypeAndServer(String type, String server) {
+        return getCertificateForTypeAndServer(type, server, true);
+    }
+
+    @Override
+    public byte[] getCertificateForTypeAndServer(String type, String server, boolean validateHash) {
         synchronized (lock) {
 
             byte[] certificate = getCertificateForServer(type, server);
@@ -72,10 +84,12 @@ public class AtakCertificateDatabaseAdapter implements AtakCertificateDatabaseIF
                 Log.e(TAG, "found certificate without hash: " + type);
                 return null;
             }
-            String hashCheck = HashingUtils.sha256sum(certificate);
-            if (!hash.equals(hashCheck)) {
-                Log.e(TAG, "certificate hash validation failed!");
-                return null;
+            if(validateHash) {
+                String hashCheck = HashingUtils.sha256sum(certificate);
+                if (!hash.equals(hashCheck)) {
+                    Log.e(TAG, "certificate hash validation failed!");
+                    return null;
+                }
             }
 
             return certificate;
@@ -168,36 +182,25 @@ public class AtakCertificateDatabaseAdapter implements AtakCertificateDatabaseIF
     }
 
     @Override
-    public void deleteCertificateForType(String type) {
+    public boolean deleteCertificateForType(String type) {
         synchronized (lock) {
             int rc = deleteCertificate(type);
             if (rc != 0) {
                 Log.e(TAG, "deleteCertificate returned " + rc);
             }
+            return (rc == 0);
         }
     }
 
     @Override
-    public void deleteCertificateForTypeAndServer(String type, String server) {
+    public boolean deleteCertificateForTypeAndServer(String type, String server) {
         synchronized (lock) {
             int rc = deleteCertificateForServer(type, server);
             if (rc != 0) {
                 Log.e(TAG, "deleteCertificateForTypeAndServer returned " + rc);
             }
+            return (rc == 0);
         }
-    }
-
-    @Override
-    public byte[] importCertificateFromPreferences(
-            Context context, String prefLocation, String type, boolean delete) {
-        return null;
-    }
-
-    @Override
-    public AtakAuthenticationCredentials importCertificatePasswordFromPreferences(
-            Context context, String prefLocation, String prefDefault,
-            String type, boolean delete) {
-        return null;
     }
 
     @Override
@@ -254,7 +257,8 @@ public class AtakCertificateDatabaseAdapter implements AtakCertificateDatabaseIF
     }
 
     // these functions pull certs for individual servers
-    protected String[] getServers(String type) {
+    @Override
+    public String[] getServers(String type) {
         ArrayList<String> servers = new ArrayList<>(_certs.size());
         for(CertificateData cert : _certs) {
             if (cert.server != null)

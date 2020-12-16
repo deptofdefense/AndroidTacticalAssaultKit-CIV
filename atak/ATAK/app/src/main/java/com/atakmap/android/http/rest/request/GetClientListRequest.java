@@ -20,10 +20,10 @@ public class GetClientListRequest implements Parcelable {
     private static final String TAG = "GetClientListRequest";
     public static final String CLIENT_LIST_MATCHER = "com.bbn.marti.remote.ClientEndpoint";
 
-    private String mBaseUrl;
-    private String mServerConnectString;
-    private String mMatcher;
-    private int mNotificationId;
+    private final String mBaseUrl;
+    private final String mServerConnectString;
+    private final String mMatcher;
+    private final int mNotificationId;
 
     public GetClientListRequest(String baseUrl, String serverConnectString,
             String matcher, int notificationId) {

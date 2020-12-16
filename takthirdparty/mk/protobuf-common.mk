@@ -57,6 +57,8 @@ $(protobuf_hosttools_builttouchfile): $(protobuf_hosttools_srctouchfile)
 	# build protobuf for host
 	$(protobuf_win32_build)
 	touch $@
+protobuf_cmake_check:
+	@[ -x $(PB_CMAKE) ] || ( echo "ERROR - CMake not installed or incorrect version" >&2 ; false )
 
 else
 

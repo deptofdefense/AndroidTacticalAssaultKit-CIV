@@ -21,6 +21,9 @@ import com.atakmap.map.AtakMapView;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
 
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public class ElevationOverlaysMapComponent extends AbstractMapComponent
         implements MapView.OnMapViewResizedListener {
 
@@ -60,10 +63,12 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
     private IsoKeyWidget _keyWidget;
     private MapView _mapView;
     private SharedPreferences prefs;
+    private final AtomicBoolean disposed = new AtomicBoolean(true);
 
     @Override
     public void onCreate(Context context, Intent intent, MapView view) {
         _mapView = view;
+        disposed.set(false);
 
         GLLayerFactory.register(GLHeatMap.SPI2);
 
@@ -77,10 +82,7 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
         heatMapOverlay.setVisible(
                 prefs.getBoolean(PREFERENCE_VISIBLE_KEY, false));
 
-        contourLinesOverlay = new ContourLinesOverlay(_mapView);
-        MapView.getMapView().addLayer(
-                MapView.RenderStack.MAP_LAYERS,
-                contourLinesOverlay);
+        refreshPersistedState();
 
         RootLayoutWidget root = (RootLayoutWidget) _mapView.getComponentExtra(
                 ROOT_LAYOUT_EXTRA);
@@ -130,8 +132,35 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
                 viewShedReceiverFilter);
     }
 
+    private void refreshPersistedState() {
+        int idx = -1;
+        if (contourLinesOverlay != null) {
+            List<Layer> layers = _mapView
+                    .getLayers(MapView.RenderStack.MAP_LAYERS);
+            idx = layers.indexOf(contourLinesOverlay);
+            _mapView.removeLayer(MapView.RenderStack.MAP_LAYERS,
+                    contourLinesOverlay);
+            contourLinesOverlay.dispose();
+        }
+
+        if (disposed.get())
+            return;
+        contourLinesOverlay = new ContourLinesOverlay(_mapView);
+        if (idx < 0)
+            MapView.getMapView().addLayer(
+                    MapView.RenderStack.MAP_LAYERS,
+                    contourLinesOverlay);
+        else
+            MapView.getMapView().addLayer(
+                    MapView.RenderStack.MAP_LAYERS,
+                    idx,
+                    contourLinesOverlay);
+    }
+
     @Override
     protected void onDestroyImpl(Context context, MapView view) {
+        disposed.set(true);
+
         _mapView.removeOnMapViewResizedListener(this);
         prefs.unregisterOnSharedPreferenceChangeListener(_prefsListener);
 
@@ -249,11 +278,12 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
     }
 
     public static void setContourLinesVisible(boolean visible) {
-        if (contourLinesOverlay.checkZoom()) {
-            contourLinesOverlay.setVisible(visible);
+        final ContourLinesOverlay overlay = contourLinesOverlay;
+        if (overlay.checkZoom()) {
+            overlay.setVisible(visible);
             MapView.getMapView().post(new Runnable() {
                 public void run() {
-                    contourLinesOverlay.getContourData();
+                    overlay.getContourData();
                 }
             });
         } else {
@@ -266,8 +296,9 @@ public class ElevationOverlaysMapComponent extends AbstractMapComponent
     }
 
     public static void cancelContourLinesGeneration() {
-        if (contourLinesOverlay != null) {
-            contourLinesOverlay.setCancelled();
+        final ContourLinesOverlay overlay = contourLinesOverlay;
+        if (overlay != null) {
+            overlay.setCancelled();
         }
     }
 

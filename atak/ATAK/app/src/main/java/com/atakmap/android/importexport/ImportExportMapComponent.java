@@ -80,8 +80,7 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
 
     protected static final String TAG = "ImportExportMapComponent";
 
-    private final HandlerThread handlerThread = new HandlerThread(
-            "ImportExportHandlerThread");
+    private HandlerThread handlerThread;
 
     public final static String ACTION_IMPORT_DATA = "com.atakmap.android.importexport.IMPORT_DATA";
     public final static String ACTION_DELETE_DATA = "com.atakmap.android.importexport.DELETE_DATA";
@@ -152,6 +151,7 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
     private final List<ImportListener> _importListeners = new ArrayList<>();
 
     private static ImportExportMapComponent _instance;
+    private boolean _isSoftReset = false;
 
     public static ImportExportMapComponent getInstance() {
         return _instance;
@@ -526,9 +526,15 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
     CotImportExportHandler cotHandler;
     KmlImportExportHandler kmlHandler;
 
+    public ImportExportMapComponent() {
+        super(true);
+    }
+
     @Override
     public void onCreate(Context context, Intent intent, MapView mapView) {
         _mapView = mapView;
+        handlerThread = new HandlerThread(
+                "ImportExportHandlerThread");
         _stillStarting = true;
         handlerThread.start();
 
@@ -629,7 +635,8 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
         mapView.getMapEventDispatcher().addMapEventListener(
                 MapEvent.ITEM_ADDED, this);
 
-        _importerResolvers = new ArrayList<>();
+        if (!_isSoftReset)
+            _importerResolvers = new ArrayList<>();
 
         // Send methods used by export
         _senders.add(new TAKContactSender(mapView));
@@ -640,7 +647,8 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
 
         _errorLogsClient = new ErrorLogsClient(_mapView.getContext());
 
-        _instance = this;
+        if (!_isSoftReset)
+            _instance = this;
 
         //now check for streaming KML connections
         //_dropDown.refresh();
@@ -650,24 +658,65 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
 
     @Override
     protected void onDestroyImpl(Context context, MapView view) {
-        _cotRemote.disconnect();
-        cotHandler.shutdown();
-        kmlHandler.shutdown();
-        handler.getLooper().quit();
-        handler.removeCallbacksAndMessages(null);
-        handlerThread.interrupt();
-        _downloader.shutdown();
-        _kmlDownloader.shutdown();
-        _ftp.dispose();
-        _dropDown.dispose();
+        // all receivers unregistered in `super.onDestroy(...)`
 
+        if (_errorLogsClient != null) {
+            _errorLogsClient.dispose();
+            _errorLogsClient = null;
+        }
+        for (URIContentSender s : _senders)
+            URIContentManager.getInstance().unregisterSender(s);
+        _senders.clear();
+        if (!_isSoftReset)
+            _importerResolvers.clear();
+        _mapView.getMapEventDispatcher()
+                .removeMapEventListener(MapEvent.ITEM_ADDED, this);
         if (_serverListener != null) {
             _serverListener.dispose();
             _serverListener = null;
         }
-
-        for (URIContentSender s : _senders)
-            URIContentManager.getInstance().unregisterSender(s);
+        if (_cotRemote != null) {
+            _cotRemote.setCotEventListener(null);
+            _cotRemote.disconnect();
+            _cotRemote = null;
+        }
+        if (kmlHandler != null) {
+            kmlHandler.shutdown();
+            kmlHandler = null;
+        }
+        if (cotHandler != null) {
+            cotHandler.shutdown();
+            cotHandler = null;
+        }
+        if (_ftp != null) {
+            _ftp.dispose();
+            _ftp = null;
+        }
+        if (_kmlDownloader != null) {
+            _kmlDownloader.shutdown();
+            _kmlDownloader.shutdown();
+        }
+        if (_downloader != null) {
+            _downloader.shutdown();
+            _downloader = null;
+        }
+        if (_dropDown != null) {
+            _dropDown.dispose();
+            _dropDown = null;
+        }
+        if (handler != null) {
+            handler.getLooper().quit();
+            handler.removeCallbacksAndMessages(null);
+            handler = null;
+        }
+        if (_overlay != null) {
+            _mapView.getMapOverlayManager().removeOverlay(_overlay);
+            _overlay = null;
+        }
+        if (handlerThread != null) {
+            handlerThread.interrupt();
+            handlerThread = null;
+        }
     }
 
     public void download(RemoteResource resource) {

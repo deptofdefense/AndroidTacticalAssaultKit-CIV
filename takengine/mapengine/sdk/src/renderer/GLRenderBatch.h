@@ -3,6 +3,7 @@
 
 #include <inttypes.h>
 #include <string>
+#include <stdexcept>
 
 #include "renderer/GLRenderBatch2.h"
 

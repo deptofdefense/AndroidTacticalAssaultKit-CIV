@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Abstract base class for service pattern.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Jan 21, 2015
+////      Jan 21, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -29,6 +29,8 @@
 ////    INCLUDES AND MACROS                                                 ////
 ////                                                                        ////
 ////========================================================================////
+
+#include "port/Platform.h"
 
 ////========================================================================////
 ////                                                                        ////
@@ -93,7 +95,7 @@ class Service
 
     virtual
     ~Service ()
-        throw ()
+        NOTHROWS
         = 0;
 
     //
@@ -108,7 +110,7 @@ class Service
     const char*
     getType ()
         const
-        throw ()
+        NOTHROWS
         = 0;
   };
 
@@ -131,7 +133,7 @@ class Service::Manager
 
     virtual
     ~Manager ()
-        throw ()
+        NOTHROWS
         = 0;
 
     //

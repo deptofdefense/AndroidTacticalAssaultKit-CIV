@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Implementation of GeometryCollection class.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Dec 11, 2014
+////      Dec 11, 2014  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -186,7 +186,7 @@ GeometryCollection::add (const Geometry &element)
 
 void
 GeometryCollection::clear()
-    throw ()
+    NOTHROWS
   {
     GeometryVector::iterator it;
     for (it = elements.begin(); it != elements.end(); it++)
@@ -196,7 +196,7 @@ GeometryCollection::clear()
 
 void
 GeometryCollection::remove (const Geometry *ref)
-    throw ()
+    NOTHROWS
   { elements.erase (std::remove (elements.begin (), elements.end (), ref)); }
 
 

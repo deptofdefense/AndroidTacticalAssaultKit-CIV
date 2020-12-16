@@ -21,6 +21,7 @@
 #include "util/MathUtils.h"
 #include "util/Memory.h"
 #include "util/NonHeapAllocatable.h"
+#include "db/DatabaseFactory.h"
 
 using namespace TAK::Engine::Feature;
 
@@ -60,7 +61,7 @@ namespace
 
     std::ostringstream &insert(std::ostringstream &strm, const char *s) NOTHROWS;
 
-    TAKErr appendOrder(bool *first, std::ostringstream &sql, Collection<BindArgument> &args, const FeatureDataStore2::FeatureQueryParameters::Order order) NOTHROWS;
+    TAKErr appendOrder(bool &first, std::ostringstream &sql, Collection<BindArgument> &args, const FeatureDataStore2::FeatureQueryParameters::Order order) NOTHROWS;
     TAKErr appendSpatialFilter(const atakmap::feature::Geometry &filter, WhereClauseBuilder2 &whereClause, const bool spatialFilterEnabled) NOTHROWS;
 
     // attribute coders
@@ -156,7 +157,8 @@ TAKErr FDB::open(const char *path, int* dbVersion, bool buildIndices) NOTHROWS
     this->database_file_ = path;
     const bool creating = (!atakmap::util::pathExists(this->database_file_) || atakmap::util::getFileSize(this->database_file_) == 0LL);
 
-    code = Databases_openDatabase(this->database_, this->database_file_);
+    DatabaseInformation info(this->database_file_);
+    code = DatabaseFactory_create(this->database_, info);
     TE_CHECKRETURN_CODE(code);
 
 #ifdef MSVC
@@ -1005,7 +1007,7 @@ TAKErr FDB::queryFeatures(FeatureCursorPtr &result, const FeatureQueryParameters
                     TE_CHECKBREAK_CODE(code);
 
                     STLListAdapter<BindArgument> subargsAdapter(subargs);
-                    code = appendOrder(&first, orderSql, subargsAdapter, order);
+                    code = appendOrder(first, orderSql, subargsAdapter, order);
                     TE_CHECKBREAK_CODE(code);
 
                     code = orderIter->next();
@@ -1082,7 +1084,7 @@ TAKErr FDB::queryFeatures(FeatureCursorPtr &result, const FeatureQueryParameters
                     TE_CHECKBREAK_CODE(code);
 
                     STLListAdapter<BindArgument> subargsAdapter(subargs);
-                    code = appendOrder(&first, orderSql, subargsAdapter, order);
+                    code = appendOrder(first, orderSql, subargsAdapter, order);
                     TE_CHECKBREAK_CODE(code);
 
                     code = orderIter->next();
@@ -1282,7 +1284,7 @@ TAKErr FDB::queryFeaturesCount(int *value, const FeatureQueryParameters &params)
                     TE_CHECKBREAK_CODE(code);
 
                     STLListAdapter<BindArgument> subargsAdapter(subargs);
-                    code = appendOrder(&first, orderSql, subargsAdapter, order);
+                    code = appendOrder(first, orderSql, subargsAdapter, order);
                     TE_CHECKBREAK_CODE(code);
 
                     code = orderIter->next();
@@ -1377,7 +1379,7 @@ TAKErr FDB::queryFeaturesCount(int *value, const FeatureQueryParameters &params)
                     TE_CHECKBREAK_CODE(code);
 
                     STLListAdapter<BindArgument> orderargs_adapter(subargs);
-                    code = appendOrder(&first, orderSql, orderargs_adapter, order);
+                    code = appendOrder(first, orderSql, orderargs_adapter, order);
                     TE_CHECKBREAK_CODE(code);
 
                     code = orderIter->next();
@@ -2201,7 +2203,7 @@ TAKErr FDB::setFeaturesVisibleImpl(const FeatureQueryParameters &paramsRef, cons
         sql << "UPDATE featuresets SET visible = ?";
         args.push_back(BindArgument(visible ? 1 : 0));
 
-        if (params->providers->empty() && params->types->empty()) {
+        if (params != nullptr && params->providers->empty() && params->types->empty()) {
             if (!params->featureSetIds->empty()) {
                 where.beginCondition();
 
@@ -4434,32 +4436,36 @@ std::ostringstream &insert(std::ostringstream &strm, const char *s) NOTHROWS
     return strm;
 }
 
-TAKErr appendOrder(bool *first, std::ostringstream &sql, Collection<BindArgument> &args, const FeatureDataStore2::FeatureQueryParameters::Order order) NOTHROWS
+TAKErr appendOrder(bool &first, std::ostringstream &sql, Collection<BindArgument> &args, const FeatureDataStore2::FeatureQueryParameters::Order order) NOTHROWS
 {
     if (order.type == FeatureDataStore2::FeatureQueryParameters::Order::FeatureId) {
-        if (!(*first)) sql << ",";
+        if (!first)
+            sql << ",";
         sql << " features.fid ASC";
-        *first = false;
+        first = false;
         return TE_Ok;
     } else if (order.type == FeatureDataStore2::FeatureQueryParameters::Order::FeatureName) {
-        if (!first) sql << ",";
+        if (!first)
+            sql << ",";
         sql << " features.name ASC";
-        *first = false;
+        first = false;
         return TE_Ok;
     } else if (order.type == FeatureDataStore2::FeatureQueryParameters::Order::FeatureSet) {
         // order by FS is handled upstream
         return TE_Ok;
     } else if (order.type == FeatureDataStore2::FeatureQueryParameters::Order::Distance) {
-        if (!first) sql << ",";
+        if (!first)
+            sql << ",";
         sql << " Distance(features.geometry, MakePoint(?, ?, 4326), 1) ASC";
         args.add(BindArgument(order.args.distance.y));
         args.add(BindArgument(order.args.distance.x));
-        *first = false;
+        first = false;
         return TE_Ok;
     } else if (order.type == FeatureDataStore2::FeatureQueryParameters::Order::Resolution) {
-        if (!first) sql << ",";
+        if (!first)
+            sql << ",";
         sql << " features.max_lod DESC";
-        *first = false;
+        first = false;
         return TE_Ok;
     } else {
         // XXX -

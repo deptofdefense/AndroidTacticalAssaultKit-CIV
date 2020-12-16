@@ -103,7 +103,10 @@ public class RouteImporter extends EditablePolylineImporter {
             route.setRouteType("Primary");
             route.setPlanningMethod("Infil");
             route.setRouteOrder("Ascending Check Points");
-            //route.setStrokeWeight(5d);
+
+            // Remove automatic archive flag if the CoT doesn't supply one
+            if (event.findDetail("archive") == null)
+                route.removeMetaData("archive");
 
         } else {
             // XXX - hack for bug 2331 -- disable refreshes

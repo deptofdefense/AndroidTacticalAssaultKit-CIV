@@ -20,7 +20,6 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.atakmap.android.preference.PreferenceSearchIndex;
-import com.atakmap.app.BuildConfig;
 
 import com.atak.plugins.impl.AtakPluginRegistry;
 import com.atakmap.android.cot.CotMapComponent;
@@ -161,10 +160,11 @@ public class MyPreferenceFragment extends AtakPreferenceFragment {
                     @Override
                     public boolean onPreferenceClick(Preference preference) {
                         ATAKConstants.displayAbout(getActivity(),
-                                BuildConfig.SHOW_EULA);
+                                true);
                         return true;
                     }
                 });
+        about.setIcon(ATAKConstants.getIcon());
     }
 
     public static java.util.List<PreferenceSearchIndex> index(Context context) {
@@ -201,18 +201,23 @@ public class MyPreferenceFragment extends AtakPreferenceFragment {
             @Override
             public void onClick(DialogInterface dialog, int which) {
 
-                if (which == TileButtonDialog.WHICH_CANCEL) {
+                switch (which) {
+                    case TileButtonDialog.WHICH_CANCEL:
 
-                } else if (which == 0) {
-                    //NavUtils.navigateUpFromSameTask(getActivity());
-                    ImportMissionPackageSort.importMissionPackage(context);
-                } else if (which == 1) {
-                    context.startActivity(new Intent(context,
-                            CotStreamListActivity.class)
-                                    .putExtra("add", true));
-                } else if (which == 2) {
-                    SettingsActivity
-                            .start(NetworkConnectionPreferenceFragment.class);
+                        break;
+                    case 0:
+                        //NavUtils.navigateUpFromSameTask(getActivity());
+                        ImportMissionPackageSort.importMissionPackage(context);
+                        break;
+                    case 1:
+                        context.startActivity(new Intent(context,
+                                CotStreamListActivity.class)
+                                        .putExtra("add", true));
+                        break;
+                    case 2:
+                        SettingsActivity
+                                .start(NetworkConnectionPreferenceFragment.class);
+                        break;
                 }
             }
         });
@@ -220,7 +225,9 @@ public class MyPreferenceFragment extends AtakPreferenceFragment {
 
     private void refreshStatus() {
 
-        MapView mapView = MapView.getMapView();
+        final MapView mapView = MapView.getMapView();
+        final Context context = mapView.getContext();
+
         CotMapComponent inst = CotMapComponent.getInstance();
 
         if (mapView == null || inst == null)
@@ -234,7 +241,7 @@ public class MyPreferenceFragment extends AtakPreferenceFragment {
                 _myServers.setSummary(R.string.no_servers_summary);
             } else {
                 _myServers.setTitle(R.string.my_servers);
-                String summary = MapView.getMapView().getContext()
+                String summary = context
                         .getString(R.string.my_servers_summary)
                         + " (" + servers.length
                         + (servers.length == 1 ? " server " : " servers ")
@@ -242,24 +249,25 @@ public class MyPreferenceFragment extends AtakPreferenceFragment {
                 _myServers.setSummary(summary);
 
                 if (inst.isServerConnected()) {
-                    _myServers.setIcon(R.drawable.ic_server_success);
+                    _myServers.setIcon(ATAKConstants.getServerConnection(true));
                 } else {
-                    _myServers.setIcon(R.drawable.ic_server_error);
+                    _myServers
+                            .setIcon(ATAKConstants.getServerConnection(false));
                 }
             }
         }
 
         if (_myIdentity != null) {
-            String summary = MapView.getMapView().getContext()
+            String summary = context
                     .getString(R.string.callsign_pref_summary2)
-                    + " (" + MapView.getMapView().getDeviceCallsign() + ")";
+                    + " (" + mapView.getDeviceCallsign() + ")";
             _myIdentity.setSummary(summary);
         }
 
         AtakPluginRegistry registry = AtakPluginRegistry.get();
         if (_myPlugins != null && registry != null) {
             Set<String> loaded = registry.getPluginsLoaded();
-            String summary = MapView.getMapView().getContext()
+            String summary = context
                     .getString(R.string.my_plugins_summary)
                     + " (" + loaded.size()
                     + (loaded.size() == 1 ? " plugin " : " plugins ")

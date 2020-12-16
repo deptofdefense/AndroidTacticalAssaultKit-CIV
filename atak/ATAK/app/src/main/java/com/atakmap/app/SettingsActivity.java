@@ -53,7 +53,7 @@ public class SettingsActivity extends MetricPreferenceActivity implements
     private boolean fakeTrail = false;
 
     //    private FauxNavBar fnb;
-    private static int lookupID = android.R.id.content;
+    private static final int lookupID = android.R.id.content;
 
     private SharedPreferences mainControlPrefs;
     private PreferenceFragment toolPreferenceViaShortCut = null;
@@ -194,7 +194,7 @@ public class SettingsActivity extends MetricPreferenceActivity implements
 
     private String tempkey;
 
-    private BroadcastReceiver _quitReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver _quitReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             SettingsActivity.this.finish();
@@ -383,7 +383,7 @@ public class SettingsActivity extends MetricPreferenceActivity implements
                         .commit();
             } catch (IllegalStateException ise) {
                 Log.e(TAG,
-                        "error occured wehn attempting to go back to home, just close out of settings");
+                        "error occurred wehn attempting to go back to home, just close out of settings");
                 finish();
             }
         } else if (i == android.R.id.home) {

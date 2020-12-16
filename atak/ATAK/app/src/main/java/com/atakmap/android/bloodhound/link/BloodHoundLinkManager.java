@@ -93,7 +93,7 @@ public class BloodHoundLinkManager {
      */
     public void removeLink(String uid) {
 
-        BloodHoundLink link = null;
+        BloodHoundLink link;
         synchronized (_links) {
             link = _links.remove(uid);
         }

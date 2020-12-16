@@ -120,7 +120,7 @@ public class DefaultMetaDataHolder implements MetaDataHolder {
         Map<String, Object> b = typedGet(_data, key, Map.class, null);
         if (b == null)
             return null;
-        return new HashMap<String, Object>(b);
+        return new HashMap<>(b);
     }
 
     @Override

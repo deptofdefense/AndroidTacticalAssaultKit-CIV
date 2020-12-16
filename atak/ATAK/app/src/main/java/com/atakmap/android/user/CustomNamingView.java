@@ -29,13 +29,13 @@ public class CustomNamingView
 
     private static final String TAG = "CUSTOM_NAMING_VIEW";
 
-    private EditText _prefixET;
-    private EditText _startNumberET;
-    private ImageButton _resetButton;
-    private ImageButton _swapButton;
-    private MapView _mapView;
-    private LinearLayout _mainView;
-    private int _creatingPallet;
+    private final EditText _prefixET;
+    private final EditText _startNumberET;
+    private final ImageButton _resetButton;
+    private final ImageButton _swapButton;
+    private final MapView _mapView;
+    private final LinearLayout _mainView;
+    private final int _creatingPallet;
 
     public final static int DOTMAP = 0;
     public final static int VEHICLE = 1;

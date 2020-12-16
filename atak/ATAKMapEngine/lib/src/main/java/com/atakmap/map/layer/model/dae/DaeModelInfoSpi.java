@@ -40,6 +40,8 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
     static final int X_UP = 2;
     static final int Z_UP = 3;
 
+    private static final int MAX_SCANNER_SIZE = 128 * 1024;
+
 
     public static final String TAG = "DaeModelInfoSpi";
 
@@ -281,7 +283,7 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
                         if(targetHref == null || sourceHref == null)
                             continue;
                         if(info.resourceMap == null)
-                            info.resourceMap = new HashMap<String, String>();
+                            info.resourceMap = new HashMap<>();
                         info.resourceMap.put(sourceHref, targetHref);
                     }
                 }
@@ -341,7 +343,7 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
                         is = zvfKmlFile.openStream();
                         long start = System.currentTimeMillis();
                         final Scanner scanner = new Scanner(is);
-                        String asset = scanner.findWithinHorizon("<href>[\\s\\S]*(.dae|.DAE)<\\/href>", 128 * 1024);
+                        String asset = scanner.findWithinHorizon("<href>[\\s\\S]*(.dae|.DAE)<\\/href>", MAX_SCANNER_SIZE);
                         scanner.close();
 
                         Log.d(TAG, "initial scan for a referenced dae file: " + kmlFile + " " + (System.currentTimeMillis() - start) + "ms");
@@ -357,7 +359,7 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
                                 if (xmlis != null) {
                                     try {
                                         xmlis.close();
-                                    } catch (Exception e) {
+                                    } catch (Exception ignored) {
                                     }
                                 }
                             }
@@ -383,11 +385,9 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
                 return modelInfos(file.getName(),
                         Collections.singletonList(file));
             }
-        } catch (IllegalArgumentException iae) {
+        } catch (IllegalArgumentException | IOException iae) {
             // occurs when a corrupt zip file is opened or something that is not a zip file
             Log.e(TAG, "error", iae);
-        } catch (IOException e) {
-            Log.e(TAG, "error", e);
         }
 
         return null;
@@ -400,7 +400,7 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
             if (inputStream == null)
                 return DOES_NOT_EXIST;
             final Scanner scanner = new Scanner(inputStream);
-            String asset = scanner.findWithinHorizon("<asset>[\\s\\S]*?<\\/asset>", 128 * 1024);
+            String asset = scanner.findWithinHorizon("<asset>[\\s\\S]*?<\\/asset>", MAX_SCANNER_SIZE);
             scanner.close();
             if (asset != null) {
                 Document doc = ModelFileUtils.parseXML(new ByteArrayInputStream(asset.getBytes()));

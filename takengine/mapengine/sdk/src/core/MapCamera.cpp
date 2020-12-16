@@ -2,5 +2,5 @@
 
 using namespace atakmap::core;
 
-MapCamera::MapCamera() {}
+MapCamera::MapCamera() : roll(0.0) {}
 MapCamera::~MapCamera() {}

@@ -6,7 +6,7 @@ import android.graphics.Point;
 
 import com.atakmap.android.maps.MapDataRef;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import org.w3c.dom.Document;
@@ -43,7 +43,8 @@ public class WidgetItemListParser {
 
     public WidgetItemList parse(String filePath) throws IOException,
             SAXException {
-        FileInputStream fis = FileIOProviderFactory.getInputStream(new File(_currentDirectory + filePath));
+        FileInputStream fis = IOProviderFactory
+                .getInputStream(new File(_currentDirectory + filePath));
         WidgetItemList list = null;
         try {
             list = parse(fis);
@@ -189,7 +190,8 @@ public class WidgetItemListParser {
         WidgetItem.Builder b = _itemCache.get(path);
         if (b == null) {
 
-            FileInputStream fis = FileIOProviderFactory.getInputStream(new File(_currentDirectory + path));
+            FileInputStream fis = IOProviderFactory
+                    .getInputStream(new File(_currentDirectory + path));
             try {
                 DocumentBuilderFactory dbf = XMLUtils
                         .getDocumenBuilderFactory();

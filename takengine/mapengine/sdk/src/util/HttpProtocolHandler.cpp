@@ -5,6 +5,7 @@
 #include <regex>
 #include <memory>
 #include "openssl/ssl.h"
+#include "openssl/x509v3.h"
 #include "util/HttpProtocolHandler.h"
 #include "util/DataInput2.h"
 #include "util/Memory.h"
@@ -47,10 +48,12 @@ namespace {
         TAKErr performRead(size_t len) NOTHROWS;
         static size_t writeCallback(void* data, size_t size, size_t nmemb, void* userData);
         static CURLcode sslContextFunction(CURL* curl, void* sslctx, void* userData);
+        static int sslVerifyFunction(X509_STORE_CTX* x509_ctx, void* arg);
     private:
         mutable TAK::Engine::Thread::Mutex mutex_;
         std::shared_ptr<HttpProtocolHandlerClientInterface> client_iface_;
         std::shared_ptr<OpenSSLX509TrustStore> root_trust_store_;
+        X509_STORE *store_;
         CURL *curl_easy_;
         CURLM *curl_multi_;
         std::deque<uint8_t> buf_;
@@ -69,6 +72,7 @@ namespace {
         virtual TAKErr populateX509TrustStore(X509TrustStore* trustStore, const char* host) NOTHROWS;
         virtual bool shouldAuthenticateHost(const char* host, int priorAttempts) NOTHROWS;
         virtual TAKErr getBasicAuth(TAK::Engine::Port::String* username, TAK::Engine::Port::String* password, const char *host) NOTHROWS;
+        virtual TAKErr shouldTrustCertificate(const uint8_t* x509Data, size_t size, const char* host) NOTHROWS;
     };
 }
 
@@ -91,12 +95,12 @@ HttpProtocolHandlerClientInterface::~HttpProtocolHandlerClientInterface() NOTHRO
 //
 
 HttpProtocolHandler::HttpProtocolHandler()
-    : HttpProtocolHandler(std::make_shared<DefaultHttpProtocolHandlerClientInterface>())
+    : HttpProtocolHandler(nullptr)
 { }
 
 
 HttpProtocolHandler::HttpProtocolHandler(const std::shared_ptr<HttpProtocolHandlerClientInterface>& client_iface_) NOTHROWS
-    : client_iface_(client_iface_)
+    : client_iface_(client_iface_ ? client_iface_ : std::make_shared<DefaultHttpProtocolHandlerClientInterface>())
 { }
 
 HttpProtocolHandler::~HttpProtocolHandler() NOTHROWS 
@@ -221,6 +225,10 @@ namespace {
         return TE_Unsupported;
     }
 
+    TAKErr DefaultHttpProtocolHandlerClientInterface::shouldTrustCertificate(const uint8_t* x509Data, size_t size, const char* host) NOTHROWS {
+        return TAK::Engine::Util::TE_Unsupported;
+    }
+
     //
     // CURLDataInput
     //
@@ -230,6 +238,7 @@ namespace {
     curl_multi_(nullptr),
     client_iface_(client_iface_),
     root_trust_store_(trustStore),
+    store_(nullptr),
     running_(0),
     length_(0)
     { }
@@ -273,8 +282,8 @@ namespace {
                 if (client_iface_->allowRedirect(this->host_))
                     curl_easy_setopt(curl_easy_, CURLOPT_FOLLOWLOCATION, 1L);
 
-                if (client_iface_->shouldAuthenticateHost(this->host_, authAttempts)) {
-                    code = client_iface_->getBasicAuth(&username, &password, this->host_);
+                if (client_iface_->shouldAuthenticateHost(URI, authAttempts)) {
+                    code = client_iface_->getBasicAuth(&username, &password, URI);
                     TE_CHECKBREAK_CODE(code);
                 } else if (authAttempts > 0) {
                     // too many failed attempts
@@ -294,12 +303,9 @@ namespace {
                 curl_easy_setopt(curl_easy_, CURLOPT_SSL_CTX_FUNCTION, sslContextFunction);
                 curl_easy_setopt(curl_easy_, CURLOPT_SSL_CTX_DATA, (void*)this);
 
-                if (client_iface_) {
-                    if (!client_iface_->shouldVerifySSLHost(this->host_))
-                        curl_easy_setopt(curl_easy_, CURLOPT_SSL_VERIFYHOST, 0L);
-                    if (!client_iface_->shouldVerifySSLPeer(this->host_))
-                        curl_easy_setopt(curl_easy_, CURLOPT_SSL_VERIFYPEER, 0L);
-                }
+                // stop CURL from duplicating this effort (handled by sslVerifyFunction)
+                curl_easy_setopt(curl_easy_, CURLOPT_SSL_VERIFYPEER, 0L);
+                curl_easy_setopt(curl_easy_, CURLOPT_SSL_VERIFYHOST, 0L);
             }
 
             curl_multi_ = curl_multi_init();
@@ -318,10 +324,14 @@ namespace {
                 int numfds;
                 CURLMcode mc = curl_multi_wait(curl_multi_, NULL, 0, INT_MAX, &numfds);
                 if (mc != CURLM_OK) {
-                    return TE_IO;
+                    break;
                 }
-                curl_multi_perform(curl_multi_, &running_);
-                curl_easy_getinfo(curl_easy_, CURLINFO_RESPONSE_CODE, &responseCode);
+                mc = curl_multi_perform(curl_multi_, &running_);
+                if (mc != CURLM_OK)
+                    break;
+                CURLcode ec = curl_easy_getinfo(curl_easy_, CURLINFO_RESPONSE_CODE, &responseCode);
+                if (ec != CURLE_OK)
+                    break;
             } while (this->running_ && responseCode == 0);
 
             if (responseCode == 401) {
@@ -335,6 +345,7 @@ namespace {
                 code = TE_Ok;
             } else {
                 code = TE_IO;
+                connecting = false;
             }
         }
 
@@ -366,6 +377,10 @@ namespace {
         }
         this->buf_.erase(buf_.begin(), buf_.end());
         this->running_ = false;
+        if (store_) {
+            X509_STORE_free(store_);
+            store_ = nullptr;
+        }
 
         return TE_Ok;
     }
@@ -385,7 +400,7 @@ namespace {
         size_t copyNum = std::min(len, this->buf_.size());
 
         if (copyNum) {
-            memcpy(dst, &buf_[0], copyNum);
+            std::copy(buf_.begin(), buf_.begin() + copyNum, dst);
             buf_.erase(buf_.begin(), buf_.begin() + copyNum);
             length_ = std::max<int64_t>(0, length_ - copyNum);
         }
@@ -447,6 +462,10 @@ namespace {
 
         SSL_CTX *sslCtx = static_cast<SSL_CTX *>(rawSSLCtx);
         CURLDataInput *thiz = static_cast<CURLDataInput *>(userData);
+        
+        // already been an attempt
+        if (thiz->store_)
+            return CURLE_SSL_CERTPROBLEM;
 
         X509_STORE* store = X509_STORE_new();
         if (!store)
@@ -455,8 +474,10 @@ namespace {
         // build host specific trust store
         OpenSSLX509TrustStore trustStore;
         TAKErr code = thiz->client_iface_->populateX509TrustStore(&trustStore, thiz->host_);
-        if (code != TE_Ok)
+        if (code != TE_Ok) {
+            X509_STORE_free(store);
             return CURLE_SSL_CERTPROBLEM;
+        }
 
         trustStore.build(store);
 
@@ -464,8 +485,54 @@ namespace {
         if (thiz->root_trust_store_)
             thiz->root_trust_store_->build(store);
 
+        // CURL/SSL appears to clean this up for us after, so don't set to this->store_ for now
         SSL_CTX_set_cert_store(sslCtx, store);
+
+        SSL_CTX_set_cert_verify_callback(sslCtx, sslVerifyFunction, thiz);
+        
         return CURLE_OK;
+    }
+
+    int CURLDataInput::sslVerifyFunction(X509_STORE_CTX* ctx, void *userData) {
+
+        CURLDataInput* thiz = static_cast<CURLDataInput*>(userData);
+
+        // enable host verification
+        if (thiz->client_iface_->shouldVerifySSLHost(thiz->host_)) {
+            X509_VERIFY_PARAM* param = X509_STORE_CTX_get0_param(ctx);
+            X509_VERIFY_PARAM_set_hostflags(param, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+            size_t hostLen = strlen(thiz->host_);
+            if (!X509_VERIFY_PARAM_set1_host(param, thiz->host_.get(), hostLen)) {
+                return 0;
+            }
+        }
+
+        bool passing = X509_verify_cert(ctx);
+        if (!passing) {
+            int error = X509_STORE_CTX_get_error(ctx);
+
+            // pass when not a hostname mismatch and peer verify is OFF (NOT SECURE-- only be for debug)
+            if (error != X509_V_ERR_HOSTNAME_MISMATCH && !thiz->client_iface_->shouldVerifySSLPeer(thiz->host_))
+                return 1;
+        }
+        
+        // give client application the chance to trust
+        if (!passing) {
+            size_t len = 0;
+            X509* serverCert = X509_STORE_CTX_get_current_cert(ctx);
+
+            if (serverCert && (len = i2d_X509(serverCert, NULL)) != 0) {
+                std::vector<uint8_t> certBytes;
+                certBytes.insert(certBytes.begin(), len, 0);
+                uint8_t* p = &certBytes[0];
+                i2d_X509(serverCert, &p);
+
+                if (thiz->client_iface_->shouldTrustCertificate(&certBytes[0], len, thiz->host_) == TE_Ok)
+                    passing = true;
+            }
+        }
+
+        return passing ? 1 : 0;
     }
 
     TAKErr CURLDataInput::performRead(size_t len) NOTHROWS {

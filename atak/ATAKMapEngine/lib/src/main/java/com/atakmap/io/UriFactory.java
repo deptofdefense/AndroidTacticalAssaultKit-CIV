@@ -96,4 +96,7 @@ public class UriFactory {
 
     private static final List<ProtocolHandler> handlers = new ArrayList<>();
     private static final FileProtocolHandler fileHandler = new FileProtocolHandler();
+    static {
+        handlers.add(new ZipProtocolHandler());
+    }
 }

@@ -135,78 +135,82 @@ public class RubberSheetReceiver extends BroadcastReceiver implements
         final AbstractSheet sheet = (AbstractSheet) shape;
 
         // Adjust rubber sheet transparency
-        if (action.equals(TRANSPARENCY)) {
-            if (_activeSheet != null) {
-                if (_activeSheet == sheet)
-                    return;
-                else
-                    SeekBarControl.dismiss();
-            }
-            SeekBarControl.show(new SeekBarControl.Subject() {
-                @Override
-                public int getValue() {
-                    return (int) ((sheet.getAlpha() / 255f) * 100);
+        switch (action) {
+            case TRANSPARENCY:
+                if (_activeSheet != null) {
+                    if (_activeSheet == sheet)
+                        return;
+                    else
+                        SeekBarControl.dismiss();
                 }
+                SeekBarControl.show(new SeekBarControl.Subject() {
+                    @Override
+                    public int getValue() {
+                        return (int) ((sheet.getAlpha() / 255f) * 100);
+                    }
 
-                @Override
-                public void setValue(int value) {
-                    sheet.setAlpha((int) ((value / 100f) * 255));
+                    @Override
+                    public void setValue(int value) {
+                        sheet.setAlpha((int) ((value / 100f) * 255));
+                    }
+
+                    @Override
+                    public void onControlDismissed() {
+                        if (sheet.hasMetaValue("archive"))
+                            sheet.persist(_mapView.getMapEventDispatcher(),
+                                    null, RubberSheetReceiver.class);
+                        _activeSheet = null;
+                    }
+                }, 5000L);
+                _activeSheet = sheet;
+                break;
+
+            // Rotate rubber sheet using two-finger gesture
+            case ROTATE:
+                String id = sheet instanceof RubberModel
+                        ? RubberModelEditTool.TOOL_NAME
+                        : RubberSheetEditTool.TOOL_NAME;
+                Bundle extras = new Bundle();
+                extras.putString("uid", sheet.getUID());
+                extras.putBoolean("rotate", true);
+                ToolManagerBroadcastReceiver.getInstance().startTool(id,
+                        extras);
+                break;
+
+            // Fine-adjust rubber sheet position
+            case FINE_ADJUST:
+                SeekBarControl.dismiss();
+                GeoPoint point;
+                if (item instanceof PointMapItem) {
+                    point = ((PointMapItem) item).getPoint();
+                    sheet.setTouchPoint(point);
+                } else
+                    point = sheet.findTouchPoint();
+                if (_tempMarker == null) {
+                    _tempMarker = new Marker(point, "FINE_ADJUST");
+                    _tempMarker.setMetaBoolean("addToObjList", false);
+                    _tempMarker.setMetaBoolean("nevercot", true);
+                    _tempMarker.setVisible(false);
+                    _group.addItem(_tempMarker);
+                } else {
+                    _tempMarker.removeOnPointChangedListener(this);
+                    _tempMarker.setPoint(point);
                 }
+                _tempMarker.addOnPointChangedListener(this);
+                _activeSheet = sheet;
+                Intent tb = new Intent(TargetBubbleReceiver.FINE_ADJUST);
+                tb.putExtra("uid", _tempMarker.getUID());
+                TargetBubbleReceiver.getInstance().onReceive(context, tb);
+                break;
 
-                @Override
-                public void onControlDismissed() {
-                    if (sheet.hasMetaValue("archive"))
-                        sheet.persist(_mapView.getMapEventDispatcher(),
-                                null, RubberSheetReceiver.class);
-                    _activeSheet = null;
+            // Show details drop-down
+            case SHOW_DETAILS:
+            case EDIT:
+                for (AbstractSheetDropDown ddr : _dropDowns) {
+                    if (ddr.show(sheet, action.equals(EDIT)))
+                        break;
                 }
-            }, 5000L);
-            _activeSheet = sheet;
-        }
-
-        // Rotate rubber sheet using two-finger gesture
-        else if (action.equals(ROTATE)) {
-            String id = sheet instanceof RubberModel
-                    ? RubberModelEditTool.TOOL_NAME
-                    : RubberSheetEditTool.TOOL_NAME;
-            Bundle extras = new Bundle();
-            extras.putString("uid", sheet.getUID());
-            extras.putBoolean("rotate", true);
-            ToolManagerBroadcastReceiver.getInstance().startTool(id, extras);
-        }
-
-        // Fine-adjust rubber sheet position
-        else if (action.equals(FINE_ADJUST)) {
-            SeekBarControl.dismiss();
-            GeoPoint point;
-            if (item instanceof PointMapItem) {
-                point = ((PointMapItem) item).getPoint();
-                sheet.setTouchPoint(point);
-            } else
-                point = sheet.findTouchPoint();
-            if (_tempMarker == null) {
-                _tempMarker = new Marker(point, "FINE_ADJUST");
-                _tempMarker.setMetaBoolean("addToObjList", false);
-                _tempMarker.setMetaBoolean("nevercot", true);
-                _tempMarker.setVisible(false);
-                _group.addItem(_tempMarker);
-            } else {
-                _tempMarker.removeOnPointChangedListener(this);
-                _tempMarker.setPoint(point);
-            }
-            _tempMarker.addOnPointChangedListener(this);
-            _activeSheet = sheet;
-            Intent tb = new Intent(TargetBubbleReceiver.FINE_ADJUST);
-            tb.putExtra("uid", _tempMarker.getUID());
-            TargetBubbleReceiver.getInstance().onReceive(context, tb);
-        }
-
-        // Show details drop-down
-        else if (action.equals(SHOW_DETAILS) || action.equals(EDIT)) {
-            for (AbstractSheetDropDown ddr : _dropDowns) {
-                if (ddr.show(sheet, action.equals(EDIT)))
-                    break;
-            }
+                break;
         }
     }
 

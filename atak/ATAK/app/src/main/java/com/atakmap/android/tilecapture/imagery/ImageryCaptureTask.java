@@ -12,9 +12,10 @@ import com.atakmap.android.tilecapture.TileCaptureBounds;
 import com.atakmap.android.tilecapture.TileCaptureParams;
 import com.atakmap.android.tilecapture.TileCaptureTask;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.lang.Unsafe;
+import com.atakmap.map.gdal.VSIFileFileSystemHandler;
 
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.Driver;
@@ -83,7 +84,7 @@ public class ImageryCaptureTask extends TileCaptureTask {
         if (dir == null)
             return false;
 
-        if (!FileIOProviderFactory.exists(dir) && !FileIOProviderFactory.mkdirs(dir))
+        if (!IOProviderFactory.exists(dir) && !IOProviderFactory.mkdirs(dir))
             return false;
 
         _outFile = new File(dir, "." + (new CoordinatedTime())
@@ -92,7 +93,11 @@ public class ImageryCaptureTask extends TileCaptureTask {
         if (driver == null)
             return false;
 
-        _dataset = driver.Create(_outFile.getAbsolutePath(),
+        String path = _outFile.getAbsolutePath();
+        if (!IOProviderFactory.isDefault()) {
+            path = VSIFileFileSystemHandler.PREFIX + path;
+        }
+        _dataset = driver.Create(path,
                 _fullWidth, _fullHeight, 3, new String[] {
                         "TILED=YES", "COMPRESS=DEFLATE", "ZLEVEL=9",
                         "BLOCKXSIZE=" + tw, "BLOCKYSIZE=" + th

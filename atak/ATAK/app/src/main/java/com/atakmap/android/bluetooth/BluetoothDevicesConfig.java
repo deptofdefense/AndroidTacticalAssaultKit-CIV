@@ -2,6 +2,7 @@
 package com.atakmap.android.bluetooth;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import org.simpleframework.xml.Attribute;
@@ -11,6 +12,8 @@ import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -89,9 +92,9 @@ public class BluetoothDevicesConfig {
         File config = FileSystemUtils.getItem(CONFIG_FILE_PATH);
 
         Serializer serializer = new Persister();
-        try {
+        try (FileInputStream fis = IOProviderFactory.getInputStream(config)) {
             BluetoothDevicesConfig contents = serializer.read(
-                    BluetoothDevicesConfig.class, config);
+                    BluetoothDevicesConfig.class, fis);
             Log.d(TAG, "Loading Bluetooth Devices Config version "
                     + contents.version
                     + ", from file: "
@@ -128,8 +131,8 @@ public class BluetoothDevicesConfig {
                         + ", contents=" + toString());
 
         Serializer serializer = new Persister();
-        try {
-            serializer.write(this, config);
+        try (FileOutputStream fos = IOProviderFactory.getOutputStream(config)) {
+            serializer.write(this, fos);
             return true;
         } catch (Exception e) {
             Log.e(TAG,

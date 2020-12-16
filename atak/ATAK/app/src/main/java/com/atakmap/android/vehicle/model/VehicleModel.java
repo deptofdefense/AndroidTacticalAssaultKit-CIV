@@ -36,7 +36,7 @@ import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
@@ -309,7 +309,8 @@ public class VehicleModel extends RubberModel implements Capturable,
     }
 
     @Override
-    protected boolean orthoHitModel(int x, int y, GeoPoint point, MapView view) {
+    protected boolean orthoHitModel(int x, int y, GeoPoint point,
+            MapView view) {
         return showOutline() && orthoHitOutline(x, y, view)
                 || super.orthoHitModel(x, y, point, view);
     }
@@ -540,7 +541,7 @@ public class VehicleModel extends RubberModel implements Capturable,
         File cacheFile = new File(cacheDir, _info.name + ".bmp");
 
         // Check if cached screenshot already exists we can quickly read from
-        if (FileIOProviderFactory.exists(cacheFile)) {
+        if (IOProviderFactory.exists(cacheFile)) {
             try {
                 // XXX - BitmapFactory doesn't take bytes as input,
                 // for some (probably stupid) reason
@@ -592,7 +593,8 @@ public class VehicleModel extends RubberModel implements Capturable,
         }
 
         // Save bitmap data straight to file (no header data needed)
-        if (FileIOProviderFactory.exists(cacheDir) || FileIOProviderFactory.mkdirs(cacheDir)) {
+        if (IOProviderFactory.exists(cacheDir)
+                || IOProviderFactory.mkdirs(cacheDir)) {
             int width = image[0].getWidth();
             int height = image[0].getHeight();
             FileOutputStream fos = null;
@@ -612,7 +614,7 @@ public class VehicleModel extends RubberModel implements Capturable,
                     b[i + 3] = (byte) (p & 0xFF);
                     i += 4;
                 }
-                fos = FileIOProviderFactory.getOutputStream(cacheFile);
+                fos = IOProviderFactory.getOutputStream(cacheFile);
                 fos.write(b);
             } catch (Exception e) {
                 FileSystemUtils.delete(cacheFile);

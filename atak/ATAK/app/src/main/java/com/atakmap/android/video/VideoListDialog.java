@@ -39,8 +39,7 @@ public class VideoListDialog {
     private static final String TAG = "VideoListDialog";
     private static final String PREF_SHOW_URLS = "videoListDialogShowURLs";
 
-    private static final Comparator<ConnectionEntry> SORT_ALIAS
-            = new Comparator<ConnectionEntry>() {
+    private static final Comparator<ConnectionEntry> SORT_ALIAS = new Comparator<ConnectionEntry>() {
         @Override
         public int compare(ConnectionEntry o1, ConnectionEntry o2) {
             return o1.getAlias().compareTo(o2.getAlias());

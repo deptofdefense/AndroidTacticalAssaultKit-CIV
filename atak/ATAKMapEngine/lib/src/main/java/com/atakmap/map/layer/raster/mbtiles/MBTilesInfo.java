@@ -1,5 +1,6 @@
 package com.atakmap.map.layer.raster.mbtiles;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -7,6 +8,8 @@ import java.util.Set;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
+import com.atakmap.coremap.io.DatabaseInformation;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
@@ -48,7 +51,7 @@ public class MBTilesInfo {
         // try spatialite first
         database = null;
         try {
-            database = Databases.openDatabase(path, true);
+            database = IOProviderFactory.createDatabase(new File(path), DatabaseInformation.OPTION_READONLY);
             final MBTilesInfo retval = get(database);
             if(retval != null) {
                 if(returnRef != null) {

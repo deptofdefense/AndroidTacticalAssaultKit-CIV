@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Definition of DB_Error exception structure.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Feb 17, 2015
+////      Feb 17, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////

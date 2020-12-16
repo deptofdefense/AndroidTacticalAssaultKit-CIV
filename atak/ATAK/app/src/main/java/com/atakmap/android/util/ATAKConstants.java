@@ -16,18 +16,25 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.graphics.drawable.Drawable;
+import com.atakmap.annotations.DeprecatedApi;
 
 import com.atakmap.android.gui.WebViewer;
 import com.atak.plugins.impl.AtakPluginRegistry;
 import com.atakmap.android.cot.detail.TakVersionDetailHandler;
 import com.atakmap.android.metrics.MetricsApi;
+import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.app.R;
+import com.atakmap.app.system.FlavorProvider;
+import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 /**
  *
@@ -67,8 +74,13 @@ public class ATAKConstants {
 
         if (FileSystemUtils.isEmpty(versionName)) {
 
-            iconId = R.drawable.ic_atak_launcher;
-            iconDrawable = context.getResources().getDrawable(iconId);
+            FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+            if (fp != null && fp.hasMilCapabilities())
+                iconId = R.drawable.ic_mil_atak_launcher;
+            else
+                iconId = R.drawable.ic_atak_launcher;
+
+            iconDrawable = context.getDrawable(iconId);
 
             appName = context.getString(R.string.app_name);
             packageName = context.getPackageName();
@@ -81,10 +93,31 @@ public class ATAKConstants {
                         + versionNameManifest;
                 versionCode = pInfo.versionCode;
                 versionBrand = context.getString(R.string.app_brand);
-                pluginApi = AtakPluginRegistry.getPluginApiVersion(context,
-                        context.getPackageName(), true);
-                pluginApiFull = AtakPluginRegistry.getPluginApiVersion(context,
-                        context.getPackageName(), false);
+                if (fp != null) {
+                    try {
+                        final String api = SystemComponentLoader
+                                .getFlavorAPI(context);
+                        final int index = api.lastIndexOf(".");
+                        versionBrand = api.substring(index + 1);
+                    } catch (Exception ignored) {
+                    }
+                }
+
+                // use the flavors api version check if installed otherwise use the cores version
+                // check.
+                final String flavorApi = SystemComponentLoader
+                        .getFlavorAPI(context);
+                if (!FileSystemUtils.isEmpty(flavorApi)) {
+                    pluginApi = AtakPluginRegistry
+                            .stripPluginApiVersion(flavorApi);
+                    pluginApiFull = flavorApi;
+                } else {
+                    pluginApi = AtakPluginRegistry.getPluginApiVersion(context,
+                            context.getPackageName(), true);
+                    pluginApiFull = AtakPluginRegistry.getPluginApiVersion(
+                            context,
+                            context.getPackageName(), false);
+                }
 
                 deviceManufacturer = Build.MANUFACTURER;
                 deviceModel = Build.MODEL;
@@ -124,6 +157,23 @@ public class ATAKConstants {
      */
     public static Drawable getIcon() {
         return iconDrawable;
+    }
+
+    /**
+     * Returns the appropriate server connection icon based on the current configuration of
+     * the application.
+     * @param connected true if the connection icon should be connected.
+     * @return the drawable associated with the server reflecting the connected state
+     */
+    public static int getServerConnection(final boolean connected) {
+        FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+        if (fp != null && fp.hasMilCapabilities()) {
+            return connected ? R.drawable.ic_mil_server_success
+                    : R.drawable.ic_mil_server_error;
+        }
+
+        return connected ? R.drawable.ic_server_success
+                : R.drawable.ic_server_error;
     }
 
     /**
@@ -183,7 +233,25 @@ public class ATAKConstants {
         return versionBrand;
     }
 
+    /**
+     * Returns the app branding which is the CIV, MIL, etc.
+     * @param context the context to provide as to not used the one produced when ATAKConstracts
+     *                was initialized.  Please use this over the getVersionBrand
+     *                with no arguments.
+     * @return the String that describes the brand.
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public static String getVersionBrand(Context context) {
+        FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+        if (fp != null) {
+            try {
+                final String api = SystemComponentLoader.getFlavorAPI(context);
+                final int index = api.lastIndexOf(".");
+                return api.substring(index + 1);
+            } catch (Exception ignored) {
+            }
+        }
         return context.getString(R.string.app_brand);
     }
 
@@ -236,6 +304,20 @@ public class ATAKConstants {
         } else {
             v = inflater.inflate(R.layout.atak_splash, null);
         }
+        FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+        if (fp != null)
+            fp.installCustomSplashScreen(v,
+                    AtakPreferenceFragment.getOrientation(context));
+
+        final String encryptorName = SystemComponentLoader
+                .getEncryptionComponentName();
+        if (encryptorName != null) {
+            final TextView encryptionText = ((TextView) v
+                    .findViewById(R.id.encryption));
+            encryptionText.setText(context
+                    .getString(R.string.dar_encryptor_message, encryptorName));
+            encryptionText.setVisibility(View.VISIBLE);
+        }
 
         TextView tv = v.findViewById(R.id.revision);
         TextView pa = v.findViewById(R.id.pluginapi);
@@ -257,7 +339,13 @@ public class ATAKConstants {
                 .getItem(FileSystemUtils.SUPPORT_DIRECTORY
                         + File.separatorChar + "atak_splash.png");
         if (FileSystemUtils.isFile(splash)) {
-            Bitmap bmp = BitmapFactory.decodeFile(splash.getAbsolutePath());
+            Bitmap bmp;
+            try (FileInputStream fis = IOProviderFactory
+                    .getInputStream(splash)) {
+                bmp = BitmapFactory.decodeStream(fis);
+            } catch (IOException e) {
+                bmp = null;
+            }
             if (bmp != null) {
                 Log.d(TAG, "Loading custom splash screen");
                 ImageView atak_splash_imgView = v

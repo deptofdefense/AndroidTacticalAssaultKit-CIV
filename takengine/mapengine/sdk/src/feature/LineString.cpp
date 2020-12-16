@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Implementation of LineString class.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Dec 10, 2014
+////      Dec 10, 2014  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -324,7 +324,7 @@ LineString::addPoints (const double* begin,
 bool
 LineString::isClosed ()
     const
-    throw ()
+    NOTHROWS
   {
     bool closed (false);
 

@@ -6,7 +6,6 @@ import android.content.Intent;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 
 import com.atakmap.android.dropdown.DropDownMapComponent;
-import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 
 /**
@@ -17,9 +16,14 @@ import com.atakmap.android.maps.MapView;
 public class HostileManagerMapComponent extends DropDownMapComponent {
 
     private HostileManagerDropDownReceiver _receiver;
+    private Context _context;
+    private MapView _mapView;
 
     @Override
     public void onCreate(Context context, Intent intent, MapView view) {
+        _context = context;
+        _mapView = view;
+
         super.onCreate(context, intent, view);
         _receiver = new HostileManagerDropDownReceiver(view);
         DocumentedIntentFilter intentFilter = new DocumentedIntentFilter();
@@ -27,12 +31,14 @@ public class HostileManagerMapComponent extends DropDownMapComponent {
                 .addAction(
                         "com.atakmap.android.maps.MANAGE_HOSTILES",
                         "The event to bring up the hostile manager within the ATAK system.   This allows for manipulation of all CAS 9-lines within the system.");
-        AtakBroadcast.getInstance().registerReceiver(_receiver, intentFilter);
+        this.registerDropDownReceiver(_receiver, intentFilter);
+
     }
 
     @Override
     protected void onDestroyImpl(Context context, MapView view) {
         super.onDestroyImpl(context, view);
-        _receiver.dispose();
+        _receiver = null;
     }
+
 }

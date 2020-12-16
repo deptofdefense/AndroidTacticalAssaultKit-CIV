@@ -12,6 +12,7 @@
 
 #include "thread/Lock.h"
 #include "thread/Mutex.h"
+#include "thread/RWMutex.h"
 #include "util/ConfigOptions.h"
 #include "util/DataInput2.h"
 #include "util/DataOutput2.h"
@@ -93,6 +94,27 @@ namespace
     };
 
     CopyOnWrite<ZipExtRegistry> &globalZipExtRegistry();
+
+    class DefaultFilesystem : public Filesystem
+    {
+    public :
+        TAKErr createTempFile(TAK::Engine::Port::String &value, const char *prefix, const char *suffix, const char *dir) NOTHROWS override;
+        TAKErr createTempDirectory(TAK::Engine::Port::String &value, const char* prefix, const char* suffix, const char* parentPath) NOTHROWS override;
+        TAKErr getFileCount(std::size_t *value, const char *path, const std::size_t limit = 0u) NOTHROWS override;
+        TAKErr listFiles(TAK::Engine::Port::Collection<TAK::Engine::Port::String> &value, const char *path) NOTHROWS override;
+        TAKErr length(int64_t *value, const char* path) NOTHROWS override;
+        TAKErr getLastModified(int64_t *value, const char* path) NOTHROWS override;
+        TAKErr isDirectory(bool *value, const char* path) NOTHROWS override;
+        TAKErr isFile(bool *value, const char* path) NOTHROWS override;
+        TAKErr exists(bool *value, const char *path) NOTHROWS override;
+        TAKErr remove(const char *path) NOTHROWS override;
+        TAKErr mkdirs(const char* dirPath) NOTHROWS override;
+        TAKErr openFile(DataInput2Ptr &dataPtr, const char *path) NOTHROWS override;
+        TAKErr openFile(DataOutput2Ptr &dataPtr, const char *path) NOTHROWS override;
+    };
+
+    RWMutex &filesystem_mutex() NOTHROWS;
+    std::shared_ptr<Filesystem> filesystem(new DefaultFilesystem());
 }
 
 
@@ -114,17 +136,23 @@ File::operator FILE * ()
 
 TAKErr TAK::Engine::Util::IO_copy(const char *dstPath, const char *srcPath) NOTHROWS
 {
-    using namespace atakmap::util;
-
-    if (!pathExists(srcPath))
+    TAKErr code(TE_Ok);
+    ReadLock rlock(filesystem_mutex());
+    bool pathExists;
+    code = filesystem->exists(&pathExists, srcPath);
+    TE_CHECKRETURN_CODE(code);
+    if(!pathExists)
         return TE_InvalidArg;
+    bool isdir;
+    filesystem->isDirectory(&isdir, srcPath);
+    if (isdir) {
+        code = filesystem->mkdirs(dstPath);
+        TE_CHECKRETURN_CODE(code);
 
-    if (isDirectory(srcPath)) {
-        if (!createDir(dstPath)) {
-            return TE_IO;
-        }
-
-        std::vector<std::string> contents = atakmap::util::getDirContents(srcPath);
+        std::vector<TAK::Engine::Port::String> contents;
+        TAK::Engine::Port::STLVectorAdapter<TAK::Engine::Port::String> contents_w(contents);
+        code = filesystem->listFiles(contents_w, srcPath);
+        TE_CHECKRETURN_CODE(code);
         const std::size_t contentsSize = contents.size();
         for (std::size_t i = 0; i < contentsSize; i++) {
             std::ostringstream dstChildPath;
@@ -134,40 +162,26 @@ TAKErr TAK::Engine::Util::IO_copy(const char *dstPath, const char *srcPath) NOTH
 #else
             dstChildPath << "/";
 #endif
-            dstChildPath << getFileName(contents[i].c_str());
+            TAK::Engine::Port::String name;
+            code = IO_getName(name, contents[i]);
+            TE_CHECKBREAK_CODE(code);
 
-            IO_copy(dstChildPath.str().c_str(), contents[i].c_str());
+            dstChildPath << name.get();
+
+            IO_copy(dstChildPath.str().c_str(), contents[i]);
         }
+
+        return TE_Ok;
     } else {
-        File src(srcPath, "rb");
-        File dst(dstPath, "wb");
+        DataInput2Ptr src(nullptr, nullptr);
+        DataOutput2Ptr dst(nullptr, nullptr);
+        code = filesystem->openFile(src, srcPath);
+        TE_CHECKRETURN_CODE(code);
+        code = filesystem->openFile(dst, dstPath);
+        TE_CHECKRETURN_CODE(code);
 
-        if (!src) {
-            Logger::log(Logger::Error, "IO2: Failed to open input %s", srcPath);
-            return TE_IO;
-        }
-        if (!dst) {
-            Logger::log(Logger::Error, "IO2: Failed to open output %s", dstPath);
-            return TE_IO;
-        }
-
-        uint8_t buf[8192];
-
-        do {
-            std::size_t numRead = fread(buf, 1u, 8192, src);
-            if (!numRead) {
-                if (ferror(src))
-                    return TE_IO;
-                break;
-            }
-            fwrite(buf, 1u, numRead, dst);
-            if (ferror(dst))
-                return TE_IO;
-        } while (true);
-
+        return IO_copy(*dst, *src);
     }
-
-    return TE_Ok;
 }
 
 TAKErr TAK::Engine::Util::IO_copy(DataOutput2 &dst, DataInput2 &src) NOTHROWS
@@ -196,55 +210,14 @@ TAKErr TAK::Engine::Util::IO_copy(DataOutput2 &dst, DataInput2 &src) NOTHROWS
 
 TAKErr TAK::Engine::Util::IO_createTempFile(TAK::Engine::Port::String &value, const char *prefix, const char *suffix, const char *dir) NOTHROWS
 {
-    using namespace atakmap::util;
+    ReadLock rlock(filesystem_mutex());
+    return filesystem->createTempFile(value, prefix, suffix, dir);
+}
 
-    static Mutex mtx;
-
-    TAKErr code(TE_Ok);
-    Port::String tmpDir(dir);
-    if (!tmpDir)
-    {
-#ifdef MSVC
-        tmpDir = getTempDir();
-#else
-        tmpDir = P_tmpdir;
-#endif
-    }
-    Lock lock(mtx);
-    code = lock.status;
-    TE_CHECKRETURN_CODE(code);
-
-    for (int i = 0; i < 20; i++) {
-        StringBuilder tmpStrm;
-        tmpStrm << tmpDir << '/'
-            << (prefix ? prefix : "") << "XXXXXX";
-        Port::String tmpPath(tmpStrm.c_str());
-
-        if (!mkstemp(tmpPath.get()))
-        {
-            Logger::log(Logger::Error, "IO_createTempDir: Call to mkdtemp failed");
-            return TE_IO;
-        }
-
-        if (suffix) {
-            StringBuilder suffixPath;
-            suffixPath << tmpPath << suffix;
-
-            deletePath(tmpPath);
-            if (platformstl::filesystem_traits<char>::file_exists(suffixPath.c_str()))
-                continue;
-            {
-                // create the file
-                File f(suffixPath.c_str(), "wb");
-            }
-            value = suffixPath.c_str();
-        } else {
-            value = tmpPath;
-        }
-
-        return TE_Ok;
-    }
-    return TE_Err;
+TAKErr TAK::Engine::Util::IO_createTempDirectory(TAK::Engine::Port::String &value, const char *prefix, const char *suffix, const char *dir) NOTHROWS
+{
+    ReadLock rlock(filesystem_mutex());
+    return filesystem->createTempDirectory(value, prefix, suffix, dir);
 }
 
 TAKErr TAK::Engine::Util::IO_getFileCount(std::size_t *result, const char *path, const std::size_t limit) NOTHROWS
@@ -254,21 +227,28 @@ TAKErr TAK::Engine::Util::IO_getFileCount(std::size_t *result, const char *path,
     return getFileCountImpl_Windows(result, path, limit);
 #else
     *result = 0;
-    return getFileCountImpl(result, path, limit);
+    ReadLock rlock(filesystem_mutex());
+    return filesystem->getFileCount(result, path, limit);
 #endif
 }
 
 TAKErr TAK::Engine::Util::IO_getFileCount(std::size_t *result, const char *path) NOTHROWS
 {
     *result = 0;
-    return getFileCountImpl(result, path);
+    ReadLock rlock(filesystem_mutex());
+    return filesystem->getFileCount(result, path);
 }
 
 TAKErr TAK::Engine::Util::IO_getParentFile(Port::String &value, const char *path) NOTHROWS
 {
     try {
-        std::string retval = atakmap::util::getDirectoryForFile(path);
-        value = retval.c_str();
+        platformstl::basic_path<char> p(path);
+        if (p.has_sep()) {
+            value = path;
+            return TE_Ok;
+        }
+        p = p.pop();
+        value = p.c_str();
         return TE_Ok;
     } catch (...) {
         return TE_Err;
@@ -278,8 +258,8 @@ TAKErr TAK::Engine::Util::IO_getParentFile(Port::String &value, const char *path
 TAKErr TAK::Engine::Util::IO_getName(Port::String &value, const char *path) NOTHROWS
 {
     try {
-        std::string retval = atakmap::util::getFileName(path);
-        value = retval.c_str();
+        platformstl::basic_path<char> p(path);
+        value = p.get_file();
         return TE_Ok;
     } catch (...) {
         return TE_Err;
@@ -290,8 +270,9 @@ TAKErr TAK::Engine::Util::IO_getName(Port::String &value, const char *path) NOTH
 TAKErr TAK::Engine::Util::IO_getAbsolutePath(Port::String &value, const char *path) NOTHROWS
 {
     try {
-        std::string retval = atakmap::util::getFileAsAbsolute(path);
-        value = retval.c_str();
+        platformstl::basic_path<char> f(path);
+        f.make_absolute();
+        value = f.c_str();
         return TE_Ok;
     } catch (...) {
         return TE_Err;
@@ -301,8 +282,48 @@ TAKErr TAK::Engine::Util::IO_getAbsolutePath(Port::String &value, const char *pa
 TAKErr TAK::Engine::Util::IO_getRelativePath(Port::String &value, const char *basePath, const char *filePath) NOTHROWS
 {
     try {
-        std::string retval = atakmap::util::computeRelativePath(basePath, filePath);
-        value = retval.c_str();
+        platformstl::basic_path<char> base(basePath);
+        platformstl::basic_path<char> file(filePath);
+
+        // Make both absolute
+        base = base.make_absolute();
+        file = file.make_absolute();
+
+        // Compare paths up to inequality point.
+        const char *baseStr = base.c_str();
+        const char *fileStr = file.c_str();
+        size_t i = 0;
+        while (baseStr[i] == fileStr[i] && baseStr[i] != '\0' && fileStr[i] != '\0')
+        {
+            i++;
+        }
+        platformstl::basic_path<char> commonPath(baseStr, i);
+        if (commonPath.empty()) {
+            // Nothing in common
+            value = filePath;
+            return TE_Ok;
+        }
+
+        // Count pop's on base to equality point.
+        platformstl::basic_path<char> ret;
+        while (!base.empty()) {
+            if (base.equal(commonPath))
+                break;
+            base.pop();
+            ret.push("..");
+        }
+
+        // Put remainder of original file path on from equality point forward.
+        size_t remains = file.size() - i;
+        while (remains > 0 && (fileStr[i] == '/' || fileStr[i] == '\\')) {
+            // skip separator
+            i++;
+            remains--;
+        }
+        if (remains > 0)
+            ret.push(platformstl::basic_path<char>(fileStr + i, remains));
+
+        value = ret.c_str();
         return TE_Ok;
     } catch (...) {
         return TE_Err;
@@ -314,27 +335,32 @@ TAKErr TAK::Engine::Util::IO_listFiles(Port::Collection<Port::String> &value, co
     TAKErr code(TE_Ok);
     bool b;
 
-    code = IO_exists(&b, path);
+    ReadLock rlock(filesystem_mutex());
+    code = filesystem->exists(&b, path);
     TE_CHECKRETURN_CODE(code);
     if (!b)
         return TE_InvalidArg;
 
-    code = IO_isDirectory(&b, path);
+    code = filesystem->isDirectory(&b, path);
     TE_CHECKRETURN_CODE(code);
     if (!b)
         return TE_InvalidArg;
 
-    try {
-        std::vector<std::string> contents = atakmap::util::getDirContents(path);
-        std::vector<std::string>::iterator it;
-        for (it = contents.begin(); it != contents.end(); it++) {
-            if (!filter || filter((*it).c_str()))
-                value.add((*it).c_str());
-        }
+    if(!filter)
+        return filesystem->listFiles(value, path);
+
+    std::vector<TAK::Engine::Port::String> contents;
+    TAK::Engine::Port::STLVectorAdapter<TAK::Engine::Port::String> contents_w;
+    code = filesystem->listFiles(contents_w, path);
+    TE_CHECKRETURN_CODE(code);
+    if(contents.empty())
         return TE_Ok;
-    } catch (...) {
-        return TE_Err;
+
+    for (auto it = contents.begin(); it != contents.end(); it++) {
+        if (!filter || filter(*it))
+            value.add(*it);
     }
+    return TE_Ok;
 }
 
 TAKErr TAK::Engine::Util::IO_listFiles(Port::Collection<Port::String> &value, const char *path, ListFilesMethod method, bool(*filter)(const char *file)) NOTHROWS {
@@ -389,14 +415,15 @@ TAKErr TAK::Engine::Util::IO_getDirectoryInfo(int64_t *fileCount, int64_t *size,
     if (!b)
         return TE_InvalidArg;
 
-    try {
-        // XXX - reimplement to handle >4GB / >2^32 file count
-        *fileCount = atakmap::util::getFileCount(path);
-        *size = atakmap::util::getFileSize(path);
-        return TE_Ok;
-    } catch (...) {
-        return TE_Err;
-    }
+    std::size_t count;
+    code = IO_getFileCount(&count, path);
+    TE_CHECKRETURN_CODE(code);
+    *fileCount = count;
+
+    code = IO_length(size, path);
+    TE_CHECKRETURN_CODE(code);
+
+    return TE_Ok;
 }
 
 TAKErr TAK::Engine::Util::IO_length(int64_t *value, const char* path) NOTHROWS
@@ -404,43 +431,34 @@ TAKErr TAK::Engine::Util::IO_length(int64_t *value, const char* path) NOTHROWS
     TAKErr code(TE_Ok);
     bool b;
 
-    code = IO_exists(&b, path);
+    ReadLock rlock(filesystem_mutex());
+    code = filesystem->exists(&b, path);
     TE_CHECKRETURN_CODE(code);
     if (!b)
         return TE_InvalidArg;
 
-    code = IO_isDirectory(&b, path);
+    code = filesystem->isDirectory(&b, path);
     TE_CHECKRETURN_CODE(code);
     if (b)
         return TE_InvalidArg;
 
-    try {
-        // XXX - reimplement to handle >4GB
-        *value = atakmap::util::getFileSize(path);
-        return TE_Ok;
-    } catch (...) {
-        return TE_Err;
-    }
+    return filesystem->length(value, path);
 }
 
 TAKErr TAK::Engine::Util::IO_getLastModified(int64_t *value, const char* path) NOTHROWS
 {
-    try {
-        *value = atakmap::util::getLastModified(path);
-        return TE_Ok;
-    } catch (...) {
-        return TE_Err;
-    }
+    if(!path)
+        return TE_InvalidArg;
+    ReadLock rlock(filesystem_mutex());
+    return filesystem->getLastModified(value, path);
 }
 
 TAKErr TAK::Engine::Util::IO_isDirectory(bool *value, const char* path) NOTHROWS
 {
-    try {
-        *value = atakmap::util::isDirectory(path);
-        return TE_Ok;
-    } catch (...) {
-        return TE_Err;
-    }
+    if(!path)
+        return TE_InvalidArg;
+    ReadLock rlock(filesystem_mutex());
+    return filesystem->isDirectory(value, path);
 }
 
 TAKErr TAK::Engine::Util::IO_isNetworkDirectory(bool *value, const char *path) NOTHROWS
@@ -450,10 +468,13 @@ TAKErr TAK::Engine::Util::IO_isNetworkDirectory(bool *value, const char *path) N
     try {
         if (FS_Traits::is_directory(path)) {
             DWORD drive_type = FS_Traits::get_drive_type(path[0]);
-            if (drive_type == DRIVE_REMOTE) 
+            if (drive_type == DRIVE_REMOTE)
                 *value = true;
-        }
-        return TE_Ok;
+            else
+                *value = false;
+            return TE_Ok;
+        } else
+            return TE_InvalidArg;
     } catch (...) {
         return TE_Err;
     }
@@ -465,46 +486,34 @@ TAKErr TAK::Engine::Util::IO_isNetworkDirectory(bool *value, const char *path) N
 
 TAKErr TAK::Engine::Util::IO_isFile(bool *value, const char* path) NOTHROWS
 {
-    try {
-        *value = atakmap::util::isFile(path);
-        return TE_Ok;
-    } catch (...) {
-        return TE_Err;
-    }
+    if(!path)
+        return TE_InvalidArg;
+    ReadLock rlock(filesystem_mutex());
+    return filesystem->isFile(value, path);
 }
 
 TAKErr TAK::Engine::Util::IO_exists(bool *value, const char *path) NOTHROWS
 {
-    try {
-        *value = atakmap::util::pathExists(path);
-        return TE_Ok;
-    } catch (...) {
-        return TE_Err;
-    }
+    if(!path)
+        return TE_InvalidArg;
+    ReadLock rlock(filesystem_mutex());
+    return filesystem->exists(value, path);
 }
 
 TAKErr TAK::Engine::Util::IO_delete(const char *path) NOTHROWS
 {
-    try {
-        if (atakmap::util::deletePath(path))
-            return TE_Ok;
-        else
-            return TE_Err;
-    } catch (...) {
-        return TE_Err;
-    }
+    if(!path)
+        return TE_InvalidArg;
+    ReadLock rlock(filesystem_mutex());
+    return filesystem->remove(path);
 }
 
 TAKErr TAK::Engine::Util::IO_mkdirs(const char* dirPath) NOTHROWS
 {
-    try {
-        if (atakmap::util::createDir(dirPath))
-            return TE_Ok;
-        else
-            return TE_Err;
-    } catch (...) {
-        return TE_Err;
-    }
+    if(!dirPath)
+        return TE_InvalidArg;
+    ReadLock rlock(filesystem_mutex());
+    return filesystem->mkdirs(dirPath);
 }
 
 TAKErr TAK::Engine::Util::IO_openFile(std::unique_ptr<DataInput2, void(*)(const DataInput2 *)> &dataPtr, const char *path) NOTHROWS
@@ -512,21 +521,19 @@ TAKErr TAK::Engine::Util::IO_openFile(std::unique_ptr<DataInput2, void(*)(const 
     if (!path)
         return TE_InvalidArg;
 
-    std::unique_ptr<FileInput2> result(new (std::nothrow) FileInput2());
-
-    if (!result)
-        return TE_OutOfMemory;
-
-    TAKErr code = result->open(path);
-    TE_CHECKRETURN_CODE(code);
-
-    dataPtr = DataInput2Ptr(result.release(), Memory_deleter_const<DataInput2, FileInput2>);
-
-    return code;
+    ReadLock rlock(filesystem_mutex());
+    return filesystem->openFile(dataPtr, path);
 }
 
 TAKErr TAK::Engine::Util::IO_visitFiles(TAKErr(*visitor)(void *, const char *), void *opaque, const char *path, ListFilesMethod method) NOTHROWS
 {
+    {
+        bool isFile = false;
+        IO_isFile(&isFile, path);
+        if(isFile)
+            return visitor(opaque, path);
+    }
+
     std::vector<Port::String> files;
     Port::STLVectorAdapter<Port::String> vectorAdapter(files);
 
@@ -762,11 +769,15 @@ TAKErr TAK::Engine::Util::IO_getFileSizeV(int64_t *size, const char *vpath) NOTH
     }
 
     TAKErr code(TE_Ok);
-    TE_BEGIN_TRAP() {
-        *size = atakmap::util::getFileSize(vpath);
-    } TE_END_TRAP(code);
-
-    return code;
+    bool isdir;
+    code = IO_isDirectory(&isdir, vpath);
+    TE_CHECKRETURN_CODE(code);
+    if(isdir) {
+        int64_t cnt;
+        return IO_getDirectoryInfo(&cnt, size, vpath);
+    } else {
+        return IO_length(size, vpath);
+    }
 }
 
 TAKErr TAK::Engine::Util::IO_listFilesV(TAK::Engine::Port::Collection<TAK::Engine::Port::String> &value, const char *vpath, ListFilesMethod method, bool(*filter)(const char *file), size_t limit) NOTHROWS
@@ -894,7 +905,7 @@ TAKErr TAK::Engine::Util::IO_visitFilesV(TAKErr(*visitor)(void *, const char *),
     return IO_visitFiles(visitor, opaque, vpath, method);
 }
 
-#if _MSC_VER
+#if defined(_MSC_VER) || defined(__ANDROID__)
 TAKErr TAK::Engine::Util::File_getStoragePath(TAK::Engine::Port::String &path) NOTHROWS {
     return TE_Ok;
 }
@@ -967,6 +978,14 @@ TAKErr TAK::Engine::Util::IO_correctPathSeps(Port::String &result, const char *p
     } TE_END_TRAP(code);
 
     return code;
+}
+void TAK::Engine::Util::IO_setFilesystem(const std::shared_ptr<Filesystem> &fs) NOTHROWS
+{
+    WriteLock wlock(filesystem_mutex());
+    if(!fs)
+        filesystem.reset(new DefaultFilesystem());
+    else
+        filesystem = fs;
 }
 
 namespace
@@ -1133,5 +1152,328 @@ namespace
     CopyOnWrite<ZipExtRegistry> &globalZipExtRegistry() {
         static CopyOnWrite<ZipExtRegistry> inst;
         return inst;
+    }
+
+    TAKErr DefaultFilesystem::createTempFile(TAK::Engine::Port::String &value, const char *prefix, const char *suffix, const char *dir) NOTHROWS
+    {
+        static Mutex mtx;
+
+        TAKErr code(TE_Ok);
+        TAK::Engine::Port::String tmpDir(dir);
+        if (!tmpDir)
+        {
+    #ifdef MSVC
+            tmpDir = getTempDir();
+    #else
+            tmpDir = P_tmpdir;
+    #endif
+        }
+        Lock lock(mtx);
+        code = lock.status;
+        TE_CHECKRETURN_CODE(code);
+
+        for (int i = 0; i < 20; i++) {
+            StringBuilder tmpStrm;
+            tmpStrm << tmpDir << '/'
+                << (prefix ? prefix : "") << "XXXXXX";
+            TAK::Engine::Port::String tmpPath(tmpStrm.c_str());
+
+            if (!mkstemp(tmpPath.get()))
+            {
+                Logger_log(TELL_Error, "IO_createTempDir: Call to mkdtemp failed");
+                return TE_IO;
+            }
+
+            if (suffix) {
+                StringBuilder suffixPath;
+                suffixPath << tmpPath << suffix;
+
+                remove(tmpPath);
+                if (platformstl::filesystem_traits<char>::file_exists(suffixPath.c_str()))
+                    continue;
+                {
+                    // create the file
+                    File f(suffixPath.c_str(), "wb");
+                }
+                value = suffixPath.c_str();
+            } else {
+                value = tmpPath;
+            }
+
+            return TE_Ok;
+        }
+        return TE_Err;
+    }
+    TAKErr DefaultFilesystem::createTempDirectory(TAK::Engine::Port::String &value, const char* prefix, const char* suffix, const char* parentPath) NOTHROWS
+    {
+        static TAK::Engine::Thread::Mutex mtx;
+    #if _MSC_VER >= 1900
+        // P_tmpdir doesn't exist.  Use TMP environment variable.
+        static const char* P_tmpdir(std::getenv("TMP"));
+    #endif
+        TAK::Engine::Thread::Lock lock(mtx);
+        for (int i = 0; i < 20; i++) {
+            std::ostringstream tmpStrm;
+
+            tmpStrm << (parentPath ? parentPath : P_tmpdir) << '/'
+                << (prefix ? prefix : "") << "XXXXXX";
+            const std::size_t tmpLength = tmpStrm.str().length();
+            array_ptr<char> tmpPath(new char[tmpLength + 1]);
+            tmpStrm.str().copy(tmpPath.get(), tmpLength);
+            tmpPath.get()[tmpStrm.str().length()] = 0;
+
+            if (!mkdtemp(tmpPath.get()))
+                return TE_IO;
+
+            if (suffix) {
+                // Attempt to create a directory with the suffixed name.  If successful,
+                // remove the original tmp directory and return the suffixed name.
+                std::string suffixPath(tmpPath.get());
+                suffixPath.append(suffix);
+                if (platformstl::filesystem_traits<char>::file_exists(suffixPath.c_str()))
+                    continue;
+
+                if (platformstl::create_directory_recurse(suffixPath.c_str()))
+                {
+                    platformstl::remove_directory_recurse(tmpPath.get());
+                    array_ptr<char> suffixBuffer(new char[suffixPath.length() + 1]);
+                    suffixPath.copy(suffixBuffer.get(), suffixPath.length());
+                    suffixBuffer.get()[suffixPath.length()] = 0;
+                    tmpPath.reset(suffixBuffer.release());
+                }
+            }
+
+            value = tmpPath.get();
+            return TE_Ok;
+        }
+        return TE_TimedOut;
+    }
+    TAKErr DefaultFilesystem::getFileCount(std::size_t *value, const char *path, const std::size_t limit) NOTHROWS
+    {
+        if(!path)
+            return TE_InvalidArg;
+        if(limit)
+            return getFileCountImpl(value, path);
+        else
+            return getFileCountImpl(value, path, limit);
+    }
+    TAKErr DefaultFilesystem::listFiles(TAK::Engine::Port::Collection<TAK::Engine::Port::String> &value, const char *path) NOTHROWS
+    {
+        try {
+            typedef platformstl::filesystem_traits<char> FS_Traits;
+            typedef platformstl::readdir_sequence DirSequence;
+
+            FS_Traits::stat_data_type statData;
+            if (path && FS_Traits::stat(path, &statData)) {
+                if (FS_Traits::is_directory(&statData)) {
+                    DirSequence dirSeq(path,
+                                       DirSequence::files
+                                       | DirSequence::directories
+                                       | DirSequence::fullPath
+                                       | DirSequence::absolutePath);
+
+                    for (auto dIter(dirSeq.begin()); dIter != dirSeq.end(); ++dIter) {
+                        value.add(*dIter);
+                    }
+                }
+            }
+
+            return TE_Ok;
+        } catch(...) {
+            return TE_Err;
+        }
+    }
+    TAKErr DefaultFilesystem::length(int64_t *value, const char* path) NOTHROWS
+    {
+        if(!path)
+            return TE_InvalidArg;
+        try {
+            typedef platformstl::filesystem_traits<char>        FS_Traits;
+            typedef platformstl::readdir_sequence               DirSequence;
+
+            *value = 0LL;
+            FS_Traits::stat_data_type statData;
+
+            if (path && FS_Traits::stat(path, &statData))
+            {
+                if (FS_Traits::is_file(&statData))
+                {
+                    *value = static_cast<int64_t>(FS_Traits::get_file_size(statData));
+                }
+                else if (FS_Traits::is_directory(&statData))
+                {
+                    DirSequence dirSeq(path,
+                        DirSequence::files
+                        | DirSequence::directories
+                        | DirSequence::fullPath
+                        | DirSequence::absolutePath);
+
+                    for (DirSequence::const_iterator dIter(dirSeq.begin());
+                        dIter != dirSeq.end();
+                        ++dIter)
+                    {
+                        int64_t fs;
+                        if(length(&fs, *dIter) == TE_Ok)
+                            *value += fs;
+                    }
+                }
+            }
+
+            return TE_Ok;
+        } catch (...) {
+            return TE_Err;
+        }
+    }
+    TAKErr DefaultFilesystem::getLastModified(int64_t *value, const char* path) NOTHROWS
+    {
+        if(!path)
+            return TE_InvalidArg;
+        try {
+            typedef platformstl::filesystem_traits<char>        FS_Traits;
+            typedef platformstl::readdir_sequence               DirSequence;
+
+            FS_Traits::stat_data_type statData;
+
+            if (FS_Traits::stat(path, &statData))
+            {
+                if (FS_Traits::is_file(&statData))
+                {
+#if defined(__ANDROID__)
+                    struct stat attrib;
+                    stat(path, &attrib);
+                    *value = attrib.st_mtime;
+#elif defined(PLATFORMSTL_OS_IS_UNIX)
+                    *value = statData.st_mtime * 1000 + statData.st_mtimensec / 1000000;
+#else
+                    *value = (static_cast<uint64_t> (statData.ftLastWriteTime.dwHighDateTime)
+                        << 32 | statData.ftLastWriteTime.dwLowDateTime)
+                        / 10000;
+#endif
+                }
+                else if (FS_Traits::is_directory(&statData))
+                {
+                    DirSequence dirSeq(path,
+                        DirSequence::files
+                        | DirSequence::directories
+                        | DirSequence::fullPath
+                        | DirSequence::absolutePath);
+
+                    *value = -1LL;
+                    for (DirSequence::const_iterator dIter(dirSeq.begin());
+                        dIter != dirSeq.end();
+                        ++dIter)
+                    {
+                        int64_t lm;
+                        if(getLastModified(&lm, *dIter) == TE_Ok)
+                            *value = std::max(*value, lm);
+                    }
+                } else {
+                    return TE_IllegalState;
+                }
+            } else {
+                return TE_InvalidArg;
+            }
+            return TE_Ok;
+        } catch (...) {
+            return TE_Err;
+        }
+    }
+    TAKErr DefaultFilesystem::isDirectory(bool *value, const char* path) NOTHROWS
+    {
+        if(!path)
+            return TE_InvalidArg;
+        try {
+            *value = platformstl::filesystem_traits<char>::is_directory(path);
+            return TE_Ok;
+        } catch (...) {
+            return TE_Err;
+        }
+    }
+    TAKErr DefaultFilesystem::isFile(bool *value, const char* path) NOTHROWS
+    {
+        if(!path)
+            return TE_InvalidArg;
+        try {
+            *value = platformstl::filesystem_traits<char>::is_file(path);
+            return TE_Ok;
+        } catch (...) {
+            return TE_Err;
+        }
+    }
+    TAKErr DefaultFilesystem::exists(bool *value, const char *path) NOTHROWS
+    {
+        if(!path)
+            return TE_InvalidArg;
+        try {
+            *value = platformstl::filesystem_traits<char>::file_exists(path);;
+            return TE_Ok;
+        } catch (...) {
+            return TE_Err;
+        }
+    }
+    TAKErr DefaultFilesystem::remove(const char *path) NOTHROWS
+    {
+        if(!path)
+            return TE_InvalidArg;
+        try {
+            typedef platformstl::filesystem_traits<char>        FS_Traits;
+
+            if(FS_Traits::is_file(path))
+                return FS_Traits::delete_file(path) ? TE_Ok : TE_IO;
+            else
+                return platformstl::remove_directory_recurse(path) ? TE_Ok : TE_IO;
+        } catch (...) {
+            return TE_Err;
+        }
+
+    }
+    TAKErr DefaultFilesystem::mkdirs(const char* dirPath) NOTHROWS
+    {
+        if(!dirPath)
+            return TE_InvalidArg;
+        try {
+            if (platformstl::create_directory_recurse(dirPath))
+                return TE_Ok;
+            else
+                return TE_Err;
+        } catch (...) {
+            return TE_Err;
+        }
+    }
+    TAKErr DefaultFilesystem::openFile(DataInput2Ptr &dataPtr, const char *path) NOTHROWS
+    {
+        if(!path)
+            return TE_InvalidArg;
+
+        std::unique_ptr<FileInput2> result(new (std::nothrow) FileInput2());
+        if (!result)
+            return TE_OutOfMemory;
+
+        TAKErr code = result->open(path);
+        TE_CHECKRETURN_CODE(code);
+
+        dataPtr = DataInput2Ptr(result.release(), Memory_deleter_const<DataInput2, FileInput2>);
+        return code;
+    }
+    TAKErr DefaultFilesystem::openFile(DataOutput2Ptr &dataPtr, const char *path) NOTHROWS
+    {
+        if(!path)
+            return TE_InvalidArg;
+
+        std::unique_ptr<FileOutput2> result(new (std::nothrow) FileOutput2());
+        if (!result)
+            return TE_OutOfMemory;
+
+        TAKErr code = result->open(path);
+        TE_CHECKRETURN_CODE(code);
+
+        dataPtr = DataOutput2Ptr(result.release(), Memory_deleter_const<DataOutput2, FileOutput2>);
+        return code;
+    }
+
+    RWMutex &filesystem_mutex() NOTHROWS
+    {
+        static RWMutex m;
+        return m;
     }
 }

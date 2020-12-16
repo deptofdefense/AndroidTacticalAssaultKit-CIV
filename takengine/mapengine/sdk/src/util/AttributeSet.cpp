@@ -9,7 +9,7 @@ using namespace TAK::Engine::Util;
 #define MEM_FN( fn )    "atakmap::util::AttributeSet::" fn ": "
 
 AttributeSet::~AttributeSet()
-throw ()
+NOTHROWS
 { }
 
 void
@@ -22,7 +22,7 @@ AttributeSet::clear()
 std::vector<const char*>
 AttributeSet::getAttributeNames()
 const
-throw ()
+NOTHROWS
 {
     std::vector<const char*> result;
     result.reserve(attrItems.size());

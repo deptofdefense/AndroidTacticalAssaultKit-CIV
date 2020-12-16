@@ -23,7 +23,7 @@ public class TilesetMapComponent extends AbstractMapComponent {
 
     private static boolean initialized = false;
 
-    private SharedPreferences.OnSharedPreferenceChangeListener prefListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+    private final SharedPreferences.OnSharedPreferenceChangeListener prefListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
 
         @Override
         public void onSharedPreferenceChanged(SharedPreferences prefs,

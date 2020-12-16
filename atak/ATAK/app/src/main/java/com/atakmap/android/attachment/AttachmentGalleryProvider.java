@@ -9,7 +9,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ public class AttachmentGalleryProvider extends GalleryContentProvider {
             for (File attachment : files) {
                 //skip child directories
                 if (!FileSystemUtils.isFile(attachment)
-                        || FileIOProviderFactory.isDirectory(attachment))
+                        || IOProviderFactory.isDirectory(attachment))
                     continue;
                 attachments.add(new GalleryFileItem(_mapView, attachment, m));
             }

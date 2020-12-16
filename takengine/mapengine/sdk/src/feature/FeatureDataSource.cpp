@@ -5,14 +5,14 @@
 ////    DESCRIPTION:    Implementation of FeatureDataSource static member
 ////                    functions.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Jan 22, 2015
+////      Jan 22, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -185,7 +185,7 @@ namespace feature                       // Open feature namespace.
 ///=====================================
 
 FeatureDataSource::~FeatureDataSource()
-    throw ()
+    NOTHROWS
 { }
 
 
@@ -311,7 +311,7 @@ FeatureDataSource::unregisterProvider (const FeatureDataSource* provider)
 
 
 FeatureDataSource::Content::~Content()
-    throw ()
+    NOTHROWS
 { }
 
 
@@ -322,7 +322,7 @@ FeatureDataSource::Content::~Content()
 
 
 FeatureDataSource::FeatureDefinition::~FeatureDefinition()
-throw ()
+NOTHROWS
 {
     freeGeometry();
     freeStyle();

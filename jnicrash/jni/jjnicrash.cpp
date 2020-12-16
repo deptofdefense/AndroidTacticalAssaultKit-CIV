@@ -467,6 +467,21 @@ JNIEXPORT void JNICALL Java_com_atakmap_jnicrash_JNICrash_setSystemDetails
 {
 //#if defined(__arm__) || defined(__aarch64__)
 
+
+    // always clear previous
+    if (reportPreface) {
+        delete[] reportPreface;
+        reportPreface = NULL;
+    }
+    if (crash_filename) {
+        delete[] crash_filename;
+        crash_filename = NULL;
+    }
+
+    // NULL will crash the VM
+    if (jlogdir == NULL || jdetails == NULL)
+        return;
+
     const char *details = env->GetStringUTFChars(jdetails, NULL);
     if (!details)
         return;
@@ -476,6 +491,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_jnicrash_JNICrash_setSystemDetails
         return;
     
     size_t n = strlen(details);
+    
     reportPreface = new char[n + 1];
     memcpy(reportPreface, details, n);
     reportPreface[n] = '\0';
@@ -490,6 +506,8 @@ JNIEXPORT void JNICALL Java_com_atakmap_jnicrash_JNICrash_setSystemDetails
     std::string ss(s.str());
     
     n = ss.length();
+    // fix leak of previous string
+    
     crash_filename = new char[n + 1];
     memcpy(crash_filename, ss.c_str(), n);
     crash_filename[n] = '\0';

@@ -7,7 +7,7 @@ import android.util.Pair;
 import android.util.Xml;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
@@ -98,7 +98,7 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
             try {
                 file = new ZipVirtualFile(file);
             } catch (Throwable e) {
-                if (file != null && FileIOProviderFactory.exists(file)) {
+                if (file != null && IOProviderFactory.exists(file)) {
                     Log.w(TAG,
                             "Unable to open KMZ as a zip file: "
                                     + e.getMessage() + " "
@@ -118,7 +118,7 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
         InputStream inputStream = null;
         try {
             ZipVirtualFile docFile = new ZipVirtualFile(file, "doc.kml");
-            if (!FileIOProviderFactory.exists(docFile)) {
+            if (!IOProviderFactory.exists(docFile)) {
                 ZipVirtualFile zipFile;
                 try {
                     zipFile = new ZipVirtualFile(file);
@@ -637,7 +637,7 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
 
             File tilecacheDir = new File(workingDir, "tilecache");
             FileSystemUtils.delete(tilecacheDir);
-            if (FileIOProviderFactory.mkdirs(tilecacheDir))
+            if (IOProviderFactory.mkdirs(tilecacheDir))
                 extraData.put("tilecacheDir", tilecacheDir.getAbsolutePath());
 
             Map<String, MosaicDatabase2.Coverage> dbCoverages = new HashMap<>();

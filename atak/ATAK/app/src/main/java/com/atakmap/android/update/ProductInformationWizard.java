@@ -193,7 +193,7 @@ public class ProductInformationWizard {
 
         final ProductInformation product = products[index];
 
-        String message = _wizardText + " " +  product.getSimpleName();
+        String message = _wizardText + " " + product.getSimpleName();
         if (index > 0) {
             message = "Wait for previous step to complete. " + message;
         }

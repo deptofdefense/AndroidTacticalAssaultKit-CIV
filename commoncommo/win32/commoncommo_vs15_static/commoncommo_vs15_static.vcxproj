@@ -213,6 +213,7 @@
     <ClInclude Include="..\..\core\impl\platform.h" />
     <ClInclude Include="..\..\core\impl\streamingsocketmanagement.h" />
     <ClInclude Include="..\..\core\impl\threadedhandler.h" />
+    <ClInclude Include="..\..\core\impl\fileIOProvider.h" />
     <ClInclude Include="..\..\core\include\commo.h" />
     <ClInclude Include="..\..\core\include\commologger.h" />
     <ClInclude Include="..\..\core\include\commoresult.h" />

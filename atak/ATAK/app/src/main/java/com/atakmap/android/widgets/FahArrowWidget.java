@@ -638,7 +638,7 @@ public class FahArrowWidget extends ShapeWidget implements
     public static class Item extends Shape {
 
         private final FahArrowWidget arrow;
-        private GLWidgetsMapComponent.WidgetTouchHandler touchListener;
+        private final GLWidgetsMapComponent.WidgetTouchHandler touchListener;
 
         public Item(MapView view) {
             super(UUID.randomUUID().toString());

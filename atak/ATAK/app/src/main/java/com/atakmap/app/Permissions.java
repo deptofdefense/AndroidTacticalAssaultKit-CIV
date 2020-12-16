@@ -6,6 +6,8 @@ import android.content.Context;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.Manifest;
+
+import com.atakmap.android.gui.AlertDialogHelper;
 import com.atakmap.coremap.log.Log;
 
 import android.app.AlertDialog;
@@ -13,6 +15,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
+import android.text.Layout;
+import android.view.LayoutInflater;
+import android.view.View;
+
 import androidx.annotation.NonNull;
 
 public class Permissions {
@@ -57,6 +63,12 @@ public class Permissions {
             "com.atakmap.app.ALLOW_TEXT_SPEECH",
     };
 
+    final static String[] locationPermissionsList = new String[] {
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_LOCATION_EXTRA_COMMANDS,
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION,
+    };
+
     static boolean checkPermissions(final Activity a) {
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
@@ -75,7 +87,7 @@ public class Permissions {
                 continue;
 
             // for this specific flavor, go ahead and do not enable SEND_SMS
-            if (BuildConfig.FLAVOR.equals("civSmall")
+            if (BuildConfig.FLAVOR.equalsIgnoreCase("civSmall")
                     && Manifest.permission.SEND_SMS.equals(permission))
                 continue;
 
@@ -118,15 +130,19 @@ public class Permissions {
 
     @TargetApi(29)
     private static void showWarning(final Activity a) {
+        LayoutInflater li = LayoutInflater.from(a);
+        View v = li.inflate(R.layout.background_location, null);
         final AlertDialog.Builder builder = new AlertDialog.Builder(a);
-        builder.setMessage(R.string.background_permission_warning);
+        builder.setTitle(R.string.use_your_location_title);
+        builder.setView(v);
+        builder.setIcon(R.drawable.ic_menu_mylocation);
 
         builder.setCancelable(false);
         builder.setPositiveButton(R.string.ok,
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        a.requestPermissions(PermissionsList, REQUEST_ID);
+                        a.requestPermissions(locationPermissionsList, REQUEST_ID);
                     }
                 });
         AlertDialog ad = builder.create();
@@ -209,8 +225,9 @@ public class Permissions {
                             continue;
 
                         // for this specific flavor, go ahead and do not enable SEND_SMS
-                        if (BuildConfig.FLAVOR.equals("civSmall")
-                                && Manifest.permission.SEND_SMS.equals(permissions[i]))
+                        if (BuildConfig.FLAVOR.equalsIgnoreCase("civSmall")
+                                && Manifest.permission.SEND_SMS
+                                        .equals(permissions[i]))
                             continue;
 
                         b = b && (grantResults[i] == PackageManager.PERMISSION_GRANTED);

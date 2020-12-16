@@ -16,6 +16,7 @@ import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 
 import com.atakmap.android.elev.dt2.Dt2ElevationModel;
+import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
@@ -61,6 +62,8 @@ public class FastMGRS {
         en = v
                 .findViewById(R.id.eastingNorthing);
         cb = v.findViewById(R.id.dropSpi);
+        cb.setText(ResourceUtil.getResource(R.string.civ_place_local_spi,
+                R.string.place_local_spi));
         cb.setChecked(spi);
         cb.setVisibility(spi ? View.VISIBLE : View.GONE);
 

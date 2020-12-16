@@ -1,18 +1,15 @@
 #ifndef TAK_ENGINE_RENDERER_CORE_GLLABEL_H_INCLUDED
 #define TAK_ENGINE_RENDERER_CORE_GLLABEL_H_INCLUDED
 
-#include "renderer/GL.h"
 #include <string>
 #include <vector>
 
-#include "core/GeoPoint.h"
 #include "feature/AltitudeMode.h"
 #include "feature/Geometry2.h"
 #include "port/Platform.h"
 #include "port/String.h"
 #include "renderer/core/GLMapView2.h"
 #include "renderer/GLNinePatch.h"
-#include "renderer/GLRenderContext.h"
 #include "renderer/GLText2.h"
 
 namespace TAK
@@ -39,67 +36,80 @@ namespace TAK
                 {
                 public:
                     GLLabel();
-                    GLLabel(GLLabel&&);
+                    GLLabel(GLLabel&&) NOTHROWS;
                     GLLabel(const GLLabel&);
                     GLLabel(TAK::Engine::Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::String text,
-                            Math::Point2<double> desiredOffset, double maxDrawResolution,
+                            Math::Point2<double> desired_offset, double max_draw_resolution,
                             TextAlignment alignment = TextAlignment::TETA_Center,
-                            VerticalAlignment verticalAlignment = VerticalAlignment::TEVA_Top, int color = 0xFFFFFFFF,
-                            int fillColor = 0x00000000, bool fill = false,
-                            TAK::Engine::Feature::AltitudeMode altitudeMode = TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround);
-                    ~GLLabel();
-                    GLLabel& operator=(GLLabel&&);
+                            VerticalAlignment vertical_alignment = VerticalAlignment::TEVA_Top, int color = 0xFFFFFFFF,
+                            int fill_color = 0x00000000, bool fill = false,
+                            TAK::Engine::Feature::AltitudeMode altitude_mode = TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround);
+                   GLLabel(const TextFormatParams &fmt,
+                           TAK::Engine::Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::String text,
+                           Math::Point2<double> desired_offset, double max_draw_resolution,
+                           TextAlignment alignment = TextAlignment::TETA_Center,
+                           VerticalAlignment vertical_alignment = VerticalAlignment::TEVA_Top, int color = 0xFFFFFFFF,
+                           int fill_color = 0x00000000, bool fill = false,
+                           TAK::Engine::Feature::AltitudeMode altitude_mode = TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround,
+                           float rotation = 0.0, bool rotationAbsolute = false);
+                    ~GLLabel() = default;
+                    GLLabel& operator=(GLLabel&&) NOTHROWS;
                     void setGeometry(const TAK::Engine::Feature::Geometry2& geometry) NOTHROWS;
                     const TAK::Engine::Feature::Geometry2* getGeometry() const NOTHROWS;
-                    void setAltitudeMode(const TAK::Engine::Feature::AltitudeMode altitudeMode) NOTHROWS;
+                    void setAltitudeMode(const TAK::Engine::Feature::AltitudeMode altitude_mode) NOTHROWS;
                     void setText(const TAK::Engine::Port::String text) NOTHROWS;
                     void setVisible(const bool visible) NOTHROWS;
-                    void setAlwaysRender(const bool alwaysRender) NOTHROWS;
-                    void setMaxDrawResolution(const double maxDrawResolution) NOTHROWS;
+                    void setAlwaysRender(const bool always_render) NOTHROWS;
+                    void setMaxDrawResolution(const double max_draw_resolution) NOTHROWS;
                     void setAlignment(const TextAlignment alignment) NOTHROWS;
-                    void setVerticalAlignment(const VerticalAlignment verticalAlignment) NOTHROWS;
-                    void setDesiredOffset(const Math::Point2<double>& desiredOffset) NOTHROWS;
+                    void setVerticalAlignment(const VerticalAlignment vertical_alignment) NOTHROWS;
+                    void setDesiredOffset(const Math::Point2<double>& desired_offset) NOTHROWS;
                     void setColor(const int color) NOTHROWS;
                     void setBackColor(const int color) NOTHROWS;
                     void setFill(const bool fill) NOTHROWS;
-                    bool shouldRenderAtResolution(const double drawResolution) const NOTHROWS;
+                    bool shouldRenderAtResolution(const double draw_resolution) const NOTHROWS;
                     void validateProjectedLocation(const TAK::Engine::Renderer::Core::GLMapView2& view) NOTHROWS;
                 private:
-                    void place(const GLMapView2& view, GLText2& glText, std::vector<atakmap::math::Rectangle<double>>& labelRects) NOTHROWS;
-                    void draw(const GLMapView2& view, GLText2& glText) NOTHROWS;
-                    void batch(const GLMapView2& view, GLText2& glText, GLRenderBatch2& batch) NOTHROWS;
+                    void place(const GLMapView2& view, GLText2& gl_text, std::vector<atakmap::math::Rectangle<double>>& label_rects) NOTHROWS;
+                    void draw(const GLMapView2& view, GLText2& gl_text) NOTHROWS;
+                    void batch(const GLMapView2& view, GLText2& gl_text, GLRenderBatch2& batch) NOTHROWS;
                     atakmap::renderer::GLNinePatch* getSmallNinePatch(TAK::Engine::Core::RenderContext &surface) NOTHROWS;
                 public:
                     atakmap::math::Rectangle<double> labelRect;
                     bool canDraw;
                 private:
-                    static atakmap::renderer::GLNinePatch* smallNinePatch;
+                    static atakmap::renderer::GLNinePatch* small_nine_patch_;
                 private:
-                    TAK::Engine::Feature::Geometry2Ptr_const m_geometry;
-                    TAK::Engine::Feature::AltitudeMode m_altitudeMode;
-                    std::string m_text;
-                    Math::Point2<double> m_desiredOffset;
-                    bool m_visible;
-                    bool m_alwaysRender;
-                    double m_maxDrawResolution;
-                    TextAlignment m_alignment;
-                    VerticalAlignment m_verticalAlignment;
-                    float m_colorR;
-                    float m_colorG;
-                    float m_colorB;
-                    float m_colorA;
-                    float m_backColorR;
-                    float m_backColorG;
-                    float m_backColorB;
-                    float m_backColorA;
-                    bool m_fill;
-                    Math::Point2<double> posProjected;
-                    Math::Point2<double> transformedAnchor;
-                    double projectedSize;
-                    float labelRotation;
-                    bool absoluteLabelRotation;
-                    bool markDirty;
-                    int m_drawVersion;
+                    TAK::Engine::Feature::Geometry2Ptr_const geometry_;
+                    TAK::Engine::Feature::AltitudeMode altitude_mode_;
+                    std::string text_;
+                    Math::Point2<double> desired_offset_;
+                    bool visible_;
+                    bool always_render_;
+                    double max_draw_resolution_;
+                    TextAlignment alignment_;
+                    VerticalAlignment vertical_alignment_;
+                    float color_r_;
+                    float color_g_;
+                    float color_b_;
+                    float color_a_;
+                    float back_color_r_;
+                    float back_color_g_;
+                    float back_color_b_;
+                    float back_color_a_;
+                    bool fill_;
+                    Math::Point2<double> pos_projected_;
+                    Math::Point2<double> transformed_anchor_;
+                    double projected_size_;
+                    struct {
+                        float angle_;
+                        bool absolute_;
+                        bool explicit_;
+                    } rotation_;
+                    bool mark_dirty_;
+                    int draw_version_;
+                    /** if `nullptr`, uses system default */
+                    GLText2 *gltext_;
 
                     friend class GLLabelManager;
                 };

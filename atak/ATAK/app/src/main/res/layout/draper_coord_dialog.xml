@@ -519,11 +519,7 @@
                             android:layout_weight="8"
                             android:hint="@string/type_in_the_address"
                             android:inputType="textNoSuggestions"
-                            android:completionThreshold="1"
-                            android:nextFocusDown="@+id/focusWidget"
-                            android:nextFocusForward="@+id/focusWidget"
-
-                            />
+                            android:completionThreshold="1" />
 
 
                         <Button
@@ -537,10 +533,7 @@
                             android:gravity="center"
                             android:textSize="@dimen/draper_font"
                             android:lines="1"
-                            android:text="@string/find"
-                            android:nextFocusDown="@+id/focusWidget"
-                            android:nextFocusForward="@+id/focusWidget"
-                            />
+                            android:text="@string/find" />
                     </LinearLayout>
                 </LinearLayout>
 

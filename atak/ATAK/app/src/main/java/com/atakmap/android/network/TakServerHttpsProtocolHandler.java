@@ -1,3 +1,4 @@
+
 package com.atakmap.android.network;
 
 import android.net.Uri;
@@ -17,22 +18,24 @@ import java.util.Collection;
 public final class TakServerHttpsProtocolHandler implements ProtocolHandler {
     @Override
     public UriFactory.OpenResult handleURI(String url) {
-        if(url == null)
+        if (url == null)
             return null;
-        if(!url.startsWith("https://"))
+        if (!url.startsWith("https://"))
             return null;
         try {
             Uri uri = Uri.parse(url);
-            TakHttpClient client = TakHttpClient.GetHttpClient(uri.getScheme() + "://" + uri.getHost());
-            TakHttpResponse response = client.execute(new org.apache.http.client.methods.HttpGet(url));
-            if(response == null)
+            TakHttpClient client = TakHttpClient
+                    .GetHttpClient(uri.getScheme() + "://" + uri.getHost());
+            TakHttpResponse response = client
+                    .execute(new org.apache.http.client.methods.HttpGet(url));
+            if (response == null)
                 return null;
 
-            if(!response.isOk())
+            if (!response.isOk())
                 return null;
 
             final HttpEntity entity = response.getEntity();
-            if(entity == null)
+            if (entity == null)
                 return null;
 
             UriFactory.OpenResult result = new UriFactory.OpenResult();
@@ -41,7 +44,7 @@ public final class TakServerHttpsProtocolHandler implements ProtocolHandler {
             result.inputStream = entity.getContent();
 
             return result;
-        } catch(Exception e) {
+        } catch (Exception e) {
             Log.e("TakHttpClientProtocolHandler", "Failed to connect", e);
             return null;
         }
@@ -55,7 +58,7 @@ public final class TakServerHttpsProtocolHandler implements ProtocolHandler {
                     return 0L;
                 return result.contentLength;
             }
-        } catch(IOException e) {
+        } catch (IOException e) {
             return 0L;
         }
     }

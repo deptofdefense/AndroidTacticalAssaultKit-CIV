@@ -38,8 +38,10 @@ namespace
     }
 }
 
-EGM96::EGM96() NOTHROWS
+EGM96::EGM96() NOTHROWS :
+    size(0)
 {}
+
 EGM96::~EGM96() NOTHROWS
 {}
 

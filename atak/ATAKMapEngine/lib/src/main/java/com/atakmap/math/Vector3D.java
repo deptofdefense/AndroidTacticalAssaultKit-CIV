@@ -49,4 +49,9 @@ public class Vector3D {
                             a.Z*b.X - a.X*b.Z,
                             a.X*b.Y - a.Y*b.X);
     }
+
+    @Override
+    public String toString() {
+        return "Vector3D {" + X + "," + Y + "," + Z + "}";
+    }
 }

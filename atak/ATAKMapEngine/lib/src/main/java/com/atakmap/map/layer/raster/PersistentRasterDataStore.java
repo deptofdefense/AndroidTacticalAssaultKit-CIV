@@ -18,7 +18,7 @@ import android.util.Pair;
 
 import com.atakmap.content.CatalogCurrency;
 import com.atakmap.content.CatalogCurrencyRegistry;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.CursorWrapper;
 import com.atakmap.lang.Objects;
@@ -751,7 +751,7 @@ public class PersistentRasterDataStore extends LocalRasterDataStore implements R
             if(appVersion != this.getAppVersion())
                 return false;
             
-            if(!FileIOProviderFactory.exists(f))
+            if(!IOProviderFactory.exists(f))
                 return false;
 
             ByteBuffer parse = ByteBuffer.wrap(appData);
@@ -768,7 +768,7 @@ public class PersistentRasterDataStore extends LocalRasterDataStore implements R
             }
             
             final boolean isDirectory = ((parse.get()&0x01) == 0x01);
-            if(FileIOProviderFactory.isDirectory(f) != isDirectory)
+            if(IOProviderFactory.isDirectory(f) != isDirectory)
                 return false;
             
             final long length = parse.getLong();
@@ -790,11 +790,11 @@ public class PersistentRasterDataStore extends LocalRasterDataStore implements R
             else if(currencyLargeDataset)
                 return true;
 
-            if(length != actual.size)
+            if(length > 0L && length != actual.size)
                 return false;
-            if(lastModified != actual.lastModified)
+            if(lastModified > 0L && lastModified != actual.lastModified)
                 return false;
-            if(numFiles != actual.numFiles)
+            if(numFiles > 0L && numFiles != actual.numFiles)
                 return false;
 
             return true;
@@ -851,7 +851,7 @@ public class PersistentRasterDataStore extends LocalRasterDataStore implements R
                 retval.putShort((short)spi.parseVersion());
                 putString(retval, spi.getType());
             }
-            retval.put(FileIOProviderFactory.isDirectory(file) ? (byte)0x01 : (byte)0x00);
+            retval.put(IOProviderFactory.isDirectory(file) ? (byte)0x01 : (byte)0x00);
             
             final FileSystemUtils.FileTreeData fdt = new FileSystemUtils.FileTreeData();
             final boolean largeDataset = (this.assumeLargeDataset || !getFileData(file, fdt, LARGE_DATASET_RECURSE_LIMIT));

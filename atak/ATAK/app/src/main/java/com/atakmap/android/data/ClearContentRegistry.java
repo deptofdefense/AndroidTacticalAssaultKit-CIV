@@ -1,5 +1,5 @@
-package com.atakmap.android.data;
 
+package com.atakmap.android.data;
 
 import android.content.Intent;
 
@@ -11,11 +11,9 @@ import java.util.List;
 
 public class ClearContentRegistry {
 
-
     private static final String TAG = "ClearContentRegistry";
 
-
-    interface ClearContentListener {
+    public interface ClearContentListener {
         /**
          * A call to clear content (ZEROIZE) has been made with the option to clear any larger map
          * data.
@@ -27,16 +25,16 @@ public class ClearContentRegistry {
     private static ClearContentRegistry _instance;
     private final List<ClearContentListener> listeners = new ArrayList<>();
 
-
     private ClearContentRegistry() {
         // provide for legacy behavior of notification by intent.
         registerListener(new ClearContentListener() {
             @Override
             public void onClearContent(boolean clearmaps) {
                 AtakBroadcast.getInstance().sendBroadcast(
-                        new Intent(DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION).putExtra(
-                                DataMgmtReceiver.ZEROIZE_CLEAR_MAPS,
-                                clearmaps));
+                        new Intent(DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION)
+                                .putExtra(
+                                        DataMgmtReceiver.ZEROIZE_CLEAR_MAPS,
+                                        clearmaps));
             }
         });
     }
@@ -56,6 +54,9 @@ public class ClearContentRegistry {
      * @param ccl the clear content listener
      */
     public synchronized void registerListener(ClearContentListener ccl) {
+        if (ccl == null)
+            throw new IllegalArgumentException(
+                    "clear content listener cannot be null");
         listeners.add(ccl);
     }
 
@@ -76,11 +77,12 @@ public class ClearContentRegistry {
         synchronized (this) {
             listeners = new ArrayList<>(this.listeners);
         }
-        for (ClearContentListener ccl: listeners) {
+        for (ClearContentListener ccl : listeners) {
             try {
                 ccl.onClearContent(clearMaps);
             } catch (Exception e) {
-                Log.e(TAG, "error occurred during a clear content with: " + ccl, e);
+                Log.e(TAG, "error occurred during a clear content with: " + ccl,
+                        e);
             }
         }
     }

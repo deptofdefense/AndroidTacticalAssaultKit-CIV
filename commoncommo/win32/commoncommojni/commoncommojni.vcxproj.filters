@@ -24,6 +24,12 @@
     <ClCompile Include="..\..\jni\native\jcotpointdata.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\jni\native\jnifileioprovider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\jni\native\jcloudclient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\jni\native\commojni_common.h">

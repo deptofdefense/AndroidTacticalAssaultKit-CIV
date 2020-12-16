@@ -22,11 +22,11 @@ public class GetServerVersionRequest implements Parcelable {
     public static final String SERVER_VERSION_MATCHER = "TAK Server";
     public static final String SERVER_CONFIG_MATCHER = "ServerConfig";
 
-    private String mBaseUrl;
-    private String mServerConnectString;
-    private String mMatcher;
-    private int mNotificationId;
-    private boolean bGetConfig;
+    private final String mBaseUrl;
+    private final String mServerConnectString;
+    private final String mMatcher;
+    private final int mNotificationId;
+    private final boolean bGetConfig;
 
     public GetServerVersionRequest(String baseUrl, String serverConnectString,
             boolean getConfig, int notificationId) {

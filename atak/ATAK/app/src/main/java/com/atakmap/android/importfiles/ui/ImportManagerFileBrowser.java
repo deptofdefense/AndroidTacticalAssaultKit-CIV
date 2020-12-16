@@ -22,7 +22,6 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import org.apache.commons.lang.StringUtils;
@@ -222,7 +221,7 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
             h.fileName.setText(f.getName());
             if (fileItem.type == FileItem.DIRECTORY) {
                 // Filter out undesired file types
-                String[] children = FileIOProviderFactory.list(f, _fileFilter);
+                String[] children = ioProvider.list(f, _fileFilter);
                 if (FileSystemUtils.isEmpty(children))
                     h.fileInfo.setText(_mapCtx.getString(
                             R.string.importmgr_count_empty));
@@ -230,7 +229,8 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
                     h.fileInfo.setText(_mapCtx.getString(
                             R.string.importmgr_count_items, children.length));
             } else
-                h.fileInfo.setText(MathUtils.GetLengthString(FileIOProviderFactory.length(f)));
+                h.fileInfo.setText(
+                        MathUtils.GetLengthString(ioProvider.length(f)));
 
             return row;
         }
@@ -242,9 +242,9 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
             File sel = new File(dir, fileName);
             String ext = StringUtils.substringAfterLast(fileName,
                     ".");
-            if (sel.isFile())
-                return (_testExtension(ext)) && sel.canRead();
-            return sel.canRead() && FileIOProviderFactory.isDirectory(sel);
+            if (isFile(sel))
+                return (_testExtension(ext)) && ioProvider.canRead(sel);
+            return ioProvider.canRead(sel) && ioProvider.isDirectory(sel);
         }
     };
 
@@ -301,7 +301,8 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
         }
 
         protected boolean isParent(File possibleParent, File file) {
-            if (!FileIOProviderFactory.exists(possibleParent) || !FileIOProviderFactory.isDirectory(possibleParent) ||
+            if (!ioProvider.exists(possibleParent)
+                    || !ioProvider.isDirectory(possibleParent) ||
                     possibleParent.equals(file)) {
                 // this cannot possibly be the parent
                 return false;
@@ -344,8 +345,8 @@ public class ImportManagerFileBrowser extends ImportFileBrowser implements
             }
             _currFile = fileItem.file;
             File sel = new File(_path, _currFile);
-            if (FileIOProviderFactory.isDirectory(sel)) {
-                if (sel.canRead()) {
+            if (ioProvider.isDirectory(sel)) {
+                if (ioProvider.canRead(sel)) {
                     _pathDirsList.add(_currFile);
                     _path = new File(sel + "");
                     _loadFileList();

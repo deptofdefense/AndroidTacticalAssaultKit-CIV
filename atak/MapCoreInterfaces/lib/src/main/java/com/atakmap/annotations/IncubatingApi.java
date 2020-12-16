@@ -1,3 +1,4 @@
+
 package com.atakmap.annotations;
 
 import java.lang.annotation.Documented;
@@ -20,7 +21,8 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({
-        ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.TYPE,
+        ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.METHOD,
+        ElementType.TYPE,
 })
 @Documented
 public @interface IncubatingApi {

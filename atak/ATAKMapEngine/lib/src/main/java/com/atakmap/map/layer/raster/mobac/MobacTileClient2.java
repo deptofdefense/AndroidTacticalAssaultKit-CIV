@@ -10,7 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -138,7 +138,7 @@ public class MobacTileClient2 implements TileClient, TileClientControl {
 
             // if no cache could be opened from the file then attempt to delete
             // the file and create a new cache
-            if(this.offlineCache == null && FileIOProviderFactory.exists(new File(offlineCachePath))) {
+            if(this.offlineCache == null && IOProviderFactory.exists(new File(offlineCachePath))) {
                 FileSystemUtils.delete(offlineCachePath);
                 this.offlineCache = openOrCreateCache(offlineCachePath, this, hint);
             }
@@ -173,7 +173,7 @@ public class MobacTileClient2 implements TileClient, TileClientControl {
                     
                     try {
                         value.dispose();
-                    } catch(Throwable t) {}
+                    } catch(Throwable ignored) {}
                     synchronized(MobacTileClient2.class) {
                         caches.remove(path);
                     }

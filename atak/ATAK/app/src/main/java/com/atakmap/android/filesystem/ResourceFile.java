@@ -10,7 +10,7 @@ import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.wfs.WFSImporter;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.spatial.file.DrwFileDatabase;
 import com.atakmap.spatial.file.GpxFileSpatialDb;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
@@ -281,6 +281,6 @@ public class ResourceFile implements Parcelable {
             return 0;
 
         File file = new File(mFilePath);
-        return FileIOProviderFactory.length(file);
+        return IOProviderFactory.length(file);
     }
 }

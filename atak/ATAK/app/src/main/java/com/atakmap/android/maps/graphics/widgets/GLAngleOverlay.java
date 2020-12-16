@@ -5,14 +5,11 @@ import android.graphics.Color;
 import android.graphics.PointF;
 import android.graphics.RectF;
 
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.graphics.GLFloatArray;
 import com.atakmap.android.maps.graphics.GLIcon;
 import com.atakmap.android.maps.graphics.GLImageCache;
-import com.atakmap.android.maps.graphics.GLTriangle;
 import com.atakmap.android.widgets.AngleOverlayShape;
 import com.atakmap.coremap.maps.assets.Icon;
-
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.opengl.GLMapView;
@@ -30,29 +27,10 @@ public class GLAngleOverlay extends GLAutoSizeAngleOverlay {
     public GLAngleOverlay(MapRenderer surface, AngleOverlayShape subject) {
         super(surface, subject);
         sw = subject;
-        sw.addOnPointsChangedListener(this);
-
-        dpi = MapView.getMapView().getContext().getResources()
-                .getDisplayMetrics().xdpi;
-        sw.getBounds(bounds);
         offsetAngle = sw.getOffsetAngle();
-        _verts = new GLTriangle.Fan(2, 2);
-        verts = new float[] {
-                0, 0,
-                0, 0,
-        };
     }
 
     private boolean _projectVerts(final GLMapView ortho) {
-        boolean centerMoved = centerGP != sw.getCenter().get();
-        boolean radiusUpdated = groundRadius != sw.getRadius();
-
-        if (centerMoved || radiusUpdated) {
-            centerGP = sw.getCenter().get();
-            groundRadius = sw.getRadius();
-            sw.getBounds(bounds);
-            OnBoundsChanged();
-        }
         offsetAngle = sw.getOffsetAngle();
 
         ortho.scratch.geo.set(sw.getCenter().get());
@@ -412,5 +390,4 @@ public class GLAngleOverlay extends GLAutoSizeAngleOverlay {
         }
 
     }
-
 }

@@ -1,6 +1,6 @@
 package com.atakmap.map.formats.c3dt;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.io.ProtocolHandler;
 import com.atakmap.io.UriFactory;
 
@@ -42,7 +42,7 @@ final class Util {
     }
     public static String resolve(String uri) {
         final File f = new File(uri);
-        if(FileIOProviderFactory.exists(f))
+        if(IOProviderFactory.exists(f))
             return f.getAbsolutePath();
         try {
             URI uriObj = new URI(uri);

@@ -4,6 +4,7 @@ package com.atakmap.android.radiolibrary;
 import java.io.File;
 import java.io.IOException;
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.NetworkDeviceManager;
 
@@ -19,7 +20,13 @@ public class ControllerPppd extends BroadcastReceiver implements Runnable {
     public static final String TAG = "ControllerPppd";
     Thread t;
     private boolean cancelled = false;
+    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
+            "private", "final"
+    })
     Context context;
+    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
+            "private", "final"
+    })
     File root;
 
     public ControllerPppd(Context c) {

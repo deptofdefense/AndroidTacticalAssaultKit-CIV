@@ -64,14 +64,15 @@ diff -U 10 -r libkml.vanilla/third_party/zlib-1.2.3/contrib/minizip/minizip_stat
      <ConfigurationType>StaticLibrary</ConfigurationType>
      <PlatformToolset>v140</PlatformToolset>
      <CharacterSet>Unicode</CharacterSet>
-     <WholeProgramOptimization>true</WholeProgramOptimization>
-   </PropertyGroup>
+-    <WholeProgramOptimization>true</WholeProgramOptimization>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
 +  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
 +    <ConfigurationType>StaticLibrary</ConfigurationType>
 +    <PlatformToolset>v140</PlatformToolset>
 +    <CharacterSet>Unicode</CharacterSet>
-+    <WholeProgramOptimization>true</WholeProgramOptimization>
-+  </PropertyGroup>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
+   </PropertyGroup>
    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
      <ConfigurationType>StaticLibrary</ConfigurationType>
      <PlatformToolset>v140</PlatformToolset>
@@ -113,7 +114,8 @@ diff -U 10 -r libkml.vanilla/third_party/zlib-1.2.3/contrib/minizip/minizip_stat
    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
      <ClCompile>
        <Optimization>Disabled</Optimization>
-       <AdditionalIncludeDirectories>..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+-      <AdditionalIncludeDirectories>..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <AdditionalIncludeDirectories>..\..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
        <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
        <MinimalRebuild>true</MinimalRebuild>
        <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -126,7 +128,7 @@ diff -U 10 -r libkml.vanilla/third_party/zlib-1.2.3/contrib/minizip/minizip_stat
 +  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
 +    <ClCompile>
 +      <Optimization>Disabled</Optimization>
-+      <AdditionalIncludeDirectories>..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <AdditionalIncludeDirectories>..\..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 +      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 +      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
 +      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -138,7 +140,8 @@ diff -U 10 -r libkml.vanilla/third_party/zlib-1.2.3/contrib/minizip/minizip_stat
 +  </ItemDefinitionGroup>
    <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
      <ClCompile>
-       <AdditionalIncludeDirectories>..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+-      <AdditionalIncludeDirectories>..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <AdditionalIncludeDirectories>..\..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
        <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
        <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
        <PrecompiledHeader />
@@ -148,7 +151,7 @@ diff -U 10 -r libkml.vanilla/third_party/zlib-1.2.3/contrib/minizip/minizip_stat
    </ItemDefinitionGroup>
 +  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
 +    <ClCompile>
-+      <AdditionalIncludeDirectories>..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
++      <AdditionalIncludeDirectories>..\..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 +      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 +      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
 +      <PrecompiledHeader>
@@ -167,67 +170,3 @@ diff -U 10 -r libkml.vanilla/third_party/zlib-1.2.3/contrib/minizip/minizip_stat
    <ItemGroup>
      <ClInclude Include="ioapi.h" />
      <ClInclude Include="iowin32.h" />
-diff -U 10 -r libkml.vanilla/third_party/zlib-1.2.3/contrib/minizip/minizip_static.vcxproj libkml/third_party/zlib-1.2.3/contrib/minizip/minizip_static.vcxproj
---- libkml.vanilla/third_party/zlib-1.2.3/contrib/minizip/minizip_static.vcxproj	2019-09-30 13:25:35.060000000 -0400
-+++ libkml/third_party/zlib-1.2.3/contrib/minizip/minizip_static.vcxproj	2019-09-30 14:24:21.541000000 -0400
-@@ -70,56 +70,56 @@
-     <IntDir>$(Configuration)\</IntDir>
-   </PropertyGroup>
-   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
-   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
-     <IntDir>$(Configuration)\</IntDir>
-   </PropertyGroup>
-   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-     <ClCompile>
-       <Optimization>Disabled</Optimization>
--      <AdditionalIncludeDirectories>..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-+      <AdditionalIncludeDirectories>..\..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-       <MinimalRebuild>true</MinimalRebuild>
-       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-       <PrecompiledHeader />
-       <WarningLevel>Level3</WarningLevel>
-       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-     </ClCompile>
-   </ItemDefinitionGroup>
-   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-     <ClCompile>
-       <Optimization>Disabled</Optimization>
--      <AdditionalIncludeDirectories>..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-+      <AdditionalIncludeDirectories>..\..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-       <PrecompiledHeader>
-       </PrecompiledHeader>
-       <WarningLevel>Level3</WarningLevel>
-       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-     </ClCompile>
-   </ItemDefinitionGroup>
-   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-     <ClCompile>
--      <AdditionalIncludeDirectories>..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-+      <AdditionalIncludeDirectories>..\..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-       <PrecompiledHeader />
-       <WarningLevel>Level3</WarningLevel>
-       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-     </ClCompile>
-   </ItemDefinitionGroup>
-   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-     <ClCompile>
--      <AdditionalIncludeDirectories>..\..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-+      <AdditionalIncludeDirectories>..\..\..\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-       <PrecompiledHeader>
-       </PrecompiledHeader>
-       <WarningLevel>Level3</WarningLevel>
-       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-     </ClCompile>
-   </ItemDefinitionGroup>
-   <ItemGroup>
-     <ClCompile Include="ioapi.c" />

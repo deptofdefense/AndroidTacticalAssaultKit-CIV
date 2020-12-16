@@ -276,14 +276,14 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
                     });
         }
         _dialog = b.create();
-        try { 
-           _dialog.show();
-           _dialog.setOnDismissListener(this);
-           // Dialog window doesn't size correctly for some reason...
-           forceWrapContent(cont);
+        try {
+            _dialog.show();
+            _dialog.setOnDismissListener(this);
+            // Dialog window doesn't size correctly for some reason...
+            forceWrapContent(cont);
 
-        } catch (Exception e) { 
-           Log.e("TileButtonDialog", "could not display the button dialog", e);
+        } catch (Exception e) {
+            Log.e("TileButtonDialog", "could not display the button dialog", e);
         }
 
     }

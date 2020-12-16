@@ -60,21 +60,21 @@ public class ModelRenderer implements GLSurfaceView.Renderer {
     private final Context activityContext;
 
     /** Store model matrix. Moves models from object space to world space */
-    private float[] modelMatrix = new float[16];
+    private final float[] modelMatrix = new float[16];
 
     /** Used as our camera. Transforms world space to eye space */
-    private float[] viewMatrix = new float[16];
+    private final float[] viewMatrix = new float[16];
 
     /** Ussed to project the scene onto a 2D viewport*/
-    private float[] projectionMatrix = new float[16];
+    private final float[] projectionMatrix = new float[16];
 
     /** Combines model, view, and projection matrices to be passed into the shaders*/
-    private float[] mvpMatrix = new float[16];
+    private final float[] mvpMatrix = new float[16];
 
     private final float[] accumulatedRotation = new float[16];
     private final float[] currentRotation = new float[16];
 
-    private float[] tempMatrix = new float[16];
+    private final float[] tempMatrix = new float[16];
 
     /** Used to pass their respective data into the shaders*/
     private int mvpMatrixHandle;

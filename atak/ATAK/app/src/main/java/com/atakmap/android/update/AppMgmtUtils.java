@@ -69,7 +69,8 @@ public class AppMgmtUtils {
     };
 
     public static boolean install(Context context, File apk) {
-        if (!FileSystemUtils.isFile(apk)) {
+        //Use java.io.File operations for Android installation purposes
+        if (!apk.isFile()) {
             String message = (apk == null ? "" : apk.getAbsolutePath());
             Log.w(TAG,
                     "Failed to install APK, file does not exist: " + message);

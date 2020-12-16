@@ -107,9 +107,9 @@ public class CotStreamListActivity extends CotPortListActivity {
                             enrollForCertificate(inputData, null);
 
                         } catch (IllegalArgumentException iae) {
-                            Log.d(TAG, "error occured entering the server",
+                            Log.d(TAG, "error occurred entering the server",
                                     iae);
-                            toast("error occured entering the server");
+                            toast("error occurred entering the server");
                         }
                     }
                 }
@@ -118,9 +118,9 @@ public class CotStreamListActivity extends CotPortListActivity {
                 try {
                     super.onActivityResult(requestCode, resultCode, data);
                 } catch (IllegalArgumentException iae) {
-                    Log.d(TAG, "error occured entering the server",
+                    Log.d(TAG, "error occurred entering the server",
                             iae);
-                    toast("error occured entering the server");
+                    toast("error occurred entering the server");
                 }
                 break;
         }

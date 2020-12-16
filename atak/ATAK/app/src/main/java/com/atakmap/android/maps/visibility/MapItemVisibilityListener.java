@@ -1,3 +1,4 @@
+
 package com.atakmap.android.maps.visibility;
 
 import com.atakmap.android.maps.MapEvent;
@@ -30,7 +31,7 @@ public class MapItemVisibilityListener implements VisibilityListener,
 
     public void dispose() {
         _manager.removeListener(this);
-        _mapView.getMapEventDispatcher().addMapEventListener(
+        _mapView.getMapEventDispatcher().removeMapEventListener(
                 MapEvent.ITEM_ADDED, this);
     }
 

@@ -48,6 +48,9 @@ $(libiconv_configtouchfile): $(libiconv_srctouchfile)
 	@echo dos2unix $(icv_sd)/makescript
 	@echo dos2unix $(icv_sd)/makeiscript
 	@echo dos2unix $(icv_sd)/confscript
+	chmod a+x $(icv_sd)/makescript
+	chmod a+x $(icv_sd)/makeiscript
+	chmod a+x $(icv_sd)/confscript
 	$(VS_SETUP) $(winsh) -l $(icv_sd)/confscript
 	touch $@
 

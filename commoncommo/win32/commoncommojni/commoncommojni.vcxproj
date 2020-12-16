@@ -102,6 +102,7 @@
       <Command>cd $(ProjectDir)\..\..\jni\native
 $(JAVA_HOME)\bin\javah -classpath .. -o jcommo.h com.atakmap.commoncommo.Commo
 $(JAVA_HOME)\bin\javah -classpath .. -o jcotpointdata.h com.atakmap.commoncommo.CoTPointData
+$(JAVA_HOME)\bin\javah -classpath .. -o jcloudclient.h com.atakmap.commoncommo.CloudClient
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -125,6 +126,7 @@ $(JAVA_HOME)\bin\javah -classpath .. -o jcotpointdata.h com.atakmap.commoncommo.
       <Command>cd $(ProjectDir)\..\..\jni\native
 $(JAVA_HOME)\bin\javah -classpath .. -o jcommo.h com.atakmap.commoncommo.Commo
 $(JAVA_HOME)\bin\javah -classpath .. -o jcotpointdata.h com.atakmap.commoncommo.CoTPointData
+$(JAVA_HOME)\bin\javah -classpath .. -o jcloudclient.h com.atakmap.commoncommo.CloudClient
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -152,6 +154,7 @@ $(JAVA_HOME)\bin\javah -classpath .. -o jcotpointdata.h com.atakmap.commoncommo.
       <Command>cd $(ProjectDir)\..\..\jni\native
 $(JAVA_HOME)\bin\javah -classpath .. -o jcommo.h com.atakmap.commoncommo.Commo
 $(JAVA_HOME)\bin\javah -classpath .. -o jcotpointdata.h com.atakmap.commoncommo.CoTPointData
+$(JAVA_HOME)\bin\javah -classpath .. -o jcloudclient.h com.atakmap.commoncommo.CloudClient
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -179,13 +182,16 @@ $(JAVA_HOME)\bin\javah -classpath .. -o jcotpointdata.h com.atakmap.commoncommo.
       <Command>cd $(ProjectDir)\..\..\jni\native
 $(JAVA_HOME)\bin\javah -classpath .. -o jcommo.h com.atakmap.commoncommo.Commo
 $(JAVA_HOME)\bin\javah -classpath .. -o jcotpointdata.h com.atakmap.commoncommo.CoTPointData
+$(JAVA_HOME)\bin\javah -classpath .. -o jcloudclient.h com.atakmap.commoncommo.CloudClient
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\jni\native\commojni_common.cpp" />
+    <ClCompile Include="..\..\jni\native\jcloudclient.cpp" />
     <ClCompile Include="..\..\jni\native\jcommo.cpp" />
     <ClCompile Include="..\..\jni\native\jcotpointdata.cpp" />
+    <ClCompile Include="..\..\jni\native\jnifileioprovider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\jni\native\commojni_common.h" />

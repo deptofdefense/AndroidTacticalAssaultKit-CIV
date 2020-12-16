@@ -30,7 +30,8 @@ class GLEditablePolyline extends GLPolyline implements
         // working around an issue with the MPU 5 and the GL_POINTS
         // this is temporary and should be removed as soon as possible but for the
         // purposes of 4.1.0.1, this is probably the least intrusive bandaid.
-        disableVertexPointDrawing = DeveloperOptions.getIntOption("disable-vertex-points", 0) == 1;
+        disableVertexPointDrawing = DeveloperOptions
+                .getIntOption("disable-vertex-points", 0) == 1;
     }
 
     @Override
@@ -100,15 +101,16 @@ class GLEditablePolyline extends GLPolyline implements
                         GLES20FixedPipeline.GL_VERTEX_ARRAY);
 
                 if (!disableVertexPointDrawing) {
-                if (dragIndex > -1 && dragIndex < this.numPoints) {
-                    // Draw single vertex being dragged
-                    GLES20FixedPipeline.glDrawArrays(
-                            GLES20FixedPipeline.GL_POINTS, dragIndex, 1);
-                } else {
-                    // Draw all vertices
-                    GLES20FixedPipeline.glDrawArrays(
-                            GLES20FixedPipeline.GL_POINTS, 0, this.numPoints);
-                }
+                    if (dragIndex > -1 && dragIndex < this.numPoints) {
+                        // Draw single vertex being dragged
+                        GLES20FixedPipeline.glDrawArrays(
+                                GLES20FixedPipeline.GL_POINTS, dragIndex, 1);
+                    } else {
+                        // Draw all vertices
+                        GLES20FixedPipeline.glDrawArrays(
+                                GLES20FixedPipeline.GL_POINTS, 0,
+                                this.numPoints);
+                    }
                 }
 
                 // Disable features

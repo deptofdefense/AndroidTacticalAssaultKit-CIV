@@ -6,7 +6,7 @@ import android.util.Pair;
 
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.GpxFileSpatialDb;
 
@@ -49,7 +49,7 @@ public class ImportGPXSort extends ImportInPlaceResolver {
         // it is a .gpx, now lets see if it contains reasonable xml
         FileInputStream fis = null;
         try {
-            return isGpx(fis = FileIOProviderFactory.getInputStream(file));
+            return isGpx(fis = IOProviderFactory.getInputStream(file));
         } catch (IOException e) {
             Log.e(TAG, "Error checking if GPX: " + file.getAbsolutePath(), e);
         } finally {

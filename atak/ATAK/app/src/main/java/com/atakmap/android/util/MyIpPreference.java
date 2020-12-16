@@ -14,7 +14,7 @@ import com.atakmap.comms.NetworkUtils.NetRestartNotification;
 
 public class MyIpPreference extends Preference {
 
-    private Context ctx;
+    private final Context ctx;
     private final String title;
 
     public MyIpPreference(Context ctx) {

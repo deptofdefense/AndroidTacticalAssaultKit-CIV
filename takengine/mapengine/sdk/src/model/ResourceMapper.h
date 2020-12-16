@@ -3,6 +3,7 @@
 
 #include <map>
 #include <vector>
+#include <string>
 #include "port/String.h"
 #include "port/Collection.h"
 #include "util/Error.h"

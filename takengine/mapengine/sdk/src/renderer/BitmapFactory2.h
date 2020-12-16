@@ -13,17 +13,8 @@ namespace TAK {
 
             struct ENGINE_API BitmapDecodeOptions
             {
-                enum EmplaceMode
-                {
-                    /** emplace not used */
-                    None,
-                    /** coerce the decoded bitmap to match the emplace attributes */
-                    Coerce,
-                    /** only emplace if soruce and emplace attributes match */
-                    IfMatches,
-                };
                 inline BitmapDecodeOptions() NOTHROWS
-                    : emplaceData(EmplaceMode::None) { }
+                    : emplaceData(false) { }
 
                 /**
                  * An informal hint as to which image format the input data is. Format hints
@@ -36,11 +27,11 @@ namespace TAK {
                  * data in the format and size specified within the destination bitmap. The decoder
                  * may return BitmapFactory::Unsupported if this is not supported.
                  */
-                EmplaceMode emplaceData;
+                bool emplaceData;
             };
 
             ENGINE_API Util::TAKErr BitmapFactory2_decode(BitmapPtr &result, Util::DataInput2 &input, const BitmapDecodeOptions *opts) NOTHROWS;
-            ENGINE_API Util::TAKErr BitmapFactory2_decode(BitmapPtr &result, const uint8_t *data, const std::size_t dataLen, const BitmapDecodeOptions *opts) NOTHROWS;
+
             ENGINE_API Util::TAKErr BitmapFactory2_decode(BitmapPtr &result, const char *bitmapFilePath, const BitmapDecodeOptions *opts) NOTHROWS;
         }
     }

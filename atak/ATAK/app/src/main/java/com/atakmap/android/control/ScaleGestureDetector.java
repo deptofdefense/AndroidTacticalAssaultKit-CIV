@@ -163,7 +163,7 @@ public class ScaleGestureDetector {
         }
     }
 
-    public boolean onTouchEvent(MotionEvent event) {
+    public boolean onTouchEvent(final MotionEvent event) {
         final int action = event.getAction();
 
         if (action == MotionEvent.ACTION_DOWN) {

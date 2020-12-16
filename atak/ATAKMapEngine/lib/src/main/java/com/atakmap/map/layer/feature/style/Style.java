@@ -176,9 +176,9 @@ public abstract class Style implements Disposable {
     static native int CompositeStyle_getNumStyles(long ptr);
     static native Pointer CompositeStyle_getStyle(long ptr, int idx);
 
-    static native Pointer PatternStrokeStyle_create(long pattern, int patternLen, int color, float width);
-    static native long PatternStrokeStyle_getPattern(long pointer);
-    static native int PatternStrokeStyle_getPatternLength(long pointer);
+    static native Pointer PatternStrokeStyle_create(int factor, short pattern, int color, float width);
+    static native short PatternStrokeStyle_getPattern(long pointer);
+    static native int PatternStrokeStyle_getFactor(long pointer);
     static native int PatternStrokeStyle_getColor(long pointer);
     static native float PatternStrokeStyle_getStrokeWidth(long pointer);
 }

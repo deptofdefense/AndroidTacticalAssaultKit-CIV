@@ -1,6 +1,6 @@
 diff -U 10 -r libkml.vanilla/msvc/libkml.sln libkml/msvc/libkml.sln
---- libkml.vanilla/msvc/libkml.sln	2019-09-27 13:33:23.332697700 -0400
-+++ libkml/msvc/libkml.sln	2019-09-27 15:05:14.475100900 -0400
+--- libkml.vanilla/msvc/libkml.sln	2020-08-25 14:35:04.179237200 -0400
++++ libkml/msvc/libkml.sln	2020-08-25 14:17:06.906943000 -0400
 @@ -11,42 +11,68 @@
  EndProject
  Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libkmlconvenience", "libkmlconvenience.vcxproj", "{5E53C538-7B22-41FF-84AF-F08F0C019E7B}"
@@ -71,8 +71,8 @@ diff -U 10 -r libkml.vanilla/msvc/libkml.sln libkml/msvc/libkml.sln
  	EndGlobalSection
  EndGlobal
 diff -U 10 -r libkml.vanilla/msvc/libkmlbase.vcxproj libkml/msvc/libkmlbase.vcxproj
---- libkml.vanilla/msvc/libkmlbase.vcxproj	2019-09-27 13:33:22.381097700 -0400
-+++ libkml/msvc/libkmlbase.vcxproj	2019-09-27 15:05:14.472100900 -0400
+--- libkml.vanilla/msvc/libkmlbase.vcxproj	2020-08-25 14:35:02.206498700 -0400
++++ libkml/msvc/libkmlbase.vcxproj	2020-08-25 14:40:56.721840900 -0400
 @@ -1,104 +1,158 @@
  ﻿<?xml version="1.0" encoding="utf-8"?>
  <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -104,14 +104,15 @@ diff -U 10 -r libkml.vanilla/msvc/libkmlbase.vcxproj libkml/msvc/libkmlbase.vcxp
      <ConfigurationType>StaticLibrary</ConfigurationType>
      <PlatformToolset>v140</PlatformToolset>
      <CharacterSet>Unicode</CharacterSet>
-     <WholeProgramOptimization>true</WholeProgramOptimization>
-   </PropertyGroup>
+-    <WholeProgramOptimization>true</WholeProgramOptimization>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
 +  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
 +    <ConfigurationType>StaticLibrary</ConfigurationType>
 +    <PlatformToolset>v140</PlatformToolset>
 +    <CharacterSet>Unicode</CharacterSet>
-+    <WholeProgramOptimization>true</WholeProgramOptimization>
-+  </PropertyGroup>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
+   </PropertyGroup>
    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
      <ConfigurationType>StaticLibrary</ConfigurationType>
      <PlatformToolset>v140</PlatformToolset>
@@ -233,8 +234,8 @@ diff -U 10 -r libkml.vanilla/msvc/libkmlbase.vcxproj libkml/msvc/libkmlbase.vcxp
      <ClInclude Include="..\src\kml\base\expat_handler_ns.h" />
      <ClInclude Include="..\src\kml\base\expat_parser.h" />
 diff -U 10 -r libkml.vanilla/msvc/libkmlconvenience.vcxproj libkml/msvc/libkmlconvenience.vcxproj
---- libkml.vanilla/msvc/libkmlconvenience.vcxproj	2019-09-27 13:33:23.285897700 -0400
-+++ libkml/msvc/libkmlconvenience.vcxproj	2019-09-27 15:05:14.434100900 -0400
+--- libkml.vanilla/msvc/libkmlconvenience.vcxproj	2020-08-25 14:35:04.054569400 -0400
++++ libkml/msvc/libkmlconvenience.vcxproj	2020-08-25 14:42:13.267095500 -0400
 @@ -1,99 +1,153 @@
  ﻿<?xml version="1.0" encoding="utf-8"?>
  <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -266,14 +267,15 @@ diff -U 10 -r libkml.vanilla/msvc/libkmlconvenience.vcxproj libkml/msvc/libkmlco
      <ConfigurationType>StaticLibrary</ConfigurationType>
      <PlatformToolset>v140</PlatformToolset>
      <CharacterSet>Unicode</CharacterSet>
-     <WholeProgramOptimization>true</WholeProgramOptimization>
-   </PropertyGroup>
+-    <WholeProgramOptimization>true</WholeProgramOptimization>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
 +  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
 +    <ConfigurationType>StaticLibrary</ConfigurationType>
 +    <PlatformToolset>v140</PlatformToolset>
 +    <CharacterSet>Unicode</CharacterSet>
-+    <WholeProgramOptimization>true</WholeProgramOptimization>
-+  </PropertyGroup>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
+   </PropertyGroup>
    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
      <ConfigurationType>StaticLibrary</ConfigurationType>
      <PlatformToolset>v140</PlatformToolset>
@@ -390,8 +392,8 @@ diff -U 10 -r libkml.vanilla/msvc/libkmlconvenience.vcxproj libkml/msvc/libkmlco
      <ClInclude Include="..\src\kml\convenience\feature_list.h" />
      <ClInclude Include="..\src\kml\convenience\google_doc_list.h" />
 diff -U 10 -r libkml.vanilla/msvc/libkmldom.vcxproj libkml/msvc/libkmldom.vcxproj
---- libkml.vanilla/msvc/libkmldom.vcxproj	2019-09-27 13:33:23.176697700 -0400
-+++ libkml/msvc/libkmldom.vcxproj	2019-09-27 15:05:14.442100900 -0400
+--- libkml.vanilla/msvc/libkmldom.vcxproj	2020-08-25 14:35:03.800248100 -0400
++++ libkml/msvc/libkmldom.vcxproj	2020-08-25 14:42:24.653688000 -0400
 @@ -1,85 +1,138 @@
  ﻿<?xml version="1.0" encoding="utf-8"?>
  <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -423,14 +425,15 @@ diff -U 10 -r libkml.vanilla/msvc/libkmldom.vcxproj libkml/msvc/libkmldom.vcxpro
      <ConfigurationType>StaticLibrary</ConfigurationType>
      <PlatformToolset>v140</PlatformToolset>
      <CharacterSet>Unicode</CharacterSet>
-     <WholeProgramOptimization>true</WholeProgramOptimization>
-   </PropertyGroup>
+-    <WholeProgramOptimization>true</WholeProgramOptimization>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
 +  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
 +    <ConfigurationType>StaticLibrary</ConfigurationType>
 +    <PlatformToolset>v140</PlatformToolset>
 +    <CharacterSet>Unicode</CharacterSet>
-+    <WholeProgramOptimization>true</WholeProgramOptimization>
-+  </PropertyGroup>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
+   </PropertyGroup>
    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
      <ConfigurationType>StaticLibrary</ConfigurationType>
      <PlatformToolset>v140</PlatformToolset>
@@ -554,8 +557,8 @@ diff -U 10 -r libkml.vanilla/msvc/libkmldom.vcxproj libkml/msvc/libkmldom.vcxpro
      <ClInclude Include="..\src\kml\dom\colorstyle.h" />
      <ClInclude Include="..\src\kml\dom\container.h" />
 diff -U 10 -r libkml.vanilla/msvc/libkmlengine.vcxproj libkml/msvc/libkmlengine.vcxproj
---- libkml.vanilla/msvc/libkmlengine.vcxproj	2019-09-27 13:33:23.223497700 -0400
-+++ libkml/msvc/libkmlengine.vcxproj	2019-09-27 15:05:14.439100900 -0400
+--- libkml.vanilla/msvc/libkmlengine.vcxproj	2020-08-25 14:35:03.892003800 -0400
++++ libkml/msvc/libkmlengine.vcxproj	2020-08-25 14:42:34.158336600 -0400
 @@ -1,85 +1,138 @@
  ﻿<?xml version="1.0" encoding="utf-8"?>
  <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -587,14 +590,15 @@ diff -U 10 -r libkml.vanilla/msvc/libkmlengine.vcxproj libkml/msvc/libkmlengine.
      <ConfigurationType>StaticLibrary</ConfigurationType>
      <PlatformToolset>v140</PlatformToolset>
      <CharacterSet>Unicode</CharacterSet>
-     <WholeProgramOptimization>true</WholeProgramOptimization>
-   </PropertyGroup>
+-    <WholeProgramOptimization>true</WholeProgramOptimization>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
 +  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
 +    <ConfigurationType>StaticLibrary</ConfigurationType>
 +    <PlatformToolset>v140</PlatformToolset>
 +    <CharacterSet>Unicode</CharacterSet>
-+    <WholeProgramOptimization>true</WholeProgramOptimization>
-+  </PropertyGroup>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
+   </PropertyGroup>
    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
      <ConfigurationType>StaticLibrary</ConfigurationType>
      <PlatformToolset>v140</PlatformToolset>
@@ -718,8 +722,8 @@ diff -U 10 -r libkml.vanilla/msvc/libkmlengine.vcxproj libkml/msvc/libkmlengine.
      <ClInclude Include="..\src\kml\engine\feature_balloon.h" />
      <ClInclude Include="..\src\kml\engine\feature_view.h" />
 diff -U 10 -r libkml.vanilla/msvc/libkmlregionator.vcxproj libkml/msvc/libkmlregionator.vcxproj
---- libkml.vanilla/msvc/libkmlregionator.vcxproj	2019-09-27 13:33:23.254697700 -0400
-+++ libkml/msvc/libkmlregionator.vcxproj	2019-09-27 15:05:14.430100900 -0400
+--- libkml.vanilla/msvc/libkmlregionator.vcxproj	2020-08-25 14:35:03.969795500 -0400
++++ libkml/msvc/libkmlregionator.vcxproj	2020-08-25 14:42:42.728450100 -0400
 @@ -1,91 +1,145 @@
  ﻿<?xml version="1.0" encoding="utf-8"?>
  <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -751,14 +755,15 @@ diff -U 10 -r libkml.vanilla/msvc/libkmlregionator.vcxproj libkml/msvc/libkmlreg
      <ConfigurationType>StaticLibrary</ConfigurationType>
      <PlatformToolset>v140</PlatformToolset>
      <CharacterSet>Unicode</CharacterSet>
-     <WholeProgramOptimization>true</WholeProgramOptimization>
-   </PropertyGroup>
+-    <WholeProgramOptimization>true</WholeProgramOptimization>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
 +  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
 +    <ConfigurationType>StaticLibrary</ConfigurationType>
 +    <PlatformToolset>v140</PlatformToolset>
 +    <CharacterSet>Unicode</CharacterSet>
-+    <WholeProgramOptimization>true</WholeProgramOptimization>
-+  </PropertyGroup>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
+   </PropertyGroup>
    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
      <ConfigurationType>StaticLibrary</ConfigurationType>
      <PlatformToolset>v140</PlatformToolset>
@@ -867,8 +872,8 @@ diff -U 10 -r libkml.vanilla/msvc/libkmlregionator.vcxproj libkml/msvc/libkmlreg
      <ClInclude Include="..\src\kml\regionator\region_handler.h" />
      <ClInclude Include="..\src\stdafx.h" />
 diff -U 10 -r libkml.vanilla/msvc/libkmlxsd.vcxproj libkml/msvc/libkmlxsd.vcxproj
---- libkml.vanilla/msvc/libkmlxsd.vcxproj	2019-09-27 13:33:23.332697700 -0400
-+++ libkml/msvc/libkmlxsd.vcxproj	2019-09-27 15:05:14.422100900 -0400
+--- libkml.vanilla/msvc/libkmlxsd.vcxproj	2020-08-25 14:35:04.141338200 -0400
++++ libkml/msvc/libkmlxsd.vcxproj	2020-08-25 14:42:50.169594000 -0400
 @@ -1,92 +1,146 @@
  ﻿<?xml version="1.0" encoding="utf-8"?>
  <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -900,14 +905,15 @@ diff -U 10 -r libkml.vanilla/msvc/libkmlxsd.vcxproj libkml/msvc/libkmlxsd.vcxpro
      <ConfigurationType>StaticLibrary</ConfigurationType>
      <PlatformToolset>v140</PlatformToolset>
      <CharacterSet>Unicode</CharacterSet>
-     <WholeProgramOptimization>true</WholeProgramOptimization>
-   </PropertyGroup>
+-    <WholeProgramOptimization>true</WholeProgramOptimization>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
 +  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
 +    <ConfigurationType>StaticLibrary</ConfigurationType>
 +    <PlatformToolset>v140</PlatformToolset>
 +    <CharacterSet>Unicode</CharacterSet>
-+    <WholeProgramOptimization>true</WholeProgramOptimization>
-+  </PropertyGroup>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
+   </PropertyGroup>
    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
      <ConfigurationType>StaticLibrary</ConfigurationType>
      <PlatformToolset>v140</PlatformToolset>

@@ -26,8 +26,8 @@ public class CoTSelector extends DropDownReceiver {
 
     private PointMapItem m;
     private TypeChangedListener tl;
-    private CustomListView clistview;
-    private View csuitmain;
+    private final CustomListView clistview;
+    private final View csuitmain;
 
     public CoTSelector(final MapView mapView) {
         super(mapView);

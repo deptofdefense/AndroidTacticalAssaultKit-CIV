@@ -9,8 +9,9 @@ import android.preference.PreferenceManager;
 
 import com.atak.plugins.impl.AtakPluginRegistry;
 import com.atakmap.android.util.ATAKConstants;
+import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
@@ -82,8 +83,8 @@ class ATAKCrashHandler implements ReportSender {
         File directory = FileSystemUtils
                 .getItem(FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar
                         + "logs");
-        if (!FileIOProviderFactory.exists(directory)) {
-            if (!FileIOProviderFactory.mkdir(directory))
+        if (!IOProviderFactory.exists(directory)) {
+            if (!IOProviderFactory.mkdir(directory))
                 Log.d(TAG, "could not make: " + directory);
         }
         return directory;
@@ -112,10 +113,8 @@ class ATAKCrashHandler implements ReportSender {
 
         PrintWriter pw = null;
         try {
-            if (!f.createNewFile()) {
-                Log.e(TAG, "error creating: " + f);
-            } else {
-                pw = new PrintWriter(FileIOProviderFactory.getFileWriter(f));
+            if (IOProviderFactory.createNewFile(f)) {
+                pw = new PrintWriter(IOProviderFactory.getFileWriter(f));
                 // add custom dynamic content not supported by ACRA, and crash summary to header
                 String error = null;
                 String st = crashData == null ? null
@@ -239,6 +238,7 @@ class ATAKCrashHandler implements ReportSender {
                 + "\",\n" +
                 "\"TAK.error\":\"" + error + "\",\n" +
                 "\"TAK.stackHash\":\"" + stackTraceHash + "\",\n" +
+                SystemComponentLoader.getCrashLogInfo() + ",\n" +
                 "\"plugins\":[" + getPluginList(context, prefs) + "]}";
     }
 

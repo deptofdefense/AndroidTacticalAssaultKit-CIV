@@ -19,7 +19,7 @@ public class CotDescriptions {
 
     private static CotDescriptions ref = null;
 
-    private static Map<String, String> descriptions_ = new HashMap<>();
+    private static final Map<String, String> descriptions_ = new HashMap<>();
 
     private CotDescriptions(final AssetManager assets) {
 

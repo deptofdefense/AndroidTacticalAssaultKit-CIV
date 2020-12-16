@@ -1,3 +1,4 @@
+
 package com.atakmap.android.maps.graphics.widgets;
 
 import android.graphics.PointF;

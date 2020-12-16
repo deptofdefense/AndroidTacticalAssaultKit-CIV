@@ -201,19 +201,19 @@ namespace TAK {
 
             struct FDB::FeatureSetDefn
             {
-                bool visible;
-                int visibleVersion;
-                bool visibleCheck;
-                int minLod;
-                int maxLod;
-                int lodVersion;
-                bool lodCheck;
-                int nameVersion;
-                int64_t fsid;
+                bool visible{false};
+                int visibleVersion{-1};
+                bool visibleCheck{false};
+                int minLod{0};
+                int maxLod{0};
+                int lodVersion{-1};
+                bool lodCheck{false};
+                int nameVersion{-1};
+                int64_t fsid{-1};
                 Port::String name;
                 Port::String type;
                 Port::String provider;
-                bool readOnly;
+                bool readOnly{false};
             };
 
             struct FDB::AttributeCoder

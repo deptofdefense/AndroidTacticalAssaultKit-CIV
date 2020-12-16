@@ -1,0 +1,672 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+   android:layout_width="match_parent"
+   android:layout_height="match_parent"
+   android:orientation="vertical" >
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="3dp"
+        android:layout_marginRight="3dp"
+        android:fadeScrollbars="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Hello, World"
+                android:textColor="@android:color/white"
+                android:textSize="20sp" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="3dp"
+                android:background="@android:color/white">
+
+            </RelativeLayout>
+
+            <TextView
+                android:id="@+id/longPressTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Long press a button for a brief descripton"
+                android:textColor="@android:color/white"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/clickTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tap a button for a demonstration"
+                android:textColor="@android:color/white"
+                android:textSize="15sp" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="3dp"
+                android:background="@android:color/white">
+
+            </RelativeLayout>
+
+            <TextView
+                android:id="@+id/layoutExamples"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Layout Examples"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+
+            <Button
+                android:id="@+id/largerButton"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Larger" />
+
+
+            <Button
+                android:id="@+id/smallerButton"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Smaller" />
+
+            <Button
+                android:id="@+id/showSearchIcon"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Show Search Icon" />
+
+         <Button
+             android:id="@+id/recyclerViewBtn"
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             style="@style/darkButton"
+             android:padding="6dp"
+             android:text="Recycler View"/>
+
+          <Button
+              android:id="@+id/tabViewBtn"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              style="@style/darkButton"
+              android:padding="6dp"
+              android:text="Tab View"/>
+
+         <TextView
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content"
+             android:text="Map Movement"
+             android:id="@+id/mapMovement"
+             android:textSize="18sp"
+             android:textColor="@android:color/white"/>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="3dp"
+                android:background="@android:color/white">
+
+            </RelativeLayout>
+
+            <Button
+                android:id="@+id/fly"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Fly" />
+
+            <TextView
+                android:id="@+id/markerManipulation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Marker Manipulation"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="3dp"
+                android:background="@android:color/white">
+
+            </RelativeLayout>
+
+            <Button
+                android:id="@+id/specialWheelMarker"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Special Marker" />
+
+            <Button
+                android:id="@+id/addAnAircraft"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Add an Aircraft" />
+
+            <Button
+                android:id="@+id/addLayer"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Add a Layer" />
+
+            <Button
+                android:id="@+id/addMultiLayer"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Add Multi Layer" />
+
+            <Button
+                android:id="@+id/staleoutMarker"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Stale out Marker" />
+
+            <Button
+                android:id="@+id/addStream"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Add Streams" />
+
+            <Button
+                android:id="@+id/removeStream"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Remove Streams" />
+
+            <Button
+                android:id="@+id/coordinateEntry"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Coordinate Entry" />
+
+            <Button
+                android:id="@+id/itemInspect"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Map Item (CoT) Inspect" />
+
+            <Button
+                android:id="@+id/customType"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Custom Type" />
+
+            <Button
+                android:id="@+id/customMenuDefault"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Custom Menu Default" />
+            <Button
+                android:id="@+id/customMenuFactory"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Custom Menu Factory" />
+
+
+            <Button
+                android:id="@+id/issLocation"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="ISS Location" />
+
+           <Button
+               android:id="@+id/sensorFOV"
+               style="@style/darkButton"
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               android:padding="6dp"
+               android:text="Sensor Field of View" />
+
+            <TextView
+                android:id="@+id/routeExamples"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Route Examples"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="3dp"
+                android:background="@android:color/white">
+
+            </RelativeLayout>
+
+            <Button
+                android:id="@+id/listRoutes"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="List Routes" />
+
+            <Button
+                android:id="@+id/addXRoute"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Add Route" />
+
+            <Button
+                android:id="@+id/reXRoute"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Reroute" />
+
+            <Button
+                android:id="@+id/dropRoute"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Drop Route Example" />
+
+            <TextView
+                android:id="@+id/emergencyExamples"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Emergency Examples"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="3dp"
+                android:background="@android:color/white">
+
+            </RelativeLayout>
+
+            <Button
+                android:id="@+id/emergency"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Emergency" />
+
+            <Button
+                android:id="@+id/no_emergency"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="No Emergency" />
+
+            <TextView
+                android:id="@+id/drawingExamples"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Drawing Examples"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="3dp"
+                android:background="@android:color/white">
+
+            </RelativeLayout>
+
+            <Button
+                android:id="@+id/rbcircle"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Range/Bearing Circle" />
+
+            <Button
+                android:id="@+id/addRectangle"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Add Rectangle" />
+            <Button
+                android:id="@+id/drawShapes"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Draw Shapes Example" />
+            <Button
+                android:id="@+id/groupAdd"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Add Shape to Custom Group" />
+
+            <TextView
+                android:id="@+id/gpsExamples"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="GPS Examples"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="3dp"
+                android:background="@android:color/white">
+
+            </RelativeLayout>
+
+            <Button
+                android:id="@+id/externalGps"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Simulate External GPS" />
+
+            <TextView
+                android:id="@+id/elevationExamples"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Elevation Examples"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="3dp"
+                android:background="@android:color/white">
+
+            </RelativeLayout>
+
+            <Button
+                android:id="@+id/surfaceAtCenter"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Query surface data" />
+
+            <TextView
+                android:id="@+id/notificationExamples"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Notification Examples"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="3dp"
+                android:background="@android:color/white">
+
+            </RelativeLayout>
+
+            <Button
+                android:id="@+id/fakeContentProvider"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Fake Content Provider" />
+
+            <Button
+                android:id="@+id/pluginNotification"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Notification with Plugin Icon" />
+
+            <Button
+                android:id="@+id/notificationSpammer"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Notification Spammer" />
+
+            <Button
+                android:id="@+id/videoLauncher"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Play a Video with Overlay" />
+
+            <Button
+                android:id="@+id/addToolbarItem"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Add Toolbar Item" />
+
+
+            <Button
+                android:id="@+id/addCountToIcon"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Add Count to Icon" />
+
+
+            <TextView
+                android:id="@+id/imageAndCamera2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Images and Camera"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="3dp"
+                android:background="@android:color/white">
+
+            </RelativeLayout>
+
+            <Button
+                android:id="@+id/cameraLauncher"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Launch Camera" />
+
+            <Button
+                android:id="@+id/imageAttach"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Image Attach" />
+
+            <Button
+                android:id="@+id/webView"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Web View" />
+
+            <TextView
+                android:id="@+id/speechToText_TV"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Speech To Text"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_margin="3dp"
+                android:background="@android:color/white">
+
+            </RelativeLayout>
+
+            <!--<Button
+                android:id="@+id/speechToText"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Speech To Text" />
+                -->
+
+            <Button
+                android:id="@+id/speechToActivity"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Speech To Activity" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Sensors"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/white" />
+
+            <Button
+                android:id="@+id/bumpControl"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Accelerometer Control Test" />
+
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Navigation"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/white" />
+
+            <Button
+                android:id="@+id/btnHookNavigationEvents"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Hook into navigation events" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Lower Level Examples"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/white" />
+
+
+            <Button
+                android:id="@+id/getImage"
+                style="@style/darkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="6dp"
+                android:text="Get Image" />
+
+            <LinearLayout
+                android:id="@+id/secondRender"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+            </LinearLayout>
+
+
+
+           <TextView
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:text="Spinner Example"
+               android:textColor="@android:color/white"
+               android:textSize="18sp" />
+
+           <View
+               android:layout_width="match_parent"
+               android:layout_height="1dp"
+               android:background="@color/white" />
+            <!-- For all usages of Spinners in plugins one must make 
+                 use of the PluginSpinner class supplied with the SDK -->
+            <com.atakmap.android.gui.PluginSpinner
+                android:id="@+id/spinner1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:entries="@array/country_arrays"
+                android:prompt="@string/country_prompt" />
+            
+
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

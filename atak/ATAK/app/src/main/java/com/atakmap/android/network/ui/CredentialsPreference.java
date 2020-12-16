@@ -44,7 +44,7 @@ public class CredentialsPreference extends DialogPreference {
     protected View view;
     protected String credentialsType = AtakAuthenticationCredentials.TYPE_UNKNOWN;
     private static Context appContext;
-    private Context pContext;
+    private final Context pContext;
 
     /**
      * For plugins we are REQUIRED to set the application context to the
@@ -107,21 +107,25 @@ public class CredentialsPreference extends DialogPreference {
         AtakAuthenticationCredentials credentials = AtakAuthenticationDatabase
                 .getCredentials(credentialsType);
 
-
         final EditText username = view.findViewById(R.id.txt_name);
         final EditText pwdText = view.findViewById(R.id.password);
 
         final CheckBox checkBox = view.findViewById(R.id.password_checkbox);
-        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                if (isChecked) {
-                    pwdText.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
-                } else {
-                    pwdText.setTransformationMethod(PasswordTransformationMethod.getInstance());
-                }
-            }
-        });
+        checkBox.setOnCheckedChangeListener(
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton,
+                            boolean isChecked) {
+                        if (isChecked) {
+                            pwdText.setTransformationMethod(
+                                    HideReturnsTransformationMethod
+                                            .getInstance());
+                        } else {
+                            pwdText.setTransformationMethod(
+                                    PasswordTransformationMethod.getInstance());
+                        }
+                    }
+                });
 
         if (credentials != null) {
             username.setText(credentials.username);
@@ -142,9 +146,6 @@ public class CredentialsPreference extends DialogPreference {
                 checkBox.setEnabled(true);
             }
         }
-
-
-
 
         return view;
     }
@@ -198,10 +199,10 @@ public class CredentialsPreference extends DialogPreference {
                             (int) (displayRectangle.width() * 1.0f),
                             (int) (displayRectangle.height() * 1.0f));
                 }
-            } catch (IllegalArgumentException ignore) {
+            } catch (IllegalArgumentException e) {
                 //     ATAK-7278 Preferences IllegalArgumentException
                 Log.d(TAG, "guarding against an issue from a crash log",
-                        ignore);
+                        e);
             }
 
         }

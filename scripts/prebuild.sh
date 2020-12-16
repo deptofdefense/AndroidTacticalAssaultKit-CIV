@@ -3,9 +3,13 @@
 (cd ../takengine && mkdir thirdparty)
 
 (cd .. && \
-        gzip -d ./depends/gdal-2.2.3-mod.tar.gz && \
-        cp depends/gdal-2.2.3-mod.tar . && \
-        tar xf gdal-2.2.3-mod.tar)
+	gzip -d ./depends/assimp-4.0.1-mod.tar.gz && \
+	cp depends/assimp-4.0.1-mod.tar . && \
+	tar xf assimp-4.0.1-mod.tar)
+(cd .. && \
+        gzip -d ./depends/gdal-2.4.4-mod.tar.gz && \
+        cp depends/gdal-2.4.4-mod.tar . && \
+        tar xf gdal-2.4.4-mod.tar)
 (cd .. && \
 	gzip -d ./depends/tinygltf-2.4.1-mod.tar.gz && \
 	cp depends/tinygltf-2.4.1-mod.tar takengine/thirdparty &&

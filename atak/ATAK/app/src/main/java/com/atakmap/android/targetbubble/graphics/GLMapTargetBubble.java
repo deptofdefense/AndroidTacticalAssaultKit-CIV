@@ -19,6 +19,7 @@ import com.atakmap.map.LegacyAdapters;
 import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.Layer;
+import com.atakmap.map.layer.Layer2;
 import com.atakmap.map.layer.feature.geometry.Polygon;
 import com.atakmap.map.layer.opengl.GLAbstractLayer2;
 import com.atakmap.map.layer.opengl.GLLayer2;
@@ -29,9 +30,9 @@ import com.atakmap.map.opengl.GLMapRenderable;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLES20FixedPipeline;
+import com.atakmap.util.Visitor;
 
-public class GLMapTargetBubble extends GLMapView implements
-        OnLocationChangedListener,
+public class GLMapTargetBubble implements OnLocationChangedListener,
         OnScaleChangedListener,
         OnCrosshairColorChangedListener,
         GLLayer3,
@@ -76,6 +77,10 @@ public class GLMapTargetBubble extends GLMapView implements
 
     private Polygon viewport;
 
+    // Renders the map imagery within the target
+    private GLMapView renderer;
+
+    // Main GL map view instance
     private final GLMapView parent;
 
     private GLTargetBubbleCrosshair crosshair;
@@ -85,14 +90,13 @@ public class GLMapTargetBubble extends GLMapView implements
     private float subjectRight;
     private float subjectBottom;
 
+    // GLMapView interface, for backwards API compatibility
+    protected float focusx;
+    protected float focusy;
+    protected int _top;
+
     public GLMapTargetBubble(final MapRenderer surface,
             MapTargetBubble subject) {
-        super(LegacyAdapters.getRenderContext(surface), subject.getGlobe(),
-                ((GLMapView) surface)._left,
-                ((GLMapView) surface)._bottom,
-                ((GLMapView) surface)._right,
-                ((GLMapView) surface)._top);
-
         this.subjectLeft = subject.getX();
         this.subjectTop = ((GLMapView) surface).getSurface().getHeight()
                 - subject.getY();
@@ -105,38 +109,32 @@ public class GLMapTargetBubble extends GLMapView implements
         this.parent = (GLMapView) this.renderCtx;
         this.subject = subject;
 
-        this.setTargeting(this.subject.isCoordExtractionBubble());
-
-        final double lat = subject.getLatitude();
-        final double lng = subject.getLongitude();
         circleRadius = subject.getWidth() / 2d;
         viewport = subject.getViewport();
-
-        this.setFocusPointOffset(((GLMapView) surface).getFocusPointOffsetX(),
-                ((GLMapView) surface).getFocusPointOffsetY());
 
         this.initialized = false;
     }
 
-    @Override
-    public final void render() {
-        throw new UnsupportedOperationException();
+    // GLMapView interface, for backwards API compatibility
+    public final <T extends MapControl> boolean visitControl(Layer2 layer, Visitor<T> visitor, Class<T> ctrlClazz) {
+        final GLMapView r = this.renderer;
+        if(r == null)
+            return false;
+        return r.visitControl(layer, visitor, ctrlClazz);
+    }
+
+    protected final void queueEvent(Runnable r) {
+        this.renderCtx.equals(r);
     }
 
     @Override
     public void onMapTargetBubbleLocationChanged(final MapTargetBubble bubble) {
-        this.lookAt(new GeoPoint(bubble.getLatitude(), bubble.getLongitude()),
-                Globe.getMapResolution(getRenderSurface().getDpi(),
-                        bubble.getMapScale()),
-                0d, 0d, false);
+        refreshLookAt();
     }
 
     @Override
     public void onMapTargetBubbleScaleChanged(MapTargetBubble bubble) {
-        this.lookAt(new GeoPoint(bubble.getLatitude(), bubble.getLongitude()),
-                Globe.getMapResolution(getRenderSurface().getDpi(),
-                        bubble.getMapScale()),
-                0d, 0d, false);
+        refreshLookAt();
     }
 
     @Override
@@ -154,6 +152,9 @@ public class GLMapTargetBubble extends GLMapView implements
             return;
 
         if (!this.initialized) {
+            this.renderer = new GLTargetBubbleView(parent);
+            this.renderer.start();
+            refreshLookAtGL();
             if (this.viewport != null) {
                 /* create the stencil buffer circle */
                 _circle = new GLTriangle.Fan(2, _STENCIL_CIRCLE_POINT_COUNT);
@@ -166,7 +167,7 @@ public class GLMapTargetBubble extends GLMapView implements
                     _circle.setY(i, (float) cy);
                 }
             }
-            this.crosshair = new GLTargetBubbleCrosshair(this,
+            this.crosshair = new GLTargetBubbleCrosshair(this.renderer,
                     this.subject.getCrosshair());
             this.crosshair.start();
             this.initialized = true;
@@ -211,29 +212,37 @@ public class GLMapTargetBubble extends GLMapView implements
             GLES20FixedPipeline.glEnable(GLES20FixedPipeline.GL_STENCIL_TEST);
             GLES20FixedPipeline.glColorMask(true, true, true, true);
         }
-        super.render();
+        this.renderer.render();
         if (_circle != null) {
             GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_STENCIL_TEST);
         }
-        crosshair.draw(this, RENDER_PASS_UI);
+        crosshair.draw(this.renderer, GLMapView.RENDER_PASS_UI);
+
+        focusx = this.renderer.focusx;
+        focusy = this.renderer.focusy;
+        _top = this.renderer._top;
     }
 
     @Override
     public void release() {
-        Collection<GLMapRenderable> renderables = new LinkedList<>();
-        super.getMapRenderables(renderables);
-        for (GLMapRenderable r : renderables) {
-            if (r instanceof GLLayer3)
-                ((GLLayer3) r).stop();
-            r.release();
+        if (this.renderer != null) {
+            this.renderer.stop();
+            Collection<GLMapRenderable> renderables = new LinkedList<>();
+            this.renderer.getMapRenderables(renderables);
+            for (GLMapRenderable r : renderables) {
+                if (r instanceof GLLayer3)
+                    ((GLLayer3) r).stop();
+                r.release();
+            }
+            if (crosshair != null) {
+                crosshair.stop();
+                crosshair.release();
+                this.crosshair = null;
+            }
+            this.renderer.release();
+            this.renderer.dispose();
+            this.renderer = null;
         }
-        if (crosshair != null) {
-            crosshair.stop();
-            crosshair.release();
-            this.crosshair = null;
-        }
-        super.release();
-        super.dispose();
 
         _circle = null;
         this.initialized = false;
@@ -242,11 +251,6 @@ public class GLMapTargetBubble extends GLMapView implements
     @Override
     public int getRenderPass() {
         return GLMapView.RENDER_PASS_UI;
-    }
-
-    @Override
-    public void startAnimating(double lat, double lng, double scale,
-            double rotation, double tilt, double animateFactor) {
     }
 
     /**************************************************************************/
@@ -261,10 +265,6 @@ public class GLMapTargetBubble extends GLMapView implements
     public void start() {
         this.subject.addOnLocationChangedListener(this);
         this.subject.addOnScaleChangedListener(this);
-        this.onMapTargetBubbleLocationChanged(this.subject);
-
-        super.start();
-
         this.subject.addOnCrosshairColorChangedListener(this);
         this.renderCtx.registerControl(this.subject, this);
     }
@@ -273,16 +273,51 @@ public class GLMapTargetBubble extends GLMapView implements
     public void stop() {
         this.renderCtx.unregisterControl(this.subject, this);
         this.subject.removeOnCrosshairColorChangedListener(this);
-
         this.subject.removeOnLocationChangedListener(this);
         this.subject.removeOnScaleChangedListener(this);
+    }
 
-        super.stop();
+    private void refreshLookAt() {
+        renderCtx.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                refreshLookAtGL();
+            }
+        });
+    }
+
+    private void refreshLookAtGL() {
+        if (this.renderer != null) {
+            double resolution = Globe.getMapResolution(
+                    renderer.getRenderSurface().getDpi(),
+                    subject.getMapScale());
+            renderer.lookAt(new GeoPoint(subject.getLatitude(),
+                            subject.getLongitude()),
+                    resolution, 0d, 0d, false);
+        }
     }
 
     private GLTriangle.Fan _circle;
 
     /**************************************************************************/
+
+    private final class GLTargetBubbleView extends GLMapView {
+
+        GLMapView parent;
+
+        GLTargetBubbleView(GLMapView parent) {
+            super(LegacyAdapters.getRenderContext(renderCtx),
+                    subject.getGlobe(),
+                    parent._left,
+                    parent._bottom,
+                    parent._right,
+                    parent._top);
+            this.parent = parent;
+            setTargeting(subject.isCoordExtractionBubble());
+            setFocusPointOffset(parent.getFocusPointOffsetX(),
+                    parent.getFocusPointOffsetY());
+        }
+    }
 
     private final static class GLTargetBubbleCrosshair extends GLAbstractLayer2
             implements CrosshairLayer.OnCrosshairColorChangedListener {
@@ -357,7 +392,7 @@ public class GLMapTargetBubble extends GLMapView implements
             //       left
             final float fx = view.focusx - view._left;
             final float fy = view.focusy
-                    - (((GLMapTargetBubble) view).parent._top - view._top);
+                    - (((GLTargetBubbleView) view).parent._top - view._top);
 
             final float pinLength = Math.min(width, height);
 

@@ -1,3 +1,4 @@
+
 package com.atakmap.android.cotdetails.sensor;
 
 import android.app.AlertDialog;
@@ -54,7 +55,8 @@ public class SensorDetailsReceiver extends DropDownReceiver implements
         DocumentedIntentFilter f = new DocumentedIntentFilter();
         f.addAction(TOGGLE_FOV, "Toggle the FOV cone on a sensor marker");
         f.addAction(FOV_COLOR, "Set the color of the FOV cone on a sensor");
-        f.addAction(FOV_DIRECTION, "Set the direction of the FOV cone on a sensor");
+        f.addAction(FOV_DIRECTION,
+                "Set the direction of the FOV cone on a sensor");
         f.addAction(FOV_SIZE, "Set the size of the FOV cone on a sensor");
         f.addAction(SHOW_DETAILS, "Show the details for a sensor marker");
         return f;
@@ -87,7 +89,8 @@ public class SensorDetailsReceiver extends DropDownReceiver implements
 
         MapItem fovMI = _mapView.getMapItem(uid + UID_POSTFIX);
         final SensorFOV fov = fovMI instanceof SensorFOV
-                ? (SensorFOV) fovMI : null;
+                ? (SensorFOV) fovMI
+                : null;
 
         switch (action) {
             // Toggle FOV cone visibility
@@ -185,12 +188,18 @@ public class SensorDetailsReceiver extends DropDownReceiver implements
         float red = (float) mi.getMetaDouble(FOV_RED, 1.0);
         float green = (float) mi.getMetaDouble(FOV_GREEN, 1.0);
         float blue = (float) mi.getMetaDouble(FOV_BLUE, 1.0);
+        float alpha = (float) mi.getMetaDouble(FOV_ALPHA, 0.3);
+        int strokeColor = mi.getMetaInteger(STROKE_COLOR, Color.WHITE);
 
-        // Copied out of Color.argb(floats) which was added in API 26
-        int color = (255 << 24) |
-                ((int) (red   * 255.0f + 0.5f) << 16) |
-                ((int) (green * 255.0f + 0.5f) <<  8) |
-                (int) (blue  * 255.0f + 0.5f);
+        int color;
+        if (alpha > 0) {
+            // Copied out of Color.argb(floats) which was added in API 26
+            color = (255 << 24) |
+                    ((int) (red * 255.0f + 0.5f) << 16) |
+                    ((int) (green * 255.0f + 0.5f) << 8) |
+                    (int) (blue * 255.0f + 0.5f);
+        } else
+            color = strokeColor;
 
         AlertDialog.Builder b = new AlertDialog.Builder(_context)
                 .setTitle(R.string.point_dropper_text21);
@@ -204,11 +213,14 @@ public class SensorDetailsReceiver extends DropDownReceiver implements
                 float red = Color.red(color) / 255f;
                 float green = Color.green(color) / 255f;
                 float blue = Color.blue(color) / 255f;
-                if (fov != null)
+                if (fov != null) {
                     fov.setColor(red, green, blue);
+                    fov.setStrokeColor(color);
+                }
                 mi.setMetaDouble(FOV_RED, red);
                 mi.setMetaDouble(FOV_GREEN, green);
                 mi.setMetaDouble(FOV_BLUE, blue);
+                mi.setMetaInteger(STROKE_COLOR, color);
                 mi.persist(_mapView.getMapEventDispatcher(), null,
                         SensorDetailsReceiver.class);
             }

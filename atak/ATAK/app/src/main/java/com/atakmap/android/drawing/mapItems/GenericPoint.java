@@ -15,12 +15,23 @@ import com.atakmap.spatial.kml.KMLUtil;
 import com.ekito.simpleKML.model.Placemark;
 import com.ekito.simpleKML.model.Point;
 import com.ekito.simpleKML.model.Style;
+import com.atakmap.annotations.ModifierApi;
 
 public class GenericPoint {
 
     private GenericPoint() {
     }
 
+    /**
+     * Create a generic point u-d-p
+     * @param title the name of the generic point
+     * @param uid the uid to use when creating the generic point
+     * @param point the latitude, longitude, and altitude of the generic point
+     * @return the marker constructed not added to a map group.
+     */
+    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
+            "static"
+    })
     public static Marker createGenericPoint(final String title,
             final String uid, final GeoPointMetaData point) {
         Marker m = new Marker(point, uid);

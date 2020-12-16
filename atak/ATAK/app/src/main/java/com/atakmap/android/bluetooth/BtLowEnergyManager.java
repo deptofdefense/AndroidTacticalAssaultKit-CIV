@@ -217,7 +217,7 @@ public class BtLowEnergyManager {
     }
 
     // Device scan callback.
-    private ScanCallback leScanCallback = new ScanCallback() {
+    private final ScanCallback leScanCallback = new ScanCallback() {
 
         @Override
         public void onScanResult(int callbackType, ScanResult result) {

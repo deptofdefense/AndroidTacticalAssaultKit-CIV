@@ -49,7 +49,7 @@ public class ClassLoaderHelper {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG, "error occured, falling back", e);
+            Log.e(TAG, "error occurred, falling back", e);
         }
 
         // Fallback to default ATAK class loader

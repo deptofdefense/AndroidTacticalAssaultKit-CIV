@@ -5,13 +5,12 @@ import com.atakmap.android.importfiles.sort.ImportVideoSort;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.video.ConnectionEntry;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -25,7 +24,7 @@ import java.util.Set;
  * reliable across systems and like to fire tons of events without much
  * rhyme or reason, which would end up impacting performance
  */
-public class VideoFileWatcher extends Thread {
+public class VideoFileWatcher implements Runnable {
 
     private static final String TAG = "VideoFileWatcher";
     private static final int SCAN_INTERVAL = 5000;
@@ -63,10 +62,10 @@ public class VideoFileWatcher extends Thread {
     private final VideoXMLHandler _xmlHandler;
     private final Set<String> _cached = new HashSet<>();
     private final Map<File, Boolean> _canWrite = new HashMap<>();
-    private boolean _started;
+    private boolean _started = false;
+    private Thread _thread;
 
     VideoFileWatcher(MapView mapView, VideoManager manager) {
-        super(TAG);
         _mapView = mapView;
         _manager = manager;
         _xmlHandler = manager.getXMLHandler();
@@ -78,16 +77,23 @@ public class VideoFileWatcher extends Thread {
         }
     }
 
-    @Override
     public void start() {
         if (!_started) {
             _started = true;
-            super.start();
+            _thread = new Thread(this, TAG);
+            _thread.start();
         }
     }
 
     public void dispose() {
-        _started = false;
+        if (_started) {
+            _started = false;
+            try {
+                _thread.interrupt();
+                _thread.join();
+            } catch (Exception ignore) {
+            }
+        }
     }
 
     @Override
@@ -135,7 +141,7 @@ public class VideoFileWatcher extends Thread {
      */
     private List<ConnectionEntry> scan(File root) {
         List<ConnectionEntry> entries = new ArrayList<>();
-        File[] files = FileIOProviderFactory.listFiles(root);
+        File[] files = IOProviderFactory.listFiles(root);
         if (FileSystemUtils.isEmpty(files))
             return entries;
         for (File f : files) {
@@ -161,7 +167,7 @@ public class VideoFileWatcher extends Thread {
                         ConnectionEntry ce = parsed.get(i);
                         File xml = new File(VideoManager.ENTRIES_DIR,
                                 ce.getUID() + ".xml");
-                        if (FileIOProviderFactory.exists(xml))
+                        if (IOProviderFactory.exists(xml))
                             parsed.remove(i--);
                         else
                             ce.setLocalFile(xml);
@@ -170,12 +176,12 @@ public class VideoFileWatcher extends Thread {
                 entries.addAll(parsed);
                 continue;
             }
-            if (!FileIOProviderFactory.isDirectory(f) && !VIDEO_FILTER.accept(f))
+            if (!IOProviderFactory.isDirectory(f) && !VIDEO_FILTER.accept(f))
                 continue;
             ConnectionEntry entry = new ConnectionEntry(f);
             entry.setLocalFile(f);
             entries.add(entry);
-            if (FileIOProviderFactory.isDirectory(f)) {
+            if (IOProviderFactory.isDirectory(f)) {
                 List<ConnectionEntry> ret = scan(f);
                 entry.setChildren(ret);
                 entries.addAll(ret);

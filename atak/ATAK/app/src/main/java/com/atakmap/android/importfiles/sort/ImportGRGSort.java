@@ -8,10 +8,10 @@ import com.atakmap.android.gdal.layers.KmzLayerInfoSpi;
 import com.atakmap.android.grg.GRGMapComponent;
 import com.atakmap.android.grg.MCIAGRGLayerInfoSpi;
 import com.atakmap.app.R;
+import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.map.layer.raster.ImageryFileType;
-import com.atakmap.map.layer.raster.ImageryFileType.AbstractFileType;
 
 import java.io.File;
 
@@ -26,7 +26,8 @@ public class ImportGRGSort extends ImportInPlaceResolver {
     public ImportGRGSort(Context context, boolean validateExt,
             boolean copyFile, boolean importInPlace) {
         super(null, "grg", validateExt, copyFile, importInPlace,
-                context.getString(R.string.grg_file),
+                ResourceUtil.getString(context, R.string.civ_grg_file,
+                        R.string.grg_file),
                 context.getDrawable(R.drawable.ic_overlay_gridlines));
 
     }
@@ -35,12 +36,13 @@ public class ImportGRGSort extends ImportInPlaceResolver {
     // KML/Z files that are properly formatted, small NITF files, and MCIAGRG style directories.
     @Override
     public boolean match(File file) {
-        if (FileIOProviderFactory.isDirectory(file)) {
+        if (IOProviderFactory.isDirectory(file)) {
             if (MCIAGRGLayerInfoSpi.isMCIAGRG(file)) {
                 return true;
             }
         } else {
-            AbstractFileType type = ImageryFileType.getFileType(file);
+            ImageryFileType.AbstractFileType type = ImageryFileType
+                    .getFileType(file);
 
             if (type == null) {
                 return false;
@@ -54,7 +56,7 @@ public class ImportGRGSort extends ImportInPlaceResolver {
 
             // If the file is a small nitf, it might be a GRG.
             if (type.getID() == ImageryFileType.GDAL &&
-                    FileIOProviderFactory.length(file) < MAX_GDAL_LENGTH) {
+                    IOProviderFactory.length(file) < MAX_GDAL_LENGTH) {
                 return true;
             }
 

@@ -43,6 +43,7 @@
     <filter type='b-m-p-j-wind'>icons/b.png</filter>
     <filter type='b-m-p-j-lp'>icons/reference_point.png</filter>
     <filter type='b-m-p-w-GOTO'>icons/green_flag.png</filter>
+    <filter type='b-r-f-h-c'>icons/damaged.png</filter>
 
     <filter type='t-s'>icons/b.png</filter>
 

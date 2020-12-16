@@ -25,7 +25,7 @@ public class GRGContentHandler extends FileOverlayContentHandler
     private int _color;
 
     GRGContentHandler(MapView mv, File file, DatasetDescriptor desc,
-                      DatasetRasterLayer2 layer) {
+            DatasetRasterLayer2 layer) {
         super(mv, file, desc.getMinimumBoundingBox());
         _desc = desc;
         _layer = layer;

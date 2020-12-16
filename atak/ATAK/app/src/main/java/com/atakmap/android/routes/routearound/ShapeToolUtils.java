@@ -26,7 +26,7 @@ import com.atakmap.coremap.log.Log;
 public class ShapeToolUtils extends AbstractMapItemSelectionTool {
 
     private static final String CIRCLE_TOOL_FINISHED = "com.atakmap.android.vns.ui_tools.region_creation.DrawingCircleCreationTool.FINISHED";
-    private static String POLYGON_TOOL_FINISHED = "com.atakmap.android.vns.ui_tools.region_creation.ShapeCreationTool.FINISHED";
+    private static final String POLYGON_TOOL_FINISHED = "com.atakmap.android.vns.ui_tools.region_creation.ShapeCreationTool.FINISHED";
     private static final String RECTANGLE_TOOL_FINISHED = "com.atakmap.android.vns.ui_tools.region_creation.DrawingRectangleCreationTool.FINISHED";
 
     private static final String TOOL_ID = "com.atakmap.android.vns.ui_tools.RegionSelectionTool";

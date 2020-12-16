@@ -184,7 +184,7 @@ public class GLBatchPolygon extends GLBatchLineString {
         }
 
         final double unwrap = view.idlHelper.getUnwrap(this.mbb);
-        projectVerticesImpl(view, this.polyTriangles, this.polyTriangles.limit()/3, vertices, altitudeMode, unwrap, this.polyVertices);
+        projectVerticesImpl(view, this.polyTriangles, this.polyTriangles.limit()/3, vertices, altitudeMode, unwrap, this.polyVertices, this.centroidProj);
 
         return true;
     }
@@ -275,7 +275,7 @@ public class GLBatchPolygon extends GLBatchLineString {
                 extrudedOutline.rewind();
             }
             final double unwrap = view.idlHelper.getUnwrap(this.mbb);
-            projectVerticesImpl(view, extrudedPolygons, extrudedPolygons.limit()/3, vertices, Feature.AltitudeMode.Relative, unwrap, projectedExtrudedPolygons);
+            projectVerticesImpl(view, extrudedPolygons, extrudedPolygons.limit()/3, vertices, Feature.AltitudeMode.Relative, unwrap, projectedExtrudedPolygons, this.centroidProj);
             if (this.fillColor == 0) {
                 this.fillColorR = 1.0f;
                 this.fillColorG = 1.0f;
@@ -293,7 +293,7 @@ public class GLBatchPolygon extends GLBatchLineString {
                     this.fillColorB,
                     this.fillColorA);
 
-            projectVerticesImpl(view, extrudedOutline, extrudedOutline.limit() / 3, vertices, Feature.AltitudeMode.Relative, unwrap, projectedExtrudedOutline);
+            projectVerticesImpl(view, extrudedOutline, extrudedOutline.limit() / 3, vertices, Feature.AltitudeMode.Relative, unwrap, projectedExtrudedOutline, centroidProj);
 
             // It would be preferable to do this using glPolygonOffset, although that (would?)
             // require changes to how batching works.

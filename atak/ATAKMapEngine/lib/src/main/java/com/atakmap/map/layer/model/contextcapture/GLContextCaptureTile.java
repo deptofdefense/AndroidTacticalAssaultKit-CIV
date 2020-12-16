@@ -1,7 +1,7 @@
 package com.atakmap.map.layer.model.contextcapture;
 
 import com.atakmap.annotations.DeprecatedApi;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.io.ZipVirtualFile;
@@ -209,7 +209,7 @@ final class GLContextCaptureTile implements GLTileNode, Controls {
                 // there was a miss
                 // see if the tile is quadtree/octree
                 ZipVirtualFile tiledir = new ZipVirtualFile(info.uri + "/" + this.baseTileDir);
-                File[] subs = FileIOProviderFactory.listFiles(tiledir, new FilenameFilter() {
+                File[] subs = IOProviderFactory.listFiles(tiledir, new FilenameFilter() {
                     @Override
                     public boolean accept(File dir, String filename) {
                         return filename.startsWith(tileNameSpec + "_L" + String.format("%02d_", lod)) && filename.endsWith(".obj");

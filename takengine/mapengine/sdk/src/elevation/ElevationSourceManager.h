@@ -26,7 +26,6 @@ namespace TAK {
             ENGINE_API Util::TAKErr ElevationSourceManager_getSources(Port::Collection<std::shared_ptr<ElevationSource>> &value) NOTHROWS;
             ENGINE_API Util::TAKErr ElevationSourceManager_visitSources(Util::TAKErr(*visitor)(void *opaque, ElevationSource &src) NOTHROWS, void *opaque) NOTHROWS;
             Util::TAKErr ElevationSourceManager_visitSources(Util::TAKErr(*visitor)(void *opaque, ElevationSource &src) NOTHROWS, void *opaque) NOTHROWS;
-            Util::TAKErr ElevationSourceManager_visitSources(Util::TAKErr(*visitor)(void *opaque, ElevationSource &src) NOTHROWS, void *opaque) NOTHROWS;
         }
     }
 }

@@ -25,7 +25,7 @@ import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.maps.MapTouchController;
 import com.atakmap.android.util.EditAction;
 import com.atakmap.android.util.Undoable;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.android.widgets.LayoutWidget;
 import com.atakmap.android.widgets.MapWidget;
@@ -58,7 +58,6 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Date;
@@ -512,14 +511,13 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
                             .getItem("support/logs/point_parse_error_"
                                     + date.getTime()
                                     + ".txt");
-                    FileOutputStream fos = FileIOProviderFactory.getOutputStream(file);
+                    FileOutputStream fos = IOProviderFactory
+                            .getOutputStream(file);
                     try {
                         fos.write(output.toString().getBytes());
                     } finally {
                         fos.close();
                     }
-                } catch (FileNotFoundException e) {
-                    Log.e(TAG, "error: ", e);
                 } catch (IOException e) {
                     Log.e(TAG, "error: ", e);
                 }

@@ -2,10 +2,12 @@
 package com.atakmap.android.bloodhound;
 
 import android.os.Bundle;
+import android.preference.Preference;
 
 import com.atakmap.android.gui.PanEditTextPreference;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.app.R;
+import com.atakmap.app.system.ResourceUtil;
 
 public class BloodHoundPreferenceFragment extends AtakPreferenceFragment {
 
@@ -29,6 +31,10 @@ public class BloodHoundPreferenceFragment extends AtakPreferenceFragment {
                 .checkValidInteger();
         ((PanEditTextPreference) findPreference("bloodhound_inner_eta"))
                 .checkValidInteger();
+
+        Preference p = findPreference("rab_bloodhound_zoom");
+        p.setSummary(ResourceUtil.getResource(R.string.civ_bloodhound_text9,
+                R.string.bloodhound_text9));
     }
 
 }

@@ -44,7 +44,7 @@ public class AutoSizeAngleOverlayShape extends Shape
         void onPropertyChanged();
     }
 
-    private List<OnPropertyChangedListener> onPropertyChangedListeners = new CopyOnWriteArrayList<>();
+    private final List<OnPropertyChangedListener> onPropertyChangedListeners = new CopyOnWriteArrayList<>();
 
     public AutoSizeAngleOverlayShape(final String uid) {
         this(MapItem.createSerialId(), new DefaultMetaDataHolder(), uid);

@@ -74,7 +74,7 @@ public class UserIconPalletFragment extends Fragment {
     private UserIcon selectedIcon;
     private View selectedView;
     private View v;
-    private java.lang.Object lock = new java.lang.Object();
+    private final Object lock = new Object();
     private CustomNamingView _customNamingView = null;
 
     /**

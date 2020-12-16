@@ -40,7 +40,7 @@ public class RouteElevationView extends LinearLayout {
     private XYMultipleSeriesRenderer _renderer;
     private XYImageSeriesRenderer _imageRender;
     private SharedPreferences _prefs;
-    private Context _context;
+    private final Context _context;
 
     public RouteElevationView(final Context context, final AttributeSet attrs) {
         super(context, attrs);

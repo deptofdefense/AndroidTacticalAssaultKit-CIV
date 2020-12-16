@@ -23,7 +23,7 @@ public :
         msg(message)
     {}
 
-    virtual ~NonInvertibleTransformException() throw () {}
+    virtual ~NonInvertibleTransformException() NOTHROWS {}
 public :
     virtual const char *what() const throw () override
     {

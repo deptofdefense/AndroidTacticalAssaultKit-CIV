@@ -288,7 +288,7 @@ public class ScanLayersService extends BroadcastReceiver {
                     // initialized.   The native loader is initialized by ATAKActivity.
                     // Having said that, this should only be running while ATAKActivity is running.
                     // Please see ATAK-8391 and ATAK-8498
-                    Log.e(TAG, "====a very bad error has occured====", e);
+                    Log.e(TAG, "====a very bad error has occurred====", e);
                 }
             }
 

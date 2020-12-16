@@ -22,7 +22,7 @@ public class GLInstanceData {
     public GeoPoint _anchor;
 
     // Color modulation
-    private float[] _color = {
+    private final float[] _color = {
             1.0f, 1.0f, 1.0f, 1.0f
     };
 

@@ -45,10 +45,10 @@ public class MovePointTool extends Tool implements OnVisibleChangedListener {
     private PointMapItem itemToMove;
     private MultiPolyline itemMP;
     private GeoPointMetaData touchPointMP;
-    private static ArrayList<String> typesToPrompt = new ArrayList<>();
+    private static final ArrayList<String> typesToPrompt = new ArrayList<>();
 
     //Map to freeze the movement of certain types when given tools are active <type, toolID>
-    private static Map<String, String> freezeMoveWhenActive = new HashMap<>();
+    private static final Map<String, String> freezeMoveWhenActive = new HashMap<>();
 
     public MovePointTool(MapView mapView) {
         super(mapView, TOOL_IDENTIFIER);

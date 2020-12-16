@@ -9,7 +9,7 @@ import com.atakmap.android.icons.UserIcon;
 import com.atakmap.android.importexport.Exportable;
 import com.atakmap.android.importexport.FormatNotSupportedException;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
 import com.atakmap.spatial.kml.FeatureHandler;
@@ -162,7 +162,7 @@ public class KMZExportMarshal extends KMLExportMarshal {
         ZipOutputStream zos = null;
         File kmz = getFile();
         try {
-            FileOutputStream fos = FileIOProviderFactory.getOutputStream(kmz);
+            FileOutputStream fos = IOProviderFactory.getOutputStream(kmz);
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             //and doc.kml
@@ -261,7 +261,8 @@ public class KMZExportMarshal extends KMLExportMarshal {
 
             return new ByteArrayInputStream(bitmap);
         } else {
-            FileInputStream fi = FileIOProviderFactory.getInputStream(new File(file));
+            FileInputStream fi = IOProviderFactory
+                    .getInputStream(new File(file));
             in = new BufferedInputStream(fi, FileSystemUtils.BUF_SIZE);
             Log.d(TAG, "File input stream: " + file);
         }

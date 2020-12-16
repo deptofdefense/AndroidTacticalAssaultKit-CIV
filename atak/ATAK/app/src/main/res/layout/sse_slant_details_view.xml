@@ -40,7 +40,7 @@
                     android:layout_height="wrap_content"
                     android:maxLength="9"
                     android:inputType="number"
-                    android:imeOptions="actionNext"
+                    android:imeOptions="flagNoFullscreen|actionNext"
                     android:hint="@string/pound_ekia"/>
             </LinearLayout>
             <LinearLayout
@@ -60,7 +60,7 @@
                     android:layout_height="wrap_content"
                     android:maxLength="9"
                     android:inputType="number"
-                    android:imeOptions="actionDone"
+                    android:imeOptions="flagNoFullscreen|actionDone"
                     android:hint="@string/number_ewia"/>
             </LinearLayout>
 

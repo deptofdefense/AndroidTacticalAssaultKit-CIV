@@ -8,13 +8,10 @@ import android.content.Intent;
 
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteDoneException;
-import android.database.sqlite.SQLiteStatement;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.ParcelFileDescriptor;
 
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.AbstractMapComponent;
@@ -26,12 +23,13 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.graphics.GLBitmapLoader;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.DatabaseInformation;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.database.DatabaseIface;
+import com.atakmap.database.QueryIface;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * Manages all aspects of icons and specifically iconsets within the
@@ -39,7 +37,7 @@ import java.io.InputStream;
  */
 public class IconsMapComponent extends AbstractMapComponent {
 
-    public static String TAG = "IconsMapComponent";
+    public static final String TAG = "IconsMapComponent";
 
     private IconsMapAdapter _adapter;
     private IconManagerDropdown _iconsetDropdown;
@@ -113,7 +111,6 @@ public class IconsMapComponent extends AbstractMapComponent {
 
         if (_iconsetRefresh != null) {
             AtakBroadcast.getInstance().unregisterReceiver(_iconsetRefresh);
-            _iconsetRefresh = null;
         }
 
         synchronized (this) {
@@ -142,7 +139,7 @@ public class IconsMapComponent extends AbstractMapComponent {
     /**
      * Refresh relevant markers when an iconset is added or removed
      */
-    private BroadcastReceiver _iconsetRefresh = new BroadcastReceiver() {
+    private final BroadcastReceiver _iconsetRefresh = new BroadcastReceiver() {
 
         @Override
         public void onReceive(Context arg0, Intent intent) {
@@ -190,7 +187,7 @@ public class IconsMapComponent extends AbstractMapComponent {
             private static final String TAG = "DefaultIconsetChangeTask";
 
             private ProgressDialog _progressDialog;
-            private String _uid;
+            private final String _uid;
 
             public DefaultIconsetChangeTask(String uid) {
                 _uid = uid;
@@ -229,8 +226,8 @@ public class IconsMapComponent extends AbstractMapComponent {
         }
     };
 
-    private SQLiteDatabase urlIconCacheDatabase;
-    private SQLiteStatement queryUrlIconBitmapStatement;
+    private DatabaseIface urlIconCacheDatabase;
+    private QueryIface queryUrlIconBitmapStatement;
 
     /**
      * Retrieve an icon from the icon cache database
@@ -241,10 +238,11 @@ public class IconsMapComponent extends AbstractMapComponent {
     public synchronized Bitmap getRemoteIcon(String url) {
         if (urlIconCacheDatabase == null) {
             final File cacheFile = GLBitmapLoader.getIconCacheDb();
-            if (cacheFile != null)
-                urlIconCacheDatabase = SQLiteDatabase.openDatabase(
-                        cacheFile.getAbsolutePath(), null,
-                        SQLiteDatabase.OPEN_READONLY);
+            if (cacheFile != null) {
+                urlIconCacheDatabase = IOProviderFactory.createDatabase(
+                        new DatabaseInformation(Uri.fromFile(cacheFile),
+                                DatabaseInformation.OPTION_READONLY));
+            }
         }
         if (urlIconCacheDatabase == null) {
             Log.w(TAG, "Failed to open URL icon database.");
@@ -252,35 +250,16 @@ public class IconsMapComponent extends AbstractMapComponent {
         }
         if (queryUrlIconBitmapStatement == null)
             queryUrlIconBitmapStatement = urlIconCacheDatabase
-                    .compileStatement("SELECT bitmap FROM cache WHERE url = ?");
-        InputStream is = null;
-        ParcelFileDescriptor fd = null;
+                    .compileQuery(
+                            "SELECT bitmap FROM cache WHERE url = ? LIMIT 1");
         try {
-            queryUrlIconBitmapStatement.bindString(1, url);
-            try {
-                fd = queryUrlIconBitmapStatement
-                        .simpleQueryForBlobFileDescriptor();
-            } catch (SQLiteDoneException e) {
-                fd = null;
-            }
-            if (fd != null) {
-                is = new FileInputStream(fd.getFileDescriptor());
-                return BitmapFactory.decodeStream(is);
+            queryUrlIconBitmapStatement.bind(1, url);
+            if (queryUrlIconBitmapStatement.moveToNext()) {
+                final byte[] blob = queryUrlIconBitmapStatement.getBlob(0);
+                return BitmapFactory.decodeByteArray(blob, 0, blob.length);
             }
         } finally {
             queryUrlIconBitmapStatement.clearBindings();
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException ignored) {
-                }
-            }
-            if (fd != null) {
-                try {
-                    fd.close();
-                } catch (IOException ignored) {
-                }
-            }
         }
         return null;
     }

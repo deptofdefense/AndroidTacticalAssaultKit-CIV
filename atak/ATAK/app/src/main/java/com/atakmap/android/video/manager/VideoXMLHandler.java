@@ -9,7 +9,7 @@ import com.atakmap.android.video.ConnectionEntry.Source;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.coremap.xml.XMLUtils;
@@ -23,6 +23,7 @@ import org.w3c.dom.NodeList;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -67,8 +68,8 @@ public class VideoXMLHandler {
         List<ConnectionEntry> ret = new ArrayList<>();
         if (_docBuilder == null)
             return ret;
-        try {
-            ret = parse(_docBuilder.parse(file));
+        try (FileInputStream is = IOProviderFactory.getInputStream(file)) {
+            ret = parse(_docBuilder.parse(is));
             for (ConnectionEntry e : ret)
                 e.setLocalFile(file);
         } catch (Exception e) {
@@ -130,15 +131,19 @@ public class VideoXMLHandler {
             String xml = serialize(entry, null);
             if (FileSystemUtils.isEmpty(xml))
                 return null;
-            if (FileIOProviderFactory.exists(file))
+            if (IOProviderFactory.exists(file))
                 FileSystemUtils.delete(file);
-            fos = FileIOProviderFactory.getOutputStream(file);
+            fos = IOProviderFactory.getOutputStream(file);
             FileSystemUtils.write(fos, xml);
             fos = null;
 
             // Save any passphrase to the auth database
-            if (entry.getProtocol() == Protocol.SRT && entry.getPassphrase() != null && entry.getPassphrase().length() > 0)
-                AtakAuthenticationDatabase.saveCredentials(AtakAuthenticationCredentials.TYPE_videoPassword, entry.getUID(), "", entry.getPassphrase(), false);
+            if (entry.getProtocol() == Protocol.SRT
+                    && entry.getPassphrase() != null
+                    && entry.getPassphrase().length() > 0)
+                AtakAuthenticationDatabase.saveCredentials(
+                        AtakAuthenticationCredentials.TYPE_videoPassword,
+                        entry.getUID(), "", entry.getPassphrase(), false);
 
             return file;
         } catch (Exception e) {
@@ -251,7 +256,10 @@ public class VideoXMLHandler {
                 : Source.EXTERNAL;
         String pass = "";
         if (proto == Protocol.SRT) {
-            AtakAuthenticationCredentials creds = AtakAuthenticationDatabase.getCredentials(AtakAuthenticationCredentials.TYPE_videoPassword, uid);
+            AtakAuthenticationCredentials creds = AtakAuthenticationDatabase
+                    .getCredentials(
+                            AtakAuthenticationCredentials.TYPE_videoPassword,
+                            uid);
             if (creds != null)
                 pass = creds.password;
         }

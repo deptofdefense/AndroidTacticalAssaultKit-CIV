@@ -91,9 +91,7 @@ public final class GLMapGroup {
             final MapRenderer surface = arg.first;
             final MapItem item = arg.second;
 
-            if (item instanceof Doghouse)
-                return new GLDogHouse(surface, (Doghouse) item);
-            else if (item instanceof SensorFOV)
+            if (item instanceof SensorFOV)
                 return new GLSensorFOV(surface, (SensorFOV) item);
             else if (item instanceof AngleOverlayShape)
                 return new GLAngleOverlay(surface, (AngleOverlayShape) item);

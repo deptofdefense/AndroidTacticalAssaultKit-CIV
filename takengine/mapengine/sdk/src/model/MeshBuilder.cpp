@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <list>
 #include <map>
 #include <vector>
 
@@ -31,6 +32,7 @@ namespace
 {
     typedef std::unique_ptr<const void, void(*)(const void *)> VertexArrayPtr;
     typedef VertexArrayPtr VertexPtr;
+    typedef std::unique_ptr<void, void(*)(const void *)> VoidPtr;
 
     template<class T>
     class ElementAccess
@@ -166,14 +168,14 @@ namespace
         std::vector<Material> materials;
         std::unique_ptr<ElementAccess<std::size_t>> indexAccess;
         std::vector<std::unique_ptr<MemBuffer2>> buffers;
-    protected :
+        VoidPtr cleaner;
+
         std::unique_ptr<ElementAccess<double>> position_access_;
         std::map<VertexAttribute, std::unique_ptr<ElementAccess<float>>> texCoordAccess;
         std::unique_ptr<ElementAccess<float>> normal_access_;
         std::unique_ptr<ElementAccess<float>> color_access_;
         std::size_t vertexCount;
         Envelope2 aabb_;
-    private :
         bool indexed_;
         DataType indexType;
         DrawMode draw_mode_;
@@ -197,15 +199,8 @@ namespace
         TAKErr reserveVertices(const std::size_t count) NOTHROWS override;
     public :
         TAKErr getVertices(const void **value, const std::size_t attr) const NOTHROWS override;
-    protected:
+    public:
         std::unique_ptr<MemBuffer2> vertices;
-
-        friend TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &, const DrawMode, const WindingOrder, const VertexDataLayout &, const std::size_t, const Material *, const Envelope2 &, const std::size_t, const void *) NOTHROWS;
-        friend TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &, const DrawMode, const WindingOrder, const VertexDataLayout &, const std::size_t, const Material *, const Envelope2 &, const std::size_t, const void *, const DataType, const std::size_t, const void *) NOTHROWS;
-        friend TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, VertexArrayPtr&& vertices,
-            size_t numBuffers, MemBufferArg* buffers) NOTHROWS;
-        friend TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, std::unique_ptr<const void, void(*)(const void*)>&& vertices, const Port::DataType indexType, const std::size_t numIndices, std::unique_ptr<const void, void(*)(const void*)>&& indices,
-            size_t numBuffers, MemBufferArg* buffers) NOTHROWS;
     };
 
     class DefaultInterleavedModel : public InterleavedModelBase
@@ -258,19 +253,13 @@ namespace
         TAKErr reserveVertices(const std::size_t count) NOTHROWS override;
     public :
         TAKErr getVertices(const void **value, const std::size_t attr) const NOTHROWS override;
-    private :
+    public :
         std::unique_ptr<MemBuffer2> positions_;
         std::map<VertexAttribute, std::unique_ptr<MemBuffer2>> texCoords;
         std::unique_ptr<MemBuffer2> normals;
         std::unique_ptr<MemBuffer2> colors;
-
-        friend TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &, const DrawMode, const WindingOrder, const VertexDataLayout &, const std::size_t, const Material *, const Envelope2 &, const std::size_t, const void *, const void **, const void *, const void *) NOTHROWS;
-        friend TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &, const DrawMode, const WindingOrder, const VertexDataLayout &, const std::size_t, const Material *, const Envelope2 &, const std::size_t, const void *, const void **, const void *, const void *, const DataType, const std::size_t, const void *) NOTHROWS;
-        friend TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &, const DrawMode, const WindingOrder, const VertexDataLayout &, const std::size_t, const Material *, const Envelope2 &, const std::size_t, VertexPtr &&, VertexPtr&&, VertexPtr &&, VertexPtr&&, VertexPtr &&, VertexPtr&&, VertexPtr &&, VertexPtr&&, VertexPtr &&, VertexPtr&&, VertexPtr&&) NOTHROWS;
-        friend TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &, const DrawMode, const WindingOrder, const VertexDataLayout &, const std::size_t, const Material *, const Envelope2 &, const std::size_t, VertexPtr &&, VertexPtr&&, VertexPtr &&, VertexPtr&&, VertexPtr &&, VertexPtr&&, VertexPtr &&, VertexPtr&&, VertexPtr &&, VertexPtr&&, VertexPtr &&, const DataType, const std::size_t, VertexPtr &&) NOTHROWS;
     };
 
-    typedef std::unique_ptr<void, void(*)(const void *)> VoidPtr;
 
     TAKErr checkInitParams(const DrawMode &mode, const VertexDataLayout &layout, const DataType &indexType) NOTHROWS;
     TAKErr resize(std::unique_ptr<MemBuffer2> &buf, const std::size_t newSize) NOTHROWS;
@@ -289,6 +278,13 @@ namespace
         if (!value.get())
             return TE_OutOfMemory;
         return TE_Ok;
+    }
+
+    void Cleaner_impl(const void *opaque)
+    {
+        std::unique_ptr<const std::list<VertexArrayPtr>> arg(static_cast<const std::list<VertexArrayPtr> *>(opaque));
+
+        // leave scope to destruct
     }
 }
 
@@ -459,37 +455,17 @@ TAKErr MeshBuilder::build(MeshPtr &value) NOTHROWS
 
 TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Envelope2 &aabb, const std::size_t numVertices, const void *vertices) NOTHROWS
 {
-    TAKErr code(TE_Ok);
-    value = MeshPtr(new GenericInterleavedModel(mode, layout), Memory_deleter_const<Mesh, GenericInterleavedModel>);
-    auto &impl = static_cast<GenericInterleavedModel &>(*value);
-
-    switch(order) {
-        case TEWO_Clockwise :
-        case TEWO_CounterClockwise :
-        case TEWO_Undefined :
-            break;
-        default :
-            return TE_InvalidArg;
-    }
-    impl.windingOrder = order;
-
-    code = impl.reserveVertices(numVertices);
-    TE_CHECKRETURN_CODE(code);
-    code = impl.vertices->put(static_cast<const uint8_t *>(vertices), impl.vertices->size());
-    TE_CHECKRETURN_CODE(code);
-    impl.vertexCount = numVertices;
-
-    for (std::size_t i = 0; i < numMaterials; i++)
-        impl.materials.push_back(materials[i]);
-
-    impl.aabb_ = aabb;
-
-    return code;
+    return MeshBuilder_buildInterleavedMesh(value, mode, order, layout, numMaterials, materials, aabb, numVertices, vertices, TEDT_UInt16, 0, nullptr);
 }
 TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Envelope2 &aabb, const std::size_t numVertices, const void *vertices, const Port::DataType indexType, const std::size_t numIndices, const void *indices) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    value = MeshPtr(new GenericInterleavedModel(mode, layout, indexType), Memory_deleter_const<Mesh, GenericInterleavedModel>);
+    if(indices)
+        value = MeshPtr(new(std::nothrow) GenericInterleavedModel(mode, layout, indexType), Memory_deleter_const<Mesh, GenericInterleavedModel>);
+    else
+        value = MeshPtr(new(std::nothrow) GenericInterleavedModel(mode, layout), Memory_deleter_const<Mesh, GenericInterleavedModel>);
+    if (!value)
+        return TE_OutOfMemory;
     auto &impl = static_cast<GenericInterleavedModel &>(*value);
 
     switch(order) {
@@ -508,10 +484,12 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &value, cons
     TE_CHECKRETURN_CODE(code);
     impl.vertexCount = numVertices;
 
-    code = impl.reserveIndices(numIndices);
-    TE_CHECKRETURN_CODE(code);
-    code = impl.indices->put(static_cast<const uint8_t *>(indices), impl.indices->size());
-    TE_CHECKRETURN_CODE(code);
+    if (indices) {
+        code = impl.reserveIndices(numIndices);
+        TE_CHECKRETURN_CODE(code);
+        code = impl.indices->put(static_cast<const uint8_t *>(indices), impl.indices->size());
+        TE_CHECKRETURN_CODE(code);
+    }
 
     for (std::size_t i = 0; i < numMaterials; i++)
         impl.materials.push_back(materials[i]);
@@ -522,8 +500,17 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &value, cons
 }
 TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Envelope2 &aabb, const std::size_t numVertices, const void *positions, const void **texCoords, const void *normals, const void *colors) NOTHROWS
 {
+    return MeshBuilder_buildNonInterleavedMesh(value, mode, order, layout, numMaterials, materials, aabb, numVertices, positions, texCoords, normals, colors, TEDT_UInt16, 0u, nullptr);
+}
+TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Envelope2 &aabb, const std::size_t numVertices, const void *positions, const void **texCoords, const void *normals, const void *colors, const Port::DataType indexType, const std::size_t numIndices, const void *indices) NOTHROWS
+{
     TAKErr code(TE_Ok);
-    value = MeshPtr(new NonInterleavedModel(mode, layout), Memory_deleter_const<Mesh, NonInterleavedModel>);
+    if(indices)
+        value = MeshPtr(new(std::nothrow) NonInterleavedModel(mode, layout, indexType), Memory_deleter_const<Mesh, NonInterleavedModel>);
+    else
+        value = MeshPtr(new(std::nothrow) NonInterleavedModel(mode, layout), Memory_deleter_const<Mesh, NonInterleavedModel>);
+    if (!value)
+        return TE_OutOfMemory;
     auto &impl = static_cast<NonInterleavedModel &>(*value);
 
     switch(order) {
@@ -562,6 +549,13 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, c
 #undef COPY_VERTICES
 
     impl.vertexCount = numVertices;
+
+    if (indices) {
+        code = impl.reserveIndices(numIndices);
+        TE_CHECKRETURN_CODE(code);
+        code = impl.indices->put(static_cast<const uint8_t *>(indices), impl.indices->size());
+        TE_CHECKRETURN_CODE(code);
+    }
 
     for (std::size_t i = 0; i < numMaterials; i++)
         impl.materials.push_back(materials[i]);
@@ -570,11 +564,22 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, c
 
     return code;
 }
-TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Envelope2 &aabb, const std::size_t numVertices, const void *positions, const void **texCoords, const void *normals, const void *colors, const Port::DataType indexType, const std::size_t numIndices, const void *indices) NOTHROWS
+
+TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Feature::Envelope2 &aabb, const std::size_t numVertices, const void *vertices, std::unique_ptr<void, void(*)(const void *)> &&cleaner) NOTHROWS
+{
+    return MeshBuilder_buildInterleavedMesh(value, mode, order, layout, numMaterials, materials, aabb, numVertices, vertices, TEDT_UInt16, 0, nullptr, std::move(cleaner));
+}
+TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Feature::Envelope2 &aabb, const std::size_t numVertices, const void *vertices, const Port::DataType indexType, const std::size_t numIndices, const void *indices, std::unique_ptr<void, void(*)(const void *)> &&cleaner) NOTHROWS
 {
     TAKErr code(TE_Ok);
-    value = MeshPtr(new NonInterleavedModel(mode, layout, indexType), Memory_deleter_const<Mesh, NonInterleavedModel>);
-    auto &impl = static_cast<NonInterleavedModel &>(*value);
+    if(indices)
+        value = MeshPtr(new(std::nothrow) GenericInterleavedModel(mode, layout, indexType), Memory_deleter_const<Mesh, GenericInterleavedModel>);
+    else
+        value = MeshPtr(new(std::nothrow) GenericInterleavedModel(mode, layout), Memory_deleter_const<Mesh, GenericInterleavedModel>);
+    if (!value)
+        return TE_OutOfMemory;
+    auto &impl = static_cast<GenericInterleavedModel &>(*value);
+    impl.cleaner = std::move(cleaner);
 
     switch(order) {
         case TEWO_Clockwise :
@@ -586,38 +591,74 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, c
     }
     impl.windingOrder = order;
 
-    code = impl.reserveVertices(numVertices);
+    std::size_t size;
+    code = VertexDataLayout_requiredInterleavedDataSize(&size, layout, numVertices);
     TE_CHECKRETURN_CODE(code);
+
+    impl.vertices.reset(new MemBuffer2(static_cast<const uint8_t *>(vertices), size));
+    impl.vertexCount = numVertices;
+
+    if (indices)
+        impl.indices.reset(new MemBuffer2(static_cast<const uint8_t *>(indices), impl.indexAccess->transferSize(numIndices)));
+
+    for (std::size_t i = 0; i < numMaterials; i++)
+        impl.materials.push_back(materials[i]);
+
+    impl.aabb_ = aabb;
+
+    return code;
+}
+TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Feature::Envelope2 &aabb, const std::size_t numVertices, const void *positions, const void **texCoords, const void *normals, const void *colors, std::unique_ptr<void, void(*)(const void *)> &&cleaner) NOTHROWS
+{
+    return MeshBuilder_buildNonInterleavedMesh(value, mode, order, layout, numMaterials, materials, aabb, numVertices, positions, texCoords, normals, colors, TEDT_UInt16, 0, nullptr, std::move(cleaner));
+}
+TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Feature::Envelope2 &aabb, const std::size_t numVertices, const void *positions, const void **texCoords, const void *normals, const void *colors, const Port::DataType indexType, const std::size_t numIndices, const void *indices, std::unique_ptr<void, void(*)(const void *)> &&cleaner) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+    if(indices)
+        value = MeshPtr(new(std::nothrow) NonInterleavedModel(mode, layout, indexType), Memory_deleter_const<Mesh, NonInterleavedModel>);
+    else
+        value = MeshPtr(new(std::nothrow) NonInterleavedModel(mode, layout), Memory_deleter_const<Mesh, NonInterleavedModel>);
+    if (!value)
+        return TE_OutOfMemory;
+    auto &impl = static_cast<NonInterleavedModel &>(*value);
+    impl.cleaner = std::move(cleaner);
+
+    switch(order) {
+        case TEWO_Clockwise :
+        case TEWO_CounterClockwise :
+        case TEWO_Undefined :
+            break;
+        default :
+            return TE_InvalidArg;
+    }
+    impl.windingOrder = order;
 
 #define COPY_VERTICES(teva, srcVa, dstVa) \
     if(layout.attributes&teva) { \
         std::size_t size; \
         code = VertexDataLayout_requiredDataSize(&size, layout, teva, numVertices); \
         TE_CHECKRETURN_CODE(code); \
-        code = impl.dstVa->put(static_cast<const uint8_t *>(srcVa), size); \
-        TE_CHECKRETURN_CODE(code); \
+        impl.dstVa.reset(new MemBuffer2(static_cast<const uint8_t *>(srcVa), size)); \
     }
 
     COPY_VERTICES(TEVA_Position, positions, positions_);
-    COPY_VERTICES(TEVA_TexCoord0, *texCoords++, texCoords[TEVA_TexCoord0]);
-    COPY_VERTICES(TEVA_TexCoord1, *texCoords++, texCoords[TEVA_TexCoord1]);
-    COPY_VERTICES(TEVA_TexCoord2, *texCoords++, texCoords[TEVA_TexCoord2]);
-    COPY_VERTICES(TEVA_TexCoord3, *texCoords++, texCoords[TEVA_TexCoord3]);
-    COPY_VERTICES(TEVA_TexCoord4, *texCoords++, texCoords[TEVA_TexCoord4]);
-    COPY_VERTICES(TEVA_TexCoord5, *texCoords++, texCoords[TEVA_TexCoord5]);
-    COPY_VERTICES(TEVA_TexCoord6, *texCoords++, texCoords[TEVA_TexCoord6]);
-    COPY_VERTICES(TEVA_TexCoord7, *texCoords++, texCoords[TEVA_TexCoord7]);
+    COPY_VERTICES(TEVA_TexCoord0, texCoords[0], texCoords[TEVA_TexCoord0]);
+    COPY_VERTICES(TEVA_TexCoord1, texCoords[1], texCoords[TEVA_TexCoord1]);
+    COPY_VERTICES(TEVA_TexCoord2, texCoords[2], texCoords[TEVA_TexCoord2]);
+    COPY_VERTICES(TEVA_TexCoord3, texCoords[3], texCoords[TEVA_TexCoord3]);
+    COPY_VERTICES(TEVA_TexCoord4, texCoords[4], texCoords[TEVA_TexCoord4]);
+    COPY_VERTICES(TEVA_TexCoord5, texCoords[5], texCoords[TEVA_TexCoord5]);
+    COPY_VERTICES(TEVA_TexCoord6, texCoords[6], texCoords[TEVA_TexCoord6]);
+    COPY_VERTICES(TEVA_TexCoord7, texCoords[7], texCoords[TEVA_TexCoord7]);
     COPY_VERTICES(TEVA_Position, normals, normals);
     COPY_VERTICES(TEVA_Position, colors, colors);
 #undef COPY_VERTICES
 
     impl.vertexCount = numVertices;
 
-    code = impl.reserveIndices(numIndices);
-    TE_CHECKRETURN_CODE(code);
-
-    code = impl.indices->put(static_cast<const uint8_t *>(indices), impl.indices->size());
-    TE_CHECKRETURN_CODE(code);
+    if (indices)
+        impl.indices.reset(new MemBuffer2(static_cast<const uint8_t *>(indices), impl.indexAccess->transferSize(numIndices)));
 
     for (std::size_t i = 0; i < numMaterials; i++)
         impl.materials.push_back(materials[i]);
@@ -630,43 +671,21 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, c
 TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Feature::Envelope2 &aabb, const std::size_t numVertices, VertexArrayPtr &&vertices,
     size_t numBuffers, MemBufferArg *buffers) NOTHROWS
 {
-    TAKErr code(TE_Ok);
-    value = MeshPtr(new GenericInterleavedModel(mode, layout), Memory_deleter_const<Mesh, GenericInterleavedModel>);
-    auto &impl = static_cast<GenericInterleavedModel &>(*value);
-
-    switch(order) {
-        case TEWO_Clockwise :
-        case TEWO_CounterClockwise :
-        case TEWO_Undefined :
-            break;
-        default :
-            return TE_InvalidArg;
-    }
-    impl.windingOrder = order;
-
-    std::size_t size;
-    code = VertexDataLayout_requiredInterleavedDataSize(&size, layout, numVertices);
-    TE_CHECKRETURN_CODE(code);
-
-    impl.vertices.reset(new MemBuffer2(std::move(vertices), size));
-    impl.vertexCount = numVertices;
-
-    for (std::size_t i = 0; i < numMaterials; i++)
-        impl.materials.push_back(materials[i]);
-
-    impl.aabb_ = aabb;
-
-    if (buffers) {
-        for (size_t i = 0; i < numBuffers; ++i)
-            impl.addBuffer(std::move(buffers[i].buffer), buffers[i].bufferSize);
-    }
-
-    if (buffers) {
-        for (size_t i = 0; i < numBuffers; ++i)
-            impl.addBuffer(std::move(buffers[i].buffer), buffers[i].bufferSize);
-    }
-
-    return code;
+    return MeshBuilder_buildInterleavedMesh(
+        value,
+        mode,
+        order,
+        layout,
+        numMaterials,
+        materials,
+        aabb,
+        numVertices,
+        std::move(vertices),
+        TEDT_UInt16,
+        0u,
+        VoidPtr(nullptr, nullptr),
+        numBuffers,
+        buffers);
 }
 
 TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, VertexArrayPtr&& vertices) NOTHROWS {
@@ -676,7 +695,12 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr& value, cons
 TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr& value, const DrawMode mode, const WindingOrder order, const VertexDataLayout& layout, const std::size_t numMaterials, const Material* materials, const Feature::Envelope2& aabb, const std::size_t numVertices, std::unique_ptr<const void, void(*)(const void*)>&& vertices, const Port::DataType indexType, const std::size_t numIndices, std::unique_ptr<const void, void(*)(const void*)>&& indices,
     size_t numBuffers, MemBufferArg* buffers) NOTHROWS {
     TAKErr code(TE_Ok);
-    value = MeshPtr(new GenericInterleavedModel(mode, layout, indexType), Memory_deleter_const<Mesh, GenericInterleavedModel>);
+    if(indices)
+        value = MeshPtr(new(std::nothrow) GenericInterleavedModel(mode, layout, indexType), Memory_deleter_const<Mesh, GenericInterleavedModel>);
+    else
+        value = MeshPtr(new(std::nothrow) GenericInterleavedModel(mode, layout), Memory_deleter_const<Mesh, GenericInterleavedModel>);
+    if (!value)
+        return TE_OutOfMemory;
     auto &impl = static_cast<GenericInterleavedModel &>(*value);
 
     switch(order) {
@@ -696,17 +720,13 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr& value, cons
     impl.vertices.reset(new MemBuffer2(std::move(vertices), size));
     impl.vertexCount = numVertices;
 
-    impl.indices.reset(new MemBuffer2(std::move(indices), impl.indexAccess->transferSize(numIndices)));
+    if(indices)
+        impl.indices.reset(new MemBuffer2(std::move(indices), impl.indexAccess->transferSize(numIndices)));
 
     for (std::size_t i = 0; i < numMaterials; i++)
         impl.materials.push_back(materials[i]);
 
     impl.aabb_ = aabb;
-
-    if (buffers) {
-        for (size_t i = 0; i < numBuffers; ++i)
-            impl.addBuffer(std::move(buffers[i].buffer), buffers[i].bufferSize);
-    }
 
     if (buffers) {
         for (size_t i = 0; i < numBuffers; ++i)
@@ -720,99 +740,77 @@ TAKErr TAK::Engine::Model::MeshBuilder_buildInterleavedMesh(MeshPtr& value, cons
 }
 TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Feature::Envelope2 &aabb, const std::size_t numVertices, VertexArrayPtr &&positions, VertexArrayPtr &&texCoords0, VertexArrayPtr &&texCoords1, VertexArrayPtr &&texCoords2, VertexArrayPtr &&texCoords3, VertexArrayPtr &&texCoords4, VertexArrayPtr &&texCoords5, VertexArrayPtr &&texCoords6, VertexArrayPtr &&texCoords7, VertexArrayPtr &&normals, VertexArrayPtr &&colors) NOTHROWS
 {
-    TAKErr code(TE_Ok);
-    value = MeshPtr(new NonInterleavedModel(mode, layout), Memory_deleter_const<Mesh, NonInterleavedModel>);
-    auto &impl = static_cast<NonInterleavedModel &>(*value);
-    TE_CHECKRETURN_CODE(code);
-
-    switch(order) {
-        case TEWO_Clockwise :
-        case TEWO_CounterClockwise :
-        case TEWO_Undefined :
-            break;
-        default :
-            return TE_InvalidArg;
-    }
-    impl.windingOrder = order;
-
-#define COPY_VERTICES(teva, srcVa, dstVa) \
-    if(layout.attributes&teva) { \
-        std::size_t size; \
-        code = VertexDataLayout_requiredDataSize(&size, layout, teva, numVertices); \
-        TE_CHECKRETURN_CODE(code); \
-        impl.dstVa.reset(new MemBuffer2(std::move(srcVa), size)); \
-    }
-
-    COPY_VERTICES(TEVA_Position, positions, positions_);
-    COPY_VERTICES(TEVA_TexCoord0, texCoords0, texCoords[TEVA_TexCoord0]);
-    COPY_VERTICES(TEVA_TexCoord1, texCoords1, texCoords[TEVA_TexCoord1]);
-    COPY_VERTICES(TEVA_TexCoord2, texCoords2, texCoords[TEVA_TexCoord2]);
-    COPY_VERTICES(TEVA_TexCoord3, texCoords3, texCoords[TEVA_TexCoord3]);
-    COPY_VERTICES(TEVA_TexCoord4, texCoords4, texCoords[TEVA_TexCoord4]);
-    COPY_VERTICES(TEVA_TexCoord5, texCoords5, texCoords[TEVA_TexCoord5]);
-    COPY_VERTICES(TEVA_TexCoord6, texCoords6, texCoords[TEVA_TexCoord6]);
-    COPY_VERTICES(TEVA_TexCoord7, texCoords7, texCoords[TEVA_TexCoord7]);
-    COPY_VERTICES(TEVA_Position, normals, normals);
-    COPY_VERTICES(TEVA_Position, colors, colors);
-#undef COPY_VERTICES
-
-    impl.vertexCount = numVertices;
-
-    for (std::size_t i = 0; i < numMaterials; i++)
-        impl.materials.push_back(materials[i]);
-
-    impl.aabb_ = aabb;
-
-    return code;
+    return MeshBuilder_buildNonInterleavedMesh(
+        value,
+        mode,
+        order,
+        layout,
+        numMaterials,
+        materials,
+        aabb,
+        numVertices,
+        std::move(positions),
+        std::move(texCoords0),
+        std::move(texCoords1),
+        std::move(texCoords2),
+        std::move(texCoords3),
+        std::move(texCoords4),
+        std::move(texCoords5),
+        std::move(texCoords6),
+        std::move(texCoords7),
+        std::move(normals),
+        std::move(colors),
+        TEDT_UInt16,
+        0u,
+        VoidPtr(nullptr, nullptr));
 }
 TAKErr TAK::Engine::Model::MeshBuilder_buildNonInterleavedMesh(MeshPtr &value, const DrawMode mode, const WindingOrder order, const VertexDataLayout &layout, const std::size_t numMaterials, const Material *materials, const Feature::Envelope2 &aabb, const std::size_t numVertices, VertexArrayPtr &&positions, VertexArrayPtr &&texCoords0, VertexArrayPtr &&texCoords1, VertexArrayPtr &&texCoords2, VertexArrayPtr &&texCoords3, VertexArrayPtr &&texCoords4, VertexArrayPtr &&texCoords5, VertexArrayPtr &&texCoords6, VertexArrayPtr &&texCoords7, VertexArrayPtr &&normals, VertexArrayPtr &&colors, const Port::DataType indexType, const std::size_t numIndices, VertexArrayPtr &&indices) NOTHROWS
 {
-    TAKErr code(TE_Ok);
-    value = MeshPtr(new NonInterleavedModel(mode, layout, indexType), Memory_deleter_const<Mesh, NonInterleavedModel>);
-    auto &impl = static_cast<NonInterleavedModel &>(*value);
-    TE_CHECKRETURN_CODE(code);
+    std::unique_ptr<std::list<VertexArrayPtr>> ptrs;
 
-    switch(order) {
-        case TEWO_Clockwise :
-        case TEWO_CounterClockwise :
-        case TEWO_Undefined :
-            break;
-        default :
-            return TE_InvalidArg;
-    }
-    impl.windingOrder = order;
-    
-#define COPY_VERTICES(teva, srcVa, dstVa) \
-    if(layout.attributes&teva) { \
-        std::size_t size; \
-        code = VertexDataLayout_requiredDataSize(&size, layout, teva, numVertices); \
-        TE_CHECKRETURN_CODE(code); \
-        impl.dstVa.reset(new MemBuffer2(std::move(srcVa), size)); \
-    }
+    const void *vpos = positions.get();
+    ptrs->push_back(std::move(positions));
+    const void *vtexCoords[8u];
+    vtexCoords[0u] = texCoords0.get();
+    ptrs->push_back(std::move(texCoords0));
+    vtexCoords[1u] = texCoords1.get();
+    ptrs->push_back(std::move(texCoords1));
+    vtexCoords[2u] = texCoords2.get();
+    ptrs->push_back(std::move(texCoords2));
+    vtexCoords[3u] = texCoords3.get();
+    ptrs->push_back(std::move(texCoords3));
+    vtexCoords[4u] = texCoords4.get();
+    ptrs->push_back(std::move(texCoords4));
+    vtexCoords[5u] = texCoords5.get();
+    ptrs->push_back(std::move(texCoords5));
+    vtexCoords[6u] = texCoords6.get();
+    ptrs->push_back(std::move(texCoords6));
+    vtexCoords[7u] = texCoords7.get();
+    ptrs->push_back(std::move(texCoords7));
+    const void *vnormals = normals.get();
+    ptrs->push_back(std::move(normals));
+    const void *vcolors = colors.get();
+    ptrs->push_back(std::move(colors));
+    const void *vindices = indices.get();
+    ptrs->push_back(std::move(indices));
 
-    COPY_VERTICES(TEVA_Position, positions, positions_);
-    COPY_VERTICES(TEVA_TexCoord0, texCoords0, texCoords[TEVA_TexCoord0]);
-    COPY_VERTICES(TEVA_TexCoord1, texCoords1, texCoords[TEVA_TexCoord1]);
-    COPY_VERTICES(TEVA_TexCoord2, texCoords2, texCoords[TEVA_TexCoord2]);
-    COPY_VERTICES(TEVA_TexCoord3, texCoords3, texCoords[TEVA_TexCoord3]);
-    COPY_VERTICES(TEVA_TexCoord4, texCoords4, texCoords[TEVA_TexCoord4]);
-    COPY_VERTICES(TEVA_TexCoord5, texCoords5, texCoords[TEVA_TexCoord5]);
-    COPY_VERTICES(TEVA_TexCoord6, texCoords6, texCoords[TEVA_TexCoord6]);
-    COPY_VERTICES(TEVA_TexCoord7, texCoords7, texCoords[TEVA_TexCoord7]);
-    COPY_VERTICES(TEVA_Position, normals, normals);
-    COPY_VERTICES(TEVA_Position, colors, colors);
-#undef COPY_VERTICES
-
-    impl.vertexCount = numVertices;
-
-    impl.indices.reset(new MemBuffer2(std::move(indices), impl.indexAccess->transferSize(numIndices)));
-
-    for (std::size_t i = 0; i < numMaterials; i++)
-        impl.materials.push_back(materials[i]);
-
-    impl.aabb_ = aabb;
-
-    return code;
+    return MeshBuilder_buildNonInterleavedMesh(
+        value,
+        mode,
+        order,
+        layout,
+        numMaterials,
+        materials,
+        aabb,
+        numVertices,
+        vpos,
+        vtexCoords,
+        vnormals,
+        vcolors,
+        indexType,
+        numIndices,
+        vindices,
+        VoidPtr(ptrs.release(), Cleaner_impl));
 }
 
 namespace
@@ -1054,7 +1052,8 @@ namespace
         indexed_(false),
         indexType(TEDT_UInt16),
         vertexCount(0u),
-        windingOrder(TEWO_Undefined)
+        windingOrder(TEWO_Undefined),
+        cleaner(nullptr, nullptr)
     {
         initAttributeAccess();
     }
@@ -1064,7 +1063,8 @@ namespace
         indexed_(true),
         indexType(indexType_),
         vertexCount(0u),
-        windingOrder(TEWO_Undefined)
+        windingOrder(TEWO_Undefined),
+        cleaner(nullptr, nullptr)
     {
         createElementAccess<std::size_t>(indexAccess, indexType, false);
 

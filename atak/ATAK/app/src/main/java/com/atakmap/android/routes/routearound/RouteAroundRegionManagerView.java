@@ -37,7 +37,8 @@ public class RouteAroundRegionManagerView {
     private ShapeToolUtils shapeUtil;
     private RegionSelectionMethodDialog regionSelectionMethodDialog;
 
-    public RouteAroundRegionManagerView(MapView mapView, RouteAroundRegionViewModel viewModel) {
+    public RouteAroundRegionManagerView(MapView mapView,
+            RouteAroundRegionViewModel viewModel) {
         this.viewModel = viewModel;
         this.mapView = mapView;
 

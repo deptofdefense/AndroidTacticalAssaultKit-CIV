@@ -54,7 +54,7 @@ ALL_PACKAGES_shared=libiconv libxml2 openssl
 # All the packages, in build order
 ALL_PACKAGES_commoncommo=protobuf pgscthread libmicrohttpd commoncommo
 packages_commoncommo-$(TARGET):=$(ALL_PACKAGES_allshared) $(ALL_PACKAGES_shared) $(ALL_PACKAGES_cshared) $(ALL_PACKAGES_commoncommo)
-ALL_PACKAGES_gdal=$(gdal_kdu_pkg) $(gdal_mrsid_pkg) expat ogdi libkml gdal
+ALL_PACKAGES_gdal=$(gdal_kdu_pkg) pdfium $(gdal_mrsid_pkg) expat ogdi libkml gdal
 packages_gdal-$(TARGET):=$(ALL_PACKAGES_allshared) $(ALL_PACKAGES_shared) $(ALL_PACKAGES_cshared) $(ALL_PACKAGES_gspatial_shared) $(ALL_PACKAGES_gdal)
 ALL_PACKAGES_spatialite=libspatialite
 packages_spatialite-$(TARGET):=$(ALL_PACKAGES_allshared) $(ALL_PACKAGES_shared) $(ALL_PACKAGES_gspatial_shared) $(ALL_PACKAGES_spatialite)
@@ -150,7 +150,7 @@ tag:
 	@if [ "$(TTP_TAG)" = "" ] ; then echo "Specify TTP_TAG=<sometaghere>"; exit 1 ; fi
 	git tag "$(TTP_TAG)"
 	cd ../gdal && git tag "$(TTP_TAG)"
-	cd ../commoncommo && cvs tag "$(TTP_TAG)"
+	cd ../commoncommo && git tag "$(TTP_TAG)"
 	cd ../pgscthread && git tag "$(TTP_TAG)"
 	cd ../pri && git tag "$(TTP_TAG)"
 	if [ "$(GDAL_USE_KDU)" = "yes" ] ; then cd ../kdu && cvs tag "$(TTP_TAG)" ; fi

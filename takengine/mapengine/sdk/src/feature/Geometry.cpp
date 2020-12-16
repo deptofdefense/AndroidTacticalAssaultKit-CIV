@@ -5,7 +5,7 @@
 using namespace atakmap::feature;
 
 Geometry::~Geometry ()
-    throw ()
+    NOTHROWS
   { }
 
 

@@ -1,10 +1,3 @@
 include ':MapCoreInterfaces'
 project(':MapCoreInterfaces').projectDir = new File(settingsDir, '../MapCoreInterfaces')
 include ':MapCoreInterfaces:lib'
-
-include ':authdb'
-project(':authdb').projectDir = new File(settingsDir, '../authdb')
-include ':authdb:lib'
-include ':certdb'
-project(':certdb').projectDir = new File(settingsDir, '../certdb')
-include ':certdb:lib'

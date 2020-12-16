@@ -134,6 +134,10 @@ public class GLImage {
         return _textureId;
     }
 
+    public void setTexId(int textureId) {
+        _textureId = textureId;
+    }
+
     public int getVertTexVBOPointer() {
         return this.vertexBufferId;
     }

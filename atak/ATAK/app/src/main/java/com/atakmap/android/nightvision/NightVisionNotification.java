@@ -28,7 +28,7 @@ public class NightVisionNotification extends BroadcastReceiver {
     private final static String TAG = "NightVisionNotification";
 
     public static final String NOTIFICATION_CONTROL = "control_notification_night_vision";
-    private int NotificationId = 99123;
+    private final int NotificationId = 99123;
 
     public NightVisionNotification() {
         //empty constructor because we assigned this receiver in the manifest

@@ -1,0 +1,18 @@
+
+
+<!-- see ATSKApplication for the implementation - this is just for referece and not used in the code -->
+
+
+
+<menu
+    buttonBg="bgs/atsk/atsk_button.xml"
+    buttonWidth='90'
+    buttonSpan="90"
+    buttonRadius='65'>
+
+    <button
+        disabled="!{${removable}}"
+        onClick="actions/atsk/atsk_delete_obs.xml"
+        icon="icons/delete.png"
+        angle="90"/>
+</menu>

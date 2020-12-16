@@ -21,7 +21,7 @@ public class SeekBarPreference extends DialogPreference implements
 
     private final Context context;
     private int value;
-    private int max;
+    private final int max;
 
     private TextView numCrmbsTV;
 

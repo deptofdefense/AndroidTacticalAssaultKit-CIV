@@ -1963,7 +1963,7 @@ public class GLQuadTileNode2 implements
         if (current == null || current.id != id)
             return;
 
-        final int transferSize = dstW*dstH*core.tileReader.getPixelSize();
+        final int transferSize = GdalGraphicUtils.getBufferSize(glTexFormat, glTexType, dstW, dstH);
         ByteBuffer transferBuffer = transferBuffer = GLQuadTileNode3.transferBuffers.get();
         if(transferBuffer == null || transferBuffer.capacity() < transferSize) {
             Unsafe.free(transferBuffer);
@@ -2534,7 +2534,7 @@ public class GLQuadTileNode2 implements
                         if (this.queue.size() < 1) {
                             try {
                                 this.syncOn.wait();
-                            } catch (InterruptedException e) {
+                            } catch (InterruptedException ignored) {
                             }
                             continue;
                         }

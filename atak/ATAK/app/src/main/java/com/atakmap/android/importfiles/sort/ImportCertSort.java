@@ -7,10 +7,14 @@ import android.preference.PreferenceManager;
 import android.util.Pair;
 
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.NetworkConnectionPreferenceFragment;
 import com.atakmap.comms.CommsMapComponent;
+import com.atakmap.comms.CotService;
 import com.atakmap.comms.TAKServer;
+import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.net.AtakAuthenticationCredentials;
 import com.atakmap.net.AtakCertificateDatabase;
 import com.atakmap.net.AtakCertificateDatabaseIFace;
@@ -18,9 +22,11 @@ import com.atakmap.net.CertificateEnrollmentClient;
 import com.atakmap.net.CertificateManager;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.Properties;
 import java.util.Set;
-
-import static android.content.Context.MODE_PRIVATE;
 
 /**
  * Sorts P12 Certificate Files
@@ -33,7 +39,7 @@ public class ImportCertSort extends ImportInternalSDResolver {
     private static final String CONTENT_TYPE = "P12 Certificate";
 
     private final Context _context;
-    private int beginServerCount = 0;
+    private List<Properties> initialServers = null;
 
     public ImportCertSort(Context context, boolean validateExt,
             boolean copyFile) {
@@ -41,14 +47,10 @@ public class ImportCertSort extends ImportInternalSDResolver {
         // true other wise this sorter will match everything when validateExt is passed
         // as false.
         super(".p12", "cert", true, copyFile, CONTENT_TYPE,
-                context.getDrawable(R.drawable.ic_server_success));
+                context.getDrawable(ATAKConstants.getServerConnection(true)));
         _context = context;
 
-        SharedPreferences streamingPrefs = _context.getSharedPreferences(
-                "cot_streams", MODE_PRIVATE);
-        if (streamingPrefs != null) {
-            beginServerCount = streamingPrefs.getInt("count", 0);
-        }
+        initialServers = CotService.loadCotStreamProperties(_context);
     }
 
     @Override
@@ -80,7 +82,7 @@ public class ImportCertSort extends ImportInternalSDResolver {
         super.onFileSorted(src, dst, flags);
     }
 
-    private boolean importCertificates(
+    private boolean importCertificateFromPreferences(
             SharedPreferences prefs,
             String caLocation, String caPassword,
             String certificateLocation, String clientPassword,
@@ -91,25 +93,86 @@ public class ImportCertSort extends ImportInternalSDResolver {
         boolean importedCaCert = false;
         boolean importedClientCert = false;
 
-        if (AtakCertificateDatabase.importCertificateFromPreferences(
-                prefs, caLocation, connectString,
+        String location = prefs.getString(caLocation, "(built-in)");
+
+        if (AtakCertificateDatabase.importCertificate(
+                location, connectString,
                 AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
                 true) != null) {
-            AtakCertificateDatabase.importCertificatePasswordFromPreferences(
-                    prefs, caPassword, defaultPassword,
+
+            AtakCertificateDatabase.saveCertificatePassword(
+                    prefs.getString(caPassword, defaultPassword),
                     AtakAuthenticationCredentials.TYPE_caPassword,
-                    connectString, true);
+                    connectString);
+
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.remove(caPassword).apply();
+
             importedCaCert = true;
         }
 
-        if (AtakCertificateDatabase.importCertificateFromPreferences(
-                prefs, certificateLocation, connectString,
+        location = prefs.getString(certificateLocation, "(built-in)");
+
+        if (AtakCertificateDatabase.importCertificate(
+                location, connectString,
                 AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
                 true) != null) {
-            AtakCertificateDatabase.importCertificatePasswordFromPreferences(
-                    prefs, clientPassword, defaultPassword,
+
+            AtakCertificateDatabase.saveCertificatePassword(
+                    prefs.getString(clientPassword, defaultPassword),
                     AtakAuthenticationCredentials.TYPE_clientPassword,
-                    connectString, true);
+                    connectString);
+
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.remove(clientPassword).apply();
+
+            importedClientCert = true;
+        }
+
+        if (importedCaCert && !importedClientCert) {
+            if (connectString == null && !enrollForCertificateWithTrust) {
+                setClientCertAndPwDialog(connectString);
+            }
+        }
+
+        return importedCaCert || importedClientCert;
+    }
+
+    private boolean importCertificatesFromProperties(
+            Properties properties,
+            String caLocation, String caPassword,
+            String certificateLocation, String clientPassword,
+            String connectString,
+            boolean enrollForCertificateWithTrust,
+            String defaultPassword) {
+
+        boolean importedCaCert = false;
+        boolean importedClientCert = false;
+
+        String location = properties.getProperty(caLocation);
+
+        if (AtakCertificateDatabase.importCertificate(
+                location, connectString,
+                AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
+                true) != null) {
+
+            AtakCertificateDatabase.saveCertificatePassword(
+                    properties.getProperty(caPassword, defaultPassword),
+                    AtakAuthenticationCredentials.TYPE_caPassword,
+                    connectString);
+            importedCaCert = true;
+        }
+
+        location = properties.getProperty(certificateLocation);
+
+        if (AtakCertificateDatabase.importCertificate(
+                location, connectString,
+                AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
+                true) != null) {
+            AtakCertificateDatabase.saveCertificatePassword(
+                    properties.getProperty(clientPassword, defaultPassword),
+                    AtakAuthenticationCredentials.TYPE_clientPassword,
+                    connectString);
             importedClientCert = true;
         }
 
@@ -130,6 +193,21 @@ public class ImportCertSort extends ImportInternalSDResolver {
             return;
         }
 
+        List<Properties> cotStreamProperties = CotService
+                .loadCotStreamProperties(_context);
+        if (cotStreamProperties == null || cotStreamProperties.size() == 0) {
+            return;
+        }
+
+        if (initialServers != null) {
+            cotStreamProperties.removeAll(initialServers);
+        }
+
+        if (cotStreamProperties.size() == 0) {
+            Log.e(TAG, "no valid server connections found!");
+            return;
+        }
+
         String defaultPassword = _context.getString(
                 com.atakmap.R.string.defaultTrustStorePassword);
 
@@ -137,77 +215,92 @@ public class ImportCertSort extends ImportInternalSDResolver {
 
         boolean enrollForCertificateWithTrust = false;
 
-        SharedPreferences streamingPrefs = _context.getSharedPreferences(
-                "cot_streams", MODE_PRIVATE);
-        if (streamingPrefs != null) {
-            // if we already have configured a streaming connection,
-            //  associate any certificate in the 'default' slot with new connection
-            if (beginServerCount != 0) {
-                connectString = streamingPrefs
-                        .getString(TAKServer.CONNECT_STRING_KEY
-                                + beginServerCount, null);
-            }
-
-            enrollForCertificateWithTrust = streamingPrefs.getBoolean(
-                    "enrollForCertificateWithTrust" + beginServerCount,
-                    false);
+        // if we already have configured a streaming connection,
+        //  associate any certificate in the 'default' slot with new connection
+        if (initialServers != null && initialServers.size() != 0) {
+            connectString = cotStreamProperties.get(0)
+                    .getProperty(TAKServer.CONNECT_STRING_KEY, "");
         }
 
         // import default certs
         SharedPreferences defaultPrefs = PreferenceManager
                 .getDefaultSharedPreferences(_context);
-        boolean reconnect = importCertificates(
+        boolean reconnect = importCertificateFromPreferences(
                 defaultPrefs,
                 "caLocation", "caPassword",
                 "certificateLocation", "clientPassword",
-                connectString, enrollForCertificateWithTrust,
+                connectString, false,
                 defaultPassword);
 
         // import connection specific certs
-        if (streamingPrefs != null) {
-            int count = streamingPrefs.getInt("count", 0);
+        for (Properties properties : cotStreamProperties) {
 
-            for (int stream = beginServerCount; stream < count; stream++) {
-                connectString = streamingPrefs
-                        .getString(TAKServer.CONNECT_STRING_KEY
-                                + stream, null);
+            connectString = properties
+                    .getProperty(TAKServer.CONNECT_STRING_KEY, null);
 
-                enrollForCertificateWithTrust = streamingPrefs.getBoolean(
-                        "enrollForCertificateWithTrust" + stream,
-                        false);
+            enrollForCertificateWithTrust = !properties.getProperty(
+                    "enrollForCertificateWithTrust", "0").equals("0");
 
-                reconnect |= importCertificates(
-                        streamingPrefs,
-                        "caLocation" + stream, "caPassword" + stream,
-                        "certificateLocation" + stream, "clientPassword"
-                                + stream,
-                        connectString, enrollForCertificateWithTrust,
-                        defaultPassword);
+            reconnect |= importCertificatesFromProperties(
+                    properties,
+                    "caLocation", "caPassword",
+                    "certificateLocation", "clientPassword",
+                    connectString, enrollForCertificateWithTrust,
+                    defaultPassword);
 
-                if (enrollForCertificateWithTrust) {
-                    String description = streamingPrefs.getString("description"
-                            + stream, null);
-                    String cacheCreds = streamingPrefs.getString("cacheCreds"
-                            + stream, "");
-                    CertificateEnrollmentClient.getInstance().enroll(
-                            MapView.getMapView().getContext(),
-                            description, connectString, cacheCreds, null, true);
-                }
+            if (enrollForCertificateWithTrust) {
+                String description = properties.getProperty("description",
+                        null);
+                String cacheCreds = properties.getProperty("cacheCreds", "");
+                CertificateEnrollmentClient.getInstance().enroll(
+                        MapView.getMapView().getContext(),
+                        description, connectString, cacheCreds, null, true);
             }
         }
 
-        if (AtakCertificateDatabase.importCertificateFromPreferences(
-                defaultPrefs, "updateServerCaLocation", null,
+        String location = defaultPrefs.getString("updateServerCaLocation",
+                "(built-in)");
+
+        if (AtakCertificateDatabase.importCertificate(
+                location, null,
                 AtakCertificateDatabaseIFace.TYPE_UPDATE_SERVER_TRUST_STORE_CA,
                 true) != null) {
-            AtakCertificateDatabase.importCertificatePasswordFromPreferences(
-                    defaultPrefs, "updateServerCaPassword", defaultPassword,
+
+            AtakCertificateDatabase.saveCertificatePassword(
+                    defaultPrefs.getString("updateServerCaPassword",
+                            defaultPassword),
                     AtakAuthenticationCredentials.TYPE_updateServerCaPassword,
-                    null, true);
+                    null);
+
+            SharedPreferences.Editor editor = defaultPrefs.edit();
+            editor.remove("updateServerCaPassword").apply();
         }
 
         if (reconnect) {
             CommsMapComponent.getInstance().getCotService().reconnectStreams();
+        }
+
+        for (Properties properties : cotStreamProperties) {
+
+            properties.remove("caLocation");
+            properties.remove("caPassword");
+            properties.remove("certificateLocation");
+            properties.remove("clientPassword");
+
+            connectString = properties.getProperty(TAKServer.CONNECT_STRING_KEY,
+                    null);
+            final File configFile = CotService.getConnectionConfig(_context,
+                    "cot_streams", connectString);
+            if (!IOProviderFactory.exists(configFile.getParentFile()))
+                IOProviderFactory.mkdirs(configFile.getParentFile());
+
+            try (FileOutputStream fos = IOProviderFactory
+                    .getOutputStream(configFile)) {
+                properties.store(fos, null);
+            } catch (IOException e) {
+                Log.w(TAG,
+                        "Failed to save network connection " + connectString);
+            }
         }
 
         CertificateManager.getInstance().refresh();

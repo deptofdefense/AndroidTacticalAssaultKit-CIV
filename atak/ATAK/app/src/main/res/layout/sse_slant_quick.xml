@@ -24,7 +24,7 @@
             android:id="@+id/quick_slant_id"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:imeOptions="actionNext"
+            android:imeOptions="flagNoFullscreen|actionNext"
             android:hint="@string/enter_building_id"
             android:inputType="textNoSuggestions" />
     </LinearLayout>
@@ -87,7 +87,7 @@
             android:maxLength="4"
             android:layout_height="wrap_content"
             android:inputType="number"
-            android:imeOptions="actionNext"
+            android:imeOptions="flagNoFullscreen|actionNext"
             android:hint="@string/men_abbreviation"/>
         <TextView
             android:layout_width="wrap_content"
@@ -100,7 +100,7 @@
             android:layout_weight="1"
             android:layout_height="wrap_content"
             android:inputType="number"
-            android:imeOptions="actionNext"
+            android:imeOptions="flagNoFullscreen|actionNext"
             android:hint="@string/women_abbreviation"/>
         <TextView
             android:layout_width="wrap_content"
@@ -113,7 +113,7 @@
             android:layout_weight="1"
             android:layout_height="wrap_content"
             android:inputType="number"
-            android:imeOptions="actionNext"
+            android:imeOptions="flagNoFullscreen|actionNext"
             android:hint="@string/children_abbreviation"/>
         <TextView
             android:layout_width="wrap_content"
@@ -126,7 +126,7 @@
             android:layout_weight="1"
             android:layout_height="wrap_content"
             android:inputType="number"
-            android:imeOptions="actionDone"
+            android:imeOptions="flagNoFullscreen|actionDone"
             android:hint="@string/phone_abbreviation"/>
         <ImageButton
             android:id="@+id/quick_slant_copy"

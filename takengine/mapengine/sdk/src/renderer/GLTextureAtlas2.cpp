@@ -489,14 +489,20 @@ TAKErr GLTextureAtlas2::addImage(int64_t *value, const char *uri, const Bitmap2 
 
 bool GLTextureAtlas2::GLTextureAtlasRectComp::operator() (const GLTextureAtlas2::Rect &x, const GLTextureAtlas2::Rect &y) const
 {
-    int retval;
-    if (x.splitFreeHorizontal) {
-        retval = static_cast<int>(x.height) - static_cast<int>(y.height);
-    }
-    else {
-        retval = static_cast<int>(x.width) - static_cast<int>(y.width);
-    }
-    if (retval == 0)
-        retval = (x.instance - y.instance);
-    return retval < 0;
+    const std::size_t xa = (x.width*x.height);
+    const std::size_t ya = (y.width*y.height);
+    if(xa < ya)
+        return true;
+    else if(xa > ya)
+        return false;
+    else if(x.splitFreeHorizontal && x.width < y.width)
+        return true;
+    else if(x.splitFreeHorizontal && x.width > y.width)
+        return false;
+    else if(x.height < y.height)
+        return true;
+    else if(x.height > y.height)
+        return false;
+    else
+        return x.instance > y.instance;
 }

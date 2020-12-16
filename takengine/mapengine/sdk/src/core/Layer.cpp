@@ -3,5 +3,5 @@
 using namespace atakmap::core;
 
 Layer::~Layer()
-throw ()
+NOTHROWS
 { }

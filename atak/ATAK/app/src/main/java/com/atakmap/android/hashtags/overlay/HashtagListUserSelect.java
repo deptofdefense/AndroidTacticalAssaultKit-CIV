@@ -86,7 +86,8 @@ public class HashtagListUserSelect extends HierarchyListUserSelect {
         List<HashtagContent> contents = new ArrayList<>();
         if (item instanceof HashtagContent)
             contents.add((HashtagContent) item);
-        if (item instanceof AbstractHierarchyListItem2 && item.isChildSupported()) {
+        if (item instanceof AbstractHierarchyListItem2
+                && item.isChildSupported()) {
             List<HierarchyListItem> items = ((AbstractHierarchyListItem2) item)
                     .getChildren();
             for (HierarchyListItem i : items)

@@ -718,12 +718,12 @@ void AtakMapView::dispatchContinuousScrollEnabledChanged()
     }
 }
 
-AtakMapView::MapLayersChangedListener::~MapLayersChangedListener() throw() {}
-AtakMapView::MapMovedListener::~MapMovedListener() throw() {}
-AtakMapView::MapProjectionChangedListener::~MapProjectionChangedListener() throw() {}
-AtakMapView::MapResizedListener::~MapResizedListener() throw() {}
-AtakMapView::MapElevationExaggerationFactorListener::~MapElevationExaggerationFactorListener() throw() {}
-AtakMapView::MapContinuousScrollListener::~MapContinuousScrollListener() throw() {}
+AtakMapView::MapLayersChangedListener::~MapLayersChangedListener() NOTHROWS {}
+AtakMapView::MapMovedListener::~MapMovedListener() NOTHROWS {}
+AtakMapView::MapProjectionChangedListener::~MapProjectionChangedListener() NOTHROWS {}
+AtakMapView::MapResizedListener::~MapResizedListener() NOTHROWS {}
+AtakMapView::MapElevationExaggerationFactorListener::~MapElevationExaggerationFactorListener() NOTHROWS {}
+AtakMapView::MapContinuousScrollListener::~MapContinuousScrollListener() NOTHROWS {}
 
 double atakmap::core::AtakMapView_getFullEquitorialExtentPixels(const double dpi) NOTHROWS
 {

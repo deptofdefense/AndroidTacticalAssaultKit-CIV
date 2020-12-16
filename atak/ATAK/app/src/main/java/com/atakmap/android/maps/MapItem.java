@@ -966,7 +966,7 @@ public abstract class MapItem extends FilterMetaDataHolder implements
             setHeight(value);
         else
             super.setMetaDouble(key, value);
-    } 
+    }
 
     @Override
     public void onVisibilityConditions(List<VisibilityCondition> conditions) {

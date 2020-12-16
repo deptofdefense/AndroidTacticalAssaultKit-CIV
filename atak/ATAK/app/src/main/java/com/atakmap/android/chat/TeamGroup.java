@@ -9,8 +9,6 @@ import com.atakmap.android.maps.MapView;
 
 import java.util.ArrayList;
 
-//TODO: add team change listener
-
 public class TeamGroup extends GroupContact {
 
     private final String teamName;

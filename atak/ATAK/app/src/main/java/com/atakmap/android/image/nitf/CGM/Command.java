@@ -33,7 +33,7 @@ public class Command {
     protected int currentByte;
 
     private static final String TAG = "CGM Command";
-    private DataInput data;
+    private final DataInput data;
 
     public Command(int elClass, int elID, int argCount, DataInput dataIn)
             throws IOException {

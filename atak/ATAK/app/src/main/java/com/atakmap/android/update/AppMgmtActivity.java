@@ -42,7 +42,7 @@ import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.AppMgmtSettingsActivity;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 
@@ -121,8 +121,8 @@ public class AppMgmtActivity extends MetricActivity {
         AtakPreferenceFragment.setSoftKeyIllumination(this);
 
         File rootDir = FileSystemUtils.getItem("support/apks");
-        if (!FileIOProviderFactory.exists(rootDir)) {
-            if (!FileIOProviderFactory.mkdir(rootDir)) {
+        if (!IOProviderFactory.exists(rootDir)) {
+            if (!IOProviderFactory.mkdir(rootDir)) {
                 Log.d(TAG, "could not make the root support directory: " +
                         rootDir);
             }
@@ -409,7 +409,7 @@ public class AppMgmtActivity extends MetricActivity {
         activityContext = this;
     }
 
-    private CompoundButton.OnCheckedChangeListener _select_all_listener = new CompoundButton.OnCheckedChangeListener() {
+    private final CompoundButton.OnCheckedChangeListener _select_all_listener = new CompoundButton.OnCheckedChangeListener() {
         @Override
         public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
             if (_appAdapter == null)
@@ -532,7 +532,7 @@ public class AppMgmtActivity extends MetricActivity {
             if (_syncReceiver != null)
                 AtakBroadcast.getInstance().unregisterReceiver(_syncReceiver);
         } catch (NullPointerException npe) {
-            Log.d(TAG, "severe error occured during shutdown", npe);
+            Log.d(TAG, "severe error occurred during shutdown", npe);
         }
 
         //TODO how can I remove myself as a listener?
@@ -960,7 +960,7 @@ public class AppMgmtActivity extends MetricActivity {
         setproductCount(products);
     }
 
-    private BroadcastReceiver _packageReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver _packageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (ApkUpdateReceiver.APP_ADDED.equals(intent.getAction())) {
@@ -976,7 +976,7 @@ public class AppMgmtActivity extends MetricActivity {
         }
     };
 
-    private BroadcastReceiver _refreshReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver _refreshReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d(TAG, "_refreshReceiver onReceive");
@@ -984,7 +984,7 @@ public class AppMgmtActivity extends MetricActivity {
         }
     };
 
-    private BroadcastReceiver _syncReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver _syncReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d(TAG, "_syncReceiver onReceive");

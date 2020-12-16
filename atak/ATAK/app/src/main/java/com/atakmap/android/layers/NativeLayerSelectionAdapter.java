@@ -1,22 +1,24 @@
 
 package com.atakmap.android.layers;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.graphics.PorterDuff.Mode;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup;
-import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.math.MathUtils;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.AtakMapView;
@@ -25,25 +27,34 @@ import com.atakmap.map.layer.feature.FeatureCursor;
 import com.atakmap.map.layer.feature.FeatureDataStore;
 import com.atakmap.map.layer.feature.FeatureDataStore.FeatureQueryParameters;
 import com.atakmap.map.layer.feature.FeatureDataStore.FeatureQueryParameters.RegionSpatialFilter;
+import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
+import com.atakmap.map.layer.raster.DatasetDescriptor;
+import com.atakmap.map.layer.raster.LocalRasterDataStore;
+import com.atakmap.map.layer.raster.RasterDataStore.DatasetDescriptorCursor;
+import com.atakmap.map.layer.raster.RasterDataStore.DatasetQueryParameters;
 import com.atakmap.map.layer.raster.nativeimagery.NativeImageryRasterLayer2;
 import com.atakmap.spatial.SpatialCalculator;
 import com.atakmap.util.Disposable;
 
+import java.io.File;
 import java.text.DecimalFormat;
 
 import com.atakmap.coremap.locale.LocaleUtil;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import com.atakmap.coremap.log.Log;
 
 class NativeLayerSelectionAdapter extends LayerSelectionAdapter
-        implements AtakMapView.OnMapMovedListener {
+        implements AtakMapView.OnMapMovedListener, View.OnClickListener {
 
     public static final String TAG = "NativeLayerSelectionAdapter";
 
@@ -60,7 +71,11 @@ class NativeLayerSelectionAdapter extends LayerSelectionAdapter
         }
     };
 
+    private final NativeImageryRasterLayer2 layer;
+    private final LocalRasterDataStore dataStore;
+    private final LayoutInflater inflater;
     private AOIIsectComputer calc;
+    private String expanded;
 
     public NativeLayerSelectionAdapter(NativeImageryRasterLayer2 layer,
             FeatureDataStore outlineDatastore,
@@ -70,7 +85,10 @@ class NativeLayerSelectionAdapter extends LayerSelectionAdapter
 
         mapView.addOnMapMovedListener(this);
 
+        this.layer = layer;
+        this.dataStore = LayersMapComponent.getLayersDatabase();
         this.calc = new AOIIsectComputer();
+        this.inflater = LayoutInflater.from(_context);
     }
 
     @Override
@@ -105,154 +123,276 @@ class NativeLayerSelectionAdapter extends LayerSelectionAdapter
 
     @Override
     protected View getViewImpl(final LayerSelection selection,
-            final int position, View convertView, ViewGroup parent) {
-        LayoutInflater inflater = LayoutInflater.from(_context);
-        View view = inflater.inflate(R.layout.layers_manager_list_item, null);
+            final int position, View row, ViewGroup parent) {
 
-        TextView title = view
-                .findViewById(R.id.layers_manager_item_title);
-
-        TextView desc = view
-                .findViewById(R.id.layers_manager_item_desc);
-
-        ImageView lockImage = view
-                .findViewById(R.id.layers_manager_item_layer_lock);
-
-        ImageView visibilityToggle = view
-                .findViewById(R.id.layers_manager_item_toggle_image);
-
-        CheckBox outlineCheckbox = view
-                .findViewById(R.id.layers_manager_item_outline_checkbox);
-
-        LinearLayout outlinesLayout = view
-                .findViewById(R.id.layers_manager_item_outline_layout);
+        LayerViewHolder h = LayerViewHolder.get(_context, row, parent);
+        h.selection = selection;
 
         String name = selection.getName();
         if (name.length() > 30)
-            title.setTextSize(13);
+            h.title.setTextSize(13);
         else if (name.length() > 23)
-            title.setTextSize(15);
+            h.title.setTextSize(15);
 
-        title.setText(name);
+        h.title.setText(name);
 
         // show the min and max resolution
-        setCurrentRes(desc,
-                selection.getMinRes(),
-                selection.getMaxRes());
+        setCurrentRes(h.desc, selection.getMinRes(), selection.getMaxRes());
 
-        lockImage.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                try {
-                    if (position >= 0 && position < _selections.size()) {
-                        if (isLocked()
-                                && getSelected() == _selections.get(position)) {
-                            setLocked(NativeLayerSelectionAdapter.this.layer
-                                    .isAutoSelect());
-                        } else {
-                            setLocked(false);
-                            setSelected(_selections.get(position));
-                        }
-                        notifyDataSetChanged();
-                    }
-                } catch (IndexOutOfBoundsException oobe) {
-                    Log.d(TAG, "error setting lock", oobe);
-                }
-
-            }
-        });
-
-        visibilityToggle.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try {
-                    if (position >= 0 && position < _selections.size()) {
-                        LayerSelection s = _selections.get(position);
-                        boolean val = NativeLayerSelectionAdapter.this.layer
-                                .isVisible(s.getName());
-                        NativeLayerSelectionAdapter.this.layer.setVisible(
-                                s.getName(),
-                                !val);
-
-                        notifyDataSetChanged();
-                    }
-                } catch (IndexOutOfBoundsException oobe) {
-                    Log.d(TAG, "error setting visibility", oobe);
+        h.expandBtn.setVisibility(View.VISIBLE);
+        if (FileSystemUtils.isEquals(expanded, selection.getName())) {
+            h.expandBtn.setImageResource(R.drawable.arrow_down);
+            List<DatasetDescriptor> datasets = queryDatasets(selection);
+            int childCount = h.filesLayout.getChildCount();
+            int numSets = datasets.size();
+            for (int i = 0; i < numSets; i++) {
+                View v1 = i < childCount ? h.filesLayout.getChildAt(i) : null;
+                View v2 = getFileView(selection, datasets.get(i), v1,
+                        h.filesLayout);
+                if (v1 != v2) {
+                    if (v1 != null)
+                        h.filesLayout.removeView(v1);
+                    h.filesLayout.addView(v2, i);
                 }
             }
-        });
-
-        boolean outlineVisible = false;
-        int outlineColor = 0;
-        final Set<Long> fids = new HashSet<>();
-
-        FeatureCursor result = null;
-        try {
-            FeatureDataStore.FeatureQueryParameters params = new FeatureDataStore.FeatureQueryParameters();
-            params.featureNames = Collections.singleton(selection.getName());
-
-            result = this.outlinesDatastore.queryFeatures(params);
-            Feature f;
-            while (result.moveToNext()) {
-                f = result.get();
-                fids.add(f.getId());
-                outlineVisible |= this.outlinesDatastore.isFeatureVisible(f
-                        .getId());
-
-                if (outlineColor == 0
-                        && f.getStyle() instanceof BasicStrokeStyle)
-                    outlineColor = ((BasicStrokeStyle) f.getStyle()).getColor();
-            }
-        } finally {
-            if (result != null)
-                result.close();
+            for (int i = numSets; i < childCount; i++)
+                h.filesLayout.removeViewAt(numSets);
+            h.filesLayout.setVisibility(View.VISIBLE);
+        } else {
+            h.expandBtn.setImageResource(R.drawable.arrow_right);
+            h.filesLayout.setVisibility(View.GONE);
         }
+        h.expandBtn.setOnClickListener(this);
 
-        outlinesLayout.getBackground().mutate()
+        boolean outlineVisible = queryOutlinesVisible(selection);
+        int outlineColor = queryOutlineColor(selection);
+
+        h.outlineBorder.getBackground().mutate()
                 .setColorFilter(outlineColor, Mode.MULTIPLY);
 
-        outlineCheckbox.setOnCheckedChangeListener(null);
-        outlineCheckbox.setChecked(outlineVisible);
-        outlineCheckbox
-                .setOnCheckedChangeListener(new OnCheckedChangeListener() {
-                    @Override
-                    public void onCheckedChanged(CompoundButton buttonView,
-                            boolean isChecked) {
-                        for (Long fid : fids)
-                            NativeLayerSelectionAdapter.this.outlinesDatastore
-                                    .setFeatureVisible(fid,
-                                            isChecked);
-                        refreshOutlinesButton();
-                    }
-                });
+        h.outlineBtn.setChecked(outlineVisible);
+        h.outlineBtn.setOnClickListener(this);
 
         final String selectName = this.layer.getSelection();
         final boolean isSelection = this.active
                 && (selectName != null && selectName
                         .equals(selection.getName()));
 
-        if (isSelection) {
-            lockImage.setVisibility(View.VISIBLE);
-            int icon;
-            if (!this.layer.isAutoSelect())
-                icon = R.drawable.ic_lock_lit;
-            else
-                icon = R.drawable.ic_lock_unlit;
-            lockImage.setImageResource(icon);
-            view.findViewById(R.id.layers_manager_item_background)
-                    .setBackgroundColor(selectedBackgroundColor);
-        } else {
-            view.findViewById(R.id.layers_manager_item_background)
-                    .setBackgroundColor(normalBackgroundColor);
+        if (isSelection)
+            h.background.setBackgroundColor(selectedBackgroundColor);
+        else
+            h.background.setBackgroundColor(normalBackgroundColor);
+
+        int icon;
+        if (isSelection && isLocked())
+            icon = R.drawable.ic_lock_lit;
+        else
+            icon = R.drawable.ic_lock_unlit;
+        h.lockBtn.setImageResource(icon);
+
+        h.lockBtn.setOnClickListener(this);
+
+        h.vizBtn.setImageResource(layer.isVisible(selection.getName())
+                ? R.drawable.overlay_visible
+                : R.drawable.overlay_not_visible);
+        h.vizBtn.setOnClickListener(this);
+
+        return h.root;
+    }
+
+    private View getFileView(LayerSelection selection, DatasetDescriptor desc,
+            View row, ViewGroup parent) {
+
+        FileViewHolder h = row != null ? (FileViewHolder) row.getTag() : null;
+        if (h == null) {
+            h = new FileViewHolder();
+            h.root = row = inflater.inflate(
+                    R.layout.layers_manager_list_item_file, parent, false);
+            h.name = row.findViewById(R.id.file_name);
+            h.size = row.findViewById(R.id.file_size);
+            h.delete = row.findViewById(R.id.file_delete);
+            h.delete.setTag(h);
+            row.setTag(h);
         }
 
-        final boolean isVisible = this.layer.isVisible(selection.getName());
-        final int visibilityIcon = isVisible ? R.drawable.overlay_visible
-                : R.drawable.overlay_not_visible;
-        visibilityToggle.setImageResource(visibilityIcon);
+        File file = new File(desc.getUri());
 
-        return view;
+        h.desc = desc;
+        h.selection = selection;
+        h.name.setText(desc.getName());
+        if (file.exists())
+            h.size.setText(MathUtils.GetLengthString(file.length()));
+        else
+            h.size.setText("");
+
+        h.root.setOnClickListener(this);
+        h.delete.setOnClickListener(this);
+
+        return row;
+    }
+
+    private static class FileViewHolder {
+        View root;
+        TextView name, size;
+        ImageButton delete;
+        LayerSelection selection;
+        DatasetDescriptor desc;
+    }
+
+    @Override
+    public void onClick(View v) {
+        Object tag = v.getTag();
+
+        if (tag instanceof LayerViewHolder) {
+
+            LayerViewHolder h = (LayerViewHolder) tag;
+
+            // Toggle selection lock
+            if (v == h.lockBtn) {
+                if (isLocked() && getSelected() == h.selection) {
+                    setLocked(layer.isAutoSelect());
+                } else {
+                    setLocked(false);
+                    setSelected(h.selection);
+                }
+                notifyDataSetChanged();
+            }
+
+            // Toggle visibility
+            else if (v == h.vizBtn) {
+                String name = h.selection.getName();
+                layer.setVisible(name, !layer.isVisible(name));
+                notifyDataSetChanged();
+            }
+
+            // Toggle outlines
+            else if (v == h.outlineBtn) {
+                try {
+                    FeatureQueryParameters params = new FeatureQueryParameters();
+                    params.featureNames = Collections.singleton(
+                            h.selection.getName());
+                    outlinesDatastore.setFeaturesVisible(params,
+                            h.outlineBtn.isChecked());
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to set features visible outlines: "
+                            + h.selection.getName(), e);
+                }
+                refreshOutlinesButton();
+            }
+
+            // Expand files
+            else if (v == h.expandBtn) {
+                String name = h.selection.getName();
+                if (!FileSystemUtils.isEquals(expanded, name))
+                    expanded = name;
+                else
+                    expanded = null;
+                notifyDataSetChanged();
+            }
+        }
+
+        else if (tag instanceof FileViewHolder) {
+
+            FileViewHolder h = (FileViewHolder) tag;
+
+            // Pan to area
+            if (v == h.root) {
+                setSelected(h.selection);
+                Envelope e = h.desc.getMinimumBoundingBox();
+                ATAKUtilities.scaleToFit(_mapView,
+                        new GeoBounds(e.minY, e.minX, e.maxY, e.maxX),
+                        _mapView.getWidth(), _mapView.getHeight());
+            }
+
+            // Delete file
+            else if (v == h.delete) {
+                final DatasetDescriptor desc = h.desc;
+                AlertDialog.Builder b = new AlertDialog.Builder(_context);
+                b.setTitle(R.string.are_you_sure);
+                b.setMessage(_context.getString(R.string.are_you_sure_delete2,
+                        desc.getName()));
+                b.setPositiveButton(R.string.yes,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog,
+                                    int which) {
+                                dataStore.remove(desc);
+                                FileSystemUtils.delete(new File(desc.getUri()));
+                                _mapView.updateView(_mapView.getLatitude(),
+                                        _mapView.getLongitude(),
+                                        _mapView.getMapScale(),
+                                        _mapView.getMapRotation(),
+                                        _mapView.getMapTilt(), false);
+                                notifyDataSetChanged();
+                            }
+                        });
+                b.setNegativeButton(R.string.no, null);
+                b.show();
+            }
+        }
+    }
+
+    private boolean queryOutlinesVisible(LayerSelection selection) {
+        FeatureCursor c = null;
+        try {
+            c = queryOutlines(selection, true);
+            return c.moveToNext();
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to query visibility selection: "
+                    + selection.getName(), e);
+        } finally {
+            if (c != null)
+                c.close();
+        }
+        return false;
+    }
+
+    private int queryOutlineColor(LayerSelection selection) {
+        FeatureCursor c = null;
+        try {
+            c = queryOutlines(selection, false);
+            if (c.moveToNext()) {
+                Feature f = c.get();
+                if (f.getStyle() instanceof BasicStrokeStyle)
+                    return ((BasicStrokeStyle) f.getStyle()).getColor();
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to query color for selection: "
+                    + selection.getName(), e);
+        } finally {
+            if (c != null)
+                c.close();
+        }
+        return 0;
+    }
+
+    private FeatureCursor queryOutlines(LayerSelection selection,
+            boolean visibleOnly) {
+        FeatureQueryParameters params = new FeatureQueryParameters();
+        params.featureNames = Collections.singleton(selection.getName());
+        params.visibleOnly = visibleOnly;
+        params.limit = 1;
+        return outlinesDatastore.queryFeatures(params);
+    }
+
+    private List<DatasetDescriptor> queryDatasets(LayerSelection selection) {
+        List<DatasetDescriptor> ret = new ArrayList<>();
+        DatasetQueryParameters params = new DatasetQueryParameters();
+        layer.filterQueryParams(params);
+        params.imageryTypes = Collections.singleton(selection.getName());
+        DatasetDescriptorCursor c = null;
+        try {
+            c = dataStore.queryDatasets(params);
+            while (c.moveToNext())
+                ret.add(c.get());
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to query color for selection: "
+                    + selection.getName(), e);
+        } finally {
+            if (c != null)
+                c.close();
+        }
+        return ret;
     }
 
     /**

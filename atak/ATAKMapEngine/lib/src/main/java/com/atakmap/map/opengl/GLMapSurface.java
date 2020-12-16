@@ -322,7 +322,7 @@ public class GLMapSurface extends GLSurfaceView implements RenderContext, Render
                 this.requestRender();
                 try {
                     released.wait(100);
-                } catch(InterruptedException e) {}
+                } catch(InterruptedException ignored) {}
             }
         }
     }

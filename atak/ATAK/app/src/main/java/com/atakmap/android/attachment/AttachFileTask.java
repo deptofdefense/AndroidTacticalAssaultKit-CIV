@@ -12,7 +12,7 @@ import android.widget.Toast;
 import com.atakmap.android.importfiles.task.ImportFileTask;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -157,7 +157,7 @@ public class AttachFileTask extends
             return new Result("File already in ATAK: " + file.getName());
         }
 
-        if (!FileIOProviderFactory.exists(file)) {
+        if (!IOProviderFactory.exists(file)) {
             Log.w(TAG, "Import file not found: " + file.getAbsolutePath());
             return new Result("Import file not found: " + file.getName());
         }
@@ -165,8 +165,8 @@ public class AttachFileTask extends
         File parent = new File(FileSystemUtils.getItem("attachments")
                 .getAbsolutePath() + File.separatorChar + _uid);
 
-        if (FileIOProviderFactory.isDirectory(file)) {
-            File[] files = FileIOProviderFactory.listFiles(file);
+        if (IOProviderFactory.isDirectory(file)) {
+            File[] files = IOProviderFactory.listFiles(file);
             if (FileSystemUtils.isEmpty(files))
                 return new Result(
                         "Import directory is empty: " + file.getName());
@@ -182,7 +182,7 @@ public class AttachFileTask extends
 
     private Result copyFile(File parent, File file) {
         File destPath = new File(parent, file.getName());
-        if (FileIOProviderFactory.exists(destPath)) {
+        if (IOProviderFactory.exists(destPath)) {
 
             // see if we should prompt user before overwriting
             if (!checkFlag(FlagPromptOverwrite)) {
@@ -214,7 +214,7 @@ public class AttachFileTask extends
         } // end file overwrite check
 
         // move/copy file
-        if (!FileIOProviderFactory.mkdirs(parent))
+        if (!IOProviderFactory.mkdirs(parent))
             Log.w(TAG,
                     "Failed to create directories" + parent.getAbsolutePath());
 
@@ -251,8 +251,8 @@ public class AttachFileTask extends
 
         if (result.success && result.file != null) {
             String name = result.file.getName();
-            if (FileIOProviderFactory.isDirectory(result.file)) {
-                File[] files = FileIOProviderFactory.listFiles(result.file);
+            if (IOProviderFactory.isDirectory(result.file)) {
+                File[] files = IOProviderFactory.listFiles(result.file);
                 if (files != null) {
                     if (files.length == 1)
                         name = files[0].getName();

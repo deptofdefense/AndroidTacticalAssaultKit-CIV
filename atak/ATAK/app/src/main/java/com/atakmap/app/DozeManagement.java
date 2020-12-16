@@ -47,8 +47,8 @@ class DozeManagement {
     private static final String ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS = "android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS";
     private static final String LAUNCH_DATA_USAGE = "com.atakmap.app.doze.LaunchDataUsage";
 
-    private static int NETWORK_NOTIFICATION = 3365188;
-    private static int PS_NOTIFICATION = 3365189;
+    private static final int NETWORK_NOTIFICATION = 3365188;
+    private static final int PS_NOTIFICATION = 3365189;
 
     private static BroadcastReceiver nwRestrictionChange;
     private static BroadcastReceiver psRestrictionChange;
@@ -256,7 +256,7 @@ class DozeManagement {
 
     private static void launchDataUsageScreen(final Context context) {
 
-        if (android.os.Build.VERSION.SDK_INT < 24) {
+        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
             return;
         }
 

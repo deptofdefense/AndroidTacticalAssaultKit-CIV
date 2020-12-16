@@ -61,8 +61,64 @@ public class Matrix {
      * resultOffset + 16 > result.length or lhsOffset + 16 > lhs.length or
      * rhsOffset + 16 > rhs.length.
      */
-    public static native void multiplyMM(float[] result, int resultOffset,
-                                         float[] lhs, int lhsOffset, float[] rhs, int rhsOffset);
+    public static void multiplyMM(float[] result, int resultOffset,
+                                         float[] lhs, int lhsOffset, float[] rhs, int rhsOffset) {
+        final float m00 = lhs[lhsOffset+0];
+        final float m01 = lhs[lhsOffset+4];
+        final float m02 = lhs[lhsOffset+8];
+        final float m03 = lhs[lhsOffset+12];
+        final float m10 = lhs[lhsOffset+1];
+        final float m11 = lhs[lhsOffset+5];
+        final float m12 = lhs[lhsOffset+9];
+        final float m13 = lhs[lhsOffset+13];
+        final float m20 = lhs[lhsOffset+2];
+        final float m21 = lhs[lhsOffset+6];
+        final float m22 = lhs[lhsOffset+10];
+        final float m23 = lhs[lhsOffset+14];
+        final float m30 = lhs[lhsOffset+3];
+        final float m31 = lhs[lhsOffset+7];
+        final float m32 = lhs[lhsOffset+11];
+        final float m33 = lhs[lhsOffset+15];
+        final float tm00 = rhs[rhsOffset+0];
+        final float tm01 = rhs[rhsOffset+4];
+        final float tm02 = rhs[rhsOffset+8];
+        final float tm03 = rhs[rhsOffset+12];
+        final float tm10 = rhs[rhsOffset+1];
+        final float tm11 = rhs[rhsOffset+5];
+        final float tm12 = rhs[rhsOffset+9];
+        final float tm13 = rhs[rhsOffset+13];
+        final float tm20 = rhs[rhsOffset+2];
+        final float tm21 = rhs[rhsOffset+6];
+        final float tm22 = rhs[rhsOffset+10];
+        final float tm23 = rhs[rhsOffset+14];
+        final float tm30 = rhs[rhsOffset+3];
+        final float tm31 = rhs[rhsOffset+7];
+        final float tm32 = rhs[rhsOffset+11];
+        final float tm33 = rhs[rhsOffset+15];
+
+        //CPL
+        final float rm00 = m00*tm00 + m01*tm10 + m02*tm20 + m03*tm30;
+        final float rm01 = m00*tm01 + m01*tm11 + m02*tm21 + m03*tm31;
+        final float rm02 = m00*tm02 + m01*tm12 + m02*tm22 + m03*tm32;
+        final float rm03 = m00*tm03 + m01*tm13 + m02*tm23 + m03*tm33;
+        final float rm10 = m10*tm00 + m11*tm10 + m12*tm20 + m13*tm30;
+        final float rm11 = m10*tm01 + m11*tm11 + m12*tm21 + m13*tm31;
+        final float rm12 = m10*tm02 + m11*tm12 + m12*tm22 + m13*tm32;
+        final float rm13 = m10*tm03 + m11*tm13 + m12*tm23 + m13*tm33;
+        final float rm20 = m20*tm00 + m21*tm10 + m22*tm20 + m23*tm30;
+        final float rm21 = m20*tm01 + m21*tm11 + m22*tm21 + m23*tm31;
+        final float rm22 = m20*tm02 + m21*tm12 + m22*tm22 + m23*tm32;
+        final float rm23 = m20*tm03 + m21*tm13 + m22*tm23 + m23*tm33;
+        final float rm30 = m30*tm00 + m31*tm10 + m32*tm20 + m33*tm30;
+        final float rm31 = m30*tm01 + m31*tm11 + m32*tm21 + m33*tm31;
+        final float rm32 = m30*tm02 + m31*tm12 + m32*tm22 + m33*tm32;
+        final float rm33 = m30*tm03 + m31*tm13 + m32*tm23 + m33*tm33;
+
+        result[resultOffset+0] = rm00; result[resultOffset+4] = rm01; result[resultOffset+8] = rm02; result[resultOffset+12] = rm03;
+        result[resultOffset+1] = rm10; result[resultOffset+5] = rm11; result[resultOffset+9] = rm12; result[resultOffset+13] = rm13;
+        result[resultOffset+2] = rm20; result[resultOffset+6] = rm21; result[resultOffset+10] = rm22; result[resultOffset+14] = rm23;
+        result[resultOffset+3] = rm30; result[resultOffset+7] = rm31; result[resultOffset+11] = rm32; result[resultOffset+15] = rm33;
+    }
     /**
      * Multiply a 4 element vector by a 4x4 matrix and store the result in a 4
      * element column vector. In matrix notation: result = lhs x rhs

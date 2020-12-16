@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="6dp">
+        <TextView
+            android:id="@+id/tab_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#FFF"
+            android:textSize="18sp"
+            android:text="Tab Display - Tab #1"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+        <View
+            android:id="@+id/tab_left_dot"
+            android:layout_width="10dp"
+            android:layout_height="7dp"
+            android:background="@drawable/dot_selector"/>
+        <View
+            android:id="@+id/tab_middle_dot"
+            android:layout_width="10dp"
+            android:layout_height="7dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/dot_selector" />
+        <View
+            android:id="@+id/tab_right_dot"
+            android:layout_width="10dp"
+            android:layout_height="7dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/dot_selector" />
+    </LinearLayout>
+
+    <androidx.viewpager.widget.ViewPager
+        android:id="@+id/tab_pager"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+</LinearLayout>

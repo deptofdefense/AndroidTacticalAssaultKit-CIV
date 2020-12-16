@@ -12,6 +12,7 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.menu.MapMenuEventListener;
 import com.atakmap.android.menu.MapMenuReceiver;
+import com.atakmap.android.menu.MapMenuReceiverCompat;
 import com.atakmap.android.toolbars.RangeAndBearingMapItem;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
@@ -46,11 +47,11 @@ public class BloodHoundLinkReceiver extends BroadcastReceiver implements
         f.addAction(MapMenuReceiver.SHOW_MENU,
                 "Listen for radial menu events so we can update the state");
         AtakBroadcast.getInstance().registerReceiver(this, f);
-        MapMenuReceiver.getInstance().addEventListener(this);
+        MapMenuReceiverCompat.addEventListener(this);
     }
 
     public void dispose() {
-        MapMenuReceiver.getInstance().removeEventListener(this);
+        MapMenuReceiverCompat.removeEventListener(this);
         AtakBroadcast.getInstance().unregisterReceiver(this);
     }
 

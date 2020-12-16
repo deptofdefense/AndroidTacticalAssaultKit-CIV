@@ -1,10 +1,3 @@
-#####
-# TODO: 
-#  Add config arg for binding type (Android: --enable-java, nil otherwise)
-#  NOT SURE IF ABOVE DOES WHAT WE NEED
-#  Complete swig/java part of build;  may not be needed depending on above
-#
-
 ifeq ($(and $(gdal_CFLAGS)),)
     $(error Required var not set)
 endif
@@ -12,8 +5,8 @@ endif
 gdal_libfile=$(LIB_PREFIX)gdal.$(LIB_SHAREDSUFFIX)
 gdal_local_libfile=$(OUTDIR)/$(gdal_local_srcdir)/$(gdal_libfile)
 gdal_out_lib=$(OUTDIR)/lib/$(gdal_libfile)
-gdal_local_javalibs=$(foreach ilib,gdalconst gdaljni ogrjni osrjni,$(OUTDIR)/$(gdal_local_srcdir)/swig/java/$(LIB_PREFIX)$(ilib)$(LIB_SHAREDSUFFIX))
-gdal_out_javalibs=$(foreach ilib,gdalconst gdaljni ogrjni osrjni,$(OUTDIR)/lib/$(LIB_PREFIX)$(ilib)$(LIB_SHAREDSUFFIX))
+gdal_local_javalibs=$(foreach ilib,gdalalljni,$(OUTDIR)/$(gdal_local_srcdir)/swig/java/$(LIB_PREFIX)$(ilib)$(LIB_SHAREDSUFFIX))
+gdal_out_javalibs=$(foreach ilib,gdalalljni,$(OUTDIR)/lib/$(LIB_PREFIX)$(ilib)$(LIB_SHAREDSUFFIX))
 
 include mk/gdal-common.mk
 
@@ -50,6 +43,9 @@ $(gdal_configtouchfile): $(OUTDIR)/$(gdal_local_srcdir)/configure
 		--with-geos=$(OUTDIR)/bin/geos-config                       \
 		--with-sqlite3=$(OUTDIR_CYGSAFE)                            \
 		--with-ogdi=$(OUTDIR_CYGSAFE)                               \
+		--without-lerc                                              \
+		--with-pdfium=$(OUTDIR_CYGSAFE)/pdfium                      \
+		--with-pdfium-extra-lib-for-test=                           \
 		--enable-static                                             \
 		--prefix=$(OUTDIR_CYGSAFE)
 	touch $@

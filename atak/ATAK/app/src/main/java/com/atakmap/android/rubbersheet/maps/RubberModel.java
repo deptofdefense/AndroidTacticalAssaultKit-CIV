@@ -273,7 +273,8 @@ public class RubberModel extends AbstractSheet implements ModelLoader.Callback {
         return orthoHitModel(x, y, point, view);
     }
 
-    protected boolean orthoHitModel(int x, int y, GeoPoint point, MapView view) {
+    protected boolean orthoHitModel(int x, int y, GeoPoint point,
+            MapView view) {
         GeoPoint result = GeoPoint.createMutable();
         final GLRubberModel renderer = _renderer;
         if (renderer != null && renderer.hitTest(x, y, result, view)) {

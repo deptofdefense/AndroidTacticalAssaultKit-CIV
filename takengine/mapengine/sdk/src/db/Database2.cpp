@@ -58,6 +58,8 @@ namespace
             throw (DB_Error);
 
         SpatiaLiteDB(const char* filePath,
+        const uint8_t *key,
+        const std::size_t keylen,
         bool readOnly)
             throw (DB_Error);
     public:
@@ -323,8 +325,27 @@ TAK::Engine::Util::TAKErr TAK::Engine::DB::Databases_lastInsertRowID(int64_t *va
 
 TAK::Engine::Util::TAKErr TAK::Engine::DB::Databases_openDatabase(DatabasePtr &db, const char* databaseFilePath, const bool readOnly) NOTHROWS
 {
+    return Databases_openDatabase(db, databaseFilePath, nullptr, 0u, readOnly);
+}
+TAK::Engine::Util::TAKErr TAK::Engine::DB::Databases_openDatabase(DatabasePtr &db, const char* databaseFilePath, const char *passphrase, const bool readOnly) NOTHROWS
+{
+    if(passphrase)
+        return Databases_openDatabase(db, databaseFilePath, reinterpret_cast<const uint8_t *>(passphrase), passphrase ? strlen(passphrase) : 0u, readOnly);
+    else
+        return Databases_openDatabase(db, databaseFilePath, nullptr, 0u, readOnly);
     try {
-        db = DatabasePtr(new SpatiaLiteDB(databaseFilePath, readOnly), deleteImpl<Database2, SpatiaLiteDB>);
+        db = DatabasePtr(new SpatiaLiteDB(databaseFilePath, reinterpret_cast<const uint8_t *>(passphrase), passphrase ? strlen(passphrase) : 0u, readOnly), deleteImpl<Database2, SpatiaLiteDB>);
+        return TE_Ok;
+    }
+    catch (DB_Error &e) {
+        Logger::log(Logger::Error, "Failed to open database %s, message: %s", databaseFilePath, e.what());
+        return TE_Err;
+    }
+}
+TAK::Engine::Util::TAKErr TAK::Engine::DB::Databases_openDatabase(DatabasePtr &db, const char* databaseFilePath, const uint8_t *key, const std::size_t keylen, const bool readOnly) NOTHROWS
+{
+    try {
+        db = DatabasePtr(new SpatiaLiteDB(databaseFilePath, key, keylen, readOnly), deleteImpl<Database2, SpatiaLiteDB>);
         return TE_Ok;
     }
     catch (DB_Error &e) {
@@ -341,7 +362,7 @@ void TAK::Engine::DB::Databases_enableDebug(bool v) NOTHROWS
 namespace
 {
 
-    SpatiaLiteDB::SpatiaLiteDB(const char* filePath, const bool ro) throw (DB_Error) :
+    SpatiaLiteDB::SpatiaLiteDB(const char* filePath, const uint8_t *key, const std::size_t keylen, const bool ro) throw (DB_Error) :
         mutex(TEMT_Recursive),
         connection(nullptr),
         cache(nullptr),
@@ -375,6 +396,21 @@ namespace
                     MEM_FN("SpatiaLiteDB"),
                     msg.c_str());
             }
+
+            if(key) {
+#ifdef SQLITE_HAS_CODEC
+                sqlite3_key(connection, key, keylen);
+                response = sqlite3_exec(connection, "SELECT count(*) FROM sqlite_master;", NULL, NULL, NULL);
+                if(response != SQLITE_OK) {
+                    throwDB_Error(response,
+                        MEM_FN("SpatiaLiteDB"),
+                        "setting passphrase on database");
+                }
+#else
+                Logger_log(TELL_Warning, "SQLite codec not available, ignoring passphrase");
+#endif
+            }
+
             cache = spatialite_alloc_connection();
             spatialite_init_ex(connection, cache, false);
         }

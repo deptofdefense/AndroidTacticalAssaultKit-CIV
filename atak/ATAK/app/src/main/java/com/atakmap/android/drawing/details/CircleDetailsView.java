@@ -28,7 +28,6 @@ import com.atakmap.android.drawing.mapItems.DrawingCircle;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.Shape;
-import com.atakmap.android.toolbar.Tool;
 import com.atakmap.android.util.Circle;
 import com.atakmap.android.util.SimpleSeekBarChangeListener;
 

@@ -10,7 +10,7 @@ import java.util.List;
 public class RouteAroundRegionEventRelay {
 
     private static RouteAroundRegionEventRelay _instance = null;
-    private List<RouteAroundRegionEventSubscriber> subscribers = new ArrayList<>();
+    private final List<RouteAroundRegionEventSubscriber> subscribers = new ArrayList<>();
 
     public static synchronized RouteAroundRegionEventRelay getInstance() {
         if (_instance == null) {

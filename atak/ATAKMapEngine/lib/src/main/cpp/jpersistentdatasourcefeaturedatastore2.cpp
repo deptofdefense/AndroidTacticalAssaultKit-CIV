@@ -68,7 +68,7 @@ JNIEXPORT jstring JNICALL Java_com_atakmap_map_layer_feature_PersistentDataSourc
     }
     TAK::Engine::Port::String value;
     code = impl->getFile(value, fsid);
-    if(ATAKMapEngineJNI_checkOrThrow(env, code))
+    if(code != TE_Ok)
         return NULL;
     if(!value)
         return NULL;

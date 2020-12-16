@@ -27,7 +27,7 @@ class TakDevPlugin implements Plugin<Project> {
     boolean verbose = false
 
     void debugPrintln(Object msg) {
-        if(verbose)
+        if (verbose)
             println(msg)
     }
 
@@ -43,10 +43,15 @@ class TakDevPlugin implements Plugin<Project> {
 
         def haveRemoteRepo = !((null == project.takrepoUrl) || (null == project.takrepoUser) || (null == project.takrepoPassword))
 
+        debugPrintln("isDevKitEnabled => ${project.isDevKitEnabled()}")
         debugPrintln("takrepo URL option => ${project.takrepoUrl}")
         debugPrintln("takrepo user option => ${project.takrepoUser}")
         debugPrintln("mavenOnly option => ${project.mavenOnly}")
+        debugPrintln("haveRemoteRepo => ${haveRemoteRepo}")
         debugPrintln("snapshot option => ${project.snapshot}")
+        debugPrintln("devkitVersion option => ${project.devkitVersion}")
+        debugPrintln("production option => ${project.takdevProduction}")
+        debugPrintln("noapp option => ${project.takdevNoApp}")
 
         if (project.mavenOnly) {
             if (haveRemoteRepo) {
@@ -80,16 +85,16 @@ class TakDevPlugin implements Plugin<Project> {
     }
 
     void addTasks(Project project) {
-        project.ext.getTargetVersion = project.tasks.create(name: 'getTargetVersion', type: DefaultTask) {
-            group 'tasks'
+        project.ext.getTargetVersion = project.tasks.register('getTargetVersion', DefaultTask) {
+            group 'metadata'
             description 'Gets this plugin\'s targeted ATAK version'
             doLast {
-                println(project.ATAK_VERSION)
+                println(project.devkitVersion)
             }
         }
     }
 
-    String getLocalOrProjectProperty(Project project, String key, String defval) {
+    static String getLocalOrProjectProperty(Project project, String key, String defval) {
         if (new File('local.properties').exists()) {
             def localProperties = new Properties()
             localProperties.load(project.rootProject.file('local.properties').newDataInputStream())
@@ -101,7 +106,7 @@ class TakDevPlugin implements Plugin<Project> {
         return project.properties.get(key, defval)
     }
 
-    String resolvePathFromSet(String[] filePaths, String fileName) {
+    static String resolvePathFromSet(String[] filePaths, String fileName) {
         for (String path : filePaths) {
             File candidate = new File(path, fileName)
             if (candidate.exists()) {
@@ -141,22 +146,14 @@ class TakDevPlugin implements Plugin<Project> {
         debugPrintln(tuple)
 
         project.android.applicationVariants.all { variant ->
-            def devType = variant.buildType.matchingFallbacks[0] ?: variant.buildType.name
 
-            // ATAK Plugin API
-            def apiJarName = "${variant.flavorName}-${devType}-${project.ATAK_VERSION}-api.jar"
-            // Add the not yet existent JAR file as a dependency during gradle's configuration phase
-            // The file will be copied in before compilation, as done in the "doFirst" closure below.
             Dependency dep = project.dependencies.create(project.files(tuple.apiJar.absolutePath))
-            Configuration config = project.configurations.getByName("${variant.name}CompileOnly")
-            config.dependencies.add(dep)
-            Configuration testConfig = project.configurations.getByName("test${variant.name.capitalize()}Implementation")
-            testConfig.dependencies.add(dep)
+            project.dependencies.add("${variant.name}CompileOnly", dep)
+            project.dependencies.add("test${variant.name.capitalize()}Implementation", dep)
 
-            project."compile${variant.name.capitalize()}JavaWithJavac".doFirst {
-
-                // Mapping for release variants
-                if ('release' == variant.buildType.name) {
+            def compileProvider = project.tasks.named("compile${variant.name.capitalize()}JavaWithJavac")
+            compileProvider.configure({
+                doFirst {
                     def mappingName = "proguard-${variant.flavorName}-${variant.buildType.name}-mapping.txt"
                     def mappingFqn = tuple.mapping.absolutePath
                     if (new File(mappingFqn).exists()) {
@@ -169,34 +166,37 @@ class TakDevPlugin implements Plugin<Project> {
                         }
                     } else {
                         def mappingFile = project.file(mappingFqn)
-                        if(!mappingFile.getParentFile().exists())
+                        if (!mappingFile.getParentFile().exists())
                             mappingFile.getParentFile().mkdirs()
                         project.file(mappingFqn).text = ""
                         println("${variant.name} => WARNING: no mapping file could be established, obfuscating just the plugin to work with the development core")
                     }
                     System.setProperty("atak.proguard.mapping", mappingFqn)
                 }
-            }
+            })
 
             // inject keystore before validate signing
-            project."validateSigning${variant.name.capitalize()}".doFirst {
-                // Keystore
-                def storeName = 'android_keystore'
-                project.copy {
-                    from tuple.keystore.absolutePath
-                    into project.buildDir
-                    rename {
-                        return storeName
+            def signingProvider = project.tasks.named("validateSigning${variant.name.capitalize()}")
+            signingProvider.configure({
+                doFirst {
+                    // Keystore
+                    def storeName = 'android_keystore'
+                    project.copy {
+                        from tuple.keystore.absolutePath
+                        into project.buildDir
+                        rename {
+                            return storeName
+                        }
                     }
                 }
-            }
+            })
         }
     }
 
     void configureMaven(Project project) {
 
         // add the maven repo as a dependency
-        MavenArtifactRepository takrepo = project.repositories.maven( {
+        MavenArtifactRepository takrepo = project.repositories.maven({
             url = project.takrepoUrl
             name = 'takrepo'
             credentials {
@@ -209,14 +209,15 @@ class TakDevPlugin implements Plugin<Project> {
         int[] versionTokens = splitVersionString(project.devkitVersion)
         String lowerBound = "${versionTokens.join('.')}-SNAPSHOT"
         versionTokens[versionTokens.length - 1] += 1 // increment for upper
-        String upperBound = versionTokens.join('.')
-        String mavenVersion = project.snapshot ? "[${lowerBound}, ${upperBound})" :  "(${lowerBound}, ${upperBound})"
+        String upperBound = "${versionTokens.join('.')}-SNAPSHOT"
+        String mavenVersion = project.snapshot ? "[${lowerBound}, ${upperBound})" : "(${lowerBound}, ${upperBound})"
 
         project.android.applicationVariants.all { variant ->
+
             // arbitrary, variant specific, configuration names
-            def atakApkConfiguration = "${variant.name}AtakApk"
-            def mappingConfiguration = "${variant.name}Mapping"
-            def keystoreConfiguration = "${variant.name}Keystore"
+            def apkZipConfigName = "${variant.name}ApkZip"
+            def mappingConfigName = "${variant.name}Mapping"
+            def keystoreConfigName = "${variant.name}Keystore"
 
             def devType = variant.buildType.matchingFallbacks[0] ?: variant.buildType.name
             if (project.takdevProduction && ('release' == variant.buildType.name)) {
@@ -224,79 +225,87 @@ class TakDevPlugin implements Plugin<Project> {
             }
             def devFlavor = variant.productFlavors.matchingFallbacks[0][0] ?: variant.flavorName
 
+            def mavenGroupApp = 'com.atakmap.app'
+            def mavenGroupCommon = "${mavenGroupApp}.${devFlavor}.common"
+            def mavenGroupTyped = "${mavenGroupApp}.${devFlavor}.${devType}"
+
             // The corner stone, the API coordinates
-            def mavenCoord = [group: 'com.atakmap.app', name: "${devFlavor}-${devType}", version: mavenVersion, classifier: 'api', ext: 'jar']
+            def mavenCoord = [group: mavenGroupCommon, name: 'api', version: mavenVersion]
             debugPrintln("${variant.name} => Using repository API, ${mavenCoord}")
 
-            // Test artifact resolution. This is done against the root project
-            // to avoid polluting the configuration caching that occurs
-            if (!tryResolve(project.rootProject, takrepo, mavenCoord)) {
+            // Test artifact resolution.
+            if (!tryResolve(project, takrepo, mavenCoord)) {
                 println("Warning: Failed to resolve remote for ${variant.name}. Skipping ${variant.name}.")
                 return
             }
 
-            // add the Maven API coordinate as a dependency
-            Configuration config = project.configurations.getByName("${variant.name}CompileOnly")
-            config.dependencies.add(project.dependencies.create(mavenCoord))
-            Configuration testConfig = project.configurations.getByName("test${variant.name.capitalize()}Implementation")
-            testConfig.dependencies.add(project.dependencies.create(mavenCoord))
+            // api
+            project.dependencies.add("${variant.name}CompileOnly", mavenCoord)
+            // test
+            project.dependencies.add("test${variant.name.capitalize()}Implementation", mavenCoord)
 
-            // add the Maven zip coordinate as a dependency
+            // other artifacts are strongly typed per variant
+            mavenCoord.group = mavenGroupTyped
+
+            // add the APK zip as a dependency
+            def apkZipConfiguration
             if (!project.takdevNoApp) {
-                mavenCoord.classifier = ''
-                mavenCoord.ext = 'zip'
-                Configuration apkConfig = project.configurations.create(atakApkConfiguration)
-                apkConfig.dependencies.add(project.dependencies.create(mavenCoord))
-            }
-
-            // Configurations for all the dependencies
-            mavenCoord.classifier = 'mapping'
-            mavenCoord.ext = 'txt'
-            Configuration mappingConfig = project.configurations.create(mappingConfiguration)
-            mappingConfig.dependencies.add(project.dependencies.create(mavenCoord))
-
-            mavenCoord.classifier = 'keystore'
-            mavenCoord.ext = 'jks'
-            Configuration keystoreConfig = project.configurations.create(keystoreConfiguration)
-            keystoreConfig.dependencies.add(project.dependencies.create(mavenCoord))
-
-            // assembleXXX copies APK and mapping artifacts into output directory
-            if (!project.takdevNoApp) {
-                project."assemble${variant.name.capitalize()}".doLast {
-                    def zipName = "atak-${variant.flavorName}-${variant.buildType.name}-apk.zip"
-                    def zipPath = "${project.buildDir}/intermediates/atak-zips"
-
-                    project.copy {
-                        from project.configurations."${atakApkConfiguration}"
-                        into zipPath
-                        rename {
-                            return zipName
-                        }
-                    }
-                    project.copy {
-                        from project.zipTree("${zipPath}/${zipName}")
-                        into "${project.buildDir}/outputs/apk/${variant.flavorName}/${variant.buildType.name}"
-                        exclude 'mapping.txt'
-                        rename 'output.json', 'atak-output.json'
-                    }
-                    project.copy {
-                        from project.zipTree("${zipPath}/${zipName}")
-                        into "${project.buildDir}/outputs/mapping/${variant.name}"
-                        include 'mapping.txt'
-                        rename 'mapping.txt', 'atak-mapping.txt'
-                    }
+                mavenCoord.name = 'apk'
+                apkZipConfiguration = project.configurations.register(apkZipConfigName)
+                project.dependencies.add(apkZipConfigName, mavenCoord)
+                debugPrintln("${variant.name} => Using repository APK, ${mavenCoord}")
+                if ('civ' != variant.flavorName) {
+                    def mavenCivCoord = [group: "${mavenGroupApp}.civ.${devType}", name: mavenCoord.name, version: mavenCoord.version]
+                    project.dependencies.add(apkZipConfigName, mavenCivCoord)
+                    debugPrintln("${variant.name} => Adding repository APK, ${mavenCivCoord}")
                 }
             }
 
-            project."compile${variant.name.capitalize()}JavaWithJavac".doFirst {
-                
-                if ('release' == variant.buildType.name) {
+            // add the mapping as a dependency
+            mavenCoord.name = 'mapping'
+            def mappingConfiguration = project.configurations.register(mappingConfigName)
+            project.dependencies.add(mappingConfigName, mavenCoord)
+            debugPrintln("${variant.name} => Using repository mapping, ${mavenCoord}")
 
+            mavenCoord.name = 'keystore'
+            def keystoreConfiguration = project.configurations.register(keystoreConfigName)
+            project.dependencies.add(keystoreConfigName, mavenCoord)
+            debugPrintln("${variant.name} => Using repository keystore, ${mavenCoord}")
+
+            // assembleXXX copies APK and mapping artifacts into output directory
+            if (!project.takdevNoApp) {
+                def assembleProvider = project.tasks.named("assemble${variant.name.capitalize()}")
+                assembleProvider.configure({
+                    doLast {
+                        project.copy {
+                            from apkZipConfiguration
+                            into "${project.buildDir}/intermediates/atak-zips"
+                            eachFile { fcd ->
+                                def zipFileTree = project.zipTree(fcd.file)
+                                def apkTree = zipFileTree.matching {
+                                    include '**/*.apk'
+                                }
+                                def matcher = (apkTree.singleFile.name =~ /(.+-([a-zA-Z]+))\.apk/)
+                                fcd.name = "${matcher[0][1]}.zip"
+                                project.copy {
+                                    from zipFileTree
+                                    into "${project.buildDir}/outputs/atak-apks/${matcher[0][2]}"
+                                    exclude "output-metadata.json"
+                                }
+                            }
+                        }
+                    }
+                })
+            }
+
+            def compileProvider = project.tasks.named("compile${variant.name.capitalize()}JavaWithJavac")
+            compileProvider.configure({
+                doFirst {
                     // Proguard mapping; flavor specific
                     def mappingName = "proguard-${variant.flavorName}-${variant.buildType.name}-mapping.txt"
                     def mappingFqn = "${project.buildDir}/${mappingName}"
                     project.copy {
-                        from project.configurations."${mappingConfiguration}"
+                        from mappingConfiguration
                         into project.buildDir
                         rename { sourceName ->
                             debugPrintln("${variant.name} => Copied proguard mapping ${sourceName} from repository into ${mappingFqn}")
@@ -306,22 +315,25 @@ class TakDevPlugin implements Plugin<Project> {
 
                     System.setProperty("atak.proguard.mapping", mappingFqn)
                 }
-            }
+            })
 
             // inject keystore before signing
-            project."validateSigning${variant.name.capitalize()}".doFirst {
-                // Keystore
-                def storeName = 'android_keystore'
-                def storeFqn = "${project.buildDir}/${storeName}"
-                project.copy {
-                    from project.configurations."${keystoreConfiguration}"
-                    into project.buildDir
-                    rename { sourceName ->
-                        debugPrintln("${variant.name} => Copied keystore from repository ${sourceName} into ${storeFqn}")
-                        return storeName
+            def signingProvider = project.tasks.named("validateSigning${variant.name.capitalize()}")
+            signingProvider.configure({
+                doFirst {
+                    // Keystore
+                    def storeName = 'android_keystore'
+                    def storeFqn = "${project.buildDir}/${storeName}"
+                    project.copy {
+                        from keystoreConfiguration
+                        into project.buildDir
+                        rename { sourceName ->
+                            debugPrintln("${variant.name} => Copied keystore from repository ${sourceName} into ${storeFqn}")
+                            return storeName
+                        }
                     }
                 }
-            }
+            })
         }
     }
 
@@ -334,7 +346,7 @@ class TakDevPlugin implements Plugin<Project> {
                 fis = new FileInputStream(pluginConfig)
                 localProperties.load(fis)
             } finally {
-                if(fis != null)
+                if (fis != null)
                     fis.close()
             }
             def value = localProperties.get(name)
@@ -350,64 +362,76 @@ class TakDevPlugin implements Plugin<Project> {
         if (!pluginConfig.exists())
             pluginConfig.getParentFile().mkdirs()
         def localProperties = new Properties()
-        if(pluginConfig.exists()) {
+        if (pluginConfig.exists()) {
             FileInputStream fis = null
             try {
                 fis = new FileInputStream(pluginConfig)
                 localProperties.load(fis)
             } finally {
-                if(fis != null)
+                if (fis != null)
                     fis.close()
             }
         }
-        if(null != value)
+        if (null != value)
             localProperties.setProperty(name, value)
-        else if(localProperties.containsKey(name))
+        else if (localProperties.containsKey(name))
             localProperties.remove(name)
         FileOutputStream fos = null
         try {
             fos = new FileOutputStream(pluginConfig)
             localProperties.store(fos, null)
         } finally {
-            if(fos != null)
+            if (fos != null)
                 fos.close()
         }
     }
 
     static String computeHash(Project p, MavenArtifactRepository repo) {
         MessageDigest digest = MessageDigest.getInstance("SHA-256")
-        def hash = digest.digest((repo.credentials.username+":"+repo.credentials.password+":"+repo.url+":"+p.findProject(':app').ATAK_VERSION).getBytes(StandardCharsets.UTF_8))
+        def key = [
+                repo.credentials.username,
+                repo.credentials.password,
+                repo.url,
+                p.devkitVersion,
+                p.snapshot
+        ].join(':')
+        def hash = digest.digest(key.getBytes(StandardCharsets.UTF_8))
         return Base64.encoder.encodeToString(hash)
     }
 
     static boolean tryResolve(Project p, MavenArtifactRepository takrepo, Map<?, ?> depcoord) {
+        // This is done against the root project
+        // to avoid polluting the configuration caching that occurs
+        Project rootProject = p.rootProject
+
         // add the maven repo if it's not already installed
-        if (p.repositories.findByName(takrepo.name) == null) {
-            p.repositories.add(p.repositories.mavenLocal())
-            p.repositories.add(takrepo)
+        if (rootProject.repositories.findByName(takrepo.name) == null) {
+            rootProject.repositories.add(rootProject.repositories.mavenLocal())
+            rootProject.repositories.add(takrepo)
         }
 
         // check the cached values for dependency resolution
+        def depKey  = "${depcoord['group']}.${depcoord['name']}"
         def repoHash = computeHash(p, takrepo)
-        def dep = p.dependencies.create(depcoord)
-        def cachedHash = readPluginProperty(p, "${dep.name}.hash", "")
-        if(!cachedHash.equals(repoHash)) {
+        def dep = rootProject.dependencies.create(depcoord)
+        def cachedHash = readPluginProperty(p, "${depKey}.hash", "")
+        if (!cachedHash.equals(repoHash)) {
             // if the cached repo hash does not equal the hash for the
             // specified repo, clear the cached dependency resolution state
-            writePluginProperty(p, "${dep.name}.hash", null)
-            writePluginProperty(p, "${dep.name}.available", null)
+            writePluginProperty(p, "${depKey}.hash", null)
+            writePluginProperty(p, "${depKey}.available", null)
         } else {
             // the hashes are equal, if dependency resolution is cached, return
             // the cached value
-            String available = readPluginProperty(p, "${dep.name}.available", null)
-            if(available != null)
+            String available = readPluginProperty(p, "${depKey}.available", null)
+            if (available != null)
                 return available.equals('true')
         }
 
         // create a transient configuration and attempt to resolve
         Configuration config = null
         try {
-            config = p.configurations.create("depResolver")
+            config = rootProject.configurations.create("depResolver")
             config.dependencies.add(dep.copy())
             boolean resolved
             try {
@@ -418,12 +442,12 @@ class TakDevPlugin implements Plugin<Project> {
                 resolved = false
             }
             // update the cached dependency resolution state
-            writePluginProperty(p, "${dep.name}.hash", repoHash)
-            writePluginProperty(p, "${dep.name}.available", resolved ? 'true' : 'false')
+            writePluginProperty(p, "${depKey}.hash", repoHash)
+            writePluginProperty(p, "${depKey}.available", resolved ? 'true' : 'false')
             return resolved
         } finally {
-            if(config != null)
-                p.configurations.remove(config)
+            if (config != null)
+                rootProject.configurations.remove(config)
         }
     }
 

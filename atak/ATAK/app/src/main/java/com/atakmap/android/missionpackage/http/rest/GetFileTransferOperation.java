@@ -5,6 +5,7 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import com.atakmap.android.filesharing.android.service.AndroidFileInfo;
@@ -25,7 +26,7 @@ import com.atakmap.app.R;
 import com.atakmap.comms.http.TakHttpClient;
 import com.atakmap.comms.http.TakHttpResponse;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.foxykeep.datadroid.exception.ConnectionException;
@@ -94,7 +95,7 @@ public final class GetFileTransferOperation extends HTTPOperation {
                 .getSystemService(Context.NOTIFICATION_SERVICE);
 
         Notification.Builder builder;
-        if (android.os.Build.VERSION.SDK_INT < 26) {
+        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             builder = new Notification.Builder(context);
         } else {
             builder = new Notification.Builder(context, "com.atakmap.app.def");
@@ -128,12 +129,13 @@ public final class GetFileTransferOperation extends HTTPOperation {
                     fileRequest.getFileTransfer().getUID());
             if (fileRequest.getRetryCount() > 1) {
                 // this is a retry, lets see if we pick up where previous attempt left off
-                if (FileIOProviderFactory.exists(temp)
-                        && FileIOProviderFactory.length(temp) > 0
-                        && temp.canWrite()
-                        && FileIOProviderFactory.length(temp) < fileRequest.getFileTransfer()
+                if (IOProviderFactory.exists(temp)
+                        && IOProviderFactory.length(temp) > 0
+                        && IOProviderFactory.canWrite(temp)
+                        && IOProviderFactory.length(temp) < fileRequest
+                                .getFileTransfer()
                                 .getSize()) {
-                    existingLength = FileIOProviderFactory.length(temp);
+                    existingLength = IOProviderFactory.length(temp);
                     bRestart = true;
                     Log.d(TAG, "Restarting download: "
                             + fileRequest.getFileTransfer().getName()
@@ -181,7 +183,8 @@ public final class GetFileTransferOperation extends HTTPOperation {
             response.verifyOk();
 
             // open up for writing
-            FileOutputStream fos = FileIOProviderFactory.getOutputStream(temp, bRestart);
+            FileOutputStream fos = IOProviderFactory.getOutputStream(temp,
+                    bRestart);
             // stream in content, keep user notified on progress
             builder.setProgress(100, 1, false);
             if (notifyManager != null)
@@ -257,7 +260,7 @@ public final class GetFileTransferOperation extends HTTPOperation {
                 throw new ConnectionException("Size or MD5 mismatch");
             }
 
-            long downloadSize = FileIOProviderFactory.length(temp);
+            long downloadSize = IOProviderFactory.length(temp);
             Log.d(TAG, "File Transfer downloaded and verified");
 
             // update notification
@@ -377,9 +380,11 @@ public final class GetFileTransferOperation extends HTTPOperation {
                     fileInfo.setUserLabel(fileRequest.getFileTransfer()
                             .getName());
                     // TODO is this checked dynamically or cached when File is created?
-                    fileInfo.setSizeInBytes((int) FileIOProviderFactory.length(savedMissionPackage));
+                    fileInfo.setSizeInBytes((int) IOProviderFactory
+                            .length(savedMissionPackage));
 
-                    fileInfo.setUpdateTime(FileIOProviderFactory.lastModified(savedMissionPackage));
+                    fileInfo.setUpdateTime(IOProviderFactory
+                            .lastModified(savedMissionPackage));
 
                     // file size and hash was verified above, so lets use that rather than re-compute
                     String sha256 = fileRequest.getFileTransfer().getSHA256(

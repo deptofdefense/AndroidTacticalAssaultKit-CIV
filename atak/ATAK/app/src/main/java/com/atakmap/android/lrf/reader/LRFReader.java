@@ -37,14 +37,14 @@ public class LRFReader extends BluetoothReader {
     RangeFinderData elevation = null;
 
     private static final int WORD_SIZE = 2;
-    private float MILS_TO_DEGREES = 0.05625f;
+    private final float MILS_TO_DEGREES = 0.05625f;
 
     /**
      * Defines the size of the GPS 153 data format in bytes (56 words)
      */
     private static final int EVENT_SIZE = 56 * WORD_SIZE;
 
-    private byte[] buffer = new byte[8 * 8 * 1024];
+    private final byte[] buffer = new byte[8 * 8 * 1024];
     private int curr = 0;
 
     public LRFReader(BluetoothDevice device) {
@@ -99,7 +99,7 @@ public class LRFReader extends BluetoothReader {
                     }
                 } catch (Exception e) {
                     Log.d(TAG,
-                            "huge error occured, reset the buffer and try again");
+                            "huge error occurred, reset the buffer and try again");
                 }
                 curr = 0;
             }
@@ -135,7 +135,7 @@ public class LRFReader extends BluetoothReader {
                     }
                 } catch (Exception e) {
                     Log.d(TAG,
-                            "huge error occured, reset the buffer and try again");
+                            "huge error occurred, reset the buffer and try again");
                 }
                 curr = 0;
             }

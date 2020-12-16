@@ -3,9 +3,11 @@ package com.atakmap.map.formats.c3dt;
 import android.net.Uri;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.io.UriFactory;
+import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.model.ModelInfo;
 import com.atakmap.map.layer.model.ModelInfoSpi;
 import com.atakmap.map.layer.model.opengl.GLSceneFactory;
@@ -17,6 +19,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Set;
@@ -52,17 +55,30 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
 
         // fallback on File test
         File f = new File(s);
-        if(FileIOProviderFactory.isDirectory(f))
-            f = new File(f, "tileset.json");
-        else
+        if(f.getName().endsWith(".zip")) {
+            try {
+                f = new ZipVirtualFile(f);
+            } catch(Throwable ignored) {}
+        }
+        if(!IOProviderFactory.isDirectory(f))
             return false; // XXX - workaround for ATAK-12324
-        return FileIOProviderFactory.exists(f) && f.getName().equals("tileset.json");
+        else if(f instanceof ZipVirtualFile)
+            f = new ZipVirtualFile(f, "tileset.json");
+        else
+            f = new File(f, "tileset.json");
+        return IOProviderFactory.exists(f) && f.getName().equals("tileset.json");
     }
 
     @Override
     public Set<ModelInfo> create(String s) {
         File f = new File(s);
-        if(!FileIOProviderFactory.exists(f)) {
+        if(f.getName().endsWith(".zip")) {
+            try {
+                f = new ZipVirtualFile(f);
+            } catch(Throwable ignored) {}
+        }
+        // remote URL load
+        if(!IOProviderFactory.exists(f)) {
             UriFactory.OpenResult uriOpenResult = UriFactory.open(s);
             if (uriOpenResult != null) {
                 try {
@@ -82,13 +98,29 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
             }
         }
 
-        if (FileIOProviderFactory.isDirectory(f))
-            f = new File(f, "tileset.json");
-        if (!FileIOProviderFactory.exists(f) || !f.getName().equals("tileset.json"))
+        if (IOProviderFactory.isDirectory(f)) {
+            if(f instanceof ZipVirtualFile) {
+                try {
+                    f = new ZipVirtualFile(f, "tileset.json");
+                } catch(Throwable t) {
+                    return null;
+                }
+            } else {
+                f = new File(f, "tileset.json");
+            }
+        }
+        if (!IOProviderFactory.exists(f) || !f.getName().equals("tileset.json"))
             return null;
 
         try {
-            return createFromString(FileSystemUtils.copyStreamToString(f),
+            InputStream is;
+            if(f instanceof ZipVirtualFile)
+                is = ((ZipVirtualFile)f).openStream();
+            else
+                is = IOProviderFactory.getInputStream(f);
+            return createFromString(
+                    FileSystemUtils.copyStreamToString(
+                            is, true, FileSystemUtils.UTF8_CHARSET),
                     f.getParentFile().getName(),
                     f.getAbsolutePath());
         } catch (Throwable t) {

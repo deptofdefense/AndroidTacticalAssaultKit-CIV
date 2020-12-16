@@ -55,7 +55,7 @@ abstract class MemberUtils {
             try {
                 isSynthetic = Member.class.getMethod("isSynthetic",
                         ArrayUtils.EMPTY_CLASS_ARRAY);
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
         }
         IS_SYNTHETIC = isSynthetic;
@@ -120,7 +120,7 @@ abstract class MemberUtils {
             try {
                 Object o = null;
                 return ((Boolean) IS_SYNTHETIC.invoke(m, o)).booleanValue();
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
         }
         return false;

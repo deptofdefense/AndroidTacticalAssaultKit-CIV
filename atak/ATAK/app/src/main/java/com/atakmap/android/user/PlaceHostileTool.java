@@ -16,7 +16,9 @@ import com.atakmap.android.toolbar.ButtonTool;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbar.widgets.TextContainer;
 import com.atakmap.app.R;
-import com.atakmap.app.BuildConfig;
+import com.atakmap.app.system.FlavorProvider;
+import com.atakmap.app.system.ResourceUtil;
+import com.atakmap.app.system.SystemComponentLoader;
 
 /**
  *
@@ -37,7 +39,9 @@ public class PlaceHostileTool extends ButtonTool {
         prefs = PreferenceManager
                 .getDefaultSharedPreferences(mapView.getContext());
 
-        if (BuildConfig.HAS_FIRES)
+        // check to see what type is being built - capabilities wise
+        FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+        if (fp != null && fp.hasMilCapabilities())
             button.setOnLongClickListener(_buttonLongClickListener);
     }
 
@@ -79,7 +83,8 @@ public class PlaceHostileTool extends ButtonTool {
             markerCreator.setHow("h-g-i-g-o");
             markerCreator.showCotDetails(false);
             markerCreator.setPrefix(
-                    _mapView.getContext().getString(R.string.tgtPrefix) + ".");
+                    ResourceUtil.getString(_mapView.getContext(),
+                            R.string.civ_tgtPrefix, R.string.tgtPrefix) + ".");
 
             boolean launchNineLine = prefs.getBoolean("autostart_nineline",
                     false);

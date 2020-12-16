@@ -59,13 +59,13 @@ public final class GLModelLayer
 
     private final static String TAG = "GLModelLayer";
 
-    private FeatureDataStore2 dataStore;
+    private final FeatureDataStore2 dataStore;
     private Collection<GLMapRenderable2> drawList;
     private final Map<Long, SceneRenderer> cache;
     private final Map<Long, MaterialManager> materialManagers;
-    private File resourceDirectory;
+    private final File resourceDirectory;
 
-    private ModelHitTestControl modelHitTestControl = new ModelHitTestControl() {
+    private final ModelHitTestControl modelHitTestControl = new ModelHitTestControl() {
         @Override
         public boolean hitTest(float screenX, float screenY,
                 GeoPoint result) {
@@ -121,24 +121,24 @@ public final class GLModelLayer
     }
 
     @Override
-    public void draw(GLMapView view, int renderPass)  {
+    public void draw(GLMapView view, int renderPass) {
         final boolean enabled = GLES30.glIsEnabled(GLES30.GL_DEPTH_TEST);
         final boolean[] mask = new boolean[1];
         GLES30.glGetBooleanv(GLES30.GL_DEPTH_WRITEMASK, mask, 0);
         final int[] func = new int[1];
         GLES30.glGetIntegerv(GLES30.GL_DEPTH_FUNC, func, 0);
-        if(!enabled)
+        if (!enabled)
             GLES30.glEnable(GLES30.GL_DEPTH_TEST);
-        if(!mask[0])
+        if (!mask[0])
             GLES30.glDepthMask(true);
-        if(func[0] != GLES30.GL_LEQUAL)
+        if (func[0] != GLES30.GL_LEQUAL)
             GLES30.glDepthFunc(GLES30.GL_LEQUAL);
         super.draw(view, renderPass);
-        if(!enabled)
+        if (!enabled)
             GLES30.glDisable(GLES30.GL_DEPTH_TEST);
-        if(!mask[0])
+        if (!mask[0])
             GLES30.glDepthMask(mask[0]);
-        if(func[0] != GLES30.GL_LEQUAL)
+        if (func[0] != GLES30.GL_LEQUAL)
             GLES30.glDepthFunc(func[0]);
     }
 

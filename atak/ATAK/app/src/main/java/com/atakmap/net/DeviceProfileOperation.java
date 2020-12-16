@@ -22,7 +22,7 @@ import com.atakmap.comms.http.TakHttpClient;
 import com.atakmap.comms.http.TakHttpException;
 import com.atakmap.comms.http.TakHttpResponse;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.foxykeep.datadroid.exception.ConnectionException;
@@ -302,7 +302,8 @@ public class DeviceProfileOperation extends HTTPOperation {
             NotificationUtil.getInstance().postNotification(notifId,
                     ATAKConstants.getIconId(), title, messageTitle,
                     messageTitle);
-            builder = NotificationUtil.getInstance().getNotificationBuilder(notifId);
+            builder = NotificationUtil.getInstance()
+                    .getNotificationBuilder(notifId);
             builder.setProgress(100, 1, false);
 
             progressTracker = new DownloadProgressTracker(contentLength);
@@ -311,7 +312,7 @@ public class DeviceProfileOperation extends HTTPOperation {
 
         int len;
         byte[] buf = new byte[8192];
-        FileOutputStream fos = FileIOProviderFactory.getOutputStream(downloaded);
+        FileOutputStream fos = IOProviderFactory.getOutputStream(downloaded);
         InputStream in = null;
         try {
             in = resEntity.getContent();
@@ -427,7 +428,8 @@ public class DeviceProfileOperation extends HTTPOperation {
                             + contentFolder.getAbsolutePath());
                 }
 
-                if (!FileIOProviderFactory.exists(contentFolder)&& !FileIOProviderFactory.mkdirs(contentFolder)) {
+                if (!IOProviderFactory.exists(contentFolder)
+                        && !IOProviderFactory.mkdirs(contentFolder)) {
                     Log.w(TAG, "Cannot create dir "
                             + contentFolder.getAbsolutePath());
                 }
@@ -456,7 +458,8 @@ public class DeviceProfileOperation extends HTTPOperation {
                         return;
                     }
 
-                    if (!FileIOProviderFactory.exists(parent) && !FileIOProviderFactory.mkdirs(parent)) {
+                    if (!IOProviderFactory.exists(parent)
+                            && !IOProviderFactory.mkdirs(parent)) {
                         Log.w(TAG, "Cannot create dir "
                                 + parent.getAbsolutePath());
                     }

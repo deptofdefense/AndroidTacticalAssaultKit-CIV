@@ -9,7 +9,8 @@ public class MockSurface implements RenderSurface {
     int width;
     int height;
     double dpi;
-    Set<OnSizeChangedListener> listeners = Collections2.newIdentityHashSet();
+    final Set<OnSizeChangedListener> listeners = Collections2
+            .newIdentityHashSet();
 
     public MockSurface(int width, int height, double dpi) {
         this.width = width;

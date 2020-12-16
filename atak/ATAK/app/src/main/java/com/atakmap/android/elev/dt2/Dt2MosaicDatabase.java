@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;
@@ -167,7 +167,7 @@ public class Dt2MosaicDatabase implements MosaicDatabase2 {
 
             // check to see if there is even a base directory for the 
             // dted, if there is not - short circuit.
-            if (!FileIOProviderFactory.exists(baseDir)) {
+            if (!IOProviderFactory.exists(baseDir)) {
                 return false;
             }
 
@@ -185,7 +185,7 @@ public class Dt2MosaicDatabase implements MosaicDatabase2 {
                 // iterating through the extensions.
                 final File ewDir = new File(this.baseDir, filename)
                         .getParentFile();
-                if (!FileIOProviderFactory.exists(ewDir)) {
+                if (!IOProviderFactory.exists(ewDir)) {
                     continue;
                 }
 
@@ -193,7 +193,7 @@ public class Dt2MosaicDatabase implements MosaicDatabase2 {
                         % this.numFormats); i < this.numFormats; i++) {
                     final File f = new File(this.baseDir, filename
                             + this.formats[i].extension);
-                    if (!FileIOProviderFactory.exists(f)) {
+                    if (!IOProviderFactory.exists(f)) {
                         this.idx++;
                         continue;
                     }

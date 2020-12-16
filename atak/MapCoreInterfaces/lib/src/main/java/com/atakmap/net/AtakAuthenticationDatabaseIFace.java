@@ -50,4 +50,10 @@ public interface AtakAuthenticationDatabaseIFace {
     void invalidateForType(
             String type,
             String site);
+
+    boolean deleteExpiredCredentials(long time);
+
+    AtakAuthenticationCredentials[] getDistinctSitesAndTypes();
+
+    void dispose();
 }

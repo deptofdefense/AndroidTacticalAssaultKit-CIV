@@ -14,7 +14,7 @@ import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
@@ -94,9 +94,9 @@ public class ExportOBJTask extends ExportFileTask implements
         // Create temporary zip directory
         File tmpDir = new File(RubberSheetManager.DIR, ".tmp_"
                 + _baseName + "_objzip");
-        if (FileIOProviderFactory.exists(tmpDir))
+        if (IOProviderFactory.exists(tmpDir))
             FileSystemUtils.delete(tmpDir);
-        if (!FileIOProviderFactory.mkdirs(tmpDir)) {
+        if (!IOProviderFactory.mkdirs(tmpDir)) {
             Log.d(TAG, "Failed to create temp dir: " + tmpDir);
             return null;
         }
@@ -243,7 +243,7 @@ public class ExportOBJTask extends ExportFileTask implements
             return null;
 
         // Cleanup
-        if (FileIOProviderFactory.exists(tmpDir))
+        if (IOProviderFactory.exists(tmpDir))
             FileSystemUtils.delete(tmpDir);
 
         return zipFile;
@@ -270,10 +270,10 @@ public class ExportOBJTask extends ExportFileTask implements
         PrintWriter ow = null, vw = null, tw = null, nw = null, fw = null;
         FileOutputStream fos = null;
         try {
-            vw = new PrintWriter(FileIOProviderFactory.getFileWriter(vFile));
-            tw = new PrintWriter(FileIOProviderFactory.getFileWriter(tFile));
-            nw = new PrintWriter(FileIOProviderFactory.getFileWriter(nFile));
-            fw = new PrintWriter(FileIOProviderFactory.getFileWriter(fFile));
+            vw = new PrintWriter(IOProviderFactory.getFileWriter(vFile));
+            tw = new PrintWriter(IOProviderFactory.getFileWriter(tFile));
+            nw = new PrintWriter(IOProviderFactory.getFileWriter(nFile));
+            fw = new PrintWriter(IOProviderFactory.getFileWriter(fFile));
 
             LinkedHashMap<ColorVertex, Integer> vMap = new LinkedHashMap<>();
             LinkedHashMap<TexCoord, Integer> tMap = new LinkedHashMap<>();
@@ -432,7 +432,8 @@ public class ExportOBJTask extends ExportFileTask implements
             tMap.clear();
 
             // Now write out the header for the OBJ file
-            ow = new PrintWriter(FileIOProviderFactory.getOutputStream(new File(path)));
+            ow = new PrintWriter(
+                    IOProviderFactory.getOutputStream(new File(path)));
 
             // Version info
             ow.println("# "
@@ -448,7 +449,7 @@ public class ExportOBJTask extends ExportFileTask implements
             ow.println("mtllib " + mtlName + "\n");
             ow.close();
 
-            fos = FileIOProviderFactory.getOutputStream(new File(path), true);
+            fos = IOProviderFactory.getOutputStream(new File(path), true);
 
             // Copy vertex file into the OBJ file
             byte[] buf = new byte[FileSystemUtils.BUF_SIZE];

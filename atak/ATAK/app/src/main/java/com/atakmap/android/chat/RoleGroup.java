@@ -18,7 +18,7 @@ import com.atakmap.coremap.locale.LocaleUtil;
 
 public class RoleGroup extends GroupContact {
 
-    private String roleName;
+    private final String roleName;
 
     public RoleGroup(final String role) {
         super(role, role, new ArrayList<Contact>(), false);

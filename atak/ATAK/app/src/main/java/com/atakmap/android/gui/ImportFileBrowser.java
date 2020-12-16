@@ -48,7 +48,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.DefaultIOProvider;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
@@ -78,6 +80,7 @@ public class ImportFileBrowser extends LinearLayout {
     protected String _currFile;
     protected ArrayAdapter<FileItem> _adapter;
     protected boolean _directoryEmpty;
+    protected IOProvider ioProvider = IOProviderFactoryProxy.INSTANCE;
 
     /*************************** PUBLIC FIELDS **************************/
     public static final String WILDCARD = "*";
@@ -222,8 +225,14 @@ public class ImportFileBrowser extends LinearLayout {
         _extensions = extensions;
     }
 
+    /** @deprecated Use {@link #getModifiedDate(Long)} */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public static String getModifiedDate(File file) {
-        return getModifiedDate(FileIOProviderFactory.lastModified(file));
+        if (!IOProviderFactory.exists(file))
+            return "";
+        else
+            return getModifiedDate(IOProviderFactory.lastModified(file));
     }
 
     public static String getModifiedDate(Long time) {
@@ -231,6 +240,13 @@ public class ImportFileBrowser extends LinearLayout {
                 LocaleUtil.getCurrent());
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
         return sdf.format(time);
+    }
+
+    public void setUseProvider(boolean useIoProvider) {
+        if (useIoProvider)
+            ioProvider = IOProviderFactoryProxy.INSTANCE;
+        else
+            ioProvider = new DefaultIOProvider();
     }
 
     /*************************** PROTECTED METHODS **************************/
@@ -251,25 +267,40 @@ public class ImportFileBrowser extends LinearLayout {
         _updateCurrentDirectoryTextView();
     }
 
+    protected final File[] listFiles(File f, FilenameFilter filter) {
+        String[] list = ioProvider.list(f, filter);
+        if (list == null)
+            return null;
+        File[] retval = new File[list.length];
+        for (int i = 0; i < list.length; i++)
+            retval[i] = new File(f, list[i]);
+        return retval;
+    }
+
+    protected final boolean isFile(File f) {
+        return ioProvider.exists(f) && !ioProvider.isDirectory(f);
+    }
+
     protected void _loadFileList() {
         MapView mv = MapView.getMapView();
         Context ctx = mv != null ? mv.getContext() : getContext();
         _fileList.clear();
-        if (FileIOProviderFactory.exists(_path) && _path.canRead()) {
+        if (ioProvider.exists(_path) && ioProvider.canRead(_path)) {
             FilenameFilter filter = new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String fileName) {
                     File sel = new File(dir, fileName);
                     String ext = StringUtils.substringAfterLast(fileName, ".");
-                    if (ext != null && sel.isFile()) {
+                    if (ext != null && isFile(sel)) {
                         return (_testExtension(ext.toLowerCase(LocaleUtil
                                 .getCurrent())))
-                                && sel.canRead();
+                                && ioProvider.canRead(sel);
                     }
-                    return sel.canRead() && FileIOProviderFactory.isDirectory(sel);
+                    return ioProvider.canRead(sel)
+                            && ioProvider.isDirectory(sel);
                 }
             };
-            File[] fList = FileIOProviderFactory.listFiles(_path, filter);
+            File[] fList = listFiles(_path, filter);
             _directoryEmpty = false;
 
             if (fList != null) {
@@ -277,7 +308,7 @@ public class ImportFileBrowser extends LinearLayout {
                     Drawable icon = ctx
                             .getDrawable(R.drawable.import_file_icon);
                     int type = FileItem.FILE;
-                    if (FileIOProviderFactory.isDirectory(f)) {
+                    if (ioProvider.isDirectory(f)) {
                         icon = ctx.getDrawable(R.drawable.import_folder_icon);
                         type = FileItem.DIRECTORY;
                     } else {
@@ -369,7 +400,7 @@ public class ImportFileBrowser extends LinearLayout {
         // first check if user provided a directory to start in
         if (_userStartDirectory != null && _userStartDirectory.length() > 0) {
             File userDir = new File(_userStartDirectory);
-            if (FileIOProviderFactory.exists(userDir) && FileIOProviderFactory.isDirectory(userDir)) {
+            if (ioProvider.exists(userDir) && ioProvider.isDirectory(userDir)) {
                 _path = userDir;
                 return;
             }
@@ -377,11 +408,13 @@ public class ImportFileBrowser extends LinearLayout {
 
         // start in default directory
         File temp = new File(INITIAL_DIRECTORY);
-        if (FileIOProviderFactory.isDirectory(temp))
+        if (ioProvider.isDirectory(temp))
             _path = temp;
         if (_path == null) {
-            if (FileIOProviderFactory.isDirectory(Environment.getExternalStorageDirectory())
-                    && Environment.getExternalStorageDirectory().canRead()) {
+            if (ioProvider
+                    .isDirectory(Environment.getExternalStorageDirectory())
+                    && ioProvider.canRead(
+                            Environment.getExternalStorageDirectory())) {
                 _path = Environment.getExternalStorageDirectory();
             } else {
                 _path = new File(FILE_SEPARATOR);
@@ -490,7 +523,7 @@ public class ImportFileBrowser extends LinearLayout {
 
                 // Attempt to create new folder
                 File newDir = new File(_path, dirName);
-                if (!FileIOProviderFactory.mkdir(newDir)) {
+                if (!IOProviderFactory.mkdir(newDir)) {
                     Toast.makeText(ctx, R.string.new_folder_failed,
                             Toast.LENGTH_SHORT).show();
                     return;
@@ -617,8 +650,9 @@ public class ImportFileBrowser extends LinearLayout {
 
             File f = new File(_path, fileItem.file);
             holder.txtFilename.setText(f.getName());
-            if (FileIOProviderFactory.exists(f))
-                holder.txtModifiedDate.setText(getModifiedDate(f));
+            if (ioProvider.exists(f))
+                holder.txtModifiedDate
+                        .setText(getModifiedDate(ioProvider.lastModified(f)));
             else
                 holder.txtModifiedDate.setText("");
 
@@ -636,8 +670,9 @@ public class ImportFileBrowser extends LinearLayout {
                     null,
                     null);
             if (fileItem.type == FileItem.FILE) {
-                if (FileIOProviderFactory.exists(f))
-                    holder.icon.setText(MathUtils.GetLengthString(FileIOProviderFactory.length(f)));
+                if (ioProvider.exists(f))
+                    holder.icon.setText(
+                            MathUtils.GetLengthString(ioProvider.length(f)));
                 else {
                     holder.icon.setText("");
                     holder.txtModifiedDate.setText("");
@@ -649,13 +684,15 @@ public class ImportFileBrowser extends LinearLayout {
                         File sel = new File(dir, fileName);
                         String ext = StringUtils.substringAfterLast(fileName,
                                 ".");
-                        if (sel.isFile()) {
-                            return (_testExtension(ext)) && sel.canRead();
+                        if (isFile(sel)) {
+                            return (_testExtension(ext))
+                                    && ioProvider.canRead(sel);
                         }
-                        return sel.canRead() && FileIOProviderFactory.isDirectory(sel);
+                        return ioProvider.canRead(sel)
+                                && ioProvider.isDirectory(sel);
                     }
                 };
-                String[] children = FileIOProviderFactory.list(f, filter);
+                String[] children = ioProvider.list(f, filter);
                 if (children == null || children.length < 1) {
                     holder.icon.setText("");
                 } else {
@@ -674,8 +711,8 @@ public class ImportFileBrowser extends LinearLayout {
                 public void onClick(View v) {
                     _currFile = fileItem.file;
                     File sel = new File(_path, _currFile);
-                    if (FileIOProviderFactory.isDirectory(sel)) {
-                        if (sel.canRead()) {
+                    if (ioProvider.isDirectory(sel)) {
+                        if (ioProvider.canRead(sel)) {
                             _pathDirsList.add(_currFile);
                             _path = new File(sel + "");
                             _loadFileList();
@@ -694,5 +731,4 @@ public class ImportFileBrowser extends LinearLayout {
             return convertView;
         }
     }
-
 }

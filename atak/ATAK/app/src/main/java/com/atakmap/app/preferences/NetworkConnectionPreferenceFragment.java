@@ -3,7 +3,6 @@ package com.atakmap.app.preferences;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.security.SecureRandom;
 import java.util.List;
 
@@ -34,7 +33,7 @@ import com.atakmap.comms.app.CotInputsListActivity;
 import com.atakmap.comms.app.CotOutputsListActivity;
 import com.atakmap.comms.app.CotStreamListActivity;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.net.AtakCertificateDatabase;
 import com.atakmap.net.AtakCertificateDatabaseIFace;
@@ -211,7 +210,8 @@ public class NetworkConnectionPreferenceFragment
 
         final String directory;
 
-        if (certDir != null && FileIOProviderFactory.exists(certDir) && FileIOProviderFactory.isDirectory(certDir))
+        if (certDir != null && IOProviderFactory.exists(certDir)
+                && IOProviderFactory.isDirectory(certDir))
             directory = certDir.getAbsolutePath();
         else
             directory = Environment.getExternalStorageDirectory().getPath();
@@ -323,7 +323,7 @@ public class NetworkConnectionPreferenceFragment
         }
     }
 
-    public void generateKey() throws UnsupportedEncodingException {
+    public void generateKey() {
         byte[] bytes = new byte[256];
         new SecureRandom().nextBytes(bytes);
 
@@ -343,7 +343,7 @@ public class NetworkConnectionPreferenceFragment
         final EditText input = new EditText(this.getActivity());
 
         AlertDialog.Builder ad = new AlertDialog.Builder(this.getActivity());
-        ad.setTitle("File name without extension (atak/config/prefs directory");
+        ad.setTitle(R.string.pref_save_title);
         ad.setView(input);
         ad.setNegativeButton(R.string.cancel, null);
         ad.setPositiveButton(R.string.ok,
@@ -362,7 +362,8 @@ public class NetworkConnectionPreferenceFragment
                                     fname + ".pref");
 
                             try {
-                                FileSystemUtils.write(FileIOProviderFactory.getOutputStream(f),
+                                FileSystemUtils.write(
+                                        IOProviderFactory.getOutputStream(f),
                                         key);
                                 Toast.makeText(
                                         NetworkConnectionPreferenceFragment.this

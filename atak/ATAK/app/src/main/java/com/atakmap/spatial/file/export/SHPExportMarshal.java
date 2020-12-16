@@ -9,7 +9,7 @@ import com.atakmap.android.importfiles.sort.ImportSHPZSort;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.ShapefileSpatialDb;
 import com.atakmap.spatial.file.export.OGRFeatureExportWrapper.NamedGeometry;
@@ -103,7 +103,7 @@ public class SHPExportMarshal extends OGRExportMarshal {
         if (files != null) {
             ZipOutputStream zos = null;
             try {
-                FileOutputStream fos = FileIOProviderFactory.getOutputStream(shpz);
+                FileOutputStream fos = IOProviderFactory.getOutputStream(shpz);
                 zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
                 //loop and add all files
@@ -183,7 +183,7 @@ public class SHPExportMarshal extends OGRExportMarshal {
                 //shpexport folder
                 parent = file.getParentFile();
                 if (parent != null
-                        && FileIOProviderFactory.exists(parent)
+                        && IOProviderFactory.exists(parent)
                         && FileSystemUtils.EXPORT_DIRECTORY.equals(parent
                                 .getName())) {
                     FileSystemUtils.deleteDirectory(parent, false);

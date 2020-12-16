@@ -1,0 +1,4 @@
+<menu buttonRadius='65' buttonSpan='32.73' buttonWidth='60' buttonBg='bgs/button.xml'> 
+    <button onClick='remove.xml' prefValue='cas' icon='removeblue.png'/> 
+    <button onClick='remove.xml' prefValue='cff' icon='removeyellow.png'/> 
+</menu>

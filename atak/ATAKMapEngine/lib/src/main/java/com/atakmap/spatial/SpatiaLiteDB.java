@@ -80,7 +80,7 @@ class SpatiaLiteDB
                   { result[i] = Integer.parseInt (version[i]); }
               }
           }
-        catch (Exception e)
+        catch (Exception ignored)
           { }
         finally
           {
@@ -112,7 +112,7 @@ class SpatiaLiteDB
                                 null);
             result = cursor.moveToNext ();
           }
-        catch (Exception e)
+        catch (Exception ignored)
           { }
         finally
           {
@@ -147,7 +147,7 @@ class SpatiaLiteDB
                                null);
             result = cursor.moveToNext ();
           }
-        catch (Exception e)
+        catch (Exception ignored)
           { }
         finally
           {
@@ -229,7 +229,7 @@ class SpatiaLiteDB
                 cursor = db.query (initSQL, null);
                 result = cursor.moveToNext () && cursor.getInt (0) == 1;
               }
-            catch (Exception e)
+            catch (Exception ignored)
               { }
             finally
               {
@@ -267,7 +267,7 @@ class SpatiaLiteDB
                                    null);
                 result = cursor.moveToNext () && cursor.getInt (0) == 1;
               }
-            catch (Exception e)
+            catch (Exception ignored)
               { }
             finally
               {

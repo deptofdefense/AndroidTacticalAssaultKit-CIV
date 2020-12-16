@@ -44,6 +44,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.missionpackage.export.MissionPackageExportWrapper;
 import com.atakmap.app.R;
+import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -96,7 +97,8 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
         super(view.getContext(),
                 coveragesLayer.getDataStore(),
                 null, // contentSource
-                view.getContext().getString(R.string.grg_lowercase)
+                ResourceUtil.getString(view.getContext(),
+                        R.string.civ_grg_lowercase, R.string.grg_lowercase)
                         .toUpperCase(LocaleUtil.getCurrent()),
                 "android.resource://"
                         + view.getContext().getPackageName()
@@ -662,7 +664,8 @@ public final class GRGMapOverlay extends FeatureDataStoreMapOverlay {
 
         private void promptDelete() {
             AlertDialog.Builder b = new AlertDialog.Builder(_context);
-            b.setTitle(_context.getString(R.string.delete_grg));
+            b.setTitle(ResourceUtil.getString(_context, R.string.civ_delete_grg,
+                    R.string.delete_grg));
             b.setIcon(R.drawable.ic_menu_delete);
             b.setMessage(_context.getString(R.string.delete) + getTitle()
                     + _context.getString(R.string.question_mark_symbol));

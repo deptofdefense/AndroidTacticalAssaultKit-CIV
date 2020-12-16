@@ -228,18 +228,22 @@ public class RubberSheetEditTool extends RectangleEditTool
 
         // Change sheet heading/rotation
         else if (mode == HEADING) {
-            if (type.equals(MapEvent.MAP_TILT))
-                event.getExtras().putBoolean("eventNotHandled", false);
-            else if (type.equals(MapEvent.MAP_ROTATE)) {
-                double ang = event.getExtras().getDouble("angle");
-                if (Double.isNaN(_startAngle))
-                    _startAngle = ang;
-                ang -= _startAngle;
-                rotate(ang);
-                event.getExtras().putBoolean("eventNotHandled", false);
-            } else if (type.equals(MapEvent.MAP_RELEASE)) {
-                run(new RotateAction(_sheet, _oldPoints));
-                reset();
+            switch (type) {
+                case MapEvent.MAP_TILT:
+                    event.getExtras().putBoolean("eventNotHandled", false);
+                    break;
+                case MapEvent.MAP_ROTATE:
+                    double ang = event.getExtras().getDouble("angle");
+                    if (Double.isNaN(_startAngle))
+                        _startAngle = ang;
+                    ang -= _startAngle;
+                    rotate(ang);
+                    event.getExtras().putBoolean("eventNotHandled", false);
+                    break;
+                case MapEvent.MAP_RELEASE:
+                    run(new RotateAction(_sheet, _oldPoints));
+                    reset();
+                    break;
             }
         }
 

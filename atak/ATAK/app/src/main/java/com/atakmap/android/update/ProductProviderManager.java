@@ -13,6 +13,7 @@ import android.content.Intent;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.widget.Toast;
 
@@ -539,8 +540,8 @@ public class ProductProviderManager extends BroadcastReceiver {
         private class BoundedProgressListener
                 implements ProgressDialogListener {
 
-            private int count;
-            private int total;
+            private final int count;
+            private final int total;
 
             public BoundedProgressListener(int count, int total) {
                 this.count = count;
@@ -612,7 +613,7 @@ public class ProductProviderManager extends BroadcastReceiver {
             _notifyManager = (NotificationManager) _manager._context
                     .getSystemService(Context.NOTIFICATION_SERVICE);
 
-            if (android.os.Build.VERSION.SDK_INT < 26) {
+            if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                 _builder = new Notification.Builder(_manager._context);
             } else {
                 _builder = new Notification.Builder(_manager._context,

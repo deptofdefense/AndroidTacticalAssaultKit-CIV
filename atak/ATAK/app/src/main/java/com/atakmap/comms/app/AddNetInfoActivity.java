@@ -5,7 +5,6 @@ import com.atakmap.android.metrics.activity.MetricActivity;
 import com.atakmap.comms.NetConnectString;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Environment;
@@ -28,7 +27,7 @@ import com.atakmap.app.R;
 import com.atakmap.comms.CotServiceRemote;
 import com.atakmap.comms.TAKServer;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.net.AtakAuthenticationCredentials;
 import com.atakmap.net.AtakAuthenticationDatabase;
@@ -180,7 +179,7 @@ public class AddNetInfoActivity extends MetricActivity {
 
         // under the possibility that the type is null, just close the activity and return;
         if (type == null) {
-            Log.e(TAG, "error occured, extras type == null");
+            Log.e(TAG, "error occurred, extras type == null");
             this.finish();
             return;
         }
@@ -646,7 +645,7 @@ public class AddNetInfoActivity extends MetricActivity {
 
                 FileOutputStream fos = null;
                 try {
-                    fos = FileIOProviderFactory.getOutputStream(new File(
+                    fos = IOProviderFactory.getOutputStream(new File(
                             absolutePath));
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     if (clientCertificate != null) {
@@ -666,7 +665,8 @@ public class AddNetInfoActivity extends MetricActivity {
 
                 new AlertDialog.Builder(AddNetInfoActivity.this)
                         .setTitle(String.format(
-                                AddNetInfoActivity.this.getString(R.string.importmgr_exported),
+                                AddNetInfoActivity.this
+                                        .getString(R.string.importmgr_exported),
                                 "Certificate"))
                         .setMessage(
                                 String.format(
@@ -719,7 +719,8 @@ public class AddNetInfoActivity extends MetricActivity {
 
         final String directory;
 
-        if (certDir != null && FileIOProviderFactory.exists(certDir) && FileIOProviderFactory.isDirectory(certDir))
+        if (certDir != null && IOProviderFactory.exists(certDir)
+                && IOProviderFactory.isDirectory(certDir))
             directory = certDir.getAbsolutePath();
         else
             directory = Environment.getExternalStorageDirectory().getPath();

@@ -62,12 +62,12 @@ namespace
     struct SpiRegistryEntry
     {
         std::shared_ptr<ProjectionSpi3> spi;
-        int priority;
+        int priority{0};
     };
 
     struct SpiRegistryComparator
     {
-        bool operator()(const SpiRegistryEntry &a, const SpiRegistryEntry &b)
+        bool operator()(const SpiRegistryEntry &a, const SpiRegistryEntry &b) const
         {
             if (a.priority == b.priority)
                 return a.spi.get() < b.spi.get();

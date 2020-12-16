@@ -105,7 +105,7 @@ public class ContentProxy implements ContentSource, Runnable {
                 if(this.queue.isEmpty()) {
                     try {
                         this.wait();
-                    } catch(InterruptedException e) {}
+                    } catch(InterruptedException ignored) {}
                     continue;
                 }
 

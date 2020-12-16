@@ -4,6 +4,7 @@ package com.atakmap.map.opengl;
 import java.nio.Buffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import com.atakmap.map.Interop;
 import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.RenderContext;
 import com.atakmap.map.RenderSurface;
+import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.layer.control.TerrainBlendControl;
 import com.atakmap.map.layer.model.Mesh;
 import com.atakmap.map.layer.model.Model;
@@ -208,7 +210,7 @@ public class GLMapView implements
     private Map<Layer2, Collection<MapControl>> controls;
     private Collection<MapControl> mapViewControls;
     // XXX - cache the model hit test controls separately to optimize inverse impl
-    private Set<ModelHitTestControl> modelHitTestControls = Collections2.newIdentityHashSet();
+    private final Set<ModelHitTestControl> modelHitTestControls = Collections2.newIdentityHashSet();
 
 
     public double hardwareTransformResolutionThreshold = 0d;
@@ -276,36 +278,9 @@ public class GLMapView implements
         /** offscreen FBO handles, index 0 is FBO, index 1 is depth buffer */
         int[] fbo;
 
-        //GLOffscreenVertex[] vertices;
-
         double hfactor = Double.NaN;
 
-        Map<Pointer, TerrainTile> terrainTilesFront = new HashMap<>();
-        Map<Pointer, TerrainTile> terrainTilesBack = new HashMap<>();
         int terrainTilesVersion = -1;
-
-        final Program program = new Program();
-    }
-
-    static class TerrainTile {
-        int numIndices;
-        ModelInfo info;
-        Model model;
-        int skirtIndexOffset;
-        /**
-         * AABB in WGS84; x=latitude, y=longitude, z=hae
-         */
-        Envelope aabb;
-
-        Object opaque;
-
-        TerrainTile() {
-            this.info = new ModelInfo();
-            this.info.localFrame = Matrix.getIdentity();
-            this.info.srid = -1;
-            this.model = null;
-            this.aabb = null;
-        }
     }
 
     Offscreen offscreen;
@@ -445,6 +420,14 @@ public class GLMapView implements
     }
 
     public void release() {
+        this.rwlock.acquireRead();
+        try {
+            if(this.pointer.raw == 0L)
+                return;
+            release(this.pointer.raw);
+        } finally {
+            this.rwlock.releaseRead();
+        }
     }
 
     /**
@@ -505,7 +488,12 @@ public class GLMapView implements
         try {
             if(this.pointer.raw == 0L)
                 return false;
-            return lookAt(this.pointer.raw, at.getLatitude(), at.getLongitude(), resolution, azimuth, tilt, animate);
+            double alt = 0d;
+            if(!Double.isNaN(at.getAltitude()))
+                alt = at.getAltitude();
+            if(at.getAltitudeReference() == GeoPoint.AltitudeReference.AGL)
+                alt += ElevationManager.getElevation(at.getLatitude(), at.getLongitude(), null);
+            return lookAt(this.pointer.raw, at.getLatitude(), at.getLongitude(), alt, resolution, azimuth, tilt, animate);
         } finally {
             this.rwlock.releaseRead();
         }
@@ -613,15 +601,17 @@ public class GLMapView implements
                     return InverseResult.None;
             case RayCast:
                 if(!MathUtils.hasBits(hints, HINT_RAYCAST_IGNORE_SURFACE_MESH)) {
+                    List<ModelHitTestControl> controls;
+                    synchronized (modelHitTestControls) {
+                        controls = new ArrayList<>(modelHitTestControls);
+                    }
                     // perform model hit test
-                    synchronized (this) {
-                        final float px = (float) x;
-                        final float py = (origin == DisplayOrigin.UpperLeft) ? (float) xyz.y : (float) (_surface.getHeight() - xyz.y);
-                        for (ModelHitTestControl ctrl : modelHitTestControls) {
-                            // NOTE: control expects UL xyz
-                            if (ctrl.hitTest(px, py, lla))
-                                return InverseResult.SurfaceMesh;
-                        }
+                    final float px = (float) x;
+                    final float py = (origin == DisplayOrigin.UpperLeft) ? (float) xyz.y : (float) (_surface.getHeight() - xyz.y);
+                    for (ModelHitTestControl ctrl : controls) {
+                        // NOTE: control expects UL xyz
+                        if (ctrl.hitTest(px, py, lla))
+                            return InverseResult.SurfaceMesh;
                     }
                 }
                 if(!MathUtils.hasBits(hints, HINT_RAYCAST_IGNORE_TERRAIN_MESH)) {
@@ -1832,31 +1822,40 @@ public class GLMapView implements
     }
 
     @Override
-    public synchronized void registerControl(Layer2 layer, MapControl ctrl) {
-        Collection<MapControl> ctrls = this.getMapViewControls();
-        if (layer != null) {
-            ctrls = this.controls.get(layer);
-            if (ctrls == null)
-                this.controls.put(layer, ctrls = Collections2.<MapControl>newIdentityHashSet());
+    public void registerControl(Layer2 layer, MapControl ctrl) {
+        if (ctrl instanceof ModelHitTestControl) {
+            synchronized (modelHitTestControls) {
+                this.modelHitTestControls.add((ModelHitTestControl) ctrl);
+            }
         }
-        if(ctrls.add(ctrl)) {
-            if(ctrl instanceof ModelHitTestControl)
-                this.modelHitTestControls.add((ModelHitTestControl)ctrl);
-
-            for(OnControlsChangedListener l : this.controlsListeners)
-                l.onControlRegistered(layer, ctrl);
+        synchronized (this) {
+            Collection<MapControl> ctrls = this.getMapViewControls();
+            if (layer != null) {
+                ctrls = this.controls.get(layer);
+                if (ctrls == null)
+                    this.controls.put(layer, ctrls = Collections2.<MapControl>newIdentityHashSet());
+            }
+            if (ctrls.add(ctrl)) {
+                for (OnControlsChangedListener l : this.controlsListeners)
+                    l.onControlRegistered(layer, ctrl);
+            }
         }
     }
 
     @Override
-    public synchronized void unregisterControl(Layer2 layer, MapControl ctrl) {
-        Collection<MapControl> ctrls = layer == null ? this.mapViewControls : this.controls.get(layer);
-        if(ctrls != null) {
-            if(ctrls.remove(ctrl)) {
-                if(ctrl instanceof ModelHitTestControl)
-                    this.modelHitTestControls.remove((ModelHitTestControl)ctrl);
-                for(OnControlsChangedListener l : this.controlsListeners)
-                    l.onControlUnregistered(layer, ctrl);
+    public void unregisterControl(Layer2 layer, MapControl ctrl) {
+        if(ctrl instanceof ModelHitTestControl) {
+            synchronized (modelHitTestControls) {
+                this.modelHitTestControls.remove((ModelHitTestControl) ctrl);
+            }
+        }
+        synchronized (this) {
+            Collection<MapControl> ctrls = layer == null ? this.mapViewControls : this.controls.get(layer);
+            if (ctrls != null) {
+                if (ctrls.remove(ctrl)) {
+                    for (OnControlsChangedListener l : this.controlsListeners)
+                        l.onControlUnregistered(layer, ctrl);
+                }
             }
         }
     }
@@ -1949,48 +1948,6 @@ public class GLMapView implements
 
         }
         return scene.inverse(new PointF(x, y), null);
-    }
-
-    /**
-     * Must be called when holding lock on <code>this</code> or on GL thread
-     * @param scene
-     * @param tile
-     * @param screenX
-     * @param screenY
-     * @param result
-     * @return
-     */
-    private static boolean hitTest(MapSceneModel scene, TerrainTile tile, float screenX, float screenY,
-                           GeoPoint result) {
-        Model m;
-        int srid;
-        Matrix localFrame = null;
-        double renderElOffset;
-        if (tile.model == null)
-            return false;
-        m = tile.model;
-        srid = tile.info.srid;
-        if (tile.info.localFrame != null) { 
-            if (localFrame == null) {
-                localFrame = tile.info.localFrame;
-            } else {
-                localFrame.concatenate(tile.info.localFrame);
-            }
-        } else {
-            return false;
-        }
-
-        if (scene.mapProjection.getSpatialReferenceID() != srid)
-            return false;
-
-        GeometryModel gm = Models.createGeometryModel(m, localFrame);
-        if (gm == null)
-            return false;
-
-        if (scene.inverse(new PointF(screenX, screenY), result, gm) == null)
-            return false;
-
-        return true;
     }
 
     /**
@@ -2333,40 +2290,6 @@ public class GLMapView implements
         
     }
 
-    void refreshTerrainTiles() {
-        LinkedList<Pointer> tilePtrs = new LinkedList<>();
-        getTerrainTiles(this.pointer.raw, tilePtrs);
-        synchronized(this.offscreen) {
-            for (Pointer tilePtr : tilePtrs) {
-                GLMapView.TerrainTile tile = this.offscreen.terrainTilesFront.remove(tilePtr);
-                if (tile == null) {
-                    // interop
-                    tile = new GLMapView.TerrainTile();
-                    tile.aabb = new Envelope();
-                    ElMgrTerrainRenderService.TerrainTile_getAAbbWgs84(tilePtr.raw, tile.aabb);
-                    tile.skirtIndexOffset = ElMgrTerrainRenderService.TerrainTile_getSkirtIndexOffset(tilePtr.raw);
-                    tile.numIndices = ElMgrTerrainRenderService.TerrainTile_getNumIndices(tilePtr.raw);
-                    tile.model = ModelBuilder.build(Mesh_interop.create(ElMgrTerrainRenderService.TerrainTile_getMesh(tilePtr.raw)));
-                    tile.info = new ModelInfo();
-                    tile.info.srid = ElMgrTerrainRenderService.TerrainTile_getSrid(tilePtr.raw);
-                    tile.info.localFrame = ElMgrTerrainRenderService.TerrainTile_getLocalFrame(tilePtr.raw);
-                }
-                offscreen.terrainTilesBack.put(tilePtr, tile);
-            }
-
-            // swap buffers
-            Map<Pointer, TerrainTile> tmp = offscreen.terrainTilesFront;
-            offscreen.terrainTilesFront = offscreen.terrainTilesBack;
-            offscreen.terrainTilesBack = tmp;
-
-            // destruct all pointers in the back buffer and clear it
-            for(Pointer pointer : offscreen.terrainTilesBack.keySet()) {
-                ElMgrTerrainRenderService.TerrainTile_destruct(pointer);
-            }
-            offscreen.terrainTilesBack.clear();
-        }
-    }
-
     /*************************************************************************/
     // Interop
 
@@ -2387,6 +2310,7 @@ public class GLMapView implements
 
     static native Pointer create(long ctxPtr, long mapviewPtr, int left, int bottom, int right, int top);
     static native void render(long ptr);
+    static native void release(long ptr);
     static native void setBaseMap(long ptr, GLMapRenderable2 basemap);
     static native void sync(long ptr, GLMapView view);
     static native void start(long ptr);
@@ -2422,7 +2346,7 @@ public class GLMapView implements
     // MapRenderer2 camera management
     static native int getDisplayMode(long pointer);
     static native void setDisplayMode(long pointer, int srid);
-    static native boolean lookAt(long ptr, double lat, double lng, double resolution, double azimuth, double tilt, boolean animate);
+    static native boolean lookAt(long ptr, double lat, double lng, double alt, double resolution, double azimuth, double tilt, boolean animate);
     static native Pointer getMapSceneModel(long ptr, boolean instant, boolean llOrigin);
     static native boolean isAnimating(long ptr);
     static native void setFocusPointOffset(long ptr, float x, float y);

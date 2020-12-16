@@ -7,18 +7,18 @@ import com.atakmap.coremap.maps.time.CoordinatedTime;
 
 import java.util.Date;
 
-class ChatLine {
+public class ChatLine {
     public String conversationId = null;
     public String conversationName = null;
     public String protocol = null;
     public String type = null;
-    Long timeReceived = null;
-    Long timeSent = null;
+    public Long timeReceived = null;
+    public Long timeSent = null;
     public String senderUid = null;
-    String senderName = null;
+    public String senderName = null;
     public String message = null;
     public String messageId = null;
-    boolean acked = false;
+    public boolean acked = false;
     public transient boolean read = false;
     public String[] destinations = null;
 

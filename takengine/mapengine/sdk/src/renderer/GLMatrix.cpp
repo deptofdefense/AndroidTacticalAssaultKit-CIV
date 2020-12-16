@@ -107,10 +107,10 @@ namespace atakmap
         {
 #if 1
             const auto theta = static_cast<float>(degrees * M_PI / 180.0f);
-            const float sinTheta = sin(theta);
-            const float cosTheta = cos(theta);
+            const float sinTheta = static_cast<float>(sin(theta));
+            const float cosTheta = static_cast<float>(cos(theta));
 
-            const float mag = sqrt((axisX*axisX) + (axisY*axisY) + (axisZ*axisZ));
+            const float mag = static_cast<float>(sqrt((axisX*axisX) + (axisY*axisY) + (axisZ*axisZ)));
 
             const float nX = axisX / mag;
             const float nY = axisY / mag;

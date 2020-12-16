@@ -20,6 +20,7 @@ import com.atakmap.android.maps.PointMapItem.OnPointChangedListener;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbars.RangeAndBearingMapComponent;
 import com.atakmap.app.R;
+import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
@@ -152,7 +153,8 @@ public class SpiButtonTool extends SpecialPointButtonTool implements
             _updateTimeout = 5;
             _prefs.edit().putString("spiUpdateDelay", "5").apply();
             Toast.makeText(_mapView.getContext(),
-                    R.string.point_dropper_text40,
+                    ResourceUtil.getResource(R.string.civ_point_dropper_text40,
+                            R.string.point_dropper_text40),
                     Toast.LENGTH_LONG).show();
         }
     }
@@ -194,7 +196,8 @@ public class SpiButtonTool extends SpecialPointButtonTool implements
                 "icons/spi" + _index + "_icon.png",
                 _mapView.getSelfMarker().getUID() + ".SPI" + _index,
                 callsign + "."
-                        + _mapView.getContext().getString(R.string.spi_abbrev)
+                        + ResourceUtil.getString(_mapView.getContext(),
+                                R.string.civ_spi_abbrev, R.string.spi_abbrev)
                         + _index,
                 "menus/spi_menu.xml",
                 "com.atakmap.android.user.SPI_OFF");

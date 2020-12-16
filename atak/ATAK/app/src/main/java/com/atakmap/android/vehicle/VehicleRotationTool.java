@@ -41,7 +41,7 @@ public class VehicleRotationTool extends ButtonTool
     private MapItem _item;
     private Marker _anchor;
     private RangeAndBearingMapItem _rab;
-    private TextContainer _cont;
+    private final TextContainer _cont;
 
     public VehicleRotationTool(MapView mapView, ImageButton button) {
         super(mapView, button, TOOL_NAME);

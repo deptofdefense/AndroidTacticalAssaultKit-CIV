@@ -31,6 +31,7 @@
 ////========================================================================////
 
 
+#include "port/Platform.h"
 #include <cstddef>
 
 
@@ -107,7 +108,7 @@ class ServiceProvider
 
     virtual
     ~ServiceProvider ()
-        throw ()
+        NOTHROWS
         = 0;
 
     //
@@ -131,7 +132,7 @@ class ServiceProviderCallback
 
     virtual
     ~ServiceProviderCallback ()
-        throw ()
+        NOTHROWS
         = 0;
 
     //
@@ -144,7 +145,7 @@ class ServiceProviderCallback
     std::size_t
     getProbeLimit ()
         const
-        throw ()
+        NOTHROWS
         = 0;
 
     //
@@ -170,7 +171,7 @@ class ServiceProviderCallback
     bool
     isProbeOnly ()
         const
-        throw ()
+        NOTHROWS
         = 0;
 
     //
@@ -451,7 +452,7 @@ class PriorityServiceProvider
     unsigned int
     getPriority ()                      // Higher value denotes higher priority.
         const
-        throw ()
+        NOTHROWS
         = 0;
   };
 
@@ -547,7 +548,7 @@ class StrategyServiceProvider
     StrategyType
     getStrategy ()
         const
-        throw ()
+        NOTHROWS
         = 0;
 
 
@@ -628,7 +629,7 @@ class StrategyServiceProvider<ProviderT, StrategyT, void>
     StrategyType
     getStrategy ()
         const
-        throw ()
+        NOTHROWS
         = 0;
 
 
@@ -671,13 +672,13 @@ template <class ResultT,
           class InputT>
 inline
 ServiceProvider<ResultT, InputT>::~ServiceProvider ()
-    throw ()
+    NOTHROWS
   { }
 
 
 inline
 ServiceProviderCallback::~ServiceProviderCallback ()
-    throw ()
+    NOTHROWS
   { }
 
 

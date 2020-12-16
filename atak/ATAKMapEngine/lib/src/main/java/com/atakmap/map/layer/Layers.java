@@ -40,8 +40,16 @@ import java.util.Collection;
 public final class Layers {
 
     private static boolean registered;
+
+    private static FlavorSpecificRegistration flavorSpecificRegistration;
     
     private Layers() {}
+
+    
+    public static void setFlavorSpecificRegistration(final FlavorSpecificRegistration specificRegistration) { 
+         flavorSpecificRegistration = specificRegistration;   
+    } 
+
    
     /**
      * Registers all layer related service providers that are part of the SDK.
@@ -80,7 +88,8 @@ public final class Layers {
 
         GLMapLayerFactory.registerSpi(GLTiledMapLayer2.SPI);
 
-        FlavorSpecificRegistration.register();
+        if (flavorSpecificRegistration != null) 
+             flavorSpecificRegistration.register();
         
         TileClientFactory.registerSpi(MobacTileClient2.SPI);
 

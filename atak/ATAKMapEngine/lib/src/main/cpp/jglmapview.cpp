@@ -1,6 +1,7 @@
 #include "jglmapview.h"
 
 #include <core/MapSceneModel2.h>
+#include <elevation/ElevationManager.h>
 #include <math/Rectangle.h>
 #include <raster/osm/OSMUtils.h>
 #include <renderer/core/GLMapView2.h>
@@ -116,6 +117,16 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_render
         return;
     }
     cview->render();
+}
+JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_release
+  (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
+    if(!cview) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return;
+    }
+    cview->release();
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setBaseMap
   (JNIEnv *env, jclass clazz, jlong ptr, jobject mbasemap)
@@ -599,7 +610,7 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_GLMapView_setDisplayMode
     cview->view.setProjection(srid);
 }
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_lookAt
-  (JNIEnv *env, jclass clazz, jlong ptr, jdouble lat, jdouble lng, jdouble res, jdouble rot, jdouble tilt, jboolean animate)
+  (JNIEnv *env, jclass clazz, jlong ptr, jdouble lat, jdouble lng, jdouble alt, jdouble res, jdouble rot, jdouble tilt, jboolean animate)
 {
     GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, ptr);
     if(!cview) {
@@ -607,8 +618,47 @@ JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_GLMapView_lookAt
         return false;
     }
 
+    // perform collision detection
+    if (cview->scene.camera.mode == MapCamera2::Perspective) {
+        atakmap::math::Point<float> focusxy;
+        cview->view.getController()->getFocusPoint(&focusxy);
+        MapSceneModel2 newModel(cview->view.getDisplayDpi(),
+                                cview->view.getWidth(), cview->view.getHeight(),
+                                cview->view.getProjection(),
+                                GeoPoint2(lat, lng),
+                                focusxy.x, focusxy.y,
+                                rot, tilt, res);
+        GeoPoint2 cameraLocation;
+        newModel.projection->inverse(&cameraLocation, newModel.camera.location);
+        double localEl = 0.0;
+        cview->getTerrainMeshElevation(&localEl, cameraLocation.latitude, cameraLocation.longitude);
+        if (cameraLocation.altitude - 2.0 < localEl) {
+            double eladj = (localEl + 2.0) - cameraLocation.altitude;
+            GeoPoint2 adjCamLoc(cameraLocation.latitude, cameraLocation.longitude, localEl + 2.0, AltitudeReference::HAE);
+            GeoPoint2 adjTgtLoc(lat, lng, eladj, AltitudeReference::HAE);
+            Point2<double> camAdjxyz;
+            newModel.projection->forward(&camAdjxyz, adjCamLoc);
+            Point2<double> tgtAdjxyz;
+            newModel.projection->forward(&tgtAdjxyz, adjTgtLoc);
+
+            Point2<double> adjTgtSurface;
+            if(newModel.displayModel->earth->intersect(&adjTgtSurface, Ray2<double>(camAdjxyz, Vector4<double>(tgtAdjxyz.x-camAdjxyz.x, tgtAdjxyz.y-camAdjxyz.y, tgtAdjxyz.z-camAdjxyz.z)))) {
+                GeoPoint2 newFocus;
+                newModel.projection->inverse(&newFocus, adjTgtSurface);
+                lat = newFocus.latitude;
+                lng = newFocus.longitude;
+
+                double od;
+                Vector2_length(&od, Point2<double>(newModel.camera.target.x-newModel.camera.location.x, newModel.camera.target.y-newModel.camera.location.y, newModel.camera.target.z-newModel.camera.location.z));
+                double nd;
+                Vector2_length(&nd, Point2<double>(adjTgtSurface.x-camAdjxyz.x, adjTgtSurface.y-camAdjxyz.y, adjTgtSurface.z-camAdjxyz.z));
+                res *= nd / od;
+            }
+        }
+    }
+
     const double mapScale = atakmap::core::AtakMapView_getMapScale(cview->view.getDisplayDpi(), res);
-    cview->view.updateView(atakmap::core::GeoPoint(lat, lng), mapScale, rot, tilt, NAN, NAN, animate);
+    cview->view.updateView(atakmap::core::GeoPoint(lat, lng, alt, atakmap::core::AltitudeReference::HAE), mapScale, rot, tilt, NAN, NAN, animate);
     return true;
 }
 

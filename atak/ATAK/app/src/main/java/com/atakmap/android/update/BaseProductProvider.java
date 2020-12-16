@@ -6,6 +6,7 @@ import android.app.Activity;
 import com.atak.plugins.impl.AtakPluginRegistry;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.annotations.ModifierApi;
 
 import java.io.File;
 
@@ -14,6 +15,10 @@ public abstract class BaseProductProvider implements
 
     private static final String TAG = "BaseProductProvider";
     protected ProductRepository _cache;
+
+    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
+            "private"
+    })
     protected Activity _context;
 
     public BaseProductProvider(Activity context) {

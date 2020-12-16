@@ -985,7 +985,7 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
             _onMoveListeners.remove(l);
     }
 
-    private List<OnMoveListener> _onMoveListeners = new ArrayList<>();
+    private final List<OnMoveListener> _onMoveListeners = new ArrayList<>();
 
     @Override
     public GeoBounds getBounds(MutableGeoBounds bnds) {
@@ -1776,7 +1776,6 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
         public boolean built() {
             return _built;
         }
-
 
         private PointMapItem[] _createInvisibleCorners(GeoPointMetaData p0,
                 GeoPointMetaData p1) {

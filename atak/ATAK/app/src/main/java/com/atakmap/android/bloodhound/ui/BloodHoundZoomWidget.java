@@ -26,9 +26,9 @@ public class BloodHoundZoomWidget extends MarkerIconWidget implements
     /****************************** FIELDS *************************/
     public static final String TAG = "BloodHoundButtonTool";
 
-    private MapView _mapView;
-    private LinearLayoutWidget layoutWidget;
-    private BloodHoundTool _bloodhoundTool;
+    private final MapView _mapView;
+    private final LinearLayoutWidget layoutWidget;
+    private final BloodHoundTool _bloodhoundTool;
 
     public static final String TOOL_IDENTIFIER = "com.atakmap.android.toolbars.BloodHoundButtonTool";
 

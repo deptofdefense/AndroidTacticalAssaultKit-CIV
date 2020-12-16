@@ -1,10 +1,10 @@
 
 package com.atakmap.android.fires;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
+
+import com.atakmap.android.data.ClearContentRegistry;
+
 import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -13,10 +13,7 @@ import android.view.View.OnTouchListener;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
-import com.atakmap.app.BuildConfig;
-
 import com.atakmap.android.gui.FastMGRS;
-import com.atakmap.android.data.DataMgmtReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
@@ -32,6 +29,9 @@ import com.atakmap.android.user.IntentLauncherTool;
 import com.atakmap.android.user.SpecialPointButtonTool;
 import com.atakmap.android.user.SpiButtonTool;
 import com.atakmap.app.R;
+import com.atakmap.app.system.FlavorProvider;
+import com.atakmap.app.system.ResourceUtil;
+import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.coremap.log.Log;
 
 import java.util.ArrayList;
@@ -41,9 +41,10 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.preference.PreferenceManager;
 
-public class FiresToolbar extends BroadcastReceiver implements
+public class FiresToolbar implements
         IToolbarExtension, OnTouchListener, View.OnLongClickListener,
-        OnSharedPreferenceChangeListener {
+        OnSharedPreferenceChangeListener,
+        ClearContentRegistry.ClearContentListener {
 
     public static final String TAG = "FiresToolbar";
     private static final String TOOLBAR_NAME = "com.atakmap.android.toolbars.FiresToolbar";
@@ -81,10 +82,8 @@ public class FiresToolbar extends BroadcastReceiver implements
         ToolbarBroadcastReceiver.getInstance().registerToolbar(TOOLBAR_NAME,
                 this);
 
-        /* Register this toolbar as a listner for the zeroize functionality */
-        DocumentedIntentFilter filter = new DocumentedIntentFilter();
-        filter.addAction(DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION);
-        AtakBroadcast.getInstance().registerReceiver(this, filter);
+        ClearContentRegistry.getInstance().registerListener(this);
+
         _container = TextContainer.getInstance();
     }
 
@@ -106,7 +105,7 @@ public class FiresToolbar extends BroadcastReceiver implements
         if (tbr != null)
             tbr.unregisterToolbarComponent(TOOLBAR_NAME);
 
-        AtakBroadcast.getInstance().unregisterReceiver(_instance);
+        ClearContentRegistry.getInstance().unregisterListener(this);
     }
 
     @Override
@@ -127,12 +126,22 @@ public class FiresToolbar extends BroadcastReceiver implements
             ImageButton buttonSPI1 = _toolbarView
                     .findViewById(R.id.buttonSPI1);
             buttonSPI1.setOnTouchListener(this);
+            buttonSPI1.setContentDescription(ResourceUtil.getString(
+                    _mapView.getContext(), R.string.civ_stringSPIDesc,
+                    R.string.stringSPIDesc));
             ImageButton buttonSPI2 = _toolbarView
                     .findViewById(R.id.buttonSPI2);
             buttonSPI2.setOnTouchListener(this);
+            buttonSPI2.setContentDescription(ResourceUtil.getString(
+                    _mapView.getContext(), R.string.civ_stringSPIDesc,
+                    R.string.stringSPIDesc));
             ImageButton buttonSPI3 = _toolbarView
                     .findViewById(R.id.buttonSPI3);
             buttonSPI3.setOnTouchListener(this);
+            buttonSPI3.setContentDescription(ResourceUtil.getString(
+                    _mapView.getContext(), R.string.civ_stringSPIDesc,
+                    R.string.stringSPIDesc));
+
             ImageButton buttonLaser = _toolbarView
                     .findViewById(R.id.buttonLaser);
             ImageButton buttonDynamicRAB = _toolbarView
@@ -154,7 +163,10 @@ public class FiresToolbar extends BroadcastReceiver implements
                 @Override
                 public void onClick(View v) {
 
-                    if (!BuildConfig.MIL_CAPABILITIES) {
+                    // check to see what type is being built - capabilities wise
+                    FlavorProvider fp = SystemComponentLoader
+                            .getFlavorProvider();
+                    if (fp == null || !fp.hasMilCapabilities()) {
                         Intent i = new Intent();
                         i.setAction("com.atakmap.android.user.GO_TO");
                         AtakBroadcast.getInstance().sendBroadcast(i);
@@ -184,7 +196,9 @@ public class FiresToolbar extends BroadcastReceiver implements
             onSharedPreferenceChanged(prefs, "firesNumberOfSpis");
 
             // instead of having a second layout, just set the layout items to gone
-            if (!BuildConfig.MIL_CAPABILITIES) {
+            // check to see what type is being built - capabilities wise
+            FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+            if (fp == null || !fp.hasMilCapabilities()) {
                 _toolbarView.findViewById(R.id.hostileManager).setVisibility(
                         View.GONE);
                 _toolbarView.findViewById(R.id.buttonLaser).setVisibility(
@@ -201,9 +215,12 @@ public class FiresToolbar extends BroadcastReceiver implements
     @Override
     public void onSharedPreferenceChanged(
             final SharedPreferences prefs, final String key) {
+        FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
         if (key.equals("legacyFiresToolbarMode")) {
             if (prefs.getBoolean(key, false)) {
-                if (BuildConfig.MIL_CAPABILITIES) {
+                // check to see what type is being built - capabilities wise
+
+                if (fp != null && fp.hasMilCapabilities()) {
                     _toolbarView.findViewById(R.id.hostileManager)
                             .setVisibility(
                                     View.GONE);
@@ -211,19 +228,21 @@ public class FiresToolbar extends BroadcastReceiver implements
                 _toolbarView.findViewById(R.id.buttonCASDynamicRangeAndBearing)
                         .setVisibility(View.VISIBLE);
 
-                if (BuildConfig.MIL_CAPABILITIES) {
+                if (fp != null && fp.hasMilCapabilities()) {
                     _toolbarView.findViewById(R.id.buttonLaser).setVisibility(
                             View.VISIBLE);
                 }
             } else {
-                if (BuildConfig.MIL_CAPABILITIES) {
+                if (fp != null && fp.hasMilCapabilities()) {
+
                     _toolbarView.findViewById(R.id.hostileManager)
                             .setVisibility(
                                     View.VISIBLE);
                 }
                 _toolbarView.findViewById(R.id.buttonCASDynamicRangeAndBearing)
                         .setVisibility(View.GONE);
-                if (BuildConfig.MIL_CAPABILITIES) {
+                if (fp != null && fp.hasMilCapabilities()) {
+
                     _toolbarView.findViewById(R.id.buttonLaser).setVisibility(
                             View.GONE);
                 }
@@ -307,8 +326,9 @@ public class FiresToolbar extends BroadcastReceiver implements
         if (!vis) {
             _container.closePrompt();
         } else {
-            _container.displayPrompt(_mapView.getContext().getString(
-                    R.string.SPI_prompt));
+            _container
+                    .displayPrompt(ResourceUtil.getString(_mapView.getContext(),
+                            R.string.civ_SPI_prompt, R.string.SPI_prompt));
         }
     }
 
@@ -317,26 +337,22 @@ public class FiresToolbar extends BroadcastReceiver implements
      * but does remove the markers and their associated data.  Button state is not properly
      * restored, but in a zeroize state, that's the least of the worries.  Should cover the Red X
      * in the R+B toolbar as it is a tool for both toolbars.
-     * @param context Current Context
-     * @param intent Intent that was received
      */
     @Override
-    public void onReceive(final Context context, final Intent intent) {
+    public void onClearContent(boolean clearmaps) {
         /* Zeroize all the stuff */
-        if (DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION
-                .equals(intent.getAction())) {
-            Log.d(TAG, "Removing Fires Overlays");
-            for (Tool tool : _tools) {
-                if (tool instanceof SpecialPointButtonTool) {
-                    Marker m = ((SpecialPointButtonTool) tool).getMarker();
-                    if (m != null)
-                        m.removeFromGroup();
-                }
+        Log.d(TAG, "Removing Fires Overlays");
+        for (Tool tool : _tools) {
+            if (tool instanceof SpecialPointButtonTool) {
+                Marker m = ((SpecialPointButtonTool) tool).getMarker();
+                if (m != null)
+                    m.removeFromGroup();
             }
-            // Remove any Laser Basket that may currently be displayed
-            Intent laserIntent = new Intent();
-            laserIntent.setAction("com.atakmap.android.maps.DRAW_WEDGE");
-            AtakBroadcast.getInstance().sendBroadcast(laserIntent);
         }
+        // Remove any Laser Basket that may currently be displayed
+        Intent laserIntent = new Intent();
+        laserIntent.setAction("com.atakmap.android.maps.DRAW_WEDGE");
+        AtakBroadcast.getInstance().sendBroadcast(laserIntent);
+
     }
 }

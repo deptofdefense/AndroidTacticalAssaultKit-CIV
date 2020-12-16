@@ -1,21 +1,14 @@
+
 package com.atakmap.android.bloodhound.ui;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.preference.PreferenceManager;
 import android.view.MotionEvent;
 import android.widget.Toast;
 
 import com.atakmap.android.bloodhound.BloodHoundTool;
 import com.atakmap.android.bloodhound.util.BloodHoundToolLink;
-import com.atakmap.android.maps.MapActivity;
-import com.atakmap.android.maps.MapComponent;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.routes.RouteMapComponent;
 import com.atakmap.android.routes.RouteNavigator;
-import com.atakmap.android.routes.RoutePlannerInterface;
-import com.atakmap.android.routes.RoutePlannerManager;
 import com.atakmap.android.widgets.LinearLayoutWidget;
 import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.android.widgets.MarkerIconWidget;
@@ -24,27 +17,17 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 /** A widget to display when the bloodhound tool is in route mode
  * that starts the navigation interface for the bloodhound route. */
 public class BloodHoundNavWidget extends MarkerIconWidget implements
-        MapWidget.OnClickListener, MapWidget.OnLongPressListener  {
-
+        MapWidget.OnClickListener, MapWidget.OnLongPressListener {
 
     /****************************** FIELDS *************************/
     public static final String TAG = "BloodHoundButtonTool";
 
-    private MapView _mapView;
-    private Context _context;
-    private LinearLayoutWidget layoutWidget;
-    private MapComponent mc;
-    private RoutePlannerManager _routeManager;
-    private List<Map.Entry<String, RoutePlannerInterface>> routePlanners = new ArrayList<>();
-    private BloodHoundTool _bloodhoundTool;
-    private final SharedPreferences _prefs;
+    private final MapView _mapView;
+    private final LinearLayoutWidget layoutWidget;
+    private final BloodHoundTool _bloodhoundTool;
 
     final String imageUriEnabled;
     final String imageUriDisabled;
@@ -53,24 +36,12 @@ public class BloodHoundNavWidget extends MarkerIconWidget implements
 
     /****************************** CONSTRUCTOR *************************/
     public BloodHoundNavWidget(final MapView mapView,
-                                 BloodHoundTool toolbarButton) {
+            BloodHoundTool toolbarButton) {
         super();
 
         this.setName("Bloodhound Nav Widget");
         _mapView = mapView;
-        _context = mapView.getContext();
         _bloodhoundTool = toolbarButton;
-
-        mc = ((MapActivity) _context)
-                .getMapComponent(RouteMapComponent.class);
-
-        _routeManager = mc != null
-                ? ((RouteMapComponent) mc)
-                .getRoutePlannerManager()
-                : null;
-
-        _prefs = PreferenceManager
-                .getDefaultSharedPreferences(_context);
 
         // Configure the layout of the widget
         RootLayoutWidget root = (RootLayoutWidget) _mapView
@@ -111,23 +82,28 @@ public class BloodHoundNavWidget extends MarkerIconWidget implements
     @Override
     public void onMapWidgetClick(MapWidget widget, MotionEvent event) {
         if (widgetState.equals(WidgetState.Disabled)) {
-            if (_bloodhoundTool.getStartItem() != MapView.getMapView().getSelfMarker()
-                  && _bloodhoundTool._routeWidget.isEnabled()) {
-                Toast.makeText(_mapView.getContext(), R.string.bloodhound_must_be_hounding_start,
+            if (_bloodhoundTool.getStartItem() != MapView.getMapView()
+                    .getSelfMarker()
+                    && _bloodhoundTool._routeWidget.isEnabled()) {
+                Toast.makeText(_mapView.getContext(),
+                        R.string.bloodhound_must_be_hounding_start,
                         Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(_mapView.getContext(), R.string.bloodhound_must_be_in_route_mode,
+                Toast.makeText(_mapView.getContext(),
+                        R.string.bloodhound_must_be_in_route_mode,
                         Toast.LENGTH_SHORT).show();
             }
         } else if (widgetState.equals(WidgetState.Enabled)) {
-            if (_bloodhoundTool.getStartItem() == MapView.getMapView().getSelfMarker()) {
+            if (_bloodhoundTool.getStartItem() == MapView.getMapView()
+                    .getSelfMarker()) {
                 // Open up navigation interface for the route.
                 final BloodHoundToolLink link = _bloodhoundTool.getlink();
                 if (link.isRoute()) {
                     RouteNavigator.getInstance().startNavigating(link.route, 0);
                 }
             } else {
-                Log.e(TAG, "Internal logic violated: Nav widget should not be enabled if startPoint is not self marker.");
+                Log.e(TAG,
+                        "Internal logic violated: Nav widget should not be enabled if startPoint is not self marker.");
             }
         }
     }
@@ -135,7 +111,8 @@ public class BloodHoundNavWidget extends MarkerIconWidget implements
     @Override
     public void onMapWidgetLongPress(MapWidget widget) {
         // TODO: Replace with resource
-        Toast.makeText(_mapView.getContext(), R.string.bloodhound_open_navigation,
+        Toast.makeText(_mapView.getContext(),
+                R.string.bloodhound_open_navigation,
                 Toast.LENGTH_SHORT).show();
     }
 
@@ -144,8 +121,6 @@ public class BloodHoundNavWidget extends MarkerIconWidget implements
         Log.d(TAG, "setVisible");
         return this.layoutWidget.setVisible(visible);
     }
-
-    /****************************** INHERITED METHODS *************************/
 
     /****************************** PRIVATE METHODS *************************/
 
@@ -174,7 +149,8 @@ public class BloodHoundNavWidget extends MarkerIconWidget implements
     }
 
     private enum WidgetState {
-        Enabled, Disabled;
+        Enabled,
+        Disabled
     }
 
 }

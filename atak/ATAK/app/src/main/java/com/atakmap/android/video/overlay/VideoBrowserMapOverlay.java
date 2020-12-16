@@ -30,7 +30,7 @@ import com.atakmap.app.R;
 import com.atakmap.comms.TAKServer;
 import com.atakmap.comms.TAKServerListener;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 
 import java.io.File;
 import java.util.Collections;
@@ -44,15 +44,15 @@ public class VideoBrowserMapOverlay extends AbstractMapOverlay2
 
     private static final String TAG = "VideoBrowserMapOverlay";
 
-    private static final int ORDER = 6;
+    protected static final int ORDER = 6;
 
     private final MapView _mapView;
     private final Context _context;
-    private final View _listHeader;
+    protected View _listHeader;
 
     private boolean _vizSupported = false;
     private ListModel _listModel;
-    private HierarchyListAdapter _om;
+    protected HierarchyListAdapter _om;
 
     public VideoBrowserMapOverlay(MapView view) {
         _mapView = view;
@@ -118,7 +118,7 @@ public class VideoBrowserMapOverlay extends AbstractMapOverlay2
         }
     }
 
-    private void checkFolderRemoved() {
+    protected void checkFolderRemoved() {
         if (_om == null || !_om.isActive())
             return;
         HierarchyListItem list = _om.getCurrentList(true);
@@ -161,7 +161,7 @@ public class VideoBrowserMapOverlay extends AbstractMapOverlay2
 
         // Show video snapshot gallery
         else if (id == R.id.gallery) {
-            File[] snapshots = FileIOProviderFactory.listFiles(new File(
+            File[] snapshots = IOProviderFactory.listFiles(new File(
                     VideoBrowserDropDownReceiver.SNAPSHOT_DIR));
             if (FileSystemUtils.isEmpty(snapshots)) {
                 Toast.makeText(_context, R.string.gallery_no_items,
@@ -175,9 +175,9 @@ public class VideoBrowserMapOverlay extends AbstractMapOverlay2
         }
     }
 
-    private class ListModel extends VideoFolderHierarchyListItem {
+    public class ListModel extends VideoFolderHierarchyListItem {
 
-        private ListModel(MapView mapView) {
+        public ListModel(MapView mapView) {
             super(mapView, null, null);
             this.asyncRefresh = true;
             this.reusable = true;
@@ -190,7 +190,7 @@ public class VideoBrowserMapOverlay extends AbstractMapOverlay2
 
         @Override
         public String getTitle() {
-            return getIdentifier();
+            return getName();
         }
 
         @Override

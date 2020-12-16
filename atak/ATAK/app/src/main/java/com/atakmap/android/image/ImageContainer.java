@@ -51,6 +51,7 @@ import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.raster.gdal.GdalGraphicUtils;
 import com.atakmap.map.layer.raster.gdal.GdalTileReader;
 
@@ -59,7 +60,6 @@ import org.apache.sanselan.formats.tiff.TiffImageMetadata;
 import org.apache.sanselan.formats.tiff.constants.TiffConstants;
 
 import org.gdal.gdal.Dataset;
-import org.gdal.gdal.gdal;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -211,7 +211,7 @@ public abstract class ImageContainer implements OnTouchListener,
 
         if (NITF_FilenameFilter.accept(nitfFile.getParentFile(),
                 nitfFile.getName())) {
-            Dataset ds = gdal.Open(nitfFile.toString());
+            Dataset ds = GdalLibrary.openDatasetFromFile(nitfFile);
 
             if (ds == null) {
                 Log.e(TAG,
@@ -325,7 +325,7 @@ public abstract class ImageContainer implements OnTouchListener,
                     try {
                         dataVal = cgmDict.get(data).getBytes("ISO_8859_1");
                     } catch (UnsupportedEncodingException e) {
-                        Log.e(TAG, "error occured", e);
+                        Log.e(TAG, "error occurred", e);
                     }
 
                     int relativeRowVal = Integer.parseInt(relRowVal);
@@ -508,9 +508,10 @@ public abstract class ImageContainer implements OnTouchListener,
         if (JPEG_FilenameFilter.accept(dir, name))
             populateEXIFData(layout, ExifHelper.getExifMetadata(bmpFile));
         else if (NITF_FilenameFilter.accept(dir, name))
-            populateNITFMetadata(layout, gdal.Open(bmpFile.toString()));
+            populateNITFMetadata(layout,
+                    GdalLibrary.openDatasetFromFile(bmpFile));
         else if (name.endsWith(".png")) {
-            Dataset ds = gdal.Open(bmpFile.toString());
+            Dataset ds = GdalLibrary.openDatasetFromFile(bmpFile);
             if (ds != null) {
                 String desc = ds.GetMetadataItem("Description");
                 ds.delete();

@@ -2,10 +2,8 @@
 package com.atakmap.app.preferences;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.Preference;
-import android.preference.PreferenceManager;
 
 import com.atakmap.android.gui.HintDialogHelper;
 import com.atakmap.android.preference.AtakPreferenceFragment;
@@ -16,7 +14,6 @@ public class AdvancedLoggingPreferenceFragment extends AtakPreferenceFragment
         implements Preference.OnPreferenceChangeListener {
 
     private static final String TAG = "AdvancedLoggingPreferenceFragment";
-    private SharedPreferences _prefs;
     private Context context;
 
     public static java.util.List<PreferenceSearchIndex> index(Context context) {
@@ -44,7 +41,6 @@ public class AdvancedLoggingPreferenceFragment extends AtakPreferenceFragment
         addPreferencesFromResource(getResourceID());
 
         context = getActivity();
-        _prefs = PreferenceManager.getDefaultSharedPreferences(context);
 
         Preference collectMetrics = findPreference("collect_metrics");
         if (collectMetrics != null)

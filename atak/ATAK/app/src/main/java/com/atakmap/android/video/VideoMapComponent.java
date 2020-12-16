@@ -33,7 +33,7 @@ public class VideoMapComponent extends DropDownMapComponent {
     private VideoManager manager;
     private VideoDropDownReceiver vdr;
     private VideoBrowserDropDownReceiver vbdr;
-    private VideoBrowserMapOverlay overlay;
+    protected VideoBrowserMapOverlay overlay;
     private ImportVideoAliasSort aliasSorter;
     private VideoAliasImporter cotImporter;
     private VideoDetailHandler cotHandler;
@@ -108,6 +108,7 @@ public class VideoMapComponent extends DropDownMapComponent {
                 cotHandler = new VideoDetailHandler(view));
         CotImporterManager.getInstance().registerImporter(
                 cotImporter = new VideoAliasImporter(view, cotHandler));
+
     }
 
     @Override
@@ -129,7 +130,6 @@ public class VideoMapComponent extends DropDownMapComponent {
         view.getMapOverlayManager().removeOverlay(overlay);
         overlay.dispose();
         manager.dispose();
-
     }
 
     /**
@@ -186,7 +186,6 @@ public class VideoMapComponent extends DropDownMapComponent {
         }
     }
 
-
     /**
      * Given a set of parameters, this will construct a video connection entry and add it to the
      * video managemement system.
@@ -223,6 +222,5 @@ public class VideoMapComponent extends DropDownMapComponent {
             Log.e(TAG, "error adding a new or updating an existing alias", e);
         }
     }
-
 
 }

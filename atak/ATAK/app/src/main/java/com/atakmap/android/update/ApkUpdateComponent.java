@@ -70,7 +70,7 @@ public class ApkUpdateComponent extends AbstractMapComponent {
         _instance = this;
     }
 
-    private BroadcastReceiver _componentsCreatedReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver _componentsCreatedReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             _providerManager.init();

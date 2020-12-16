@@ -5,14 +5,14 @@
 ////    DESCRIPTION:    Implementation of OGR_SchemaDefinition static member
 ////                    functions.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Apr 22, 2015
+////      Apr 22, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -186,7 +186,7 @@ namespace feature                       // Open feature namespace.
 ///=====================================
 
 OGR_SchemaDefinition::~OGR_SchemaDefinition ()
-    throw ()
+    NOTHROWS
   { }
 
 const OGR_SchemaDefinition*

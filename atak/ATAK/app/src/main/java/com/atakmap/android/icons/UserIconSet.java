@@ -1,8 +1,6 @@
 
 package com.atakmap.android.icons;
 
-import android.database.Cursor;
-
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
@@ -16,6 +14,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import com.atakmap.coremap.locale.LocaleUtil;
+import com.atakmap.database.CursorIface;
 
 /**
  * Icon set may be loaded from XML and or SQLite
@@ -402,7 +401,7 @@ public class UserIconSet {
         return (name + id).hashCode();
     }
 
-    static UserIconSet fromCursor(Cursor cursor) {
+    static UserIconSet fromCursor(CursorIface cursor) {
         return new UserIconSet(
                 cursor.getInt(cursor
                         .getColumnIndex(UserIconSet.COLUMN_ICONSETS_ID)),

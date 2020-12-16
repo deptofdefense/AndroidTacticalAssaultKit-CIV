@@ -1,10 +1,8 @@
 
 package com.atakmap.android.statesaver;
 
-import com.atakmap.android.database.DatabaseFactory;
-import com.atakmap.android.database.DatabaseInformation;
-import com.atakmap.android.database.DatabaseProvider;
-import com.atakmap.android.database.ProviderChangeRequestedListener;
+import com.atakmap.android.data.ClearContentRegistry;
+import com.atakmap.coremap.io.DatabaseInformation;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -13,18 +11,16 @@ import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.database.sqlite.SQLiteException;
 import android.net.Uri;
 
-import com.atakmap.android.data.DataMgmtReceiver;
 import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.DefaultMapGroup;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.overlay.DefaultMapGroupOverlay;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProvider;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.database.CursorIface;
@@ -38,8 +34,7 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.Map;
 
-public class StateSaver extends AbstractMapComponent
-        implements ProviderChangeRequestedListener {
+public class StateSaver extends AbstractMapComponent {
 
     public static final String TAG = "StateSaver";
 
@@ -120,9 +115,7 @@ public class StateSaver extends AbstractMapComponent
         filter.addAction(ADD_CLASSIFICATION_ACTION);
         this.registerReceiver(context, classificationBroadcastReceiver, filter);
 
-        filter = new DocumentedIntentFilter();
-        filter.addAction(DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION);
-        this.registerReceiver(context, dataMgmtReceiver, filter);
+        ClearContentRegistry.getInstance().registerListener(dataMgmtReceiver);
 
         _instance = this;
     }
@@ -147,6 +140,8 @@ public class StateSaver extends AbstractMapComponent
                 stateSaverDatabase = null;
             }
         }
+        ClearContentRegistry.getInstance().unregisterListener(dataMgmtReceiver);
+
     }
 
     /**
@@ -183,15 +178,17 @@ public class StateSaver extends AbstractMapComponent
         }
     };
 
-    private final BroadcastReceiver dataMgmtReceiver = new BroadcastReceiver() {
+    private final ClearContentRegistry.ClearContentListener dataMgmtReceiver = new ClearContentRegistry.ClearContentListener() {
         @Override
-        public void onReceive(Context context, Intent intent) {
+        public void onClearContent(boolean clearmaps) {
+
             Log.d(TAG, "Clearing table: " + TABLE_COTEVENTS);
             synchronized (StateSaver.dbWriteLock) {
                 if (stateSaverDatabase != null)
                     stateSaverDatabase.close();
                 stateSaverDatabase = null;
-                FileIOProviderFactory.delete(STATE_SAVER_DB_FILE2, FileIOProvider.SECURE_DELETE);
+                IOProviderFactory.delete(STATE_SAVER_DB_FILE2,
+                        IOProvider.SECURE_DELETE);
             }
         }
     };
@@ -218,118 +215,23 @@ public class StateSaver extends AbstractMapComponent
         return 0;
     }
 
-    @Override
-    public void onProviderChangeRequested(DatabaseProvider provider,
-            int change) {
-        Log.d(TAG, "provider change requested" + provider + " " + change);
-        // TODO/VERIFY:
-        //      - remove all map items loaded from the statesaver without removing them from the statesaver
-        //      - stop statesaver restore if in progress
-        //      - remove the statesaver listener (no new items are persisted
-        //      - iterate through uid's and call remove on the item.
-        //      - set up new statesaver database
-        //      - start statesaver restoration
-
-        DatabaseIface oldStateSaverDatabase = stateSaverDatabase;
-
-        DatabaseInformation dbi = new DatabaseInformation(
-                Uri.fromFile(STATE_SAVER_DB_FILE2), this);
-
-        DatabaseIface newStateSaverDatabase = DatabaseFactory.create(dbi);
-        upgradeDatabase(newStateSaverDatabase);
-
-        // new database is ready, now we need to cut over.
-
-        // stop listening for events and dispose the listener
-        view.getMapEventDispatcher().removeMapEventListener(
-                MapEvent.ITEM_REMOVED,
-                listener);
-        view.getMapEventDispatcher().removeMapEventListener(
-                MapEvent.ITEM_PERSIST,
-                listener);
-        listener.dispose();
-
-        synchronized (lock) {
-            if (publishThread != null) {
-                // dispose the publisher and do not continue publishing, block on 
-                // the thread per the contract with the callback.   This means that the 
-                // ComponentsCreatedReceiver has already been called and the 
-                // publishThread was already created.   
-                publisher.cancel();
-
-                while (publishThread.isAlive()) {
-                    Log.d(TAG, "waiting for publishing thread to die...");
-                    try {
-                        Thread.sleep(1000);
-
-                    } catch (Exception ignored) {
-                    }
-
-                }
-
-                // determine what database elements were placed on the screen and delete them from the mapView.
-                CursorIface result = stateSaverDatabase.query("SELECT " +
-                        StateSaver.COLUMN_UID + " FROM "
-                        + StateSaver.TABLE_COTEVENTS, null);
-                while (result.moveToNext()) {
-                    final String uid = result.getString(0);
-                    Log.d(TAG, "removing: " + uid);
-                    final MapItem mi = view.getMapItem(uid);
-                    if (mi != null)
-                        mi.removeFromGroup();
-                }
-
-            }
-
-            // cut over to the new statesaver
-            stateSaverDatabase = newStateSaverDatabase;
-
-            // create the new listener
-            listener = new StateSaverListener(stateSaverDatabase, view);
-
-            view.getMapEventDispatcher().addMapEventListener(
-                    MapEvent.ITEM_REMOVED,
-                    listener);
-            view.getMapEventDispatcher().addMapEventListener(
-                    MapEvent.ITEM_PERSIST,
-                    listener);
-
-            publisher = new StateSaverPublisher(stateSaverDatabase, view);
-            publisher.resetStateSaverLoaded();
-
-            if (publishThread != null) {
-                // begin publishing the elements from the new statesaver, since 
-                // ComponentsCreatedReceiver has already been called and the 
-                // publisher was already in progress
-
-                publishThread = new Thread(publisher, "InitialCotPublisher");
-                publishThread.start();
-            }
-
-            // close out of the old statsaver
-            try {
-                if (oldStateSaverDatabase != null)
-                    oldStateSaverDatabase.close();
-            } catch (Exception ignore) {
-            }
-        }
-
-    }
-
     private void checkStateSaverDatabaseNoSync() {
         if (stateSaverDatabase == null) {
 
             DatabaseInformation dbi = new DatabaseInformation(
-                    Uri.fromFile(STATE_SAVER_DB_FILE2), this);
+                    Uri.fromFile(STATE_SAVER_DB_FILE2),
+                    DatabaseInformation.OPTION_RESERVED1);
 
-            stateSaverDatabase = DatabaseFactory.create(dbi);
+            stateSaverDatabase = IOProviderFactory.createDatabase(dbi);
             if (stateSaverDatabase != null) {
                 upgradeDatabase(stateSaverDatabase);
             } else {
                 try {
                     final File f = STATE_SAVER_DB_FILE2;
-                    if (!FileIOProviderFactory.renameTo(f, new File(STATE_SAVER_DB_FILE2 + ".corrupt."
-                            + new CoordinatedTime().getMilliseconds()))) {
+                    if (!IOProviderFactory.renameTo(f,
+                            new File(STATE_SAVER_DB_FILE2 + ".corrupt."
+                                    + new CoordinatedTime()
+                                            .getMilliseconds()))) {
                         Log.d(TAG, "could not move corrup db out of the way");
                     } else {
                         Log.d(TAG,
@@ -338,7 +240,7 @@ public class StateSaver extends AbstractMapComponent
                     }
                 } catch (Exception ignored) {
                 }
-                stateSaverDatabase = DatabaseFactory.create(dbi);
+                stateSaverDatabase = IOProviderFactory.createDatabase(dbi);
                 upgradeDatabase(stateSaverDatabase);
             }
 

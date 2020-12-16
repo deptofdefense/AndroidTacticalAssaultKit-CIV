@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <list>
 #include <map>
+#include <string>
 
 #include "thread/Cond.h"
 #include "thread/Mutex.h"
@@ -48,7 +49,7 @@ namespace TAK {
 
                     // Installs given AsynchronousIO to be used. May only be invoked if the deferred init constructor was used,
                     // and may only be invoked once. Pass nullptr to have this TileReader2 create its own AsynchronousIO.
-                    void installAsynchronousIO(AsynchronousIO *io);
+                    void installAsynchronousIO(std::shared_ptr<AsynchronousIO> io);
 
                    public:
                     /**
@@ -469,8 +470,7 @@ namespace TAK {
 
                    protected:
                     const Port::String uri;
-                    AsynchronousIO *asynchronousIO;
-                    bool disposeIO;
+                    std::shared_ptr<AsynchronousIO> asynchronousIO;
                     int asyncRequestId;
 
                     /**

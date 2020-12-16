@@ -13,7 +13,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:hint="@string/client_cert_password"
-            android:imeOptions="actionDone"
+            android:imeOptions="flagNoFullscreen|actionDone"
             android:inputType="textPassword"/>
 
     </LinearLayout>

@@ -8,7 +8,7 @@ import com.atakmap.android.rubbersheet.maps.RubberImage;
 import com.atakmap.app.R;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
@@ -51,9 +51,9 @@ public class ExportGRGTask extends ExportFileTask {
         File img = image.getFile();
         File tmpDir = new File(RubberSheetManager.DIR, ".tmp_"
                 + image.getFile().getName());
-        if (FileIOProviderFactory.exists(tmpDir))
+        if (IOProviderFactory.exists(tmpDir))
             FileSystemUtils.delete(tmpDir);
-        if (!FileIOProviderFactory.mkdirs(tmpDir)) {
+        if (!IOProviderFactory.mkdirs(tmpDir)) {
             Log.d(TAG, "Failed to create temp dir: " + tmpDir);
             return null;
         }

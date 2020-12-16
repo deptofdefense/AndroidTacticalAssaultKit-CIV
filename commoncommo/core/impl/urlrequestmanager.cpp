@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <inttypes.h>
 #include <string.h>
+#include <memory>
 
 using namespace atakmap::commoncommo;
 using namespace atakmap::commoncommo::impl;
@@ -20,7 +21,8 @@ namespace {
     };
 }
 
-URLRequestManager::URLRequestManager(CommoLogger *logger) :
+URLRequestManager::URLRequestManager(CommoLogger *logger,
+        FileIOProviderTracker* factory) :
                 ThreadedHandler(2, THREAD_NAMES), logger(logger),
                 nextId(0),
                 notRunningRequests(),
@@ -33,7 +35,8 @@ URLRequestManager::URLRequestManager(CommoLogger *logger) :
                 statusUpdatesMutex(),
                 statusUpdatesMonitor(),
                 statusThreadWaiting(false),
-                curlMultiCtx(NULL)
+                curlMultiCtx(NULL),
+                providerTracker(factory)
 {
     curlMultiCtx = curl_multi_init();
 
@@ -83,8 +86,9 @@ void URLRequestManager::initRequest(
     PGSC::Thread::LockPtr lock(NULL, NULL);
     PGSC::Thread::Lock_create(lock, notRunningRequestsMutex);
 
+    auto provider(providerTracker->getCurrentProvider());
     IOContext *ctx = new IOContext(this, req, io,
-                                   nextId);
+                                   nextId, provider);
     InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO,
         "URLReq: Creating %s transfer transaction - id %d URL %s local %s",
         ctx->isUpload ? "upload" : "download",
@@ -513,7 +517,7 @@ size_t URLRequestManager::curlWriteCallback(char *buf, size_t size, size_t nmemb
     IOContext *ioCtx = (IOContext *)userCtx;
     size_t n;
     if (ioCtx->request->type == URLRequest::FILE_DOWNLOAD) {
-        n = fwrite(buf, size, nmemb, ioCtx->localFile);
+        n = ioCtx->provider->write(buf, size, nmemb, ioCtx->localFile);
     } else {
         ioCtx->request->downloadedData((uint8_t *)buf, nmemb);
         n = nmemb;
@@ -526,7 +530,7 @@ size_t URLRequestManager::curlWriteCallback(char *buf, size_t size, size_t nmemb
 size_t URLRequestManager::curlReadCallback(char *buf, size_t size, size_t nmemb, void *userCtx)
 {
     IOContext *ioCtx = (IOContext *)userCtx;
-    size_t n = fread(buf, size, nmemb, ioCtx->localFile);
+    size_t n = ioCtx->provider->read(buf, size, nmemb, ioCtx->localFile);
 
     return n * size;
 }
@@ -772,7 +776,8 @@ URLRequestManager::IOContext::IOContext(
                   URLRequestManager *owner,
                   URLRequest *req,
                   URLRequestIO *io,
-                  int id) :
+                  int id,
+                  std::shared_ptr<FileIOProvider>& provider) :
                           owner(owner),
                           io(io),
                           request(req),
@@ -782,7 +787,8 @@ URLRequestManager::IOContext::IOContext(
                           curlErrBuf(),
                           localFile(NULL),
                           localFileLen(0),
-                          bytesTransferred(0)
+                          bytesTransferred(0),
+                          provider(provider)
 {
 }
 
@@ -799,10 +805,10 @@ void URLRequestManager::IOContext::openLocalFile() COMMO_THROW (IOStatusExceptio
         // Get file size
         if (!getFileSize(&localFileLen, request->localFileName.c_str()))
             throw IOStatusException(FILEIO_LOCAL_FILE_OPEN_FAILURE, "Could not determine file size - check path and permissions");
-        
-        localFile = fopen(request->localFileName.c_str(), "rb");
+
+        localFile = provider->open(request->localFileName.c_str(), "rb");
     } else if (request->type == URLRequest::FILE_DOWNLOAD) {
-        localFile = fopen(request->localFileName.c_str(), "wb");
+        localFile = provider->open(request->localFileName.c_str(), "wb");
     } else {
         // No local file needed/used
         return;
@@ -814,7 +820,7 @@ void URLRequestManager::IOContext::openLocalFile() COMMO_THROW (IOStatusExceptio
 void URLRequestManager::IOContext::closeLocalFile()
 {
     if (localFile != NULL) {
-        fclose(localFile);
+        provider->close(localFile);
         localFile = NULL;
     }
 }

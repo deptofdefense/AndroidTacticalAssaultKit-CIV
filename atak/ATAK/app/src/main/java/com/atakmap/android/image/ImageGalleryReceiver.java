@@ -56,7 +56,7 @@ import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.ATAKActivity;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.filesystem.HashingUtils;
@@ -201,11 +201,12 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                 File dir = new File(
                         FileSystemUtils
                                 .sanitizeWithSpacesAndSlashes(directory));
-                if (FileSystemUtils.isFile(dir) && FileIOProviderFactory.isDirectory(dir)) {
-                    File[] fileArr = FileIOProviderFactory.listFiles(dir);
+                if (FileSystemUtils.isFile(dir)
+                        && IOProviderFactory.isDirectory(dir)) {
+                    File[] fileArr = IOProviderFactory.listFiles(dir);
                     if (fileArr != null) {
                         for (File f : fileArr) {
-                            if (!FileIOProviderFactory.isDirectory(f))
+                            if (!IOProviderFactory.isDirectory(f))
                                 fileList.add(f);
                         }
                     }
@@ -224,7 +225,8 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                         File f = new File(file);
                         // redundant check, but leaving in place because it 
                         // was the original code
-                        if (FileIOProviderFactory.exists(f) && !FileIOProviderFactory.isDirectory(f))
+                        if (IOProviderFactory.exists(f)
+                                && !IOProviderFactory.isDirectory(f))
                             fileList.add(f);
                     } else {
                         Log.w(TAG, "Skipping file: " + file);
@@ -264,7 +266,8 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                     + " " + context.getString(R.string.attachments);
 
             String dirPath = AttachmentManager.getFolderPath(uid, true);
-            if (dirPath != null && FileIOProviderFactory.exists(new File(dirPath))) {
+            if (dirPath != null
+                    && IOProviderFactory.exists(new File(dirPath))) {
                 Log.d(TAG, "Processing directory: " + dirPath);
                 List<File> fileList = AttachmentManager.getAttachments(uid);
 
@@ -305,7 +308,7 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                                 f.getParentFile(), f.getName())) {
                             File nitfXml = new File(f.getParent(), f.getName()
                                     + ".aux.xml");
-                            if (FileIOProviderFactory.exists(nitfXml))
+                            if (IOProviderFactory.exists(nitfXml))
                                 manifest.addFile(nitfXml, uid);
                         }
                     }
@@ -887,7 +890,7 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                             addItem(result.file);
                         }
                     } catch (Exception e) {
-                        Log.d(TAG, "error occured", e);
+                        Log.d(TAG, "error occurred", e);
                     }
                 }
             });
@@ -967,7 +970,8 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
 
         TextView sizeText = v
                 .findViewById(R.id.attachment_detail_txtSize);
-        sizeText.setText(MathUtils.GetLengthString(FileIOProviderFactory.length(file)));
+        sizeText.setText(
+                MathUtils.GetLengthString(IOProviderFactory.length(file)));
 
         TextView dateText = v
                 .findViewById(R.id.attachment_detail_txtModifiedDate);
@@ -1073,8 +1077,8 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
         // restrict the uris that are valid.
         final String sURI = contentURI.toString();
         if (sURI.startsWith("content://com.android.providers.media.documents")
-                ||
-                sURI.startsWith("content://media/external")) {
+                || sURI.startsWith("content://media/external")
+                || sURI.startsWith("content://com.android.externalstorage.documents")) {
             // nothing at this point
         } else {
             // Log.d(TAG, "trying to load content from: " + contentURI);
@@ -1224,7 +1228,7 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                             }
                             final File finalAtt = att;
                             if (finalAtt != null) {
-                                if (FileIOProviderFactory.exists(finalAtt)) {
+                                if (IOProviderFactory.exists(finalAtt)) {
                                     AlertDialog.Builder adb = new AlertDialog.Builder(
                                             context);
                                     adb.setTitle(R.string.overwrite_existing);
@@ -1300,9 +1304,9 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                     .openInputStream(dataUri);
             if (is != null) {
                 FileSystemUtils.copyStream(is,
-                        os = FileIOProviderFactory.getOutputStream(
+                        os = IOProviderFactory.getOutputStream(
                                 outFile));
-                return FileIOProviderFactory.exists(outFile);
+                return IOProviderFactory.exists(outFile);
             } else {
                 Log.e(TAG, "Failed to extract content from "
                         + dataUri + " to " + outFile);

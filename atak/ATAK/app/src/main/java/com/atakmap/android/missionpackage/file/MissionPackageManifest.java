@@ -13,8 +13,11 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.ui.MissionPackageListMapItem;
 import com.atakmap.android.routes.Route;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipFile;
 
 import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.Element;
@@ -23,15 +26,13 @@ import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import com.atakmap.coremap.locale.LocaleUtil;
-
 import java.util.UUID;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * Maintains current state of Mission Package being built by user. The Mission Package may or may
@@ -243,7 +244,7 @@ public class MissionPackageManifest implements Parcelable {
     }
 
     public boolean pathExists() {
-        return _path != null && FileIOProviderFactory.exists(new File(_path));
+        return _path != null && IOProviderFactory.exists(new File(_path));
     }
 
     /**
@@ -430,8 +431,8 @@ public class MissionPackageManifest implements Parcelable {
             }
 
             File f = new File(p.getValue());
-            if (FileIOProviderFactory.exists(f))
-                totalSizeInBytes += FileIOProviderFactory.length(f);
+            if (IOProviderFactory.exists(f))
+                totalSizeInBytes += IOProviderFactory.length(f);
             else
                 totalSizeInBytes += file.getSize();
         }
@@ -554,8 +555,8 @@ public class MissionPackageManifest implements Parcelable {
                 + file.getAbsolutePath());
         Serializer serializer = new Persister();
 
-        try {
-            serializer.write(this, file);
+        try (FileOutputStream fos = IOProviderFactory.getOutputStream(file)) {
+            serializer.write(this, fos);
             return true;
         } catch (Exception e) {
             Log.e(TAG, "Failed to save manifest: " + toString(), e);
@@ -625,9 +626,9 @@ public class MissionPackageManifest implements Parcelable {
                         + file.getAbsolutePath());
 
         Serializer serializer = new Persister();
-        try {
+        try (FileInputStream fis = IOProviderFactory.getInputStream(file)) {
             MissionPackageManifest contents = serializer.read(
-                    MissionPackageManifest.class, file);
+                    MissionPackageManifest.class, fis);
             contents.setPath(file.getAbsolutePath());
             return contents;
         } catch (Exception e) {

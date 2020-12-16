@@ -8,6 +8,7 @@
 #include "port/Platform.h"
 #include "port/String.h"
 #include "util/Error.h"
+#include "util/Filesystem.h"
 #include "util/NonCopyable.h"
 #include "util/NonHeapAllocatable.h"
 
@@ -82,20 +83,10 @@ namespace TAK {
                 FILE *fd;
             };
 
-            enum ListFilesMethod {
-                /** Lists all files and directories in the current directory */
-                TELFM_Immediate,
-                /** Lists all files in the current directory */
-                TELFM_ImmediateFiles,
-                /** Lists all files and directories in the current directory, and all subdirectories */
-                TELFM_Recursive,
-                /** Lists all files in the current directory, and all subdirectories */
-                TELFM_RecursiveFiles
-            };
-
             ENGINE_API TAKErr IO_copy(const char *dst, const char *src) NOTHROWS;
 	    ENGINE_API TAKErr IO_copy(DataOutput2 &dst, DataInput2 &src) NOTHROWS;
 	    ENGINE_API TAKErr IO_createTempFile(Port::String &value, const char *prefix, const char *suffix, const char *dir) NOTHROWS;
+	    ENGINE_API TAKErr IO_createTempDirectory(Port::String &value, const char *prefix, const char *suffix, const char *dir) NOTHROWS;
             ENGINE_API TAKErr IO_getFileCount(std::size_t *value, const char *path) NOTHROWS;
 	    ENGINE_API TAKErr IO_getFileCount(std::size_t *value, const char *path, const std::size_t limit) NOTHROWS;
 
@@ -184,6 +175,8 @@ namespace TAK {
             ENGINE_API TAKErr IO_getExt(Port::String &ext, const char **extPos, const char *path) NOTHROWS;
 
             ENGINE_API TAKErr IO_correctPathSeps(Port::String &result, const char *path) NOTHROWS;
+
+            ENGINE_API void IO_setFilesystem(const std::shared_ptr<Filesystem> &filesystem) NOTHROWS;
         }
     }
 }

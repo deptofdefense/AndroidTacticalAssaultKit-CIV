@@ -1,0 +1,6 @@
+<menu buttonWidth='90' buttonSpan='90' buttonRadius='70' buttonBg='bgs/dark_button.xml'>
+   <button angle='0' disabled='!{${removable}}' onClick='actions/atsk/atsk_delete_obs.xml' icon='icons/delete.png' /> 
+   <button onClick='actions/atsk/atsk_edit_obs.xml' icon='icons/obstruction_edit.png'/> 
+   <button onClick='actions/cancel.xml' icon='icons/close.png'/> 
+   <button onClick='actions/atsk/atsk_obs_info.xml' icon='icons/info.png'/> 
+</menu>

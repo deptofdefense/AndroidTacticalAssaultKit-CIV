@@ -17,7 +17,7 @@ public class NorthOverlay extends ArrowOverlay {
     public static final String SYMBOL = "N";
 
     private boolean _boundsNeedUpdate = false;
-    private Rect _txtBounds = new Rect();
+    private final Rect _txtBounds = new Rect();
 
     public NorthOverlay(PolylineCommand line) {
         super(line);

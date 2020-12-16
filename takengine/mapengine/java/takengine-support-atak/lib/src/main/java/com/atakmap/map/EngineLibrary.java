@@ -45,7 +45,7 @@ public final class EngineLibrary {
                 "libssl-1_1",
                 "libcurl",
                 "kdu_v64R",
-                "gdal202",
+                "gdal204",
                 "assimp",
                 "pri",
                 "libGLESv2",
@@ -53,40 +53,10 @@ public final class EngineLibrary {
                 "takenginejni",
             }
         );
-        /** WIN32 **/
-        libs.put(
-            OS_WIN|ARCH_x86,
-            new String[]
-            {
-                    "charset-1",
-                    "iconv-2",
-                    "zlibwapi",
-                    "libxml2",
-                    "libcrypto-1_1",
-                    "sqlite3",
-                    "proj",
-                    "geos_c",
-                    "spatialite",
-                    "libexpat",
-                    "ogdi",
-                    "tbb",
-                    "lti_dsdk_9.5",
-                    "libssl-1_1",
-                    "libcurl",
-                    "kdu_v64R",
-                    "gdal202",
-                    "assimp",
-                    "pri",
-                    "libGLESv2",
-                    "takengine",
-                    "takenginejni",
-            }
-        );
     }
 
     private final static Map<Integer, String> libPaths = new HashMap<>();
     static {
-        libPaths.put(OS_WIN|ARCH_x86, "win32");
         libPaths.put(OS_WIN|ARCH_x64, "win64");
     }
 

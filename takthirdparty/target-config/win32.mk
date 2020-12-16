@@ -7,9 +7,9 @@ LIB_STATICSUFFIX=lib
 OBJ_SUFFIX=obj
 
 # Debug yes/no flag used by a number of win32 build scripts
-win32_debug_yesno_debug=yes
-win32_debug_yesno_release=no
-win32_debug_yesno=$(win32_debug_yesno_$(BUILD_TYPE))
+win_debug_yesno_debug=yes
+win_debug_yesno_release=no
+win_debug_yesno=$(win_debug_yesno_$(BUILD_TYPE))
 win32_debug_en_debug=yes
 win32_debug_en=$(win32_debug_en_$(BUILD_TYPE))
 

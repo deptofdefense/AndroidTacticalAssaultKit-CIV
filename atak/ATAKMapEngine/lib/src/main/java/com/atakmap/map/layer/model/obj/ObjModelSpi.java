@@ -1,6 +1,6 @@
 package com.atakmap.map.layer.model.obj;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.lang.Unsafe;
@@ -69,9 +69,9 @@ public final class ObjModelSpi implements ModelSpi {
             }
         }
 
-        if(!FileIOProviderFactory.exists(f))
+        if(!IOProviderFactory.exists(f))
             return null;
-        final long fileLength = FileIOProviderFactory.length(f);
+        final long fileLength = IOProviderFactory.length(f);
         if(fileLength > 0x7FFFFFFFL)
             return null;
 
@@ -271,18 +271,18 @@ public final class ObjModelSpi implements ModelSpi {
             // XXX - check for material file
             File textureFile = null;
             final File materialFile = ObjUtils.getSibling(f, f.getName().replace(".obj", ".mtl"));
-            if(FileIOProviderFactory.exists(materialFile)) {
+            if(IOProviderFactory.exists(materialFile)) {
                 try {
                     Map<String, String> materials = ObjUtils.extractMaterialTextures(materialFile);
                     for(String filename : materials.values()) {
                         textureFile = new File(f.getParentFile(), filename);
-                        if(FileIOProviderFactory.exists(textureFile))
+                        if(IOProviderFactory.exists(textureFile))
                             break;
                         textureFile = null;
                     }
                 } catch(Throwable ignored) {}
             }
-            if(textureFile == null || !FileIOProviderFactory.exists(textureFile)) {
+            if(textureFile == null || !IOProviderFactory.exists(textureFile)) {
                 String[] exts = new String[]
                         {
                                 "_texture.jpg",

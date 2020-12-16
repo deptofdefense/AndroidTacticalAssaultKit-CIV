@@ -18,7 +18,7 @@ import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -126,7 +126,7 @@ public class AttachmentExportMarshal extends ExportFileMarshal {
 
         // delete existing file, and then serialize out to file
         File file = getFile();
-        if (FileIOProviderFactory.exists(file)) {
+        if (IOProviderFactory.exists(file)) {
             FileSystemUtils.deleteFile(file);
         }
 
@@ -163,7 +163,7 @@ public class AttachmentExportMarshal extends ExportFileMarshal {
             }
         }
         final File file = getFile();
-        if (!FileIOProviderFactory.exists(file)) {
+        if (!IOProviderFactory.exists(file)) {
             Log.d(TAG, "Export failed: " + file.getAbsolutePath());
             NotificationUtil.getInstance().postNotification(
                     R.drawable.ic_network_error_notification_icon,

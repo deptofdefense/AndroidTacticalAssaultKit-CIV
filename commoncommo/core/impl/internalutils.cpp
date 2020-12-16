@@ -246,7 +246,7 @@ bool InternalUtils::urlReplacePort(std::string *url, int port)
     return true;
 }
 
-bool InternalUtils::computeSha256Hash(std::string *hashOut, const char *filename)
+bool InternalUtils::computeSha256Hash(std::string *hashOut, const char *filename, std::shared_ptr<FileIOProvider>& provider)
 {
     static const size_t bufSize = 512;
     uint8_t buf[bufSize];
@@ -262,16 +262,16 @@ bool InternalUtils::computeSha256Hash(std::string *hashOut, const char *filename
     if (!EVP_DigestInit(mdCtx, sha256type))
         ret = false;
 
-    FILE *f = fopen(filename, "rb");
+    FileHandle *f = provider->open(filename, "rb");
     if (!f)
         ret = false;
 
     while (ret) {
-        size_t n = fread(buf, 1, bufSize, f);
+        size_t n = provider->read(buf, 1, bufSize, f);
         if (n > 0 && !EVP_DigestUpdate(mdCtx, buf, n))
             ret = false;
 
-        if (n < bufSize && ferror(f))
+        if (n < bufSize && provider->error(f))
             ret = false;
 
         if (!n)
@@ -279,7 +279,7 @@ bool InternalUtils::computeSha256Hash(std::string *hashOut, const char *filename
             break;
     }
     if (f)
-        fclose(f);
+        provider->close(f);
 
     if (ret) {
         if (!EVP_DigestFinal(mdCtx, hashBin, &hashBinSize))
@@ -296,17 +296,6 @@ bool InternalUtils::computeSha256Hash(std::string *hashOut, const char *filename
     EVP_MD_CTX_destroy(mdCtx);
     return ret;
 }
-
-uint64_t InternalUtils::computeFileSize(const char *filename) COMMO_THROW (std::invalid_argument)
-{
-    struct stat s;
-
-    int r = ::stat(filename, &s);
-    if (r != 0)
-        throw std::invalid_argument("cannot stat file");
-    return s.st_size;
-}
-
 
 namespace {
     // Throws ILLEGAL_ARGUMENT based exception only for invalid/nonsense args.

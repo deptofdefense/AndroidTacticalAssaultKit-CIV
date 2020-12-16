@@ -32,7 +32,7 @@ public class DynamicRangeAndBearingEndpoint extends Marker implements
     private final MapView _mapView;
     private final Dt2ElevationModel _dem;
 
-    private float _hitRadiusSq = 1024; // 32 pixel touch radius, 1024 is 32 squared
+    private final float _hitRadiusSq = 1024; // 32 pixel touch radius, 1024 is 32 squared
 
     private RangeAndBearingMapItem _parent;
     private int _part;

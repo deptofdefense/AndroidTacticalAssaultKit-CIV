@@ -176,8 +176,7 @@ GLMosaicMapLayer::GLMosaicMapLayer(TAK::Engine::Core::MapRenderer *renderer, Mos
 GLMosaicMapLayer::~GLMosaicMapLayer() NOTHROWS
 {
     release();
-    if (this->ownsIO)
-        delete this->asyncio;
+    this->asyncio.reset();
 }
 
 Util::TAKErr GLMosaicMapLayer::toString(TAK::Engine::Port::String &value) NOTHROWS
@@ -336,14 +335,13 @@ Util::TAKErr GLMosaicMapLayer::resetQueryContext(QueryContext &pendingDataOpaque
     pendingData.spatialCalc.clear();
 
     pendingData.loaded.clear();
-    SortedFrameMap::iterator iter;
-    for (iter = this->visibleFrames.begin(); iter != visibleFrames.end(); ++iter) {
+    for (auto iter = this->visibleFrames.begin(); iter != visibleFrames.end(); iter++) {
         Port::String resolved;
         TAKErr code = this->resolvePath(resolved, iter->first.path);
         TE_CHECKRETURN_CODE(code);
         pendingData.loaded.insert(resolved.get());
     }
-    for (iter = this->zombie_frames_.begin(); iter != zombie_frames_.end(); ++iter) {
+    for (auto iter = this->zombie_frames_.begin(); iter != zombie_frames_.end(); iter++) {
         Port::String resolved;
         TAKErr code = this->resolvePath(resolved, iter->first.path);
         TE_CHECKRETURN_CODE(code);
@@ -528,6 +526,18 @@ bool GLMosaicMapLayer::shouldQuery() NOTHROWS
     return (prepared->valid != target->valid) || GLAsynchronousMapRenderable3::shouldQuery();
 }
 
+bool GLMosaicMapLayer::shouldCancel() NOTHROWS
+{
+    auto *prepared = static_cast<QueryArgument *>(this->prepared_state_.get());
+    auto *target = static_cast<QueryArgument *>(this->target_state_.get());
+    double delta = log(target->drawMapResolution / prepared->drawMapResolution) / log(2.0);
+    if(abs(delta) > 1.0) {
+        return true;
+    }
+
+    return false;
+}
+
 Util::TAKErr GLMosaicMapLayer::getRenderables(Port::Collection<GLMapRenderable2 *>::IteratorPtr &iter) NOTHROWS
 {
     iter = Port::Collection<GLMapRenderable2 *>::IteratorPtr(new RenderableListIter(this),
@@ -554,10 +564,10 @@ void GLMosaicMapLayer::commonInit(TAK::Engine::Core::RenderContext *context, Mos
     } else
 #endif
     if (ConfigOptions_getIntOptionOrDefault("imagery.single-async-io", 0) != 0) {
-        this->asyncio = TileReader2_getMasterIOThread();
+        this->asyncio = std::shared_ptr<TileReader2::AsynchronousIO>(TileReader2_getMasterIOThread(), TAK::Engine::Util::Memory_leaker<TileReader2::AsynchronousIO>);
         this->ownsIO = false;
     } else {
-        this->asyncio = new ::Raster::TileReader::TileReader2::AsynchronousIO();
+        this->asyncio = std::make_shared<TileReader2::AsynchronousIO>();
         this->ownsIO = true;
     }
 
@@ -660,6 +670,10 @@ TAKErr GLMosaicMapLayer::queryImpl(QueryContext &retvalqc, const QueryArgument &
             TE_CHECKBREAK_CODE(code);
 
             while ((code = result->moveToNext()) == TE_Ok) {
+                if (this->cancelled_) {
+                    break;
+                }
+
                 GeoPoint2 ul, ur, lr, ll;
                 code = result->getUpperLeft(&ul);
                 TE_CHECKBREAK_CODE(code);
@@ -731,7 +745,7 @@ TAKErr GLMosaicMapLayer::queryImpl(QueryContext &retvalqc, const QueryArgument &
                 code = TE_Ok;
             // If error condition - break outer loop
             TE_CHECKBREAK_CODE(code);
-            if (isComplete)
+            if (isComplete || this->cancelled_)
                 break;
         }
 
@@ -750,6 +764,9 @@ TAKErr GLMosaicMapLayer::queryImpl(QueryContext &retvalqc, const QueryArgument &
     // instantiate (but do not initialize) renderables for all frames that
     // are not currently loaded
     for (std::pair<MosaicDatabase2::Frame, GLQuadTileNode2Ptr> &framePair : retval.frames) {
+        if (this->cancelled_) {
+            break;
+        }
         Port::String resolved;
         code = this->resolvePath(resolved, framePair.first.path);
         TE_CHECKRETURN_CODE(code);
@@ -762,6 +779,14 @@ TAKErr GLMosaicMapLayer::queryImpl(QueryContext &retvalqc, const QueryArgument &
             framePair.second = std::move(renderable);
     }
     // long e = android.os.SystemClock.elapsedRealtime();
+
+    if (this->cancelled_) {
+        retval.frames.erase(
+            std::remove_if(retval.frames.begin(), retval.frames.end(), [](const auto &p) { return p.second.get() == nullptr; }),
+            retval.frames.end());
+
+        return TE_Canceled;
+    }
 
     // System.out.println("PROCESSED " + processed + " in " + (e-s) + "ms");
     // System.out.println("got " + retval.frames.size() + " results");

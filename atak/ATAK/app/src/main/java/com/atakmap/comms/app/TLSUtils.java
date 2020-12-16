@@ -495,7 +495,7 @@ public class TLSUtils {
      * @param hostname
      * @return
      */
-    public static AtakCertificateDatabase.CeritficateValidity validateCert(
+    public static AtakCertificateDatabase.CertificateValidity validateCert(
             final String hostname) {
         if (FileSystemUtils.isEmpty(hostname)) {
             Log.w(TAG, "validateCert invalid hostname");
@@ -554,29 +554,34 @@ public class TLSUtils {
                             "TAK Certificate Issue", ticker, ticker,
                             new Intent("com.atakmap.app.NETWORK_SETTINGS"));
                 } else {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(context)
-                            .setTitle(host)
-                            .setIcon(
-                                    R.drawable.ic_network_error_notification_icon)
-                            .setMessage("TAK Server connectivity issue: "
-                                    + message + ". Open network settings now?")
-                            .setPositiveButton(R.string.ok,
-                                    new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(
-                                                DialogInterface dialog, int i) {
-                                            dialog.dismiss();
-                                            context.startActivity(new Intent(
-                                                    context,
-                                                    CotStreamListActivity.class));
-                                        }
-                                    })
-                            .setNegativeButton(R.string.cancel, null);
-                      try {
-                          builder.show();
-                      } catch (Exception ignored) {
-                          // catch a android.view.WindowManager$BadTokenException if it occurs
-                      }
+                    AlertDialog.Builder builder = new AlertDialog.Builder(
+                            context)
+                                    .setTitle(host)
+                                    .setIcon(
+                                            R.drawable.ic_network_error_notification_icon)
+                                    .setMessage(
+                                            "TAK Server connectivity issue: "
+                                                    + message
+                                                    + ". Open network settings now?")
+                                    .setPositiveButton(R.string.ok,
+                                            new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(
+                                                        DialogInterface dialog,
+                                                        int i) {
+                                                    dialog.dismiss();
+                                                    context.startActivity(
+                                                            new Intent(
+                                                                    context,
+                                                                    CotStreamListActivity.class));
+                                                }
+                                            })
+                                    .setNegativeButton(R.string.cancel, null);
+                    try {
+                        builder.show();
+                    } catch (Exception ignored) {
+                        // catch a android.view.WindowManager$BadTokenException if it occurs
+                    }
                 }
             }
         });

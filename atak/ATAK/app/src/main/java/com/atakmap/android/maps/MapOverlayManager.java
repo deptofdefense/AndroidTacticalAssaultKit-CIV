@@ -94,6 +94,12 @@ public class MapOverlayManager {
                 overlay);
     }
 
+    public synchronized boolean removeFilesOverlay(MapOverlay overlay) {
+        return removeOverlay(
+                MapOverlayParent.getParent(this.mapView, "fileoverlays"),
+                overlay);
+    }
+
     public synchronized boolean addAlertsOverlay(MapOverlay overlay) {
         return addOverlay(
                 MapOverlayParent.getOrAddParent(this.mapView, "alertoverlays",
@@ -126,6 +132,24 @@ public class MapOverlayManager {
                             overlay.getQueryFunction());
 
         updateHierarchy("addOverlay", overlay);
+
+        return true;
+    }
+
+    public synchronized boolean removeOverlay(MapOverlayParent parent,
+            MapOverlay overlay) {
+        if (parent == null || overlay == null) {
+            Log.w(TAG, "Cannot remove child overlay");
+            return false;
+        }
+
+        parent.remove(overlay);
+
+        if (overlay.getRootGroup() != null)
+            this.mapView.getRootGroup()
+                    .removeGroup(overlay.getRootGroup());
+
+        updateHierarchy("removeOverlay", overlay);
 
         return true;
     }

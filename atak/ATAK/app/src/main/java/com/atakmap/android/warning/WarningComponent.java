@@ -317,7 +317,6 @@ public class WarningComponent extends AbstractWidgetMapComponent implements
             return;
         }
 
-
         boolean bAlert = false;
         synchronized (alerts) {
             if (!_active) {

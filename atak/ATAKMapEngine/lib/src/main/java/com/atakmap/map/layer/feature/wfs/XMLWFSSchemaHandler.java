@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import java.util.Map;
 import java.util.Set;
@@ -40,7 +40,7 @@ public class XMLWFSSchemaHandler implements WFSSchemaHandler {
     private File file;
 
     public XMLWFSSchemaHandler(File schema) throws XmlPullParserException, IOException {
-        this(schema, FileIOProviderFactory.getInputStream(schema), true);
+        this(schema, IOProviderFactory.getInputStream(schema), true);
     }
     
     public XMLWFSSchemaHandler(InputStream schema) throws XmlPullParserException, IOException {

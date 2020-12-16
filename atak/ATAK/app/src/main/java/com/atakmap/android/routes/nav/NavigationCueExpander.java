@@ -9,7 +9,7 @@ import java.util.StringTokenizer;
  */
 public class NavigationCueExpander {
 
-    private static HashMap<String, String> expansions = new HashMap<>();
+    private static final HashMap<String, String> expansions = new HashMap<>();
 
     static {
         // https://pe.usps.com/text/pub28/28apc_002.htm

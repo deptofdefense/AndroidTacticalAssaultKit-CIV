@@ -35,8 +35,8 @@ public class CotStreamListener implements
 
     /**
      * ctor
-     * @param context
-     * @param name
+     * @param context the context to use for the StreamListener
+     * @param name The name of the stream listener
      * @param eventListener [optional]
      */
     public CotStreamListener(Context context, String name,
@@ -46,8 +46,8 @@ public class CotStreamListener implements
 
     /**
      * ctor
-     * @param context
-     * @param name
+     * @param context the context to use for the StreamListener
+     * @param name The name of the stream listener
      * @param eventListener [optional]
      * @param bConnect True to connect immediately, false to manually do so later via init()
      */
@@ -447,7 +447,7 @@ public class CotStreamListener implements
      * Note, currently called by CotService when removed or disconnected
      *
      * CotServiceRemote.OutputsChangedListener.onCotOutputRemoved
-     * @param descBundle
+     * @param descBundle the bundle that describes the stream.
      */
     @Override
     public void onCotOutputRemoved(final Bundle descBundle) {

@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Implementation of Service::Manager interface.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Jan 21, 2015
+////      Jan 21, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////

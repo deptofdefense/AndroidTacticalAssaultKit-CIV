@@ -13,7 +13,7 @@ import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.app.R;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
@@ -109,8 +109,8 @@ public class ImportJPEGSort extends ImportResolver {
             return false;
         }
 
-        if (!FileIOProviderFactory.exists(destParent)) {
-            if (!FileIOProviderFactory.mkdirs(destParent)) {
+        if (!IOProviderFactory.exists(destParent)) {
+            if (!IOProviderFactory.mkdirs(destParent)) {
                 Log.w(TAG,
                         "Failed to create directory: "
                                 + destParent.getAbsolutePath());

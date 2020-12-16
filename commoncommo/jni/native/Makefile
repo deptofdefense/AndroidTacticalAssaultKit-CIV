@@ -116,5 +116,10 @@ jcloudclient.h: $(JSRCS)/CloudClient.class
 	$(JAVAHCMD) $(PACKAGE).CloudClient
 jcloudclient.o: jcloudclient.cpp jcloudclient.h commojni_common.h
 
+jnifileioprovider.h: $(JSRCS)/FileIOProvider.class
+	$(JAVAHCMD) $(PACKAGE).FileIOProvider
+jnifileioprovider.o: jnifileioprovider.cpp jnifileioprovider.h commojni_common.h commojni_impl.h
+
+
 %.class: %.java
 	ant -f $(JROOT)/build.xml compile

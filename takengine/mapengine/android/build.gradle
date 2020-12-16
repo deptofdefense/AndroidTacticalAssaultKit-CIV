@@ -8,7 +8,7 @@
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.6.3'
+        classpath 'com.android.tools.build:gradle:4.0.1'
     }
  }
 
@@ -39,16 +39,22 @@ android {
             abiFilters 'armeabi-v7a', 'x86', 'arm64-v8a'
         }
 		
-        externalNativeBuild {
-            ndkBuild {
-                arguments "NDK_APPLICATION_MK:=jni/Application.mk"
+		externalNativeBuild {
+			cmake {
+                arguments "-DCMAKE_TOOLCHAIN_FILE=cmake/android.toolchain.cmake",
+                    "-DCMAKE_ANDROID_NDK=${project.android.ndkDirectory.toString().replaceAll('\\\\', '/')}",
+                    "-DANDROID_TOOLCHAIN=gcc",
+                    "-DANDROID_STL=gnustl_static",
+                    "-DANDROID_PLATFORM=android-24" // 24 is the highest so available in 12 ndk??
+                cFlags "-D__GXX_EXPERIMENTAL_CXX0X__"
+                cppFlags "-fexceptions", "-frtti"
             }
-        }
+		}
     }
 
-    externalNativeBuild {
-        ndkBuild {
-            path = 'jni/Android.mk'
+	externalNativeBuild {
+		cmake {
+            path = '../../CMakeLists.txt'
         }
     }
 		
@@ -110,21 +116,18 @@ android.libraryVariants.all { variant ->
 
             // copy built .so's into the 'jniLibs' directory
             copy {
-                from(buildDir.getAbsolutePath() + "/intermediates/ndkBuild/" + variant.name + "/obj/local/armeabi-v7a/") {
+                from(buildDir.getAbsolutePath() + "/intermediates/cmake/" + variant.name + "/obj/armeabi-v7a/") {
                     include 'libtakengine.so'
                 }
                 from('../../../takthirdparty/builds/android-armeabi-v7a-release/lib/') {
                     include 'libassimp.so'
                     include 'libcharset.so'
                     include 'libgdal.so'
-                    include 'libgdalconstjni.so'
-                    include 'libgdaljni.so'
+                    include 'libgdalalljni.so'
                     include 'libiconv.so'
                     include 'libjassimp.so'
                     include 'libltidsdk.so' // only available if DSDK present for build
                     include 'libogdi.so'
-                    include 'libogrjni.so'
-                    include 'libosrjni.so'
                     include 'libproj.so'
                     include 'libspatialite.so'
                }
@@ -135,21 +138,19 @@ android.libraryVariants.all { variant ->
                 duplicatesStrategy 'include'
             }
             copy {
-                from(buildDir.getAbsolutePath() + "/intermediates/ndkBuild/" + variant.name + "/obj/local/arm64-v8a/") {
+                from(buildDir.getAbsolutePath() + "/intermediates/cmake/" + variant.name + "/obj/arm64-v8a/") {
                     include 'libtakengine.so'
                 }
                 from('../../../takthirdparty/builds/android-arm64-v8a-release/lib/') {
                     include 'libassimp.so'
                     include 'libcharset.so'
                     include 'libgdal.so'
-                    include 'libgdalconstjni.so'
+                    include 'libgdalalljni.so'
                     include 'libgdaljni.so'
                     include 'libiconv.so'
                     include 'libjassimp.so'
                     include 'libltidsdk.so' // only available if DSDK present for build
                     include 'libogdi.so'
-                    include 'libogrjni.so'
-                    include 'libosrjni.so'
                     include 'libproj.so'
                     include 'libspatialite.so'
                }
@@ -160,21 +161,18 @@ android.libraryVariants.all { variant ->
                 duplicatesStrategy 'include'
             }
             copy {
-                from(buildDir.getAbsolutePath() + "/intermediates/ndkBuild/" + variant.name + "/obj/local/x86/") {
+                from(buildDir.getAbsolutePath() + "/intermediates/cmake/" + variant.name + "/obj/x86/") {
                     include 'libtakengine.so'
                 }
                 from('../../../takthirdparty/builds/android-armeabi-x86/lib/') {
                     include 'libassimp.so'
                     include 'libcharset.so'
                     include 'libgdal.so'
-                    include 'libgdalconstjni.so'
-                    include 'libgdaljni.so'
+                    include 'libgdalalljni.so'
                     include 'libiconv.so'
                     include 'libjassimp.so'
                     include 'libltidsdk.so' // only available if DSDK present for build
                     include 'libogdi.so'
-                    include 'libogrjni.so'
-                    include 'libosrjni.so'
                     include 'libproj.so'
                     include 'libspatialite.so'
                }

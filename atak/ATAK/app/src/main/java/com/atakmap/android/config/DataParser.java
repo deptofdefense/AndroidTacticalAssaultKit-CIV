@@ -3,6 +3,8 @@ package com.atakmap.android.config;
 
 import android.graphics.Color;
 
+import com.atakmap.annotations.DeprecatedApi;
+
 import org.w3c.dom.Node;
 
 public class DataParser {
@@ -11,6 +13,8 @@ public class DataParser {
     static final int TYPE_STRING = 1;
     static final int TYPE_BOOLEAN = 2;
 
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     static int getDataType(Node node) {
         int type = TYPE_NONE;
 
@@ -42,6 +46,8 @@ public class DataParser {
         return r;
     }
 
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public static boolean parseBooleanElem(Node elemNode, boolean fallback) {
         boolean r = fallback;
         if (elemNode != null) {

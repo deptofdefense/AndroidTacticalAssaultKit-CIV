@@ -59,7 +59,7 @@ public class DrawingEllipseImporter extends DrawingImporter {
             double major = parseDouble(d.getAttribute("major"), 0);
             double angle = parseDouble(d.getAttribute("angle"), 0);
             Ellipse e = new Ellipse(UUID.randomUUID().toString());
-            e.setCenterHeightWidthAngle(center, minor, major, angle);
+            e.setDimensions(center, minor / 2, major / 2, angle);
             rings.add(e);
         }
         // Failed to create any rings

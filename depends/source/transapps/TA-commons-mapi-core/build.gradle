@@ -1,4 +1,0 @@
-dependencies {
-    compile project(':ATAKMapEngine')
-    compile project(':TA-commons-geom')
-}

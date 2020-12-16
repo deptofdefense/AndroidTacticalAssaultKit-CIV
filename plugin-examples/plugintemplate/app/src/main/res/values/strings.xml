@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">Plugin Template</string>
+    <!-- description -->
+    <string name="app_desc">This plugin demonstrate bare bones plugin UI, and may be used to start a new plugin project</string>
+
+
+
+
+</resources>

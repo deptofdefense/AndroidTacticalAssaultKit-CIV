@@ -7,7 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.contentservices.CacheRequest;
 import com.atakmap.map.contentservices.CacheRequestListener;
@@ -40,7 +40,7 @@ public abstract class AbstractTileClient implements TileClient {
         // the file and create a new cache
         if(forceCreate &&
            this.offlineCache == null &&
-           FileIOProviderFactory.exists(new File(path))) {
+           IOProviderFactory.exists(new File(path))) {
 
             FileSystemUtils.delete(path);
             this.offlineCache = openOrCreateCache(path, this, preferredProvider);

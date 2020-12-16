@@ -53,7 +53,8 @@ class SidePane implements OnTouchListener {
     private double heightFraction = DropDownReceiver.FULL_HEIGHT;
     private double widthFraction = DropDownReceiver.HALF_WIDTH;
 
-    private int pHeight, pWidth;
+    private final int pHeight;
+    private final int pWidth;
 
     private double tap;
 
@@ -353,7 +354,11 @@ class SidePane implements OnTouchListener {
         if (toolbarButtonLayout != null) {
             toolbarButtonLayout.removeAllViews();
             toolbarButtonLayout.addView(closeButton);
+            int buttonPadding = (int) mapView.getResources()
+                    .getDimension(R.dimen.top_bar_button_padding);
             for (ImageButton button : buttons) {
+                button.setBackgroundColor(Color.TRANSPARENT);
+                button.setPadding(buttonPadding, 0, buttonPadding, 0);
                 toolbarButtonLayout.addView(button, 0);
             }
         }
@@ -366,11 +371,7 @@ class SidePane implements OnTouchListener {
         closeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent();
-                intent.setAction(DropDownManager.CLOSE_DROPDOWN);
-                AtakBroadcast.getInstance().sendBroadcast(
-                        intent);
-                close();
+                DropDownManager.getInstance().closeAllDropDowns();
             }
         });
         if (toolbarButtonLayout.indexOfChild(closeButton) == -1) {

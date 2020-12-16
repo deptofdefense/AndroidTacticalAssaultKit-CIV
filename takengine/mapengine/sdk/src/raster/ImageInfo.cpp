@@ -4,7 +4,12 @@ using namespace TAK::Engine::Raster;
 
 using namespace TAK::Engine::Core;
 
-ImageInfo::ImageInfo() NOTHROWS
+ImageInfo::ImageInfo() NOTHROWS :
+    precisionImagery(false),
+    maxGsd(0.0),
+    width(0),
+    height(0),
+    srid(-1)
 {}
 ImageInfo::ImageInfo(const char *path_,
                      const char *type_,

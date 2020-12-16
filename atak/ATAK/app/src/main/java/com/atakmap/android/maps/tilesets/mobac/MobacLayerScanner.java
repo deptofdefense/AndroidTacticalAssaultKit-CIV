@@ -3,7 +3,7 @@ package com.atakmap.android.maps.tilesets.mobac;
 
 import com.atakmap.android.layers.GenericLayerScanner;
 import com.atakmap.android.layers.LayerScanner;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.map.layer.raster.mobac.MobacMapSourceLayerInfoSpi;
 
 import java.io.File;
@@ -31,7 +31,7 @@ public class MobacLayerScanner extends GenericLayerScanner {
 
     @Override
     protected int checkFile(int depth, File f) {
-        if (FileIOProviderFactory.isDirectory(f))
+        if (IOProviderFactory.isDirectory(f))
             return DELAY;
         else if (f.getName().endsWith(".bsh") || f.getName().endsWith(".xml")
                 || f.getName().endsWith(".xmle"))

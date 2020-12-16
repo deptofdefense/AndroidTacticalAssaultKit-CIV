@@ -4,7 +4,7 @@ package com.atakmap.android.maps.graphics;
 import android.graphics.Bitmap;
 import android.opengl.GLSurfaceView;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLTexture;
 
@@ -267,7 +267,7 @@ public abstract class GLCapture {
             boolean recycleOnExit) throws IOException {
         FileOutputStream outputStream = null;
         try {
-            outputStream = FileIOProviderFactory.getOutputStream(target);
+            outputStream = IOProviderFactory.getOutputStream(target);
             bitmap.compress(compressFmt, quality, outputStream);
         } finally {
             if (recycleOnExit)
@@ -306,7 +306,7 @@ public abstract class GLCapture {
          * This method is invoked if an error occurs during the capture process.
          * 
          * @param capture   The {@link GLCapture} instance
-         * @param t the throwable that has occured during the capture.
+         * @param t the throwable that has occurred during the capture.
          */
         void onCaptureError(GLCapture capture, Throwable t);
     }

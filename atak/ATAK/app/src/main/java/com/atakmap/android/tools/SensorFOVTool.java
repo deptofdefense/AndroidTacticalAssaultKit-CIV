@@ -2,6 +2,7 @@
 package com.atakmap.android.tools;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.ImageButton;
 import android.widget.Toast;
@@ -15,6 +16,7 @@ import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
+import com.atakmap.android.maps.SensorFOV;
 import com.atakmap.android.toolbar.ButtonTool;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbar.widgets.TextContainer;
@@ -32,9 +34,9 @@ public class SensorFOVTool extends ButtonTool
     public static final String TAG = "SensorFOVTool";
     public static final String TOOL_NAME = "sensor_fov_tool";
 
-    private MapView _mapView;
+    private final MapView _mapView;
     private Marker _marker;
-    private TextContainer _cont;
+    private final TextContainer _cont;
     private boolean _showDetails = false;
 
     public SensorFOVTool(MapView mapView, ImageButton button) {
@@ -131,14 +133,24 @@ public class SensorFOVTool extends ButtonTool
                 SensorDetailHandler.FOV_ALPHA, 0.3f);
         boolean showFOV = !_marker.hasMetaValue(
                 SensorDetailHandler.HIDE_FOV);
+        int sc = _marker.getMetaInteger(SensorDetailHandler.STROKE_COLOR,
+                Color.WHITE);
+        double sw = _marker.getMetaDouble(SensorDetailHandler.STROKE_WEIGHT, 0);
 
-        SensorDetailHandler.addFovToMap(_marker, trueBearing, fov, dist,
+        SensorFOV sens = SensorDetailHandler.addFovToMap(_marker, trueBearing,
+                fov, dist,
                 new float[] {
                         red, green, blue, alpha
                 }, showFOV);
+        if (sens == null)
+            return;
+
+        sens.setStrokeWeight(sw);
+        sens.setStrokeColor(sc);
 
         if (_showDetails) {
-            Intent detailEditor = new Intent(SensorDetailsReceiver.SHOW_DETAILS);
+            Intent detailEditor = new Intent(
+                    SensorDetailsReceiver.SHOW_DETAILS);
             detailEditor.putExtra("targetUID", _marker.getUID());
             AtakBroadcast.getInstance().sendBroadcast(detailEditor);
         }

@@ -64,9 +64,9 @@ public class TextEntryDialog {
         void onEvent(TextEntryEvent event);
     }
 
-    private Context _context;
-    private AlertDialog.Builder _builder;
-    private Resources _resources;
+    private final Context _context;
+    private final AlertDialog.Builder _builder;
+    private final Resources _resources;
     private TextEntryEventListener _observer;
     private Predicate<String> _validator;
     private EditText _entry;
@@ -234,7 +234,7 @@ public class TextEntryDialog {
 
     public static class TextEntryEvent {
 
-        private String _text;
+        private final String _text;
 
         TextEntryEvent(@Nullable String text) {
             _text = text;

@@ -42,7 +42,7 @@ public class RouteConfirmationTool extends Tool implements
     private Intent _callbackIntent;
 
     // Confirm address widget
-    private ActionBarView _toolbar;
+    private final ActionBarView _toolbar;
     private String _address;
     private boolean _accept;
 

@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Implementation of DrawingTool classes.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Feb 6, 2015
+////      Feb 6, 2015   scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -185,6 +185,28 @@ extractValue (const char* value,
     return remainder;
   }
 
+const char*
+extractValue (const char* value,
+              feature::Symbol::Position& result)
+  {
+    unsigned int tmp (0);
+    const char* remainder (extractValue (value, tmp));
+
+    if (tmp < feature::Label::BASELINE_LEFT
+        || tmp > feature::Label::BOTTOM_RIGHT)
+      {
+          std::ostringstream msg;
+               msg <<
+                    MEM_FN ("extractValue") <<
+                     "Invalid Label::Position value: " <<
+                     value;
+        throw std::invalid_argument
+                  (msg.str());
+      }
+
+    result = static_cast<feature::Symbol::Position> (tmp);
+    return remainder;
+  }
 
 const char*
 extractValue (const char* value,
@@ -343,7 +365,8 @@ Label::Label()
     outlineColor(0),
     shadowColor(0),
     fontSize(0),
-    angle(0.0),
+    angle(NAN),
+    relativeAngle(NAN),
     stretch(100.0),
     placement(FIRST_VERTEX),
     position(CENTER_LEFT),
@@ -373,7 +396,8 @@ Symbol::Symbol()
     : DrawingTool(DrawingTool::SYMBOL),
     color(0xFFFFFFFF),
     outlineColor(0),
-    angle(0.0),
+    angle(NAN),
+    relativeAngle(NAN),
     scaling(1.0),
     size(0.0),
     dx(0.0),
@@ -381,7 +405,10 @@ Symbol::Symbol()
     dp(0.0),
     ds(0.0),
     di(0.0),
-    priority(1)
+    priority(1),
+    position(CENTER_CENTER),
+    symbolWidth(0.0),
+    symbolHeight(0.0)
 { }
 
 
@@ -690,6 +717,8 @@ const char* const Label::LABEL_HORIZONTAL_OFFSET ("dx");
 const char* const Label::LABEL_VERTICAL_OFFSET ("dy");
 const char* const Label::LABEL_PERPENDICULAR_OFFSET ("dp");
 const char* const Label::LABEL_PRIORITY_LEVEL ("l");
+// libtakengine additions
+const char* const Label::LABEL_RELATIVE_ANGLE ("ra");
 
 
 void
@@ -776,6 +805,11 @@ Label::setParam (const char* key,
       {
         extractValue (value, strikeout);
       }
+    // libtakengine additions
+    else if (!std::strcmp (key, LABEL_RELATIVE_ANGLE))
+      {
+        extractValue (value, relativeAngle);
+      }
   }
 
 
@@ -810,7 +844,27 @@ Pen::setParam (const char* key,
       }
     else if (!std::strcmp (key, PEN_PATTERN))
       {
-        pattern = value;
+        const char* ch = value;
+        std::ostringstream sub;
+        while (ch && *ch) {
+            if (*ch >= '0' && *ch <= '9') {
+                // append
+                sub << *ch;
+            } else if (sub.str().length()) {
+                // emit
+                unsigned px;
+                extractValue(sub.str().c_str(), px);
+                pattern.push_back(px);
+                sub.str("");
+            }
+            ch++;
+        }
+        if(sub.str().length()) {
+            // emit
+            unsigned px;
+            extractValue(sub.str().c_str(), px);
+            pattern.push_back(px);
+        }
       }
     else if (!std::strcmp (key, PEN_CAP))
       {
@@ -846,6 +900,11 @@ const char* const Symbol::SYMBOL_PERPENDICULAR_OFFSET ("dp");
 const char* const Symbol::SYMBOL_SPACING_STEP ("ds");
 const char* const Symbol::SYMBOL_SPACING_INITIAL ("di");
 const char* const Symbol::SYMBOL_PRIORITY_LEVEL ("l");
+// libtakengine additions
+const char* const Symbol::SYMBOL_POSITION ("p");
+const char* const Symbol::SYMBOL_RELATIVE_ANGLE ("ra");
+const char* const Symbol::SYMBOL_SYMBOL_WIDTH ("sw");
+const char* const Symbol::SYMBOL_SYMBOL_HEIGHT ("sh");
 
 
 void
@@ -918,6 +977,63 @@ Symbol::setParam (const char* key,
     else if (!std::strcmp (key, SYMBOL_PRIORITY_LEVEL))
       {
         extractValue (value, priority);
+      }
+    // libtakengine additions
+    else if (!std::strcmp (key, SYMBOL_RELATIVE_ANGLE))
+      {
+        extractValue (value, relativeAngle);
+      }
+    else if (!std::strcmp (key, SYMBOL_POSITION))
+      {
+        extractValue (value, position);
+      }
+    else if (!std::strcmp (key, SYMBOL_SYMBOL_WIDTH))
+      {
+          std::string valueString(value);
+          const char *units = nullptr;
+          if(valueString.length() > 2 && valueString.compare(valueString.size() - 2, 2, "px") == 0)
+          {
+              valueString = valueString.substr(0, valueString.length()-2);
+              units = "px";
+          }
+          const char *temp(extractValue (valueString.c_str(), symbolWidth));
+          if(!units)
+          {
+              units = temp;
+          }
+
+        if (units && *units)
+          {
+            convertUnits (units, symbolWidth); // Size is absolute.
+          }
+        else
+          {
+            // Size is pixels.
+          }
+      }
+    else if (!std::strcmp (key, SYMBOL_SYMBOL_HEIGHT))
+      {
+          std::string valueString(value);
+          const char *units = nullptr;
+          if(valueString.length() > 2 && valueString.compare(valueString.size() - 2, 2, "px") == 0)
+          {
+              valueString = valueString.substr(0, valueString.length()-2);
+              units = "px";
+          }
+          const char *temp(extractValue (valueString.c_str(), symbolHeight));
+          if(!units)
+          {
+              units = temp;
+          }
+
+        if (units && *units)
+          {
+            convertUnits (units, symbolHeight); // Size is absolute.
+          }
+        else
+          {
+            // Size is pixels.
+          }
       }
   }
 

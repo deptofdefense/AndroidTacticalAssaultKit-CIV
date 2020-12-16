@@ -1,6 +1,7 @@
 
 package com.atakmap.android.update;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -21,6 +22,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.atakmap.android.update.sorters.ProductInformationComparator;
+import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -321,6 +323,7 @@ public class ProductInformationAdapter extends BaseAdapter {
         TextView availability;
         ImageButton details;
         ImageButton uninstall;
+        ImageView trusted;
     }
 
     @Override
@@ -353,6 +356,8 @@ public class ProductInformationAdapter extends BaseAdapter {
                     .findViewById(R.id.app_mgmt_row_details);
             holder.uninstall = row
                     .findViewById(R.id.app_mgmt_row_uninstall);
+            holder.trusted = row
+                    .findViewById(R.id.app_mgmt_row_trusted);
 
             row.setTag(holder);
         } else {
@@ -423,6 +428,36 @@ public class ProductInformationAdapter extends BaseAdapter {
         } else {
             holder.loadPluginChk.setVisibility(View.GONE);
             holder.status.setVisibility(View.VISIBLE);
+        }
+
+        if (app.productType == ProductInformation.ProductType.plugin) {
+            final int message;
+
+            if (AtakPluginRegistry.verifyTrust(_context, app.packageName)) {
+                holder.trusted.setImageDrawable(
+                        _context.getDrawable(R.drawable.trusted));
+                message = R.string.officially_signed;
+            } else {
+                holder.trusted.setImageDrawable(
+                        _context.getDrawable(R.drawable.untrusted));
+                message = R.string.not_officially_signed;
+            }
+            holder.trusted.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    AlertDialog.Builder alertBuilder = new AlertDialog.Builder(
+                            _context);
+                    alertBuilder
+                            .setTitle(R.string.plugin_warning)
+                            .setMessage(message)
+                            .setPositiveButton(R.string.ok, null);
+                    alertBuilder.create().show();
+
+                }
+            });
+        } else {
+            holder.trusted.setImageDrawable(
+                    _context.getDrawable(R.drawable.disabled_trust));
         }
 
         //now populate update availability
@@ -1703,9 +1738,10 @@ public class ProductInformationAdapter extends BaseAdapter {
         dialog.setNegativeButton(R.string.cancel, null);
         dialog.setCancelable(false);
 
-        try { 
+        try {
             dialog.show();
-        } catch (Exception ignored) { }
+        } catch (Exception ignored) {
+        }
     }
 
     private void uninstall(final ProductInformation app) {
@@ -1752,9 +1788,10 @@ public class ProductInformationAdapter extends BaseAdapter {
         dialog.setNegativeButton(R.string.cancel, null);
         dialog.setCancelable(false);
 
-        try { 
+        try {
             dialog.show();
-        } catch (Exception ignored) { }
+        } catch (Exception ignored) {
+        }
     }
 
     public void refresh(List<ProductInformation> products) {

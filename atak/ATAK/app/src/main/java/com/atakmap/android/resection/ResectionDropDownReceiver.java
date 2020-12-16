@@ -44,7 +44,7 @@ public class ResectionDropDownReceiver extends DropDownReceiver
 
     private final MapView _mapView;
     private final Context _context;
-    private ResectionMapManager _manager;
+    private final ResectionMapManager _manager;
 
     private ImageButton _addBtn;
     private final ResectionLandmarkAdapter _adapter;

@@ -45,8 +45,8 @@ public class DrawingToolsMapComponent extends AbstractWidgetMapComponent {
     private static MapGroup drawingGroup;
     private static final Object lock = new Object();
 
-    private List<MapItemImporter> _importers = new ArrayList<>();
-    private List<CotDetailHandler> _detailHandlers = new ArrayList<>();
+    private final List<MapItemImporter> _importers = new ArrayList<>();
+    private final List<CotDetailHandler> _detailHandlers = new ArrayList<>();
 
     @SuppressWarnings("unused")
     private DrawingToolsToolbar _drawingToolbarBroadcastReceiver;

@@ -54,9 +54,9 @@ public final class RouteNavigationManager {
     private double bubbleRadius;
     private double offRouteBubbleRadius;
 
-    private AtomicReference<PointMapItem> currentObjective = new AtomicReference<>(
+    private final AtomicReference<PointMapItem> currentObjective = new AtomicReference<>(
             null);
-    private AtomicInteger currentObjectiveIndex = new AtomicInteger(-1);
+    private final AtomicInteger currentObjectiveIndex = new AtomicInteger(-1);
 
     private final Set<Integer> arrivedAtPoints;
     private final Set<Integer> departedPoints;
@@ -77,9 +77,9 @@ public final class RouteNavigationManager {
     private GeoPoint location = null;
 
     private GeoPoint offRouteLocation = null;
-    private long offRouteEventTimeDelay = 3000;
+    private final long offRouteEventTimeDelay = 3000;
 
-    private ConcurrentLinkedQueue<RouteNavigationManagerEventListener> registeredListeners = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<RouteNavigationManagerEventListener> registeredListeners = new ConcurrentLinkedQueue<>();
 
     /**
      * Constructs a new RouteNavigatorManager instance.
@@ -529,7 +529,8 @@ public final class RouteNavigationManager {
 
         for (Integer p : possibleDepartures) {
             PointMapItem pmi = route.getPointMapItem(p);
-            if (pmi != null && getHasPointBeenDepartedFrom(pmi.getPoint(), newLocation)) {
+            if (pmi != null && getHasPointBeenDepartedFrom(pmi.getPoint(),
+                    newLocation)) {
                 pointsTargetedButNotDepartedFrom.remove(p);
                 departedPoints.add(p);
                 fireOnDepartedPoint(pmi);

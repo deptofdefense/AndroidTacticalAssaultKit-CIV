@@ -5,7 +5,6 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.preference.Preference;
-import android.view.View;
 
 import com.atakmap.android.emergency.tool.EmergencyManager;
 import com.atakmap.android.maps.MapView;
@@ -29,10 +28,11 @@ public class AlertPreferenceFragment extends AtakPreferenceFragment {
         super.onCreate(savedInstanceBundle);
         addPreferencesFromResource(getResourceID());
 
-
         try {
-            int res = MapView.getMapView().getContext().checkCallingOrSelfPermission(Manifest.permission.SEND_SMS);
-            if (res != PackageManager.PERMISSION_GRANTED && !EmergencyManager.hasSmsSendPlugin()) {
+            int res = MapView.getMapView().getContext()
+                    .checkCallingOrSelfPermission(Manifest.permission.SEND_SMS);
+            if (res != PackageManager.PERMISSION_GRANTED
+                    && !EmergencyManager.hasSmsSendPlugin()) {
                 Preference p = findPreference("sms_numbers");
                 p.setEnabled(false);
             }

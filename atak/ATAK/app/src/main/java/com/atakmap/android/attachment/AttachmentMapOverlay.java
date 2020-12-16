@@ -51,7 +51,7 @@ import com.atakmap.android.overlay.AbstractMapOverlay2;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.assets.Icon;
@@ -575,7 +575,8 @@ public class AttachmentMapOverlay extends AbstractMapOverlay2 {
                     continue;
                 for (File f : files) {
                     //skip child directories
-                    if (!FileSystemUtils.isFile(f) || FileIOProviderFactory.isDirectory(f))
+                    if (!FileSystemUtils.isFile(f)
+                            || IOProviderFactory.isDirectory(f))
                         continue;
                     MapItemAttachment att = new MapItemAttachment(m, f);
                     if (att.isValid()) {

@@ -373,7 +373,7 @@ public class OnlineLayersDownloadManager {
 
         boolean closed = this.shape instanceof DrawingRectangle
                 || MathUtils.hasBits(shape.getStyle(),
-                Polyline.STYLE_CLOSED_MASK)
+                        Polyline.STYLE_CLOSED_MASK)
                 || points[0].equals(points[points.length - 1]);
 
         // Extrude route by a certain meter distance

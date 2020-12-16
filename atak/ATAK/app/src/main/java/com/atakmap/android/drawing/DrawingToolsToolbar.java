@@ -43,7 +43,7 @@ public class DrawingToolsToolbar extends DropDownReceiver implements
     private final Context _context;
     private final MapGroup _drawingGroup;
     private final DrawingToolsMapReceiver _drawingMapReceiver;
-    private SharedPreferences _prefs;
+    private final SharedPreferences _prefs;
 
     private List<Tool> _tools = null;
     private ShapeCreationTool _shapeTool;

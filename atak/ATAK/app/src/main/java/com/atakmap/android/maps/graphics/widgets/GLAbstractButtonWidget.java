@@ -246,12 +246,12 @@ public abstract class GLAbstractButtonWidget extends GLWidget implements
         }
     }
 
-    private int _bgColor;
-    private GLImageCache.Entry _imageEntry;
-    private GLImage _image;
-    private int _anchorx, _anchory, _iconWidth, _iconHeight;
-    private GLText _glText;
-    private String _textValue;
-    private boolean _textDirty;
+    protected int _bgColor;
+    protected GLImageCache.Entry _imageEntry;
+    protected GLImage _image;
+    protected int _anchorx, _anchory, _iconWidth, _iconHeight;
+    protected GLText _glText;
+    protected String _textValue;
+    protected boolean _textDirty;
 
 }

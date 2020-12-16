@@ -237,7 +237,7 @@ namespace atakmap
                 "  gl_FragColor = uColor;\n"
                 "}";
 
-#if 0 // fixes checkGLErrors unused warning
+#if 1 // fixes checkGLErrors unused warning
             void checkGLErrors(int line) {
                 using namespace atakmap::util;
 
@@ -246,7 +246,8 @@ namespace atakmap
                 while (true) {
                     GLenum e = glGetError();
                     if (e != GL_NO_ERROR) {
-                        Logger::log(Logger::ERROR, "GL ERROR was pending = %d at %d last ok at %d", e, line, lastok);
+                        Logger::log(Logger::Error, "GL ERROR was pending = %d at %d last ok at %d", e, line, lastok);
+                        
                         n++;
                     } else {
                         if (n == 0)

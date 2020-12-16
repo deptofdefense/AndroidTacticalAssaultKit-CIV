@@ -97,7 +97,7 @@ public class MedLineView implements PointMapItem.OnPointChangedListener {
     private boolean init = true;
     private boolean reopening = false;
     private CoordinateFormat _cFormat = CoordinateFormat.MGRS;
-    private SharedPreferences _prefs;
+    private final SharedPreferences _prefs;
     public static final String PREF_MEDLINE_FREQ = "com.atakmap.android.medline.pref_medline_freq";
     public static final String PREF_MEDLINE_CALLSIGN = "com.atakmap.android.medline.pref_medline_callsign";
 
@@ -1086,6 +1086,7 @@ public class MedLineView implements PointMapItem.OnPointChangedListener {
         send.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
+                saveData();
                 if (!hasExternalMedevacProcessors()) {
                     attachmentManager.send();
                 } else {

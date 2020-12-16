@@ -8,7 +8,7 @@ final class Tileset {
     public JSONObject properties;
     public double geometricError;
     public Tile root;
-    public double maxScreenSpaceError = 16d;
+    public double maxScreenSpaceError;
 
     public static Tileset parse(JSONObject json) throws JSONException {
         return parse(json, null);
@@ -30,6 +30,7 @@ final class Tileset {
         tileset.root = Tile.parse(parent, json.optJSONObject("root"));
         tileset.properties = json.optJSONObject("properties");
         // XXX - max screen space error
+        tileset.maxScreenSpaceError = 32d;
         return tileset;
     }
 }

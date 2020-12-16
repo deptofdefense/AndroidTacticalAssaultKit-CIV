@@ -3,7 +3,7 @@
 #include <map>
 #include <sstream>
 
-#include "renderer/GLES20FixedPipeline.h"
+#include "renderer/GLSLUtil.h"
 #include "thread/Lock.h"
 #include "thread/Mutex.h"
 
@@ -27,10 +27,107 @@ namespace
         static std::map<const RenderContext *, std::map<unsigned, std::shared_ptr<const Shader>>> m;
         return m;
     }
+    std::map<const RenderContext*, std::map<unsigned, std::shared_ptr<const Shader2>>>& shaders2() NOTHROWS
+    {
+        static std::map<const RenderContext*, std::map<unsigned, std::shared_ptr<const Shader2>>> m;
+        return m;
+    }
     Mutex &shadersMutex() NOTHROWS
     {
         static Mutex m;
         return m;
+    }
+
+    TAKErr compileShader2(Shader2* value, const char* vert, const char* frag) {
+
+        TAKErr code(TE_Ok);
+        ShaderProgram program{ GL_NONE, GL_NONE, GL_NONE };
+        code = TAK::Engine::Renderer::GLSLUtil_createProgram(&program, vert, frag);
+        TE_CHECKRETURN_CODE(code);
+
+        value->handle = program.program;
+        if (program.vertShader != GL_NONE)
+            glDeleteShader(program.vertShader);
+        if (program.fragShader != GL_NONE)
+            glDeleteShader(program.fragShader);
+
+        value->uMVP = glGetUniformLocation(value->handle, "uMVP");
+        value->uTexture = glGetUniformLocation(value->handle, "uTexture");
+        value->uSunPosition = glGetUniformLocation(value->handle, "uSunPosition");
+        value->uColor = glGetUniformLocation(value->handle, "uColor");
+        value->uInvModelView = glGetAttribLocation(value->handle, "uInvModelView");
+        value->aTexCoords = glGetAttribLocation(value->handle, "aTexCoords");
+        value->aVertexCoords = glGetAttribLocation(value->handle, "aVertexCoords");
+        value->aNormals = glGetAttribLocation(value->handle, "aNormals");
+
+        //numAttribs = 1 + (colorPointer ? 1 : 0) + (textured ? 1 : 0) + (lighting ? 1 : 0);
+
+        return TE_Ok;
+    }
+
+    TAKErr makeDefaultShader2(Shader2* value, bool textured, bool lighting) {
+        // vertex shader source
+        std::ostringstream vshsrc;
+        vshsrc << "uniform mat4 uMVP;\n";
+        if (textured) {
+            vshsrc << "attribute vec2 aTexCoords;\n";
+            vshsrc << "varying vec2 vTexPos;\n";
+        }
+        vshsrc << "attribute vec3 aVertexCoords;\n";
+        if (lighting) {
+            vshsrc << "attribute vec3 aNormals;\n";
+            vshsrc << "varying vec3 vNormal;\n";
+        }
+        vshsrc << "void main() {\n";
+        if (textured) {
+            vshsrc << "  vec4 texCoords = vec4(aTexCoords.xy, 0.0, 1.0);\n";
+            vshsrc << "  vTexPos = texCoords.xy;\n";
+        }
+        if (lighting)
+            vshsrc << "  vNormal = normalize(mat3(uMVP) * aNormals);\n";
+        vshsrc << "  gl_Position = uMVP * vec4(aVertexCoords.xyz, 1.0);\n";
+        vshsrc << "}";
+
+        // fragment shader source
+        std::ostringstream fshsrc;
+        fshsrc << "precision mediump float;\n";
+        if (textured) {
+            fshsrc << "uniform sampler2D uTexture;\n";
+            fshsrc << "varying vec2 vTexPos;\n";
+        }
+        fshsrc << "uniform vec4 uColor;\n";
+        if (lighting)
+            fshsrc << "varying vec3 vNormal;\n";
+        fshsrc << "void main(void) {\n";
+        if (textured)
+            fshsrc << "  vec4 color = texture2D(uTexture, vTexPos);\n";
+        else
+            fshsrc << "  vec4 color = vec4(1.0, 1.0, 1.0, 1.0);\n";
+        if (lighting) {
+            // XXX - next two as uniforms
+            fshsrc << "  vec3 sun_position = vec3(3.0, 10.0, -5.0);\n";
+            fshsrc << "  vec3 sun_color = vec3(1.0, 1.0, 1.0);\n";
+            fshsrc << "  float lum = max(dot(vNormal, normalize(sun_position)), 0.0);\n";
+            fshsrc << "  color = color * vec4((0.6 + 0.4 * lum) * sun_color, 1.0);\n";
+        }
+        fshsrc << "  gl_FragColor = uColor * color;\n";
+        fshsrc << "}";
+
+        if (compileShader2(value, vshsrc.str().c_str(), fshsrc.str().c_str()) != TE_Ok)
+            return TE_Err;
+
+        return TE_Ok;
+    }
+
+    void deleteShader2(Shader2* value) {
+        if (!value)
+            return;
+        if (value->handle) {
+            glDeleteProgram(value->handle);
+            // incase dtor added to Shader2 that does the same
+            value->handle = 0;
+        }
+        delete value;
     }
 }
 
@@ -115,15 +212,14 @@ Shader::Shader(const unsigned flags) NOTHROWS
     this->fsh_ = fshsrc.str();
     this->vsh_ = vshsrc.str();
 
-    GLuint vsh = GL_NONE;
-    GLuint fsh = GL_NONE;
-    vsh = atakmap::renderer::Program::loadShader(vshsrc.str().c_str(), GL_VERTEX_SHADER);
-    fsh = atakmap::renderer::Program::loadShader(fshsrc.str().c_str(), GL_FRAGMENT_SHADER);
-    handle = atakmap::renderer::Program::createProgram(vsh, fsh);
-    if(vsh != GL_NONE)
-        glDeleteShader(vsh);
-    if(fsh != GL_NONE)
-        glDeleteShader(fsh);
+    ShaderProgram program { GL_NONE, GL_NONE, GL_NONE };
+    GLSLUtil_createProgram(&program, vshsrc.str().c_str(), fshsrc.str().c_str());
+    handle = program.program;
+
+    if(program.vertShader != GL_NONE)
+        glDeleteShader(program.vertShader);
+    if(program.fragShader != GL_NONE)
+        glDeleteShader(program.fragShader);
 
     uProjection = glGetUniformLocation(handle, "uProjection");
     uModelView = glGetUniformLocation(handle, "uModelView");
@@ -176,3 +272,61 @@ void TAK::Engine::Renderer::Shader_get(std::shared_ptr<const Shader> &value, con
     // failed lock acquisition, create and return a shader instance
     value = std::shared_ptr<const Shader>(new(std::nothrow) Shader(flags));
 }
+
+TAKErr TAK::Engine::Renderer::Shader_get(std::shared_ptr<const Shader2> &value, const TAK::Engine::Core::RenderContext& ctx, const RenderAttributes& attrs) NOTHROWS {
+
+    bool textured = false;
+    bool lighting = false;
+    unsigned int flags = 0u;
+    if (attrs.colorPointer)
+        return TE_Unsupported;
+    if (!attrs.opaque)
+        return TE_Unsupported;
+    for (std::size_t i = 0u; i < 8u; i++) {
+        if (!attrs.textureIds[i])
+            continue;
+        textured = true;
+        flags |= ShaderFlags::FLAG_TEXTURED;
+        break;
+    }
+    if (attrs.normals) {
+        lighting = true;
+        flags |= ShaderFlags::FLAG_NORMAL;
+    }
+
+    do {
+        Lock lock(shadersMutex());
+        TE_CHECKBREAK_CODE(lock.status);
+
+        // obtain or insert the shaders for the specified context
+        std::map<unsigned, std::shared_ptr<const Shader2>>& ctxShaders = shaders2()[&ctx];
+
+        auto retval = ctxShaders.find(flags);
+        if (retval == ctxShaders.end()) {
+            std::shared_ptr<Shader2> shader(new Shader2(), deleteShader2);
+            TAKErr code = makeDefaultShader2(shader.get(), textured, lighting);
+            if (code != TE_Ok)
+                return code;
+            value = shader;
+            ctxShaders[flags] = std::shared_ptr<const Shader2>(value);
+        }
+        else {
+            value = retval->second;
+        }
+
+        return TE_Ok;
+    } while (false);
+
+    return TE_Err;
+}
+
+TAKErr TAK::Engine::Renderer::Shader_compile(std::shared_ptr<const Shader2>& result, const TAK::Engine::Core::RenderContext& ctx, const char* vert, const char* frag) NOTHROWS {
+    if (!vert || !frag)
+        return TE_InvalidArg;
+    std::shared_ptr<Shader2> shader(new Shader2(), deleteShader2);
+    TAKErr code = compileShader2(shader.get(), vert, frag);
+    if (code == TE_Ok)
+        result = shader;
+    return code;
+}
+

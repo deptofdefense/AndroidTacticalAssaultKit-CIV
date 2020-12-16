@@ -17,8 +17,7 @@ import com.atakmap.coremap.conversions.Angle;
 
 /**
  * Represents a link between 2 markers using a R&B line
- * This class is similar to {@Link BloodhoundToolLink}
- * but is used specifically for the management of bloodhound lines
+ * This class is used specifically for the management of bloodhound lines
  * created with the radial menu option on a R&B line, not the link
  * managed by the BloodHound tool itself.
  */

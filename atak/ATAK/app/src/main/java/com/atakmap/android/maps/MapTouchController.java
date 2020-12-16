@@ -83,7 +83,7 @@ public class MapTouchController implements OnTouchListener,
     private final MapTouchEventListener _mapListener;
     private boolean _toolActive;
     private MotionEvent _lastDrag;
-    private android.view.ViewConfiguration viewConfig;
+    private final android.view.ViewConfiguration viewConfig;
 
     // if show details is requested, only fire this intent after the
     // drop down receiver is closed (otherwise it will show and get 
@@ -132,7 +132,6 @@ public class MapTouchController implements OnTouchListener,
         if (DeveloperOptions.getIntOption(
                 "disable-3D-mode", 0) == 0)
             MenuCapabilities.registerSupported("capability.3d");
-
 
     }
 
@@ -799,7 +798,7 @@ public class MapTouchController implements OnTouchListener,
      * Listener that's fired before sending the item list
      * to the deconfliction drop-down
      */
-    private ConcurrentLinkedQueue<DeconflictionListener> _deconfListeners = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<DeconflictionListener> _deconfListeners = new ConcurrentLinkedQueue<>();
 
     public interface DeconflictionListener {
         /**
@@ -1176,8 +1175,7 @@ public class MapTouchController implements OnTouchListener,
     private boolean _freeForm3DEnabled = false;
     private GeoPoint _freeFormPoint;
     private PointMapItem _freeFormItem;
-    private PointMapItem.OnPointChangedListener _ffPointListener
-            = new PointMapItem.OnPointChangedListener() {
+    private final PointMapItem.OnPointChangedListener _ffPointListener = new PointMapItem.OnPointChangedListener() {
         @Override
         public void onPointChanged(PointMapItem item) {
             if (_freeFormItem == item) {
@@ -1186,11 +1184,11 @@ public class MapTouchController implements OnTouchListener,
             }
         }
     };
-    private MapItem.OnGroupChangedListener _ffRemoveListener
-            = new MapItem.OnGroupChangedListener() {
+    private MapItem.OnGroupChangedListener _ffRemoveListener = new MapItem.OnGroupChangedListener() {
         @Override
         public void onItemAdded(MapItem item, MapGroup group) {
         }
+
         @Override
         public void onItemRemoved(MapItem item, MapGroup group) {
             if (_freeFormItem == item)
@@ -1203,7 +1201,7 @@ public class MapTouchController implements OnTouchListener,
     private GeoPointMetaData _originalFocusPoint;
 
     // internal use for debugging purposes
-    private boolean zoomEnabled = true;
+    private final boolean zoomEnabled = true;
 
     public void setUserOrientation(boolean orientation) {
         _userOrientation = orientation;
@@ -1447,7 +1445,12 @@ public class MapTouchController implements OnTouchListener,
 
         if (_userOrientation || isFreeForm3DEnabled()) {
             _originalMapAngle = _mapView.getMapRotation();
-            _originalAngle = detector.getAngle();
+            try {
+                _originalAngle = detector.getAngle();
+            } catch (NullPointerException npe) {
+                // Address crash log from PlayStore described in ATAK-13717
+                return false;
+            }
         }
 
         _originalFocusX = detector.getFocusX();

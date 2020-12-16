@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <PreferenceCategory 
-        android:title="@string/fires_prefs">
+    <PreferenceCategory
+        android:key="fire_prefs_category"
+        android:title="@string/civ_fires_prefs">
         <com.atakmap.android.gui.PanEditTextPreference 
-            android:title="@string/spi_update_delay"
+            android:title="@string/civ_spi_update_delay"
             android:key="spiUpdateDelay" 
             android:inputType="number"
-            android:summary="@string/spi_update_delay_summary"
+            android:summary="@string/civ_spi_update_delay_summary"
             android:defaultValue="5" />
         <ListPreference
             android:title="@string/hostileUpdatePreferences"
@@ -21,20 +22,25 @@
             android:key="legacyFiresToolbarMode"
             android:defaultValue="false" />
         <ListPreference
-            android:title="@string/fireSpiNumber"
+            android:title="@string/civ_fireSpiNumber"
             android:key="firesNumberOfSpis"
             android:entryValues="@array/spi_number"
             android:entries="@array/spi_number"
-            android:summary="@string/fireSpiNumberSummary"
+            android:summary="@string/civ_fireSpiNumberSummary"
             android:defaultValue="1" />
 
         <com.atakmap.android.gui.PanEditTextPreference
-            android:title="@string/spi_redx_fah"
+            android:title="@string/civ_spi_redx_fah"
             android:key="spiFahSize"
             android:inputType="number"
-            android:summary="@string/spi_redx_fah_summary"
+            android:summary="@string/civ_spi_redx_fah_summary"
             android:defaultValue="30" />
 
+        <CheckBoxPreference
+            android:title="Expanded Danger Close Search"
+            android:summary="Consider Neutrals and Unknowns when determining a danger close situation."
+            android:key="expandedDangerClose"
+            android:defaultValue="false" />
     </PreferenceCategory>
 
       

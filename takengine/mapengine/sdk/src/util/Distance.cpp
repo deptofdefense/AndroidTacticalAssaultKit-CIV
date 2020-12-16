@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Implementation of distance-related functions.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Dec 15, 2014
+////      Dec 15, 2014  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////

@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Feature data source that ingests ESRI shape files.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Apr 15, 2015
+////      Apr 15, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -39,10 +39,10 @@ namespace atakmap {
             static const char* const DEFAULT_STROKE_WIDTH_PROPERTY;
         public :
             OGR_FeatureDataSource();
-            ~OGR_FeatureDataSource() throw ()
+            ~OGR_FeatureDataSource() NOTHROWS
             { }
         public ://  FeatureDataSource INTERFACE
-            const char* getName() const throw () override
+            const char* getName() const NOTHROWS override
             {
 #ifdef __ANDROID__
                 return "ogr";
@@ -53,7 +53,7 @@ namespace atakmap {
 
             Content* parseFile(const char* filePath) const override;
 
-            unsigned int parseVersion() const throw () override
+            unsigned int parseVersion() const NOTHROWS override
             { return 18; }
         public :
 			static std::size_t ComputeAreaThreshold(unsigned int DPI);

@@ -5,12 +5,12 @@ public abstract class SpeedInterpolationProvider implements
         MapWidgetAnimationInterpolatorInterface {
 
     //-------------------- Fields and Properties ---------------------------
-    private static float epsilon = (float) 1E-6;
+    private static final float epsilon = (float) 1E-6;
 
     private final float speed;
     private final float to;
     private long lastReceivedTime = 0;
-    private boolean isComplete = false;
+    private final boolean isComplete = false;
 
     //-------------------- CTOR ---------------------------
 

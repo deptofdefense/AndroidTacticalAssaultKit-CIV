@@ -2,7 +2,7 @@ package com.atakmap.map.layer.raster.osm;
 
 import java.io.File;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.android.maps.tilesets.TilesetInfo;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
@@ -17,7 +17,7 @@ public class OSMDroidZipLayerInfoSpi {
     private OSMDroidZipLayerInfoSpi() {}
 
     public static DatasetDescriptor parseOSMDroidZipTilecache(File cache, File basedir) {
-        File[] levels = FileIOProviderFactory.listFiles(basedir); /* NUMBER_FILE_FILTER */
+        File[] levels = IOProviderFactory.listFiles(basedir); /* NUMBER_FILE_FILTER */
         int maxLevel = -1;
         int minLevel = -1;
         int level;
@@ -37,7 +37,7 @@ public class OSMDroidZipLayerInfoSpi {
                     if (minLevel == -1 || level < minLevel)
                         minLevel = level;
                     if (level == minLevel)
-                        imgExtension = fillMapnikBounds(level, FileIOProviderFactory.listFiles(levels[i]), swne);
+                        imgExtension = fillMapnikBounds(level, IOProviderFactory.listFiles(levels[i]), swne);
                 }
             }
         }
@@ -115,7 +115,7 @@ public class OSMDroidZipLayerInfoSpi {
                 swne[1] = tileLng;
             if (Double.isNaN(swne[3]) || tileLng > swne[3])
                 swne[3] = tileLng;
-            tileImageFiles = FileIOProviderFactory.listFiles(tileDirs[i]);
+            tileImageFiles = IOProviderFactory.listFiles(tileDirs[i]);
 
             if (tileImageFiles != null) { 
                 for (int j = 0; j < tileImageFiles.length; j++) {

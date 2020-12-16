@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Abstract base classes for databases.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Dec 21, 2014
+////      Dec 21, 2014  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -107,7 +107,7 @@ class Database
 
     virtual
     ~Database ()
-        throw ()
+        NOTHROWS
         = 0;
 
     //
@@ -162,14 +162,14 @@ class Database
     bool
     inTransaction ()
         const
-        throw ()
+        NOTHROWS
         = 0;
 
     virtual
     bool
     isReadOnly ()
         const
-        throw ()
+        NOTHROWS
         = 0;
 
     virtual
@@ -234,7 +234,7 @@ class Database::Transaction
       { db.beginTransaction (); }
 
     ~Transaction ()
-        throw ()
+        NOTHROWS
       {
         try
           { db.endTransaction (); }

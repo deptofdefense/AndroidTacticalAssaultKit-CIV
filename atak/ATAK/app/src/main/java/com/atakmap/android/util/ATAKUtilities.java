@@ -21,7 +21,7 @@ import com.atakmap.android.image.ImageDropDownReceiver;
 import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.importfiles.sort.ImportResolver;
 import com.atakmap.android.importfiles.task.ImportFilesTask;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.conversion.GeomagneticField;
 import android.net.Uri;
 import android.util.Base64;
@@ -63,6 +63,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -865,6 +866,22 @@ public class ATAKUtilities {
     }
 
     /**
+     * Set the icon based on the map item's icon drawable
+     *
+     * @param view  The ImageView to display the icon
+     * @param mi    The Map Item to load the icon from
+     */
+    public static void setIcon(ImageView view, MapItem mi) {
+        Drawable dr = mi.getIconDrawable();
+        if (dr != null) {
+            view.setImageDrawable(dr);
+            view.setColorFilter(mi.getIconColor(), PorterDuff.Mode.MULTIPLY);
+            view.setVisibility(View.VISIBLE);
+        } else
+            view.setVisibility(View.INVISIBLE);
+    }
+
+    /**
      * Set the icon based on the iconUriStr
      * Parses all the support uri formats
      *
@@ -872,8 +889,9 @@ public class ATAKUtilities {
      * @param icon  The ImageView to display the icon
      * @param mi    The Map Item to load the icon from
      */
-    public static void SetIcon(Context context, ImageView icon, MapItem mi) {
-        SetIcon(context, icon, getIconUri(mi), getIconColor(mi));
+    public static void SetIcon(final Context context, final ImageView view,
+            final MapItem mi) {
+        setIcon(view, mi);
     }
 
     /**
@@ -1100,9 +1118,10 @@ public class ATAKUtilities {
                     Log.d(TAG, "error decoding: " + uriStr + " by: " + decoder);
                 }
             }
-            try {
-                return BitmapFactory.decodeFile(FileSystemUtils
-                        .validityScan(path));
+            try (FileInputStream fis = IOProviderFactory
+                    .getInputStream(new File(FileSystemUtils
+                            .validityScan(path)))) {
+                return BitmapFactory.decodeStream(fis);
             } catch (IOException ioe) {
                 return null;
             }
@@ -1208,9 +1227,12 @@ public class ATAKUtilities {
      */
     public static Bitmap setIconFromFile(ImageView icon, File iconFile) {
         Bitmap bitmap = null;
-        if (FileIOProviderFactory.exists(iconFile)) {
+        if (IOProviderFactory.exists(iconFile)) {
             try {
-                bitmap = BitmapFactory.decodeFile(iconFile.getAbsolutePath());
+                BitmapFactory.decodeStream(
+                        IOProviderFactory.getInputStream(iconFile));
+            } catch (IOException ioe) {
+                return null;
             } catch (RuntimeException ignored) {
             }
         }

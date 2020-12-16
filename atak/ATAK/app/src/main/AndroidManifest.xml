@@ -165,10 +165,10 @@
     <application
         android:requestLegacyExternalStorage="true"
         android:hardwareAccelerated="true"
-        android:icon="@drawable/ic_atak_launcher"
         android:label="@string/app_name"
         android:theme="@style/ATAKTheme"
         android:name="com.atakmap.app.ATAKApplication"
+        android:icon="@drawable/ic_atak_launcher"
         android:extractNativeLibs="true"
         android:usesCleartextTraffic="true"
         android:description="@string/app_desc"
@@ -196,14 +196,40 @@
             android:screenOrientation="nosensor">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
         </activity>
 
-        <provider android:name="plugins.host.provider.PluginProvider" 
-                  android:authorities="com.atakmap.app.plugins.registry" 
-                  android:exported="false"/>
+
+        <activity-alias
+            android:targetActivity=".ATAKActivity"
+            android:name=".ATAKActivityMil"
+            android:icon="@drawable/ic_mil_atak_launcher"
+            android:enabled="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+
+        <activity-alias
+            android:targetActivity=".ATAKActivity"
+            android:name=".ATAKActivityCiv"
+            android:icon="@drawable/ic_atak_launcher"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <!-- only exists at this point to block installation of older apps with 
+            other app identifiers.   Note this is not a valid provider and no
+            attempts should be made to use it --> 
+        <provider android:name="plugins.host.provider.PluginProvider"
+                  android:authorities="com.atakmap.app.plugins.registry"
+                  android:exported="false" />
+
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -217,53 +243,43 @@
 
         <!-- Sub Activities -->
 
-
-        <!-- Correct implementation of a capability where the application can accept a
-             file using the built in Android SEND feature.   No component permission is 
-             required and it is masked appropriately based on file type. -->
-        <activity 
-           android:name="com.atakmap.android.maps.ImageAcceptActivity" >
-           <intent-filter>
-               <!-- Use Android Gallery to attach a picture to a map item -->
-              <action android:name="android.intent.action.SEND" />
-              <category android:name="android.intent.category.DEFAULT" />
-              <data android:mimeType="image/*" />
-           </intent-filter>
-        </activity>
-
-        <!-- Correct implementation of a capability where the application can accept a
-             file using the built in Android VIEW feature.   No component permission is 
-             required and it is masked appropriately based on file type. -->
         <activity
             android:name="com.atakmap.android.maps.ImportFileActivity" >
             <intent-filter android:label="@string/app_name">
-                <!-- Allow ATAK to handle supported file opened/viewed by the user -->
-                <action android:name="android.intent.action.VIEW" />
+                <!-- Allow ATAK to handle supported file imported by the user -->
+                <action android:name="android.intent.action.SEND" />
 
                 <!-- Note, extensions may be added here. These are unfortunately case sensitive... -->
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.zip" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.kml" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.kmz" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.lpt" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.drw" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.shp" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.shpz" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.xml" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.txt" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.pref" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.cot" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.sqlite" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.gpx" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.jpg" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.jpeg" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.png" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.csv" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.inf" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.tif" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.ntf" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.nitf" />
-                <data android:scheme="file" android:host="*" android:mimeType="*/*" android:pathPattern=".*\\.sid" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.zip" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.kml" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.kmz" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.lpt" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.drw" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.shp" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.shpz" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.xml" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.txt" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.pref" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.cot" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.sqlite" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.gpx" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.csv" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.inf" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.tif" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.ntf" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.nitf" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.sid" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.dpkg" />
+
+<!--
+                TODO: Build a better way to attach a file to a marker by augmenting the intent that 
+                is processed by starting ATAK as part of ImportFileActivity
+
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.png" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.jpg" />
+                <data android:mimeType="*/*" android:host="*" android:pathPattern=".*\\.jpeg" />
+-->
             </intent-filter>
             <intent-filter android:label="@string/app_name">
                 <action android:name="android.intent.action.VIEW" />

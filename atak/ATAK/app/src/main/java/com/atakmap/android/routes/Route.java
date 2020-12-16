@@ -479,7 +479,7 @@ public class Route extends EditablePolyline {
 
     private boolean addWaypointsToGroup = true;
 
-    private Map<String, NavigationCue> navigationCues = new ConcurrentHashMap<>();
+    private final Map<String, NavigationCue> navigationCues = new ConcurrentHashMap<>();
 
     private final DefaultMetaDataHolder cpMeta; // used to describe control points for a route
 

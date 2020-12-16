@@ -4,7 +4,7 @@ package com.atakmap.android.maps.tilesets.mobac;
 import android.util.Xml;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -261,9 +261,8 @@ public class WMSQueryLayers extends QueryLayers {
                                     bounds = new GeoBounds(minLat, minLong,
                                             maxLat, maxLong);
                                 } catch (NumberFormatException ex) {
-                                    System.err
-                                            .println("Error parsing value: "
-                                                    + ex);
+                                    Log.e(TAG, "Error parsing value: "
+                                            + ex);
                                 }
                             }
                             break;
@@ -297,9 +296,8 @@ public class WMSQueryLayers extends QueryLayers {
                                             srids = new HashSet<>();
                                         srids.add(srid);
                                     } catch (NumberFormatException e) {
-                                        System.err
-                                                .println("Invalid SRID: "
-                                                        + token);
+                                        Log.e(TAG, "Invalid SRID: "
+                                                + token);
                                     }
                                 }
                             }
@@ -398,7 +396,7 @@ public class WMSQueryLayers extends QueryLayers {
 
                         // XXX do anything about this?
                         if (!name.equals("OGC:WMS"))
-                            System.err.println("WMS - Invalid Service Name!");
+                            Log.d(TAG, "WMS - Invalid Service Name!");
                     } else if (inTag.equals("Title")) {
                         title = parser.getText();
                     }
@@ -690,7 +688,7 @@ public class WMSQueryLayers extends QueryLayers {
                 f = new File(FileSystemUtils
                         .getItem("imagery/mobile/mapsources"),
                         FileSystemUtils.sanitizeWithSpacesAndSlashes(filename));
-                if (FileIOProviderFactory.exists(f)) {
+                if (IOProviderFactory.exists(f)) {
                     suffix = String.valueOf(index++);
 
                     // give up after a while
@@ -703,7 +701,8 @@ public class WMSQueryLayers extends QueryLayers {
             }
 
             // and print out the XML itself.
-            PrintWriter out = new PrintWriter(FileIOProviderFactory.getFileWriter(f));
+            PrintWriter out = new PrintWriter(
+                    IOProviderFactory.getFileWriter(f));
             out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
             out.println("<customWmsMapSource>");
             out.println("    <name>" + title + " on "

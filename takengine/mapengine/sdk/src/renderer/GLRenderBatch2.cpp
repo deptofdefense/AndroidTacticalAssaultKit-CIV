@@ -1987,9 +1987,9 @@ TAKErr GLRenderBatch2::bindTexture(int *value, const int textureId) NOTHROWS
 
     int * const texUnitTexIds = texUnitIdxToTexId.get();
 
-    for (int i = numActiveTexUnits; i > 0u; i--) {
+    for (int i = numActiveTexUnits; i > 0; i--) {
         if (texUnitTexIds[i-1u] == textureId) {
-            *value = i-1u;
+            *value = i-1;
             return code;
         }
     }

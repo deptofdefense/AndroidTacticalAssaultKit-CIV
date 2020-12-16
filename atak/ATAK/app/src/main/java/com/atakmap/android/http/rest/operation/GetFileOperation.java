@@ -10,7 +10,7 @@ import com.atakmap.comms.http.TakHttpClient;
 import com.atakmap.comms.http.TakHttpException;
 import com.atakmap.comms.http.TakHttpResponse;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
@@ -141,7 +141,7 @@ public final class GetFileOperation extends HTTPOperation {
                     fileRequest.getFileName());
             FileOutputStream fos = null;
             try {
-                fos = FileIOProviderFactory.getOutputStream(temp);
+                fos = IOProviderFactory.getOutputStream(temp);
                 resEntity.writeTo(fos);
             } finally {
                 if (fos != null)
@@ -154,7 +154,7 @@ public final class GetFileOperation extends HTTPOperation {
                 throw new ConnectionException("Failed to download data");
             }
 
-            long downloadSize = FileIOProviderFactory.length(temp);
+            long downloadSize = IOProviderFactory.length(temp);
             long stopTime = System.currentTimeMillis();
 
             // Compute SHA256 checksum on service (rather than UI thread) for convenience

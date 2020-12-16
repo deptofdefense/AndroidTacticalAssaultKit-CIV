@@ -109,7 +109,7 @@ public class ViewShedReceiver extends BroadcastReceiver {
     public static final String VIEWSHED_LINE_UID_SEPERATOR = "*";
 
     public static class VsdLayer {
-        private MapView mapview = MapView.getMapView();
+        private final MapView mapview = MapView.getMapView();
         private ViewShedLayer2 viewShed;
         private MapOverlayRenderer viewShedRenderer;
         private boolean visible = false;

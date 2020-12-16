@@ -104,7 +104,6 @@ public class ContactLocationView extends ContactDetailView implements
                 if (m == null)
                     return;
 
-
                 AlertDialog.Builder b = new AlertDialog.Builder(_mapView
                         .getContext());
                 LayoutInflater inflater = LayoutInflater.from(_mapView
@@ -179,7 +178,7 @@ public class ContactLocationView extends ContactDetailView implements
         return v;
     }
 
-    private static ConcurrentLinkedQueue<ExtendedSelfInfoFactory> extendedInfoFactories = new ConcurrentLinkedQueue<>();
+    private static final ConcurrentLinkedQueue<ExtendedSelfInfoFactory> extendedInfoFactories = new ConcurrentLinkedQueue<>();
 
     public interface ExtendedSelfInfoFactory {
         ExtendedInfoView createView();
@@ -326,7 +325,7 @@ public class ContactLocationView extends ContactDetailView implements
                     try {
                         ((ExtendedInfoView) nextChild).setMarker(_marker);
                     } catch (Exception e) {
-                        Log.e(TAG, "error occured setting the marker on: "
+                        Log.e(TAG, "error occurred setting the marker on: "
                                 + nextChild);
                     }
                 }

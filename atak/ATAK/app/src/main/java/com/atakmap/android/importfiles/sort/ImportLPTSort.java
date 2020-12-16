@@ -6,7 +6,7 @@ import android.util.Pair;
 
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.LptFileDatabase;
 import com.healthmarketscience.jackcess.Database;
@@ -15,6 +15,7 @@ import com.healthmarketscience.jackcess.Table;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
 
 /**
  * Imports LPT files (local points from Falcon View) MS-Access based
@@ -55,27 +56,36 @@ public class ImportLPTSort extends ImportInPlaceResolver {
             return false;
         }
 
-        if (!FileIOProviderFactory.exists(file)) {
+        if (!IOProviderFactory.exists(file)) {
             Log.e(TAG, "LPT does not exist: " + file.getAbsolutePath());
             return false;
         }
 
-        Database msaccessDb = null;
-        try {
-            DatabaseBuilder db = new DatabaseBuilder();
-            db.setFile(file);
-            db.setReadOnly(true);
-            msaccessDb = db.open();
-        } catch (Exception e) {
-            Log.d(TAG, "Error reading LPT file from disk: " + file, e);
-            return false;
-        }
+        try (FileChannel chan = IOProviderFactory.getChannel(file, "r")) {
+            Database msaccessDb = null;
+            try {
+                DatabaseBuilder db = new DatabaseBuilder();
+                db.setChannel(chan);
+                db.setReadOnly(true);
+                msaccessDb = db.open();
+            } catch (Exception e) {
+                Log.d(TAG, "Error reading LPT file from disk: " + file, e);
+                return false;
+            }
 
-        try {
-            Table msaccessTable = msaccessDb.getTable("Points");
-            return (msaccessTable != null && msaccessTable.getRowCount() > 0);
+            try {
+                Table msaccessTable = msaccessDb.getTable("Points");
+                return (msaccessTable != null
+                        && msaccessTable.getRowCount() > 0);
+            } catch (IOException e) {
+                Log.d(TAG,
+                        "Error parsing/reading MS Access table for LPT file: "
+                                + file,
+                        e);
+                return false;
+            }
         } catch (IOException e) {
-            Log.d(TAG, "Error parsing/reading MS Access table for LPT file: "
+            Log.d(TAG, "Error obtaining LPT file channel: "
                     + file, e);
             return false;
         }

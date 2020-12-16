@@ -17,8 +17,8 @@ import com.atakmap.android.importfiles.sort.ImportResolver;
 import com.atakmap.android.importfiles.sort.ImportResolver.SortFlags;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProvider;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
 
@@ -90,7 +90,7 @@ public class ImportFileTask extends
 
     public static final int FlagZoomToFile = 1 << 8;
 
-    protected abstract class ProgressUpdate {
+    protected static abstract class ProgressUpdate {
         public abstract void callOnUIThread();
     }
 
@@ -251,7 +251,7 @@ public class ImportFileTask extends
         if (file == null)
             return new Result(String.format(_context.getString(
                     R.string.importmgr_import_file_not_found), filePath));
-        if (!FileIOProviderFactory.exists(file)) {
+        if (!IOProviderFactory.exists(file)) {
             Log.w(TAG, "Import file not found: " + file.getAbsolutePath());
             return new Result(
                     String.format(_context.getString(
@@ -259,7 +259,7 @@ public class ImportFileTask extends
                             file.getName()));
         }
 
-        boolean isDirectory = FileIOProviderFactory.isDirectory(file);
+        boolean isDirectory = IOProviderFactory.isDirectory(file);
 
         final List<ImportResolver> matchingSorters = new ArrayList<>();
         for (ImportResolver sorter : sorters) {
@@ -351,7 +351,7 @@ public class ImportFileTask extends
                 sameFile = false;
             }
 
-            if (FileIOProviderFactory.exists(destPath) && !sameFile) {
+            if (IOProviderFactory.exists(destPath) && !sameFile) {
                 newMD5 = HashingUtils.md5sum(file);
                 // see if we should compare MD5 since file will be overwritten
                 if (checkFlag(FlagSkipDeleteOnMD5Match)) {
@@ -362,7 +362,8 @@ public class ImportFileTask extends
                                         + ", File has not been updated, discarding: "
                                         + file.getAbsolutePath()
                                         + " based on MD5: " + newMD5);
-                        if (!FileIOProviderFactory.delete(file, FileIOProvider.SECURE_DELETE))
+                        if (!IOProviderFactory.delete(file,
+                                IOProvider.SECURE_DELETE))
                             Log.w(TAG,
                                     sorter.toString()
                                             + ", Failed to delete un-updated file: "

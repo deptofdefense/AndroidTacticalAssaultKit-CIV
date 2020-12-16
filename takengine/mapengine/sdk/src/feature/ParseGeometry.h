@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Geometry parsing utility functions.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Dec 16, 2014
+////      Dec 16, 2014  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////

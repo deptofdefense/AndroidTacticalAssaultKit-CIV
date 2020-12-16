@@ -2,7 +2,7 @@
 package com.atakmap.io;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 
 import org.junit.Test;
 
@@ -167,13 +167,13 @@ public class CachingProtocolHandlerTest {
             file = File.createTempFile("tmp", "");
             if (directory) {
                 file.delete();
-                FileIOProviderFactory.mkdir(file);
+                IOProviderFactory.mkdir(file);
             }
         }
 
         private static void delete(File file) {
-            if (FileIOProviderFactory.isDirectory(file)) {
-                File[] children = FileIOProviderFactory.listFiles(file);
+            if (IOProviderFactory.isDirectory(file)) {
+                File[] children = IOProviderFactory.listFiles(file);
                 if (children != null)
                     for (File c : children)
                         delete(c);

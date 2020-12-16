@@ -3,7 +3,7 @@ package com.atakmap.android.routes;
 
 import com.atakmap.android.cot.detail.CotDetailManager;
 import com.atakmap.android.cot.importer.CotImporterManager;
-import com.atakmap.android.data.DataMgmtReceiver;
+import com.atakmap.android.data.ClearContentRegistry;
 import com.atakmap.android.drawing.DrawingToolsMapReceiver;
 import com.atakmap.android.editableShapes.EditablePolylineReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -27,7 +27,6 @@ import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.comms.CotServiceRemote;
 import com.atakmap.comms.CotServiceRemote.ConnectionListener;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
@@ -195,12 +194,7 @@ public class RouteMapComponent extends AbstractWidgetMapComponent implements
         view.getMapEventDispatcher().addMapEventListener(MapEvent.ITEM_REMOVED,
                 regionRemovalListener);
 
-        // Register our zero-ize receiver
-        AtakBroadcast.DocumentedIntentFilter i = new AtakBroadcast.DocumentedIntentFilter(
-                DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION,
-                "Respond to zeroize signal");
-        AtakBroadcast.getInstance().registerReceiver(routeAroundZeroizeReceiver,
-                i);
+        ClearContentRegistry.getInstance().registerListener(dataMgmtReceiver);
     }
 
     @Override
@@ -209,8 +203,8 @@ public class RouteMapComponent extends AbstractWidgetMapComponent implements
         CotDetailManager.getInstance().unregisterHandler(_cueHandler);
         AtakBroadcast.getInstance().unregisterReceiver(_routeReceiver);
         AtakBroadcast.getInstance().unregisterReceiver(_routeToolbarReceiver);
-        AtakBroadcast.getInstance()
-                .unregisterReceiver(routeAroundZeroizeReceiver);
+
+        ClearContentRegistry.getInstance().unregisterListener(dataMgmtReceiver);
 
         _editablePolylineReceiver.dispose();
         cotService_.disconnect();
@@ -219,15 +213,14 @@ public class RouteMapComponent extends AbstractWidgetMapComponent implements
         _goTo.dispose();
     }
 
-    private BroadcastReceiver routeAroundZeroizeReceiver = new BroadcastReceiver() {
+    private final ClearContentRegistry.ClearContentListener dataMgmtReceiver = new ClearContentRegistry.ClearContentListener() {
         @Override
-        public void onReceive(Context context, Intent intent) {
-            if (DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION
-                    .equals(intent.getAction())) {
-                // Delete the serialization file for the route around region manager.
-                FileSystemUtils
-                        .delete(RouteAroundRegionViewModel.SERIALIZATION_FILE);
-            }
+        public void onClearContent(boolean clearmaps) {
+
+            // Delete the serialization file for the route around region manager.
+            FileSystemUtils
+                    .delete(RouteAroundRegionViewModel.SERIALIZATION_FILE);
+
         }
     };
 

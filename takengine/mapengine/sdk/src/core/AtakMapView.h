@@ -181,7 +181,7 @@ namespace atakmap {
 
         struct ENGINE_API AtakMapView::MapLayersChangedListener
         {
-            virtual ~MapLayersChangedListener () throw () = 0;
+            virtual ~MapLayersChangedListener () NOTHROWS = 0;
             virtual void mapLayerAdded(AtakMapView *view, Layer *layer) = 0;
             virtual void mapLayerRemoved(AtakMapView *view, Layer *layer) = 0;
             virtual void mapLayerPositionChanged(AtakMapView *view, Layer *layer, const int oldPos, const int newPos) = 0;
@@ -189,31 +189,31 @@ namespace atakmap {
 
         struct ENGINE_API AtakMapView::MapMovedListener
         {
-            virtual ~MapMovedListener () throw () = 0;
+            virtual ~MapMovedListener () NOTHROWS = 0;
             virtual void mapMoved(AtakMapView *view, const bool animate) = 0;
         }; // end class MapMovedListener
 
         struct ENGINE_API AtakMapView::MapProjectionChangedListener
         {
-            virtual ~MapProjectionChangedListener () throw () = 0;
+            virtual ~MapProjectionChangedListener () NOTHROWS = 0;
             virtual void mapProjectionChanged(AtakMapView *view) = 0;
         };
 
         struct ENGINE_API AtakMapView::MapResizedListener
         {
-            virtual ~MapResizedListener () throw () = 0;
+            virtual ~MapResizedListener () NOTHROWS = 0;
             virtual void mapResized(AtakMapView *view) = 0;
         }; // end class MapResizedListener
 
         struct ENGINE_API AtakMapView::MapElevationExaggerationFactorListener
         {
-            virtual ~MapElevationExaggerationFactorListener() throw () = 0;
+            virtual ~MapElevationExaggerationFactorListener() NOTHROWS = 0;
             virtual void mapElevationExaggerationFactorChanged(AtakMapView *view, const double factor) = 0;
         }; // end class MapResizedListener
 
         struct ENGINE_API AtakMapView::MapContinuousScrollListener
         {
-            virtual ~MapContinuousScrollListener() throw () = 0;
+            virtual ~MapContinuousScrollListener() NOTHROWS = 0;
             virtual void mapContinuousScrollEnabledChanged(AtakMapView *view, const bool enabled) = 0;
         }; // end class MapResizedListener
 

@@ -7,7 +7,7 @@ $(libxml2_configtouchfile): $(libxml2_srctouchfile)
 		iconv=no                                        \
 		cruntime=/MD                                    \
 		threads=native                                  \
-		debug=$(win32_debug_yesno)                      \
+		debug=$(win_debug_yesno)                        \
 		vcmanifest=yes
 	touch $@
 

@@ -15,6 +15,9 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 
+import java.util.concurrent.ThreadFactory;
+
+
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -181,4 +184,26 @@ public abstract class MultiThreadedIntentService extends Service {
      * @param intent The value passed to {@link Context#startService(Intent)}.
      */
     abstract protected void onHandleIntent(Intent intent);
+
+    public static  class NamedThreadFactory implements ThreadFactory {
+
+        private int count = 0;
+        private final String name;
+
+        /**
+         * Constructs a Thread factory with a specific name and count for each thread created to assist
+         * in debugging.
+         * .
+         * @param name the name of the threads created by this factory.
+         */
+        public NamedThreadFactory(final String name) {
+            this.name = name;
+        }
+    
+        @Override
+        public Thread newThread(final Runnable r) {
+            return new Thread(r, name + "-" + count++);
+        }
+    }
+    
 }

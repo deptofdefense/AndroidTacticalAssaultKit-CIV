@@ -6,7 +6,7 @@ import android.util.Pair;
 
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.ShapefileSpatialDb;
 
@@ -47,7 +47,7 @@ public class ImportSHPSort extends ImportInPlaceResolver {
 
         // it is a .shp, now lets see if it contains reasonable data
         try {
-            InputStream is = FileIOProviderFactory.getInputStream(file);
+            InputStream is = IOProviderFactory.getInputStream(file);
             try {
                 boolean b = isShp(is);
                 Log.d(TAG, (b ? "Matched Shapefile: " + file.getAbsolutePath()
@@ -125,8 +125,8 @@ public class ImportSHPSort extends ImportInPlaceResolver {
             return false;
         }
 
-        if (!FileIOProviderFactory.exists(destParent)) {
-            if (!FileIOProviderFactory.mkdirs(destParent)) {
+        if (!IOProviderFactory.exists(destParent)) {
+            if (!IOProviderFactory.mkdirs(destParent)) {
                 Log.w(TAG,
                         "Failed to create directory: "
                                 + destParent.getAbsolutePath());
@@ -225,7 +225,7 @@ public class ImportSHPSort extends ImportInPlaceResolver {
             }
         };
 
-        File[] listFiles = FileIOProviderFactory.listFiles(parent, shpFilter);
+        File[] listFiles = IOProviderFactory.listFiles(parent, shpFilter);
         if (listFiles != null && listFiles.length > 0) {
             files.addAll(new ArrayList<>(Arrays.asList(listFiles)));
         }

@@ -11,6 +11,8 @@ import android.util.TypedValue;
 
 import com.atak.plugins.impl.PluginMapComponent;
 import com.atakmap.android.tools.AtakLayerDrawableUtil;
+import com.atakmap.app.system.FlavorProvider;
+import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
@@ -59,7 +61,7 @@ public class ActionMenuData implements Parcelable {
     private boolean bSelected = false;
     private boolean bEnabled = false;
 
-    private static Map<String, Drawable> cachedIconMap = new HashMap<>();
+    private static final Map<String, Drawable> cachedIconMap = new HashMap<>();
 
     public ActionMenuData() {
         pam = new PersistedActionMenu();
@@ -206,7 +208,18 @@ public class ActionMenuData implements Parcelable {
         if (pam.baseline) {
             try {
                 Class<?> c = com.atakmap.app.R.string.class;
-                Field f = c.getField(pam.title);
+                Field f = null;
+                FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+                if (fp != null && fp.hasMilCapabilities()) {
+                    try {
+                        f = c.getField("mil_" + pam.title);
+                    } catch (Exception ignored) {
+                    }
+                }
+
+                if (f == null)
+                    f = c.getField(pam.title);
+
                 int i = f.getInt(null);
                 Context ctx = com.atakmap.android.maps.MapView.getMapView()
                         .getContext();
@@ -636,7 +649,7 @@ public class ActionMenuData implements Parcelable {
             }
         }
 
-        // messy for now, but assume an error condition has occured or the reference is 
+        // messy for now, but assume an error condition has occurred or the reference is 
         // a placholder - put in a placeholder
 
         List<ActionClickData> placeholderActionClick = new ArrayList<>();

@@ -15,14 +15,12 @@ import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.log.Log;
-
-import com.atakmap.coremap.maps.coords.GeoPoint;
-
-import java.util.ArrayList;
 import com.atakmap.coremap.locale.LocaleUtil;
+import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -93,9 +91,7 @@ public class ShapeDetailHandler extends CotDetailHandler {
             double minor = parseDouble(d.getAttribute("minor"), 0.0);
             double angle = parseDouble(d.getAttribute("angle"), 0.0);
 
-            ell.setCenterHeightWidthAngle(getPoint(marker), minor,
-                    major,
-                    angle);
+            ell.setDimensions(getPoint(marker), minor / 2, major / 2, angle);
 
             //set color, default to white
             int color = _getColorAttr(d, "color");

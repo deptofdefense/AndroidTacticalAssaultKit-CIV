@@ -92,6 +92,12 @@ public class AddEditAlias {
     private boolean initialIgnoreKLV = false;
     private String initialPath = "";
     private String initialTimeout = "";
+
+    /**
+     * Fortify has flagged this as Password Management: Hardcoded Password
+     * This is a empty assignment just for the purposes of making the code simpler instead of
+     * extra null pointer checks.    This is not hardcoded.
+     */
     private String initialPassphrase = "";
     private boolean initialBuffered = false;
     private String initialBufferTime = "";
@@ -615,7 +621,6 @@ public class AddEditAlias {
             file.setVisibility(View.GONE);
             file.setFocusable(false);
 
-
             passphraseLabel.setVisibility(View.VISIBLE);
             passphrase.setVisibility(View.VISIBLE);
             passphrase.setFocusable(true);
@@ -627,7 +632,7 @@ public class AddEditAlias {
 
     /**
      * test if the connection entry has been modified
-     * 
+     *
      * @return - true if the entry was changed
      */
     private boolean entryChanged(ConnectionEntry ce) {
@@ -682,7 +687,8 @@ public class AddEditAlias {
                 return true;
         }
         if (ce.getProtocol() == Protocol.SRT) {
-            if (!passphrase.getText().toString().contentEquals(initialPassphrase))
+            if (!passphrase.getText().toString()
+                    .contentEquals(initialPassphrase))
                 return true;
         }
 
@@ -703,9 +709,13 @@ public class AddEditAlias {
             final TextView ui) {
 
         if (ui.getText() != null && ui.getText().length() > 0) {
-            int port = Integer.parseInt(ui.getText().toString());
-            if (port > 0 && (port <= MAX_PORT_VAL))
-                return true;
+            try { 
+                int port = Integer.parseInt(ui.getText().toString());
+                if (port > 0 && (port <= MAX_PORT_VAL))
+                    return true;
+            } catch (NumberFormatException nfe) { 
+                Log.e(TAG, "not a valid integer: " + ui.getText(), nfe);
+            }
         }
         ui.requestFocus();
         Toast.makeText(context, R.string.video_text33, Toast.LENGTH_LONG)
@@ -715,7 +725,7 @@ public class AddEditAlias {
 
     /**
      * test the fields for valid input.
-     * 
+     *
      * @return - true if all fields are valid
      */
 

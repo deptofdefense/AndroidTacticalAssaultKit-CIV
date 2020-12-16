@@ -28,6 +28,9 @@
           <Preference android:title="@string/userManual"
                     android:key="atakDocumentation"
                     android:icon="@drawable/document"/>
+        <Preference android:title="@string/addendum"
+            android:key="atakFlavorAddendum"
+            android:icon="@drawable/document"/>
           <Preference android:title="@string/atakDatasets"
                     android:key="atakDatasets"
                     android:icon="@drawable/document"/>

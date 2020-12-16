@@ -141,9 +141,6 @@
     <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jmesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jmobacmapsourcefactory.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jmodelbuilder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -380,6 +377,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\c3dt\tiny_gltf_loader.cpp">
       <Filter>Source Files\c3dt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\jgltext.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\renderer\ManagedTextFormat2.cpp">
+      <Filter>Source Files\interop\renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\..\..\..\ATAK\ATAKMapEngine\lib\src\main\cpp\interop\java\JNIEnum.cpp">
+      <Filter>Source Files\interop\java</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

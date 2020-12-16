@@ -8,7 +8,7 @@ import com.atakmap.android.importexport.Exportable;
 import com.atakmap.android.importexport.FormatNotSupportedException;
 import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
@@ -248,7 +248,7 @@ public class KMLExportMarshal extends ExportFileMarshal {
 
         // delete existing file, and then serialize KML out to file
         File file = getFile();
-        if (FileIOProviderFactory.exists(file)) {
+        if (IOProviderFactory.exists(file)) {
             FileSystemUtils.deleteFile(file);
         }
 
@@ -278,7 +278,7 @@ public class KMLExportMarshal extends ExportFileMarshal {
             //sort by name 
             if (lhs.getName() == null && rhs.getName() == null)
                 return 0;
-            
+
             if (lhs.getName() == null || rhs.getName() == null)
                 return (lhs.getName() == null ? -1 : 1);
 

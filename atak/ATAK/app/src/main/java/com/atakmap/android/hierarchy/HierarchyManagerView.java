@@ -65,7 +65,9 @@ public class HierarchyManagerView extends LinearLayout {
         // Track if touch event is active
         if (action == MotionEvent.ACTION_DOWN)
             _touchEventActive = true;
-        else if (action == MotionEvent.ACTION_UP)
+        else if (action == MotionEvent.ACTION_UP
+                || action == MotionEvent.ACTION_CANCEL
+                || action == MotionEvent.ACTION_OUTSIDE)
             _touchEventActive = false;
 
         return super.dispatchTouchEvent(event);

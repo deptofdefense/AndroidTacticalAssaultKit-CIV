@@ -155,7 +155,7 @@ public class HintDialogHelper {
                 return;
             }
 
-            new AlertDialog.Builder(context)
+            AlertDialog.Builder builder = new AlertDialog.Builder(context)
                     .setTitle(title)
                     .setIcon(R.drawable.ic_dialog_hint)
                     .setCancelable(false)
@@ -176,8 +176,11 @@ public class HintDialogHelper {
                                         action.postHint();
                                     dialog.dismiss();
                                 }
-                            })
-                    .show();
+                            });
+            try {
+                builder.show();
+            } catch (Exception ignored) {
+            }
         }
 
     }

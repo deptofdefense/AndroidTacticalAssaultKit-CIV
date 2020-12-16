@@ -29,8 +29,8 @@ import javax.net.ssl.X509TrustManager;
 public class AtakWebProtocolHandlerCallbacks
         implements WebProtocolHandler.Callbacks {
 
-    private AtakAuthenticatedConnectionCallback authCallback;
-    private String TAG = "AtakWebProtocolHandlerCallbacks";
+    private final AtakAuthenticatedConnectionCallback authCallback;
+    private final static String TAG = "AtakWebProtocolHandlerCallbacks";
 
     public AtakWebProtocolHandlerCallbacks(
             AtakAuthenticatedConnectionCallback authCallback) {

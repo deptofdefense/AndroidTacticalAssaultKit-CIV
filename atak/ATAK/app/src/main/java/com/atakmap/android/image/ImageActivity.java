@@ -22,15 +22,18 @@ import com.atakmap.android.tools.menu.ActionBroadcastExtraStringData;
 import com.atakmap.app.ATAKActivity;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public class ImageActivity {
 
@@ -40,6 +43,7 @@ public class ImageActivity {
     private final MapView _mapView;
     private final Context _context;
     private final String _uid;
+    private final File _tmpFile;
     private final File _output;
     private final ActionBroadcastData _broadcast;
     private final boolean _multiCapture;
@@ -54,6 +58,7 @@ public class ImageActivity {
         _uid = uid;
         _broadcast = broadcast;
         _output = new File(output);
+        _tmpFile = createTempFile(_context, _output);
         _mapView = mapView;
         _multiCapture = false;
     }
@@ -63,9 +68,25 @@ public class ImageActivity {
         _mapView = mapView;
         _context = mapView.getContext();
         _output = outImage;
+        _tmpFile = createTempFile(_context, outImage);
         _uid = uid;
         _broadcast = broadcast;
         _multiCapture = multiCapture;
+    }
+
+    private static File createTempFile(Context context, File file) {
+        File cacheDir = context.getExternalCacheDir();
+        File result = null;
+        try {
+            result = File.createTempFile("ImageActivity", file.getName(),
+                    cacheDir);
+            result.deleteOnExit();
+        } catch (IOException e) {
+            Log.w(TAG,
+                    "Unable to create temporary file for camera to save image to",
+                    e);
+        }
+        return result;
     }
 
     final BroadcastReceiver activityResultReceiver = new BroadcastReceiver() {
@@ -88,7 +109,7 @@ public class ImageActivity {
         AtakBroadcast.getInstance().registerReceiver(activityResultReceiver, f);
         Intent i = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         i.putExtra(MediaStore.EXTRA_OUTPUT,
-                FileProviderHelper.fromFile(_context, _output));
+                FileProviderHelper.fromFile(_context, _tmpFile));
         if (_multiCapture)
             i.putExtra("multiCapture", true);
         try {
@@ -97,6 +118,26 @@ public class ImageActivity {
             Log.w(TAG, "Failed to ACTION_IMAGE_CAPTURE", e);
             Toast.makeText(_context, R.string.image_text2,
                     Toast.LENGTH_LONG).show();
+        }
+    }
+
+    /**
+     * Reads data from input file using plain File I/O and writes it to output file using
+     * the IOProviderFactory. Moves by copying data and then deleting input file.
+     *
+     * @param input The File to read with plain File I/O
+     * @param output The File to write with the IOProviderFactory
+     */
+    private static void moveWithProvider(File input, File output) {
+        try (InputStream is = new FileInputStream(input);
+                OutputStream os = IOProviderFactory.getOutputStream(output)) {
+            FileSystemUtils.copy(is, os);
+        } catch (IOException e) {
+            Log.w(TAG, String.format(
+                    "Unable to copy image from %s with plain File I/O -- to %s with IOProviderFactory",
+                    input.getAbsolutePath(), output.getAbsolutePath()), e);
+        } finally {
+            input.delete();
         }
     }
 
@@ -116,22 +157,33 @@ public class ImageActivity {
                 File file = null;
                 String[] pathList = data.getStringArrayExtra("pathList");
                 if (pathList != null) {
+                    File parentDir = _output.getParentFile();
                     for (String path : pathList) {
-                        File f = new File(path);
-                        if (FileIOProviderFactory.exists(f)) {
-                            file = f;
-                            insertExifLocationData(f);
-                            imgCount++;
+                        File tmpFile = new File(path);
+                        if (tmpFile.exists()) {
+                            File destFile = new File(parentDir,
+                                    tmpFile.getName());
+
+                            moveWithProvider(tmpFile, destFile);
+
+                            if (IOProviderFactory.exists(destFile)) {
+                                file = destFile;
+                                insertExifLocationData(destFile);
+                                imgCount++;
+                            }
                         }
                     }
                 }
                 broadcastIntentToListeners(imgCount == 1
                         ? file.getAbsolutePath()
                         : _output.getParent(), _uid);
-            } else if (_output != null && _output.isFile()
-                    && _output.canRead()) {
-                // image is already saved in _output,
-                // just broadcast the result to any listeners!
+            } else if (_tmpFile != null && _tmpFile.isFile()
+                    && _tmpFile.canRead()) {
+                // image is already saved in _tmpFile, copy image to _output
+                // and broadcast result to any listeners!
+
+                moveWithProvider(_tmpFile, _output);
+
                 insertExifLocationData(_output);
                 broadcastIntentToListeners(_output.getAbsolutePath(), _uid);
             } else if (data != null
@@ -186,7 +238,7 @@ public class ImageActivity {
     public void saveImageFile(byte[] data) {
         FileOutputStream outStream = null;
         try {
-            outStream = FileIOProviderFactory.getOutputStream(_output);
+            outStream = IOProviderFactory.getOutputStream(_output);
             try {
                 outStream.write(data);
             } finally {

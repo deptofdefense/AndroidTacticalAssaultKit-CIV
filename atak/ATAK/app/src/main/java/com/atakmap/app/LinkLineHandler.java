@@ -245,7 +245,7 @@ public class LinkLineHandler
                         //if the current parent UID and the new parent UID are the same,
                         //then there is no need to update the list.
                         if (currentParentUid != null
-                                && currentParentUid != parentUid) {
+                                && !currentParentUid.equals(parentUid)) {
                             if (childrenUidList.size() != 0) {
                                 deferredChildLinkage.put(currentParentUid,
                                         childrenUidList);
@@ -299,10 +299,10 @@ public class LinkLineHandler
         return true;
     }
 
-    private String getLoggableUid(MapItem mi) { 
-         if (mi == null)
+    private String getLoggableUid(MapItem mi) {
+        if (mi == null)
             return null;
-         else 
+        else
             return mi.getUID();
     }
 
@@ -310,17 +310,14 @@ public class LinkLineHandler
             final MapItem childItem) {
         boolean addedLink = false;
 
-
         if (parentItem == null || childItem == null) {
-            Log.d(TAG, "Failed to pair items " + getLoggableUid(parentItem) + " ("
-                    + parentItem + ") -> " + getLoggableUid(childItem)
-                    + " (" + childItem + ")");
+            Log.d(TAG,
+                    "Failed to pair items " + getLoggableUid(parentItem) + " ("
+                            + parentItem + ") -> " + getLoggableUid(childItem)
+                            + " (" + childItem + ")");
 
             return false;
         }
-           
-           
-           
 
         String parentUid = parentItem.getUID();
         String childUid = childItem.getUID();

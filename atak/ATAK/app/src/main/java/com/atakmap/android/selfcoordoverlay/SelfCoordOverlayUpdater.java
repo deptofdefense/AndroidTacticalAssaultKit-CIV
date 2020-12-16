@@ -17,6 +17,7 @@ import com.atakmap.android.maps.PointMapItem.OnPointChangedListener;
 import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.toolbar.tools.SpecifySelfLocationTool;
+import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.AltitudeUtilities;
 import com.atakmap.android.util.NotificationUtil;
@@ -75,7 +76,7 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
     private boolean _show;
     private boolean _noGps = true;
 
-    protected Updater calc;
+    protected Updater calc = null;
 
     private final static int ICON_WIDTH = 32;
     private final static int ICON_HEIGHT = 32;
@@ -161,6 +162,7 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
         super(mapView.getContext(), TAG, null);
 
         _mapView = mapView;
+        calc = new Updater();
 
         speedFormatter = SpeedFormatter.getInstance();
 
@@ -237,8 +239,6 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
                         updateTextVisibility();
                     }
                 }, selfLocationSpecifiedFilter);
-
-        calc = new Updater();
 
         _instance = this;
     }
@@ -673,7 +673,8 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
 
                 // Pan to the self marker without triggering the receiver used
                 // to reset self lock-on
-                _mapView.getMapController().panTo(_self.getPoint(), true, false);
+                _mapView.getMapController().panTo(_self.getPoint(), true,
+                        false);
             }
         }
 
@@ -698,8 +699,8 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
     }
 
     protected synchronized int getConnectedDrawable() {
-        return _bConnected ? R.drawable.ic_server_success
-                : R.drawable.ic_server_error;
+        return _bConnected ? ATAKConstants.getServerConnection(true)
+                : ATAKConstants.getServerConnection(false);
     }
 
     protected synchronized NotificationUtil.NotificationColor getConnectedColor() {

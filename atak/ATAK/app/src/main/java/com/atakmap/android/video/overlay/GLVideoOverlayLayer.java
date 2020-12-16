@@ -58,15 +58,15 @@ public class GLVideoOverlayLayer extends GLAbstractLayer implements
     private DatasetProjection2 proj;
     private SurfaceTexture surfaceTexture;
     private SurfaceTextureHandler textureHandler;
-    private float[] texTransform;
+    private final float[] texTransform;
     private TexturedRectProgram program;
     private boolean frameIsUpdating;
 
     private int sourceWidth;
     private int sourceHeight;
     private boolean updateSourceSizes;
-    private float[] mvandp = new float[16 * 2];
-    private float[] mvp = new float[16];
+    private final float[] mvandp = new float[16 * 2];
+    private final float[] mvp = new float[16];
 
     private GLVideoOverlayLayer(final MapRenderer surface,
             final VideoOverlayLayer subject) {

@@ -14,7 +14,7 @@ import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.ByteArrayInputStream;
@@ -45,8 +45,9 @@ public class CoTAutoBroadcaster implements
     private final SharedPreferences _prefs;
 
     private final ArrayList<String> _markers;
+    private boolean _markersInvalid;
 
-    private MapView _mapView;
+    private final MapView _mapView;
     private static CoTAutoBroadcaster _instance;
     private final Object lock = new Object();
 
@@ -76,10 +77,11 @@ public class CoTAutoBroadcaster implements
         _prefs.registerOnSharedPreferenceChangeListener(this);
         _updateTimeout = Integer.parseInt(_prefs.getString("hostileUpdateDelay",
                 "60")); // default to 60 seconds
-        loadMarkers();
+        loadMarkers(false);
         addMapListener();
         _instance = this;
         startTimer();
+
     }
 
     /**
@@ -123,21 +125,25 @@ public class CoTAutoBroadcaster implements
      * This  method will load the marker ID's
      * from a list stored in Databases
      */
-    private void loadMarkers() {
+    private void loadMarkers(boolean verifyMarkerExists) {
         //load markers from list
         File inputFile = new File(Environment.getExternalStorageDirectory()
                 .getAbsoluteFile()
                 + "/atak/Databases/" + FILENAME);
-        if (FileIOProviderFactory.exists(inputFile)) {
+        if (IOProviderFactory.exists(inputFile)) {
             InputStream is = null;
             try {
-                is = FileIOProviderFactory.getInputStream(inputFile);
+                is = IOProviderFactory.getInputStream(inputFile);
                 byte[] temp = new byte[is.available()];
                 int read = is.read(temp);
                 String menuString = new String(temp, 0, read,
                         FileSystemUtils.UTF8_CHARSET);
                 String[] lines = menuString.split("\n");
                 for (String line : lines) {
+                    // make sure the marker exists
+                    if (_mapView.getRootGroup().deepFindUID(line) == null)
+                        continue;
+                    // mark as autobroadcast
                     synchronized (_markers) {
                         _markers.add(line);
                     }
@@ -167,7 +173,7 @@ public class CoTAutoBroadcaster implements
         final File outputFile = FileSystemUtils
                 .getItem("Databases/" + FILENAME);
 
-        if (FileIOProviderFactory.exists(outputFile))
+        if (IOProviderFactory.exists(outputFile))
             FileSystemUtils.delete(outputFile);
         try {
             StringBuilder builder = new StringBuilder();
@@ -179,12 +185,12 @@ public class CoTAutoBroadcaster implements
                     }
                 }
             }
-            os = FileIOProviderFactory.getOutputStream(outputFile);
+            os = IOProviderFactory.getOutputStream(outputFile);
             is = new ByteArrayInputStream(builder.toString()
                     .getBytes());
             FileSystemUtils.copy(is, os);
         } catch (IOException e) {
-            Log.e(TAG, "error occured", e);
+            Log.e(TAG, "error occurred", e);
         } finally {
             if (os != null) {
                 try {
@@ -268,6 +274,11 @@ public class CoTAutoBroadcaster implements
      */
     public boolean isBroadcast(final Marker m) {
         synchronized (_markers) {
+            if (_markersInvalid) {
+                _markers.clear();
+                loadMarkers(true);
+                _markersInvalid = false;
+            }
             return _markers.contains(m.getUID());
         }
     }
@@ -354,10 +365,10 @@ public class CoTAutoBroadcaster implements
     public void onMapEvent(MapEvent event) {
         if (event.getType().equals(MapEvent.ITEM_REMOVED)) {
             MapItem item = event.getItem();
-            synchronized (lock) {
-                if (item instanceof Marker) {
-                    Marker m = (Marker) item;
-                    if (isBroadcast(m))
+            if (item instanceof Marker) {
+                Marker m = (Marker) item;
+                synchronized (_markers) {
+                    if (_markers.contains(m.getUID()))
                         removeMarker(m);
                 }
             }

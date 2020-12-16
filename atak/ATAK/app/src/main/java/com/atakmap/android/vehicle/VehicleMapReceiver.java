@@ -53,27 +53,31 @@ public class VehicleMapReceiver extends BroadcastReceiver {
             extras = new Bundle();
 
         // Start vehicle rotation tool
-        if (action.equals(ROTATE)) {
-            ToolManagerBroadcastReceiver.getInstance().startTool(
-                    VehicleRotationTool.TOOL_NAME, extras);
-        }
+        switch (action) {
+            case ROTATE:
+                ToolManagerBroadcastReceiver.getInstance().startTool(
+                        VehicleRotationTool.TOOL_NAME, extras);
+                break;
 
-        // Edit vehicle model
-        else if (action.equals(EDIT)) {
-            ToolManagerBroadcastReceiver.getInstance().startTool(
-                    RubberModelEditTool.TOOL_NAME, extras);
-        }
+            // Edit vehicle model
+            case EDIT:
+                ToolManagerBroadcastReceiver.getInstance().startTool(
+                        RubberModelEditTool.TOOL_NAME, extras);
+                break;
 
-        // Toggle vehicle marker label
-        else if (action.equals(TOGGLE_LABEL)) {
-            if (mi instanceof VehicleShape) {
-                VehicleShape veh = (VehicleShape) mi;
-                veh.setShowLabel(!veh.hasMetaValue("showLabel"));
-                veh.save();
-            } else {
-                mi.toggleMetaData("showLabel", !mi.hasMetaValue("showLabel"));
-                mi.persist(_mapView.getMapEventDispatcher(), null, getClass());
-            }
+            // Toggle vehicle marker label
+            case TOGGLE_LABEL:
+                if (mi instanceof VehicleShape) {
+                    VehicleShape veh = (VehicleShape) mi;
+                    veh.setShowLabel(!veh.hasMetaValue("showLabel"));
+                    veh.save();
+                } else {
+                    mi.toggleMetaData("showLabel",
+                            !mi.hasMetaValue("showLabel"));
+                    mi.persist(_mapView.getMapEventDispatcher(), null,
+                            getClass());
+                }
+                break;
         }
     }
 }

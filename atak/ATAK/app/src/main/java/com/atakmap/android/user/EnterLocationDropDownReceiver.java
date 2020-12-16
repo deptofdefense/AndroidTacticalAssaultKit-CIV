@@ -32,6 +32,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.atakmap.android.maps.MapTouchController;
+import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.android.contact.ContactPresenceDropdown;
 import com.atakmap.android.coordoverlay.CoordOverlayMapReceiver;
@@ -158,7 +160,8 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
                 } else if (_initialLoad && !FileSystemUtils.isEmpty(
                         _iconPalletAdapter.pallets)) {
                     // Last pallet selected preference
-                    String iconsetUid = _prefs.getString("iconset.selected.uid", "");
+                    String iconsetUid = _prefs.getString("iconset.selected.uid",
+                            "");
                     setPallet(iconsetUid);
                 }
 
@@ -289,8 +292,9 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
     private List<IconPallet> loadPallets() {
         //add 2525B, dot map, user icons
         List<IconPallet> pallets = new ArrayList<>();
-        IconPallet pallet = new Icon2525bPallet(getMapView().getContext()
-                .getString(R.string.cot2525B));
+        IconPallet pallet = new Icon2525bPallet(ResourceUtil
+                .getString(getMapView().getContext(), R.string.civ_cot2525B,
+                        R.string.cot2525B));
         pallets.add(pallet);
         Log.d(TAG, "Adding Icon2525bPallet");
         if (_selectedIconPallet == null)
@@ -910,9 +914,7 @@ public class EnterLocationDropDownReceiver extends DropDownReceiver implements
         //Log.d(TAG, "setLastPoint: " + marker.getTitle());
 
         // ICON
-        _lastPointIcon.setImageDrawable(_lastPoint.getIconDrawable());
-        _lastPointIcon.setColorFilter(_lastPoint.getIconColor(),
-                PorterDuff.Mode.MULTIPLY);
+        ATAKUtilities.setIcon(_lastPointIcon, _lastPoint);
     }
 
     private void unsetLastPoint() {

@@ -99,7 +99,7 @@ public abstract class BluetoothConnection {
                                 Log.d(TAG, "shutting down the connection");
                                 continue;
                             }
-                            Log.d(TAG, "error case occured, start retry");
+                            Log.d(TAG, "error case occurred, start retry");
                             errors++;
                             if (reconnectStartTime < 0)
                                 reconnectStartTime = new CoordinatedTime()

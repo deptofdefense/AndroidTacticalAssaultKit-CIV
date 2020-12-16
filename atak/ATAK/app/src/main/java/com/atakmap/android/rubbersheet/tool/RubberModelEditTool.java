@@ -130,7 +130,7 @@ public class RubberModelEditTool extends RubberSheetEditTool {
 
     @Override
     public void onMoved(Rectangle r, GeoPointMetaData[] oldPoints,
-                        GeoPointMetaData[] newPoints) {
+            GeoPointMetaData[] newPoints) {
         super.onMoved(r, oldPoints, newPoints);
         if (getMode() == ELEV)
             _mapView.getMapController().panTo(_sheet.getCenterPoint(), false);

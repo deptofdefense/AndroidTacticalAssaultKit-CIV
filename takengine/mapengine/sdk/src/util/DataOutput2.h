@@ -124,6 +124,7 @@ namespace TAK {
                 FILE *f;
             };
 
+            typedef std::unique_ptr<DataOutput2, void(*)(const DataOutput2 *)> DataOutput2Ptr;
 
             class ENGINE_API MemoryOutput2 : public DataOutput2
             {

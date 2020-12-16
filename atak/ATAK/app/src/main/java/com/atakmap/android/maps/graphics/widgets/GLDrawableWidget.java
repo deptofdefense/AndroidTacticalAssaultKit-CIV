@@ -1,3 +1,4 @@
+
 package com.atakmap.android.maps.graphics.widgets;
 
 import android.graphics.Bitmap;
@@ -55,9 +56,10 @@ public class GLDrawableWidget extends GLWidget2 implements
             1.0f, 0.0f
     };
 
-    private static final Buffer TEXCOORD_BUFFER = ByteBuffer.allocateDirect(TEXTURE_COORDINATES.length * 4)
-            .order(ByteOrder.nativeOrder()).asFloatBuffer().put(TEXTURE_COORDINATES).rewind();
-
+    private static final Buffer TEXCOORD_BUFFER = ByteBuffer
+            .allocateDirect(TEXTURE_COORDINATES.length * 4)
+            .order(ByteOrder.nativeOrder()).asFloatBuffer()
+            .put(TEXTURE_COORDINATES).rewind();
 
     private final DrawableWidget _subject;
 
@@ -238,10 +240,12 @@ public class GLDrawableWidget extends GLWidget2 implements
     }
 
     @Override
-    public void scheduleDrawable(@NonNull Drawable who, @NonNull Runnable what, long when) {
+    public void scheduleDrawable(@NonNull Drawable who, @NonNull Runnable what,
+            long when) {
     }
 
     @Override
-    public void unscheduleDrawable(@NonNull Drawable who, @NonNull Runnable what) {
+    public void unscheduleDrawable(@NonNull Drawable who,
+            @NonNull Runnable what) {
     }
 }

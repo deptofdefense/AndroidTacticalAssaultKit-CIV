@@ -297,6 +297,11 @@ void Commo::SetMissionPackageViaServerEnabled(bool enabled)
     impl->commo->setMissionPackageViaServerEnabled(enabled);
 }
 
+CommoResult Commo::SetMissionPackageHttpPort(int serverPort)
+{
+     return impl::nativeToCLI(impl->commo->setMissionPackageHttpPort(serverPort));
+}
+
 CommoResult Commo::SetMissionPackageHttpsPort(int serverPort)
 {
      return impl::nativeToCLI(impl->commo->setMissionPackageHttpsPort(serverPort));

@@ -8,7 +8,8 @@ import android.util.Base64;
 import com.atakmap.R;
 import com.atakmap.comms.NetConnectString;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.filesystem.HashingUtils;
@@ -40,6 +41,8 @@ public class AtakCertificateDatabase {
     private static File databaseFile;
     private static boolean initialized = false;
     private static AtakCertificateDatabaseAdapter atakCertificateDatabaseAdapter;
+    private static Context ctx;
+
 
     public static synchronized AtakCertificateDatabaseAdapter getAdapter() {
         if (atakCertificateDatabaseAdapter == null) {
@@ -81,19 +84,25 @@ public class AtakCertificateDatabase {
                 if (!initialized) {
                     databaseFile = context.getDatabasePath("certificates.sqlite");
 
-                    String pwd = getPwd(
+                    String pwd = null;
+                    // if the default provider is in effect, use the legacy
+                    // password to unlock, otherwise defer to the provider's
+                    // mechanism
+                    if(IOProviderFactory.isDefault()) {
+                        pwd = getPwd(
                             context,
                             Base64.encodeToString(
                                     databaseFile.getAbsolutePath().getBytes(FileSystemUtils.UTF8_CHARSET), Base64.NO_WRAP),
                             deviceId);
-                    if (pwd == null) {
-                        return;
+                        if (pwd == null) {
+                            return;
+                        }
                     }
 
                     File parent = databaseFile.getParentFile();
-                    if(parent != null && !FileIOProviderFactory.exists(parent)){
+                    if(parent != null && !IOProviderFactory.exists(parent)){
                         Log.d(TAG, "Creating private database directory: " + parent.getAbsolutePath());
-                        if(!FileIOProviderFactory.mkdirs(parent)){
+                        if(!IOProviderFactory.mkdirs(parent)){
                             Log.w(TAG, "Failed to create private database directory: " + parent.getAbsolutePath());
                         }
                     }
@@ -145,7 +154,7 @@ public class AtakCertificateDatabase {
                 return null;
             }
 
-            return getAdapter().getCertificate(type);
+            return getAdapter().getCertificateForType(type, false);
         }
     }
 
@@ -175,7 +184,7 @@ public class AtakCertificateDatabase {
                 return null;
             }
 
-            return getAdapter().getCertificateForServer(type, server);
+            return getAdapter().getCertificateForTypeAndServer(type, server);
         }
     }
 
@@ -204,8 +213,8 @@ public class AtakCertificateDatabase {
                 return;
             }
 
-            int rc = getAdapter().deleteCertificate(type);
-            if (rc != 0) {
+            boolean rc = getAdapter().deleteCertificateForType(type);
+            if (!rc) {
                 Log.e(TAG, "deleteCertificate returned " + rc);
                 return;
             }
@@ -225,8 +234,8 @@ public class AtakCertificateDatabase {
                 return;
             }
 
-            int rc = getAdapter().deleteCertificateForServer(type, server);
-            if (rc != 0) {
+            boolean rc = getAdapter().deleteCertificateForTypeAndServer(type, server);
+            if (!rc) {
                 Log.e(TAG, "deleteCertificateForServer returned " + rc);
                 return;
             }
@@ -238,14 +247,17 @@ public class AtakCertificateDatabase {
         }
     }
 
-    public static byte[] importCertificateFromPreferences(
-            SharedPreferences defaultPrefs,
-            String prefLocation,
+    public static byte[] importCertificate(
+            String location,
             String connectString,
             String type, boolean delete) {
         synchronized (getAdapter().lock) {
-            String location = defaultPrefs.getString(
-                    prefLocation, "(built-in)");
+
+            if (location == null) {
+                Log.e(TAG, "null location in importCertificate!");
+                return null;
+            }
+
             if (location.equals("(built-in)")) {
                 return null;
             }
@@ -269,9 +281,6 @@ public class AtakCertificateDatabase {
 
             if (delete) {
                 FileSystemUtils.deleteFile(file);
-
-                SharedPreferences.Editor editor = defaultPrefs.edit();
-                editor.remove(prefLocation).apply();
             }
 
             if (connectString == null || connectString.length() == 0) {
@@ -286,11 +295,10 @@ public class AtakCertificateDatabase {
     }
 
     public static AtakAuthenticationCredentials
-        importCertificatePasswordFromPreferences(
-            SharedPreferences preferences, String prefLocation, String prefDefault,
-            String type, String connectString, boolean delete) {
+        saveCertificatePassword(
+            String password,
+            String type, String connectString) {
         synchronized (getAdapter().lock) {
-            String password = preferences.getString(prefLocation, prefDefault);
 
             String site = null;
             if (connectString == null) {
@@ -302,11 +310,6 @@ public class AtakCertificateDatabase {
 
             AtakAuthenticationDatabase.saveCredentials(type, site, "", password, false);
 
-            if (delete) {
-                SharedPreferences.Editor editor = preferences.edit();
-                editor.remove(prefLocation).apply();
-            }
-
             return AtakAuthenticationDatabase.getCredentials(type, site);
         }
     }
@@ -316,36 +319,34 @@ public class AtakCertificateDatabase {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         String defaultPassword = context.getString(R.string.defaultTrustStorePassword);
 
-        if (importCertificateFromPreferences(
-                prefs,
-                "caLocation",
+        if (importCertificate(
+                prefs.getString("caLocation", "(built-in)"),
                 null,
                 AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA,
                 true) != null) {
 
-            importCertificatePasswordFromPreferences(
-                    prefs,
-                    "caPassword",
-                    defaultPassword,
+            AtakCertificateDatabase.saveCertificatePassword(
+                    prefs.getString("caPassword", defaultPassword),
                     AtakAuthenticationCredentials.TYPE_caPassword,
-                    null,
-                    true);
+                    null);
+
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.remove("caPassword").apply();
         }
 
-        if (importCertificateFromPreferences(
-                prefs,
-                "certificateLocation",
+        if (importCertificate(
+                prefs.getString("certificateLocation", "(built-in)"),
                 null,
                 AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
                 true) != null) {
 
-            importCertificatePasswordFromPreferences(
-                    prefs,
-                    "clientPassword",
-                    defaultPassword,
+            AtakCertificateDatabase.saveCertificatePassword(
+                    prefs.getString("clientPassword", defaultPassword),
                     AtakAuthenticationCredentials.TYPE_clientPassword,
-                    null,
-                    true);
+                    null);
+
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.remove("clientPassword").apply();
         }
     }
 
@@ -372,14 +373,14 @@ public class AtakCertificateDatabase {
     }
 
 
-    public static class CeritficateValidity{
+    public static class CertificateValidity{
 
         final public X509Certificate certificate;
         final private boolean valid;
         final public String error;
         final public Date certNotAfter;
 
-        public CeritficateValidity(X509Certificate certificate, boolean valid, String error, Date certNotAfter) {
+        public CertificateValidity(X509Certificate certificate, boolean valid, String error, Date certNotAfter) {
             this.certificate = certificate;
             this.valid = valid;
             this.error = error;
@@ -448,7 +449,7 @@ public class AtakCertificateDatabase {
      * @param password
      * @return
      */
-    public static CeritficateValidity checkValidity(byte[] keystore, String password) {
+    public static CertificateValidity checkValidity(byte[] keystore, String password) {
 
         List<X509Certificate> certificates = loadCertificate(keystore, password);
         if (FileSystemUtils.isEmpty(certificates)) {
@@ -463,14 +464,14 @@ public class AtakCertificateDatabase {
                 certificate.checkValidity();
             } catch (CertificateExpiredException cee) {
                 Log.e(TAG, "Found an expired certificate!", cee);
-                return new CeritficateValidity(certificate, false, cee.getMessage(), certificate.getNotAfter());
+                return new CertificateValidity(certificate, false, cee.getMessage(), certificate.getNotAfter());
             } catch (CertificateNotYetValidException cnyve) {
                 Log.e(TAG, "Found a not yet valid certificate!", cnyve);
-                return new CeritficateValidity(certificate, false, cnyve.getMessage(), certificate.getNotAfter());
+                return new CertificateValidity(certificate, false, cnyve.getMessage(), certificate.getNotAfter());
             }
 
             //TODO dont break loop. check other certs? return first one to expire?
-            return new CeritficateValidity(certificate, true, null, certificate.getNotAfter());
+            return new CertificateValidity(certificate, true, null, certificate.getNotAfter());
         }
 
         Log.w(TAG, "loadCertificate failed within checkValidity");

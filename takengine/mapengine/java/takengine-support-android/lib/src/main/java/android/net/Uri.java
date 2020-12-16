@@ -67,4 +67,14 @@ public class Uri {
         }
         return query_pairs;
     }
+
+    public String getLastPathSegment() {
+        final String path = this.impl.getPath();
+        if(path == null)
+            return null;
+        final int sepIdx = path.lastIndexOf('/');
+        // if not found, `sepIdx` will be -1; add one to get substring starting
+        // after last separator
+        return path.substring(sepIdx+1);
+    }
 }

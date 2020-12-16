@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<menu
+    buttonBg='bgs/button.xml'
+    buttonRadius='65'
+    buttonSpan='180'
+    buttonWidth='90' >
+
+    <button angle='-90'
+            icon='icons/delete.png'
+            onClick='actions/layer_delete.xml' />
+
+    <button icon='icons/eye.png'
+        onClick='actions/layer_toggle_visibility.xml'/>
+</menu>

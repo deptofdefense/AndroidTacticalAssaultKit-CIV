@@ -4,12 +4,14 @@
 ////
 ////    DESCRIPTION:    Abstract base classes for database cursors.
 ////
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
+////      Dec 17, 2014  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -124,7 +126,7 @@ class Cursor
 
     virtual
     ~Cursor ()
-        throw ()
+        NOTHROWS
         = 0;
 
     //
@@ -238,7 +240,7 @@ class CursorProxy
         throw (CursorError);            // Thrown if subject is NULL.
 
     ~CursorProxy ()
-        throw ()
+        NOTHROWS
       { }
 
     //
@@ -330,7 +332,7 @@ class CursorProxy
     Cursor&
     getSubject ()
         const
-        throw ()
+        NOTHROWS
       { return *subject; }
 
 
@@ -366,7 +368,7 @@ class FileCursor
 
 
     ~FileCursor ()
-        throw ()
+        NOTHROWS
       { }
 
     //
@@ -418,7 +420,7 @@ class FilteredCursor
         throw (CursorError);            // Thrown if subject is NULL.
 
     ~FilteredCursor ()
-        throw ()
+        NOTHROWS
       { }
 
     //

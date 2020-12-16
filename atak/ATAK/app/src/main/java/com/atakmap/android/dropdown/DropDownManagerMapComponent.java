@@ -21,7 +21,6 @@ public class DropDownManagerMapComponent extends AbstractWidgetMapComponent {
         filter.addAction(DropDownManager.CLOSE_DROPDOWN);
         AtakBroadcast.getInstance().registerReceiver(_dropDownManagerSingleton,
                 filter);
-
     }
 
     @Override

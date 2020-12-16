@@ -8,7 +8,6 @@ import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.ActivityInfo;
 import android.graphics.Typeface;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
@@ -18,7 +17,6 @@ import android.view.View;
 import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.items.GLMapItemsDatabaseRenderer;
 import com.atakmap.android.location.LocationMapComponent;
-import com.atakmap.android.maps.graphics.GLBitmapLoader;
 import com.atakmap.android.maps.graphics.GLMapGroup;
 import com.atakmap.android.maps.graphics.GLMapGroup2;
 import com.atakmap.android.maps.graphics.GLMapItemFactory;
@@ -33,7 +31,7 @@ import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.BuildConfig;
 import com.atakmap.app.DeveloperOptions;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
@@ -50,8 +48,6 @@ import com.atakmap.map.layer.MultiLayer;
 import com.atakmap.map.layer.ProxyLayer;
 import com.atakmap.map.layer.feature.ogr.OgrFeatureDataSource;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
-import com.atakmap.map.layer.raster.PrecisionImageryUtil;
-import com.atakmap.map.layer.raster.RasterDataAccess2;
 import com.atakmap.map.layer.raster.RasterLayer2;
 import com.atakmap.map.layer.raster.service.RasterDataAccessControl;
 import com.atakmap.map.opengl.GLAntiMeridianHelper;
@@ -322,12 +318,8 @@ public class MapView extends AtakMapView {
 
     @Override
     protected void initGLSurface() {
-        if (FileIOProviderFactory.exists(FileSystemUtils.getItem("opengl.broken")))
+        if (IOProviderFactory.exists(FileSystemUtils.getItem("opengl.broken")))
             System.setProperty("USE_GENERIC_EGL_CONFIG", "true");
-
-        GLBitmapLoader.setIconCacheDb(FileSystemUtils.getItem(
-                "Databases" + File.separatorChar + "iconcache.sqlite"));
-
         super.initGLSurface();
 
         GLMapItemFactory.registerSpi(GLMapGroup.DEFAULT_GLMAPITEM_SPI2);
@@ -605,62 +597,13 @@ public class MapView extends AtakMapView {
      * @param geoPoint A coordinate
      * @return A precise coordinate, possibly containing CE/LE and elevation information that is
      *         derived from the underlying imagery.
+     *
+     * @deprecated  Will be removed without replacement
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public GeoPointMetaData getPrecisePoint(GeoPointMetaData geoPoint) {
-        Layer mapLayers = this.renderStack
-                .getBin(MapView.RenderStack.MAP_LAYERS.name());
-        if (mapLayers == null)
-            return null;
-        final PrecisePointVisitor visitor = new PrecisePointVisitor(geoPoint);
-        if (!findService(this.getGLSurface().getGLMapView(),
-                RasterDataAccessControl.class, mapLayers, visitor)) {
-            return null;
-        }
-        if (visitor.error != null) {
-            if (visitor.error instanceof RuntimeException)
-                throw (RuntimeException) visitor.error;
-            else
-                throw new RuntimeException(visitor.error);
-        }
-        return visitor.result;
-    }
-
-    private final static class PrecisePointVisitor implements
-            Visitor<RasterDataAccessControl> {
-        private final GeoPointMetaData imprecise;
-        GeoPointMetaData result;
-        Throwable error;
-
-        PrecisePointVisitor(GeoPointMetaData imprecise) {
-            this.imprecise = imprecise;
-            this.result = null;
-            this.error = null;
-        }
-
-        @Override
-        public void visit(RasterDataAccessControl service) {
-            try {
-                final RasterDataAccess2 access = service
-                        .accessRasterData(this.imprecise.get());
-                if (access == null)
-                    return;
-
-                this.result = new GeoPointMetaData();
-                final long s = SystemClock.elapsedRealtime();
-                final boolean success = PrecisionImageryUtil.refine(
-                        access,
-                        this.imprecise,
-                        this.result);
-                final long e = SystemClock.elapsedRealtime();
-
-                if (!success)
-                    this.result = null;
-
-                Log.d(TAG, "point refined in: " + (e - s) + "ms");
-            } catch (Throwable t) {
-                this.error = t;
-            }
-        }
+        return null;
     }
 
     public RasterLayer2 getRasterLayerAt2(final GeoPoint point) {
@@ -814,7 +757,7 @@ public class MapView extends AtakMapView {
     private MapOverlayManager overlayManager;
     private final LayerBinLayer renderStack;
     private HashMap<String, Object> _extras = new HashMap<>();
-    private MapData _mapData = new MapData();
+    private final MapData _mapData = new MapData();
     private boolean autoSelectProjection;
 
     private final MapTouchController _touchController;

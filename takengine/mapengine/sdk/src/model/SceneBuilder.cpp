@@ -44,10 +44,10 @@ namespace
 
     struct DeferredNode
     {
-        const SceneNode *parent;
-        bool hasTransform;
+        const SceneNode *parent {nullptr};
+        bool hasTransform {false};
         Matrix2 transform;
-        std::size_t instanceId;
+        std::size_t instanceId {0};
     };
 
     class BuilderSceneImpl : public SceneImpl {

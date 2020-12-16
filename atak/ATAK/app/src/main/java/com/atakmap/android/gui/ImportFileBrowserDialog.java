@@ -54,6 +54,51 @@ public class ImportFileBrowserDialog {
             final String[] extensionTypes,
             final DialogDismissed dismissed,
             final Context context) {
+        showHelper(title, location, extensionTypes, dismissed, context, true);
+    }
+
+    /**
+     * Produce a file browser without a defined location, uses the last recorded location and
+     * whether or not a IO Provider should be used.
+     *
+     * @param useProvider   if <code>true</code>, the
+     *                      {@link com.atakmap.coremap.io.IOProviderFactory IOProviderFactory}
+     *                      will be used for all filesystem interactions, else default
+     *                      filesystem IO will be utilized.
+     */
+    synchronized static public void show(final String title,
+            final String[] extensionTypes,
+            final DialogDismissed dismissed,
+            final Context context, boolean useProvider) {
+        showHelper(title, null, extensionTypes, dismissed, context,
+                useProvider);
+    }
+
+    /**
+     * Produce a file browser with a defined location and whether or not a IO Provider should be used.
+     *
+     * @param useProvider   if <code>true</code>, the
+     *                      {@link com.atakmap.coremap.io.IOProviderFactory IOProviderFactory}
+     *                      will be used for all filesystem interactions, else default
+     *                      filesystem IO will be utilized.
+     */
+    synchronized static public void show(final String title,
+            final String location,
+            final String[] extensionTypes,
+            final DialogDismissed dismissed,
+            final Context context, boolean useProvider) {
+        showHelper(title, location, extensionTypes, dismissed, context,
+                useProvider);
+    }
+
+    /**
+     * Helper method for showing the dialog
+     */
+    private synchronized static void showHelper(final String title,
+            final String location,
+            final String[] extensionTypes,
+            final DialogDismissed dismissed,
+            final Context context, boolean useProvider) {
 
         MapView mv = MapView.getMapView();
         if (mv == null)
@@ -62,6 +107,7 @@ public class ImportFileBrowserDialog {
         Context mapCtx = mv.getContext();
         final ImportManagerFileBrowser importFileBrowser = ImportManagerFileBrowser
                 .inflate(mv);
+        importFileBrowser.setUseProvider(useProvider);
         final SharedPreferences defaultPrefs = PreferenceManager
                 .getDefaultSharedPreferences(mv.getContext());
 
@@ -104,12 +150,13 @@ public class ImportFileBrowserDialog {
                     if (dismissed != null)
                         dismissed.onDialogClosed();
                 }
+                importFileBrowser.setUseProvider(true);
             }
         });
 
         // XXX - https://atakmap.com/bugzilla3/show_bug.cgi?id=2838
-        // Based on the literature, people recommend using isFinishing() to overcome this, but the 
-        // context that has been passed in is the MapView context, so I really doubt that at the point of this 
+        // Based on the literature, people recommend using isFinishing() to overcome this, but the
+        // context that has been passed in is the MapView context, so I really doubt that at the point of this
         // code it is really finishing.     (but possibly?)   Low risk try catch block for 2.2.
         try {
             if (!((Activity) context).isFinishing())

@@ -704,9 +704,9 @@ public class EditablePolylineEditTool extends ButtonTool
                 points.length,
                 _mapView.isContinuousScrollEnabled());
 
-        // error has occured computing the center of extremes
+        // error has occurred computing the center of extremes
         if (center == null) {
-            Log.e(TAG, "error has occured computing the center of extremes");
+            Log.e(TAG, "error has occurred computing the center of extremes");
             return;
         }
 

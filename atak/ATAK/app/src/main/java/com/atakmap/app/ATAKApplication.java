@@ -2,9 +2,11 @@
 package com.atakmap.app;
 
 import android.app.Activity;
+import android.app.Application;
 import android.os.Bundle;
 
 import com.atakmap.comms.CommsMapComponent;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import org.acra.ACRA;
@@ -15,16 +17,10 @@ import org.acra.annotation.ReportsCrashes;
 import java.io.File;
 import com.atakmap.jnicrash.JNICrash;
 
-import plugins.core.model.Plugin;
-import plugins.host.PluginRegistry;
-import transapps.commons.rtcl.RTCLApplication;
-
 @ReportsCrashes
-public class ATAKApplication extends RTCLApplication {
+public class ATAKApplication extends Application {
 
     static final String TAG = "ATAKApplication";
-
-    private PluginRegistry plugins;
 
     @Override
     public void onCreate() {
@@ -78,25 +74,40 @@ public class ATAKApplication extends RTCLApplication {
                 .setReportSender(ATAKCrashHandler.instance());
 
         this.registerActivityLifecycleCallbacks(new ActivityLifecycleHandler());
-        plugins = PluginRegistry.getInstance(this);
-        plugins.registerPlugin(new Plugin(this));
-        long time = android.os.SystemClock.elapsedRealtime();
-        plugins.preloadClasses();
-        Log.d(TAG, "Preloaded plugin classes in "
-                + (android.os.SystemClock.elapsedRealtime() - time));
 
         Thread.setDefaultUncaughtExceptionHandler(new CustomExceptionHandler());
 
-        File logsDir = ATAKCrashHandler.getLogsDir();
         com.atakmap.coremap.loader.NativeLoader
                 .loadLibrary("jnicrash");
+
+        initializeJNICrash(IOProviderFactory.isDefault());
+    }
+
+    /**
+     * Package protected capability to notify when there is a switch of encrypted IO during the
+     * initialization.   This mechanism ensures that the JNI Crash capability is initialized
+     * correctly.
+     */
+    public void notifyEncryptionChanged() {
+        initializeJNICrash(IOProviderFactory.isDefault());
+    }
+
+    private void initializeJNICrash(boolean enable) {
+        File logsDir = ATAKCrashHandler.getLogsDir();
         String hdr = ATAKCrashHandler.getHeaderText(null, null, null, this);
         try {
             String gpu = ATAKCrashHandler.getGPUInfo();
             hdr += ",\n" + gpu;
         } catch (Exception ignore) {
         }
-        JNICrash.initialize(logsDir, hdr);
+
+        File providerLogsDir = null;
+        if (enable) {
+            // use toURI to get a "resolved" path to pass to IOProvider unaware JNICrash.initialize
+            providerLogsDir = new File(
+                    IOProviderFactory.toURI(logsDir).getPath());
+        }
+        JNICrash.initialize(providerLogsDir, hdr);
     }
 
     /**
@@ -137,11 +148,6 @@ public class ATAKApplication extends RTCLApplication {
             // Chain to ACRA
             defaultUEH.uncaughtException(t, e);
         }
-    }
-
-    @Override
-    public PluginRegistry getPluginRegistry() {
-        return plugins;
     }
 
     /**

@@ -1,0 +1,60 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.atakmap.android.helloworld.plugin">
+
+    <application 
+        android:allowBackup="false"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:description="@string/app_desc"
+        android:theme="@style/AppTheme" >
+        <meta-data android:name="plugin-api" android:value="${atakApiVersion}"/>
+        <meta-data android:name="app_desc" android:value="@string/app_desc"/>
+
+
+  
+        <provider android:name="com.javacodegeeks.android.contentprovidertest.BirthProvider"
+            android:authorities="com.javacodegeeks.provider.Birthday">
+        </provider>
+
+        <service
+            android:name="com.atakmap.android.helloworld.notification.NotificationService"
+            android:label="Plugin Notification Service">
+
+            <intent-filter>
+                <action android:name="com.atakmap.android.helloworld.notification.NotificationService"/>
+            </intent-filter>
+        </service>
+
+        <activity
+            android:name="com.atakmap.android.helloworld.CameraActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"
+            android:exported="true"
+            android:configChanges="orientation">
+        </activity>
+
+       <!-- Commented out, functionality absorbed by SpeechToActivity
+        <activity
+            android:name="com.atakmap.android.helloworld.SpeechToTextActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true"
+            android:configChanges="orientation"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="com.atakmap.android.helloworld.SpeechToTextActivity"/>
+            </intent-filter>
+        </activity>
+        -->
+        <activity
+            android:name="com.atakmap.android.helloworld.speechtotext.SpeechToActivity"
+            android:theme="@style/Theme.Transparent"
+            android:exported="true"
+            android:configChanges="orientation"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="com.atakmap.android.helloworld.SpeechToActivity"/>
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>

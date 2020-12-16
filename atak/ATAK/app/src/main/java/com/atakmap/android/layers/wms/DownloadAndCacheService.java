@@ -171,7 +171,6 @@ public class DownloadAndCacheService extends IntentService {
         double maxRes = Double.NaN;
         String uri = null;
 
-
         if (extras != null) {
 
             title = extras.getString(TITLE);

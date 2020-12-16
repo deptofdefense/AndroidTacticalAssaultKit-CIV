@@ -1,6 +1,10 @@
 
 package com.atakmap.android.warning;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
@@ -19,7 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class DangerCloseCalculator implements Runnable {
+public class DangerCloseCalculator implements Runnable,
+        SharedPreferences.OnSharedPreferenceChangeListener {
 
     public static final String TAG = "DangerCloseCalculator";
 
@@ -38,6 +43,9 @@ public class DangerCloseCalculator implements Runnable {
     private static final long PERIOD = 2500;
     private boolean cancelled = false;
     private Thread t = null;
+
+    private final SharedPreferences _prefs;
+    private static boolean expandedDangerClose = false;
 
     private static DangerCloseCalculator _instance;
 
@@ -177,9 +185,22 @@ public class DangerCloseCalculator implements Runnable {
      * ctor
      *
      */
-    DangerCloseCalculator() {
+    DangerCloseCalculator(Context c) {
 
         _instance = this;
+        _prefs = PreferenceManager
+                .getDefaultSharedPreferences(c);
+
+        _prefs.registerOnSharedPreferenceChangeListener(this);
+        onSharedPreferenceChanged(_prefs, "expandedDangerClose");
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+            String key) {
+        if (key.equals("expandedDangerClose")) {
+            expandedDangerClose = _prefs.getBoolean(key, false);
+        }
     }
 
     /**
@@ -320,9 +341,13 @@ public class DangerCloseCalculator implements Runnable {
         closestDistance = Double.MAX_VALUE;
         closestObject = null;
 
+        // Target is a surface-to-air threat
+        final boolean airDefense = target.getType().startsWith("a-h-G-U-C-D");
+
         //find self marker
         final PointMapItem self = MapView.getMapView().getSelfMarker();
-        if (self.getGroup() != null && self.getPoint().isValid()) {
+        if (!airDefense && self.getGroup() != null
+                && self.getPoint().isValid()) {
 
             //initialize closest with self
             closestObject = self;
@@ -346,10 +371,21 @@ public class DangerCloseCalculator implements Runnable {
 
             @Override
             public boolean onMapItem(final PointMapItem mapItem) {
-                boolean isCorrectTypePrefix = mapItem.getType()
-                        .startsWith("a-f") &&
-                        !mapItem.getType().startsWith("a-f-A");
-                //                    || mapItem.getType().startsWith("a-n-G");
+                final String type = mapItem.getType();
+
+                // Friendlies
+                boolean isCorrectTypePrefix = type.startsWith("a-f");
+
+                // Add in ground neutrals and ground unknowns if the prefix is checked.
+                if (expandedDangerClose)
+                    isCorrectTypePrefix = isCorrectTypePrefix ||
+                            type.startsWith("a-n-G") ||
+                            type.startsWith("a-u-G");
+
+                // Air defense hostiles only affect aircraft
+                // and non-air defense only affect non-aircraft
+                isCorrectTypePrefix &= airDefense == type.startsWith("a-f-A");
+
                 if (isCorrectTypePrefix) {
                     final double d = target.getPoint().distanceTo(
                             mapItem.getPoint());

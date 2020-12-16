@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="64dp"
+    android:layout_height="80dp"
+    android:gravity="center">
+
+    <ImageView
+        android:id="@+id/icon"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:src="@drawable/node_icon"/>
+
+    <TextView
+        android:id="@+id/callsign"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:singleLine="true"
+        android:textColor="#FFF"
+        android:textSize="12sp"
+        android:text="Callsign"
+        android:ellipsize="middle"/>
+
+    <TextView
+        android:id="@+id/last_update"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:textSize="10sp"
+        android:text="10 secs ago"
+        android:ellipsize="end"/>
+
+</LinearLayout>

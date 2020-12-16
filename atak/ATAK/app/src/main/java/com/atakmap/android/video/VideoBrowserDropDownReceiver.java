@@ -12,6 +12,8 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.log.Log;
+
 import android.widget.Toast;
 
 import java.io.File;
@@ -24,7 +26,7 @@ public class VideoBrowserDropDownReceiver extends DropDownReceiver implements
 
     public static final String VIDEO_TOOL = "com.atakmap.android.video.VIDEO_TOOL";
 
-    private Context context;
+    protected Context context;
 
     public static final String VIDEO_DIRNAME = FileSystemUtils.TOOL_DATA_DIRECTORY
             + File.separatorChar + "videos";
@@ -47,7 +49,6 @@ public class VideoBrowserDropDownReceiver extends DropDownReceiver implements
 
     @Override
     public void onReceive(Context c, Intent intent) {
-
         // only in place for the time being until DropDown shutffling is implemented.
         if (vddr != null && !vddr.isClosed()) {
 

@@ -25,7 +25,7 @@ public class UserListArrayAdapter extends ArrayAdapter<TrackUser> {
 
     private final Context context;
     private final int layoutResourceId;
-    private TrackUser[] data;
+    private final TrackUser[] data;
     private final boolean bLocalSearch;
 
     public UserListArrayAdapter(Context context, int layoutResourceId,

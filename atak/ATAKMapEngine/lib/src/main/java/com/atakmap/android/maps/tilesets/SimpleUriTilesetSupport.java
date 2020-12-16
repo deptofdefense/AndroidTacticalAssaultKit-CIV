@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.map.layer.raster.osm.OSMTilesetSupport;
 import com.atakmap.map.layer.raster.osm.OSMUtils;
 import com.atakmap.android.maps.graphics.GLBitmapLoader;
@@ -208,7 +209,7 @@ public class SimpleUriTilesetSupport {
         final String uri = tsInfo.getInfo().getUri();
         if (TilesetInfo.isZipArchive(uri))
             GLBitmapLoader.mountArchive(uri);
-        else if (Databases.isSQLiteDatabase(uri))
+        else if (IOProviderFactory.isDatabase(new File(uri)))
             GLBitmapLoader.mountDatabase(uri);
     }
 
@@ -216,7 +217,7 @@ public class SimpleUriTilesetSupport {
         final String uri = tsInfo.getInfo().getUri();
         if (TilesetInfo.isZipArchive(uri))
             GLBitmapLoader.unmountArchive(uri);
-        else if (Databases.isSQLiteDatabase(uri))
+        else if (IOProviderFactory.isDatabase(new File(uri)))
             GLBitmapLoader.unmountDatabase(uri);
     }
 

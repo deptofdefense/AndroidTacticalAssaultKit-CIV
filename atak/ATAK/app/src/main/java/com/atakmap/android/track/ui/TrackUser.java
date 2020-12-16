@@ -17,8 +17,8 @@ public class TrackUser {
 
     private static final String TAG = "TrackUser";
 
-    private String callsign;
-    private String uid;
+    private final String callsign;
+    private final String uid;
     private int numberTracks;
 
     public TrackUser(String callsign, String uid, int numberTracks) {

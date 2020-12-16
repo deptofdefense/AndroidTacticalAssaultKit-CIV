@@ -23,9 +23,9 @@ public class DeadReckoningManager implements
     final static private String TAG = "DeadReckoningManager";
     private final static double CUTOFF_SPEED = 1.0d;
 
-    private Timer timer;
+    private final Timer timer;
     private DeadReckoner dr;
-    private PointMapItem self;
+    private final PointMapItem self;
 
     private static DeadReckoningManager _instance;
 
@@ -55,7 +55,7 @@ public class DeadReckoningManager implements
         void calcEstimate(PointMapItem item, long time);
     }
 
-    private static DeadReckoner simpleDeadReckoner = new DeadReckoner() {
+    private static final DeadReckoner simpleDeadReckoner = new DeadReckoner() {
 
         final static private String TAG = "SimpleDeadReckoner";
 

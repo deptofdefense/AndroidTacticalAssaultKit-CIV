@@ -1,13 +1,9 @@
 
 package com.atakmap.android.rubbersheet.data;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
 
-import com.atakmap.android.data.DataMgmtReceiver;
-import com.atakmap.android.ipc.AtakBroadcast;
-import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
+import com.atakmap.android.data.ClearContentRegistry;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
@@ -17,7 +13,7 @@ import com.atakmap.android.rubbersheet.maps.RubberModel;
 import com.atakmap.android.rubbersheet.maps.RubberSheetMapGroup;
 import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import org.json.JSONArray;
@@ -35,7 +31,8 @@ import java.util.concurrent.Executors;
 /**
  * Used to persist and load rubber sheets/models
  */
-public class RubberSheetManager implements MapGroup.OnItemListChangedListener {
+public class RubberSheetManager implements MapGroup.OnItemListChangedListener,
+        ClearContentRegistry.ClearContentListener {
 
     private static final String TAG = "RubberSheetManager";
 
@@ -46,8 +43,7 @@ public class RubberSheetManager implements MapGroup.OnItemListChangedListener {
     private final MapView _mapView;
     private final Context _context;
     private final RubberSheetMapGroup _group;
-    private final ExecutorService _workers = Executors.newFixedThreadPool(
-            5, new NamedThreadFactory(TAG + "-Pool"));
+    private ExecutorService _workers;
 
     private boolean _saveLoadBusy;
 
@@ -56,26 +52,33 @@ public class RubberSheetManager implements MapGroup.OnItemListChangedListener {
         _context = mapView.getContext();
         _group = group;
 
+        init();
+    }
+
+    public void init() {
+
+        _workers = Executors.newFixedThreadPool(5,
+                new NamedThreadFactory(TAG + "-Pool"));
+
         // Create the working plugin directory
-        if (!FileIOProviderFactory.exists(DIR) && !FileIOProviderFactory.mkdirs(DIR))
+        if (!IOProviderFactory.exists(DIR) && !IOProviderFactory.mkdirs(DIR))
             Log.e(TAG, "Failed to make tools directory: " + DIR);
 
-        // Clear content listener
-        DocumentedIntentFilter f = new DocumentedIntentFilter(
-                DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION,
-                "Clear content task executed - delete all plugin data");
-        AtakBroadcast.getInstance().registerReceiver(_ccReceiver, f);
+        ClearContentRegistry.getInstance().registerListener(this);
 
         _group.addOnItemListChangedListener(this);
 
         loadSheets();
+
     }
 
     public void shutdown() {
         _group.removeOnItemListChangedListener(this);
-        AtakBroadcast.getInstance().unregisterReceiver(_ccReceiver);
-        if (FileIOProviderFactory.exists(SAVE_FILE))
+        ClearContentRegistry.getInstance().unregisterListener(this);
+        if (IOProviderFactory.exists(SAVE_FILE))
             saveSheets();
+        _group.clearItems();
+        _group.clearGroups();
         _workers.shutdown();
     }
 
@@ -87,7 +90,7 @@ public class RubberSheetManager implements MapGroup.OnItemListChangedListener {
     @Override
     public void onItemRemoved(MapItem item, MapGroup group) {
         File dir = new File(DIR, item.getUID());
-        if (FileIOProviderFactory.exists(dir))
+        if (IOProviderFactory.exists(dir))
             FileSystemUtils.deleteDirectory(dir, false);
         saveSheets();
     }
@@ -118,7 +121,7 @@ public class RubberSheetManager implements MapGroup.OnItemListChangedListener {
                     continue;
                 arr.put(o);
             }
-            fos = FileIOProviderFactory.getOutputStream(SAVE_FILE);
+            fos = IOProviderFactory.getOutputStream(SAVE_FILE);
             FileSystemUtils.write(fos, arr.toString());
         } catch (Exception e) {
             Log.e(TAG, "Failed to write rubber sheet data to: "
@@ -134,7 +137,7 @@ public class RubberSheetManager implements MapGroup.OnItemListChangedListener {
     }
 
     private void loadSheets() {
-        if (_saveLoadBusy || !FileIOProviderFactory.exists(SAVE_FILE))
+        if (_saveLoadBusy || !IOProviderFactory.exists(SAVE_FILE))
             return;
         _saveLoadBusy = true;
         String json = null;
@@ -187,10 +190,9 @@ public class RubberSheetManager implements MapGroup.OnItemListChangedListener {
         }
     }
 
-    private final BroadcastReceiver _ccReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            FileSystemUtils.deleteDirectory(DIR, false);
-        }
-    };
+    @Override
+    public void onClearContent(boolean clearmaps) {
+        FileSystemUtils.deleteDirectory(DIR, false);
+    }
+
 }

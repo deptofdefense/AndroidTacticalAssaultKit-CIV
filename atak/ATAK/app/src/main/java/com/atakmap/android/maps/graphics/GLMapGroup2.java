@@ -9,6 +9,7 @@ import com.atakmap.android.maps.Association;
 import com.atakmap.android.maps.AxisOfAdvance;
 import com.atakmap.android.maps.CircleCrumb;
 import com.atakmap.android.maps.CompassRing;
+import com.atakmap.android.maps.Doghouse;
 import com.atakmap.android.maps.Ellipse;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
@@ -341,6 +342,8 @@ public final class GLMapGroup2 implements MapGroup.OnItemListChangedListener,
                 return new GLMultipolyline(surface, (MultiPolyline) item);
             else if (item instanceof AxisOfAdvance)
                 return new GLAxisOfAdvance(surface, (AxisOfAdvance) item);
+            else if (item instanceof Doghouse)
+                return new GLDogHouse(surface, (Doghouse) item);
 
             return this.reflect(surface, item);
         }

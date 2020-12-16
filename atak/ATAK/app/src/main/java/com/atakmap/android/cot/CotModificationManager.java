@@ -15,7 +15,7 @@ import android.os.Bundle;
  */
 public class CotModificationManager {
 
-    private static Map<String, ModificationAction> table = new HashMap<>();
+    private static final Map<String, ModificationAction> table = new HashMap<>();
 
     static abstract public class ModificationAction {
         /**

@@ -3,9 +3,10 @@ package com.atakmap.android.geofence.component;
 
 import android.content.Context;
 import android.content.Intent;
+
+import com.atakmap.android.data.ClearContentRegistry;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 
-import com.atakmap.android.data.DataMgmtReceiver;
 import com.atakmap.android.geofence.alert.GeoFenceAlerting;
 import com.atakmap.android.geofence.data.GeoFence;
 import com.atakmap.android.geofence.data.GeoFenceCotEventMarshal;
@@ -88,9 +89,10 @@ public class GeoFenceComponent extends AbstractMapComponent {
                 "Intent to specific a list of map items to monitor in a Geofence");
         filter.addAction(GeoFenceReceiver.ADD,
                 "Intent to a CoT based Geofence to the local system");
-        filter.addAction(DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION,
-                "When the local system is zeroized, all Geofences are removed");
+
         AtakBroadcast.getInstance().registerReceiver(_receiver, filter);
+
+        ClearContentRegistry.getInstance().registerListener(_receiver.ccl);
 
         synchronized (GeoFenceComponent.class) {
             _breachMarkerMapGroup = _mapView.getRootGroup().findMapGroup(
@@ -133,6 +135,8 @@ public class GeoFenceComponent extends AbstractMapComponent {
 
     @Override
     protected void onDestroyImpl(Context context, MapView view) {
+
+        ClearContentRegistry.getInstance().unregisterListener(_receiver.ccl);
 
         if (_receiver != null) {
             AtakBroadcast.getInstance().unregisterReceiver(_receiver);

@@ -1,7 +1,7 @@
 
 package com.atakmap.android.importfiles.resource;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import org.simpleframework.xml.Element;
@@ -10,6 +10,8 @@ import org.simpleframework.xml.Root;
 import org.simpleframework.xml.Serializer;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,7 +62,9 @@ public class RemoteResources {
     public static RemoteResources load(File file, Serializer serializer) {
         RemoteResources resources = null;
         try {
-            resources = serializer.read(RemoteResources.class, file);
+            try (FileInputStream fis = IOProviderFactory.getInputStream(file)) {
+                resources = serializer.read(RemoteResources.class, fis);
+            }
             Log.d(TAG,
                     "Loaded " + resources.getResources().size()
                             + " resources from: "
@@ -83,13 +87,17 @@ public class RemoteResources {
      * @return boolean true is serialization was successful.
      */
     public boolean save(File file, Serializer serializer) {
-        if (!FileIOProviderFactory.exists(file) && !FileIOProviderFactory.exists(file.getParentFile())
-                && !FileIOProviderFactory.mkdirs(file.getParentFile())) {
+        if (!IOProviderFactory.exists(file)
+                && !IOProviderFactory.exists(file.getParentFile())
+                && !IOProviderFactory.mkdirs(file.getParentFile())) {
             Log.w(TAG, "Failed to create " + file.getAbsolutePath());
             return false;
         }
         try {
-            serializer.write(this, file);
+            try (FileOutputStream fos = IOProviderFactory
+                    .getOutputStream(file)) {
+                serializer.write(this, fos);
+            }
             Log.d(TAG, "save " + getResources().size() + " resources to: "
                     + file.getAbsolutePath());
             return true;

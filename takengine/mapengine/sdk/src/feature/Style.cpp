@@ -86,15 +86,34 @@ namespace
 
         return static_cast<float>(pixels * 72 / PPI);           // 72 points per inch.
     }
+
+    // derived from https://codereview.stackexchange.com/questions/66711/greatest-common-divisor/66735
+    template<class T>
+    T gcd(const T a, const T b) NOTHROWS
+    {
+        return (a<b) ? gcd(b, a) : (!b ? a : gcd(b, a % b));
+    }
+
+    template<class T>
+    T gcd(const std::vector<T>& values) NOTHROWS
+    {
+        T result = values[0];
+        for (std::size_t i = 1u; i < values.size(); i++)
+        {
+            result = gcd(result, values[i]);
+            if (result == 1)
+                break;
+        }
+        return result;
+    }
 }
 
-namespace atakmap {
-    namespace feature {
+using namespace atakmap::feature;
 
 Style::Style(const StyleClass styleClass_) NOTHROWS :
     styleClass(styleClass_)
 {}
-Style::~Style () throw ()
+Style::~Style () NOTHROWS
   { }
 StyleClass Style::getClass() const NOTHROWS
 {
@@ -126,23 +145,93 @@ Style* Style::parseStyle (const char* styleOGR)
         if (tmpBrush) {
             styles.emplace_back (std::unique_ptr<Style>(new BasicFillStyle (tmpBrush->foreColor)));
         } else if (tmpPen) {
-            styles.emplace_back (std::unique_ptr<Style>(new BasicStrokeStyle (tmpPen->color,
-                                                    tmpPen->width)));
+            if (tmpPen->pattern.size()) {
+                std::size_t len = tmpPen->pattern[0u];
+                for (std::size_t i = 1u; i < tmpPen->pattern.size(); i++)
+                    len += tmpPen->pattern[i];
+                std::size_t factor;
+                if (len >= 16) {
+                    // the factor will be the total pattern length, divided by 16
+                    factor = len / 16u;
+                } else {
+                    factor = 1u;
+                }
+
+                std::size_t bit = 0u;
+                int16_t pattern = 0LL;
+                for (std::size_t i = 0; i < tmpPen->pattern.size(); i++) {
+                    std::size_t run = (tmpPen->pattern[i] / factor);
+                    for (std::size_t j = 0; j < run; j++) {
+                        if (i % 2 == 0)
+                            pattern |= static_cast<int16_t>(0x1u) << bit;
+                        bit++;
+                    }
+                }
+                if (bit > 16)
+                    Logger_log(TELL_Warning, "Stroke pattern overflow");
+                else if(bit < 16)
+                    Logger_log(TELL_Warning, "Stroke pattern underflow");
+                styles.emplace_back(std::unique_ptr<Style>(new PatternStrokeStyle(
+                    factor,
+                    pattern,
+                    tmpPen->color,
+                    tmpPen->width)));
+            } else {
+                styles.emplace_back(std::unique_ptr<Style>(new BasicStrokeStyle(tmpPen->color,
+                    tmpPen->width)));
+            }
         } else if (tmpSymbol) {
             float scaling (tmpSymbol->scaling);
-            float size (tmpSymbol->size);
-            IconPointStyle::HorizontalAlignment hAlign
-                (tmpSymbol->dx == 0.0
-                 ? IconPointStyle::H_CENTER
-                 : tmpSymbol->dx < 0.0
-                   ? IconPointStyle::LEFT
-                   : IconPointStyle::RIGHT);
-            IconPointStyle::VerticalAlignment vAlign
-                (tmpSymbol->dy == 0.0
-                 ? IconPointStyle::V_CENTER
-                 : tmpSymbol->dy < 0.0
-                   ? IconPointStyle::ABOVE
-                   : IconPointStyle::BELOW);
+            float width (tmpSymbol->size);
+            float height (tmpSymbol->size);
+            if (tmpSymbol->symbolWidth && tmpSymbol->symbolHeight) {
+                width = tmpSymbol->symbolWidth;
+                height = tmpSymbol->symbolHeight;
+            }
+            IconPointStyle::HorizontalAlignment hAlign (IconPointStyle::H_CENTER);
+
+            switch (tmpSymbol->position)
+            {
+            case Label::BASELINE_LEFT:
+            case Label::CENTER_LEFT:
+            case Label::TOP_LEFT:
+            case Label::BOTTOM_LEFT:
+                hAlign = IconPointStyle::RIGHT;
+                break;
+            case Label::BASELINE_RIGHT:
+            case Label::CENTER_RIGHT:
+            case Label::TOP_RIGHT:
+            case Label::BOTTOM_RIGHT:
+                hAlign = IconPointStyle::LEFT;
+                break;
+            default:
+                break;
+            }
+
+            IconPointStyle::VerticalAlignment vAlign (IconPointStyle::V_CENTER);
+
+            switch (tmpSymbol->position)
+            {
+            case Label::BASELINE_LEFT:
+            case Label::BASELINE_CENTER:
+            case Label::BASELINE_RIGHT:
+            case Label::BOTTOM_LEFT:
+            case Label::BOTTOM_CENTER:
+            case Label::BOTTOM_RIGHT:
+                vAlign = IconPointStyle::ABOVE;
+                break;
+            case Label::TOP_LEFT:
+            case Label::TOP_CENTER:
+            case Label::TOP_RIGHT:
+                vAlign = IconPointStyle::BELOW;
+                break;
+            default:
+                break;
+            }
+
+            const bool relativeRotation = (isnan(tmpSymbol->relativeAngle) && isnan(tmpSymbol->angle)) || !isnan(tmpSymbol->relativeAngle);
+            if (isnan(tmpSymbol->angle))            tmpSymbol->angle = 0.0;
+            if (isnan(tmpSymbol->relativeAngle))    tmpSymbol->relativeAngle = 0.0;
 
             if(!tmpSymbol->names.get()) {
                 styles.emplace_back(std::unique_ptr<Style>(new BasicPointStyle(tmpSymbol->color, tmpSymbol->size)));
@@ -154,13 +243,17 @@ Style* Style::parseStyle (const char* styleOGR)
                       scaling,
                       hAlign,
                       vAlign,
-                      -tmpSymbol->angle)
+                      !tmpSymbol->relativeAngle ? -tmpSymbol->angle : -tmpSymbol->relativeAngle, 
+                      !tmpSymbol->relativeAngle)
                       : new IconPointStyle(tmpSymbol->color,
                       tmpSymbol->names,
-                      size, size,
+                      width, height,
+                      tmpSymbol->dx,
+                      tmpSymbol->dy,
                       hAlign,
                       vAlign,
-                      -tmpSymbol->angle)));
+                      !relativeRotation ? -tmpSymbol->angle : -tmpSymbol->relativeAngle, 
+                      !relativeRotation)));
             }
         } else if (tmpLabel) {
             // Label represents font size in pixels.  Convert to points.
@@ -226,17 +319,45 @@ Style* Style::parseStyle (const char* styleOGR)
                 break;
             }
 
+            unsigned style = 0u;
+            if (tmpLabel->bold)
+                style |= LabelPointStyle::BOLD;
+            if (tmpLabel->italic)
+                style |= LabelPointStyle::ITALIC;
+            if (tmpLabel->strikeout)
+                style |= LabelPointStyle::STRIKETHROUGH;
+            if (tmpLabel->underline)
+                style |= LabelPointStyle::UNDERLINE;
+
+            const char *face = nullptr;
+            if (tmpLabel->fontNames) {
+                // truncate to the first font name
+                const char* sep = strstr(tmpLabel->fontNames, ",");
+                if (sep)
+                    tmpLabel->fontNames.get()[sep - tmpLabel->fontNames.get()] = '\0';
+                face = tmpLabel->fontNames;
+            }
             if(!tmpLabel->text)
                 tmpLabel->text = "";
+
+            const bool relativeRotation = (isnan(tmpLabel->relativeAngle) && isnan(tmpLabel->angle)) || !isnan(tmpLabel->relativeAngle);
+            if (isnan(tmpLabel->angle))         tmpLabel->angle = 0.0;
+            if (isnan(tmpLabel->relativeAngle)) tmpLabel->relativeAngle = 0.0;
 
             styles.emplace_back (std::unique_ptr<Style>(new LabelPointStyle (tmpLabel->text,
                                                    tmpLabel->foreColor,
                                                    tmpLabel->backColor,
+                                                   tmpLabel->outlineColor,
                                                    scrollMode,
+                                                   face,
                                                    fontSize,
+                                                   (LabelPointStyle::Style)style,
+                                                   tmpLabel->dx,
+                                                   tmpLabel->dy,
                                                    hAlign,
                                                    vAlign,
-                                                   -tmpLabel->angle)));
+                                                   !relativeRotation ? -tmpLabel->angle : -tmpLabel->relativeAngle, 
+                                                   !relativeRotation)));
         }
     }
 
@@ -255,7 +376,7 @@ Style* Style::parseStyle (const char* styleOGR)
     return result;
 }
 
-BasicFillStyle::BasicFillStyle (unsigned int color) throw () :
+BasicFillStyle::BasicFillStyle (unsigned int color) NOTHROWS :
     Style(TESC_BasicFillStyle),
     color (color)
 { }
@@ -394,7 +515,9 @@ IconPointStyle::IconPointStyle (unsigned int color,
     width (0),
     height (0),
     rotation (rotation),
-    absoluteRotation (absoluteRotation)
+    absoluteRotation (absoluteRotation),
+    offsetX(0.0),
+    offsetY(0.0)
 {
 
     if (!iconURI) {
@@ -425,7 +548,48 @@ IconPointStyle::IconPointStyle (unsigned int color,
     width (width),
     height (height),
     rotation (rotation),
-    absoluteRotation (absoluteRotation)
+    absoluteRotation (absoluteRotation),
+    offsetX(0.0),
+    offsetY(0.0)
+{
+    if (!iconURI) {
+        throw std::invalid_argument
+                  ("atakmap::feature::IconPointStyle::IconPointStyle: "
+                   "Received NULL icon URI");
+    }
+    if (width < 0) {
+        throw std::invalid_argument
+                  ("atakmap::feature::IconPointStyle::IconPointStyle: "
+                   "Received negative width");
+    }
+    if (height < 0) {
+        throw std::invalid_argument
+                  ("atakmap::feature::IconPointStyle::IconPointStyle: "
+                   "Received negative height");
+    }
+}
+IconPointStyle::IconPointStyle (unsigned int color,
+                                const char* iconURI,
+                                float width,
+                                float height,
+                                float offsetX,
+                                float offsetY,
+                                HorizontalAlignment hAlign,
+                                VerticalAlignment vAlign,
+                                float rotation,
+                                bool absoluteRotation) :
+    Style(TESC_IconPointStyle),
+    color (color),
+    iconURI (iconURI),
+    hAlign (hAlign),
+    vAlign (vAlign),
+    scaling (!width && !height ? 1.0f : 0.0f),
+    width (width),
+    height (height),
+    rotation (rotation),
+    absoluteRotation (absoluteRotation),
+    offsetX(offsetX),
+    offsetY(offsetY)
 {
     if (!iconURI) {
         throw std::invalid_argument
@@ -450,32 +614,39 @@ TAKErr IconPointStyle::toOGR(Port::String &value) const NOTHROWS
 
     strm << "SYMBOL(id:\"" << iconURI << "\"";
     if (rotation) {
-        strm << ",a:" << -rotation;     // OGR uses CCW degrees.
+        if(absoluteRotation)
+            strm << ",a:" << -rotation;     // OGR uses CCW degrees.
+        else
+            strm << ",ra:" << -rotation;     // OGR uses CCW degrees.
     }
 	strm << ",c:" << OGR_Color(color);
     if (!scaling) {
-        strm << ",s:" << size << "px";  // Units means size, not scaling.
-    } else {
+        strm << ",sw:" << width << "px";
+        strm << ",sh:" << height << "px"; // Units means size, not scaling.
+    } else if(scaling && scaling != 1.0) {
         strm << ",s:" << scaling;       // No units means scaling, not size.
+    }
 
-        // Since we have no explicit size and may need to provide X and Y
-        // offsets below, set size to a scaled (arbitrarily selected) 32-pixel
-        // symbol size.
-        size = 32 * scaling;
-      }
-
+    unsigned anchorPosition = 5;
     switch (hAlign)
     {
-    case LEFT:  strm << ",dx:" << -size << "px";    break;
-    case RIGHT: strm << ",dx:" << size << "px";     break;
-    default:                                        break;
+    case LEFT:  anchorPosition += 1;    break;
+    case RIGHT: anchorPosition -= 1;    break;
+    default:                            break;
     }
     switch (vAlign)
     {
-    case ABOVE: strm << ",dy:" << -size << "px";    break;
-    case BELOW: strm << ",dy:" << size << "px";     break;
-    default:                                        break;
+    case ABOVE: anchorPosition += 6;    break;
+    case BELOW: anchorPosition += 3;    break;
+    default:                            break;
     }
+    if (anchorPosition != 5) {
+        strm << ",p:" << anchorPosition;
+    }
+    if(offsetX)
+        strm << ",dx:" << offsetX << "px";
+    if(offsetY)
+        strm << ",dy:" << offsetY << "px";
     strm << ")";
 
     value = strm.str().c_str();
@@ -490,7 +661,11 @@ LabelPointStyle::LabelPointStyle (const char* text,
                                   unsigned int textColor,
                                   unsigned int backColor,
                                   ScrollMode mode,
+                                  const char *face,
                                   float textSize,
+                                  LabelPointStyle::Style style,
+                                  float offsetX,
+                                  float offsetY,
                                   HorizontalAlignment hAlign,
                                   VerticalAlignment vAlign,
                                   float rotation,
@@ -498,7 +673,7 @@ LabelPointStyle::LabelPointStyle (const char* text,
                                   float paddingX,
                                   float paddingY,
                                   double labelMinRenderResolution) :
-    Style(TESC_LabelPointStyle),
+    atakmap::feature::Style(TESC_LabelPointStyle),
     text (text),
     foreColor (textColor),
     backColor (backColor),
@@ -510,7 +685,59 @@ LabelPointStyle::LabelPointStyle (const char* text,
     paddingX(paddingX),
     paddingY(paddingY),
     absoluteRotation (absoluteRotation),
-    labelMinRenderResolution (labelMinRenderResolution)
+    labelMinRenderResolution (labelMinRenderResolution),
+    offsetX(offsetX),
+    offsetY(offsetY),
+    face(face),
+    style(style),
+    outlineColor(0u)
+  {
+    if (!text) {
+        throw std::invalid_argument
+                  ("atakmap::feature::LabelPointStyle::LabelPointStyle: "
+                   "Received NULL label text");
+    }
+    if (textSize < 0) {
+        throw std::invalid_argument
+                  ("atakmap::feature::LabelPointStyle::LabelPointStyle: "
+                   "Received negative textSize");
+    }
+}
+LabelPointStyle::LabelPointStyle (const char* text,
+                                  unsigned int textColor,
+                                  unsigned int backColor,
+                                  unsigned int outlineColor,
+                                  ScrollMode mode,
+                                  const char *face,
+                                  float textSize,
+                                  LabelPointStyle::Style style,
+                                  float offsetX,
+                                  float offsetY,
+                                  HorizontalAlignment hAlign,
+                                  VerticalAlignment vAlign,
+                                  float rotation,
+                                  bool absoluteRotation,
+                                  float paddingX,
+                                  float paddingY,
+                                  double labelMinRenderResolution) :
+    atakmap::feature::Style(TESC_LabelPointStyle),
+    text (text),
+    foreColor (textColor),
+    backColor (backColor),
+    scrollMode (mode),
+    hAlign (hAlign),
+    vAlign (vAlign),
+    textSize (textSize ? textSize : 16),        // ATAK hack
+    rotation (rotation),
+    paddingX(paddingX),
+    paddingY(paddingY),
+    absoluteRotation (absoluteRotation),
+    labelMinRenderResolution (labelMinRenderResolution),
+    offsetX(offsetX),
+    offsetY(offsetY),
+    face(face),
+    style(style),
+    outlineColor(outlineColor)
   {
     if (!text) {
         throw std::invalid_argument
@@ -538,11 +765,26 @@ TAKErr LabelPointStyle::toOGR(Port::String &value) const NOTHROWS
     }
     strm << "\""
          << ",s:" << textSize << "pt";
+    if (style & LabelPointStyle::BOLD)
+        strm << ",bo:1";
+    if (style & LabelPointStyle::ITALIC)
+        strm << ",it:1";
+    if (style & LabelPointStyle::UNDERLINE)
+        strm << ",un:1";
+    if (style & LabelPointStyle::STRIKETHROUGH)
+        strm << ",st:1";
+    if (face)
+        strm << ",f:\"" << face << "\"";
     if (rotation) {
-        strm << ",a:" << -rotation;     // OGR uses CCW degrees.
+        if (absoluteRotation)
+            strm << ",a:" << -rotation;     // OGR uses CCW degrees.
+        else
+            strm << ",ra:" << -rotation;
     }
     strm << ",c:" << OGR_Color (foreColor)
          << ",b:" << OGR_Color (backColor);
+    if (outlineColor & 0xFF000000)
+        strm << ",o:" << OGR_Color(outlineColor);
 
     // Co-opt the OGR Label placement mode to specify the scroll mode.  The
     // co-opted placements normally apply to polylines.
@@ -577,6 +819,10 @@ TAKErr LabelPointStyle::toOGR(Port::String &value) const NOTHROWS
     case BELOW: position += 3;  break;  // Adjust to top values.
     default:                    break;
     }
+    if (offsetX)
+        strm << ",dx:" << offsetX << "px";
+    if (offsetY)
+        strm << ",dy:" << offsetY << "px";
     strm << ",p:" << position << ")";
 
     value = strm.str().c_str();
@@ -587,34 +833,34 @@ Style *LabelPointStyle::clone() const
     return new LabelPointStyle(*this);
 }
 
-PatternStrokeStyle::PatternStrokeStyle (const uint64_t pattern_,
-                    const std::size_t patternLen_,
+PatternStrokeStyle::PatternStrokeStyle (const std::size_t factor_,
+                    const uint16_t pattern_,
                     const unsigned int color_,
                     const float strokeWidth_) :
     Style(TESC_PatternStrokeStyle),
     pattern(pattern_),
-    patternLen(patternLen_),
+    factor(factor_),
     color(color_),
     width(strokeWidth_)
 {
-    if(patternLen < 2u || patternLen > 64u || !TAK::Engine::Util::MathUtils_isPowerOf2(patternLen))
+    if(!factor)
         throw std::invalid_argument("bad pattern length");
     if(width < 0.0)
         throw std::invalid_argument("invalid stroke width");
 }
-uint64_t PatternStrokeStyle::getPattern() const throw ()
+uint16_t PatternStrokeStyle::getPattern() const NOTHROWS
 {
     return pattern;
 }
-std::size_t PatternStrokeStyle::getPatternLength() const throw ()
+std::size_t PatternStrokeStyle::getFactor() const NOTHROWS
 {
-    return patternLen;
+    return factor;
 }
-unsigned int PatternStrokeStyle::getColor () const throw ()
+unsigned int PatternStrokeStyle::getColor () const NOTHROWS
 {
     return color;
 }
-float PatternStrokeStyle::getStrokeWidth() const throw ()
+float PatternStrokeStyle::getStrokeWidth() const NOTHROWS
 {
     return width;
 }
@@ -622,19 +868,19 @@ TAKErr PatternStrokeStyle::toOGR(TAK::Engine::Port::String &value) const NOTHROW
 {
     std::ostringstream ogr;
     //PEN(c:#FF0000,w:2px,p:”4px 5px”)
-    ogr << "PEN(c:#" << OGR_Color (color) << ",w" << width << "px,p:\"";
+    ogr << "PEN(c:" << OGR_Color (color) << ",w:" << width << "px,p:\"";
     uint8_t state = 0x1;
     std::size_t stateCount = 0;
     uint64_t pat = pattern;
     std::size_t emit = 0;
-    for(std::size_t i = 0u; i < patternLen; i++) {
+    for(std::size_t i = 0u; i < 16u; i++) {
         const uint8_t px = pat&0x1u;
         pat >>= 0x1u;
         if(px != state) {
             // the state has flipped, emit the pixel count
             if(!emit)
                 ogr << ' ';
-            ogr << stateCount << "px";
+            ogr << (stateCount*factor) << "px";
             emit++;
             state = px;
             stateCount = 0u;
@@ -646,7 +892,7 @@ TAKErr PatternStrokeStyle::toOGR(TAK::Engine::Port::String &value) const NOTHROW
     if(stateCount) {
         if(!emit)
             ogr << ' ';
-        ogr << stateCount << "px";
+        ogr << (stateCount*factor) << "px";
     }
     ogr << "\")";
     value = ogr.str().c_str();
@@ -657,7 +903,20 @@ Style *PatternStrokeStyle::clone() const
     return new PatternStrokeStyle(*this);
 }
 
-TAKErr BasicFillStyle_create(StylePtr &value, const unsigned int color) NOTHROWS
+TAKErr atakmap::feature::Style_parseStyle(StylePtr &value, const char *ogr) NOTHROWS
+{
+    try {
+        value = StylePtr(Style::parseStyle(ogr), Style::destructStyle);
+        return !value ? TE_InvalidArg : TE_Ok;
+    } catch(const std::invalid_argument &) {
+        return TE_InvalidArg;
+    } catch(const std::bad_alloc &) {
+        return TE_OutOfMemory;
+    } catch(...) {
+        return TE_Err;
+    }
+}
+TAKErr atakmap::feature::BasicFillStyle_create(StylePtr &value, const unsigned int color) NOTHROWS
 {
     try {
         value = StylePtr(new BasicFillStyle(color), Memory_deleter_const<Style, BasicFillStyle>);
@@ -670,7 +929,7 @@ TAKErr BasicFillStyle_create(StylePtr &value, const unsigned int color) NOTHROWS
         return TE_Err;
     }
 }
-TAKErr BasicPointStyle_create(StylePtr &value, const unsigned int color, const float size) NOTHROWS
+TAKErr atakmap::feature::BasicPointStyle_create(StylePtr &value, const unsigned int color, const float size) NOTHROWS
 {
     try {
         value = StylePtr(new BasicPointStyle(color, size), Memory_deleter_const<Style, BasicPointStyle>);
@@ -683,7 +942,7 @@ TAKErr BasicPointStyle_create(StylePtr &value, const unsigned int color, const f
         return TE_Err;
     }
 }
-TAKErr BasicStrokeStyle_create(StylePtr &value, const unsigned int color, const float width) NOTHROWS
+TAKErr atakmap::feature::BasicStrokeStyle_create(StylePtr &value, const unsigned int color, const float width) NOTHROWS
 {
     try {
         value = StylePtr(new BasicStrokeStyle(color, width), Memory_deleter_const<Style, BasicStrokeStyle>);
@@ -696,7 +955,7 @@ TAKErr BasicStrokeStyle_create(StylePtr &value, const unsigned int color, const 
         return TE_Err;
     }
 }
-TAKErr CompositeStyle_create(StylePtr &value, const Style **styles, const std::size_t count) NOTHROWS
+TAKErr atakmap::feature::CompositeStyle_create(StylePtr &value, const Style **styles, const std::size_t count) NOTHROWS
 {
     try {
         std::vector<Style *> styles_v;
@@ -716,7 +975,7 @@ TAKErr CompositeStyle_create(StylePtr &value, const Style **styles, const std::s
         return TE_Err;
     }
 }
-TAKErr IconPointStyle_create(StylePtr &value, unsigned int color,
+TAKErr atakmap::feature::IconPointStyle_create(StylePtr &value, unsigned int color,
                                                                 const char* iconURI,
                                                                 float scaleFactor,
                                                                 IconPointStyle::HorizontalAlignment hAlign,
@@ -735,7 +994,7 @@ TAKErr IconPointStyle_create(StylePtr &value, unsigned int color,
         return TE_Err;
     }
 }
-TAKErr IconPointStyle_create(StylePtr &value, unsigned int color,
+TAKErr atakmap::feature::IconPointStyle_create(StylePtr &value, unsigned int color,
                                                                             const char* iconURI,
                                                                             float width,
                                                                             float height,
@@ -755,7 +1014,7 @@ TAKErr IconPointStyle_create(StylePtr &value, unsigned int color,
         return TE_Err;
     }
 }
-TAKErr LabelPointStyle_create(StylePtr &value, const char* text,
+TAKErr atakmap::feature::LabelPointStyle_create(StylePtr &value, const char* text,
                                                                  unsigned int textColor,    // 0xAARRGGBB
                                                                  unsigned int backColor,    // 0xAARRGGBB
                                                                  LabelPointStyle::ScrollMode mode,
@@ -770,7 +1029,7 @@ TAKErr LabelPointStyle_create(StylePtr &value, const char* text,
 {
     try {
 
-        value = StylePtr(new LabelPointStyle(text, textColor, backColor, mode, textSize, hAlign, vAlign, rotation, absoluteRotation, paddingX, paddingY, labelMinRenderResolution), Memory_deleter_const<Style, LabelPointStyle>);
+        value = StylePtr(new LabelPointStyle(text, textColor, backColor, mode, nullptr, textSize, (LabelPointStyle::Style)0, 0.0, 0.0, hAlign, vAlign, rotation, absoluteRotation, paddingX, paddingY, labelMinRenderResolution), Memory_deleter_const<Style, LabelPointStyle>);
         return TE_Ok;
     } catch(const std::invalid_argument &) {
         return TE_InvalidArg;
@@ -780,13 +1039,13 @@ TAKErr LabelPointStyle_create(StylePtr &value, const char* text,
         return TE_Err;
     }
 }
-TAKErr PatternStrokeStyle_create(StylePtr &value, const uint64_t pattern,
-                                                                    const std::size_t patternLen,
+TAKErr atakmap::feature::PatternStrokeStyle_create(StylePtr &value, const std::size_t factor,
+                                                                    const uint16_t pattern,
                                                                     const unsigned int color,
                                                                     const float strokeWidth) NOTHROWS
 {
     try {
-        value = StylePtr(new PatternStrokeStyle(pattern, patternLen, color, strokeWidth), Memory_deleter_const<Style, PatternStrokeStyle>);
+        value = StylePtr(new PatternStrokeStyle(factor, pattern, color, strokeWidth), Memory_deleter_const<Style, PatternStrokeStyle>);
         return TE_Ok;
     } catch(const std::invalid_argument &) {
         return TE_InvalidArg;
@@ -794,8 +1053,5 @@ TAKErr PatternStrokeStyle_create(StylePtr &value, const uint64_t pattern,
         return TE_OutOfMemory;
     } catch(...) {
         return TE_Err;
-    }
-}
-
     }
 }

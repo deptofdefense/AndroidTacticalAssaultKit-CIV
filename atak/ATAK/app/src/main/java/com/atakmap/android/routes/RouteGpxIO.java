@@ -4,7 +4,7 @@ package com.atakmap.android.routes;
 import android.content.SharedPreferences;
 
 import com.atakmap.android.maps.Marker;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.android.gpx.Gpx;
 import com.atakmap.android.gpx.GpxRoute;
@@ -25,6 +25,8 @@ import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -117,14 +119,16 @@ public class RouteGpxIO {
      */
     public static void write(Gpx gpx, File file) throws Exception {
         File parent = file.getParentFile();
-        if (!FileIOProviderFactory.exists(parent))
-            if (!FileIOProviderFactory.mkdirs(parent)) {
+        if (!IOProviderFactory.exists(parent))
+            if (!IOProviderFactory.mkdirs(parent)) {
                 Log.d(TAG, "Failed to make dir at " + parent.getAbsolutePath());
             }
 
         // TODO for performance reuse Serializer? Or use PullParser
         Serializer serializer = new Persister();
-        serializer.write(gpx, file);
+        try (FileOutputStream fos = IOProviderFactory.getOutputStream(file)) {
+            serializer.write(gpx, fos);
+        }
     }
 
     /**
@@ -211,7 +215,7 @@ public class RouteGpxIO {
                     try {
                         geoPoint = convertPoint(point);
                     } catch (NullPointerException npe) {
-                        Log.e(TAG, "erorr occured converting", npe);
+                        Log.e(TAG, "erorr occurred converting", npe);
                         geoPoint = null;
                     }
                     if (geoPoint == null) {
@@ -511,7 +515,7 @@ public class RouteGpxIO {
                         return waypoint;
                 }
             } catch (NullPointerException npe) {
-                Log.e(TAG, "erorr occured matching", npe);
+                Log.e(TAG, "erorr occurred matching", npe);
             }
         }
 
@@ -526,9 +530,9 @@ public class RouteGpxIO {
      */
     public static Gpx read(final File file) {
         Serializer serializer = new Persister();
-        try {
+        try (FileInputStream fis = IOProviderFactory.getInputStream(file)) {
             // Read, strict=false to ignore non-standard GPX/XML
-            return serializer.read(Gpx.class, file, false);
+            return serializer.read(Gpx.class, fis, false);
         } catch (Exception e) {
             Log.e(TAG, "Unable to read file: " + file.getAbsolutePath(), e);
         }

@@ -25,7 +25,7 @@ namespace TAK {
                 /** returns the width of the specified character at the specified position */
                 virtual float getCharPositionWidth(const char *text, int position) NOTHROWS = 0;
                 /** returns the width of the specified character */
-                virtual float getCharWidth(const char chr) NOTHROWS = 0;
+                virtual float getCharWidth(const unsigned int chr) NOTHROWS = 0;
                 /** returns nominal character height */
                 virtual float getCharHeight() NOTHROWS = 0;
                 virtual float getDescent() NOTHROWS = 0;
@@ -36,12 +36,27 @@ namespace TAK {
                 /** returns the point size of the font */
                 virtual int getFontSize() NOTHROWS = 0;
 
-                virtual Util::TAKErr loadGlyph(BitmapPtr &value, const char c) NOTHROWS = 0;
+                virtual Util::TAKErr loadGlyph(BitmapPtr &value, const unsigned int c) NOTHROWS = 0;
             };
 
             typedef std::unique_ptr<TextFormat2, void(*)(const TextFormat2 *)> TextFormat2Ptr;
 
+            struct ENGINE_API TextFormatParams
+            {
+            public :
+                TextFormatParams(const float size) NOTHROWS;
+                TextFormatParams(const char* fontName, const float size) NOTHROWS;
+            public :
+                const char *fontName;
+                float size;
+                bool bold;
+                bool italic;
+                bool underline;
+                bool strikethrough;
+            };
+
             ENGINE_API Util::TAKErr TextFormat2_createDefaultSystemTextFormat(TextFormat2Ptr &value, const float textSize) NOTHROWS;
+            ENGINE_API Util::TAKErr TextFormat2_createTextFormat(TextFormat2Ptr &value, const TextFormatParams &params) NOTHROWS;
 
             class ENGINE_API GLText2
             {
@@ -129,22 +144,22 @@ namespace TAK {
                     const float r, const float g, const float b, const float a,
                     const float scissorX0, const float scissorX1) NOTHROWS;
 
-                Util::TAKErr loadGlyph(int64_t *atlasKey, const char c) NOTHROWS;
+                Util::TAKErr loadGlyph(int64_t *atlasKey, const unsigned int c) NOTHROWS;
             private :
                 TextFormat2Ptr textFormat;
 
-                std::unique_ptr<GLTextureAtlas2> glyphAtlas;
+                GLTextureAtlas2 glyphAtlas;
 
                 float charMaxHeight;
-
-                Util::array_ptr<float> commonCharUV;
-                Util::array_ptr<int> commonCharTexId;
-                Util::array_ptr<float> commonCharWidth;
-
-                atakmap::math::Rectangle<float> scratchCharBounds;
+#define GLTEXT2_NUM_COMMON_CHARS (((254u) - (32u) + 1u))
+                float commonCharUV[GLTEXT2_NUM_COMMON_CHARS * 4u];
+                int commonCharTexId[GLTEXT2_NUM_COMMON_CHARS];
+                float commonCharWidth[GLTEXT2_NUM_COMMON_CHARS];
+#undef GLTEXT2_NUM_COMMON_CHARS
             };
 
             ENGINE_API GLText2 *GLText2_intern(std::shared_ptr<TextFormat2> textFormat) NOTHROWS;
+            ENGINE_API GLText2 *GLText2_intern(const TextFormatParams &fmt) NOTHROWS;
         }
     }
 }

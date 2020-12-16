@@ -20,7 +20,7 @@ import com.atakmap.commoncommo.CommoException;
 import com.atakmap.comms.CommsMapComponent;
 import com.atakmap.comms.missionpackage.MPSendListener;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.foxykeep.datadroid.exception.ConnectionException;
 
@@ -82,8 +82,8 @@ public class CopyAndSendTask extends MissionPackageBaseTask {
         // copy to private directory in the "transfer" folder
         File parent = new File(_receiver.getComponent().getFileIO()
                 .getMissionPackageTransferPath(), UUID.randomUUID().toString());
-        if (!FileIOProviderFactory.exists(parent)) {
-            if (!FileIOProviderFactory.mkdirs(parent)) {
+        if (!IOProviderFactory.exists(parent)) {
+            if (!IOProviderFactory.mkdirs(parent)) {
                 Log.d(TAG, "Failed to make dir at " + parent.getAbsolutePath());
             }
         }
@@ -130,8 +130,8 @@ public class CopyAndSendTask extends MissionPackageBaseTask {
         // now copy to deploy directory
         try {
             FileSystemUtils.copyStream(
-                    FileIOProviderFactory.getInputStream(source),
-                    FileIOProviderFactory.getOutputStream(_destination));
+                    IOProviderFactory.getInputStream(source),
+                    IOProviderFactory.getOutputStream(_destination));
         } catch (Exception e) {
             Log.w(TAG, "Failed to deploy (1) to: " + _destination, e);
             cancel("Failed to deploy "
@@ -155,8 +155,8 @@ public class CopyAndSendTask extends MissionPackageBaseTask {
 
         fileInfo.setUserName(_deviceCallsign);
         fileInfo.setUserLabel(_manifest.getName());
-        fileInfo.setSizeInBytes((int) FileIOProviderFactory.length(_destination));
-        fileInfo.setUpdateTime(FileIOProviderFactory.lastModified(_destination));
+        fileInfo.setSizeInBytes((int) IOProviderFactory.length(_destination));
+        fileInfo.setUpdateTime(IOProviderFactory.lastModified(_destination));
 
         // attempt to use existing file hash (for file we copied above), only recompute if necessary
         String sha256 = null;
@@ -279,7 +279,7 @@ public class CopyAndSendTask extends MissionPackageBaseTask {
             File postfile) throws ConnectionException {
         // hash's hashcode as notifierid per prior generation code
         CommsMPSendListener sendListener = new CommsMPSendListener(
-                hash.hashCode(), name, FileIOProviderFactory.length(postfile));
+                hash.hashCode(), name, IOProviderFactory.length(postfile));
 
         try {
             CommsMapComponent.getInstance().sendMissionPackage(
@@ -309,17 +309,17 @@ public class CopyAndSendTask extends MissionPackageBaseTask {
 
     private static class CommsMPSendListener implements MPSendListener {
 
-        private int notifierId;
-        private Context context;
-        private String transferName;
-        private String tickerFilename;
-        private long fileSize;
+        private final int notifierId;
+        private final Context context;
+        private final String transferName;
+        private final String tickerFilename;
+        private final long fileSize;
         private String postedUrl;
         private String uploadErrorDetail;
 
         // non-null for sends to contacts controlled by an outer task
         // null for direct to server uploads
-        private CopyAndSendTask task;
+        private final CopyAndSendTask task;
 
         private String progressUid;
         private boolean uploadComplete;

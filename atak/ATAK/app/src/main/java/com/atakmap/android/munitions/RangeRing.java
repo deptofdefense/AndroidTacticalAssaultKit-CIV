@@ -107,7 +107,7 @@ public class RangeRing extends PointMapItem implements AnchoredMapItem,
         _target.addOnGroupChangedListener(this);
         _mapGroup.addItem(this);
 
-        if (!hasNoLine()) {
+        if (hasNoLine()) {
             DangerCloseCalculator.getInstance().registerListener(this, _target);
         }
         if (_target.getMetaInteger("dangerclose", 0) < _outerRange)

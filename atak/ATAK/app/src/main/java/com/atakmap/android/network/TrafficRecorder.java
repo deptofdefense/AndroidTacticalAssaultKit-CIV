@@ -6,7 +6,7 @@ import android.content.DialogInterface;
 import android.view.View;
 import android.widget.Toast;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.comms.NetworkUtils;
@@ -111,8 +111,8 @@ public class TrafficRecorder implements Runnable {
         long filelength = 0;
 
         try {
-            fos = FileIOProviderFactory.getOutputStream(file);
-            idxos = new PrintWriter(FileIOProviderFactory.getOutputStream(index));
+            fos = IOProviderFactory.getOutputStream(file);
+            idxos = new PrintWriter(IOProviderFactory.getOutputStream(index));
 
             while (!cancelled) {
                 socket.receive(packet);

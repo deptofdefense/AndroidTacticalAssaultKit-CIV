@@ -85,7 +85,7 @@ expat_LIBS=-lstdc++ -lm -llog
 libkml_LIBS=-lstdc++ -lm -llog
 libspatialite_LIBS=-lstdc++ -lm
 protobuf_LIBS=-llog
-gdal_LIBS=-lstdc++
+gdal_LIBS=-L$(OUTDIR_CYGSAFE)/lib -lssl -lcrypto -lstdc++
 
 gdal_LDFLAGS=
 

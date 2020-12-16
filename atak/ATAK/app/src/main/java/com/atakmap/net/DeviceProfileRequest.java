@@ -99,7 +99,7 @@ public class DeviceProfileRequest implements Parcelable {
      */
     private boolean doNotUnzip;
 
-    private boolean allowAllHostnames;
+    private final boolean allowAllHostnames;
 
     public DeviceProfileRequest(String server, String username, String password,
             boolean onEnrollment, boolean onConnect, long syncSecago,

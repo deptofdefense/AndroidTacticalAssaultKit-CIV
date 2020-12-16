@@ -39,8 +39,6 @@ import com.atakmap.android.routes.RouteListModel;
 import com.atakmap.android.user.filter.MapOverlayConfig;
 import com.atakmap.android.user.filter.MapOverlayFilter;
 import com.atakmap.android.user.filter.MapOverlayFilters;
-import com.atakmap.android.user.icon.Icon2525bPallet;
-import com.atakmap.android.user.icon.SpotMapPallet;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.export.GPXExportWrapper;
@@ -776,7 +774,8 @@ public class FilterMapOverlay extends AbstractMapOverlay2
 
         if (item instanceof Marker) {
             String path = item.getMetaString(UserIcon.IconsetPath, null);
-            if (UserIcon.IsValidIconsetPath(path, false, mapView.getContext())) {
+            if (UserIcon.IsValidIconsetPath(path, false,
+                    mapView.getContext())) {
                 //this is a user icon, lets skip it here and void the expense of
                 //filter matching since it may very well match on CoT type
                 //Log.d(TAG + toString(), toString() + " not accepting usericon");
@@ -1063,7 +1062,8 @@ public class FilterMapOverlay extends AbstractMapOverlay2
 
         @Override
         public boolean onItemFunction(MapItem item) {
-            if (!(item instanceof Marker) || !item.hasMetaValue(UserIcon.IconsetPath))
+            if (!(item instanceof Marker)
+                    || !item.hasMetaValue(UserIcon.IconsetPath))
                 return false;
 
             return UserIcon.IsValidIconsetPath(

@@ -1,3 +1,4 @@
+
 package com.atakmap.android.maps.visibility;
 
 import java.util.List;
@@ -16,7 +17,7 @@ public class VisibilityUtil {
      *         considered invisible
      */
     public static int checkConditions(Object object,
-                                      List<VisibilityCondition> conditions) {
+            List<VisibilityCondition> conditions) {
         int ret = VisibilityCondition.IGNORE;
         for (VisibilityCondition cond : conditions) {
             int v = cond.isVisible(object);

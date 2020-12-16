@@ -63,6 +63,14 @@
         android:layout_gravity="center_vertical"
         android:textSize="@dimen/listview_row_font_lrg"
         android:layout_width="0dp"/>
+    <ImageView
+        android:src="@drawable/trusted"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:gravity="end"
+        android:id="@+id/app_mgmt_row_trusted"
+        android:layout_gravity="center_vertical"
+        android:padding="3dp"/>
 
     <ImageButton
         android:src="@drawable/details"
@@ -81,4 +89,5 @@
         style="@style/darkButton"
         android:layout_gravity="center_vertical"
         android:padding="3dp"/>
+
 </LinearLayout>

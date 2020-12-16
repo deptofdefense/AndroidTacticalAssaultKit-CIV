@@ -175,13 +175,13 @@ public class FeatureDataSourceContentFactoryTests extends ATAKInstrumentedTest {
         FeatureDataSource[] unsupported = new FeatureDataSource[5];
         for (int i = 0; i < unsupported.length; i++) {
             unsupported[i] = MockFeatureDataSource
-                    .createNullContent(prefix + "." + String.valueOf(i), 1);
+                    .createNullContent(prefix + "." + i, 1);
             FeatureDataSourceContentFactory.register(unsupported[i]);
         }
 
         final FeatureDataSource supported = MockFeatureDataSource
                 .createEmptyContent(
-                        prefix + "." + String.valueOf(unsupported.length), 1);
+                        prefix + "." + unsupported.length, 1);
 
         FeatureDataSourceContentFactory.register(supported);
         try {
@@ -211,8 +211,8 @@ public class FeatureDataSourceContentFactoryTests extends ATAKInstrumentedTest {
         FeatureDataSource[] supported = new FeatureDataSource[20];
         for (int i = 0; i < supported.length; i++) {
             supported[i] = MockFeatureDataSource.createRandomContent(
-                    prefix + "." + String.valueOf(i),
-                    prefix + "." + String.valueOf(i), 1, 1, 1);
+                    prefix + "." + i,
+                    prefix + "." + i, 1, 1, 1);
             FeatureDataSourceContentFactory.register(supported[i]);
         }
 
@@ -248,8 +248,8 @@ public class FeatureDataSourceContentFactoryTests extends ATAKInstrumentedTest {
         FeatureDataSource[] supported = new FeatureDataSource[20];
         for (int i = 0; i < supported.length; i++) {
             supported[i] = MockFeatureDataSource.createRandomContent(
-                    prefix + "." + String.valueOf(i),
-                    prefix + "." + String.valueOf(i), 1, 1, 1);
+                    prefix + "." + i,
+                    prefix + "." + i, 1, 1, 1);
             FeatureDataSourceContentFactory.register(supported[i]);
         }
 
@@ -258,7 +258,7 @@ public class FeatureDataSourceContentFactoryTests extends ATAKInstrumentedTest {
             try {
                 final File file = new File("/dev/null");
                 content = FeatureDataSourceContentFactory.parse(file,
-                        prefix + "." + String.valueOf(supported.length));
+                        prefix + "." + supported.length);
                 Assert.assertNull(content);
             } finally {
                 if (content != null)

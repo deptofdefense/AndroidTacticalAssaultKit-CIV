@@ -13,7 +13,7 @@ public class NITFImage {
 
     /**************************************************************************/
 
-    private static TileReader.Format paletteRgbaFormat = TileReader.Format.ARGB;
+    private static final TileReader.Format paletteRgbaFormat = TileReader.Format.ARGB;
 
     protected final Dataset nitfDataset;
 

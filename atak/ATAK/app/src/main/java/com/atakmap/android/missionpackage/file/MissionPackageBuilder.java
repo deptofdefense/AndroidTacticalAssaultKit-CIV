@@ -6,7 +6,7 @@ import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.BufferedInputStream;
@@ -18,8 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import com.atakmap.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 /**
@@ -90,7 +89,7 @@ public class MissionPackageBuilder {
             _wroteManifest = false;
 
             File f = new File(_contents.getPath());
-            if (FileIOProviderFactory.exists(f)) {
+            if (IOProviderFactory.exists(f)) {
                 // MP already exists - copy it to a temp file in case we need to
                 // extract and pull its contents into the new package
                 tmpCopy = new File(f.getAbsolutePath() + ".tmp");
@@ -104,7 +103,8 @@ public class MissionPackageBuilder {
                 }
             }
 
-            FileOutputStream fos = FileIOProviderFactory.getOutputStream(new File(_contents.getPath()));
+            FileOutputStream fos = IOProviderFactory
+                    .getOutputStream(new File(_contents.getPath()));
             _zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             Log.d(TAG, "Building package: " + _contents.getPath());
@@ -197,7 +197,7 @@ public class MissionPackageBuilder {
         }
 
         // create new zip entry
-        ZipEntry entry = new ZipEntry(MANIFEST_XML);
+        java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(MANIFEST_XML);
         zos.putNextEntry(entry);
         Log.d(TAG, "Adding manifest: " + entry.getName() + " with size: "
                 + contentData.length);
@@ -259,29 +259,31 @@ public class MissionPackageBuilder {
             // this is to avoid any cases of recursive archival
             boolean tmpCopy = false;
             File f = new File(p.getValue());
-            if (FileIOProviderFactory.exists(f) && FileSystemUtils.isZip(f)) {
+            if (IOProviderFactory.exists(f) && FileSystemUtils.isZip(f)) {
                 File tmpDir = FileSystemUtils.getItemOnSameRoot(f, "tmp");
-                if (!FileIOProviderFactory.exists(tmpDir) && !FileIOProviderFactory.mkdirs(tmpDir))
+                if (!IOProviderFactory.exists(tmpDir)
+                        && !IOProviderFactory.mkdirs(tmpDir))
                     Log.e(TAG, "Failed to create tmp dir: " + tmpDir);
                 else {
                     File tmpFile = new File(tmpDir, f.getName());
                     if (!tmpFile.equals(f)) {
                         FileSystemUtils.copyFile(f, tmpFile);
-                        if (FileIOProviderFactory.exists(tmpFile)) {
+                        if (IOProviderFactory.exists(tmpFile)) {
                             f = tmpFile;
                             tmpCopy = true;
                         }
                     }
                 }
             }
-            long fileSize = FileIOProviderFactory.length(f);
+            long fileSize = IOProviderFactory.length(f);
 
             // create new zip entry
-            ZipEntry entry = new ZipEntry(content.getManifestUid());
+            java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(
+                    content.getManifestUid());
             _zos.putNextEntry(entry);
 
             // stream file into zipstream
-            FileInputStream fi = FileIOProviderFactory.getInputStream(f);
+            FileInputStream fi = IOProviderFactory.getInputStream(f);
             BufferedInputStream origin = new BufferedInputStream(fi,
                     FileSystemUtils.BUF_SIZE);
             write(origin, true);
@@ -332,12 +334,13 @@ public class MissionPackageBuilder {
         if (item == null) {
             // Item isn't found on the map, but it might be in the existing package
             if (_existing != null) {
-                ZipEntry entry = _existing.getEntry(uid + "/" + uid + ".cot");
+                com.atakmap.util.zip.ZipEntry entry = _existing
+                        .getEntry(uid + "/" + uid + ".cot");
                 if (entry != null) {
                     InputStream is = null;
                     try {
                         is = _existing.getInputStream(entry);
-                        _zos.putNextEntry(entry);
+                        _zos.putNextEntry(entry.toJavaZipEntry());
                         write(is, false);
                         _zos.closeEntry();
                     } catch (Exception e) {
@@ -382,7 +385,8 @@ public class MissionPackageBuilder {
         }
 
         // create new zip entry
-        ZipEntry entry = new ZipEntry(content.getManifestUid());
+        java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(
+                content.getManifestUid());
 
         try {
             byte[] eventData = eventXML.getBytes(FileSystemUtils.UTF8_CHARSET);

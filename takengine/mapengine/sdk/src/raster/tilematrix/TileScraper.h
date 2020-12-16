@@ -32,7 +32,7 @@ namespace TAK {
                     std::unique_ptr<CacheRequest> request;
                     std::shared_ptr<CacheRequestListener> callback;
 
-                    std::unique_ptr<ScrapeContext> scrapeContext;
+                    std::shared_ptr<ScrapeContext> scrapeContext;
                     std::unique_ptr<Downloader> downloader;
 
 
@@ -116,13 +116,13 @@ namespace TAK {
 
                     class DownloadTask {
                     private:
-                        ScrapeContext * const context;
+                        std::shared_ptr<ScrapeContext> context;
                         const size_t tileX;
                         const size_t tileY;
                         const size_t tileZ;
 
                     public:
-                        DownloadTask(ScrapeContext *context, size_t tileZ, size_t tileX,
+                        DownloadTask(std::shared_ptr<ScrapeContext> context, size_t tileZ, size_t tileX,
                             size_t tileY);
 
                         Util::TAKErr run();
@@ -133,15 +133,15 @@ namespace TAK {
                     class Downloader {
 
                     private:
-                        CacheRequestListener *callback;
+                        std::shared_ptr<CacheRequestListener> callback;
                         int levelStartTiles;
 
                     protected:
-                        Downloader(CacheRequestListener *callback);
-                        void reportStatus(ScrapeContext *downloadContext);
+                        Downloader(std::shared_ptr<CacheRequestListener> callback);
+                        void reportStatus(std::shared_ptr<ScrapeContext> context);
 
-                        void onDownloadEnter(ScrapeContext *context);
-                        virtual void onDownloadExit(ScrapeContext *context, int jobStatus);
+                        void onDownloadEnter(std::shared_ptr<ScrapeContext> context);
+                        virtual void onDownloadExit(std::shared_ptr<ScrapeContext> context, int jobStatus);
 
                         /**
                         * Return <code>true</code> if ready to download the next tile,
@@ -154,11 +154,11 @@ namespace TAK {
                         *          immediately, <code>false</code> if the download should be
                         *          delayed.
                         */
-                        virtual bool checkReadyForDownload(ScrapeContext *context);
+                        virtual bool checkReadyForDownload(std::shared_ptr<ScrapeContext> context);
 
-                        virtual void onLevelDownloadComplete(ScrapeContext *context);
-                        virtual void onLevelDownloadStart(ScrapeContext *context);
-                        virtual Util::TAKErr downloadTileImpl(ScrapeContext *context,
+                        virtual void onLevelDownloadComplete(std::shared_ptr<ScrapeContext> context);
+                        virtual void onLevelDownloadStart(std::shared_ptr<ScrapeContext> context);
+                        virtual Util::TAKErr downloadTileImpl(std::shared_ptr<ScrapeContext> context,
                             int tileLevel, int tileX, int tileY) = 0;
 
                         /**
@@ -166,7 +166,7 @@ namespace TAK {
                         * TODO: More refined scraping for routes - currently just uses the bounds
                         */
                     public:
-                        bool download(ScrapeContext *downloadContext);
+                        bool download(std::shared_ptr<ScrapeContext> downloadContext);
                         virtual ~Downloader();
                     };
 
@@ -182,16 +182,16 @@ namespace TAK {
                         Thread::ThreadPoolPtr pool;
 
                     public:
-                        MultiThreadDownloader(CacheRequestListener *callback, int numDownloadThreads);
+                        MultiThreadDownloader(std::shared_ptr<CacheRequestListener> callback, int numDownloadThreads);
                         virtual ~MultiThreadDownloader();
                         
-                        void flush(ScrapeContext *downloadContext, bool reportStatus);
+                        void flush(std::shared_ptr<ScrapeContext> context, bool reportStatus);
                     protected:
-                        virtual void onDownloadExit(ScrapeContext *context, int jobStatus);
+                        virtual void onDownloadExit(std::shared_ptr<ScrapeContext> context, int jobStatus);
 
-                        virtual bool checkReadyForDownload(ScrapeContext *context);
-                        virtual void onLevelDownloadComplete(ScrapeContext *downloadContext);
-                        virtual Util::TAKErr downloadTileImpl(ScrapeContext *context, int tileLevel,
+                        virtual bool checkReadyForDownload(std::shared_ptr<ScrapeContext> context);
+                        virtual void onLevelDownloadComplete(std::shared_ptr<ScrapeContext> context);
+                        virtual Util::TAKErr downloadTileImpl(std::shared_ptr<ScrapeContext> context, int tileLevel,
                             int tileX, int tileY);
                     private:
                         static void *threadEntry(void *selfPtr);
@@ -200,10 +200,10 @@ namespace TAK {
 
                     class LegacyDownloader : public Downloader {
                     public:
-                        LegacyDownloader(CacheRequestListener *callback);
+                        LegacyDownloader(std::shared_ptr<CacheRequestListener> callback);
                         virtual ~LegacyDownloader();
                     protected:
-                        virtual Util::TAKErr downloadTileImpl(ScrapeContext *context, int tileLevel,
+                        virtual Util::TAKErr downloadTileImpl(std::shared_ptr<ScrapeContext> context, int tileLevel,
                             int tileX, int tileY);
                     };
 

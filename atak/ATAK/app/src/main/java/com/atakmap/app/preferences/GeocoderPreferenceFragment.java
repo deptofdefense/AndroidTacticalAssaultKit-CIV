@@ -14,6 +14,7 @@ import com.atakmap.android.user.geocode.GeocodingTask;
 import com.atakmap.android.user.geocode.ReverseGeocodingTask;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.xml.XMLUtils;
@@ -24,6 +25,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -209,7 +211,6 @@ public class GeocoderPreferenceFragment extends AtakPreferenceFragment {
                         additional);
             }
 
-            final boolean fSuccess = success;
             getActivity().runOnUiThread(new Runnable() {
 
                 @Override
@@ -217,7 +218,7 @@ public class GeocoderPreferenceFragment extends AtakPreferenceFragment {
 
                     AlertDialog.Builder b = new AlertDialog.Builder(
                             getActivity());
-                    b.setTitle(fSuccess ? getString(R.string.success)
+                    b.setTitle(success ? getString(R.string.success)
                             : getString(R.string.failure));
                     b.setMessage(msg);
                     b.setPositiveButton(getString(R.string.ok), null);
@@ -246,7 +247,11 @@ public class GeocoderPreferenceFragment extends AtakPreferenceFragment {
                         .getDocumenBuilderFactory();
 
                 DocumentBuilder db = dbf.newDocumentBuilder();
-                Document document = db.parse(supplier);
+                Document document;
+                try (InputStream is = IOProviderFactory
+                        .getInputStream(supplier)) {
+                    document = db.parse(is);
+                }
                 document.getDocumentElement().normalize();
                 NodeList nList = document.getElementsByTagName("entry");
 

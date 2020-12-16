@@ -1,6 +1,6 @@
 package com.atakmap.map.layer.model.obj;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.model.ModelInfo;
@@ -55,7 +55,7 @@ public final class ObjModelInfoSpi implements ModelInfoSpi {
                 if (entry != null)
                     f[0] = entry;
             } catch(IllegalArgumentException ignored) {}
-        } else if(!FileIOProviderFactory.exists(f[0]))
+        } else if(!IOProviderFactory.exists(f[0]))
             return false;
         if(!f[0].getName().toLowerCase(LocaleUtil.getCurrent()).endsWith(".obj"))
             return false;

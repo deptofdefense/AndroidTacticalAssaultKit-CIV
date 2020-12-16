@@ -130,7 +130,7 @@ GdalBitmapReader::GdalBitmapReader(const char *uri) NOTHROWS :
     width(0),
     height(0),
     numDataElements(0),
-    alphaOrder(Format::RGBA),
+    alphaOrder(Format::ARGB),
     format(RGB), // guess, will be assigned
     impl(nullptr),
     colorTable(nullptr)

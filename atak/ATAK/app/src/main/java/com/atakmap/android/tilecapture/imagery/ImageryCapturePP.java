@@ -25,7 +25,7 @@ import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
@@ -375,7 +375,8 @@ public class ImageryCapturePP extends CapturePP {
                 + "</kml>";
         try {
             PrintWriter out = new PrintWriter(new OutputStreamWriter(
-                    FileIOProviderFactory.getOutputStream(docKml), FileSystemUtils.UTF8_CHARSET.name()));
+                    IOProviderFactory.getOutputStream(docKml),
+                    FileSystemUtils.UTF8_CHARSET.name()));
             out.println(docSkel);
             out.close();
         } catch (IOException ioe) {

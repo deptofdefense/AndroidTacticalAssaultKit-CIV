@@ -37,7 +37,6 @@ import android.widget.ToggleButton;
 
 import com.atakmap.android.cotdetails.extras.ExtraDetailsLayout;
 import com.atakmap.android.hashtags.view.RemarksLayout;
-import com.atakmap.app.BuildConfig;
 
 import com.atakmap.android.cotselector.CoTSelector;
 import com.atakmap.android.drawing.details.GenericDetailsView;
@@ -63,6 +62,8 @@ import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.android.util.SimpleItemSelectedListener;
 import com.atakmap.android.util.SpeedFormatter;
 import com.atakmap.app.R;
+import com.atakmap.app.system.FlavorProvider;
+import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.conversions.SpanUtilities;
@@ -119,7 +120,7 @@ public class CoTInfoView extends RelativeLayout
                 ImageButton modifierButton, PointMapItem marker);
     }
 
-    private static TypeSetListener tsListener;
+    protected static TypeSetListener tsListener;
 
     /**
      * Registration for the typeset listener required for an external development effort.    
@@ -129,7 +130,7 @@ public class CoTInfoView extends RelativeLayout
         tsListener = l;
     }
 
-    private AttachmentManager attachmentManager;
+    protected AttachmentManager attachmentManager;
 
     private boolean needsUpdate = false;
 
@@ -138,12 +139,14 @@ public class CoTInfoView extends RelativeLayout
     private Button _coordButton;
     private View _noGps;
     private RangeAndBearingTableHandler rabtable;
-    private Button _cotButton, _tleButton, _heightButton;
+    private Button _cotButton;
+    private Button _tleButton;
+    private Button _heightButton;
     private TextView _tleText;
     private TextView _derivedFrom;
     private ImageButton _colorButton;
     private LinearLayout _extendedCotInfo;
-    private TextView _lastSeenText;
+    protected TextView _lastSeenText;
     private TextView _batteryText;
     private TextView _speedText;
     private TextView _courseText;
@@ -155,14 +158,14 @@ public class CoTInfoView extends RelativeLayout
     private View cotAuthorLayout;
     private ImageView cotAuthorIconButton;
     private ImageView cotAuthorPanButton;
-    private RemarksLayout _remarksEdit;
+    protected RemarksLayout _remarksEdit;
     private TextView _summaryEdit;
     private TextView _summaryTitle;
     private ImageButton _sendButton;
-    private ImageButton _attachmentsButton;
+    protected ImageButton _attachmentsButton;
     private ToggleButton _autoBroadcastButton;
     private ExtraDetailsLayout _extrasLayout;
-    private boolean _visible = false;
+    protected boolean _visible = false;
 
     private String _prevName;
     private String _prevRemarks;
@@ -179,10 +182,10 @@ public class CoTInfoView extends RelativeLayout
 
     private CoTAutoBroadcaster cab;
 
-    private MapView mapView;
+    protected MapView mapView;
 
     // constant strings to use for meta info
-    private CoTSelector selector;
+    protected CoTSelector selector;
 
     @Override
     public void onSharedPreferenceChanged(
@@ -236,7 +239,7 @@ public class CoTInfoView extends RelativeLayout
         return _bgColor;
     }
 
-    private void setup() {
+    protected void setup() {
         GenericDetailsView.addEditTextPrompts(this);
         _iconButton = this.findViewById(R.id.cotInfoNameTitle);
         _nameEdit = this.findViewById(R.id.cotInfoNameEdit);
@@ -499,10 +502,8 @@ public class CoTInfoView extends RelativeLayout
             @Override
             public void onClick(View v) {
                 if (_marker != null) {
-                    if (_marker.getGeoPointMetaData().getGeopointSource()
-                            .equals(GeoPointMetaData.PRI)
-                            || _marker.getGeoPointMetaData().getGeopointSource()
-                                    .equals(GeoPointMetaData.PRI)) {
+                    if (GeoPointMetaData.isPrecisionImageryDerived(
+                            _marker.getGeoPointMetaData())) {
 
                         Toast.makeText(
                                 getContext(),
@@ -706,8 +707,9 @@ public class CoTInfoView extends RelativeLayout
 
         selector = new CoTSelector(mapView);
 
-        // check to see what type is being built - capabilities wise 
-        if (!BuildConfig.MIL_CAPABILITIES) {
+        // check to see what type is being built - capabilities wise
+        FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+        if (fp == null || !fp.hasMilCapabilities()) {
             findViewById(R.id.cotInfoCotLayout).setVisibility(View.GONE);
             findViewById(R.id.cotInfoCotTitle).setVisibility(View.GONE);
         }
@@ -815,7 +817,7 @@ public class CoTInfoView extends RelativeLayout
         });
     }
 
-    private void _updateRemarks() {
+    protected void _updateRemarks() {
         if (!_visible || _marker == null)
             return;
         String remarks = _remarksEdit.getText().trim();
@@ -902,14 +904,14 @@ public class CoTInfoView extends RelativeLayout
         attachmentManager.refresh();
     }
 
-    private void _updatePreferences() {
+    protected void _updatePreferences() {
         _cFormat = _prefs.getCoordinateFormat();
 
         if (_cFormat == null)
             _cFormat = CoordinateFormat.MGRS;
     }
 
-    private void _updateName() {
+    protected void _updateName() {
         if (!_visible)
             return;
 
@@ -1087,7 +1089,7 @@ public class CoTInfoView extends RelativeLayout
         });
     }
 
-    private void refreshMarker() {
+    protected void refreshMarker() {
         if (_marker == null)
             return;
         _coordButton.setText(_prefs.formatPoint(
@@ -1146,8 +1148,7 @@ public class CoTInfoView extends RelativeLayout
 
         final String pointSource = point.getGeopointSource();
 
-        if (pointSource.equals(GeoPointMetaData.PRI) ||
-                pointSource.equals(GeoPointMetaData.PFI)) {
+        if (GeoPointMetaData.isPrecisionImageryDerived(point)) {
 
             _derivedFrom.setVisibility(View.VISIBLE);
 
@@ -1308,7 +1309,7 @@ public class CoTInfoView extends RelativeLayout
                 try {
                     ((ExtendedInfoView) nextChild).setMarker(_marker);
                 } catch (Exception e) {
-                    Log.e(TAG, "error occured setting the marker on: "
+                    Log.e(TAG, "error occurred setting the marker on: "
                             + nextChild);
                 }
             }

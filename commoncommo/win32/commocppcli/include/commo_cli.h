@@ -279,6 +279,20 @@ namespace TAK {
             /**
              * <summary>
              * Sets the TCP port number to use when contacting a TAK
+             * Server's http web api. Default is port 8080.
+             *
+             * Returns IllegalArgument if the port number is out of range
+             * </summary>
+             *
+             * <param name="serverPort">
+             * tcp port to use
+             * </param>
+             */
+            CommoResult SetMissionPackageHttpPort(int serverPort);
+
+            /**
+             * <summary>
+             * Sets the TCP port number to use when contacting a TAK
              * Server's https web api. Default is port 8443.
              *
              * Returns IllegalArgument if the port number is out of range

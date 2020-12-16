@@ -11,13 +11,13 @@ import android.content.SharedPreferences.Editor;
 import android.graphics.Color;
 import android.preference.PreferenceManager;
 
+import com.atakmap.android.data.ClearContentRegistry;
 import com.atakmap.android.gui.ColorPalette;
 import com.atakmap.android.track.maps.TrackPolyline;
 import com.atakmap.android.track.task.CreateTracksTask;
 import com.atakmap.android.track.task.DeleteTracksTask;
 import com.atakmap.android.track.task.ExportTrackHistoryTask;
 import com.atakmap.android.track.task.ExportTrackParams;
-import com.atakmap.android.data.DataMgmtReceiver;
 import com.atakmap.android.editableShapes.EditablePolyline;
 import com.atakmap.android.maps.CrumbTrail;
 import com.atakmap.android.maps.MapGroup;
@@ -77,7 +77,7 @@ public class BreadcrumbReceiver extends BroadcastReceiver implements
     private final Context _context;
     private final MapGroup _trackGroup;
     private boolean logCrumbs;
-    private SharedPreferences prefs;
+    private final SharedPreferences prefs;
     private CrumbDatabase crumbDatabase;
     private Timer _crumbTrailTimer;
     private static final int CRUMB_TRAIL_RATE = 1000; //millis
@@ -258,7 +258,7 @@ public class BreadcrumbReceiver extends BroadcastReceiver implements
      * Listens for self crumbs to be created. If configured, adds them to
      * an editable polyline
      */
-    private CrumbTrail.CrumbLogListener selfLogListener = new CrumbTrail.CrumbLogListener() {
+    private final CrumbTrail.CrumbLogListener selfLogListener = new CrumbTrail.CrumbLogListener() {
         @Override
         public void logCrumb(Crumb c) {
             if (!bPersistentSelfTrack) {
@@ -547,7 +547,12 @@ public class BreadcrumbReceiver extends BroadcastReceiver implements
                     });
             b.setNegativeButton(R.string.cancel, null);
             b.show();
-        } else if (action.equals(DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION)) {
+        }
+    }
+
+    final ClearContentRegistry.ClearContentListener dataMgmtReceiver = new ClearContentRegistry.ClearContentListener() {
+        @Override
+        public void onClearContent(boolean clearmaps) {
             Log.d(TAG, "Clearing breadcrumbs");
             //stop logging
             logSelfCrumbs(false);
@@ -566,7 +571,7 @@ public class BreadcrumbReceiver extends BroadcastReceiver implements
                 crumbDatabase = null;
             }
         }
-    }
+    };
 
     private void clearCrumbs(String uid) {
         List<CrumbTrail> trails = getTrails(view.getRootGroup());

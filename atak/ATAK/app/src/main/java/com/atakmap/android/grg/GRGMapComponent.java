@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
+import com.atakmap.android.data.ClearContentRegistry;
 import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.hierarchy.HierarchyListReceiver;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
@@ -13,7 +14,6 @@ import android.preference.PreferenceManager;
 import android.util.Pair;
 import android.widget.Toast;
 
-import com.atakmap.android.data.DataMgmtReceiver;
 import com.atakmap.android.importexport.ImporterManager;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.layers.ExternalLayerDataImporter;
@@ -29,7 +29,7 @@ import com.atakmap.android.maps.MapView.RenderStack;
 import com.atakmap.android.widgets.SeekBarControl;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.MultiLayer;
@@ -100,6 +100,8 @@ public class GRGMapComponent extends AbstractMapComponent {
     private FeatureLayer coveragesLayer;
     private DatasetRasterLayer2 rasterLayer;
     private MapView _mapView;
+    private MCIAGRGMapOverlay mciagrgMapOverlay;
+    private GRGDiscovery grgDiscovery;
 
     private MultiLayer grgLayer;
 
@@ -167,22 +169,16 @@ public class GRGMapComponent extends AbstractMapComponent {
 
         view.getMapOverlayManager().addOverlay(this.overlay);
         view.getMapOverlayManager().addOverlay(
-                new MCIAGRGMapOverlay(context, this.grgDatabase));
+                mciagrgMapOverlay = new MCIAGRGMapOverlay(context,
+                        this.grgDatabase));
 
-        // XXX - periodic discovery/refresh?
-
-        Thread t = new Thread(new GRGDiscovery(context, this.grgDatabase));
-        t.setName("GRG-discovery-thread");
-        t.setPriority(Thread.MIN_PRIORITY);
-        t.start();
+        startGrgDiscoveryThread(context);
 
         DocumentedIntentFilter intentFilter = new DocumentedIntentFilter();
         intentFilter.addAction("com.atakmap.android.grg.OUTLINE_VISIBLE");
         this.registerReceiver(context, visibilityReceiver, intentFilter);
 
-        intentFilter = new DocumentedIntentFilter();
-        intentFilter.addAction(DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION);
-        this.registerReceiver(context, dataMgmtReceiver, intentFilter);
+        ClearContentRegistry.getInstance().registerListener(dataMgmtReceiver);
 
         intentFilter = new DocumentedIntentFilter();
         intentFilter.addAction("com.atakmap.android.grg.TRANSPARENCY");
@@ -229,11 +225,7 @@ public class GRGMapComponent extends AbstractMapComponent {
             this.overlay = null;
         }
 
-        if (dataMgmtReceiver != null) {
-            AtakBroadcast.getInstance().unregisterReceiver(dataMgmtReceiver);
-            dataMgmtReceiver = null;
-        }
-
+        ClearContentRegistry.getInstance().unregisterListener(dataMgmtReceiver);
         if (visibilityReceiver != null) {
             AtakBroadcast.getInstance().unregisterReceiver(visibilityReceiver);
             visibilityReceiver = null;
@@ -241,6 +233,21 @@ public class GRGMapComponent extends AbstractMapComponent {
 
         this.grgDatabase.dispose();
     }
+
+    // IO Abstraction
+
+    private void startGrgDiscoveryThread(Context context) {
+
+        // XXX - periodic discovery/refresh?
+
+        Thread t = new Thread(
+                grgDiscovery = new GRGDiscovery(context, this.grgDatabase));
+        t.setName("GRG-discovery-thread");
+        t.setPriority(Thread.MIN_PRIORITY);
+        t.start();
+    }
+
+    // ----
 
     public RasterLayer2 getLayer() {
         return this.rasterLayer;
@@ -259,7 +266,7 @@ public class GRGMapComponent extends AbstractMapComponent {
         }
     };
 
-    private BroadcastReceiver transparencyReceiver = new TransparencyReceiver();
+    private final BroadcastReceiver transparencyReceiver = new TransparencyReceiver();
 
     private final class TransparencyReceiver extends BroadcastReceiver
             implements MapEventDispatchListener {
@@ -331,7 +338,7 @@ public class GRGMapComponent extends AbstractMapComponent {
 
     // refactor all of these broadcast receivers into a single
     // broadcast receiver
-    private BroadcastReceiver grgVisibilityReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver grgVisibilityReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String uid = intent.getExtras().getString("uid", null);
@@ -354,10 +361,9 @@ public class GRGMapComponent extends AbstractMapComponent {
         }
     };
 
-    private BroadcastReceiver dataMgmtReceiver = new BroadcastReceiver() {
-
+    private final ClearContentRegistry.ClearContentListener dataMgmtReceiver = new ClearContentRegistry.ClearContentListener() {
         @Override
-        public void onReceive(Context context, Intent intent) {
+        public void onClearContent(boolean clearmaps) {
             Log.d(TAG, "Deleting GRGs");
             //remove from database
             try {
@@ -378,9 +384,11 @@ public class GRGMapComponent extends AbstractMapComponent {
             final String[] mountPoints = FileSystemUtils.findMountPoints();
             for (String mountPoint : mountPoints) {
                 File scanDir = new File(mountPoint, "grg");
-                if (FileIOProviderFactory.exists(scanDir) && FileIOProviderFactory.isDirectory(scanDir))
+                if (IOProviderFactory.exists(scanDir)
+                        && IOProviderFactory.isDirectory(scanDir))
                     FileSystemUtils.deleteDirectory(scanDir, true);
             }
+
         }
     };
 }

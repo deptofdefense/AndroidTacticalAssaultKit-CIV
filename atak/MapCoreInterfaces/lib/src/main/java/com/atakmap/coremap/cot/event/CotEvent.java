@@ -13,7 +13,7 @@ import java.util.Locale;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.maps.time.CoordinatedTime;
@@ -205,7 +205,7 @@ public class CotEvent implements Parcelable {
      * Location to log invalid CoT messages. For the purposes of ATAK this should be
      * FileSystemUtils.getItem("cot");
      */
-    synchronized public static void setLogInvalid(boolean log, File directory)  {
+    synchronized public static void setLogInvalid(boolean log, File directory) {
         // if logging is enabled, create the file to log to.
 
         if (log) {
@@ -215,15 +215,16 @@ public class CotEvent implements Parcelable {
                 return;
 
             // File f = FileSystemUtils.getItem("cot");
-            if (!FileIOProviderFactory.exists(directory))
-                if (!FileIOProviderFactory.mkdir(directory))
+            if (!IOProviderFactory.exists(directory))
+                if (!IOProviderFactory.mkdir(directory))
                     Log.w(TAG, "Failed to create directory");
 
             try {
                 File lf = new File(directory, "cot_" + getLogDateString()
                         + ".log");
                 fileWriter = new PrintWriter(new OutputStreamWriter(
-                        FileIOProviderFactory.getOutputStream(lf), FileSystemUtils.UTF8_CHARSET.name()));
+                        IOProviderFactory.getOutputStream(lf),
+                        FileSystemUtils.UTF8_CHARSET.name()));
             } catch (UnsupportedEncodingException uee) {
                 Log.e(TAG, "error: ", uee);
             } catch (IOException ioe) {

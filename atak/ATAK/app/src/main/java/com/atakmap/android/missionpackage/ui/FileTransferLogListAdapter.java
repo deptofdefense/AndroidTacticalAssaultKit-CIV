@@ -60,7 +60,7 @@ public class FileTransferLogListAdapter extends BaseAdapter {
      */
     private SortType _sort;
     private boolean _sortReversed;
-    private boolean _fullTime;
+    private final boolean _fullTime;
 
     /**
      * ctor

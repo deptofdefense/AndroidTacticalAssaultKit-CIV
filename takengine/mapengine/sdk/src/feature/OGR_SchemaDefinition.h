@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Abstract base class for OGR schema definitions.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Apr 22, 2015
+////      Apr 22, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -90,7 +90,7 @@ class OGR_SchemaDefinition
 
     virtual
     ~OGR_SchemaDefinition ()
-        throw ()
+        NOTHROWS
         = 0;
 
     //

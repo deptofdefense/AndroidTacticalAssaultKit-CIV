@@ -16,7 +16,7 @@ import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.util.NotificationIdRecycler;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
@@ -85,6 +85,10 @@ public abstract class SpatialDbContentSource implements Importer {
         this.type = type;
 
         this.notifyUserAfterImport = true;
+    }
+
+    public final DataSourceFeatureDataStore getDatabase() {
+        return this.database;
     }
 
     /**
@@ -244,9 +248,9 @@ public abstract class SpatialDbContentSource implements Importer {
      *         {@link #PROCESS_REJECT}.
      */
     public int processAccept(File f, int depth) {
-        if (f.isFile() && f.canRead())
+        if (IOProviderFactory.isFile(f) && IOProviderFactory.canRead(f))
             return PROCESS_ACCEPT;
-        else if (FileIOProviderFactory.isDirectory(f))
+        else if (IOProviderFactory.isDirectory(f))
             return PROCESS_RECURSE;
         else
             return PROCESS_REJECT;

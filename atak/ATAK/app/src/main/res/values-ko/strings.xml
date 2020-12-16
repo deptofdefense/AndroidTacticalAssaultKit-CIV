@@ -2023,7 +2023,6 @@
     <string name="maps">지도</string>
     <string name="mobile">모바일</string>
     <string name="favs">좋아하는</string>
-    <string name="grg">GRG</string>
     <string name="local">로컬 or 지역</string>
     <string name="online">온라인</string>
     <string name="download_limit">단일 타일 셋에서%d 개 이상을 다운로드할 수 없습니다.</string>
@@ -2775,27 +2774,13 @@
     <string name="default_route_prc152">기본 경로-고급 기능 이므로 표준 해리스 SA 작업에 대해 사용 하도록 설정 해서는 안 됩니다. 지시 하지 않는 한 사용 하지 마십시오.</string>
     <string name="grg_lowercase">0</string>
     <string name="friendly">친화적인</string>
-    <string name="grgLayerPreferences">GRG 개요 기본 설정</string>
+
     <string name="target_title">대상</string>
     <string name="fire_control_prefs">도구 모음 환경 설정 실행</string>
     <string name="fires_prefs">환경 설정 실행</string>
     <string name="adjust_fire_settings">화재 도구 모음에 대 한 기본 설정 조정</string>
     <string name="s2525B">0</string>
     <string name="default_cot_mapping">기본 CoT 매핑</string>
-    <string name="tadilj_settings">타 딜-J 선호</string>
-    <string name="tadilj_id">내 타 딜-J 아이디</string>
-    <string name="tadilj_id2">*타 딜-J</string>
-    <string name="tadilj_self_type">어떤 유형의 tadil-J 메시지를 보내 자체 SA 메시지</string>
-    <string name="tadilj_track_block">이는 타 딜-J id 블록의 시작으로,이는 hostiles에 자동으로 할당 되어야 합니다.</string>
-    <string name="tadilj_settings_summary">tadil-J 메시지에 대 한 설정 관리</string>
-    <string name="managePersistedIdsSummary">지속 되는 tadil-J id를 탭 하 여 관리 하려면 누릅니다.</string>
-    <string name="showTadiljIdsTitle">타딜-J id 표시</string>
-    <string name="showTadiljIdsSummary">체크 하면 다른 사용자가 tadil-J id가 맵에 나타납니다</string>
-    <string name="replaceTadiljIdsCallsignTitle">s를 타 딜-J ID로 교체 합니다.</string>
-    <string name="replaceTadiljIdsCallsignSummary">자체 좌표 표시에서 호출 기호를 tadil-J ID로 바꿉니다</string>
-    <string name="preferences_text438">타 딜-J 오프셋 리셋</string>
-    <string name="details_text50">타 딜-J 정보 입력:</string>
-    <string name="details_text52">"모든 타 딜-J 연락처를 삭제 하 시겠습니까? "</string>
     <string name="preferences_text422b">장치 설치 마법사</string>
     <string name="dump_prompt">인텔 덤프 업로드를 위한 기본 URL을 입력 합니다.</string>
     <string name="stringSPIDesc">SPI 도구를 토글합니다.</string>
@@ -3209,7 +3194,7 @@
     <string name="actionbar_quicknav">빠른 탐색</string>
     <string name="actionbar_quickpic">빠른 그림</string>
     <string name="actionbar_trackhistory">위치 기록</string>
-    <string name="actionbar_firetools">대기 지원 도구</string>
+    <string name="mil_actionbar_firetools">대기 지원 도구</string>
     <string name="actionbar_gallery">화랑</string>
     <string name="actionbar_elevationtools">고도 도구 </string>
     <string name="actionbar_casevac">사상자 피난</string>
@@ -3436,7 +3421,7 @@
     <string name="video_meta_tgt">TGT --- -- ----- -----</string>
     <string name="cannot_delete_sdcard_file_msg">This file is in a read-only directory and cannot be deleted.</string>
     <string name="globe_display">Enable Globe Display Mode</string>
-    <string name="globe_display_summary">When enabled, will display the earth as a globe. The default is to display the earth flattened using Equirectangular Map Projection.</string>
+    <string name="globe_display_summary">The default is to display the earth as a globe. When disabled, display the earth flattened using Equirectangular Map Projection.</string>
     <string name="imagery_transparency">Imagery Transparency</string>
     <string name="map_controls">Map Controls</string>
     <string name="pref_mp_all_servers">Use All Servers</string>
@@ -3612,7 +3597,6 @@
     <string name="invalid_input">Invalid Input</string>
     <string name="background_scanning">Scanning in background...</string>
     <string name="copied_to_clipboard_generic">Copied to clipboard...</string>
-    <string name="background_permission_warning">With Android 10, this application requires the location permission to be set to \'Allow all of the time\'</string>
     <string name="no_exporters_registered">No exporters registered</string>
 
     <string name="scanning_apps">Scanning available apps and plugins</string>
@@ -3672,5 +3656,103 @@
     <string name="bloodhound_must_be_in_route_mode">Must be in route mode to navigate.</string>
     <string name="bloodhound_open_navigation">Open navigation interface.</string>
     <string name="server_auth_error">Server Authentication Error</string>
+
+    <string name="civ_enable_grg_interact">Enable Image Overlay Map Interaction</string>
+    <string name="civ_enable_grg_interact_summ">Enable to allow interaction with Image Overlays on the map when the outline is visible.   If no outline is visible, then the Image Overlay cannot be interacted with.  If this is false, no interaction can occur even if the outline is visible.</string>
+    <string name="civ_delete_grg">Delete Image Overlay</string>
+    <string name="civ_grg_file">Image Overlay File</string>
+    <string name="civ_grg_lowercase">image overlay</string>
+
+    <string name="civ_SPI_prompt">Press the DP button to toggle between movable and pinned state. Long press to remove.</string>
+    <string name="civ_fire_control_prefs">Digital Pointer Toolbar Preferences</string>
+    <string name="civ_fires_prefs">Digital Pointer Preferences</string>
+    <string name="civ_adjust_fire_settings">Adjust preferences for the Digital Pointer toolbar</string>
+
+    <string name="civ_cot2525B" translatable="false">Markers</string>
+    <string name="civ_s2525B">Markers</string>
+
+    <string name="civ_default_cot_mapping">Default Mapping</string>
+
+
+    <string name="tadilj_settings">Datalink Preferences</string>
+    <string name="tadilj_id">My Datalink Id</string>
+    <string name="tadilj_id2">Datalink ID</string>
+    <string name="tadilj_self_type">Which type of Datalink message to send for self-SA messages</string>
+    <string name="tadilj_track_block">This is the start of the block of Datalink IDs that should be auto-assigned to hostiles</string>
+    <string name="tadilj_settings_summary">Manage settings for Datalink messages</string>
+    <string name="managePersistedIdsSummary">Tap to manage Persisted Datalink IDs</string>
+    <string name="showTadiljIdsTitle">Show Datalink IDs</string>
+    <string name="showTadiljIdsSummary">If checked other users\' Datalink IDs will appear on the map</string>
+    <string name="replaceTadiljIdsCallsignTitle">Replace s with Datalink ID</string>
+    <string name="replaceTadiljIdsCallsignSummary">In the Self Coordinate Display, replace the callsign with the Datalink ID</string>
+    <string name="preferences_text438">Reset Datalink offset</string>
+    <string name="details_text50">"Enter Datalink info: "</string>
+    <string name="details_text52">"Clear all Datalink contacts? "</string>
+
+
+    <string name="civ_stringSPIDesc">Toggle the DP tool.</string>
+    <string name="civ_quick_select_spi">Quick Select DP</string>
+
+    <string name="civ_tool_text31">The Digital Pointer (DP) has a menu item that when selected allows the DP to be dragged around the radius to correct issues introduced by the magnetic compass in the Laser Range Finder.   The red cone displays a 10 degree offset of either side of the reported shot to aid in correction.</string>
+    <string name="civ_place_local_spi">Place Local DP</string>
+    <string name="civ_spi_update_delay">DP Update Period</string>
+    <string name="civ_spi_update_delay_summary">The maximum delay between sending updates for the DP point, if enabled (in seconds) even if the DP is not modified.   Moving a DP point locally will generate updates immediately.</string>
+
+    <string name="civ_bloodhound_text9">Enable Auto Zoom feature to display self and DP in map view when tool is first launched</string>
+    <string name="civ_imagery_change_summ">In this version, the Image Overlay tab has been fully migrated to the Overlay Manager.\nImage Overlay files, in TIF or KMZ file format, should be placed in the atak/grg folder on either the sdcard or the internal memory.\n\nImagery based map products (pfps, native, layers) should now be placed in the atak/imagery folder either on the sdcard or the internal memory.\n\nOverlay products like KML, KMZ, LPT, DRW, etc should be placed in the atak/overlay folder either on the sdcard or internal memory.</string>
+    <string name="civ_point_dropper_text40">Invalid DP update delay set. Resetting to default value 5.</string>
+    <string translatable="false" name="repeater_in_contact">In Contact</string>
+    <string name="civ_fireSpiNumber">Number of DP</string>
+    <string name="civ_fireSpiNumberSummary">Number of DPs to show in the Digital Pointer toolbar</string>
+    <string name="civ_spi_redx_fah">DP/RedX FAH Width</string>
+    <string name="civ_spi_redx_fah_summary">Sets the width of the FAH cone (in degrees) when enabled from a DP or the Red X (rounds to the closest increment of 10)</string>
+
+    <!-- already a mil equiv -->
+    <string name="actionbar_firetools">Digital Pointer Tools</string>
+
+    <!-- possibly unused -->
+    <string name="civ_fire_tools_title">Digital Pointer Tools</string>
+
+    <!-- Even though this is the Distribution statement, we want it to
+         appear at the bottom and not floating above empty text blocks -->
+    <string name="caseLabel">Distribution Statement A: Approved for public release; distribution is unlimited.</string>
+
+    <!-- for filter names -->
+    <string name="civ_filter_title_markers">Markers</string>
+    <string name="civ_filter_title_hostiles">Red Markers</string>
+
+    <string name="mil_filter_title_marker">CoT 2525B</string>
+    <string name="mil_filter_title_hostiles">Hostile Markers</string>
+
+    <string name="mission_type">Mission Type</string>
+    <string name="indirect_fire">Indirect</string>
+
+
+    <string name="dar_encryptor_message">[%s Installed]</string>
+    <string name="outline_colon">Outline:</string>
+    <string name="chat_message_no_recipients">There are currently no online users in this group.</string>
+    <string name="pref_save_title">File name without extension (atak/config/prefs directory</string>
+    <string name="pref_billboard_distance_title">Billboard Render Distance</string>
+    <string name="pref_billboard_category">Attachment Billboards</string>
+    <string name="pref_billboard_distance_desc">Image attachment billboards within this distance will be shown while navigating.</string>
+    <string name="pref_billboard_enabled_title">Show Attachment Billboards</string>
+    <string name="pref_billboard_enabled_desc">Show image attachment billboards above markers while route navigation is active.</string>
+    <string name="plugin_warning">Plugin Warning</string>
+    <string name="plugin_warning_message">This build is running one or more plugins not officially signed.  Only plugins with a green shield are officially signed.</string>
+    <string name="see_more">See More</string>
+    <string name="officially_signed">This plugin is officially signed.</string>
+    <string name="not_officially_signed">This plugin is not officially signed.</string>
+    <string name="elevation_data">Elevation Data</string>
+    <string name="addendum">Addendum</string>
+    <string name="webview_not_installed">This display window is not supported because Android System Webview is not installed</string>
+
+
+    <string name="use_your_location_title">Use Your Location in the Background</string>
+    <string name="background_permission_warning">ATAK asks for the ability to collect location in the background so that when users are running ATAK and background it to perform other activities, it can continue to report the precise location to team members either on a local network of via a TAK Server that the user has configured to use.   The data is sent out to other team members to show the precise location of the individual helping with coordinating such things such as incident response, disaster relief, and personal safety.</string>
+    <string name="background_permission_warning_bullet">\t1) This data is not sent to the developers of the application.\n\t2) ATAK does not collect location data when the app is not running, only when it is backgrounded.</string>
+    <string name="background_permission_warning_action">This application requires the location permission to be set to \'Allow all of the time\'</string>
+    <string name="delete_elevation_data_warning">You cannot delete the entire elevation data set. Please select a specific set.</string>
+    <string name="are_you_sure_delete_elevation">Are you sure you want to delete %s elevation data?</string>
+    <string name="delete_elevation_please_lock">Please lock both switches to delete elevation</string>
 
 </resources>

@@ -27,13 +27,13 @@ import javax.crypto.spec.SecretKeySpec;
 // Source: http://stackoverflow.com/questions/4551263/how-can-i-convert-a-string-to-a-secretkey/8828196#8828196
 class EncryptionUtils {
     private static final String TAG = "EncryptionUtils";
-    private static final String cipherOptions = "AES/CBC/PKCS5Padding";
+    private static final String cipherOptions = "AES/GCM/PKCS5Padding";
     private static final String symKeyAlgorithm = "AES";
     private static final String prng = "SHA1PRNG";
 
     static byte[] encrypt(byte[] symKeyData, byte[] encodedMessage)
             throws Exception {
-        final Cipher cipher = Cipher.getInstance(cipherOptions);
+        final Cipher cipher = Cipher.getInstance(cipherOptions, "BC");
         final int blockSize = cipher.getBlockSize();
 
         SecretKeySpec symKey = new SecretKeySpec(symKeyData, symKeyAlgorithm);
@@ -59,7 +59,7 @@ class EncryptionUtils {
     public static byte[] decrypt(byte[] symKeyData,
             byte[] ivAndEncryptedMessage) {
         try {
-            final Cipher cipher = Cipher.getInstance(cipherOptions);
+            final Cipher cipher = Cipher.getInstance(cipherOptions, "BC");
             final int blockSize = cipher.getBlockSize();
 
             // create the key

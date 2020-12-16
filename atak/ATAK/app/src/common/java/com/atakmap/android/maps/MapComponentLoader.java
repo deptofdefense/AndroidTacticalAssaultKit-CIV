@@ -63,116 +63,164 @@ import com.atakmap.android.warning.WarningComponent;
 import com.atakmap.android.warning.WarningMapComponent;
 import com.atakmap.android.wfs.WFSMapComponent;
 import com.atakmap.app.preferences.json.JSONPreferenceControl;
+import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.comms.CommsMapComponent;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.wkt.WktMapComponent;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * For loading the entire list of core map components
  */
 public class MapComponentLoader {
-    
-    public static void loadGLWidgets(MapActivity activity) {
-        activity.registerMapComponent(new GLWidgetsMapComponent());
-    }
+    private static final String TAG = "MapComponentLoader";
 
-    public static void loadMapComponents(MapActivity activity) {
+    private static final List<Class> mapComponents = new ArrayList<>();
+
+    static {
         // location needs to be first
-        activity.registerMapComponent(new LocationMapComponent());
+        mapComponents.add(LocationMapComponent.class);
 
         // common communications next
-        activity.registerMapComponent(new CommsMapComponent());
+        mapComponents.add(CommsMapComponent.class);
 
-        // JSON preference file serialization and reading
-        JSONPreferenceControl.getInstance().initDefaults(activity.getMapView());
-
-        activity.registerMapComponent(new VisibilityMapComponent());
-        activity.registerMapComponent(new BrightnessComponent());
-        activity.registerMapComponent(new DataMgmtMapComponent());
-        activity.registerMapComponent(new ImportExportMapComponent());
+        mapComponents.add(VisibilityMapComponent.class);
+        mapComponents.add(BrightnessComponent.class);
+        mapComponents.add(DataMgmtMapComponent.class);
+        mapComponents.add(ImportExportMapComponent.class);
         // UserMapComponent & CotMapComponent create MapGroups used by other components
-        activity.registerMapComponent(new UserMapComponent());
-        activity.registerMapComponent(new CotMapComponent());
-        activity.registerMapComponent(new MenuMapComponent());
-        activity.registerMapComponent(new ElevationMapComponent());
-        activity.registerMapComponent(new TargetBubbleMapComponent());
-        activity.registerMapComponent(new DangerCloseMapComponent());
-        activity.registerMapComponent(new WarningMapComponent());
+        mapComponents.add(UserMapComponent.class);
+        mapComponents.add(CotMapComponent.class);
+        mapComponents.add(MenuMapComponent.class);
+        mapComponents.add(ElevationMapComponent.class);
+        mapComponents.add(TargetBubbleMapComponent.class);
+        mapComponents.add(DangerCloseMapComponent.class);
+        mapComponents.add(WarningMapComponent.class);
 
-        FlavorComponentLoader.loadFires(activity);
-
-        activity.registerMapComponent(new VideoMapComponent());
+        mapComponents.add(VideoMapComponent.class);
         // ChatManagerMapComponent after CotMapComponent
-        activity.registerMapComponent(new ChatManagerMapComponent());
-        activity.registerMapComponent(new ToolbarMapComponent());
-        activity.registerMapComponent(new IconsMapComponent());
-        activity.registerMapComponent(new ImageMapComponent());
-        activity.registerMapComponent(new CoTInfoMapComponent());
-        activity.registerMapComponent(new HostileManagerMapComponent());
-        activity.registerMapComponent(new OffScreenIndicatorsMapComponent());
+        mapComponents.add(ChatManagerMapComponent.class);
+        mapComponents.add(ToolbarMapComponent.class);
+        mapComponents.add(IconsMapComponent.class);
+        mapComponents.add(ImageMapComponent.class);
+        mapComponents.add(CoTInfoMapComponent.class);
+        mapComponents.add(HostileManagerMapComponent.class);
+        mapComponents.add(OffScreenIndicatorsMapComponent.class);
 
         // Layer SPI / API components
 
-        activity.registerMapComponent(new TilesetMapComponent());
-        activity.registerMapComponent(new NativeRenderingMapComponent());
+        mapComponents.add(TilesetMapComponent.class);
+        mapComponents.add(NativeRenderingMapComponent.class);
 
         // The LayersMapComponent should be created after all layer SPI components
         // as it will kick off a layer scan.
 
-        activity.registerMapComponent(new LayersMapComponent());
+        mapComponents.add(LayersMapComponent.class);
 
-        activity.registerMapComponent(new LRFMapComponent());
-        activity.registerMapComponent(new FiresMapComponent());
-        activity.registerMapComponent(new CoordOverlayMapComponent());
-        activity.registerMapComponent(new WarningComponent());
-        activity.registerMapComponent(new GridLinesMapComponent());
-        activity.registerMapComponent(new JumpBridgeMapComponent());
-        activity.registerMapComponent(new ElevationOverlaysMapComponent());
-        activity.registerMapComponent(new DropDownManagerMapComponent());
-        activity.registerMapComponent(new PairingLineMapComponent());
-        activity.registerMapComponent(new RouteMapComponent());
-        activity.registerMapComponent(new CompassRingMapComponent());
-        activity.registerMapComponent(new TrackHistoryComponent());
-        activity.registerMapComponent(new WktMapComponent());
-        activity.registerMapComponent(new ViewshedMapComponent());
-        activity.registerMapComponent(new HierarchyMapComponent());
-        activity.registerMapComponent(new RangeAndBearingMapComponent());
-        activity.registerMapComponent(new BloodHoundMapComponent());
-        activity.registerMapComponent(new MedicalLineMapComponent());
-        activity.registerMapComponent(new DrawingToolsMapComponent());
-        activity.registerMapComponent(new CompassArrowMapComponent());
-        activity.registerMapComponent(new RadioMapComponent());
-        activity.registerMapComponent(new MissionPackageMapComponent());
-        activity.registerMapComponent(new QuickPicMapComponent());
-        activity.registerMapComponent(new MapCoreIntentsComponent());
-        activity.registerMapComponent(new ApkUpdateComponent());
-        activity.registerMapComponent(new GeoFenceComponent());
-        activity.registerMapComponent(new EmergencyAlertComponent());
-        activity.registerMapComponent(new EmergencyLifecycleListener());
-        activity.registerMapComponent(new WFSMapComponent());
-        activity.registerMapComponent(new MultiplePairingLineMapComponent());
-
-        FlavorComponentLoader.loadSlant(activity);
+        mapComponents.add(LRFMapComponent.class);
+        mapComponents.add(FiresMapComponent.class);
+        mapComponents.add(CoordOverlayMapComponent.class);
+        mapComponents.add(WarningComponent.class);
+        mapComponents.add(GridLinesMapComponent.class);
+        mapComponents.add(JumpBridgeMapComponent.class);
+        mapComponents.add(ElevationOverlaysMapComponent.class);
+        mapComponents.add(DropDownManagerMapComponent.class);
+        mapComponents.add(PairingLineMapComponent.class);
+        mapComponents.add(RouteMapComponent.class);
+        mapComponents.add(CompassRingMapComponent.class);
+        mapComponents.add(TrackHistoryComponent.class);
+        mapComponents.add(WktMapComponent.class);
+        mapComponents.add(ViewshedMapComponent.class);
+        mapComponents.add(HierarchyMapComponent.class);
+        mapComponents.add(RangeAndBearingMapComponent.class);
+        mapComponents.add(BloodHoundMapComponent.class);
+        mapComponents.add(MedicalLineMapComponent.class);
+        mapComponents.add(DrawingToolsMapComponent.class);
+        mapComponents.add(CompassArrowMapComponent.class);
+        mapComponents.add(RadioMapComponent.class);
+        mapComponents.add(MissionPackageMapComponent.class);
+        mapComponents.add(QuickPicMapComponent.class);
+        mapComponents.add(MapCoreIntentsComponent.class);
+        mapComponents.add(ApkUpdateComponent.class);
+        mapComponents.add(GeoFenceComponent.class);
+        mapComponents.add(EmergencyAlertComponent.class);
+        mapComponents.add(EmergencyLifecycleListener.class);
+        mapComponents.add(WFSMapComponent.class);
+        mapComponents.add(MultiplePairingLineMapComponent.class);
 
         // Night Vision Component must be placed after Location
-        activity.registerMapComponent(new NightVisionMapWidgetComponent());
-        activity.registerMapComponent(new ResectionMapComponent());
-        activity.registerMapComponent(new MetricReportMapComponent());
+        mapComponents.add(NightVisionMapWidgetComponent.class);
+        mapComponents.add(ResectionMapComponent.class);
+        mapComponents.add(MetricReportMapComponent.class);
 
         // Fire up the state saver last for the internal components.
 
-        activity.registerMapComponent(new StateSaver());
+        mapComponents.add(StateSaver.class);
 
-        activity.registerMapComponent(new GeopackageMapComponent());
-        activity.registerMapComponent(new ModelMapComponent());
-        activity.registerMapComponent(new RubberSheetMapComponent());
-        activity.registerMapComponent(new HashtagMapComponent());
+        mapComponents.add(GeopackageMapComponent.class);
+        mapComponents.add(ModelMapComponent.class);
+        mapComponents.add(RubberSheetMapComponent.class);
+        mapComponents.add(HashtagMapComponent.class);
 
         // Vehicle shapes and overhead markers
-        activity.registerMapComponent(new VehicleMapComponent());
+        mapComponents.add(VehicleMapComponent.class);
 
         // Load up all of the external components, when this is complete it will trigger the
         // state saver to unroll all of the map components.
 
-        activity.registerMapComponent(new PluginMapComponent());
+        mapComponents.add(PluginMapComponent.class);
+
+    }
+
+    static void loadGLWidgets(MapActivity activity) {
+        activity.registerMapComponent(new GLWidgetsMapComponent());
+    }
+
+    /**
+     * Allows for a system flavor to register a MapComponent that should be instantiated after an
+     * existing component.  If component specified to be loaded after does not exist, the supplied
+     * map component will be loaded at the end.
+     * @param mapComponent The MapComponent to load
+     * @param c the class to load this immediately after.  If c is null, then the mapComponent is
+     *          loaded at the very end.
+     */
+    public static void registerComponentAfter(final Class mapComponent,
+            final Class c) {
+
+        SystemComponentLoader.securityCheck();
+        if (c == null) {
+            mapComponents.add(mapComponent);
+            return;
+        }
+
+        for (int i = 0; i < mapComponents.size(); ++i) {
+            if (c == mapComponents.get(i)) {
+                if (i + 1 < mapComponents.size()) {
+                    mapComponents.add(i + 1, mapComponent);
+                } else {
+                    mapComponents.add(c);
+                }
+                return;
+
+            }
+        }
+    }
+
+    static void loadMapComponents(MapActivity activity) {
+
+        // JSON preference file serialization and reading
+        JSONPreferenceControl.getInstance().initDefaults(activity.getMapView());
+
+        for (Class component : mapComponents) {
+            try {
+                activity.registerMapComponent(
+                        (MapComponent) component.newInstance());
+            } catch (Throwable t) {
+                Log.e(TAG, "error loading: " + component);
+            }
+        }
+
     }
 }

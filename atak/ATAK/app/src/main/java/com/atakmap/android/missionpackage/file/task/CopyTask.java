@@ -7,7 +7,7 @@ import com.atakmap.android.missionpackage.MissionPackageReceiver;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -61,8 +61,8 @@ public class CopyTask extends MissionPackageBaseTask {
         // copy to private directory in the "transfer" folder
         File parent = new File(_receiver.getComponent().getFileIO()
                 .getMissionPackageTransferPath(), UUID.randomUUID().toString());
-        if (!FileIOProviderFactory.exists(parent)) {
-            if (!FileIOProviderFactory.mkdirs(parent)) {
+        if (!IOProviderFactory.exists(parent)) {
+            if (!IOProviderFactory.mkdirs(parent)) {
                 Log.d(TAG, "Failed to make dir at " + parent.getAbsolutePath());
             }
         }
@@ -76,8 +76,8 @@ public class CopyTask extends MissionPackageBaseTask {
         FileOutputStream fos = null;
         try {
             FileSystemUtils.copyStream(
-                    fis = FileIOProviderFactory.getInputStream(source),
-                    fos = FileIOProviderFactory.getOutputStream(_destination));
+                    fis = IOProviderFactory.getInputStream(source),
+                    fos = IOProviderFactory.getOutputStream(_destination));
         } catch (Exception e) {
             Log.w(TAG, "Failed to deploy (1) to: " + _destination, e);
             cancel("Failed to deploy "

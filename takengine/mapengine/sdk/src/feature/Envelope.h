@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Three-dimensional bounding box.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Dec 3, 2014
+////      Dec 3, 2014   scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -29,6 +29,8 @@
 ////    INCLUDES AND MACROS                                                 ////
 ////                                                                        ////
 ////========================================================================////
+
+#include "port/Platform.h"
 
 ////========================================================================////
 ////                                                                        ////
@@ -52,7 +54,7 @@ namespace feature                       // Open feature namespace.
 struct Envelope
   {
     Envelope()
-      throw()
+      NOTHROWS
       : minX (0),
         minY (0),
         minZ (0),
@@ -67,7 +69,7 @@ struct Envelope
               double maxX,
               double maxY,
               double maxZ)
-        throw ()
+        NOTHROWS
       : minX (minX),
         minY (minY),
         minZ (minZ),

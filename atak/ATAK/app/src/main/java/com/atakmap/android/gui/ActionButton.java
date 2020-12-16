@@ -25,11 +25,11 @@ import com.atakmap.app.R;
  */
 public class ActionButton {
 
-    private View _root;
-    private TextView _title;
-    private TextView _selectedText;
+    private final View _root;
+    private final TextView _title;
+    private final TextView _selectedText;
     private boolean _enabled = true;
-    private ImageView _icon;
+    private final ImageView _icon;
 
     public ActionButton(View root) {
         _root = root;

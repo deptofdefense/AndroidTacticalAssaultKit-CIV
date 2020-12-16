@@ -18,7 +18,7 @@ BlobImpl::BlobImpl(const uint8_t *begin, const uint8_t *end, void (* cleanup)(Bl
 BlobImpl::BlobImpl(const uint8_t *begin, const uint8_t *end)
 : first(begin), second(end), cleanup(nullptr) { }
 
-BlobImpl::BlobImpl(BlobImpl &&temp)
+BlobImpl::BlobImpl(BlobImpl &&temp) NOTHROWS
 : first(temp.first), second(temp.second), cleanup(temp.cleanup) {
     cleanup = nullptr;
 }

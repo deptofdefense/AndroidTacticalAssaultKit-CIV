@@ -4,7 +4,7 @@ package com.atakmap.android.model;
 import com.atakmap.android.data.FileContentResolver;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.model.opengl.GLModelLayer;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureCursor;
@@ -46,7 +46,7 @@ public class ModelContentResolver extends FileContentResolver {
             return;
         String path = featureSet.getName();
         File f = new File(path);
-        if (!FileIOProviderFactory.exists(f))
+        if (!IOProviderFactory.exists(f))
             return;
         addHandler(new ModelContentHandler(_mapView, f, _dataStore,
                 featureSet, bounds));

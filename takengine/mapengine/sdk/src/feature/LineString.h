@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Concrete class representing a 2D or 3D line string.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Dec 10, 2014
+////      Dec 10, 2014  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -82,7 +82,7 @@ class ENGINE_API LineString
       { }
 
     ~LineString ()
-        throw ()
+        NOTHROWS
       { }
 
     //
@@ -152,7 +152,7 @@ class ENGINE_API LineString
     std::size_t
     getPointCount ()
         const
-        throw ()
+        NOTHROWS
       { return count; }
 
     //
@@ -192,7 +192,7 @@ class ENGINE_API LineString
     bool
     isClosed ()
         const
-        throw ();
+        NOTHROWS;
 
     //
     // Sets the point at the supplied index to the supplied Point.

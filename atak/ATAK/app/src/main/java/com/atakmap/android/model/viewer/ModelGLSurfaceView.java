@@ -18,7 +18,7 @@ public class ModelGLSurfaceView extends GLSurfaceView {
     private float previousYp2;
     private float density;
 
-    private ScaleGestureDetector zoomDetector;
+    private final ScaleGestureDetector zoomDetector;
 
     public ModelGLSurfaceView(Context context) {
         super(context);

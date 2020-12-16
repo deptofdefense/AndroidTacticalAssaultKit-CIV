@@ -8,20 +8,13 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.opengl.GLES30;
 
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.lang.Unsafe;
-import com.atakmap.map.AtakMapView;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.feature.Feature;
-import com.atakmap.map.layer.feature.geometry.GeometryCollection;
-import com.atakmap.map.layer.feature.geometry.GeometryFactory;
-import com.atakmap.map.layer.feature.geometry.Point;
-import com.atakmap.map.layer.feature.geometry.Polygon;
 import com.atakmap.map.layer.feature.style.PatternStrokeStyle;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Envelope;
@@ -31,11 +24,11 @@ import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
 import com.atakmap.map.layer.feature.style.CompositeStyle;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
-import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
+import com.atakmap.math.PointD;
+import com.atakmap.map.opengl.GLAntiAliasedLine;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLRenderBatch2;
-import com.atakmap.opengl.GLTexture;
 import com.atakmap.opengl.Tessellate;
 
 public class GLBatchLineString extends GLBatchGeometry {
@@ -73,6 +66,8 @@ public class GLBatchLineString extends GLBatchGeometry {
         DEFAULT_RS.strokeColorB = 1.0f;
         DEFAULT_RS.strokeColorA = 1.0f;
         DEFAULT_RS.strokeColor = 0xFFFFFFFF;
+        DEFAULT_RS.pattern = (short)0xFFFF;
+        DEFAULT_RS.factor = 1;
     }
     private final static String TAG = "GLLineString";
 
@@ -103,6 +98,8 @@ public class GLBatchLineString extends GLBatchGeometry {
     
     Envelope mbb;
 
+    PointD centroidProj = new PointD(0d, 0d, 0d);
+
     private double unwrap;
     private boolean needsTessellate;
     protected boolean tessellated;
@@ -112,7 +109,10 @@ public class GLBatchLineString extends GLBatchGeometry {
 
     protected Feature.AltitudeMode altitudeMode;
     protected double extrude = 0d;
-    
+
+    private boolean _aalineDirty;
+    private GLAntiAliasedLine _lineRenderer;
+
     public GLBatchLineString(GLMapSurface surface) {
         this(surface.getGLMapView());
     }
@@ -143,6 +143,7 @@ public class GLBatchLineString extends GLBatchGeometry {
         this.tessellated = false;
         this.tessellationEnabled = true;
         this.tessellationMode = Tessellate.Mode.WGS84;
+        _aalineDirty = true;
     }
 
     @Override
@@ -182,8 +183,49 @@ public class GLBatchLineString extends GLBatchGeometry {
         if(s instanceof CompositeStyle) {
             CompositeStyle c = (CompositeStyle)s;
             final int numStyles = c.getNumStyles();
-            for(int i = 0; i < numStyles; i++)
+            // XXX - stroke definition should reside as a single style
+            //       definition. The composition based approach offers some
+            //       nice flexibility, but consumption and rendering would
+            //       be much better served with a unified representation.
+
+            final int olen = states.size();
+            for (int i = 0; i < numStyles; i++)
                 getRenderStates(ctx, c.getStyle(i), states);
+
+            // look for outline emulation
+            if(states.size() == olen+2) {
+                final RenderState a = states.get(olen);
+                final RenderState b = states.get(olen+1);
+                if(a.pattern == b.pattern && // same pattern definition
+                   a.factor == b.factor &&
+                   a.outlineWidth == 0f && // neither are outlined
+                   b.outlineWidth == 0 &&
+                   a.strokeWidth > b.strokeWidth // `a` is stroked wider than `b`
+                    ) {
+
+                    RenderState outlined = new RenderState();
+                    // stroke
+                    outlined.strokeWidth = b.strokeWidth;
+                    outlined.strokeColor = b.strokeColor;
+                    outlined.strokeColorR = b.strokeColorR;
+                    outlined.strokeColorG = b.strokeColorG;
+                    outlined.strokeColorB = b.strokeColorB;
+                    outlined.strokeColorA = b.strokeColorA;
+                    // outline
+                    outlined.outlineWidth = (a.strokeWidth-b.strokeWidth) / 2f;
+                    outlined.outlineColor = a.strokeColor;
+                    outlined.outlineColorR = a.strokeColorR;
+                    outlined.outlineColorG = a.strokeColorG;
+                    outlined.outlineColorB = a.strokeColorB;
+                    outlined.outlineColorA = a.strokeColorA;
+                    // pattern
+                    outlined.pattern = b.pattern;
+                    outlined.factor = b.factor;
+
+                    states.remove(states.size()-1);
+                    states.set(states.size()-1, outlined);
+                }
+            }
         } else if(s instanceof BasicStrokeStyle) {
             BasicStrokeStyle basicStroke = (BasicStrokeStyle)s;
             RenderState rs = new RenderState();
@@ -203,36 +245,10 @@ public class GLBatchLineString extends GLBatchGeometry {
             rs.strokeColorG = Color.green(rs.strokeColor) / 255f;
             rs.strokeColorB = Color.blue(rs.strokeColor) / 255f;
             rs.strokeColorA = Color.alpha(rs.strokeColor) / 255f;
+            rs.factor = ps.getFactor();
+            rs.pattern = (short)ps.getPattern();
             states.add(rs);
-
-            if(ctx.isRenderThread())
-                glInitPattern(ps, rs);
-            else
-                ctx.queueEvent(new Runnable() {
-                    public void run() { glInitPattern(ps, rs); }
-                });
         }
-    }
-
-    private static void glInitPattern(PatternStrokeStyle ps, RenderState rs) {
-        long pattern = ps.getPattern();
-        final int len = ps.getPatternLength();
-
-        Bitmap b = Bitmap.createBitmap(1, len, Bitmap.Config.ARGB_8888);
-        int[] px = new int[len];
-        for(int i = 0; i < len; i++) {
-            final int p = (int)(pattern&0x01);
-            pattern >>>= 1;
-            b.setPixel(0, i, p*-1);
-            px[i] = p;
-        }
-
-        rs.pattern = new GLTexture(b.getWidth(), b.getHeight(), b.getConfig());
-        rs.pattern.setWrapS(GLES30.GL_MIRRORED_REPEAT);
-        rs.pattern.setWrapT(GLES30.GL_MIRRORED_REPEAT);
-        rs.pattern.load(b);
-        rs.patternHeight = b.getHeight();
-        b.recycle();
     }
 
     @Override
@@ -398,9 +414,10 @@ public class GLBatchLineString extends GLBatchGeometry {
 
 
         // force tessellation sync
-            this.tessellated = !this.needsTessellate;
+        this.tessellated = !this.needsTessellate;
 
-            this.validateGeometry();
+        this.validateGeometry();
+        _aalineDirty = true;
     }
 
     protected boolean validateGeometry() {
@@ -451,6 +468,7 @@ public class GLBatchLineString extends GLBatchGeometry {
             this.projectedVerticesSrid = -1;
             this.verticesDrawVersion = -1;
             this.vertexType = -1;
+            _aalineDirty = true;
 
             return true;
         }
@@ -488,7 +506,8 @@ public class GLBatchLineString extends GLBatchGeometry {
                             vertices,
                             altitudeMode,
                             unwrap,
-                            this.vertices);
+                            this.vertices,
+                            centroidProj);
 
                     retval = true;
                 }
@@ -507,7 +526,8 @@ public class GLBatchLineString extends GLBatchGeometry {
                                         vertices,
                                         altitudeMode,
                                         unwrap,
-                                        this.vertices);
+                                        this.vertices,
+                                        centroidProj);
 
                     this.projectedVerticesSrid = view.drawSrid;
                     this.unwrap = unwrap;
@@ -534,7 +554,7 @@ public class GLBatchLineString extends GLBatchGeometry {
         return true;
     }
 
-    final static void projectVerticesImpl(GLMapView view, DoubleBuffer points, int numPoints, int type, Feature.AltitudeMode altitudeMode, double unwrap, FloatBuffer vertices) {
+    final static void projectVerticesImpl(GLMapView view, DoubleBuffer points, int numPoints, int type, Feature.AltitudeMode altitudeMode, double unwrap, FloatBuffer vertices, PointD centroidProj) {
         switch(type) {
             case GLGeometry.VERTICES_PIXEL :
                 vertices.clear();
@@ -578,9 +598,9 @@ public class GLBatchLineString extends GLBatchGeometry {
 
                     view.scratch.geo.set(lat, lng, alt);
                     view.scene.mapProjection.forward(view.scratch.geo, view.scratch.pointD);
-                    vertices.put((float)view.scratch.pointD.x);
-                    vertices.put((float)view.scratch.pointD.y);
-                    vertices.put((float)view.scratch.pointD.z);
+                    vertices.put((float)(view.scratch.pointD.x-centroidProj.x));
+                    vertices.put((float)(view.scratch.pointD.y-centroidProj.y));
+                    vertices.put((float)(view.scratch.pointD.z-centroidProj.z));
                 }
 
                 vertices.flip();
@@ -592,17 +612,8 @@ public class GLBatchLineString extends GLBatchGeometry {
 
     @Override
     public final void draw(GLMapView view) {
-        if(false) {
-        GLES20FixedPipeline.glPushMatrix();
-        GLES20FixedPipeline.glLoadMatrixf(view.sceneModelForwardMatrix, 0);
-        this.draw(view, GLGeometry.VERTICES_PROJECTED);
-        GLES20FixedPipeline.glPopMatrix();
-        } else {
-            GLES20FixedPipeline.glPushMatrix();
-            GLES20FixedPipeline.glLoadIdentity();
-            this.draw(view, GLGeometry.VERTICES_PIXEL);
-            GLES20FixedPipeline.glPopMatrix();
-        }
+
+        this.draw(view, GLGeometry.VERTICES_PIXEL);
     }
     
     /**
@@ -611,103 +622,49 @@ public class GLBatchLineString extends GLBatchGeometry {
      * @param view
      */
     public void draw(GLMapView view, int vertices) {
-        this.projectVertices(view, vertices);
         FloatBuffer v = this.vertices;
         if(v == null)
             return;
+
+        this.needsTessellate = (view.drawSrid == 4978) && this.tessellationEnabled;
+        this.validateGeometry();
 
         this.drawImpl(view, v, 3);
     }
     
     protected void drawImpl(GLMapView view, FloatBuffer v, int size) {
-        GLES20FixedPipeline.glEnable(GLES20FixedPipeline.GL_BLEND);
-        GLES20FixedPipeline.glBlendFunc(GLES20FixedPipeline.GL_SRC_ALPHA,
-                GLES20FixedPipeline.GL_ONE_MINUS_SRC_ALPHA);
-
-        GLES20FixedPipeline.glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-
-        GLES20FixedPipeline.glVertexPointer(size, GLES20FixedPipeline.GL_FLOAT, 0, v);
-
         final RenderState[] toDraw = this.renderStates;
         if(toDraw == null) {
-            drawImpl(DEFAULT_RS);
+            drawImpl(view, DEFAULT_RS);
         } else {
             for(RenderState rs : toDraw) {
-                final boolean textured = rs.pattern != null;
-                if(!textured)
-                    drawImpl(rs);
-                else
-                    drawImplTextured(rs);
+                drawImpl(view, rs);
             }
         }
-
-        GLES20FixedPipeline.glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-
-        GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_BLEND);
     }
 
-    private void drawImpl(RenderState rs) {
-        GLES20FixedPipeline.glColor4f(rs.strokeColorR,
-                                      rs.strokeColorG,
-                                      rs.strokeColorB,
-                                      rs.strokeColorA);
-
-        GLES20FixedPipeline.glLineWidth(rs.strokeWidth);
-        GLES20FixedPipeline.glDrawArrays(GLES20FixedPipeline.GL_LINE_STRIP, 0,
-                this.numRenderPoints);
-    }
-
-    private void drawImplTextured(RenderState rs) {
-        projectTexture(rs);
-
-        GLES20FixedPipeline.glEnableClientState(GLES20FixedPipeline.GL_TEXTURE_COORD_ARRAY);
-        GLES20FixedPipeline.glTexCoordPointer(2, GLES20FixedPipeline.GL_FLOAT, 0, rs.textureCoordinates);
-        GLES20FixedPipeline.glBindTexture(GLES20FixedPipeline.GL_TEXTURE_2D, rs.pattern.getTexId());
-        GLES20FixedPipeline.glColor4f(rs.strokeColorR,
-                rs.strokeColorG,
-                rs.strokeColorB,
-                rs.strokeColorA);
-
-        GLES20FixedPipeline.glLineWidth(rs.strokeWidth);
-        GLES20FixedPipeline.glDrawArrays(GLES20FixedPipeline.GL_LINE_STRIP, 0,
-                this.numRenderPoints);
-        GLES20FixedPipeline.glDisableClientState(GLES20FixedPipeline.GL_TEXTURE_COORD_ARRAY);
-    }
-
-    private void drawImplTextured2(GLMapView view, FloatBuffer v, int size, RenderState rs) {
-        PatternShader shader = PatternShader.get(view);
-        GLES30.glUseProgram(shader.handle);
-        // set up uniforms
-        GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_PROJECTION, view.scratch.matrixF, 0);
-        GLES30.glUniformMatrix4fv(shader.uProjection, 1, false, view.scratch.matrixF, 0);
-        GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_MODELVIEW, view.scratch.matrixF, 0);
-        GLES30.glUniformMatrix4fv(shader.uModelView, 1, false, view.scratch.matrixF, 0);
-        GLES30.glUniform1f(shader.uViewportWidth, (view._right-view._left));
-        GLES30.glUniform1f(shader.uViewportHeight, (view._top-view._bottom));
-        GLES30.glUniform4f(shader.uColor, rs.strokeColorR, rs.strokeColorG, rs.strokeColorB, rs.strokeColorA);
-        int[] texunit = new int[1];
-        GLES30.glGetIntegerv(GLES30.GL_ACTIVE_TEXTURE, texunit, 0);
-        GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, rs.pattern.getTexId());
-        GLES30.glUniform1i(shader.uTexture, texunit[0]-GLES30.GL_TEXTURE0);
-
-        // set up attribs
-        GLES30.glEnableVertexAttribArray(shader.aVertexCoords);
-        GLES30.glVertexAttribPointer(shader.aVertexCoords, 3, GLES30.GL_FLOAT, false, 12, vertices);
-
-        // set line width
-        GLES30.glLineWidth(rs.strokeWidth*GLRenderGlobals.getRelativeScaling());
-
-        // draw
-        FloatBuffer startVertexCoord = vertices.duplicate();
-        for(int i = 0; i < this.numRenderPoints-1; i++) {
-            GLES30.glUniform3fv(shader.uStartVertexCoord, 1, startVertexCoord);
-            GLES30.glDrawArrays(GLES20FixedPipeline.GL_LINE_STRIP, i, 2);
-            startVertexCoord.position(startVertexCoord.position()+3);
+    private void drawImpl(GLMapView view, RenderState rs) {
+        if(_aalineDirty) {
+            if(_lineRenderer == null)
+                _lineRenderer = new GLAntiAliasedLine();
+            _lineRenderer.setLineData(this.renderPoints, 3, GLAntiAliasedLine.ConnectionType.AS_IS, altitudeMode);
+            _aalineDirty = false;
         }
-
-        // reset program
-        GLES30.glDisableVertexAttribArray(shader.aVertexCoords);
-        GLES30.glUseProgram(0);
+        _lineRenderer.draw(view,
+                           // pattern
+                           rs.factor, rs.pattern,
+                           // stroke
+                           rs.strokeColorR,
+                           rs.strokeColorG,
+                           rs.strokeColorB,
+                           rs.strokeColorA,
+                           rs.strokeWidth,
+                           // outline
+                           rs.outlineColorR,
+                           rs.outlineColorG,
+                           rs.outlineColorB,
+                           rs.outlineColorA,
+                           rs.outlineWidth);
     }
 
     @Override
@@ -730,6 +687,12 @@ public class GLBatchLineString extends GLBatchGeometry {
         this.vertexType = -1;
 
         this.tessellated = !this.needsTessellate;
+
+        _aalineDirty = true;
+        if(_lineRenderer != null) {
+            _lineRenderer.release();
+            _lineRenderer = null;
+    }
     }
 
     @Override
@@ -789,95 +752,23 @@ public class GLBatchLineString extends GLBatchGeometry {
         return GLMapView.RENDER_PASS_SURFACE; 
     }
 
-    private void projectTexture(RenderState rs) {
-        if (rs.textureCoordinates == null || rs.textureCoordinates.capacity() < (numRenderPoints-1)*4)
-            rs.textureCoordinates = Unsafe.allocateDirect((numRenderPoints-1)*4, FloatBuffer.class);
-
-        rs.textureCoordinates.clear();
-
-        float p0x, p0y;
-        float p1x, p1y;
-
-        int index = 0;
-        final int limit = this.numRenderPoints - 1;
-        for (int i = 0; i < limit; i++) {
-            // NOTE: points have already been projected to vertices
-
-            p0x = vertices.get(i * 3);
-            p0y = vertices.get(i * 3 + 1);
-
-            p1x = vertices.get((i+1) * 3);
-            p1y = vertices.get((i+1) * 3 + 1);
-
-            // dash length and spacing magic happens here
-            rs.textureCoordinates.put(0f);
-            rs.textureCoordinates.put(0f);
-            rs.textureCoordinates.put(1f);
-            rs.textureCoordinates.put((float) Math
-                    .sqrt(((p1x - p0x) * (p1x - p0x))
-                            + ((p1y - p0y) * (p1y - p0y)))
-                    / rs.patternHeight);
-        }
-
-        rs.textureCoordinates.flip();
-    }
-
     static class RenderState {
+        // stroke
         float strokeWidth;
         float strokeColorR;
         float strokeColorG;
         float strokeColorB;
         float strokeColorA;
         int strokeColor;
-        GLTexture pattern;
-        float patternHeight;
-        FloatBuffer textureCoordinates;
-    }
-
-    static class PatternShader {
-        static PatternShader instance;
-
-        int handle;
-        // vertex shader
-        int uProjection;
-        int uModelView;
-        int uViewportWidth;
-        int uViewportHeight;
-        int aVertexCoords;
-        int uStartVertexCoord;
-        // fragment shader
-        int uTexture;
-        int uColor;
-
-        PatternShader() {
-            int vsh = GLES20FixedPipeline.GL_NONE;
-            int fsh = GLES20FixedPipeline.GL_NONE;
-            try {
-                vsh = GLES20FixedPipeline.loadShader(GLES30.GL_VERTEX_SHADER, PATTERN_VERTEX_SHADER);
-                fsh = GLES20FixedPipeline.loadShader(GLES30.GL_FRAGMENT_SHADER, PATTERN_FRAGMENT_SHADER);
-                handle = GLES20FixedPipeline.createProgram(vsh, fsh);
-            } finally {
-                if(vsh != GLES30.GL_NONE)
-                    GLES30.glDeleteShader(vsh);
-                if(fsh != GLES30.GL_NONE)
-                    GLES30.glDeleteShader(fsh);
-            }
-
-            GLES30.glUseProgram(handle);
-            uProjection = GLES30.glGetUniformLocation(handle, "uProjection");
-            uModelView = GLES30.glGetUniformLocation(handle, "uModelView");
-            uViewportWidth = GLES30.glGetUniformLocation(handle, "uViewportWidth");
-            uViewportHeight = GLES30.glGetUniformLocation(handle, "uViewportHeight");
-            uTexture = GLES30.glGetUniformLocation(handle, "uTexture");
-            uColor = GLES30.glGetUniformLocation(handle, "uColor");
-            aVertexCoords = GLES30.glGetAttribLocation(handle, "aVertexCoords");
-            uStartVertexCoord = GLES30.glGetAttribLocation(handle, "uStartVertexCoord");
-        }
-
-        static PatternShader get(MapRenderer ctx) {
-            if(instance == null)
-                instance = new PatternShader();
-            return instance;
-        }
+        // outline
+        float outlineWidth;
+        float outlineColorR;
+        float outlineColorG;
+        float outlineColorB;
+        float outlineColorA;
+        int outlineColor;
+        // pattern
+        short pattern = (short)0xFFFF;
+        int factor = 1;
     }
 }

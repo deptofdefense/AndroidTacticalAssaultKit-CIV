@@ -480,7 +480,7 @@ public class CertificateManager {
                 boolean allowAllHostnames)
                 throws NoSuchAlgorithmException, KeyManagementException,
                 KeyStoreException, UnrecoverableKeyException {
-            super((KeyStore)null);
+            super((KeyStore) null);
 
             CentralTrustManager centralTrustManager = new CentralTrustManager(
                     this);
@@ -499,7 +499,7 @@ public class CertificateManager {
         public ExtendedSSLSocketFactory(SSLContext c)
                 throws UnrecoverableKeyException, NoSuchAlgorithmException,
                 KeyStoreException, KeyManagementException {
-            super((KeyStore)null);
+            super((KeyStore) null);
             sslContext = c;
         }
 

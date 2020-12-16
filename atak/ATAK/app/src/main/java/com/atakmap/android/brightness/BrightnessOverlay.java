@@ -24,7 +24,7 @@ class BrightnessOverlay implements GLMapRenderable,
 
     private final GLMapSurface _surface;
     private final AtomicInteger _brightness;
-    private Context _context;
+    private final Context _context;
     private final SharedPreferences prefs;
 
     private static final FloatBuffer _vertexCoords;

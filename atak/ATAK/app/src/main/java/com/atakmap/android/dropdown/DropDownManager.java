@@ -172,7 +172,9 @@ public class DropDownManager extends BroadcastReceiver {
                     closeRightDropDown(false, true);
                     return true;
                 } else if (rightSideStack.contains(ddr)) {
-                    Log.d(TAG, "drop down show called already on the stack, moving to the front: " +  ddr);
+                    Log.d(TAG,
+                            "drop down show called already on the stack, moving to the front: "
+                                    + ddr);
                     closeDropDown(ddr.getDropDown());
 
                     // XXX - This behavior doesn't aid the user in any way

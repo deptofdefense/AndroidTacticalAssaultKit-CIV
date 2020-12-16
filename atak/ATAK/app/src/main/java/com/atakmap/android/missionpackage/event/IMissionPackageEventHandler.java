@@ -6,11 +6,11 @@ import com.atakmap.android.missionpackage.file.MissionPackageContent;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.missionpackage.ui.MissionPackageListFileItem;
 import com.atakmap.android.missionpackage.ui.MissionPackageListGroup;
+import com.atakmap.util.zip.ZipFile;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.zip.ZipFile;
 
 /**
  * Handler for Mission Package being processed

@@ -17,7 +17,7 @@ namespace TAK {
                     size_t preferredTileWidth;
                     size_t preferredTileHeight;
                     const char *cacheUri;
-                    TileReader2::AsynchronousIO *asyncIO;
+                    std::shared_ptr<TileReader2::AsynchronousIO> asyncIO;
 
                     TileReaderFactory2Options();
                     TileReaderFactory2Options(const TileReaderFactory2Options &other);

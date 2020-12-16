@@ -38,13 +38,14 @@ public class VehicleMapComponent extends AbstractMapComponent {
 
     private MapView _mapView;
     private MapGroup _vehicleGroup;
-    private List<MapItemImporter> _importers = new ArrayList<>();
-    private List<CotDetailHandler> _detailHandlers = new ArrayList<>();
+    private final List<MapItemImporter> _importers = new ArrayList<>();
+    private final List<CotDetailHandler> _detailHandlers = new ArrayList<>();
     private VehicleModelLayer _modelLayer;
     private GLOffscreenCaptureService _captureService;
     private EnterLocationDropDownReceiver _pointDropper;
     private VehicleModelPallet _modelPallet;
     private double _mapRes;
+    private AtakMapView.OnMapMovedListener _mapMovedListener;
 
     @Override
     public void onCreate(Context context, Intent intent, final MapView view) {
@@ -69,7 +70,7 @@ public class VehicleMapComponent extends AbstractMapComponent {
         filter.addAction(VehicleMapReceiver.TOGGLE_LABEL);
         registerReceiver(context, new VehicleMapReceiver(view), filter);
 
-        view.addOnMapMovedListener(new AtakMapView.OnMapMovedListener() {
+        _mapMovedListener = new AtakMapView.OnMapMovedListener() {
             @Override
             public void onMapMoved(AtakMapView view,
                     boolean animate) {
@@ -79,7 +80,8 @@ public class VehicleMapComponent extends AbstractMapComponent {
                     updateVehicleDisplay();
                 }
             }
-        });
+        };
+        view.addOnMapMovedListener(_mapMovedListener);
 
         // Load file listing for vehicle models
         VehicleModelCache.getInstance().rescan();
@@ -92,18 +94,33 @@ public class VehicleMapComponent extends AbstractMapComponent {
         _modelPallet = new VehicleModelPallet(view);
         _pointDropper = EnterLocationDropDownReceiver.getInstance(view);
         _pointDropper.addPallet(_modelPallet, 3);
+
     }
 
     @Override
     protected void onDestroyImpl(Context context, MapView view) {
+
+        if (_mapMovedListener != null) {
+            view.removeOnMapMovedListener(_mapMovedListener);
+            _mapMovedListener = null;
+        }
         for (MapItemImporter importer : _importers)
             CotImporterManager.getInstance().unregisterImporter(importer);
+        _importers.clear();
 
         for (CotDetailHandler handler : _detailHandlers)
             CotDetailManager.getInstance().unregisterHandler(handler);
+        _detailHandlers.clear();
 
-        _modelLayer.dispose();
-        _captureService.dispose();
+        if (_modelLayer != null) {
+            _modelLayer.dispose();
+            _modelLayer = null;
+        }
+        if (_captureService != null) {
+            _captureService.dispose();
+            _captureService = null;
+        }
+
         VehicleModelCache.getInstance().dispose();
     }
 

@@ -97,10 +97,10 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
     private PointMapItem selectedLineMarker2 = null;
 
     //These hold the viewshed marker uids and their values
-    private HashMap<String, Double> radiusMap = new HashMap<>();
-    private HashMap<String, Integer> heightMap = new HashMap<>();
-    private HashMap<String, Integer> intensityMap = new HashMap<>();
-    private HashMap<String, GeoPoint> refPointMap = new HashMap<>();
+    private final HashMap<String, Double> radiusMap = new HashMap<>();
+    private final HashMap<String, Integer> heightMap = new HashMap<>();
+    private final HashMap<String, Integer> intensityMap = new HashMap<>();
+    private final HashMap<String, GeoPoint> refPointMap = new HashMap<>();
 
     private TabHost tabHost;
     private TextView markerInfoTV;
@@ -130,7 +130,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
 
     private int sampleRate = 4;
 
-    private LimitingThread intensityLT;
+    private final LimitingThread intensityLT;
 
     public ViewshedDropDownReceiver(final MapView mapView) {
         super(mapView);
@@ -1510,7 +1510,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
     /**
      * Broadcast the intent to calculate and show the Viewhsed
      */
-    public void showViewshed(PointMapItem vsdMarker) {
+    public void showViewshed(final PointMapItem vsdMarker) {
 
         if (vsdMarker == null)
             return;
@@ -1555,71 +1555,75 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
                 GeoPoint.UNKNOWN);
         refPointMap.put(vsdMarker.getUID(), refPoint);
 
-        String opPref = prefs.getString(
+        final String opPref = prefs.getString(
                 ViewShedReceiver.VIEWSHED_PREFERENCE_COLOR_INTENSITY_KEY, "50");
 
-        //ensure new viewsheds are visible by ensuring intensity is at least 10
-        int intensity;
-        if (Integer.parseInt(opPref) < 10) {
-            intensity = 10;
-            intensityMap.put(vsdMarker.getUID(), intensity);
-            intensityPercentageET.setText(String.valueOf(intensity));
-        } else {
-            intensity = Integer.parseInt(opPref);
-        }
-        intensityPercentageET.setText(String.valueOf(intensity));
-        intensitySeek.setProgress(intensity);
-        intensityMap.put(vsdMarker.getUID(), intensity);
+        final GeoPoint finalRefPoint = refPoint;
 
-        double radius;
-        if (radiusET.getText().length() == 0)
-            return;
-
-        try {
-            radius = Double.parseDouble(radiusET.getText().toString());
-        } catch (Exception e) {
-            Toast.makeText(
-                    getMapView().getContext(),
-                    getMapView().getContext().getString(
-                            R.string.radius_num_warn),
-                    Toast.LENGTH_SHORT).show();
-            return;
-        }
-        if (radius < 1 || radius > MAX_RADIUS) {
-            Toast.makeText(
-                    getMapView().getContext(),
-                    getMapView().getContext().getString(
-                            R.string.radius_1_to_40000),
-                    Toast.LENGTH_SHORT).show();
-            return;
-        }
-        prefs.edit()
-                .putInt(ViewShedReceiver.VIEWSHED_PREFERENCE_RADIUS_KEY,
-                        (int) radius)
-                .apply();
-        radiusMap.put(vsdMarker.getUID(), radius);
-
-        ElevationOverlaysMapComponent.setHeatMapVisible(false);
-        showHideHeatmapCB.setChecked(false);
-
-        Intent i = new Intent(ViewShedReceiver.ACTION_SHOW_VIEWSHED);
-        i.putExtra(ViewShedReceiver.VIEWSHED_UID, vsdMarker.getUID());
-        i.putExtra(ViewShedReceiver.EXTRA_ELEV_POINT, refPoint);
-        i.putExtra(ViewShedReceiver.EXTRA_ELEV_RADIUS, radius);
-        i.putExtra(ViewShedReceiver.EXTRA_ELEV_OPACITY, intensity);
-
-        AtakBroadcast.getInstance().sendBroadcast(i);
-        showingViewshed = true;
         getMapView().post(new Runnable() {
             @Override
             public void run() {
+
+                //ensure new viewsheds are visible by ensuring intensity is at least 10
+                int intensity;
+                if (Integer.parseInt(opPref) < 10) {
+                    intensity = 10;
+                    intensityMap.put(vsdMarker.getUID(), intensity);
+                    intensityPercentageET.setText(String.valueOf(intensity));
+                } else {
+                    intensity = Integer.parseInt(opPref);
+                }
+                intensityPercentageET.setText(String.valueOf(intensity));
+                intensitySeek.setProgress(intensity);
+                intensityMap.put(vsdMarker.getUID(), intensity);
+
+                double radius;
+                if (radiusET.getText().length() == 0)
+                    return;
+
+                try {
+                    radius = Double.parseDouble(radiusET.getText().toString());
+                } catch (Exception e) {
+                    Toast.makeText(
+                            getMapView().getContext(),
+                            getMapView().getContext().getString(
+                                    R.string.radius_num_warn),
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (radius < 1 || radius > MAX_RADIUS) {
+                    Toast.makeText(
+                            getMapView().getContext(),
+                            getMapView().getContext().getString(
+                                    R.string.radius_1_to_40000),
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                prefs.edit()
+                        .putInt(ViewShedReceiver.VIEWSHED_PREFERENCE_RADIUS_KEY,
+                                (int) radius)
+                        .apply();
+                radiusMap.put(vsdMarker.getUID(), radius);
+
+                ElevationOverlaysMapComponent.setHeatMapVisible(false);
+                showHideHeatmapCB.setChecked(false);
+
+                Intent i = new Intent(ViewShedReceiver.ACTION_SHOW_VIEWSHED);
+                i.putExtra(ViewShedReceiver.VIEWSHED_UID, vsdMarker.getUID());
+                i.putExtra(ViewShedReceiver.EXTRA_ELEV_POINT, finalRefPoint);
+                i.putExtra(ViewShedReceiver.EXTRA_ELEV_RADIUS, radius);
+                i.putExtra(ViewShedReceiver.EXTRA_ELEV_OPACITY, intensity);
+
+                AtakBroadcast.getInstance().sendBroadcast(i);
+                showingViewshed = true;
+
                 hideButton.setVisibility(View.VISIBLE);
+
+                sampleView.setVisibility(View.GONE);
+                viewshedOpts.setVisibility(View.VISIBLE);
+                listButton.setVisibility(View.VISIBLE);
             }
         });
-
-        sampleView.setVisibility(View.GONE);
-        viewshedOpts.setVisibility(View.VISIBLE);
-        listButton.setVisibility(View.VISIBLE);
     }
 
     /**
@@ -1628,11 +1632,17 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
      * @param vsdMarker - marker being changed to.
      */
     private void changeViewshed(PointMapItem vsdMarker) {
-        double radius = radiusMap.get(vsdMarker.getUID());
-        int intensity = intensityMap.get(vsdMarker.getUID());
-        int heightAboveGround = heightMap.get(vsdMarker.getUID());
-        GeoPoint refPoint = refPointMap.get(vsdMarker.getUID());
+        if (vsdMarker == null)
+            return;
+
+        final String uid = vsdMarker.getUID();
+
+        double radius = radiusMap.get(uid);
+        int intensity = intensityMap.get(uid);
+        int heightAboveGround = heightMap.get(uid);
+        GeoPoint refPoint = refPointMap.get(uid);
         final String msltext = EGM96.formatMSL(vsdMarker.getPoint());
+
         //Updates the text boxes
         markerInfoTV.setText(vsdMarker.getTitle());
         viewshedDtedTV.setText(msltext);
@@ -1653,7 +1663,7 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
         ElevationOverlaysMapComponent.setHeatMapVisible(false);
         showHideHeatmapCB.setChecked(false);
 
-        Intent i = new Intent(ViewShedReceiver.ACTION_SHOW_VIEWSHED);
+        final Intent i = new Intent(ViewShedReceiver.ACTION_SHOW_VIEWSHED);
         i.putExtra(ViewShedReceiver.VIEWSHED_UID, vsdMarker.getUID());
         i.putExtra(ViewShedReceiver.EXTRA_ELEV_POINT, refPoint);
         i.putExtra(ViewShedReceiver.EXTRA_ELEV_RADIUS, radius);
@@ -1751,8 +1761,8 @@ public class ViewshedDropDownReceiver extends DropDownReceiver implements
      * max- the highest accept int value
      */
     private static class InputFilterMinMax implements InputFilter {
-        private int min;
-        private int max;
+        private final int min;
+        private final int max;
 
         InputFilterMinMax(int min, int max) {
             this.min = min;

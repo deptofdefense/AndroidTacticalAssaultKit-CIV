@@ -26,7 +26,7 @@ import com.atakmap.android.toolbar.ToolbarBroadcastReceiver;
 import com.atakmap.android.util.LimitingThread;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -36,6 +36,7 @@ import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.AtakMapView;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.opengl.GLLayer2;
 import com.atakmap.map.layer.opengl.GLLayer3;
@@ -100,7 +101,7 @@ public class GLCaptureTool extends GLMapView implements GLLayer2,
 
     private final ImageCapture _subject;
     private GLImageCapture _imgCap;
-    private SharedPreferences _prefs;
+    private final SharedPreferences _prefs;
     private int _capCount = 0;
 
     private int _captureRes;
@@ -573,7 +574,7 @@ public class GLCaptureTool extends GLMapView implements GLLayer2,
             _postDraw = postDraw;
             _tileFile = new File(_subject.getOutputDirectory(), "." +
                     (new CoordinatedTime()).getMilliseconds() + "_tiles.tiff");
-            if (FileIOProviderFactory.exists(_tileFile))
+            if (IOProviderFactory.exists(_tileFile))
                 FileSystemUtils.deleteFile(_tileFile);
             _driver = gdal.GetDriverByName("GTiff");
             if (_driver == null) {
@@ -624,7 +625,7 @@ public class GLCaptureTool extends GLMapView implements GLLayer2,
             _postDraw = null;
             _postDialog = null;
             _redrawThread.dispose();
-            if (FileIOProviderFactory.exists(_tileFile))
+            if (IOProviderFactory.exists(_tileFile))
                 FileSystemUtils.deleteFile(_tileFile);
             _tileCount = 0;
         }
@@ -657,7 +658,7 @@ public class GLCaptureTool extends GLMapView implements GLLayer2,
                 ds = _subject.createDataset(_driver, _tileFile,
                         width * _captureRes, height * _captureRes);
             } else
-                ds = gdal.Open(_tileFile.getAbsolutePath(),
+                ds = GdalLibrary.openDatasetFromFile(_tileFile,
                         gdalconst.GA_Update);
 
             if (ds != null) {
@@ -711,7 +712,7 @@ public class GLCaptureTool extends GLMapView implements GLLayer2,
         }
 
         private Bitmap buildPreview() {
-            Dataset ds = gdal.Open(_tileFile.getAbsolutePath(),
+            Dataset ds = GdalLibrary.openDatasetFromFile(_tileFile,
                     gdalconst.GA_ReadOnly);
             if (ds == null)
                 return null;

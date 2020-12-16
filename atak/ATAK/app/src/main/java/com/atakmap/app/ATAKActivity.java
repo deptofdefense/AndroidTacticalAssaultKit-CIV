@@ -9,6 +9,7 @@ import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -16,6 +17,7 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -25,14 +27,12 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.os.FileObserver;
 import android.os.Handler;
 import android.os.PowerManager;
 import android.os.StrictMode;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
-import android.provider.Settings.SettingNotFoundException;
 import androidx.annotation.NonNull;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -48,8 +48,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.atakmap.android.data.ClearContentTask;
-import com.atakmap.android.database.DatabaseFactory;
 import com.atakmap.android.dropdown.DropDownManager;
+import com.atakmap.os.FileObserver;
 import com.atakmap.android.gui.HintDialogHelper;
 import com.atakmap.android.http.rest.HTTPRequestService;
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -93,12 +93,15 @@ import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.preferences.LocationSettingsActivity;
 import com.atakmap.app.preferences.NetworkSettingsActivity;
 import com.atakmap.app.preferences.PreferenceControl;
+import com.atakmap.app.system.AbstractSystemComponent;
+import com.atakmap.app.system.FlavorProvider;
+import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.comms.CotService;
 import com.atakmap.comms.NetworkDeviceManager;
 import com.atakmap.comms.app.KeyManagerFactory;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.filesystem.SecureDelete;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -120,15 +123,18 @@ import com.atakmap.util.ConfigOptions;
 import org.xml.sax.SAXException;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -137,68 +143,14 @@ public class ATAKActivity extends MapActivity implements
 
     public static final String TAG = "ATAKActivity";
 
-    private void setupSplash(final View splashView) {
-        try {
-            ((TextView) splashView.findViewById(R.id.revision))
-                    .setText(String.format(LocaleUtil.getCurrent(), "%s%s",
-                            getString(R.string.version),
-                            getPackageManager().getPackageInfo(
-                                    getPackageName(), 0).versionName));
-
-            File file = null;
-            File splash = FileSystemUtils
-                    .getItem(FileSystemUtils.SUPPORT_DIRECTORY
-                            + File.separatorChar + "atak_splash.png");
-            File splashUpper = FileSystemUtils
-                    .getItem(FileSystemUtils.SUPPORT_DIRECTORY
-                            + File.separatorChar + "atak_splash.PNG");
-            if (FileSystemUtils.isFile(splash)) {
-                file = splash;
-            } else if (FileSystemUtils.isFile(splashUpper)) {
-                file = splashUpper;
-            }
-            if (file != null) {
-                Bitmap bmp = BitmapFactory.decodeFile(file.getAbsolutePath());
-                if (bmp != null && bmp.getWidth() < 4096
-                        && bmp.getHeight() < 4096) {
-                    Log.d(TAG, "Loading custom splash screen");
-                    ImageView atak_splash_imgView = splashView
-                            .findViewById(R.id.atak_splash_imgView);
-                    atak_splash_imgView.setImageBitmap(bmp);
-                } else {
-                    if (bmp == null) {
-                        Toast.makeText(this, R.string.invalid_splash,
-                                Toast.LENGTH_LONG).show();
-                        Log.e(TAG, "splash screen bitmap was null");
-                    } else {
-                        Toast.makeText(this,
-                                R.string.invalid_splash_size,
-                                Toast.LENGTH_LONG).show();
-                        Log.e(TAG,
-                                "splash screen exceeds maximum 4096 in one direction:  width = "
-                                        + bmp.getWidth() + " height = "
-                                        + bmp.getHeight());
-                        // do not use it
-                        bmp.recycle();
-                    }
-                }
-            }
-
-        } catch (NameNotFoundException e) {
-            Log.e(TAG, "Error: " + e);
-        }
-
-    }
-
     @SuppressLint("SourceLockedOrientationActivity")
     @Override
     public void onCreate(final Bundle savedInstanceState) {
 
         _controlPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-
         // please note - this should never be set to false unless being called as part of 
-        // automatated testing.
+        // automated testing.
         callSystemExit = _controlPrefs
                 .getBoolean("callSystemExit", true);
 
@@ -226,6 +178,9 @@ public class ATAKActivity extends MapActivity implements
                     .penaltyDeath()
                     .build());
         }
+
+        SystemComponentLoader.initializeEncryption(this);
+        SystemComponentLoader.initializeFlavor(this);
 
         setWarningShown();
 
@@ -256,12 +211,16 @@ public class ATAKActivity extends MapActivity implements
             return;
         }
 
+        MigrationShim.onMigration(this);
+
         _controlPrefs.registerOnSharedPreferenceChangeListener(this);
 
-        
         FileSystemUtils.reset();
 
         AtakBroadcast.init(this);
+
+        // initialize some of the constants
+        ATAKConstants.init(this);
 
         // keeps the GPS alive and provide TTS services
         BackgroundServices.start(this);
@@ -279,6 +238,7 @@ public class ATAKActivity extends MapActivity implements
         AtakAuthenticationDatabase.initialize(this);
 
         AtakCertificateDatabase.migrateCertificatesToSqlcipher(this);
+
         CertificateManager.setCertificateDatabase(AtakCertificateDatabase
                 .getAdapter());
         CertificateManager.getInstance().initialize(this);
@@ -298,8 +258,6 @@ public class ATAKActivity extends MapActivity implements
         // a device so that it can be mass configured through something like the
         // mission package tool.  When restoring a system, this should come first.
         PreferenceControl.getInstance(this).ingestDefaults();
-
-        ATAKConstants.init(this);
 
         // force initialization of all of the stuff (even if the orientation is already correct)
         AtakPreferenceFragment.setOrientation(ATAKActivity.this, true);
@@ -323,7 +281,7 @@ public class ATAKActivity extends MapActivity implements
         super.onCreate(null);
 
         // set up visual splash screen
-        if (BuildConfig.FLAVOR.equals("civUIMods")) {
+        if (BuildConfig.FLAVOR.equalsIgnoreCase("civUIMods")) {
             _newNavView = NavigationCompat.setContentView(this);
             _newNavView.setVisibility(View.GONE);
         } else {
@@ -409,19 +367,24 @@ public class ATAKActivity extends MapActivity implements
             _newNavView.setVisibility(View.VISIBLE);
         } else {
             final ActionBar actionBar = this.getActionBar();
-            actionBar.show();
+            if (actionBar != null)
+                actionBar.show();
 
             // fix up the action bar.
             v.postDelayed(new Runnable() {
                 @Override
                 public void run() {
+                    if (actionBar == null)
+                        return;
+
                     final int actionBarHeight = actionBar.getHeight();
                     Log.d(TAG, "onCreate actionBar height: "
                             + actionBarHeight);
                     setupActionBar(false);
                     try {
                         onResume();
-                    } catch (IllegalStateException | IllegalArgumentException ignored) {
+                    } catch (IllegalStateException
+                            | IllegalArgumentException ignored) {
                         // explicit call to on resume in this thread may fail if the app is shutting
                         // down due to another error.   should be benign just to catch and finish the
                         // thread properly.
@@ -473,7 +436,8 @@ public class ATAKActivity extends MapActivity implements
         // force redeployment of the wms sources.   Needs to happen before
         // AppVersionUpgrade which tries to create the imagery/mobile directory.
 
-        if (!FileIOProviderFactory.exists(FileSystemUtils.getItem("imagery/mobile"))) {
+        if (!IOProviderFactory
+                .exists(FileSystemUtils.getItem("imagery/mobile"))) {
             Log.d(TAG,
                     "imagery/mobile directory missing, redeploying the map sources");
             _controlPrefs.edit().putBoolean("wms_deployed", false).apply();
@@ -528,7 +492,7 @@ public class ATAKActivity extends MapActivity implements
                 Log.e(TAG, "could not monitor the file: " + networkMap);
             }
 
-        } else if (FileIOProviderFactory.exists(networkMap)) {
+        } else if (IOProviderFactory.exists(networkMap)) {
             Log.d(TAG,
                     "cowardly refusing to enable the NetworkDeviceManager device list because NetworkMonitor is not configured");
             AlertDialog.Builder alertBuilder = new AlertDialog.Builder(
@@ -609,6 +573,7 @@ public class ATAKActivity extends MapActivity implements
                             setupWizard = new DeviceSetupWizard(
                                     ATAKActivity.this, _mapView, _controlPrefs);
                             setupWizard.init(false);
+
                         } finally {
                             progressDialog.dismiss();
                             try {
@@ -657,7 +622,7 @@ public class ATAKActivity extends MapActivity implements
         String sSU = getString(R.string.FalconSA_su);
         File su = new File(sSU);
 
-        if (product.startsWith("cm_") || FileIOProviderFactory.exists(su)) {
+        if (product.startsWith("cm_") || IOProviderFactory.exists(su)) {
             HintDialogHelper
                     .showHint(
                             _mapView.getContext(),
@@ -820,8 +785,8 @@ public class ATAKActivity extends MapActivity implements
         filter.addAction(ActionBarReceiver.REMOVE_TOOLS);
         filter.addAction(ActionBarReceiver.DISABLE_ACTIONBAR);
         //Hide main toolbar if this is a civUIMods release build. Otherwise let it show,
-        if (!BuildConfig.FLAVOR.equals("civUIMods")
-                || (BuildConfig.FLAVOR.equals("civUIMods")
+        if (!BuildConfig.FLAVOR.equalsIgnoreCase("civUIMods")
+                || (BuildConfig.FLAVOR.equalsIgnoreCase("civUIMods")
                         && BuildConfig.DEBUG)) {
             filter.addAction(ActionBarReceiver.TOGGLE_ACTIONBAR);
         }
@@ -870,17 +835,6 @@ public class ATAKActivity extends MapActivity implements
             setBrightness(brightnessValue);
         }
 
-        //setNavBar();
-
-        String forceAirplaneRadioList = _controlPrefs.getString(
-                "atakForceAirplaneRadioList", "none");
-        airplaneModeState = getAirplaneModeState();
-        Log.v(TAG, "airplane mode active before start: " + airplaneModeState);
-
-        if (!forceAirplaneRadioList.equals("none")) {
-            disableRadio(forceAirplaneRadioList);
-        }
-
         _focusOnLocationMarker();
 
         FileSystemUtils.ensureDataDirectory(
@@ -916,24 +870,28 @@ public class ATAKActivity extends MapActivity implements
                         + "license",
                 true);
 
-        FileSystemUtils.copyFromAssetsToStorageFile(getApplicationContext(),
-                "support/support.inf",
+        File supportFile = new File(FileSystemUtils.getRoot(),
                 FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar
-                        + "support.inf",
-                false);
-
-        FileSystemUtils.copyFromAssetsToStorageFile(getApplicationContext(),
-                "support/support.inf",
-                FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar
-                        + "support.inf",
-                false);
+                        + "support.inf");
+        if (!supportFile.exists()) {
+            supportFile.getParentFile().mkdirs();
+            try (OutputStream supportStream = new FileOutputStream(
+                    supportFile)) {
+                FileSystemUtils.copyFromAssets(
+                        getApplicationContext(),
+                        "support/support.inf",
+                        supportStream);
+            } catch (IOException e) {
+                Log.d(TAG, "could not copy support.inf to "
+                        + supportFile.getPath(), e);
+            }
+        }
 
         CoordinatedTime.setLoggerDirectory(FileSystemUtils
                 .getItem(FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar
                         + "cottimedebug"));
 
         extractPrivateResource("wmm_cof", "world-magnetic-model-file");
-        extractPrivateResource("ww15mgh", "egm96-file");
 
         _unitChangeReceiver = new UnitChangeReceiver(_mapView);
         Log.d(TAG, "Created UnitChangeReceiver");
@@ -975,8 +933,8 @@ public class ATAKActivity extends MapActivity implements
                 orientationFilter);
 
         final File basemapDir = FileSystemUtils.getItem("basemap");
-        if (FileIOProviderFactory.exists(basemapDir)) {
-            File[] children = FileIOProviderFactory.listFiles(basemapDir);
+        if (IOProviderFactory.exists(basemapDir)) {
+            File[] children = IOProviderFactory.listFiles(basemapDir);
             if (children != null) {
                 for (File aChildren : children) {
                     Set<DatasetDescriptor> descs = DatasetDescriptorFactory2
@@ -1029,7 +987,7 @@ public class ATAKActivity extends MapActivity implements
 
             File cofFile = new File(this.getFilesDir(), resourceName);
             FileSystemUtils.copyStream(stream, false,
-                    FileIOProviderFactory.getOutputStream(cofFile), true);
+                    IOProviderFactory.getOutputStream(cofFile), true);
             long e = SystemClock.uptimeMillis();
 
             Log.v(TAG, "Extracted resource [" + resourceName + "] in " + (e - s)
@@ -1159,43 +1117,6 @@ public class ATAKActivity extends MapActivity implements
                 invalidateOptionsMenu();
             }
         }
-    }
-
-    private boolean getAirplaneModeState() {
-        try {
-            return (Settings.System.getInt(getContentResolver(),
-                    Settings.System.AIRPLANE_MODE_ON) == 1);
-        } catch (SettingNotFoundException snex) {
-            return false;
-        }
-    }
-
-    private void setAirplaneModeState(boolean state) {
-        Settings.System.putInt(getContentResolver(),
-                Settings.System.AIRPLANE_MODE_ON, (state) ? 1 : 0);
-        Intent intent = new Intent(Intent.ACTION_AIRPLANE_MODE_CHANGED);
-        intent.putExtra("state", state);
-        try {
-            AtakBroadcast.getInstance().sendSystemBroadcast(intent);
-        } catch (Exception e) {
-            Log.e(TAG, "Couldn't set airplane mode: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Disable a list of radio types in comma delineated format. Even without a
-     * sim chip for example, the cellular radio is enabled and drains power.
-     * Common examples are: cell (@see Settings.System.RADIO_CELL) cell,wifi (@see
-     * Settings.System.RADIO_WIFI) cell,wifi,bluetooth (@see
-     * Settings.System.RADIO_BLUETOOTH) cell,wifi,bluetooth,nfc (@see
-     * Settings.System.RADIO_NFC)
-     */
-    private void disableRadio(String type) {
-        // only include the cell radio in the list of devices
-        // covered by airplane mode.
-        Settings.System.putString(getContentResolver(),
-                Settings.System.AIRPLANE_MODE_RADIOS, type);
-        setAirplaneModeState(true);
     }
 
     /**
@@ -1461,7 +1382,8 @@ public class ATAKActivity extends MapActivity implements
                             // system and not from this application.   Warn users for future SDK's
                             // that this might not work when running debug versions - so it can be
                             // checked.
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && BuildConfig.DEBUG)
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                                    && BuildConfig.DEBUG)
                                 Log.e(TAG,
                                         "may need to revisit double reflection trick: ATAKActivity");
                             final Method xgetDeclaredField = Class.class
@@ -1632,7 +1554,7 @@ public class ATAKActivity extends MapActivity implements
             return;
         }
 
-        DatabaseFactory.notifyOnDestroy();
+        IOProviderFactory.notifyOnDestroy();
 
         // during shutdown it is best if the powerManager.isScreenOn is not called
         paused = true;
@@ -1701,8 +1623,10 @@ public class ATAKActivity extends MapActivity implements
         }
 
         try {
-            AtakBroadcast.getInstance().unregisterReceiver(
-                    _pluginLoadedRec);
+            if (_pluginLoadedRec != null) {
+                AtakBroadcast.getInstance().unregisterReceiver(
+                        _pluginLoadedRec);
+            }
         } catch (Exception e) {
             Log.e(TAG, "error unregistering pluginLoadedRec: ", e);
         }
@@ -1733,6 +1657,13 @@ public class ATAKActivity extends MapActivity implements
             btFrag.onDestroy();
         } catch (Exception e) {
             Log.e(TAG, "error stopping btFrag", e);
+        }
+
+        try {
+            final File sendtoLocation = FileSystemUtils.getItem("tools/sendto");
+            FileSystemUtils.deleteDirectory(sendtoLocation, false);
+        } catch (Exception e) {
+            Log.e(TAG, "error removing sendto directory", e);
         }
 
         try {
@@ -1775,11 +1706,6 @@ public class ATAKActivity extends MapActivity implements
 
             _lockActionMenu = null;
 
-            Log.v(TAG, "reset Airplane Mode State back to: "
-                    + airplaneModeState);
-            if (!airplaneModeState)
-                setAirplaneModeState(false);
-
             _controlPrefs
                     .unregisterOnSharedPreferenceChangeListener(
                             _prefsChangedListener);
@@ -1812,6 +1738,9 @@ public class ATAKActivity extends MapActivity implements
             AtakBroadcast.getInstance().dispose();
             NotificationUtil.getInstance().dispose();
 
+            SystemComponentLoader
+                    .notify(AbstractSystemComponent.SystemState.DESTROY);
+
         } catch (Exception e) {
             Log.e(TAG, "error: ", e);
         } finally {
@@ -1827,6 +1756,10 @@ public class ATAKActivity extends MapActivity implements
             // previously.
             Log.v(TAG,
                     "finishing onDestroy, preparing to call exit in 1/4 second.");
+
+            // move the icon change till the end of the the shutdown in order to prevent forced crash
+            // on some Pixel devices and the Samsung S20.
+            ensureCorrectIcon();
 
             Thread monitorThread = new Thread(new Runnable() {
                 @Override
@@ -1904,7 +1837,11 @@ public class ATAKActivity extends MapActivity implements
                 }
                 Log.d(TAG, "new intent for Activity with internal intent: "
                         + s);
-                AtakBroadcast.getInstance().sendBroadcast(s);
+                try {
+                    AtakBroadcast.getInstance().sendBroadcast(s);
+                } catch (IllegalStateException ignore) {
+
+                }
             } else {
                 Log.d(TAG,
                         "new intent for Activity with internal intent but intent null");
@@ -2663,6 +2600,111 @@ public class ATAKActivity extends MapActivity implements
         AtakBroadcast.getInstance().sendBroadcast(myLocationIntent);
     }
 
+    /**
+     * The responsibility of the application is to check to see if the icon is correct based on the
+     * flavor.   If it is incorrect, during the shutdown of the application - go ahead and switch the
+     * icon.   This solves issues with the unpredictable behavior caused by disabling an application
+     * that is running.   Please note - this should only be run when the application is quit so it
+     * does not kill the application on startup.
+     */
+    private void ensureCorrectIcon() {
+        final FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+        boolean civilian = true;
+        if (fp != null && fp.hasMilCapabilities()) {
+            civilian = false;
+        }
+        // Enable/disable activity-aliases
+        PackageManager pm = getPackageManager();
+        pm.setComponentEnabledSetting(
+                new ComponentName(ATAKActivity.this,
+                        "com.atakmap.app.ATAKActivityCiv"),
+                (civilian) ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                        : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP);
+        pm.setComponentEnabledSetting(
+                new ComponentName(ATAKActivity.this,
+                        "com.atakmap.app.ATAKActivityMil"),
+                (civilian) ? PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+                        : PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                PackageManager.DONT_KILL_APP);
+
+    }
+
+    private void setupSplash(final View splashView) {
+        FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+        if (fp != null)
+            fp.installCustomSplashScreen(splashView,
+                    AtakPreferenceFragment.getOrientation(this));
+
+        try {
+            ((TextView) splashView.findViewById(R.id.revision))
+                    .setText(String.format(LocaleUtil.getCurrent(), "%s%s",
+                            getString(R.string.version),
+                            getPackageManager().getPackageInfo(
+                                    getPackageName(), 0).versionName));
+
+            final String encryptorName = SystemComponentLoader
+                    .getEncryptionComponentName();
+            if (encryptorName != null) {
+                final TextView encryptionText = ((TextView) splashView
+                        .findViewById(R.id.encryption));
+                encryptionText.setText(getString(R.string.dar_encryptor_message,
+                        encryptorName));
+                encryptionText.setVisibility(View.VISIBLE);
+
+            }
+            File file = null;
+            File splash = FileSystemUtils
+                    .getItem(FileSystemUtils.SUPPORT_DIRECTORY
+                            + File.separatorChar + "atak_splash.png");
+            File splashUpper = FileSystemUtils
+                    .getItem(FileSystemUtils.SUPPORT_DIRECTORY
+                            + File.separatorChar + "atak_splash.PNG");
+            if (FileSystemUtils.isFile(splash)) {
+                file = splash;
+            } else if (FileSystemUtils.isFile(splashUpper)) {
+                file = splashUpper;
+            }
+            if (file != null) {
+                Bitmap bmp;
+                try (FileInputStream fis = IOProviderFactory
+                        .getInputStream(file)) {
+                    bmp = BitmapFactory.decodeStream(fis);
+                } catch (IOException e) {
+                    bmp = null;
+                }
+
+                if (bmp != null && bmp.getWidth() < 4096
+                        && bmp.getHeight() < 4096) {
+                    Log.d(TAG, "Loading custom splash screen");
+                    ImageView atak_splash_imgView = splashView
+                            .findViewById(R.id.atak_splash_imgView);
+                    atak_splash_imgView.setImageBitmap(bmp);
+                } else {
+                    if (bmp == null) {
+                        Toast.makeText(this, R.string.invalid_splash,
+                                Toast.LENGTH_LONG).show();
+                        Log.e(TAG, "splash screen bitmap was null");
+                    } else {
+                        Toast.makeText(this,
+                                R.string.invalid_splash_size,
+                                Toast.LENGTH_LONG).show();
+                        Log.e(TAG,
+                                "splash screen exceeds maximum 4096 in one direction:  width = "
+                                        + bmp.getWidth() + " height = "
+                                        + bmp.getHeight());
+                        // do not use it
+                        bmp.recycle();
+                    }
+                }
+            }
+
+        } catch (NameNotFoundException e) {
+            Log.e(TAG, "Error: " + e);
+        }
+
+    }
+
     private void setupFileLog() {
         try {
             if (_controlPrefs.getBoolean("loggingfile", false)) {
@@ -2677,17 +2719,18 @@ public class ATAKActivity extends MapActivity implements
                                 + File.separatorChar + "logs"
                                 + File.separatorChar + "logcat" + index
                                 + ".txt");
-                if (!FileIOProviderFactory.mkdir(logFile.getParentFile())) {
+                if (!IOProviderFactory.mkdir(logFile.getParentFile())) {
                     Log.e(TAG, "Failed to make dir at: "
                             + logFile.getParentFile().getPath());
                 }
                 if (logFile.getParentFile() != null)
-                    if (!FileIOProviderFactory.mkdirs(logFile.getParentFile())) {
+                    if (!IOProviderFactory.mkdirs(logFile.getParentFile())) {
                         Log.e(TAG, "Failed to make dir at: "
                                 + logFile.getParentFile().getPath());
                     }
 
-                fileLogger.setLogFile(FileIOProviderFactory.getOutputStream(logFile));
+                fileLogger
+                        .setLogFile(IOProviderFactory.getOutputStream(logFile));
                 Log.registerLogListener(fileLogger);
                 fileLogger.setWriteOnlyErrors(_controlPrefs.getBoolean(
                         "loggingfile_error_only", false));
@@ -2767,6 +2810,9 @@ public class ATAKActivity extends MapActivity implements
                 _mapView.onActionBarToggled(actionBar.getHeight());
             }
         }
+        SystemComponentLoader
+                .notify(AbstractSystemComponent.SystemState.RESUME);
+
     }
 
     @Override
@@ -2834,6 +2880,7 @@ public class ATAKActivity extends MapActivity implements
         endLocationTool.putExtra("tool", EnterLocationTool.TOOL_NAME);
         AtakBroadcast.getInstance().sendBroadcast(endLocationTool);
 
+        SystemComponentLoader.notify(AbstractSystemComponent.SystemState.PAUSE);
         super.onPause();
     }
 
@@ -2842,28 +2889,39 @@ public class ATAKActivity extends MapActivity implements
     @Override
     public void onRequestPermissionsResult(int requestCode,
             @NonNull String[] permissions, @NonNull int[] grantResults) {
-        boolean b = Permissions.onRequestPermissionsResult(requestCode,
-                permissions, grantResults);
-        if (b) {
-            acceptedPermissions = true;
-            onCreate(null);
-            return;
-        }
-        if (count > 3) {
-            Permissions.displayNeverAskAgainDialog(this);
-        } else {
-            count++;
-            Log.d(TAG, "need to generate a new permission request");
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-                requestPermissions(Permissions.PermissionsList,
-                        Permissions.REQUEST_ID);
+        if (requestCode == Permissions.REQUEST_ID) {
+            boolean b = Permissions.onRequestPermissionsResult(requestCode,
+                    permissions, grantResults);
+            if (b) {
+                acceptedPermissions = true;
+                onCreate(null);
+                return;
+            }
+            if (count > 3) {
+                Permissions.displayNeverAskAgainDialog(this);
+            } else {
+                count++;
+                Log.d(TAG, "need to generate a new permission request");
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
+                    requestPermissions(Permissions.PermissionsList,
+                            Permissions.REQUEST_ID);
+            }
+        } else {
+            final boolean b = Permissions.onRequestPermissionsResult(
+                    requestCode,
+                    permissions, grantResults);
+            Log.d(TAG,
+                    "permissions[" + requestCode + "]: "
+                            + Arrays.toString(permissions) +
+                            " " + (b ? "granted" : "not granted"));
         }
 
     }
 
     synchronized private void cancelForeground() {
-        if (Build.VERSION.SDK_INT >= 26) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Log.d(TAG, "skipping the foreground task: cancel");
             return;
         }
@@ -2880,7 +2938,7 @@ public class ATAKActivity extends MapActivity implements
     }
 
     synchronized private void scheduleForeground(boolean forceSchedule) {
-        if (Build.VERSION.SDK_INT >= 26) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Log.d(TAG, "skipping the foreground task: schedule");
             return;
         }
@@ -2977,7 +3035,6 @@ public class ATAKActivity extends MapActivity implements
     private String _currentUID;
 
     private boolean orientationChangeRequestPending = false;
-    private boolean airplaneModeState = false;
     private ZoomReceiver _zoomReceiver;
     private ActionBarReceiver _actionBarReceiver;
     private BroadcastReceiver _pluginLoadedRec;

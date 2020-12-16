@@ -20,11 +20,11 @@ public class GetCotEventRequest implements Parcelable {
     private static final String TAG = "GetCotEventRequest";
     public static final String COT_MATCHER = "<event";
 
-    private String mBaseUrl;
-    private String mUID;
-    private String mMatcher;
-    private String mTag;
-    private int mNotificationId;
+    private final String mBaseUrl;
+    private final String mUID;
+    private final String mMatcher;
+    private final String mTag;
+    private final int mNotificationId;
 
     public GetCotEventRequest(String baseUrl, String uid, String matcher,
             String tag, int notificationId) {

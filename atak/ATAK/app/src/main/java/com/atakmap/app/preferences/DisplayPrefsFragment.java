@@ -16,7 +16,6 @@ import android.widget.Toast;
 import com.atakmap.android.gridlines.GridLinesPreferenceFragment;
 import com.atakmap.android.layers.app.ImportStyleDefaultPreferenceFragment;
 import com.atakmap.android.layers.app.LayerPreferenceFragment;
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.offscreenindicators.OffscreenIndicatorsPrefsFragment;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.preference.PreferenceSearchIndex;
@@ -90,9 +89,10 @@ public class DisplayPrefsFragment extends AtakPreferenceFragment {
             @Override
             public boolean onPreferenceClick(Preference preference) {
 
-                try { 
+                try {
                     startActivityForResult(new Intent(
-                                android.provider.Settings.ACTION_DISPLAY_SETTINGS), 0);
+                            android.provider.Settings.ACTION_DISPLAY_SETTINGS),
+                            0);
                 } catch (ActivityNotFoundException ignored) {
 
                     // TODO: Translate this after it has been backported to 4.1.1
@@ -151,7 +151,7 @@ public class DisplayPrefsFragment extends AtakPreferenceFragment {
         overlayManagerWidthHeight = (ListPreference) findPreference(
                 "overlay_manager_width_height");
         //only allow on tablet devices?????
-        if (!MapView.getMapView().getContext().getResources()
+        if (!getActivity().getResources()
                 .getBoolean(R.bool.isTablet)) {
             overlayManagerWidthHeight.setEnabled(false);
         }

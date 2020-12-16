@@ -88,6 +88,9 @@
     <ClInclude Include="..\..\core\impl\cotmessage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\core\impl\fileIOProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\core\impl\datagramsocketmanagement.h">
       <Filter>Header Files</Filter>
     </ClInclude>

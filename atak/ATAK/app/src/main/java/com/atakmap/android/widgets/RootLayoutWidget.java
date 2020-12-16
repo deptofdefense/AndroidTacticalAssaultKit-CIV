@@ -59,9 +59,10 @@ public class RootLayoutWidget extends LayoutWidget implements
 
     // Padding for curved screens
     private float _curvePadding = 0f;
-    private RectF _usableArea = new RectF();
+    private final RectF _usableArea = new RectF();
     private View _content;
-    private View _ddHandleLS, _ddHandlePT;
+    private final View _ddHandleLS;
+    private final View _ddHandlePT;
 
     private final LinearLayoutWidget[] _layouts = new LinearLayoutWidget[BOTTOM_EDGE
             + 1];
@@ -168,7 +169,8 @@ public class RootLayoutWidget extends LayoutWidget implements
     @Override
     public void onWidgetSizeChanged(MapWidget2 widget) {
         if (_content != null)
-            _usableArea.set(_curvePadding, 0f, _content.getWidth() - _curvePadding,
+            _usableArea.set(_curvePadding, 0f,
+                    _content.getWidth() - _curvePadding,
                     _content.getHeight() - _curvePadding);
 
         LinearLayoutWidget w = (LinearLayoutWidget) widget;

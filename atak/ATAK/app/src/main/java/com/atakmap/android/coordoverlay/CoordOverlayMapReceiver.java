@@ -81,8 +81,8 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
     public static final String TAG = "CoordOverlayMapReceiver";
 
     public static final String SHOW_DETAILS = "com.atakmap.android.maps.SHOW_DETAILS";
-    public static final String COORD_COPY = "com.atakmap.android.maps.COORD_COPY";
-    public static final String COORD_ENLARGE = "com.atakmap.android.maps.COORD_ENLARGE";
+    protected static final String COORD_COPY = "com.atakmap.android.maps.COORD_COPY";
+    protected static final String COORD_ENLARGE = "com.atakmap.android.maps.COORD_ENLARGE";
 
     //TODO why does this class have _pointItem and _activeMarker?
     private PointMapItem _pointItem;
@@ -673,9 +673,7 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
             retval.append(TLECategory.getCEString(point.getLE()));
         }
 
-        if (pointWithMetadata.getGeopointSource().equals(GeoPointMetaData.PFI)
-                || pointWithMetadata.getGeopointSource()
-                        .equals(GeoPointMetaData.PRI)) {
+        if (GeoPointMetaData.isPrecisionImageryDerived(pointWithMetadata)) {
             final TLECategory cat = TLECategory.getCategory(point.getCE());
             lineColors[lineNum++] = cat.getColor();
 
@@ -939,7 +937,7 @@ public class CoordOverlayMapReceiver extends BroadcastReceiver implements
         return curCoordString;
     }
 
-    private final BroadcastReceiver coordReceiver = new BroadcastReceiver() {
+    protected final BroadcastReceiver coordReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();

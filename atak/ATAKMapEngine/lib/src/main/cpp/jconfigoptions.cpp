@@ -12,14 +12,24 @@ using namespace TAKEngineJNI::Interop;
 JNIEXPORT void JNICALL Java_com_atakmap_util_ConfigOptions_setOption
   (JNIEnv *env, jclass clazz, jstring jkey, jstring jvalue)
 {
+    TAKErr code = TE_Ok;
     TAK::Engine::Port::String key;
     if(ATAKMapEngineJNI_checkOrThrow(env, JNIStringUTF_get(key, *env, jkey)))
         return;
-    TAK::Engine::Port::String value;
-    if(ATAKMapEngineJNI_checkOrThrow(env, JNIStringUTF_get(value, *env, jvalue)))
-        return;
+    if(jvalue != NULL){
+        TAK::Engine::Port::String value;
+        if(ATAKMapEngineJNI_checkOrThrow(env, JNIStringUTF_get(value, *env, jvalue)))
+            return;
 
-    TAKErr code = ConfigOptions_setOption(key, value);
+        code = ConfigOptions_setOption(key, value);
+    }
+    else{
+        TAK::Engine::Port::String value;
+        auto checkCode = ConfigOptions_getOption(value, key);
+	if(checkCode == TE_Ok && value != NULL){
+            code = ConfigOptions_setOption(key, NULL);
+	}
+    }
     ATAKMapEngineJNI_checkOrThrow(env, code);
 }
 JNIEXPORT jstring JNICALL Java_com_atakmap_util_ConfigOptions_getOption

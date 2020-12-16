@@ -34,7 +34,7 @@ public class MenuLayoutBase extends LayoutWidget implements
     private static final int RING_PADDING = 5;
 
     private final AtakMapView _atakMapView;
-    private MapItem _mapItem;
+    protected MapItem _mapItem;
     private final List<MapMenuFactory> _factories;
 
     private final SharedPreferences prefs;
@@ -43,7 +43,7 @@ public class MenuLayoutBase extends LayoutWidget implements
         void dispatchAction(MapAction mapAction, MapItem mapItem);
     }
 
-    private MapActionDispatcher _mapActionDispatcher;
+    protected MapActionDispatcher _mapActionDispatcher;
 
     @Override
     public void onClick(MotionEvent event) {
@@ -205,7 +205,7 @@ public class MenuLayoutBase extends LayoutWidget implements
     /**
      * Controls what actions are to be taken when a MapMenuButtonWidget is pressed.
      */
-    private void _addPressExpanders(final MapMenuWidget menuWidget) {
+    protected void _addPressExpanders(final MapMenuWidget menuWidget) {
         for (int i = 0; i < menuWidget.getChildCount(); ++i) {
             final MapMenuButtonWidget button = (MapMenuButtonWidget) menuWidget
                     .getChildAt(i);
@@ -259,9 +259,8 @@ public class MenuLayoutBase extends LayoutWidget implements
             if (parentButton.isDisabled())
                 childButton.setDisabled(true);
 
-            final float radius = submenuWidget._buttonRadius
-                    + parentButton.getButtonWidth()
-                    + RING_PADDING;
+            final float radius = getChildMenuRadius(submenuWidget,
+                    parentButton);
             childButton.setOrientation(childButton.getOrientationAngle(),
                     radius);
 
@@ -326,7 +325,14 @@ public class MenuLayoutBase extends LayoutWidget implements
         }
     }
 
-    private void _expandPressSubmenu(MapMenuWidget menuWidget,
+    protected float getChildMenuRadius(final MapMenuWidget submenuWidget,
+            final MapMenuButtonWidget parentButton) {
+        return submenuWidget._buttonRadius
+                + parentButton.getButtonWidth()
+                + RING_PADDING;
+    }
+
+    protected void _expandPressSubmenu(MapMenuWidget menuWidget,
             MapMenuButtonWidget parentButton) {
         MapMenuWidget submenuWidget = _openSubmenu(menuWidget, parentButton);
         if (submenuWidget != null) {
@@ -418,12 +424,12 @@ public class MenuLayoutBase extends LayoutWidget implements
         return totalWeight;
     }
 
-    private void layoutAsMenu(MapMenuWidget menuWidget) {
+    protected void layoutAsMenu(MapMenuWidget menuWidget) {
         final float totalWeight = cullAndWeighButtons(menuWidget, false);
         orientLayout(menuWidget, totalWeight);
     }
 
-    private void layoutAsSubmenu(MapMenuWidget menuWidget,
+    protected void layoutAsSubmenu(MapMenuWidget menuWidget,
             MapMenuButtonWidget parentButton) {
 
         // cull before we figure our dimensioning

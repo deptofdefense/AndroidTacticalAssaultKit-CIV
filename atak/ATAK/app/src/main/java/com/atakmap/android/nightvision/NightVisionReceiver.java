@@ -30,7 +30,7 @@ public class NightVisionReceiver extends BroadcastReceiver
         implements SeekBar.OnSeekBarChangeListener {
 
     private static final String TAG = "NightVisionReceiver";
-    private MapView _mapView;
+    private final MapView _mapView;
 
     public static final String ADJUST_NIGHT_VISION_VALUE = "adjust_night_vision_value";
     public static final String UPDATE_DIM_VALUE = "update_dim_value";

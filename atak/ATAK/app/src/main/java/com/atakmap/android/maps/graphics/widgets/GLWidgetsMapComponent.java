@@ -45,6 +45,7 @@ public class GLWidgetsMapComponent extends AbstractMapComponent implements
         _mapView.addOnActionBarToggledListener(this);
         _mapView.addOnTouchListenerAt(0, _touchListener);
 
+        GLWidgetFactory.registerSpi(GLMapFocusTextWidget.SPI);
         GLWidgetFactory.registerSpi(GLTextWidget.SPI);
         GLWidgetFactory.registerSpi(GLScrollLayoutWidget.SPI);
         GLWidgetFactory.registerSpi(GLLinearLayoutWidget.SPI);

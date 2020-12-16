@@ -160,7 +160,12 @@ public class CredentialsDialog {
                             }
                         })
 
-                .setCancelable(false)
-                .show();
+                .setCancelable(false);
+
+        try {
+            credentialsBuilder.show();
+        } catch (Exception bte) {
+            // ATAK-13893
+        }
     }
 }

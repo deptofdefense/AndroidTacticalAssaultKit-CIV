@@ -8,8 +8,9 @@ import com.atakmap.android.importexport.ExportFileMarshal;
 import com.atakmap.android.importexport.Exportable;
 import com.atakmap.android.importexport.FormatNotSupportedException;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.map.gdal.VSIFileFileSystemHandler;
 import com.atakmap.spatial.file.export.OGRFeatureExportWrapper.NamedGeometry;
 
 import org.gdal.ogr.DataSource;
@@ -132,12 +133,12 @@ public abstract class OGRExportMarshal extends ExportFileMarshal {
 
         // delete existing file, and then serialize KML out to file
         File file = getFile();
-        if (FileIOProviderFactory.exists(file)) {
+        if (IOProviderFactory.exists(file)) {
             FileSystemUtils.deleteFile(file);
         } else {
             File parentFile = file.getParentFile();
 
-            if (!FileIOProviderFactory.mkdirs(parentFile)) {
+            if (!IOProviderFactory.mkdirs(parentFile)) {
                 Log.w(TAG, "Failed to create directories"
                         + parentFile);
             }
@@ -150,8 +151,11 @@ public abstract class OGRExportMarshal extends ExportFileMarshal {
                 throw new IOException("Unable to create OGR driver: "
                         + driverName);
             }
-            DataSource dataSource = driver.CreateDataSource(file
-                    .getAbsolutePath());
+            String path = file.getAbsolutePath();
+            if (!IOProviderFactory.isDefault()) {
+                path = VSIFileFileSystemHandler.PREFIX + path;
+            }
+            DataSource dataSource = driver.CreateDataSource(path);
             if (dataSource == null) {
                 throw new IOException("Unable to create OGR dataSource: "
                         + file.getAbsolutePath());

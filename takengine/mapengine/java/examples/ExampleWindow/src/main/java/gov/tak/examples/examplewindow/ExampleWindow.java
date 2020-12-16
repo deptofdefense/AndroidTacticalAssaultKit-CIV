@@ -4,11 +4,16 @@ package gov.tak.examples.examplewindow;
 import android.content.Context;
 import android.graphics.PointF;
 import android.opengl.JOGLGLES;
+import android.util.Log;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.*;
 import com.atakmap.map.elevation.ElevationSourceManager;
 import com.atakmap.map.formats.mapbox.MapBoxElevationSource;
+import com.atakmap.map.layer.Layer;
+import com.atakmap.map.layer.LayerFilter;
+import com.atakmap.map.layer.MultiLayer;
+import com.atakmap.map.layer.ProxyLayer;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
 import com.atakmap.map.layer.raster.*;
 import com.atakmap.map.layer.raster.gpkg.GeoPackageTileContainer;
@@ -26,8 +31,10 @@ import com.atakmap.map.opengl.GLBaseMap;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.net.*;
 import com.atakmap.opengl.GLSLUtil;
+import com.atakmap.util.ConfigOptions;
 import com.jogamp.opengl.*;
 import com.jogamp.opengl.util.Animator;
+import gov.tak.examples.examplewindow.overlays.FrameRateOverlay;
 import gov.tak.examples.examplewindow.overlays.PointerInformationOverlay;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import uno.glsl.Program;
@@ -37,12 +44,11 @@ import com.atakmap.map.opengl.GLMapView;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.*;
 import java.security.Security;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Properties;
 
 /**
@@ -59,6 +65,8 @@ public class ExampleWindow implements KeyListener {
     public static void main(String[] args) throws Throwable {
         //System.out.println("press enter to continue"); System.in.read();
 
+        android.util.Log.minLevel = Log.INFO;
+
         context = new Context();
 
         GLRenderGlobals.appContext = context;
@@ -66,9 +74,21 @@ public class ExampleWindow implements KeyListener {
         NativeLoader.init(context);
         EngineLibrary.initialize();
 
+        if(System.getProperty("perspective-camera-enabled", "false").equals("true"))
+            MapSceneModel.setPerspectiveCameraEnabled(true);
+        if(System.getProperty("disable-vsync", "false").equals("true"))
+            ConfigOptions.setOption("disable-vsync", 1);
+        if(System.getProperty("diagnostics", "false").equals("true"))
+            ConfigOptions.setOption("glmapview.render-diagnostics", 1);
+
+        ConfigOptions.setOption("glmapview.gpu-terrain-intersect", "1");
+
         Security.addProvider(new BouncyCastleProvider());
         CertificateManager.setCertificateDatabase(AtakCertificateDatabase.getAdapter());
         CertificateManager.getInstance().initialize(context);
+
+        AtakCertificateDatabase.initialize(context);
+        AtakAuthenticationDatabase.initialize(context);
 
         // provider registration
 
@@ -111,6 +131,9 @@ public class ExampleWindow implements KeyListener {
         PointerInformationOverlay pointerInfo = new PointerInformationOverlay();
         globe.addLayer(pointerInfo);
 
+        FrameRateOverlay fps = new FrameRateOverlay();
+        globe.addLayer(fps);
+
         // add an elevation source
         final MapBoxElevationSource elevationSource = new MapBoxElevationSource(mapboxToken, new File(appDataDir, "mapbox/terrainrgb"));
         Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -120,10 +143,19 @@ public class ExampleWindow implements KeyListener {
         });
         ElevationSourceManager.attach(elevationSource);
 
-        GlobeComponent panel = new GlobeCanvas(globe);
+        GlobeComponent panel;
+        if(System.getProperty("heavyweight-globe", "false").equals("true"))
+            panel = new GlobeCanvas(globe);
+        else
+            panel = new GlobePanel(globe);
         panel.setOnRendererInitializedListener(new GlobeComponent.OnRendererInitializedListener() {
             @Override
             public void onRendererInitialized(Component comp, MapRenderer2 renderer) {
+                if(window.getJMenuBar() == null) {
+                    window.setJMenuBar(buildMenuBar(globe, renderer));
+                    window.revalidate();
+                }
+
                 // restore the last view on initialization
                 try {
                     loadView(renderer, "last");
@@ -141,11 +173,15 @@ public class ExampleWindow implements KeyListener {
         window.getContentPane().setLayout(new BorderLayout());
         window.getContentPane().add((Component)panel, BorderLayout.CENTER);
 
+        if(panel.getRenderer() != null)
+            window.setJMenuBar(buildMenuBar(globe, panel.getRenderer()));
+
         window.setVisible(true);
 
         window.addKeyListener(this);
 
         animator = new Animator(panel);
+        animator.setRunAsFastAsPossible(true);
         animator.start();
 
         window.addWindowListener(new WindowAdapter() {
@@ -254,5 +290,117 @@ public class ExampleWindow implements KeyListener {
         if(!cacheDir.exists())
             cacheDir.mkdirs();
         return cacheDir;
+    }
+
+    private static JMenuBar buildMenuBar(final Globe globe, final MapRenderer2 renderer) {
+        JMenuBar menubar = new JMenuBar();
+
+        JMenu viewMenu = new JMenu("View");
+        JMenu cameraMenu = new JMenu("Camera");
+        ButtonGroup cameraGroup = new ButtonGroup();
+        JRadioButtonMenuItem orthoCameraOption = new JRadioButtonMenuItem("Orthographic");
+        orthoCameraOption.setSelected(!MapSceneModel.isPerspectiveCameraEnabled());
+        JRadioButtonMenuItem perspectiveCameraOption = new JRadioButtonMenuItem("Perspective");
+        perspectiveCameraOption.setSelected(MapSceneModel.isPerspectiveCameraEnabled());
+        cameraGroup.add(orthoCameraOption);
+        cameraGroup.add(perspectiveCameraOption);
+        orthoCameraOption.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                MapSceneModel.setPerspectiveCameraEnabled(!((JRadioButtonMenuItem)e.getItem()).isSelected());
+            }
+        });
+        perspectiveCameraOption.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                MapSceneModel.setPerspectiveCameraEnabled(((JRadioButtonMenuItem)e.getItem()).isSelected());
+            }
+        });
+
+        cameraMenu.add(orthoCameraOption);
+        cameraMenu.add(perspectiveCameraOption);
+
+        viewMenu.add(cameraMenu);
+
+        JMenu projectionMenu = new JMenu("Projection");
+        ButtonGroup projectionGroup = new ButtonGroup();
+        JRadioButtonMenuItem flatProjectionOption = new JRadioButtonMenuItem("Flat");
+        flatProjectionOption.setSelected(renderer.getDisplayMode() == MapRenderer2.DisplayMode.Flat);
+        JRadioButtonMenuItem globeProjectionOption = new JRadioButtonMenuItem("Globe");
+        globeProjectionOption.setSelected(renderer.getDisplayMode() == MapRenderer2.DisplayMode.Globe);
+        projectionGroup.add(flatProjectionOption);
+        projectionGroup.add(globeProjectionOption);
+        flatProjectionOption.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                final boolean flatTarget = ((JRadioButtonMenuItem)e.getItem()).isSelected();
+                final boolean flatCurrent = (renderer.getDisplayMode() == MapRenderer2.DisplayMode.Flat);
+                if(flatTarget != flatCurrent)
+                    renderer.setDisplayMode(flatTarget ? MapRenderer2.DisplayMode.Flat : MapRenderer2.DisplayMode.Globe);
+            }
+        });
+        globeProjectionOption.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                final boolean globeTarget = ((JRadioButtonMenuItem)e.getItem()).isSelected();
+                final boolean globeCurrent = (renderer.getDisplayMode() == MapRenderer2.DisplayMode.Globe);
+                if(globeCurrent != globeCurrent)
+                    renderer.setDisplayMode(globeTarget ? MapRenderer2.DisplayMode.Globe : MapRenderer2.DisplayMode.Flat);
+            }
+        });
+
+        projectionMenu.add(flatProjectionOption);
+        projectionMenu.add(globeProjectionOption);
+
+        viewMenu.add(projectionMenu);
+
+        JCheckBoxMenuItem showFramerateCheckbox = new JCheckBoxMenuItem("Frame Rate", isVisible(globe, FrameRateOverlay.class));
+        showFramerateCheckbox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                final Layer l = findLayer(globe.getLayers(), FrameRateOverlay.class);
+                if(l != null)
+                    l.setVisible(((JCheckBoxMenuItem)e.getSource()).isSelected());
+            }
+        });
+        viewMenu.add(showFramerateCheckbox);
+
+        JCheckBoxMenuItem showPointerInfoCheckbox = new JCheckBoxMenuItem("Pointer Information", isVisible(globe, PointerInformationOverlay.class));
+        showPointerInfoCheckbox.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                final Layer l = findLayer(globe.getLayers(), PointerInformationOverlay.class);
+                if(l != null)
+                    l.setVisible(((JCheckBoxMenuItem)e.getSource()).isSelected());
+            }
+        });
+        viewMenu.add(showPointerInfoCheckbox);
+
+        menubar.add(viewMenu);
+
+        return menubar;
+    }
+
+    static Layer findLayer(Collection<Layer> layers, Class<? extends Layer> type) {
+        if(layers == null)
+            return null;
+        for(Layer l : layers) {
+            if(type.isAssignableFrom(l.getClass())) {
+                return l;
+            } else if(l instanceof MultiLayer) {
+                final Layer hit = findLayer(((MultiLayer) l).getLayers(), type);
+                if (hit != null)
+                    return hit;
+            } else if(l instanceof ProxyLayer) {
+                if(type.isAssignableFrom(((ProxyLayer)l).get().getClass()))
+                    return ((ProxyLayer)l).get();
+            }
+        }
+        return null;
+    }
+
+    static boolean isVisible(Globe globe, Class<? extends Layer> type) {
+        Layer l = findLayer(globe.getLayers(), type);
+        return (l != null) && l.isVisible();
     }
 }

@@ -42,7 +42,8 @@ Feature2::Feature2(const int64_t fid_, const int64_t fsid_, const char *name_, c
     altitudeMode(altitudeMode_),
     extrude(extrude_),
     style(style_.clone(), atakmap::feature::Style::destructStyle),
-    attributes(new atakmap::util::AttributeSet(attributes_), deleter<const atakmap::util::AttributeSet>)
+    attributes(new atakmap::util::AttributeSet(attributes_), deleter<const atakmap::util::AttributeSet>),
+    timestamp(0)
 {}
 
 Feature2::Feature2(const int64_t fid_, const int64_t fsid_, const char *name_, GeometryPtr &&geom_,
@@ -56,7 +57,8 @@ Feature2::Feature2(const int64_t fid_, const int64_t fsid_, const char *name_, G
     altitudeMode(altitudeMode_),
     extrude(extrude_),
     style(nullptr, nullptr),
-    attributes(nullptr, nullptr)
+    attributes(nullptr, nullptr),
+    timestamp(0)
 {
     geometry = GeometryPtr_const(geom_.get(), geom_.get_deleter());
     geom_.release();
@@ -77,7 +79,8 @@ Feature2::Feature2(const int64_t fid_, const int64_t fsid_, const char *name_, G
     altitudeMode(altitudeMode_),
     extrude(extrude_),
     style(std::move(style_)),
-    attributes(std::move(attributes_))
+    attributes(std::move(attributes_)),
+    timestamp(0)
 {
 }
 

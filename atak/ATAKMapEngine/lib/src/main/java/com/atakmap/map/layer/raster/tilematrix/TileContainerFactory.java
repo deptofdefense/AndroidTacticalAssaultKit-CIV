@@ -7,7 +7,7 @@ import java.util.IdentityHashMap;
 import java.util.Collections;
 import java.util.Set;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.util.Visitor;
 
 public final class TileContainerFactory {
@@ -33,7 +33,7 @@ public final class TileContainerFactory {
         if(path == null)
             return null;
 
-        boolean create = !FileIOProviderFactory.exists(new File(path));
+        boolean create = !IOProviderFactory.exists(new File(path));
         for(TileContainerSpi spi : spis) {
             if(hint != null && !spi.getName().equals(hint))
                 continue;

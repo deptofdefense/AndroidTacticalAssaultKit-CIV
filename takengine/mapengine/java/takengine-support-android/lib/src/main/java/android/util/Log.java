@@ -61,6 +61,9 @@ import java.net.UnknownHostException;
  * significant work and incurring significant overhead.
  */
 public final class Log {
+    //[CPL]
+    public static int minLevel;
+
     /** @hide */
     //[CPL]@IntDef({ASSERT, ERROR, WARN, INFO, DEBUG, VERBOSE})
     @Retention(RetentionPolicy.SOURCE)
@@ -350,6 +353,8 @@ public final class Log {
     //[CPL]@UnsupportedAppUsage
     //[CPL]public static native int println_native(int bufID, int priority, String tag, String msg);
     public static int println_native(int bufID, int priority, String tag, String msg) {
+        if(priority < minLevel)
+            return 0;
         StringBuilder output = new StringBuilder();
         output.append('[').append(tag).append("] : ").append(msg);
         System.out.println(output.toString());
@@ -387,6 +392,9 @@ public final class Log {
      */
     public static int printlns(int bufID, int priority, @Nullable String tag, @NonNull String msg,
                                @Nullable Throwable tr) {
+        if(priority < minLevel)
+            return 0;
+
         ImmediateLogWriter logWriter = new ImmediateLogWriter(bufID, priority, tag);
         // Acceptable buffer size. Get the native buffer size, subtract two zero terminators,
         // and the length of the tag.

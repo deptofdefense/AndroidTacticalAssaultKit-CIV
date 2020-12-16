@@ -58,6 +58,7 @@ import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.SimpleItemSelectedListener;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
+import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.conversions.Angle;
 import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.conversions.ConversionFactors;
@@ -83,12 +84,11 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-
 /** Handles the toolbar button for bloodhound */
 public class BloodHoundTool extends ButtonTool implements
         ImageButton.OnLongClickListener,
         ActionBarReceiver.ActionBarChangeListener,
-        SharedPreferences.OnSharedPreferenceChangeListener  {
+        SharedPreferences.OnSharedPreferenceChangeListener {
 
     public static final String BLOOD_HOUND = "com.atakmap.android.toolbars.BLOOD_HOUND";
     public static final String TOOL_IDENTIFIER = "com.atakmap.android.toolbars.BloodHoundButtonTool";
@@ -124,14 +124,15 @@ public class BloodHoundTool extends ButtonTool implements
     private boolean running = false;
     private boolean manuallyClosed = true;
 
-    private SimpleSpeedBearingComputer ssc = new SimpleSpeedBearingComputer(30);
+    private final SimpleSpeedBearingComputer ssc = new SimpleSpeedBearingComputer(
+            30);
 
     private String _uid;
 
-    private BloodHoundHUD _bloodHoundHUD;
-    private BloodHoundZoomWidget _zoomWidget;
-    public BloodHoundRouteWidget _routeWidget;
-    private BloodHoundNavWidget _navWidget;
+    private final BloodHoundHUD _bloodHoundHUD;
+    private final BloodHoundZoomWidget _zoomWidget;
+    public final BloodHoundRouteWidget _routeWidget;
+    private final BloodHoundNavWidget _navWidget;
 
     private boolean spinDoNotClear = false;
 
@@ -223,23 +224,10 @@ public class BloodHoundTool extends ButtonTool implements
 
         timer = new Timer();
 
-        try {
-            if (timer != null && timerTask != null) {
-                timerTask.cancel();
-                timer.purge();
-            }
-        } catch (Exception ignored) {
-        }
-
-        timerTask = new FlashTimerTask();
-        if (timer != null) {
-            timer.schedule(timerTask, 300, 300);
-        }
-
         _prefs = new BloodHoundPreferences(mapView);
 
         ToolManagerBroadcastReceiver.getInstance().registerTool(
-                TOOL_IDENTIFIER,  this);
+                TOOL_IDENTIFIER, this);
 
         AtakBroadcast.getInstance().registerReceiver(houndReceiver,
                 new AtakBroadcast.DocumentedIntentFilter(BLOOD_HOUND));
@@ -327,7 +315,8 @@ public class BloodHoundTool extends ButtonTool implements
         Log.d(TAG, "bloodhound setActive:" + running);
         if (_amd != null) {
             _amd.setSelected(active);
-            ActivityCompat.invalidateOptionsMenu((Activity) _mapView.getContext());
+            ActivityCompat
+                    .invalidateOptionsMenu((Activity) _mapView.getContext());
         }
     }
 
@@ -622,6 +611,9 @@ public class BloodHoundTool extends ButtonTool implements
         final Spinner spin = view.findViewById(R.id.spinnerItems);
         final TextView spinLabel = view
                 .findViewById(R.id.spinnerItemsLabel);
+        spinLabel.setText(ResourceUtil.getResource(
+                R.string.civ_quick_select_spi, R.string.quick_select_spi));
+
         if (_spiItems.size() > 1) {
             ArrayAdapter<MapItem> adapter = new ArrayAdapter<MapItem>(
                     _mapView.getContext(),
@@ -923,8 +915,17 @@ public class BloodHoundTool extends ButtonTool implements
         }
     };
 
-    /** Starts the bloodhound tool to the given SPI */
-    private void _startBloodhound(MapItem item) {
+    /**
+     * Starts the bloodhound tool for a given MapItem.
+     */
+    private void _startBloodhound(final MapItem item) {
+
+        if (timerTask != null) {
+            timer.purge();
+        }
+
+        timerTask = new FlashTimerTask();
+        timer.schedule(timerTask, 300, 300);
 
         _zoomWidget.setVisible(true);
         _bloodHoundHUD.setLayoutVisible(true);
@@ -1010,11 +1011,11 @@ public class BloodHoundTool extends ButtonTool implements
 
                         linkListener.line.dispose();
 
-                        if (_link != null) { 
+                        if (_link != null) {
                             RouteMapReceiver.getInstance().getRouteGroup()
                                     .removeItem(_link.route);
-                                _link.route.dispose();
-                                _link = null;
+                            _link.route.dispose();
+                            _link = null;
                         }
 
                         if (_startItem != null) {
@@ -1198,17 +1199,22 @@ public class BloodHoundTool extends ButtonTool implements
     @Override
     public void onToolEnd() {
         super.onToolEnd();
+
+        // No reason to keep the timer task going, only should be running the timer when the
+        // tool enters onToolBegin and ends when the onToolEnd.
         timerTask.setEta(Double.NaN);
-        if (_link != null) { 
+        timerTask.cancel();
+        timer.purge();
+
+        if (_link != null) {
             _link.route.dispose();
             _link = null;
         }
     }
 
-
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sp,
-                                          String key) {
+            String key) {
         switch (key) {
             case "rab_north_ref_pref":
                 _northReference = _prefs.getNorthReference();
@@ -1260,7 +1266,6 @@ public class BloodHoundTool extends ButtonTool implements
             _updateLinkInfo();
     }
 
-
     public void _updateLinkInfo() {
         PointMapItem startPoint = getStartItem();
         PointMapItem endPoint = getEndItem();
@@ -1308,7 +1313,7 @@ public class BloodHoundTool extends ButtonTool implements
             if (_displaySlantRange) {
                 text += bs + " "
                         + SpanUtilities.formatType(_rangeUnits, slantRange,
-                        Span.METER);
+                                Span.METER);
             } else {
                 //user pref selected ground clamped direction instead of slant range
                 text += bs + " " + SpanUtilities.formatType(_rangeUnits, range,
@@ -1329,7 +1334,7 @@ public class BloodHoundTool extends ButtonTool implements
                     && endPoint.getPoint().isAltitudeValid()) {
                 text += "   "
                         + AngleUtilities.format(Math.abs(depAngle),
-                        _bearingUnits, false);
+                                _bearingUnits, false);
                 if (depAngle > 0) {
                     text += "\u2191"; //Up arrow
                 } else if (depAngle < 0) {
@@ -1511,9 +1516,9 @@ public class BloodHoundTool extends ButtonTool implements
 
                         BloodHoundToolLink link = getlink();
                         if (eta <= flashETA && blink % 9 == 0) {
-                                _bloodHoundHUD.setColor(flashColor);
-                                if (link != null)
-                                    link.setColor(flashColor);
+                            _bloodHoundHUD.setColor(flashColor);
+                            if (link != null)
+                                link.setColor(flashColor);
                         } else {
                             int currentColor = currentColor();
                             _bloodHoundHUD.setColor(currentColor);

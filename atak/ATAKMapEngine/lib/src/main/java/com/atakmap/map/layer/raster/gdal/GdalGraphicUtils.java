@@ -1,6 +1,7 @@
 
 package com.atakmap.map.layer.raster.gdal;
 
+import java.io.File;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -8,6 +9,7 @@ import java.util.Vector;
 
 import com.atakmap.coremap.log.Log;
 
+import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.opengl.GLES20FixedPipeline;
 
@@ -28,7 +30,7 @@ public class GdalGraphicUtils {
         Dataset src = null;
         Dataset dst = null;
         try {
-            src = org.gdal.gdal.gdal.Open(srcPath, gdalconst.GA_ReadOnly);
+            src = GdalLibrary.openDatasetFromFile(new File(srcPath), gdalconst.GA_ReadOnly);
             if(src == null)
                 return false;
             Vector<String> args = new Vector<String>();

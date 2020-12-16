@@ -126,8 +126,8 @@ public class GetCotHistoryOperation extends HTTPOperation {
             try {
                 if (client != null)
                     client.shutdown();
-            } catch (Exception ignore) {
-                Log.e(TAG, "Failed to shutdown the client", ignore);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to shutdown the client", e);
             }
         }
     }

@@ -27,8 +27,6 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.os.Build;
 import com.atakmap.android.util.ATAKConstants;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import com.atakmap.coremap.log.Log;
 
 import java.util.Locale;
@@ -44,6 +42,7 @@ public class BackgroundServices extends Service implements LocationListener,
     private static final String TAG = "BackgroundServices";
 
     static PendingIntent contentIntent;
+    private static Notification notification;
 
     public static final String SPEAK_INTENT = "com.atakmap.android.speak";
     public static final String SPEAK_TEXT = "text";
@@ -58,7 +57,7 @@ public class BackgroundServices extends Service implements LocationListener,
     private TextToSpeech _textToSpeech;
     private AudioManager audioManager = null;
 
-    private UtteranceProgressListener upListener = new UtteranceProgressListener() {
+    private final UtteranceProgressListener upListener = new UtteranceProgressListener() {
         @Override
         public void onDone(String utteranceId) {
             Log.d(TAG, "utterance onDone");
@@ -79,13 +78,13 @@ public class BackgroundServices extends Service implements LocationListener,
         }
     };
 
-    private AudioManager.OnAudioFocusChangeListener afChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+    private final AudioManager.OnAudioFocusChangeListener afChangeListener = new AudioManager.OnAudioFocusChangeListener() {
         @Override
         public void onAudioFocusChange(int focusChange) {
         }
     };
 
-    private BroadcastReceiver receiver = new BroadcastReceiver() {
+    private final BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
 
@@ -115,41 +114,12 @@ public class BackgroundServices extends Service implements LocationListener,
     @Override
     @SuppressLint("MissingPermission")
     public void onCreate() {
+        super.onCreate();
+
         _instance = this;
 
-        final Context ctx = this;
-
-        // create the notification util which creates the default channel on the newer android versions
-        NotificationUtil.getInstance().cancelAll();
-
-        Intent atakFrontIntent = new Intent();
-        atakFrontIntent.setComponent(ATAKConstants.getComponentName());
-        atakFrontIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
-                | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-
-        // requires the use of currentTimeMillis
-        PendingIntent contentIntent = PendingIntent.getActivity(ctx,
-                (int) System.currentTimeMillis(),
-                atakFrontIntent, PendingIntent.FLAG_CANCEL_CURRENT);
-        Notification.Builder nBuilder;
-        if (android.os.Build.VERSION.SDK_INT < 26) {
-            nBuilder = new Notification.Builder(ctx);
-        } else {
-            nBuilder = new Notification.Builder(ctx, "com.atakmap.app.def");
-        }
-        nBuilder.setContentTitle(ATAKConstants.getAppName())
-                .setContentText(ATAKConstants.getAppName() + " Running....")
-                .setSmallIcon(
-                        com.atakmap.android.util.ATAKConstants.getIconId())
-                .setContentIntent(contentIntent)
-                .setAutoCancel(true);
-        nBuilder.setStyle(new Notification.BigTextStyle()
-                .bigText(ATAKConstants.getAppName() + " Running...."));
-        nBuilder.setOngoing(true);
-        nBuilder.setAutoCancel(false);
-        final Notification notification = nBuilder.build();
-
         startForeground(NOTIFICATION_ID, notification);
+
         mLocationManager = (LocationManager) this
                 .getSystemService(Context.LOCATION_SERVICE);
         if (mLocationManager != null) {
@@ -172,7 +142,7 @@ public class BackgroundServices extends Service implements LocationListener,
         //        this);
         //}    
 
-        _textToSpeech = new TextToSpeech(ctx, this);
+        _textToSpeech = new TextToSpeech(this, this);
 
         DocumentedIntentFilter filter = new DocumentedIntentFilter(SPEAK_INTENT,
                 "Allows for speaking to occur when the app is backgrounded, utilizes"
@@ -281,8 +251,48 @@ public class BackgroundServices extends Service implements LocationListener,
     }
 
     public static void start(final Activity a) {
+
+        final Context ctx = a;
+
+        // create the notification util which creates the default channel on the newer android versions
+        NotificationUtil.getInstance().cancelAll();
+
+        Intent atakFrontIntent = new Intent();
+        atakFrontIntent.setComponent(ATAKConstants.getComponentName());
+
+        atakFrontIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+        // requires the use of currentTimeMillis
+        PendingIntent contentIntent = PendingIntent.getActivity(ctx,
+                (int) System.currentTimeMillis(),
+                atakFrontIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+        Notification.Builder nBuilder;
+        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            nBuilder = new Notification.Builder(ctx);
+        } else {
+            nBuilder = new Notification.Builder(ctx, "com.atakmap.app.def");
+        }
+        nBuilder.setContentTitle(ATAKConstants.getAppName())
+                .setContentText(ATAKConstants.getAppName() + " Running....")
+                .setSmallIcon(
+                        com.atakmap.android.util.ATAKConstants.getIconId())
+                .setContentIntent(contentIntent)
+                .setAutoCancel(true);
+        nBuilder.setStyle(new Notification.BigTextStyle()
+                .bigText(ATAKConstants.getAppName() + " Running...."));
+        nBuilder.setOngoing(true);
+        nBuilder.setAutoCancel(false);
+        notification = nBuilder.build();
+
         Log.d(TAG, "call to start the gps keep alive service");
-        startForegroundService(a, new Intent(a, BackgroundServices.class));
+        Intent i = new Intent(a, BackgroundServices.class);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            a.startForegroundService(i);
+        } else {
+            a.startService(i);
+        }
         Log.d(TAG, "call to start the gps keep alive service completed");
     }
 
@@ -292,26 +302,6 @@ public class BackgroundServices extends Service implements LocationListener,
             _instance.stopForeground(true);
             _instance.stopSelf();
             Log.d(TAG, "call to stop the gps keep alive service completed");
-        }
-    }
-
-    public static void startForegroundService(Activity a, Intent i) {
-
-        if (Build.VERSION.SDK_INT >= 26) {
-            Log.d(TAG, "sdk version >= 26");
-            Method m;
-            try {
-                m = a.getClass().getMethod("startForegroundService",
-                        Intent.class);
-                m.invoke(a, i);
-            } catch (SecurityException | NoSuchMethodException
-                    | IllegalArgumentException | IllegalAccessException
-                    | InvocationTargetException e) {
-                Log.e(TAG, "startForegroundService failed", e);
-            }
-        } else {
-            Log.d(TAG, "sdk version < 26");
-            a.startService(i);
         }
     }
 

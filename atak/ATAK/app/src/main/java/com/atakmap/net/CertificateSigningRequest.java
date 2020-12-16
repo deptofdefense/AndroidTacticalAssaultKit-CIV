@@ -15,7 +15,7 @@ public class CertificateSigningRequest implements Parcelable {
     private final String server;
     private final String username;
     private final String password;
-    private boolean hasTruststore;
+    private final boolean hasTruststore;
 
     /**
      * @deprecated Certificate Enrollment only stores certificates with the connection
@@ -26,7 +26,7 @@ public class CertificateSigningRequest implements Parcelable {
 
     private boolean getProfile;
     private final String CSR;
-    private boolean allowAllHostnames;
+    private final boolean allowAllHostnames;
 
     public CertificateSigningRequest(
             String server, String username, String password,

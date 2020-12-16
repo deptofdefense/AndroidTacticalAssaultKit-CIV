@@ -1,13 +1,10 @@
 
 package com.atakmap.android.chat;
 
-import com.atakmap.android.database.DatabaseFactory;
-import com.atakmap.android.database.DatabaseInformation;
-import com.atakmap.android.database.DatabaseProvider;
-import com.atakmap.android.database.ProviderChangeRequestedListener;
+import com.atakmap.coremap.io.DatabaseInformation;
 
-import com.atakmap.coremap.io.FileIOProvider;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
@@ -44,7 +41,7 @@ import java.util.List;
 import com.atakmap.coremap.locale.LocaleUtil;
 import android.database.DatabaseUtils;
 
-public class ChatDatabase implements ProviderChangeRequestedListener {
+public class ChatDatabase {
     public static final String TAG = "ChatDatabase";
     public static final int VERSION = 6;
 
@@ -57,7 +54,7 @@ public class ChatDatabase implements ProviderChangeRequestedListener {
     static final String TABLE_GROUPS = "Groups";
     static final String ARRAY_DELIMITER = ",";
 
-    private SharedPreferences chatPrefs;
+    private final SharedPreferences chatPrefs;
 
     private static class DBColumn {
         public String key;
@@ -132,23 +129,16 @@ public class ChatDatabase implements ProviderChangeRequestedListener {
         return _instance;
     }
 
-    @Override
-    public void onProviderChangeRequested(DatabaseProvider provider,
-            int change) {
-        Log.d(TAG, "provider change requested" + provider + " " + change);
-        initDatabase();
-
-        fireChatDatabaseChanged();
-    }
-
     private void initDatabase() {
 
         final DatabaseIface oldChatDb = chatDb;
 
         DatabaseInformation dbi = new DatabaseInformation(
-                Uri.fromFile(CHAT_DB_FILE2), this);
+                Uri.fromFile(CHAT_DB_FILE2),
+                DatabaseInformation.OPTION_RESERVED1
+                        | DatabaseInformation.OPTION_ENSURE_PARENT_DIRS);
 
-        DatabaseIface newChatDb = DatabaseFactory.create(dbi);
+        DatabaseIface newChatDb = IOProviderFactory.createDatabase(dbi);
 
         if (newChatDb != null) {
 
@@ -160,8 +150,9 @@ public class ChatDatabase implements ProviderChangeRequestedListener {
         } else {
             try {
                 final File f = CHAT_DB_FILE2;
-                if (!FileIOProviderFactory.renameTo(f, new File(CHAT_DB_FILE2 + ".corrupt."
-                        + new CoordinatedTime().getMilliseconds()))) {
+                if (!IOProviderFactory.renameTo(f,
+                        new File(CHAT_DB_FILE2 + ".corrupt."
+                                + new CoordinatedTime().getMilliseconds()))) {
                     Log.d(TAG, "could not move corrupt db out of the way");
                 } else {
                     Log.d(TAG,
@@ -170,7 +161,7 @@ public class ChatDatabase implements ProviderChangeRequestedListener {
                 }
             } catch (Exception ignored) {
             }
-            newChatDb = DatabaseFactory.create(dbi);
+            newChatDb = IOProviderFactory.createDatabase(dbi);
             if (newChatDb != null) {
                 Log.d(TAG, "Upgrading from v" + newChatDb.getVersion()
                         + " to v" + VERSION);
@@ -453,7 +444,7 @@ public class ChatDatabase implements ProviderChangeRequestedListener {
     }
 
     // TODO - Use CL's suggestion about the Map.
-    // check out the class com.atakmap.database.BindArgument
+    // check out the class com.atakmap.database.android.BindArgument
     //you can return a LinkedHashMap<String, BindArgument> instead of a pair, where String is column name (used to build SQL) and the bind arguments are the args (edited)
     // there's a static function on BindArgument that takes a collection of them, compiles a statement, binds the arguemtns and executes it
 
@@ -1021,7 +1012,7 @@ public class ChatDatabase implements ProviderChangeRequestedListener {
 
     void clearAll() {
         chatDb.close();
-        FileIOProviderFactory.delete(CHAT_DB_FILE2, FileIOProvider.SECURE_DELETE);
+        IOProviderFactory.delete(CHAT_DB_FILE2, IOProvider.SECURE_DELETE);
 
         initDatabase();
         fireChatDatabaseChanged();
@@ -1096,11 +1087,9 @@ public class ChatDatabase implements ProviderChangeRequestedListener {
             List<List<String>> resultTable)
             throws IOException {
         File file = new File(filename);
-        if (!FileIOProviderFactory.exists(file))
-            if (!file.createNewFile()) {
-                Log.d(TAG, "could not wrap: " + file);
-            }
-        BufferedWriter writer = new BufferedWriter(FileIOProviderFactory.getFileWriter(file));
+        IOProviderFactory.createNewFile(file);
+        BufferedWriter writer = new BufferedWriter(
+                IOProviderFactory.getFileWriter(file));
         try {
             for (List<String> row : resultTable) {
                 String delim = "";

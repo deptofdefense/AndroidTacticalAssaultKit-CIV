@@ -1,10 +1,13 @@
 
 package com.atakmap.android.gridlines.graphics;
 
+import android.graphics.PointF;
+
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.graphics.GLPolyline;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.map.opengl.GLMapView;
@@ -91,6 +94,22 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
                     if (StringUtils.isEmpty(_text))
                         return;
                     map.forward(pt, map.scratch.pointF);
+                    // Loop through the line until we find a segment that crosses x = 0, this
+                    // prevents the labels from spazzing out when zooming out.
+                    if (map.scratch.pointF.x < 0) {
+                        PointF prev = map.scratch.pointF;
+                        for (int i = line.getPoints().length - 1; i > 1; i--) {
+                            PointF curr = map.forward(line.getPoints()[i - 1]);
+                            if (prev.x < 0 && curr.x > 0) {
+                                float deltaX = curr.x - prev.x;
+                                float deltaY = curr.y - prev.y;
+                                float slope = deltaY / deltaX;
+                                map.scratch.pointF.y = curr.y - slope * curr.x;
+                                map.scratch.pointF.x = 0;
+                            }
+                        }
+                    }
+
                     float yoffset;
                     float xoffset = (map.scratch.pointF.x
                             + (_glText.getStringWidth(_text)) / 2);
@@ -111,7 +130,7 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
 
                     // draw labels only if too far out
                     GLES20FixedPipeline.glPushMatrix();
-                    GLES20FixedPipeline.glTranslatef(xoffset + 2f, yoffset + 4f,
+                    GLES20FixedPipeline.glTranslatef(xoffset + 9f, yoffset + 4f,
                             0f);
                     _glText.draw(_text, _red, _green, _blue, 1.0f);
                     GLES20FixedPipeline.glPopMatrix();
@@ -277,6 +296,27 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
                     yoffset = (map.scratch.pointF.y - (_glText.getStringHeight()
                             / 2) - 8f);
                 } else {
+                    // Do the same thing as in _drawLatLines() except we treat the y-values as x-values
+                    // and vice versa. Essentially rotating a cartesian graph to the right by 90 degrees.
+                    int height = MapView.getMapView().getHeight();
+                    if (map.scratch.pointF.y > height) {
+                        PointF prev = map.scratch.pointF;
+                        for (int i = 1; i < line.getPoints().length - 1; i++) {
+                            PointF curr = map.forward(line.getPoints()[i + 1]);
+                            if (prev.y > height && curr.y < height) {
+                                float deltaX = curr.x - prev.x;
+                                float deltaY = curr.y - prev.y;
+                                float slope = deltaX / deltaY;
+                                map.scratch.pointF.y = height;
+                                // Have to find the xIntercept since the point we're solving for
+                                // isn't at y = 0.
+                                float xIntercept = curr.x - slope * curr.y;
+                                map.scratch.pointF.x = (height * slope)
+                                        + xIntercept;
+                            }
+                        }
+
+                    }
                     yoffset = (map.scratch.pointF.y - (_glText.getStringHeight()
                             / 2) - 8f);
                 }
@@ -297,7 +337,8 @@ public class GLLatLngZoneOverlay extends GLZonesOverlay {
 
                 // draw labels only if too far out
                 GLES20FixedPipeline.glPushMatrix();
-                GLES20FixedPipeline.glTranslatef(xoffset, yoffset + 4f, 0f);
+                GLES20FixedPipeline.glTranslatef(xoffset + 9f, yoffset + 4f,
+                        0f);
                 _glText.draw(_text, _red, _green, _blue, 1.0f);
                 GLES20FixedPipeline.glPopMatrix();
             }

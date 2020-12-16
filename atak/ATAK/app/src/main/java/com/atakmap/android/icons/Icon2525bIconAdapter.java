@@ -35,7 +35,7 @@ public class Icon2525bIconAdapter implements IconAdapter {
     private static final String TAG = "Icon2525bIconAdapter";
 
     private Context _context;
-    private HashMap<String, MapDataRef> _refCache = new HashMap<>();
+    private final HashMap<String, MapDataRef> _refCache = new HashMap<>();
     private final Map<String, MapDataRef> typeIconMap = new HashMap<>();
     private static final Map<String, Integer> teamColors = new HashMap<>();
 
@@ -64,7 +64,7 @@ public class Icon2525bIconAdapter implements IconAdapter {
     }
 
     private FiltersConfig _filters; // do not use directly for this class 
-    private HashMap<String, String> type2icon = new HashMap<>();
+    private final HashMap<String, String> type2icon = new HashMap<>();
 
     public Icon2525bIconAdapter(final Context context) {
         try {
@@ -95,7 +95,6 @@ public class Icon2525bIconAdapter implements IconAdapter {
         _filters = null;
         _refCache.clear();
         type2icon.clear();
-        _refCache = null;
     }
 
     /**

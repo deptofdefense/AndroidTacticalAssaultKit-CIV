@@ -3,7 +3,7 @@ package com.atakmap.map.layer.model.pointcloud;
 import android.util.JsonReader;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.io.ZipVirtualFile;
@@ -65,7 +65,7 @@ public class LocalToGpsJsonGeoreferencer implements Georeferencer {
                 double hae = 0.0;
                 ModelInfo.AltitudeMode altMode = ModelInfo.AltitudeMode.Relative;
 
-                fr = FileIOProviderFactory.getInputStream(geoRefFile);
+                fr = IOProviderFactory.getInputStream(geoRefFile);
                 JSONObject json = new JSONObject(FileSystemUtils.copyStreamToString(fr, true,
                         FileSystemUtils.UTF8_CHARSET));
                 Iterator<String> keys = json.keys();

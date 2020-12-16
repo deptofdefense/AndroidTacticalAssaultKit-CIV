@@ -56,15 +56,6 @@
 
 ## Using TAK Thirdparty Build System
 
-  - Checkout the source trees:
-      - git clone <https://git.takmaps.com/TAK-Engine-3rd-Party-Owners/takthirdparty.git>
-      - git clone <https://git.takmaps.com/PAR-Government/gdal.git>
-      - git clone
-        <https://git.takmaps.com/PAR-Government/pgscthread.git>
-      - git clone <https://git.takmaps.com/tcm/pri.git>
-      - git clone <https://git.takmaps.com/PAR-Government/assimp.git>
-      - git clone <https://git.takmaps.com/tak-engine/commoncommo>   (only needed for commo builds)
-      - cvs co kdu   (PAR internal only due to licensing - enables KDU-based j2k support in gdal)
   - cd takthirdparty
   - Simply type *make* to get some generic help and list the valid
     targets

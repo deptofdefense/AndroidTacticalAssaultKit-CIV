@@ -18,18 +18,18 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.gdal.gdal.Dataset;
-import org.gdal.gdal.gdal;
 
 import android.net.Uri;
 import android.util.Pair;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.LegacyAdapters;
 import com.atakmap.map.MapControl;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.control.ColorControl;
 import com.atakmap.map.layer.control.Controls;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
@@ -87,7 +87,7 @@ public class GLMosaicMapLayer extends
 
             final MosaicDatasetDescriptor mosaic = (MosaicDatasetDescriptor)info;
             File dbFile = mosaic.getMosaicDatabaseFile();
-            if (dbFile == null || !FileIOProviderFactory.exists(dbFile) || FileIOProviderFactory.length(dbFile) < 1) {
+            if (dbFile == null || !IOProviderFactory.exists(dbFile) || IOProviderFactory.length(dbFile) < 1) {
                 Log.e(TAG, "Mosaic database does not exist for dataset " + info.getUri());
                 return null;
             }
@@ -697,7 +697,7 @@ outer:      for(MosaicDatabase2.QueryParameters p : params) {
     
             Dataset dataset = null;
             if(retval.reader == null) {
-                dataset = gdal.Open(GLMosaicMapLayer.this.resolvePath(frame.path));
+                dataset = GdalLibrary.openDatasetFromPath(GLMosaicMapLayer.this.resolvePath(frame.path));
                 if (dataset == null) {
                     retval.error = new RuntimeException("Failed to create tile reader for " + frame.path);
                     return retval;

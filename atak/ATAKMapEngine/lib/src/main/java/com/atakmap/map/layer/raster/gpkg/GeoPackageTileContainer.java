@@ -3,7 +3,7 @@ package com.atakmap.map.layer.raster.gpkg;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import android.graphics.Bitmap;
@@ -44,7 +44,7 @@ public class GeoPackageTileContainer implements TileContainer {
         public TileContainer create(String name, String path, TileMatrix spec) {
             // since we are creating, if the file exists delete it to overwrite
             File f = new File(path);
-            if(FileIOProviderFactory.exists(f))
+            if(IOProviderFactory.exists(f))
                 FileSystemUtils.delete(f);
             
             // adopt the name from the spec if not defined

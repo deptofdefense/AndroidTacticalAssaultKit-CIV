@@ -8,14 +8,13 @@ package com.atakmap.io;
  */
 
 import java.io.*;
-import java.lang.ref.Reference;
 import java.util.*;
 
-import java.util.zip.*;
-
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.util.ReferenceCount;
+import com.atakmap.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipFile;
 
 /**
  * @author Developer
@@ -37,25 +36,24 @@ public class ZipVirtualFile extends File {
     }
 
     public ZipVirtualFile(File parent, String child) {
-        this((parent instanceof ZipVirtualFile) ?
-                ((ZipVirtualFile) parent).zipFile :
-                getZipFile(parent),
-             (parent instanceof ZipVirtualFile) ?
-                ((ZipVirtualFile)parent).shadow.root :
+        this((parent instanceof ZipVirtualFile)
+                ? ((ZipVirtualFile) parent).zipFile
+                : getZipFile(parent),
+                (parent instanceof ZipVirtualFile)
+                        ? ((ZipVirtualFile) parent).shadow.root
+                        : null,
                 null,
-             null,
-             getZipEntryPath(parent.getAbsolutePath() + File.separatorChar + child));
+                getZipEntryPath(
+                        parent.getAbsolutePath() + File.separatorChar + child));
     }
 
     public ZipVirtualFile(File f) {
-        this((f instanceof ZipVirtualFile) ?
-                ((ZipVirtualFile)f).zipFile :
-                getZipFile(f),
-             (f instanceof ZipVirtualFile) ?
-                ((ZipVirtualFile)f).shadow.root :
+        this((f instanceof ZipVirtualFile) ? ((ZipVirtualFile) f).zipFile
+                : getZipFile(f),
+                (f instanceof ZipVirtualFile) ? ((ZipVirtualFile) f).shadow.root
+                        : null,
                 null,
-             null,
-             getZipEntryPath(f));
+                getZipEntryPath(f));
     }
 
     public ZipVirtualFile(String path) {
@@ -66,27 +64,29 @@ public class ZipVirtualFile extends File {
         this(zip, shadow, null);
     }
 
-    private ZipVirtualFile(File zip, HierarchicalZipFile shadow, String entryPath) {
+    private ZipVirtualFile(File zip, HierarchicalZipFile shadow,
+            String entryPath) {
         this(zip,
-             (shadow != null) ? shadow.root : null,
-             shadow,
-             entryPath);
+                (shadow != null) ? shadow.root : null,
+                shadow,
+                entryPath);
     }
 
-    private ZipVirtualFile(File zip, HierarchicalZipFile shadowRoot, HierarchicalZipFile shadow, String entryPath) {
+    private ZipVirtualFile(File zip, HierarchicalZipFile shadowRoot,
+            HierarchicalZipFile shadow, String entryPath) {
         super("");
         if (zip == null)
             throw new IllegalArgumentException("not a zip file.");
 
         this.zipFile = zip;
         if (shadow == null) {
-            if(shadowRoot == null) {
-                synchronized(mounts) {
+            if (shadowRoot == null) {
+                synchronized (mounts) {
                     ReferenceCount<HierarchicalZipFile> ref = mounts.get(zip);
                     if (ref != null)
                         shadowRoot = ref.value;
                 }
-                if(shadowRoot == null) {
+                if (shadowRoot == null) {
                     try {
                         shadowRoot = buildHierarchy(this.zipFile);
                     } catch (IOException e) {
@@ -103,11 +103,12 @@ public class ZipVirtualFile extends File {
     }
 
     public String toString() {
-        StringBuilder retval = new StringBuilder(this.zipFile.getAbsolutePath());
-        if(this.shadow != null) {
+        StringBuilder retval = new StringBuilder(
+                this.zipFile.getAbsolutePath());
+        if (this.shadow != null) {
             retval.append(File.separatorChar);
             retval.append(this.shadow.entry.getName());
-        } else if(this.entryPath != null) {
+        } else if (this.entryPath != null) {
             retval.append(File.separatorChar);
             retval.append(this.entryPath);
         }
@@ -179,7 +180,8 @@ public class ZipVirtualFile extends File {
             OpenArchiveSpec spec = openZipFiles.get(this.zipFile);
             if (b) {
                 if (spec == null)
-                    openZipFiles.put(this.zipFile, spec = new OpenArchiveSpec(this.zipFile));
+                    openZipFiles.put(this.zipFile,
+                            spec = new OpenArchiveSpec(this.zipFile));
                 spec.batchmode.add(this);
             } else if (spec != null) {
                 spec.batchmode.remove(this);
@@ -195,7 +197,7 @@ public class ZipVirtualFile extends File {
 
     @Override
     public String getName() {
-        if(this.shadow != null) {
+        if (this.shadow != null) {
             if (this.shadow.parent == null)
                 return this.zipFile.getName();
 
@@ -233,22 +235,26 @@ public class ZipVirtualFile extends File {
 
     @Override
     public String getAbsolutePath() {
-        return this.zipFile.getAbsolutePath() + File.separator + this.getEntryPath();
+        return this.zipFile.getAbsolutePath() + File.separator
+                + this.getEntryPath();
     }
 
     @Override
     public File getAbsoluteFile() {
-        return new ZipVirtualFile(this.zipFile.getAbsoluteFile(), this.shadow, this.entryPath);
+        return new ZipVirtualFile(this.zipFile.getAbsoluteFile(), this.shadow,
+                this.entryPath);
     }
 
     @Override
     public String getCanonicalPath() throws IOException {
-        return this.zipFile.getCanonicalPath() + File.separator + this.getEntryPath();
+        return this.zipFile.getCanonicalPath() + File.separator
+                + this.getEntryPath();
     }
 
     @Override
     public File getCanonicalFile() throws IOException {
-        return new ZipVirtualFile(this.zipFile.getCanonicalFile(), this.shadow, this.entryPath);
+        return new ZipVirtualFile(this.zipFile.getCanonicalFile(), this.shadow,
+                this.entryPath);
     }
 
     /* -- Attribute accessors -- */
@@ -270,7 +276,7 @@ public class ZipVirtualFile extends File {
 
     @Override
     public boolean isDirectory() {
-        if (!FileIOProviderFactory.exists(this))
+        if (!IOProviderFactory.exists(this))
             return false;
         return this.shadow.isDirectory();
     }
@@ -288,14 +294,14 @@ public class ZipVirtualFile extends File {
 
     @Override
     public long lastModified() {
-        if (!FileIOProviderFactory.exists(this))
+        if (!IOProviderFactory.exists(this))
             return 0L;
         return this.shadow.entry.getTime();
     }
 
     @Override
     public long length() {
-        if (!FileIOProviderFactory.exists(this))
+        if (!IOProviderFactory.exists(this))
             return 0L;
         return this.shadow.entry.getSize();
     }
@@ -324,11 +330,11 @@ public class ZipVirtualFile extends File {
 
     @Override
     public String[] list(FilenameFilter filter) {
-        if (!FileIOProviderFactory.exists(this) || !this.shadow.isDirectory())
+        if (!IOProviderFactory.exists(this) || !this.shadow.isDirectory())
             return null;
 
         File[] list = this.listFiles(filter);
-        if(list == null)
+        if (list == null)
             return null;
 
         String[] retval = new String[list.length];
@@ -352,11 +358,11 @@ public class ZipVirtualFile extends File {
 
     @Override
     public File[] listFiles(FileFilter filter) {
-        if (!FileIOProviderFactory.exists(this) || !this.shadow.isDirectory())
+        if (!IOProviderFactory.exists(this) || !this.shadow.isDirectory())
             return null;
 
         HierarchicalZipFile[] children = this.shadow.getChildren();
-        if(children == null)
+        if (children == null)
             return null;
 
         ArrayList<File> retval = new ArrayList<File>(children.length);
@@ -434,7 +440,7 @@ public class ZipVirtualFile extends File {
 
     @Override
     public long getTotalSpace() {
-        return FileIOProviderFactory.length(zipFile);
+        return IOProviderFactory.length(zipFile);
     }
 
     @Override
@@ -473,7 +479,7 @@ public class ZipVirtualFile extends File {
     private static File getZipFile(File f) {
         if (f instanceof ZipVirtualFile)
             return ((ZipVirtualFile) f).getZipFile();
-        if (!FileIOProviderFactory.exists(f) && f.getParentFile() != null)
+        if (!IOProviderFactory.exists(f) && f.getParentFile() != null)
             return getZipFile(f.getParentFile());
         ZipFile z = null;
         try {
@@ -503,24 +509,28 @@ public class ZipVirtualFile extends File {
         if (zipFile == null)
             return null;
         String retval = f.getPath().substring(zipFile.getPath().length());
-        if (retval.length() >= 1 && (retval.charAt(0) == '/' || retval.charAt(0) == '\\'))
+        if (retval.length() >= 1
+                && (retval.charAt(0) == '/' || retval.charAt(0) == '\\'))
             retval = retval.substring(1);
         if (retval.length() < 1)
             return null;
         return retval;
     }
 
-    private static HierarchicalZipFile buildHierarchy(File file) throws IOException {
+    private static HierarchicalZipFile buildHierarchy(File file)
+            throws IOException {
         ZipFile zipFile = null;
         try {
             zipFile = new ZipFile(file);
 
             HierarchicalZipFile root = new HierarchicalZipFile();
-            root.entry.setTime(FileIOProviderFactory.lastModified(file));
+            root.entry.setTime(IOProviderFactory.lastModified(file));
             root.entry.setSize(0L);
 
             buildHierarchy(Collections.singletonMap("", root),
-                    (EnumerationIterator<ZipEntry>) new EnumerationIterator(zipFile.entries()), 0);
+                    (EnumerationIterator<ZipEntry>) new EnumerationIterator(
+                            zipFile.entries()),
+                    0);
             root.resolved();
 
             return root;
@@ -530,7 +540,8 @@ public class ZipVirtualFile extends File {
         }
     }
 
-    private static void buildHierarchy(Map<String, HierarchicalZipFile> previousDirs,
+    private static void buildHierarchy(
+            Map<String, HierarchicalZipFile> previousDirs,
             Iterator<ZipEntry> entriesIter, int depth) {
         Map<String, HierarchicalZipFile> currentDirs = new LinkedHashMap<String, HierarchicalZipFile>();
         LinkedList<ZipEntry> delayed = new LinkedList<ZipEntry>();
@@ -546,18 +557,23 @@ public class ZipVirtualFile extends File {
                 if (p == null)
                     throw new IllegalStateException();
                 if (!entry.isDirectory()) {
-                    f = new HierarchicalZipFile(p, getChildPath(entry.getName(), depth), entry);
+                    f = new HierarchicalZipFile(p,
+                            getChildPath(entry.getName(), depth), entry);
                 } else if (!currentDirs.containsKey(entry.getName())) {
-                    f = new HierarchicalZipFile(p, getChildPath(entry.getName(), depth), entry);
+                    f = new HierarchicalZipFile(p,
+                            getChildPath(entry.getName(), depth), entry);
                     currentDirs.put(entry.getName(), f);
                 }
             } else {
-                String depthAncestor = getParentPath(entry.getName(), depth + 1);
-                if (depthAncestor != null && !currentDirs.containsKey(depthAncestor)) {
+                String depthAncestor = getParentPath(entry.getName(),
+                        depth + 1);
+                if (depthAncestor != null
+                        && !currentDirs.containsKey(depthAncestor)) {
                     p = previousDirs.get(getParentPath(depthAncestor, depth));
                     if (p == null)
                         throw new IllegalStateException();
-                    f = new HierarchicalZipFile(p, getChildPath(depthAncestor, depth),
+                    f = new HierarchicalZipFile(p,
+                            getChildPath(depthAncestor, depth),
                             new ZipEntry(depthAncestor));
                     currentDirs.put(depthAncestor, f);
                 }
@@ -619,7 +635,8 @@ public class ZipVirtualFile extends File {
         return path.substring(idx);
     }
 
-    private static HierarchicalZipFile findInHierarchy(HierarchicalZipFile root, String entryPath) {
+    private static HierarchicalZipFile findInHierarchy(HierarchicalZipFile root,
+            String entryPath) {
         if (entryPath == null)
             return root;
         String[] pathComponents = entryPath.split("[\\/\\\\]");
@@ -632,7 +649,7 @@ public class ZipVirtualFile extends File {
             } else {
                 HierarchicalZipFile[] children = match.getChildren();
                 match = null;
-                if(children != null) {
+                if (children != null) {
                     for (int j = 0; j < children.length; j++) {
                         String name = children[j].name;
                         name = name.replaceAll("[\\/\\\\]", "");
@@ -649,7 +666,8 @@ public class ZipVirtualFile extends File {
         return match;
     }
 
-    private static synchronized InputStream openStream(ZipVirtualFile f) throws IOException {
+    private static synchronized InputStream openStream(ZipVirtualFile f)
+            throws IOException {
         if (f.shadow == null || f.shadow.entry == null || f.isDirectory())
             throw new IllegalArgumentException();
 
@@ -724,7 +742,8 @@ public class ZipVirtualFile extends File {
             this(null, "", new ZipEntry("/"));
         }
 
-        public HierarchicalZipFile(HierarchicalZipFile parent, String name, ZipEntry entry) {
+        public HierarchicalZipFile(HierarchicalZipFile parent, String name,
+                ZipEntry entry) {
             this.entry = entry;
             this.name = name;
             this.parent = parent;
@@ -775,7 +794,8 @@ public class ZipVirtualFile extends File {
         public void close() throws IOException {
             try {
                 synchronized (ZipVirtualFile.class) {
-                    OpenArchiveSpec spec = openZipFiles.get(ZipVirtualFile.this.zipFile);
+                    OpenArchiveSpec spec = openZipFiles
+                            .get(ZipVirtualFile.this.zipFile);
                     if (spec != null) {
                         spec.refs.remove(this.in);
                         if (spec.refs.size() < 1 && spec.batchmode.size() < 1) {
@@ -811,29 +831,32 @@ public class ZipVirtualFile extends File {
 
         public OpenArchiveSpec(File zipFile) throws IOException {
             this.source = new ZipFile(zipFile);
-            this.refs = Collections.newSetFromMap(new IdentityHashMap<InputStream, Boolean>());
+            this.refs = Collections
+                    .newSetFromMap(new IdentityHashMap<InputStream, Boolean>());
             this.batchmode = Collections
-                    .newSetFromMap(new IdentityHashMap<ZipVirtualFile, Boolean>());
+                    .newSetFromMap(
+                            new IdentityHashMap<ZipVirtualFile, Boolean>());
         }
     }
 
     public static void mountArchive(File file) throws IOException {
-        synchronized(mounts) {
+        synchronized (mounts) {
             ReferenceCount<HierarchicalZipFile> root = mounts.get(file);
-            if(root == null)
-                mounts.put(file, new ReferenceCount<>(buildHierarchy(file), true));
+            if (root == null)
+                mounts.put(file,
+                        new ReferenceCount<>(buildHierarchy(file), true));
             else
                 root.reference();
         }
     }
 
     public static void unmountArchive(File file) {
-        synchronized(mounts) {
+        synchronized (mounts) {
             ReferenceCount<HierarchicalZipFile> root = mounts.get(file);
-            if(root == null)
+            if (root == null)
                 return;
             root.dereference();
-            if(!root.isReferenced())
+            if (!root.isReferenced())
                 mounts.remove(file);
         }
     }
@@ -846,18 +869,19 @@ public class ZipVirtualFile extends File {
      * @param zipFile   A zip file
      * @param filter    The filter
      */
-    public static void scan(File zipFile, FilenameFilter filter) throws IOException {
+    public static void scan(File zipFile, FilenameFilter filter)
+            throws IOException {
         ZipFile zip = null;
         try {
             zip = new ZipFile(zipFile);
             Enumeration entries = zip.entries();
-            while(entries.hasMoreElements()) {
-                ZipEntry entry = (ZipEntry)entries.nextElement();
-                if(filter.accept(zipFile, entry.getName()))
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = (ZipEntry) entries.nextElement();
+                if (filter.accept(zipFile, entry.getName()))
                     break;
             }
         } finally {
-            if(zip != null)
+            if (zip != null)
                 zip.close();
         }
     }

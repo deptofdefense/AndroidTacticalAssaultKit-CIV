@@ -24,8 +24,8 @@ public abstract class SpatialDbContentResolver extends FileContentResolver {
     protected final MapView _mapView;
     protected final DataSourceFeatureDataStore _database;
 
-    protected SpatialDbContentResolver(MapView mv,
-            DataSourceFeatureDataStore db, Set<String> validExts) {
+    protected SpatialDbContentResolver(final MapView mv,
+            final DataSourceFeatureDataStore db, final Set<String> validExts) {
         super(validExts);
         _mapView = mv;
         _database = db;

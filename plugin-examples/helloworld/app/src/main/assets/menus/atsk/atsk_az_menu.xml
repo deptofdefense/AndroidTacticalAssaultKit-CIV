@@ -1,0 +1,24 @@
+
+
+<!-- see ATSKApplication for the implementation - this is just for referece and not used in the code -->
+
+<menu
+    buttonBg="bgs/atsk/atsk_button.xml"
+    buttonWidth='90'
+    buttonSpan="90"
+    buttonRadius='65'>
+
+    <button
+        onClick="actions/atsk/atsk_az_delete.xml"
+        icon="icons/delete.png"
+        angle="90"/>
+    <button
+        onClick="actions/atsk/atsk_az_edit.xml"
+        icon="icons/edit2.png"/>
+    <button
+        onClick="actions/cancel.xml"
+        icon="icons/close.png"/>
+    <button
+        onClick="actions/atsk/atsk_az_info.xml"
+        icon="icons/details.png"/>
+</menu>

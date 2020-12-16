@@ -96,7 +96,7 @@ public abstract class Interop<T> {
         if(!clazz.isInterface()) {
             try {
                 retval = new ReflectInterop<T>(clazz, clazz);
-            } catch(Throwable t) {
+            } catch(Throwable ignored) {
 
             }
         }
@@ -154,7 +154,7 @@ public abstract class Interop<T> {
             try {
                 create = service.getDeclaredMethod("create", Pointer.class, Object.class);
                 create.setAccessible(true);
-            } catch(Throwable t) {}
+            } catch(Throwable ignored) {}
 
             try {
                 clone = service.getDeclaredMethod("clone", Long.TYPE);

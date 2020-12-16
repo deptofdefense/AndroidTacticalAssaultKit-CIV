@@ -773,9 +773,11 @@ public class GLQuadtreeNode2 extends
             MapGroup aGroup = aSub.getGroup(), bGroup = bSub.getGroup();
             if (aGroup != null && bGroup != null) {
                 MapGroup aChildGroup = aSub instanceof ParentMapItem
-                        ? ((ParentMapItem) aSub).getChildMapGroup() : null;
+                        ? ((ParentMapItem) aSub).getChildMapGroup()
+                        : null;
                 MapGroup bChildGroup = bSub instanceof ParentMapItem
-                        ? ((ParentMapItem) bSub).getChildMapGroup() : null;
+                        ? ((ParentMapItem) bSub).getChildMapGroup()
+                        : null;
                 if (aGroup == bChildGroup || bGroup == aChildGroup
                         || aGroup == bGroup && aGroup.hasMetaValue("shapeUID"))
                     return ITEM_COMPARATOR.compare(a, b);

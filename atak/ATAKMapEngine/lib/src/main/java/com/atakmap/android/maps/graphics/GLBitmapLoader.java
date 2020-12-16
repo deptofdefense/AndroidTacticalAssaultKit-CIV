@@ -25,15 +25,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.ThreadFactory;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import com.atakmap.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipFile;
 
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.DatabaseInformation;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
-import com.atakmap.database.Databases;
 import com.atakmap.database.QueryIface;
 import com.atakmap.database.StatementIface;
 import com.atakmap.map.RenderContext;
@@ -234,7 +235,7 @@ public class GLBitmapLoader {
         for (ReferenceCount<ZipFile> value : _zipCache.values()) {
             try {
                 value.value.close();
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
         }
         _zipCache.clear();
@@ -242,22 +243,32 @@ public class GLBitmapLoader {
         for (ReferenceCount<DatabaseIface> value : _dbCache.values()) {
             try {
                 value.value.close();
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
         }
         _dbCache.clear();
 
-        synchronized (this) {
-            if (this.urlIconCacheDatabase != null) {
-                if (this.insertUrlIconStatement != null)
-                    this.insertUrlIconStatement.close();
-                if (this.queryUrlIconBitmapStatement != null)
-                    this.queryUrlIconBitmapStatement.close();
-                this.urlIconCacheDatabase.close();
-                this.urlIconCacheDatabase = null;
-            }
-        }
+        resetUrlIconCacheDatabase();
+    }
 
+    /**
+     * If the `urlIconCacheDatabase` is initialized, close and set to `null`.
+     * This will force re-initialization on the next attempt to read from the
+     * cache.
+     */
+    private synchronized void resetUrlIconCacheDatabase() {
+        if (this.urlIconCacheDatabase != null) {
+            if (this.insertUrlIconStatement != null) {
+                this.insertUrlIconStatement.close();
+                this.insertUrlIconStatement = null;
+            }
+            if (this.queryUrlIconBitmapStatement != null) {
+                this.queryUrlIconBitmapStatement.close();
+                this.queryUrlIconBitmapStatement = null;
+            }
+            this.urlIconCacheDatabase.close();
+            this.urlIconCacheDatabase = null;
+        }
     }
 
     public FutureTask<Bitmap> loadBitmap(final String uri,
@@ -305,7 +316,7 @@ public class GLBitmapLoader {
             if (zEntry == null) {
                 try {
                     zf.close();
-                } catch (Exception e) {
+                } catch (Exception ignored) {
                 }
                 return false;
             } else {
@@ -324,13 +335,15 @@ public class GLBitmapLoader {
      * @param arcPath the archive to mount in zip format.
      */
     static public void mountArchive(final String arcPath) {
+        boolean addRefresher = false;
         synchronized (_zipCache) {
             ReferenceCount<ZipFile> zip = _zipCache.get(arcPath);
             if (zip == null || !validZip(zip.value)) {
                 try {
-                    zip = new ReferenceCount<ZipFile>(new ZipFile(arcPath));
+                    zip = new ReferenceCount<>(new ZipFile(arcPath));
                     Log.d(TAG, "archive: " + arcPath + " add to cache.");
                     _zipCache.put(arcPath, zip);
+                    addRefresher = (_zipCache.size() == 1);
                 } catch (IOException e) {
                     Log.e(TAG, "error: ", e);
                 }
@@ -347,6 +360,7 @@ public class GLBitmapLoader {
      * @param arcPath the archive to mount in zip format.
      */
     static public void unmountArchive(final String arcPath) {
+        boolean removeRefresher = false;
         synchronized (_zipCache) {
             ReferenceCount<ZipFile> zip = _zipCache.get(arcPath);
             try {
@@ -356,12 +370,14 @@ public class GLBitmapLoader {
                         Log.d(TAG, "archive: " + arcPath + " remove from cache.");
                         _zipCache.remove(arcPath);
                         zip.value.close();
+                        removeRefresher = _zipCache.isEmpty();
                     }
                 }
             } catch (Exception e) {
                 Log.e(TAG, "error: ", e);
             }
         }
+
     }
 
     /**
@@ -370,7 +386,11 @@ public class GLBitmapLoader {
      * by future users. XXX: You have been warned.
      *
      * @param path the archive to mount in zip format.
+     *
+     * @deprecated Will be made private, without replacement
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1.1", forRemoval = true, removeAt = "4.4")
     static public ZipFile getMountedArchive(String path) {
         synchronized (_zipCache) {
             ReferenceCount<ZipFile> zipFile = _zipCache.get(path);
@@ -389,20 +409,23 @@ public class GLBitmapLoader {
      *
      * @param arcPath the archive to mount in zip format.
      */
-    static public void mountDatabase(String arcPath) {
+    static public void mountDatabase(final String arcPath) {
         synchronized (_dbCache) {
             ReferenceCount<DatabaseIface> db = _dbCache.get(arcPath);
             if (db != null) {
                 db.reference();
                 return;
             }
-            File f = new File(arcPath);
-            if (!FileIOProviderFactory.exists(f)) {
+            final File f = new File(arcPath);
+            if (!IOProviderFactory.exists(f)) {
                 Log.w(TAG, "SQLite Database " + arcPath + " could not be mounted.");
                 return;
             }
-            db = new ReferenceCount<DatabaseIface>(
-                    Databases.openDatabase(arcPath, true));
+            db = new ReferenceCount<>(
+                    IOProviderFactory.createDatabase(
+                        new DatabaseInformation(
+                            Uri.fromFile(f),
+                            DatabaseInformation.OPTION_READONLY)));
             Log.d(TAG, "archive: " + arcPath + " add to cache.");
             _dbCache.put(arcPath, db);
 
@@ -434,7 +457,7 @@ public class GLBitmapLoader {
 
 
     /**
-     * @deprecated  always returns null, use {@link #getMountedDatabase2(String)}
+     * @deprecated  always returns null, will be removed without replacement
      */
     @Deprecated
     @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
@@ -448,7 +471,10 @@ public class GLBitmapLoader {
      * by future users. XXX: You have been warned.
      *
      * @param path the archive to mount in zip format.
+     * @deprecated  always returns null, will be removed without replacement
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.1.1", forRemoval = true, removeAt = "4.4")
     static public DatabaseIface getMountedDatabase2(String path) {
         synchronized (_dbCache) {
             ReferenceCount<DatabaseIface> db = _dbCache.get(path);
@@ -672,7 +698,11 @@ public class GLBitmapLoader {
             final Uri u = Uri.parse(uri);
             final String scheme = u.getScheme();
             String filePath = uri.substring((scheme != null) ? scheme.length()+3 : 0);
-            return BitmapFactory.decodeFile(filePath, opts);
+            try(FileInputStream fis = IOProviderFactory.getInputStream(new File(filePath))) {
+                return BitmapFactory.decodeStream(fis, null, opts);
+            } catch(IOException e) {
+                return null;
+            }
         }
 
         @Override
@@ -728,7 +758,13 @@ public class GLBitmapLoader {
         }
     }
 
-    public synchronized static void setIconCacheDb(File file) {
+    /** @deprecated use {@link #setIconCacheDb(File, IconCacheSeed)} */
+    @Deprecated
+    @DeprecatedApi(since = "4.1.1", forRemoval = true, removeAt = "4.4")
+    public static void setIconCacheDb(File file) {
+        setIconCacheDb(file, null);
+    }
+    public synchronized static void setIconCacheDb(File file, IconCacheSeed seeder) {
         // no-op
         if(file == null && iconCacheFile == null)
             return;
@@ -736,12 +772,12 @@ public class GLBitmapLoader {
         if(file == null)
             iconCacheTempFileError = false;
         iconCacheFile = file;
-
+        iconCacheSeed = seeder;
     }
     public synchronized static File getIconCacheDb() {
         if(iconCacheFile == null && !iconCacheTempFileError) {
             try {
-                iconCacheFile = File.createTempFile("tmp", ".tmp");
+                iconCacheFile = IOProviderFactory.createTempFile("tmp", ".tmp", null);
             } catch(IOException e) {
                 Log.w(TAG, "Failed to create Icon Cache", e);
                 iconCacheTempFileError = true;
@@ -756,14 +792,23 @@ public class GLBitmapLoader {
             if (GLBitmapLoader.this.urlIconCacheDatabase == null) {
                 final File iconCacheDbFile = getIconCacheDb();
                 if(iconCacheDbFile != null) {
-                    GLBitmapLoader.this.urlIconCacheDatabase = Databases.openOrCreateDatabase(
-                            iconCacheDbFile.getAbsolutePath());
+                    GLBitmapLoader.this.urlIconCacheDatabase = IOProviderFactory.createDatabase(
+                            new DatabaseInformation(Uri.fromFile(iconCacheDbFile)));
+                    if(GLBitmapLoader.this.urlIconCacheDatabase == null && IOProviderFactory.exists(iconCacheDbFile)) {
+                        IOProviderFactory.delete(iconCacheDbFile, IOProvider.SECURE_DELETE);
+                        GLBitmapLoader.this.urlIconCacheDatabase = IOProviderFactory.createDatabase(
+                            new DatabaseInformation(Uri.fromFile(iconCacheDbFile)));
+                    }
+                    // rebuild the DB if necessary
                     if (GLBitmapLoader.this.urlIconCacheDatabase.getVersion() != ICON_CACHE_DB_VERSION) {
                         GLBitmapLoader.this.urlIconCacheDatabase
                                 .execute("DROP TABLE IF EXISTS cache", null);
                         GLBitmapLoader.this.urlIconCacheDatabase
                                 .execute("CREATE TABLE cache (url TEXT, bitmap BLOB)", null);
                         GLBitmapLoader.this.urlIconCacheDatabase.setVersion(ICON_CACHE_DB_VERSION);
+                        // seed the DB if the seeder is specified
+                        if(iconCacheSeed != null)
+                            iconCacheSeed.seed(GLBitmapLoader.this.urlIconCacheDatabase);
                     }
                 }
             }
@@ -788,12 +833,13 @@ public class GLBitmapLoader {
 
                     try {
                         queryUrlIconBitmapStatement.bind(1, url);
-                        if(!queryUrlIconBitmapStatement.moveToNext())
-                            return null;
-                        byte[] fd = queryUrlIconBitmapStatement.getBlob(0);
-                        if (fd != null) {
-                            return BitmapFactory.decodeByteArray(fd, 0, fd.length, opts);
-                        }
+                        do {
+                            if (!queryUrlIconBitmapStatement.moveToNext())
+                                break; // not in cache, proceed to download
+                            byte[] fd = queryUrlIconBitmapStatement.getBlob(0);
+                            if (fd != null)
+                                return BitmapFactory.decodeByteArray(fd, 0, fd.length, opts);
+                        } while(false);
                     } finally {
                         queryUrlIconBitmapStatement.clearBindings();
                     }
@@ -843,25 +889,25 @@ public class GLBitmapLoader {
 
                 File cacheFile = null;
                 if (cache) {
-                    cacheFile = File.createTempFile("icon", ".cache");
+                    cacheFile = IOProviderFactory.createTempFile("icon", ".cache", null);
 
                     FileOutputStream fos = null;
 
                     try {
-                        FileSystemUtils.copyStream(is, fos = FileIOProviderFactory.getOutputStream(cacheFile));
+                        FileSystemUtils.copyStream(is, fos = IOProviderFactory.getOutputStream(cacheFile));
                     } finally {
                         // if during construction of the FileOutputStream, there is an
                         // exception thrown, is will not be closed right away.
                         if (fos != null)
                             try {
                                 fos.close();
-                            } catch (Exception e) {}
+                            } catch (Exception ignored) {}
                         if (is != null)
                             try {
                                 is.close();
-                            } catch (Exception e) {}
+                            } catch (Exception ignored) {}
                     }
-                    is = FileIOProviderFactory.getInputStream(cacheFile);
+                    is = IOProviderFactory.getInputStream(cacheFile);
                 }
 
                 final Bitmap urlBitmap = BitmapFactory.decodeStream(is, null, opts);
@@ -905,6 +951,10 @@ public class GLBitmapLoader {
         }
     }
 
+    public interface IconCacheSeed {
+        void seed(DatabaseIface db);
+    }
+
     private static final String TAG = "GLBitmapLoader";
     private static final HashMap<String, ReferenceCount<ZipFile>> _zipCache = new HashMap<>();
     private static final HashMap<String, ReferenceCount<DatabaseIface>> _dbCache = new HashMap<>();
@@ -912,6 +962,7 @@ public class GLBitmapLoader {
     private static final Set<String> resolvedHosts = new HashSet<>();
     private static final Set<String> unresolvableHosts = new HashSet<>();
     private static File iconCacheFile = null;
+    private static IconCacheSeed iconCacheSeed = null;
     private static boolean iconCacheTempFileError = false;
 
     public final static int ICON_CACHE_DB_VERSION = 2;

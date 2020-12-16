@@ -91,7 +91,7 @@ public class HttpConnection {
                 entity = response.getEntity();
             }
         } catch (Exception e) {
-            Log.e(TAG, "error occured", e);
+            Log.e(TAG, "error occurred", e);
         }
     }
 
@@ -110,7 +110,7 @@ public class HttpConnection {
                 entity = response.getEntity();
             }
         } catch (Exception e) {
-            Log.e(TAG, "error occured", e);
+            Log.e(TAG, "error occurred", e);
         }
     }
 
@@ -122,7 +122,7 @@ public class HttpConnection {
             if (entity != null)
                 stream = entity.getContent();
         } catch (IOException e) {
-            Log.e(TAG, "error occured", e);
+            Log.e(TAG, "error occurred", e);
         }
         return stream;
     }
@@ -139,7 +139,7 @@ public class HttpConnection {
             } else
                 return null;
         } catch (IOException e) {
-            Log.e(TAG, "error occured", e);
+            Log.e(TAG, "error occurred", e);
             return null;
         }
     }
@@ -153,7 +153,7 @@ public class HttpConnection {
                 stream.close();
                 stream = null;
             } catch (IOException e) {
-                Log.e(TAG, "error occured", e);
+                Log.e(TAG, "error occurred", e);
             }
         }
         if (entity != null) {
@@ -162,7 +162,7 @@ public class HttpConnection {
                 //"finish". Important if we want to reuse the client object one day... 
                 entity = null;
             } catch (IOException e) {
-                Log.e(TAG, "error occured", e);
+                Log.e(TAG, "error occurred", e);
             }
         }
         if (client != null) {

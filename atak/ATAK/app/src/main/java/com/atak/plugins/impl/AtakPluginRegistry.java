@@ -1,3 +1,4 @@
+
 package com.atak.plugins.impl;
 
 import android.annotation.SuppressLint;
@@ -76,7 +77,10 @@ public final class AtakPluginRegistry {
             "3082030d308201f5a00302010202044fce2f46300d06092a864886f70d01010b05003037310b30090603550406130255533110300e060355040a1307416e64726f6964311630140603550403130d416e64726f6964204465627567301e170d3133303132323135323932395a170d3134303132323135323932395a3037310b30090603550406130255533110300e060355040a1307416e64726f6964311630140603550403130d416e64726f696420446562756730820122300d06092a864886f70d01010105000382010f003082010a02820101009b715652725d49cd5ce8e52c3c1dfa77b60861e23a787c8d1dd4b980596ef7fa9e843500ec7dbf883416e58b5e43fd58eb0faeb5412717629b033b28e3760650c88e635f54538af20c52289087b895f175bf0ccb8135c83e0db8c08dd58f4262881317ae88b659d7e73fdc5d3c3cc96b1e0d2a957ceec45632870a23e794e0b403047a9265e74e115f9af6a18d747cc45c4591fd0bf6f6e5fcd5d305b4f6b1cd392d71ecb6428c7ccf4f3cef96a0dce499bb24ff888319fabc5aa2163ae723637f20e79f14037c20854b305b39f0f2106831c9e4145857f987d6c8fedf7e5bf9b4f0fd3662bf1761f301ded0550ad7f1172394035b9e5ba8d7a8384f00555bf50203010001a321301f301d0603551d0e04160414b4531a77e455c714390e73ff7f828179f97c2c41300d06092a864886f70d01010b0500038201010082b47e77b10ed6262c936f66d16affb6607668d62b87ce1399ddcfcebce67f92c2630352bf0b7685610cac1ad97c0b3cfd0fc1c24842cfb0f839ea49b952b7f0b12121aed87b19a7944d2b24cb6a373a651ac9919164826961dc35a37061874940afcafad1f8466caf08f4b405634afa3723f59ca22ff8bcb66a30794d74b08e62ed213eabbdea6260b5cb2fc8844d21f196636fba1cea077a51a969193d99fbca156298a18909cfc16511708317b684e0d3744217d05276aaf71cac68063bd0c58d7097d9f5ebbd3d9cd0faed8744222422bb3572acab31e67bbcaf1f290d7f56d2a54d2d39ca04338f7e426556a6e3271d3f68e88ca1140e49b46d8dd497fb",
             "3082038930820271a00302010202040885ec68300d06092a864886f70d01010b05003075310b30090603550406130255533110300e06035504081307556e6b6e6f776e311430120603550407130b726170746f72782e6f72673110300e060355040a1307526170746f7258311a3018060355040b1311526170746f7220436f6e736f727469756d3110300e06035504031307556e6b6e6f776e301e170d3137303531373230303533325a170d3434313030323230303533325a3075310b30090603550406130255533110300e06035504081307556e6b6e6f776e311430120603550407130b726170746f72782e6f72673110300e060355040a1307526170746f7258311a3018060355040b1311526170746f7220436f6e736f727469756d3110300e06035504031307556e6b6e6f776e30820122300d06092a864886f70d01010105000382010f003082010a0282010100a23b3a0d799312fc4e9d6c842e2778f378b873b71dd041aa438903e08c77a387e446c72f626f7766cd90dfe5aeb2d9d1ab997bc70de0d2c338925991de0511547e78b70b77b99a29af71baa8cef3dd9cedd88a13ac0c0cfeef30d33890eff178d992168aeb13272833e8aea6c3c698e09e6789bc9d8d2373b3a13e7ab75f710cacff3c0e7fe1d06a191d73f990554d84ef8da2784388ccacdaacb366bd4acae5c646bdf68b822804a7dfff0e7a4887579719b7badce060710847b0a652895d2ea11107f92d5fef8efb9677a19bb1f0cd8e572b97a92fcf0b9952ce7f41784783521ec373920c55e4292030df3c0fcf3dd1ace8267ec71f868d62f0c5f58f908b0203010001a321301f301d0603551d0e04160414c414ae3840cc708132c2b8b4ac981f7c3bf35a87300d06092a864886f70d01010b05000382010100a0be7e78c323bf5d68db99280bce6392f3315bc0bced005793055e791c052a5d12aeedee2c743da05e6409e24cbbb84ad4d50c2b0bae9bb930187875b928cb59b46e429f28d9306a476fb1679849e5bd8f274d7717e84fa05c3845d582616960f7863ee7b901793ad0869b236de36fb0ed265e2c16e6ac9aeb211b620393db310b9bae158e3551953548dd4b7d4e2425f283ae8ff67221d96bfc92610de4e49989cc398a3e077ecaad3b1b4002d49ccc0badfc626502aa98dbc1d73ef2227b63562891575cd2c5c91c6915b5394cb3b342b74838f069af219501fd827e296e3eb7e28ec273ad0340e05e0a9782fb2a4e080cc7ffc51503bb95f3940c3a9b8ee0",
             "308202c43082024aa0030201020214643352031f1da2384eadb9eaf1daed408eac13da300a06082a8648ce3d040302308197310b30090603550406130255533111300f06035504080c0856697267696e69613115301306035504070c0c466f72742042656c766f6972310c300a060355040a0c0354414b31173015060355040b0c0e50726f647563742043656e7465723137303506035504030c2e54414b2050726f647563742043656e746572204154414b205472757374656420506c7567696e2052656c656173653020170d3230303532313039333530365a180f32303530303531343039333530365a308197310b30090603550406130255533111300f06035504080c0856697267696e69613115301306035504070c0c466f72742042656c766f6972310c300a060355040a0c0354414b31173015060355040b0c0e50726f647563742043656e7465723137303506035504030c2e54414b2050726f647563742043656e746572204154414b205472757374656420506c7567696e2052656c656173653076301006072a8648ce3d020106052b81040022036200044feb54baeaf9a24f3dc0181daf8a2871840f2c3209b1f2135da72b5ee356a06ae36ca5b5542c7b21da5b7e7a8d17af93b0e6d49e8a6076f988e4b011a106e68c0f740eece9f1bd71254d0b1498ee923598dd5c8ad6eef3856f024b24fccdb528a3533051301d0603551d0e04160414c22b57a8e00e0a32ebc128d7833762bf65dbc49e301f0603551d23041830168014c22b57a8e00e0a32ebc128d7833762bf65dbc49e300f0603551d130101ff040530030101ff300a06082a8648ce3d0403020368003065023055cea4a942e0d6d4710a3fa506eb1163f6d39cec289cf3b5ac9368a709564bd0426850c455178ba357b40dfdf46c2d5f023100f5b493c98edc08744d42625db0040b33e05334a39a41d33759fc8f4270089932532085904cbeedddcd4bf3719213df7e",
+            "308202c73082024ea00302010202143efff3c9fc6b6865c29bb23af07fa7645727e650300a06082a8648ce3d040302308199310b30090603550406130255533111300f06035504080c0856697267696e69613115301306035504070c0c466f72742042656c766f6972310c300a060355040a0c0354414b31173015060355040b0c0e50726f647563742043656e7465723139303706035504030c3054414b2050726f647563742043656e746572204154414b20556e7472757374656420506c7567696e2052656c656173653020170d3230313030383135343631375a180f32303530313030313135343631375a308199310b30090603550406130255533111300f06035504080c0856697267696e69613115301306035504070c0c466f72742042656c766f6972310c300a060355040a0c0354414b31173015060355040b0c0e50726f647563742043656e7465723139303706035504030c3054414b2050726f647563742043656e746572204154414b20556e7472757374656420506c7567696e2052656c656173653076301006072a8648ce3d020106052b8104002203620004bbf9dba5553faaee4558788805494c1a3d8bc0a5eca4c59bce62fcb68b979993877f5c65190454e1700c98184163d022b8d91648ca6898b41b2cf56b26ce19e3794a4bdeb1c7c08f021d8fb7b258b904d94c52ab1ffb223975bd6365127083cfa3533051301d0603551d0e04160414893a2594bd35f780183a882731d180de056b8326301f0603551d23041830168014893a2594bd35f780183a882731d180de056b8326300f0603551d130101ff040530030101ff300a06082a8648ce3d040302036700306402306a0b7e55fb2eb46584bf79dbac99720ed368cd0f9e4c333893aaa1763104472ce60c899136cb3fb3a847ee7d6dc9029602300afbc42742092b1f499cb7febd33543c0a24afe21aee6820d1b917375bd0204406751c647d76071cd61e16c1042d796a",
     };
+
+    private boolean allTrusted = true;
 
     /**
      * List of all apps installed on the local device
@@ -166,7 +170,7 @@ public final class AtakPluginRegistry {
             //}
 
             for (final Signature sig : pi.signatures) {
-                if(BuildConfig.BUILD_TYPE.equals("sdk")) {
+                if (BuildConfig.BUILD_TYPE.equals("sdk")) {
                     Log.d(TAG, "SDK skipping signature check[" + pkgname + "]");
                     return true;
                 } else if (sig.equals(atak.signatures[0])) {
@@ -210,6 +214,30 @@ public final class AtakPluginRegistry {
             MetricsApi.record("plugin", b);
         }
 
+        return false;
+    }
+
+    /**
+     * Verifies that a specific package can be trusted.
+     * @param context the context to use
+     * @param pkgname the package name to look up
+     * @return
+     */
+    public static boolean verifyTrust(final Context context,
+            final String pkgname) {
+        try {
+            final PackageManager pm = context.getPackageManager();
+            final PackageInfo pi = pm.getPackageInfo(pkgname,
+                    PackageManager.GET_SIGNATURES);
+            for (final Signature sig : pi.signatures) {
+                final String val = sig.toCharsString();
+                if (val.endsWith("213df7e") || val.endsWith("f05b36e") ||
+                        val.endsWith("a9b8ee0"))
+                    return true;
+            }
+
+        } catch (Exception ignored) {
+        }
         return false;
     }
 
@@ -298,10 +326,13 @@ public final class AtakPluginRegistry {
     /**
      * Scan apps, parse plugin descriptors, loads all extentions for all plugins which are flagged \
      * as "shouldLoad" and are not already loaded
+     * @return if all of the plugins are to be considered trusted.
      */
-    public void scanAndLoadPlugins(PluginLoadingProgressCallback callback) {
+    public boolean scanAndLoadPlugins(PluginLoadingProgressCallback callback) {
+        allTrusted = true;
         Log.d(TAG, "Scanning and Loading Plugins");
         this.scan().loadDescriptors(callback).loadPlugins(callback);
+        return allTrusted;
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -594,6 +625,9 @@ public final class AtakPluginRegistry {
                     return null;
                 }
 
+                allTrusted = allTrusted
+                        && verifyTrust(mapView.getContext(), pkgname);
+
                 //finally add plugin to classpath
                 ClassLoader classLoader = getClassLoader(
                         extension.parent.appInfo);
@@ -655,7 +689,7 @@ public final class AtakPluginRegistry {
                                 .newInstance(
                                         new PluginContext(pluginContext,
                                                 classLoader));
-                    } catch (Exception constructorException) {
+                    } catch (Throwable constructorException) {
                         Log.w(TAG,
                                 "Got an exception instantiating "
                                         + extension.impl
@@ -777,24 +811,44 @@ public final class AtakPluginRegistry {
             final String pluginApiVersion) {
 
         try {
-            //String atakApiVersion = getPluginApiVersion(context, context.getPackageName(), false);
-            String atakApiVersion = ATAKConstants.getPluginApi(false);
-            if (!atakApiVersion.equals(pluginApiVersion)) {
-                Log.d(TAG, "api version mismatch[" + packageName
-                        + "]; atakApiVersion: "
-                        + atakApiVersion + ", pluginApiVersion: "
-                        + pluginApiVersion);
-                return false;
-            } else {
+            final String flavorAtakApiVersion = ATAKConstants
+                    .getPluginApi(false);
+            final String coreAtakApiVersion = getCoreApi(flavorAtakApiVersion)
+                    + ".CIV";
+            if (flavorAtakApiVersion.equals(pluginApiVersion) ||
+                    coreAtakApiVersion.equals(pluginApiVersion)) {
                 Log.d(TAG, "api matches[ " + packageName
                         + "]; pluginApiVersion:" + pluginApiVersion);
                 return true;
+            } else {
+                Log.d(TAG, "api version mismatch[" + packageName
+                        + "]; atakApiVersion: "
+                        + flavorAtakApiVersion + ", pluginApiVersion: "
+                        + pluginApiVersion);
+                return false;
             }
 
         } catch (Exception e) {
-            Log.d(TAG, "error occurred verifying signature", e);
+            Log.d(TAG, "error occurred verifying api compatibility", e);
         }
         return false;
+    }
+
+    /**
+     * Since the flavor will provide a packagename@apinumber.flavor, use this to strip the flavor
+     * off so we can determine if the plugin base is compatible.   So this means every plugin can
+     * either be flavor compatible or base compatible
+     * @param api a properly formatted api
+     * @return the api with the flavor removed.
+     */
+    private static String getCoreApi(final String api) {
+        int i = api.lastIndexOf('.');
+        if (i > 0 && i + 1 < api.length()) {
+            if (!Character.isDigit(api.charAt(i + 1))) {
+                return api.substring(0, i);
+            }
+        }
+        return api;
     }
 
     /**
@@ -883,7 +937,7 @@ public final class AtakPluginRegistry {
     // for ApplicationInfo -> ClassLoader
 
     /// Set of APK source directories that are loadable with buildingClassLoader
-    private Map<String, ClassLoader> loadedSourceDirs = new HashMap<>();
+    private final Map<String, ClassLoader> loadedSourceDirs = new HashMap<>();
 
     /**
      * Gets a ClassLoader that is capable of loading classes in the application 

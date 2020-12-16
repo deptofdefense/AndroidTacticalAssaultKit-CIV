@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Concrete class for database of spatial features.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Jan 13, 2015
+////      Jan 13, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -123,7 +123,7 @@ class ENGINE_API FeatureDatabase
 
 
     ~FeatureDatabase ()
-        throw ()
+        NOTHROWS
       { }
 
     //
@@ -467,7 +467,7 @@ class FeatureDatabase::Cursor
 
 
     ~Cursor ()
-        throw ()
+        NOTHROWS
       { }
 
     //
@@ -573,7 +573,7 @@ class FeatureDatabase::Transaction
       { db.beginTransaction (); }
 
     ~Transaction ()
-        throw ()
+        NOTHROWS
       {
         try
           { db.endTransaction (); }

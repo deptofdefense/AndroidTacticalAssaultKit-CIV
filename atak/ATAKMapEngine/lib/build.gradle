@@ -8,7 +8,7 @@
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.6.3'
+        classpath 'com.android.tools.build:gradle:4.0.1'
     }
  }
 
@@ -41,7 +41,7 @@ android {
 
     // Only enable externalNativeBuild on machines with NDK installed -> valid ndkDir
     if (isNativeBuildEnabled()) {
-        externalNativeBuild.ndkBuild.path = 'src/main/cpp/Android.mk'
+        externalNativeBuild.cmake.path = '../CMakeLists.txt'
     } else if(ndkVersion != null) {
         // developer has requested NDK build, but no valid NDK is present
         throw new GradleException("NDK builds require version " + ndkVersion)
@@ -49,6 +49,18 @@ android {
 
     defaultConfig {
         minSdkVersion 21
+
+        externalNativeBuild {
+            cmake {
+                arguments "-DCMAKE_TOOLCHAIN_FILE=cmake/android.toolchain.cmake",
+                    "-DCMAKE_ANDROID_NDK=${project.android.ndkDirectory.toString().replaceAll('\\\\', '/')}",
+                    "-DANDROID_TOOLCHAIN=gcc",
+                    "-DANDROID_STL=gnustl_static",
+                    "-DANDROID_PLATFORM=android-24" // 24 is the highest so available in 12 ndk??
+                cFlags "-D__GXX_EXPERIMENTAL_CXX0X__"
+                cppFlags "-fexceptions", "-frtti"
+            }
+        }
     }
 
     flavorDimensions "application"
@@ -86,8 +98,6 @@ android {
         main {
         }
 
-        civ.java.srcDir 'src/nonpri-common/java'
-        civSmall.java.srcDir 'src/nonpri-common/java'
 
         debug.setRoot('build-types/debug')
         release.setRoot('build-types/release')
@@ -118,9 +128,8 @@ android {
 // Ahh, looks like you have to move the dependencies block below the android block. How intuitive.
 dependencies {
     api project(':MapCoreInterfaces:lib')
-    api project(':authdb:lib')
-    api project(':certdb:lib')
     api fileTree(dir: 'libs', include: '*.jar')
+
 }
 
 clean {
@@ -239,14 +248,11 @@ task installDepends {
                 include 'libassimp.so'
                 include 'libcharset.so'
                 include 'libgdal.so'
-                include 'libgdalconstjni.so'
-                include 'libgdaljni.so'
+                include 'libgdalalljni.so'
                 include 'libiconv.so'
                 include 'libjassimp.so'
                 include 'libltidsdk.so' // only available if DSDK present for build
                 include 'libogdi.so'
-                include 'libogrjni.so'
-                include 'libosrjni.so'
                 include 'libproj.so'
                 include 'libspatialite.so'
             }
@@ -264,14 +270,11 @@ task installDepends {
                 include 'libassimp.so'
                 include 'libcharset.so'
                 include 'libgdal.so'
-                include 'libgdalconstjni.so'
-                include 'libgdaljni.so'
+                include 'libgdalalljni.so'
                 include 'libiconv.so'
                 include 'libjassimp.so'
                 include 'libltidsdk.so' // only available if DSDK present for build
                 include 'libogdi.so'
-                include 'libogrjni.so'
-                include 'libosrjni.so'
                 include 'libproj.so'
                 include 'libspatialite.so'
             }
@@ -288,14 +291,11 @@ task installDepends {
                 include 'libassimp.so'
                 include 'libcharset.so'
                 include 'libgdal.so'
-                include 'libgdalconstjni.so'
-                include 'libgdaljni.so'
+                include 'libgdalalljni.so'
                 include 'libiconv.so'
                 include 'libjassimp.so'
                 include 'libltidsdk.so' // only available if DSDK present for build
                 include 'libogdi.so'
-                include 'libogrjni.so'
-                include 'libosrjni.so'
                 include 'libproj.so'
                 include 'libspatialite.so'
             }

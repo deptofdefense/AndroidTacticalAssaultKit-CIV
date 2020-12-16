@@ -29,7 +29,7 @@ import java.util.List;
 public class PLRFBluetoothLEHandler
         implements BtLowEnergyManager.BluetoothLEHandler {
 
-    private static String TAG = "PLRFBluetoothLEHandler";
+    private static final String TAG = "PLRFBluetoothLEHandler";
     private final Context context;
     private BluetoothGatt bluetoothGatt;
     private BluetoothDevice device;
@@ -108,7 +108,7 @@ public class PLRFBluetoothLEHandler
             // 2) investigate the use of BluetoothDevice.TRANSPORT_LE
             bluetoothGatt = device.connectGatt(context, false, gattCallback);
             if (bluetoothGatt == null) {
-                Log.d(TAG, "error occured during the gatt connection");
+                Log.d(TAG, "error occurred during the gatt connection");
             }
 
         } else {
@@ -358,7 +358,7 @@ public class PLRFBluetoothLEHandler
     @SuppressLint({
             "MissingPermission"
     })
-    private BroadcastReceiver searchDevices = new BroadcastReceiver() {
+    private final BroadcastReceiver searchDevices = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
 
             String action = intent.getAction();
@@ -396,7 +396,7 @@ public class PLRFBluetoothLEHandler
                                 gattCallback);
                         if (bluetoothGatt == null) {
                             Log.d(TAG,
-                                    "error occured during the gatt connection");
+                                    "error occurred during the gatt connection");
                         }
                         break;
 

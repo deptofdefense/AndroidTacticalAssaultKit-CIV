@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
+import com.atakmap.android.attachment.layer.GLAttachmentBillboardLayer;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 
 import com.atakmap.android.dropdown.DropDownMapComponent;
@@ -12,6 +13,7 @@ import com.atakmap.android.ipc.DocumentedExtra;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.AttachmentWatcher;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.map.layer.opengl.GLLayerFactory;
 
 /**
  * Creates the component for displaying images in the system.   Images 
@@ -146,11 +148,13 @@ public class ImageMapComponent extends DropDownMapComponent {
         this.registerReceiver(context, imageGalleryReceiver,
                 imageGalleryFilter);
 
+        GLLayerFactory.register(GLAttachmentBillboardLayer.SPI);
     }
 
     @Override
     protected void onDestroyImpl(Context context, MapView view) {
         super.onDestroyImpl(context, view);
+        GLLayerFactory.unregister(GLAttachmentBillboardLayer.SPI);
         _attWatcher.dispose();
     }
 }

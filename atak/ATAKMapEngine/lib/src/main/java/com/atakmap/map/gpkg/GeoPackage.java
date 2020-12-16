@@ -13,7 +13,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.DatabaseInformation;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
@@ -112,9 +113,9 @@ public class GeoPackage {
 
     public GeoPackage(File database, boolean readOnly){
         this.file = database;
-        this.database = Databases.openDatabase
-                            (database.getPath (),
-                             readOnly);
+        this.database = IOProviderFactory.createDatabase
+                (new File(database.getPath ()),
+                        readOnly ? DatabaseInformation.OPTION_READONLY : 0);
         checkGeoPackageSupport (this.database);
     }
     
@@ -532,13 +533,13 @@ public class GeoPackage {
      * otherwise.
      */
     public static boolean isGeoPackage(File file){
-        if(!FileIOProviderFactory.exists(file) || FileIOProviderFactory.isDirectory(file)){
+        if(!IOProviderFactory.exists(file) || IOProviderFactory.isDirectory(file)){
             return false;
         }
         
         InputStream is = null;
         try{
-            is = new BufferedInputStream(FileIOProviderFactory.getInputStream(file));
+            is = new BufferedInputStream(IOProviderFactory.getInputStream(file));
             
             byte[] headerData = new byte[72];
             int r = is.read(headerData);
@@ -568,7 +569,7 @@ public class GeoPackage {
             
             DatabaseIface database = null;
             try {
-                database = Databases.openDatabase(file.getAbsolutePath(), true);
+                database = IOProviderFactory.createDatabase(file, DatabaseInformation.OPTION_READONLY);
                 return tableExists (database, "gpkg_contents");
             }catch(Exception e){
                 return false;
@@ -834,8 +835,8 @@ public class GeoPackage {
     public static void createNewGeoPackage(String path) {
         DatabaseIface db = null;
         try {
-            db = Databases.openOrCreateDatabase(path);
-            
+            db = IOProviderFactory.createDatabase(new File(path));
+
             // Annex C  Table Definition SQL
             db.execute("CREATE TABLE gpkg_spatial_ref_sys (" +
                        "srs_name TEXT NOT NULL, " +

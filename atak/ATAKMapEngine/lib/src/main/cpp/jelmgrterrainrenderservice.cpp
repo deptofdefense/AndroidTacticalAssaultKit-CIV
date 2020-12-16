@@ -57,10 +57,6 @@ JNIEXPORT jint JNICALL Java_com_atakmap_map_opengl_ElMgrTerrainRenderService_loc
         return -1;
     }
     GLMapView2 *cview = JLONG_TO_INTPTR(GLMapView2, viewptr);
-    if(!cview) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
-        return -1;
-    }
     if(!mtiles) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return -1;
@@ -68,7 +64,10 @@ JNIEXPORT jint JNICALL Java_com_atakmap_map_opengl_ElMgrTerrainRenderService_loc
     const int retval = svc->getTerrainVersion();
     std::vector<std::shared_ptr<const TerrainTile>> ctiles;
     STLVectorAdapter<std::shared_ptr<const TerrainTile>> ctiles_w(ctiles);
-    code = svc->lock(ctiles_w, cview->renderPasses[0u].scene, cview->drawSrid, cview->renderPasses[0u].drawVersion);
+    if(cview)
+        code = svc->lock(ctiles_w, cview->renderPasses[0u].scene, cview->drawSrid, cview->renderPasses[0u].drawVersion);
+    else
+        code = svc->lock(ctiles_w);
     if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return -1;
     for(std::size_t i = 0u; i < ctiles.size(); i++) {
@@ -149,11 +148,11 @@ JNIEXPORT jint JNICALL Java_com_atakmap_map_opengl_ElMgrTerrainRenderService_Ter
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return 0;
     }
-    if(!tile->data.get() || !tile->data->value.get()) {
+    if(!tile->data.value) {
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return 0;
     }
-    return tile->data->value->getNumIndices();
+    return tile->data.value->getNumIndices();
 }
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_opengl_ElMgrTerrainRenderService_TerrainTile_1getMesh
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -163,12 +162,10 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_opengl_ElMgrTerrainRenderService_
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return NULL;
     }
-    if(!tile->data.get())
-        return NULL;
-    if(!tile->data->value.get())
+    if(!tile->data.value)
         return NULL;
 
-    return NewPointer(env, tile->data->value);
+    return NewPointer(env, tile->data.value);
 }
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_opengl_ElMgrTerrainRenderService_TerrainTile_1getLocalFrame
   (JNIEnv *env, jclass clazz, jlong ptr)
@@ -179,12 +176,8 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_opengl_ElMgrTerrainRenderService_
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return NULL;
     }
-    if(!tile->data.get()) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
-        return NULL;
-    }
     Java::JNILocalRef mlocalFrame(*env, NULL);
-    code = Math::Interop_marshal(mlocalFrame, *env, tile->data->localFrame);
+    code = Math::Interop_marshal(mlocalFrame, *env, tile->data.localFrame);
     if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return NULL;
     return mlocalFrame.release();
@@ -197,11 +190,7 @@ JNIEXPORT jint JNICALL Java_com_atakmap_map_opengl_ElMgrTerrainRenderService_Ter
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return 0;
     }
-    if(!tile->data.get()) {
-        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
-        return 0;
-    }
-    return tile->data->srid;
+    return tile->data.srid;
 }
 JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_ElMgrTerrainRenderService_TerrainTile_1getAAbbWgs84
   (JNIEnv *env, jclass clazz, jlong ptr, jobject maabb)
@@ -212,7 +201,62 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_opengl_ElMgrTerrainRenderService_Ter
         ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
         return;
     }
-    code = Feature::Interop_marshal(maabb, *env, tile->aabb_wgs84);
+    TAK::Engine::Feature::Envelope2 caabb(tile->aabb_wgs84);
+    if (!tile->hasData) {
+        caabb.minZ = 0.0;
+        caabb.maxZ = 0.0;
+    }
+    code = Feature::Interop_marshal(maabb, *env, caabb);
     if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return;
+}
+JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_ElMgrTerrainRenderService_TerrainTile_1hasData
+  (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    TerrainTile *tile = JLONG_TO_INTPTR(TerrainTile, ptr);
+    if(!tile) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return 0;
+    }
+    return tile->hasData;
+}
+JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_ElMgrTerrainRenderService_TerrainTile_1isHeightMap
+  (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    TerrainTile *tile = JLONG_TO_INTPTR(TerrainTile, ptr);
+    if(!tile) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return 0;
+    }
+    return tile->heightmap;
+}
+JNIEXPORT jint JNICALL Java_com_atakmap_map_opengl_ElMgrTerrainRenderService_TerrainTile_1getNumPostsX
+  (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    TerrainTile *tile = JLONG_TO_INTPTR(TerrainTile, ptr);
+    if(!tile) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return 0;
+    }
+    return tile->posts_x;
+}
+JNIEXPORT jint JNICALL Java_com_atakmap_map_opengl_ElMgrTerrainRenderService_TerrainTile_1getNumPostsY
+  (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    TerrainTile *tile = JLONG_TO_INTPTR(TerrainTile, ptr);
+    if(!tile) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return 0;
+    }
+    return tile->posts_y;
+}
+JNIEXPORT jboolean JNICALL Java_com_atakmap_map_opengl_ElMgrTerrainRenderService_TerrainTile_1isInvertYAxis
+  (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    TerrainTile *tile = JLONG_TO_INTPTR(TerrainTile, ptr);
+    if(!tile) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return false;
+    }
+    return tile->invert_y_axis;
 }

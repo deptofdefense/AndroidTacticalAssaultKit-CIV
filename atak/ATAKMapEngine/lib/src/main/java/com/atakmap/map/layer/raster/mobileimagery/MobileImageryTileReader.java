@@ -1,5 +1,6 @@
 package com.atakmap.map.layer.raster.mobileimagery;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,6 +14,8 @@ import android.graphics.RectF;
 import android.net.Uri;
 
 import com.atakmap.android.maps.tilesets.TilesetInfo;
+import com.atakmap.coremap.io.DatabaseInformation;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.Databases;
 import com.atakmap.lang.Objects;
@@ -90,16 +93,16 @@ final class MobileImageryTileReader extends TileReader {
                                 reader = MobacTileReader.SPI.create(tsInfo.getInfo().getUri(), onlineOpts);
                             } else if(type.equals("osmdroid") || type.equals("osmdroid.atak")) {
                                 reader = new OSMDroidTileReader(tsInfo.getInfo().getUri(),
-                                                                options.asyncIO,
-                                                                Databases.openDatabase(tsInfo.getInfo().getUri(), true),
-                                                                0,
-                                                                maxLevel+1,
-                                                                0,
-                                                                0,
-                                                                is2x1Grid ? 1 : 0, // 2x1 grid for WGS84
-                                                                0,
-                                                                256,
-                                                                false);
+                                        options.asyncIO,
+                                        IOProviderFactory.createDatabase(new File(tsInfo.getInfo().getUri()), DatabaseInformation.OPTION_READONLY),
+                                        0,
+                                        maxLevel+1,
+                                        0,
+                                        0,
+                                        is2x1Grid ? 1 : 0, // 2x1 grid for WGS84
+                                        0,
+                                        256,
+                                        false);
                             } else {
                                 throw new IllegalArgumentException();
                             }

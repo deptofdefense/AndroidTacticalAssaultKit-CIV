@@ -19,6 +19,7 @@ jobs:
         sudo apt-get install dos2unix
         sudo apt-get install autoconf
         sudo apt-get install automake
+        sudo apt-get install g++
         sudo apt-get install libtool
         sudo apt-get install patch
         sudo apt-get install make

@@ -9,7 +9,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
-
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -193,7 +193,14 @@ public final class ElevationManager {
                 hae = Double.NaN;
  
             if(!Double.isNaN(hae) && geoPointMetaData != null) {
-                geoPointMetaData.set(new GeoPoint(latitude, longitude, hae)).setAltitudeSource(resultType[0]);
+                geoPointMetaData.set(new GeoPoint(latitude, longitude, hae));
+   
+                // perform a check just in case the result type returned from the provider is empty
+                if (!FileSystemUtils.isEmpty(resultType))
+                    geoPointMetaData.setAltitudeSource(resultType[0]);
+                else 
+                    geoPointMetaData.setAltitudeSource(GeoPointMetaData.UNKNOWN);
+
             } else if(geoPointMetaData != null) {
                 geoPointMetaData.set(new GeoPoint(latitude,longitude)).setAltitudeSource(GeoPointMetaData.UNKNOWN);
             }
@@ -288,7 +295,7 @@ public final class ElevationManager {
                 NativeElevationSource.QueryParameters_adapt(params, cparams.raw);
             }
 
-            final boolean done = getElevation(src, idx, cparams.raw);
+            final boolean done = getElevation(src, idx, (cparams != null) ? cparams.raw : 0L);
             for(int i = 0; i < idx; i++)
                 elevations[i] = src[(i*3)+2];
             return done;

@@ -11,8 +11,8 @@ import com.atakmap.app.R;
 import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProvider;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.BufferedReader;
@@ -56,7 +56,8 @@ public class ImportCotSort extends ImportResolver {
         // it is a .cot, now lets see if it contains reasonable CoT
         FileInputStream fis = null;
         try {
-            return isCoT(fis = FileIOProviderFactory.getInputStream(file), _charBuffer);
+            return isCoT(fis = IOProviderFactory.getInputStream(file),
+                    _charBuffer);
         } catch (IOException e) {
             Log.e(TAG, "Error checking if CoT: " + file.getAbsolutePath(), e);
         } finally {
@@ -126,7 +127,7 @@ public class ImportCotSort extends ImportResolver {
         FileInputStream fis = null;
         try {
             event = FileSystemUtils.copyStreamToString(
-                    fis = FileIOProviderFactory.getInputStream(file), true,
+                    fis = IOProviderFactory.getInputStream(file), true,
                     FileSystemUtils.UTF8_CHARSET, _charBuffer);
         } catch (Exception e) {
             Log.e(TAG, "Failed to load CoT Event: " + file.getAbsolutePath(),
@@ -155,7 +156,7 @@ public class ImportCotSort extends ImportResolver {
         File atakdata = new File(_context.getCacheDir(),
                 FileSystemUtils.ATAKDATA);
         if (file.getAbsolutePath().startsWith(atakdata.getAbsolutePath())
-                && FileIOProviderFactory.delete(file, FileIOProvider.SECURE_DELETE))
+                && IOProviderFactory.delete(file, IOProvider.SECURE_DELETE))
             Log.d(TAG, "Deleted import CoT: " + file.getAbsolutePath());
 
         return true;

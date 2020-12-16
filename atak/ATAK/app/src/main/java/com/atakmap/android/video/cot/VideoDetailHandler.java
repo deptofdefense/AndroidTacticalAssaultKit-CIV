@@ -131,7 +131,8 @@ public class VideoDetailHandler extends CotDetailHandler
             pullInt(detail, "buffer", item, "buffer", -1);
             pullInt(detail, "timeout", item, "timeout", 5000);
 
-            if (ce == null && FileSystemUtils.isEmpty(detail.getAttribute("url"))) {
+            if (ce == null
+                    && FileSystemUtils.isEmpty(detail.getAttribute("url"))) {
                 String uid = detail.getAttribute("uid");
                 if (FileSystemUtils.isEmpty(uid))
                     uid = event.getUID();

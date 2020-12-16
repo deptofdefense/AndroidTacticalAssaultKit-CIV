@@ -92,7 +92,7 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
             super.onCreate(null);
             setOrientation(getActivity());
         } else {
-            Log.d(TAG, "error occured: " + getClass() +
+            Log.d(TAG, "error occurred: " + getClass() +
                     " does not have an associated activity");
         }
     }
@@ -118,7 +118,7 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
                             p.setEnabled(false);
                             p.setShouldDisableView(true);
                         } catch (Exception e) {
-                            Log.e(TAG, "error occured disabling: " + key);
+                            Log.e(TAG, "error occurred disabling: " + key);
                         }
                     }
                 };
@@ -133,7 +133,7 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
                 try {
                     removePreference(p);
                 } catch (Exception e) {
-                    Log.e(TAG, "error occured hiding: " + key);
+                    Log.e(TAG, "error occurred hiding: " + key);
                 }
             }
         }
@@ -294,11 +294,11 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
                             + (disable ? '0' : '1')
                             + " > /system/class/leds/keyboard-backlight/brightness");
                 } catch (Exception e) {
-                    Log.d(TAG, "error occured setting class leds", e);
+                    Log.d(TAG, "error occurred setting class leds", e);
                 }
             }
         } catch (Exception ignored) {
-            Log.d(TAG, "error occured setting led brightness");
+            Log.d(TAG, "error occurred setting led brightness");
         }
     }
 
@@ -432,7 +432,7 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
                     p.setShouldDisableView(true);
                     p.setEnabled(state);
                 } catch (Exception e) {
-                    Log.e(TAG, "error occured disabling: " + p.getTitle());
+                    Log.e(TAG, "error occurred disabling: " + p.getTitle());
                 }
             }
         };
@@ -616,7 +616,7 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
             String parentSummary) {
 
         if (p == null) {
-            Log.d(TAG, "error occured indexing a sub preference for: " + clazz
+            Log.d(TAG, "error occurred indexing a sub preference for: " + clazz
                     + " key: " + parentKey);
             return;
         }

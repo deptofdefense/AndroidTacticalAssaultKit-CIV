@@ -6,10 +6,11 @@ import android.content.SharedPreferences;
 import android.location.Address;
 import android.preference.PreferenceManager;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -45,9 +46,9 @@ public class GeocodeManager {
     public static final String ADDRESS_DIR = FileSystemUtils.TOOL_DATA_DIRECTORY
             + File.separatorChar + "address";
 
-    private List<Geocoder> geocoders = new ArrayList<>();
-    private SharedPreferences _prefs;
-    private Context context;
+    private final List<Geocoder> geocoders = new ArrayList<>();
+    private final SharedPreferences _prefs;
+    private final Context context;
 
     public interface Geocoder {
         /**
@@ -158,9 +159,9 @@ public class GeocodeManager {
         return new ArrayList<>(geocoders);
     }
 
-    private Geocoder AndroidGeocoder = new Geocoder() {
+    private final Geocoder AndroidGeocoder = new Geocoder() {
 
-        private String TAG = "AndroidGeocoder";
+        private final static String TAG = "AndroidGeocoder";
 
         @Override
         public String getUniqueIdentifier() {
@@ -322,8 +323,8 @@ public class GeocodeManager {
     private void loadNominatim() {
         try {
             final File dir = FileSystemUtils.getItem(ADDRESS_DIR);
-            if (FileIOProviderFactory.exists(dir)) {
-                File[] files = FileIOProviderFactory.listFiles(dir);
+            if (IOProviderFactory.exists(dir)) {
+                File[] files = IOProviderFactory.listFiles(dir);
                 if (files != null) {
                     for (File file : files) {
                         Log.d(TAG, "loading: " + file);
@@ -332,7 +333,11 @@ public class GeocodeManager {
                                 .getDocumenBuilderFactory();
 
                         DocumentBuilder db = dbf.newDocumentBuilder();
-                        Document document = db.parse(file);
+                        Document document;
+                        try (InputStream is = IOProviderFactory
+                                .getInputStream(file)) {
+                            document = db.parse(is);
+                        }
                         document.getDocumentElement().normalize();
                         NodeList nList = document.getElementsByTagName("entry");
 

@@ -55,12 +55,12 @@ namespace {
     public :
         struct LevelOfDetail
         {
-            std::size_t levelOfDetail;
-            int64_t meshDataOffset;
-            std::size_t meshDataLength;
+            std::size_t levelOfDetail {0};
+            int64_t meshDataOffset {0};
+            std::size_t meshDataLength {0};
             std::shared_ptr<const Mesh> staticMesh;
             std::weak_ptr<const Mesh> streamingMesh;
-            std::size_t instanceId;
+            std::size_t instanceId {0};
         };
     public :
         StreamingSceneNode() NOTHROWS;
@@ -686,7 +686,7 @@ namespace {
                 VertexDataRecord{ TEVA_TexCoord7, srcLayout.texCoord7, dstLayout.texCoord7 },
             };
             for (std::size_t i = 0u; i < 11u; i++) {
-                if (!dstLayout.attributes&records[i].attr)
+                if (!(dstLayout.attributes & records[i].attr))
                     continue;
 
                 std::size_t dataLen;
@@ -879,7 +879,7 @@ namespace {
                 VertexDataRecord{ TEVA_TexCoord7, srcLayout.texCoord7, dstLayout.texCoord7 },
             };
             for (std::size_t i = 0u; i < 11u; i++) {
-                if (!dstLayout.attributes&records[i].attr)
+                if (!(dstLayout.attributes & records[i].attr))
                     continue;
 
                 std::size_t dataLen;
@@ -1071,7 +1071,7 @@ namespace {
                 VertexDataRecord{ TEVA_TexCoord7, layout.texCoord7, texCoord7 },
             };
             for (std::size_t i = 0u; i < 11u; i++) {
-                if (!layout.attributes&records[i].attr)
+                if (!(layout.attributes & records[i].attr))
                     continue;
 
                 code = src.readLong(&longval);

@@ -79,17 +79,24 @@ public class JOGLRenderContext implements RenderContext {
 
     @Override
     public boolean isAttached() {
-        return isRenderThread();
+        return isRenderThread() && impl.getContext().isCurrent();
     }
 
     @Override
     public boolean attach() {
-        return isRenderThread();
+        if(!isRenderThread())
+            return false;
+        impl.getContext().makeCurrent();
+        return impl.getContext().isCurrent();
     }
 
     @Override
     public boolean detach() {
-        return false;
+        if(!isRenderThread())
+            return false;
+        if(impl.getContext().isCurrent())
+            impl.getContext().release();;
+        return isAttached();
     }
 
     @Override

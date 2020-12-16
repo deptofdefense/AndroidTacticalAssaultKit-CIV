@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Concrete class representing a 2D or 3D point.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Dec 12, 2014
+////      Dec 12, 2014  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -80,7 +80,7 @@ namespace feature                       // Open feature namespace.
 void
 Point::set (double x_val,
             double y_val)
-    throw ()
+    NOTHROWS
   {
     Point::x = x_val;
     Point::y = y_val;

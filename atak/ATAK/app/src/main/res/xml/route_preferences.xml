@@ -142,6 +142,22 @@
             android:inputType="number" />
 
         <PreferenceCategory
+            android:title="@string/pref_billboard_category" />
+
+        <CheckBoxPreference
+            android:title="@string/pref_billboard_enabled_title"
+            android:summary="@string/pref_billboard_enabled_desc"
+            android:key="route_billboard_enabled"
+            android:defaultValue="true" />
+        <com.atakmap.android.gui.PanEditTextPreference
+            android:title="@string/pref_billboard_distance_title"
+            android:summary="@string/pref_billboard_distance_desc"
+            android:key="route_billboard_distance_m"
+            android:dialogTitle="@string/preferences_text317"
+            android:defaultValue="500"
+            android:inputType="number"/>
+
+        <PreferenceCategory
             android:title="Other" />
 
         <CheckBoxPreference

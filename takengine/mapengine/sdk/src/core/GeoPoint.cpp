@@ -69,7 +69,7 @@ GeoPoint::~GeoPoint()
 
 bool GeoPoint::operator==(const GeoPoint& rhs) const
 {
-    double epsilon = std::numeric_limits<double>::epsilon();
+    constexpr double epsilon = std::numeric_limits<double>::epsilon();
     bool bEquals = (altitudeRef == rhs.altitudeRef);
     bEquals = bEquals && (fabs(latitude - rhs.latitude) < epsilon);
     bEquals = bEquals && (fabs(longitude - rhs.longitude) < epsilon);

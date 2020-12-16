@@ -8,18 +8,18 @@ import android.util.Pair;
 import com.atakmap.android.icons.IconsMapAdapter;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.app.R;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipFile;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Enumeration;
-import com.atakmap.coremap.locale.LocaleUtil;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * Does not move the input file, rather simply imports into DB, if not already loaded
@@ -60,7 +60,7 @@ public class ImportUserIconSetSort extends ImportInPlaceResolver {
      */
     public static boolean HasIconset(File file, boolean requireXml) {
 
-        if (file == null || !FileIOProviderFactory.exists(file)) {
+        if (file == null || !IOProviderFactory.exists(file)) {
             Log.d(TAG,
                     "ZIP does not exist: "
                             + (file == null ? "null" : file.getAbsolutePath()));

@@ -2,8 +2,10 @@
 package com.atakmap.android.image;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
@@ -39,7 +41,7 @@ import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.missionpackage.file.NameValuePair;
 import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.android.video.manager.VideoFileWatcher;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
 import org.apache.sanselan.formats.tiff.TiffImageMetadata;
@@ -58,6 +60,7 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.filesystem.HashingUtils;
+import com.atakmap.map.gdal.GdalLibrary;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
@@ -83,7 +86,6 @@ import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.Toast;
-import org.gdal.gdal.gdal;
 
 public class ImageDropDownReceiver
         extends DropDownReceiver
@@ -172,13 +174,15 @@ public class ImageDropDownReceiver
             final File dir = new File(dirPath);
 
             Log.d(TAG, "creating an attachment directory: " + dirPath);
-            if (FileIOProviderFactory.isDirectory(dir) || !FileIOProviderFactory.exists(dir) && FileIOProviderFactory.mkdirs(dir)) {
+            if (IOProviderFactory.isDirectory(dir)
+                    || !IOProviderFactory.exists(dir)
+                            && IOProviderFactory.mkdirs(dir)) {
                 final String name = getDateTimeString();
 
                 for (int i = 0; result == null && i < possible.length; ++i) {
                     File file = new File(dir, name + possible[i] + "." + ext);
 
-                    if (!FileIOProviderFactory.exists(file)) {
+                    if (!IOProviderFactory.exists(file)) {
                         result = file;
                     }
                 }
@@ -774,7 +778,8 @@ public class ImageDropDownReceiver
             @Override
             public int compare(File f1, File f2) {
                 if (sortByTime)
-                    return Long.compare(FileIOProviderFactory.lastModified(f2), FileIOProviderFactory.lastModified(f1));
+                    return Long.compare(IOProviderFactory.lastModified(f2),
+                            IOProviderFactory.lastModified(f1));
                 else
                     return f1.getName().compareTo(f2.getName());
             }
@@ -926,7 +931,7 @@ public class ImageDropDownReceiver
                             false);
                 }
                 // Convert NITF metadata to EXIF
-                Dataset nitf = gdal.Open(file.toString());
+                Dataset nitf = GdalLibrary.openDatasetFromFile(file);
                 if (nitf != null) {
                     tos = NITFHelper.getExifOutput(nitf, outWidth, outHeight);
                     nitf.delete();
@@ -937,7 +942,11 @@ public class ImageDropDownReceiver
             BitmapFactory.Options opts = new BitmapFactory.Options();
 
             opts.inJustDecodeBounds = true;
-            BitmapFactory.decodeFile(filePath, opts);
+            try (FileInputStream fis = IOProviderFactory
+                    .getInputStream(new File(filePath))) {
+                BitmapFactory.decodeStream(fis, null, opts);
+            } catch (IOException ignored) {
+            }
 
             // Is resizing necessary?
             if (opts.outWidth > width || opts.outHeight > height) {
@@ -947,7 +956,12 @@ public class ImageDropDownReceiver
                 opts.inJustDecodeBounds = false;
 
                 // Decode subsampled result
-                bmp = BitmapFactory.decodeFile(filePath, opts);
+                try (FileInputStream fis = IOProviderFactory
+                        .getInputStream(new File(filePath))) {
+                    bmp = BitmapFactory.decodeStream(fis, null, opts);
+                } catch (IOException ignored) {
+                    // bitmap remains null
+                }
 
                 // Copy EXIF data
                 tos = ExifHelper
@@ -962,7 +976,8 @@ public class ImageDropDownReceiver
 
             // Store downscaled in ATAK temp directory (cleared on shutdown)
             File atakTmp = FileSystemUtils.getItemOnSameRoot(file, "tmp");
-            if (!FileIOProviderFactory.exists(atakTmp) && !FileIOProviderFactory.mkdirs(atakTmp)) {
+            if (!IOProviderFactory.exists(atakTmp)
+                    && !IOProviderFactory.mkdirs(atakTmp)) {
                 Log.w(TAG, "Failed to create ATAK temp dir: " + atakTmp);
                 // Fallback to system temp directory (may not be readable/writable)
                 result = new File(_context.getCacheDir(),
@@ -972,7 +987,7 @@ public class ImageDropDownReceiver
             try {
                 int jpeg_quality = 90;
 
-                fos = FileIOProviderFactory.getOutputStream(result);
+                fos = IOProviderFactory.getOutputStream(result);
                 bmp.compress(CompressFormat.JPEG, jpeg_quality, fos);
                 fos.flush();
                 fos.close();
@@ -1082,7 +1097,7 @@ public class ImageDropDownReceiver
                 file.getParentFile(), file.getName())) {
             File nitfXml = new File(file.getParent(), file.getName()
                     + ".aux.xml");
-            if (FileIOProviderFactory.exists(nitfXml))
+            if (IOProviderFactory.exists(nitfXml))
                 manifest.addFile(nitfXml, uid);
         }
 
@@ -1130,7 +1145,7 @@ public class ImageDropDownReceiver
             }
         } else if (ImageContainer.NITF_FilenameFilter.accept(dir, name)) {
             // Update NITF file title
-            Dataset nitf = gdal.Open(imageFile.toString());
+            Dataset nitf = GdalLibrary.openDatasetFromFile(imageFile);
             if (nitf != null) {
                 NITFHelper.setTitle(nitf, newDesc);
                 nitf.delete();

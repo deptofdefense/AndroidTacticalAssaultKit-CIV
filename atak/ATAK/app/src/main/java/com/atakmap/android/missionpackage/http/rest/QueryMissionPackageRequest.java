@@ -17,9 +17,9 @@ public class QueryMissionPackageRequest implements Parcelable {
 
     private static final String TAG = "QueryMissionPackageRequest";
 
-    private String mServerConnectString;
-    private String mTool;
-    private int mNotificationId;
+    private final String mServerConnectString;
+    private final String mTool;
+    private final int mNotificationId;
 
     public QueryMissionPackageRequest(String serverConnectString,
             int notificationId) {

@@ -2,29 +2,37 @@
 package com.atakmap.app;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.util.ConfigOptions;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Map;
 import java.util.Properties;
 
 public final class DeveloperOptions {
 
-    private static String TAG = "DeveloperOptions";
+    private static final String TAG = "DeveloperOptions";
 
     private final static File DEVOPTS_FILE = FileSystemUtils
             .getItem("devopts.properties");
 
     private static final Properties opts = new Properties();
     static {
+
+        // first examine the system level properties via getprop
+        loadSystemProperties();
+
+        // then load the devopts.properties file allowing a developer
+        // to locally override any system level properties
         InputStream in = null;
         try {
-            if (FileIOProviderFactory.exists(DEVOPTS_FILE)) {
-                in = FileIOProviderFactory.getInputStream(DEVOPTS_FILE);
+            if (IOProviderFactory.exists(DEVOPTS_FILE)) {
+                in = IOProviderFactory.getInputStream(DEVOPTS_FILE);
                 opts.load(in);
             }
         } catch (IOException e) {
@@ -77,6 +85,44 @@ public final class DeveloperOptions {
             return Double.parseDouble(retval);
         } catch (NumberFormatException e) {
             return defVal;
+        }
+    }
+
+    /**
+     * Loads system properties that would be specified by setProp and obtained by getProp.
+     * The properties that are loaded are prefaced with "ro.tak." and  
+     */
+    private static void loadSystemProperties() {
+        Process proc = null;
+        BufferedReader br = null;
+
+        try {
+            proc = new ProcessBuilder().command("/system/bin/getprop")
+                    .redirectErrorStream(true).start();
+            br = new BufferedReader(
+                    new InputStreamReader(proc.getInputStream()));
+            String line;
+            while ((line = br.readLine()) != null) {
+                final String[] split = line.split("\\]: \\[");
+                String key = split[0].substring(1);
+                String value = split[1].substring(0, split[1].length() - 1);
+                if (key.startsWith("ro.tak.")) {
+                    key = key.replace("ro.tak.", "");
+                    opts.setProperty(key, value);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to read system properties", e);
+        } finally {
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException ignored) {
+                }
+            }
+            if (proc != null) {
+                proc.destroy();
+            }
         }
     }
 }

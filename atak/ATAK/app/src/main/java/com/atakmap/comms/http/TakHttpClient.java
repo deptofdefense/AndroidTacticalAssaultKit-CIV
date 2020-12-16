@@ -28,13 +28,13 @@ public class TakHttpClient {
     /**
      * Encapsulated client to execute HTTP operations
      */
-    private HttpClient _client;
+    private final HttpClient _client;
 
     /**
      * Base URL for TAK (Server) related URLs. Manages building out the full request URL from
      * a base URL
      */
-    private String _baseUrl;
+    private final String _baseUrl;
 
     /**
      * Setup HTTP client.
@@ -214,7 +214,7 @@ public class TakHttpClient {
      * @param url the url to perform a http get on.
      * @param verify the string that is to be contained in the response
      * @return response body as String if HTTP OK 200 is returned by serve
-     * @throws IOException
+     * @throws IOException when there is an issue with the gzip'd data
      */
     public String getGZip(String url, String verify) throws IOException {
         return getGZip(url, verify, null);
@@ -225,9 +225,9 @@ public class TakHttpClient {
      *
      * @param url the url to perform a http get on.
      * @param verify the string that is to be contained in the response
-     * @param accept
+     * @param accept Set "Accept" header on request
      * @return response body as String if HTTP OK 200 is returned by serve
-     * @throws IOException
+     * @throws IOException when there is an issue with the gzip'd data
      */
     public String getGZip(String url, String verify, String accept)
             throws IOException {

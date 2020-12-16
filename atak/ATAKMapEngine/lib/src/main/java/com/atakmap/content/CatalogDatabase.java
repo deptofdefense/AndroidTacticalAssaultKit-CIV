@@ -5,7 +5,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.CursorWrapper;
 import com.atakmap.database.DatabaseIface;
@@ -243,7 +243,7 @@ public class CatalogDatabase {
     protected boolean validateCatalogRowNoSync(CatalogCursor row) {
         CatalogCurrency currency = this.currencyRegistry.get(row.getAppName());
         File file = new File(FileSystemUtils.sanitizeWithSpacesAndSlashes(row.getPath()));
-        return FileIOProviderFactory.exists(file) &&
+        return IOProviderFactory.exists(file) &&
                 (currency != null &&
                  currency.isValidApp(file,
                         row.getAppVersion(),

@@ -11,10 +11,14 @@ import java.util.LinkedList;
 import java.util.Set;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.DatabaseInformation;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.CursorWrapper;
+import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.Databases;
 import com.atakmap.database.StatementIface;
 import com.atakmap.map.layer.feature.datastore.FeatureSpatialDatabase;
@@ -86,7 +90,22 @@ final class LayersDatabase extends CatalogDatabase {
     /**************************************************************************/
 
     public LayersDatabase(File databaseFile, CatalogCurrencyRegistry r) {
-        super(Databases.openOrCreateDatabase(databaseFile.getAbsolutePath()), r);
+        super(createDatabase(databaseFile), r);
+    }
+
+    /**
+     * Responsible for renaming the Old DB if necessary, and returns the Database.
+     * @param databaseFile the file to use as the database.
+     * @return the database.
+     */
+    private static DatabaseIface createDatabase(File databaseFile){
+        DatabaseIface db = IOProviderFactory.createDatabase(databaseFile,
+                DatabaseInformation.OPTION_ENSURE_PARENT_DIRS);
+        if(db == null && IOProviderFactory.exists(databaseFile)) {
+            IOProviderFactory.delete(databaseFile, IOProvider.SECURE_DELETE);
+            db = IOProviderFactory.createDatabase(databaseFile);
+        }
+        return db;
     }
 
     private static int databaseVersion() {

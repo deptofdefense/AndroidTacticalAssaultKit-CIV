@@ -47,9 +47,9 @@ public class GLInstancedPolyline extends GLInstancedRenderable {
 
     private static Integer _programID;
 
-    private FloatBuffer _points;
-    private int _numPoints;
-    private int _pointBufferSize;
+    private final FloatBuffer _points;
+    private final int _numPoints;
+    private final int _pointBufferSize;
     private int[] _posBuffer;
 
     // Color buffer

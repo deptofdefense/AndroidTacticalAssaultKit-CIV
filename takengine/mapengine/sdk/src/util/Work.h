@@ -247,13 +247,13 @@ namespace TAK {
 			 * use this for tasks that block and wait on things (like IO), or very short lived non-taxing
 			 * tasks.
 			 */
-			ENGINE_API SharedWorkerPtr GeneralWorkers_flex() NOTHROWS;
+			ENGINE_API const SharedWorkerPtr& GeneralWorkers_flex() NOTHROWS;
 
 			/**
 			 * A single thread always ready. It is good to use this for tasks that must be serialized, or
 			 * expensive tasks when GeneralWorkers_cpu() chokes out performance too much.
 			 */
-			ENGINE_API SharedWorkerPtr GeneralWorkers_single() NOTHROWS;
+			ENGINE_API const SharedWorkerPtr& GeneralWorkers_single() NOTHROWS;
 
 			/**
 			 * General purpose Worker for handling more expensive computation type tasks that are
@@ -261,7 +261,7 @@ namespace TAK {
 			 * doing other work. Generally, this is a fixed thread-pool with the same number of threads
 			 * as CPU cores.
 			 */
-			ENGINE_API SharedWorkerPtr GeneralWorkers_cpu() NOTHROWS;
+			ENGINE_API const SharedWorkerPtr& GeneralWorkers_cpu() NOTHROWS;
 
 			/**
 			 * Create a new thread for each task.
@@ -271,7 +271,7 @@ namespace TAK {
 			/**
 			 * Do the task immediately within the context it arrives.
 			 */
-			ENGINE_API SharedWorkerPtr GeneralWorkers_immediate() NOTHROWS;
+                        ENGINE_API const SharedWorkerPtr& GeneralWorkers_immediate() NOTHROWS;
 		}
 	}
 }

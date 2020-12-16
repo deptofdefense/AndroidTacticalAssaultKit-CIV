@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.layer.raster.AbstractDatasetDescriptorSpi;
@@ -96,7 +96,7 @@ public class MobacMapSourceLayerInfoSpi extends AbstractDatasetDescriptorSpi {
         final String cacheDirPath = ConfigOptions.getOption("imagery.offline-cache-dir", null);
         if(cacheDirPath != null) {
             File cacheDir = new File(cacheDirPath);
-            if(FileIOProviderFactory.exists(cacheDir))
+            if(IOProviderFactory.exists(cacheDir))
                 cacheFile = new File(cacheDir, mapSource.getName() + ".sqlite");
         }
         builder.setExtra("offlineCache", cacheFile.getAbsolutePath());

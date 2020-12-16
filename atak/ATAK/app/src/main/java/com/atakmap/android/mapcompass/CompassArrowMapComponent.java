@@ -14,7 +14,6 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.res.Resources;
 import android.graphics.Color;
-import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Typeface;
 import android.preference.PreferenceManager;
@@ -36,10 +35,10 @@ import com.atakmap.android.menu.MapMenuWidget;
 import com.atakmap.android.menu.MenuLayoutWidget;
 import com.atakmap.android.model.ModelImporter;
 import com.atakmap.android.util.ATAKUtilities;
-import com.atakmap.android.util.AltitudeUtilities;
 import com.atakmap.android.widgets.AbstractParentWidget;
 import com.atakmap.android.widgets.DrawableWidget;
 import com.atakmap.android.widgets.LinearLayoutWidget;
+import com.atakmap.android.widgets.MapFocusTextWidget;
 import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.android.widgets.MapWidget.OnClickListener;
 import com.atakmap.android.widgets.MapWidget.OnLongPressListener;
@@ -51,7 +50,6 @@ import com.atakmap.android.widgets.TextWidget;
 import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.conversions.CoordinateFormat;
-import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -107,7 +105,7 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
 
     // Center cross-hair
     protected CenterBeadWidget cb;
-    protected TextWidget cbText;
+    protected MapFocusTextWidget cbText;
     protected CoordinateFormat coordMode = CoordinateFormat.MGRS;
 
     private float lastHeading = 0;
@@ -240,7 +238,7 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
         this.coordMode = CoordinateFormat.find(_prefs.getString(
                 "coord_display_pref", res.getString(
                         R.string.coord_display_pref_default)));
-        this.cbText = new TextWidget("", 2);
+        this.cbText = new MapFocusTextWidget();
         this.cbText.setMargins(16f, 0f, 0f, 16f);
         this.cbText.setVisible(cbVisible);
         blLayout.addWidgetAt(1, this.cbText);
@@ -342,7 +340,8 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
 
         // Restore tilt to zero if we were in free look mode w/out 3D mode
         // explicitly toggled on
-        if (mapTouch.isFreeForm3DEnabled() && !_prefs.getBoolean("status_3d_enabled", false))
+        if (mapTouch.isFreeForm3DEnabled()
+                && !_prefs.getBoolean("status_3d_enabled", false))
             view.getMapController().tiltTo(0, false);
 
         // record the heading value at the time the app is being shut down.
@@ -511,7 +510,8 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
                         true);
             }
             updateDegDisplay(!Double.isNaN(lockedHeadingValue)
-                    ? lockedHeadingValue : 0.0);
+                    ? lockedHeadingValue
+                    : 0.0);
             onMapMoved(mapView, false);
         }
         compass.setMode(mapMode, lockedHeading);
@@ -528,7 +528,7 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
 
         final Projection proj = view.getProjection();
         boolean globeModeEnabled = _prefs.getBoolean("atakGlobeModeEnabled",
-                false);
+                true);
 
         if (proj.getSpatialReferenceID() == ECEFProjection.INSTANCE
                 .getSpatialReferenceID()) {
@@ -556,18 +556,9 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
             updateDegDisplay(rot);
         compass.setRotation((float) rot);
 
-        // Update center coordinate text
-        if (this.cbText != null && this.cbText.isVisible()) {
-            Point focus = view.getMapController().getFocusPoint();
-            GeoPoint p = mapView.inverseWithElevation(focus.x, focus.y).get();
-            this.cbText.setText(CoordinateFormatUtilities.formatToString(p,
-                    this.coordMode) + " "
-                    + AltitudeUtilities.format(p,
-                            _prefs, true));
-        }
-
         // Toggle off free look if map moved
-        if (freeLookWidget != null && freeLookWidget.isVisible() != freeForm3D) {
+        if (freeLookWidget != null
+                && freeLookWidget.isVisible() != freeForm3D) {
             freeLookWidget.setVisible(freeForm3D);
             updateCompassWidget();
         }
@@ -778,7 +769,7 @@ public class CompassArrowMapComponent extends AbstractMapComponent implements
                     this.tlwc.refresh();
                 break;
             case "atakGlobeModeEnabled":
-                if (prefs.getBoolean(key, false)) {
+                if (prefs.getBoolean(key, true)) {
                     mapView.setProjection(ECEFProjection.INSTANCE);
                 } else {
                     mapView.setProjection(

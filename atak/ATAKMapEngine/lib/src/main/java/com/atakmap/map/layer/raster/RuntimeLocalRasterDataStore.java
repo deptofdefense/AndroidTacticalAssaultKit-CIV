@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 
 public class RuntimeLocalRasterDataStore extends LocalRasterDataStore {
 
@@ -73,7 +73,7 @@ public class RuntimeLocalRasterDataStore extends LocalRasterDataStore {
 
     @Override
     public boolean isAvailable() {
-        return FileIOProviderFactory.exists(this.workingDir);
+        return IOProviderFactory.exists(this.workingDir);
     }
 
     @Override

@@ -12,7 +12,7 @@ import com.atakmap.comms.NetworkUtils.NetRestartNotification;
 
 public class MyIpTextView extends TextView {
 
-    private Context ctx;
+    private final Context ctx;
 
     public MyIpTextView(Context ctx) {
         super(ctx);

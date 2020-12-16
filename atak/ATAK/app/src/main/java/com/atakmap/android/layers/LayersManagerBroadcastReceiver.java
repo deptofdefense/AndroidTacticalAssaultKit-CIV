@@ -1,7 +1,6 @@
 
 package com.atakmap.android.layers;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -50,7 +49,7 @@ import android.widget.Toast;
 import com.atakmap.android.contentservices.Service;
 import com.atakmap.android.contentservices.ServiceFactory;
 import com.atakmap.android.contentservices.ServiceListing;
-import com.atakmap.android.data.DataMgmtReceiver;
+import com.atakmap.android.data.ClearContentRegistry;
 import com.atakmap.android.dropdown.DropDown.OnStateListener;
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.favorites.FavoriteListAdapter;
@@ -75,6 +74,7 @@ import com.atakmap.android.maps.tilesets.mobac.WebMapLayer;
 import com.atakmap.android.util.NotificationIdRecycler;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
+import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -93,6 +93,8 @@ import com.atakmap.map.layer.raster.tilematrix.TileContainerFactory;
 import com.atakmap.map.layer.raster.tilematrix.TileContainerSpi;
 import com.atakmap.map.layer.raster.tilematrix.TileMatrix;
 import com.atakmap.math.MathUtils;
+import com.atakmap.net.AtakAuthenticationCredentials;
+import com.atakmap.net.AtakAuthenticationDatabase;
 import com.atakmap.spi.InteractiveServiceProvider;
 import com.atakmap.util.Visitor;
 
@@ -136,7 +138,6 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
      * on the dataset.
      */
     public final static String EXTRA_ZOOM_TO = "zoomTo";
-    private static final float defaultFontSize = 26;
 
     private final SharedPreferences _prefs;
     private DownloadAndCacheBroadcastReceiver downloadRecv = null;
@@ -144,12 +145,43 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
     // these are not visible strings, rather tab identifiers - do not translate
     final private static String IMAGERY_ID = "imagery";
     final private static String MOBILE_ID = "mobile";
-    final private static String GRG_ID = "grg";
     final private static String FAVS_ID = "favs";
-    private FavoriteListAdapter _favAdapter;
+    private final FavoriteListAdapter _favAdapter;
 
     TileButtonDialog tileButtonDialog;
     TileButton rectangleButton, freeFormButton, mapSelectButton;
+
+    public static final int TILE_DOWNLOAD_LIMIT = 300000;
+    private final static int ACTIVATED_COLOR = Color.parseColor("#008F00");
+
+    public static final String TAG = "LayersManagerBroadcastReceiver";
+
+    private static final NotificationIdRecycler _notificationId = new NotificationIdRecycler(
+            85000, 4);
+
+    private TabHost tabHost = null;
+    private final AdapterSpec _nativeLayersAdapter;
+    private final AdapterSpec _mobileLayersAdapter;
+    private Button downloadButton;
+    private Button cancelButton;
+    private Button selectButton;
+    private Switch offlineOnlyCheckbox;
+    private OnlineLayersManagerView onlineView;
+    private OnlineLayersDownloadManager downloader;
+    private AlertDialog listDialog;
+    private LayersManagerView nativeManagerView;
+    private final Set<LayerSelectionAdapter> adapters;
+    private final CardLayer rasterLayers;
+    private final Map<Layer, LayerSelectionAdapter> layerToAdapter;
+
+    // Ability to read preferences to load username, password and domain for a site
+    private final static String ONLINE_USERNAME = "online.username.";
+    /**
+     * Fortify has flagged this as Password Management: Hardcoded Password
+     * this is only a key.
+     */
+    private final static String ONLINE_PASSWORD = "online.password.";
+    private final static String ONLINE_DOMAIN = "online.domain.";
 
     public LayersManagerBroadcastReceiver(MapView mapView,
             CardLayer rasterLayers,
@@ -160,6 +192,9 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         _prefs = PreferenceManager
                 .getDefaultSharedPreferences(getMapView()
                         .getContext());
+
+        // Register the listener to change the indicator when preferences change
+        _prefs.registerOnSharedPreferenceChangeListener(this);
 
         this.rasterLayers = rasterLayers;
         _nativeLayersAdapter = nativeListAdapter;
@@ -203,13 +238,16 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         } catch (Exception e) {
             Log.d(TAG, "error unregistering the download receiver", e);
         }
+
+        _prefs.unregisterOnSharedPreferenceChangeListener(this);
     }
 
     private void showImageryHint() {
         showHint(
                 "imagery.display",
                 getMapView().getContext().getString(R.string.imagery_change),
-                getMapView().getContext().getString(
+                ResourceUtil.getString(getMapView().getContext(),
+                        R.string.civ_imagery_change_summ,
                         R.string.imagery_change_summ));
     }
 
@@ -277,17 +315,6 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
             downloader.finishRegionSelect(intent);
             if (downloader.hasRegionShape())
                 downloadButton.setEnabled(true);
-            return;
-        } else if (intent.getAction().contentEquals(
-                DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION)) {
-            if (intent.getBooleanExtra(DataMgmtReceiver.ZEROIZE_CLEAR_MAPS,
-                    false)) {
-                Log.d(TAG, "Clearing map data");
-
-                //clear DB
-                LayersMapComponent.getLayersDatabase().clear();
-            }
-
             return;
         } else if (intent.getAction().contentEquals(ACTION_SELECT_LAYER)) {
             // attempt to locate the layer and selection for the favorite
@@ -419,9 +446,6 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                 _prefs.getString("imagery_tab_name", getMapView().getContext()
                         .getString(R.string.imagery)));
 
-        // Register the listener to change the indicator when preferences change
-        _prefs.registerOnSharedPreferenceChangeListener(this);
-
         nativeSpec.setContent(new TabContentFactory() {
 
             @Override
@@ -507,34 +531,73 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         }
     }
 
+    final ClearContentRegistry.ClearContentListener dataMgmtReceiver = new ClearContentRegistry.ClearContentListener() {
+        @Override
+        public void onClearContent(boolean clearmaps) {
+
+            if (clearmaps)
+                LayersMapComponent.getLayersDatabase().clear();
+        }
+    };
+
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
-        if (key.equals("imagery_tab_name")) {
-            Context c = getMapView().getContext();
+
+        if (key.startsWith(ONLINE_USERNAME) ||
+                key.startsWith(ONLINE_PASSWORD) ||
+                key.startsWith(ONLINE_DOMAIN)) {
+
+            String[] arr = key.split("\\.");
+
+            final String username = p.getString(ONLINE_USERNAME + arr[2], null);
+            final String password = p.getString(ONLINE_PASSWORD + arr[2], null);
+            final String domain = p.getString(ONLINE_DOMAIN + arr[2], null);
+
+            if (username != null && password != null && domain != null) {
+                AtakAuthenticationDatabase.saveCredentials(
+                        AtakAuthenticationCredentials.TYPE_HTTP_BASIC_AUTH,
+                        domain, username, password, false);
+                p.edit().remove(ONLINE_USERNAME + arr[2])
+                        .remove(ONLINE_PASSWORD + arr[2])
+                        .remove(ONLINE_DOMAIN + arr[2]).apply();
+            }
+
+        }
+
+        if (key.equals("imagery_tab_name") && tabHost != null) {
+            final Context c = getMapView().getContext();
             final String tabName = _prefs.getString(key, c.getString(
                     R.string.imagery));
             // Indicators cannot be set once created, workaround is setting title of widget
-            final TabWidget widget = tabHost.getTabWidget();
-            final LinearLayout tabView = (LinearLayout) widget
-                    .getChildTabViewAt(0);
-            if (tabView != null) {
-                int count = tabView.getChildCount();
-                if (count > 1) { 
-                    final View v = tabView.getChildAt(1);
-                    if (v instanceof TextView) { 
-                        TextView tabTitle = (TextView)v;
-                        if (tabName.equals(c.getString(R.string.imagery))) {
-                            // For Imagery tab = Imagery, set indicator to Imagery
-                            tabTitle.setText(c.getString(R.string.imagery));
-                            //Log.d(TAG, "Imagery tab is Imagery");
-                        } else if (tabName.equals(c.getString(R.string.maps))) {
-                            // For Imagery tab = Maps, set indicator to Maps
-                            tabTitle.setText(c.getString(R.string.maps));
-                            //Log.d(TAG, "Imagery tab is Maps");
+            getMapView().post(new Runnable() {
+                public void run() {
+                    final TabWidget widget = tabHost.getTabWidget();
+                    final LinearLayout tabView = (LinearLayout) widget
+                            .getChildTabViewAt(0);
+                    if (tabView != null) {
+                        int count = tabView.getChildCount();
+                        if (count > 1) {
+                            final View v = tabView.getChildAt(1);
+                            if (v instanceof TextView) {
+                                TextView tabTitle = (TextView) v;
+                                if (tabName.equals(
+                                        c.getString(R.string.imagery))) {
+                                    // For Imagery tab = Imagery, set indicator to Imagery
+                                    tabTitle.setText(
+                                            c.getString(R.string.imagery));
+                                    //Log.d(TAG, "Imagery tab is Imagery");
+                                } else if (tabName
+                                        .equals(c.getString(R.string.maps))) {
+                                    // For Imagery tab = Maps, set indicator to Maps
+                                    tabTitle.setText(
+                                            c.getString(R.string.maps));
+                                    //Log.d(TAG, "Imagery tab is Maps");
+                                }
+                            }
                         }
                     }
                 }
-            }
+            });
         }
     }
 
@@ -618,7 +681,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                                                 LayerSelectionAdapter active = LayersManagerBroadcastReceiver.this
                                                         .getActiveLayers();
 
-                                                String layer = null;
+                                                String layer;
                                                 String selection = null;
                                                 boolean locked = false;
                                                 if (_favAdapter != null) {
@@ -919,8 +982,11 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                         lowerRight.getLongitude(),
                         lowerLeft.getLongitude());
 
-                if (!LayersMapComponent.intersects(new Envelope(
-                        west, south, 0d, east, north, 0d),
+                if (!LayersMapComponent.intersects(
+                        new Envelope[] {
+                                new Envelope(
+                                        west, south, 0d, east, north, 0d)
+                        },
                         layerSelection.getBounds())) {
 
                     targetPoint = LayerSelection
@@ -1476,8 +1542,9 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                                 List<Service> layerList = new ArrayList<>();
                                 for (CheckBox cb : checkboxes) {
                                     if (cb.isChecked()) {
-                                        Service layer = addedLayers.get(cb
-                                                .getTag());
+                                        Service layer = addedLayers
+                                                .get((String) cb
+                                                        .getTag());
                                         if (layer != null)
                                             layerList.add(layer);
                                     }
@@ -1502,8 +1569,9 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                                     // our list of sources
                                     for (CheckBox cb : checkboxes) {
                                         if (cb.isChecked()) {
-                                            Service layer = addedLayers.get(cb
-                                                    .getTag());
+                                            Service layer = addedLayers
+                                                    .get((String) cb
+                                                            .getTag());
                                             doAddMapLayer(layer);
                                         }
                                     }
@@ -1572,10 +1640,12 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                 .show();
     }
 
-    // Recursive function to add layers to a dialog layout.
-    // Displayable layers get a checkbox, non-displayable just a text label.
-    // 'padding' is left-side padding of the added layer; used to increase
-    // indentation for the tree structure.
+    /**
+     * Recursive function to add layers to a dialog layout.
+     * Displayable layers get a checkbox, non-displayable just a text label.
+     * 'padding' is left-side padding of the added layer; used to increase
+     * indentation for the tree structure.
+     **/
     private void addMapLayersToLayout(Collection<Service> layers,
             LinearLayout content, int padding,
             Collection<CheckBox> checkboxes,
@@ -1789,38 +1859,19 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
 
     /** toast an error message */
     private void showError(final String e) {
-        ((Activity) getMapView().getContext()).runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                /**
-                 * Use a NULL in place of the ticker, so the perception of how fast things
-                 * are scanned and loaded is not adverse.
-                 */
-                NotificationUtil.getInstance().postNotification(
-                        _notificationId.getNotificationId(),
-                        R.drawable.select_point_icon,
-                        NotificationUtil.RED,
-                        getMapView().getContext().getString(
-                                R.string.failed_to_load_layer),
-                        null, e);
-            }
-        });
-    }
 
-    private TabHost tabHost = null;
-    private final AdapterSpec _nativeLayersAdapter;
-    private final AdapterSpec _mobileLayersAdapter;
-    private Button downloadButton;
-    private Button cancelButton;
-    private Button selectButton;
-    private Switch offlineOnlyCheckbox;
-    private OnlineLayersManagerView onlineView;
-    private OnlineLayersDownloadManager downloader;
-    private AlertDialog listDialog;
-    private LayersManagerView nativeManagerView;
-    private final Set<LayerSelectionAdapter> adapters;
-    private final CardLayer rasterLayers;
-    private final Map<Layer, LayerSelectionAdapter> layerToAdapter;
+        // Use a NULL in place of the ticker, so the perception of how fast things
+        // are scanned and loaded is not adverse.
+
+        NotificationUtil.getInstance().postNotification(
+                _notificationId.getNotificationId(),
+                R.drawable.select_point_icon,
+                NotificationUtil.RED,
+                getMapView().getContext().getString(
+                        R.string.failed_to_load_layer),
+                null, e);
+
+    }
 
     final OnItemSelectedListener mobileDownloadSelectionListener = new OnItemSelectedListener() {
         @Override
@@ -1854,16 +1905,10 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         }
     };
 
-    public static final int TILE_DOWNLOAD_LIMIT = 300000;
-    private final static int ACTIVATED_COLOR = Color.parseColor("#008F00");
-
-    public static final String TAG = "LayersManagerBroadcastReceiver";
-
-    private static final NotificationIdRecycler _notificationId = new NotificationIdRecycler(
-            85000, 4);
-
+    /**
+     * listen for the back button
+     **/
     @Override
-    /** listen for the back button*/
     public boolean onKey(View v, int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             downloader.cancelRegionSelect();

@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Implementation of DefaultDriverDefinition class.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Apr 17, 2015
+////      Apr 17, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////

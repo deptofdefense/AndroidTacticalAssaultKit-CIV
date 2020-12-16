@@ -14,7 +14,7 @@ curl_build: $(curl_srctouchfile)
 			WITH_DEVEL=$(OUTDIR_CYGSAFE)                       \
 			WITH_SSL=dll                                       \
 			ENABLE_WINSSL=no                                   \
-                        DEBUG=$(win32_debug_yesno)
+                        DEBUG=$(win_debug_yesno)
 
 $(curl_src_lib): curl_build
 	@echo "curl built"

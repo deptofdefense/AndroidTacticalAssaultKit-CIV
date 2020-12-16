@@ -29,9 +29,9 @@ public final class AttributionWidget extends TextWidget implements
         AttributionControl.OnAttributionUpdatedListener,
         Layer.OnLayerVisibleChangedListener {
 
-    private Map<AttributionControl, Set<Pair<String, String>>> ctrlToAttributions;
-    private Map<AttributionControl, Layer2> ctrlToLayer;
-    private SortedMap<String, SortedSet<String>> attributionText;
+    private final Map<AttributionControl, Set<Pair<String, String>>> ctrlToAttributions;
+    private final Map<AttributionControl, Layer2> ctrlToLayer;
+    private final SortedMap<String, SortedSet<String>> attributionText;
     private boolean expanded;
 
     public AttributionWidget(MapRenderer contentRenderer) {

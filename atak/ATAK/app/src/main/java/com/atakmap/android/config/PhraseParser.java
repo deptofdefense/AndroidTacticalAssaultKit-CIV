@@ -102,15 +102,15 @@ public class PhraseParser {
      * Expand a phrase to a resulting string
      * 
      * @param phraseSource the source phrase
-     * @param params
-     * @return
+     * @param params tthe parameters to be used
+     * @return the expanded string
      */
     public static String expandPhrase(final String phraseSource,
             final Parameters params) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < phraseSource.length(); ++i) {
             char c = phraseSource.charAt(i);
-            Resolver resolver = null;
+            Resolver resolver;
             if (_isNext(phraseSource, i, '{')
                     && (resolver = params.getResolver(c)) != null) {
                 StringBuilder key = new StringBuilder();
@@ -128,7 +128,7 @@ public class PhraseParser {
         int end = index;
         for (int i = index; i < phraseSource.length(); ++i) {
             char c = phraseSource.charAt(i);
-            Resolver resolver = null;
+            Resolver resolver;
             if (_isNext(phraseSource, i, '{')
                     && (resolver = params.getResolver(c)) != null) {
                 StringBuilder key = new StringBuilder();

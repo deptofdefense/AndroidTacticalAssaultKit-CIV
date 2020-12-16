@@ -311,7 +311,8 @@ public abstract class GenericDetailsView extends RelativeLayout implements
         Tool active = ToolManagerBroadcastReceiver.getInstance()
                 .getActiveTool();
         return active != null && active.getIdentifier().equals(toolID)
-                ? (T) active : null;
+                ? (T) active
+                : null;
     }
 
     /**

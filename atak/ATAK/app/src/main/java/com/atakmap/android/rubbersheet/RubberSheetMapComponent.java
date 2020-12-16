@@ -40,6 +40,7 @@ public class RubberSheetMapComponent extends DropDownMapComponent {
 
         // 3D models layer
         _modelLayer = new RubberModelLayer(view, _group);
+
     }
 
     @Override
@@ -52,4 +53,5 @@ public class RubberSheetMapComponent extends DropDownMapComponent {
         BitmapPyramid.disposeStatic();
         super.onDestroyImpl(context, view);
     }
+
 }

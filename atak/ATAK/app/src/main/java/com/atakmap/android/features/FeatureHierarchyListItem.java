@@ -328,7 +328,7 @@ public class FeatureHierarchyListItem extends
     public boolean delete() {
         try {
             this.spatialDb.deleteFeature(this.fid);
-        } catch (DataStoreException dse) {
+        } catch (DataStoreException ignored) {
         }
         return true;
     }
