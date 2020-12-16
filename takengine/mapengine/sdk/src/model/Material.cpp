@@ -7,8 +7,6 @@
 
 #include "port/StringBuilder.h"
 
-#include "port/StringBuilder.h"
-
 using namespace TAK::Engine::Model;
 using namespace TAK::Engine::Util;
 using namespace TAK::Engine::Port;

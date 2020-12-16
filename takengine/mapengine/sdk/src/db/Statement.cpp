@@ -4,5 +4,5 @@ using namespace atakmap::db;
 
 
 Statement::~Statement()
-    throw ()
+    NOTHROWS
 { }

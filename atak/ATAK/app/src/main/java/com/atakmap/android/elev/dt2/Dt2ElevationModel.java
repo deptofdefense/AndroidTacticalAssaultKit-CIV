@@ -2,7 +2,7 @@
 package com.atakmap.android.elev.dt2;
 
 import com.atakmap.annotations.DeprecatedApi;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
 
@@ -280,7 +280,7 @@ public class Dt2ElevationModel {
     static double _fromDtXFile(File file, double lat, double lng) {
         RandomAccessFile raf = null;
         try {
-            raf = FileIOProviderFactory.getRandomAccessFile(file, "r");
+            raf = IOProviderFactory.getRandomAccessFile(file, "r");
             return _getHeight(raf, lat, lng);
         } catch (Exception e) {
             Log.e(TAG,
@@ -319,7 +319,7 @@ public class Dt2ElevationModel {
         RandomAccessFile raf = null;
 
         try {
-            raf = FileIOProviderFactory.getRandomAccessFile(file, "r");
+            raf = IOProviderFactory.getRandomAccessFile(file, "r");
 
             raf.skipBytes(_NUM_LNG_LINES_OFFSET);
             byte[] bytes = {

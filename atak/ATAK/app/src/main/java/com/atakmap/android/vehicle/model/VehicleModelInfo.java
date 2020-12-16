@@ -15,12 +15,14 @@ import com.atakmap.android.vehicle.model.icon.VehicleModelCaptureRequest;
 import com.atakmap.android.vehicle.model.icon.VehicleOutlineCaptureRequest;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.ModelInfo;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
 
@@ -109,8 +111,13 @@ public class VehicleModelInfo implements ModelLoader.Callback {
         String fileName = FileSystemUtils.sanitizeWithSpacesAndSlashes(
                 this.category + File.separator + this.fileName + ".png");
         File iconFile = new File(VehicleModelCache.ICON_DIR, fileName);
-        if (FileIOProviderFactory.exists(iconFile))
-            bmp = BitmapFactory.decodeFile(iconFile.getAbsolutePath());
+        if (IOProviderFactory.exists(iconFile))
+            try (FileInputStream fis = IOProviderFactory
+                    .getInputStream(iconFile)) {
+                bmp = BitmapFactory.decodeStream(fis);
+            } catch (IOException e) {
+                // `bmp` remains `null`
+            }
         if (bmp != null) {
             this.icon.setBitmap(bmp);
             return this.icon;
@@ -200,7 +207,7 @@ public class VehicleModelInfo implements ModelLoader.Callback {
         }
 
         // Copy the file from assets if we haven't already
-        if (!FileIOProviderFactory.exists(file)) {
+        if (!IOProviderFactory.exists(file)) {
             Log.d(TAG, "Copying vehicle model from assets: " + file.getName());
             if (!VehicleModelAssetUtils.copyAssetToFile(file)) {
                 Log.e(TAG, "Failed to find model file: " + file);

@@ -14,16 +14,17 @@ import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.Polyline.OnBasicLineStyleChangedListener;
 import com.atakmap.android.maps.Polyline.OnLabelsChangedListener;
 import com.atakmap.android.maps.Shape;
+import com.atakmap.android.maps.hittest.PartitionRect;
+import com.atakmap.android.maps.hittest.ShapeHitTestControl;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
+import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.Vector2D;
-import com.atakmap.android.maps.hittest.PartitionRect;
-import com.atakmap.android.maps.hittest.ShapeHitTestControl;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.map.layer.feature.geometry.LineString;
 import com.atakmap.map.layer.feature.geometry.Polygon;
@@ -102,7 +103,7 @@ public class GLPolyline extends GLShape2 implements
 
     public AltitudeMode altitudeMode;
 
-    private GLBatchLineString impl;
+    private final GLBatchLineString impl;
 
     protected boolean needsProjectVertices;
 
@@ -340,9 +341,6 @@ public class GLPolyline extends GLShape2 implements
         if (points == null)
             points = new GeoPoint[0];
         _pointsSize = altitudeMode == AltitudeMode.ClampToGround ? 2 : 3;
-        if (_hasHeight) {
-            _pointsSize = 3;
-        }
         centerPoint = center;
         int pLen = points.length * _pointsSize;
         if (_points == null || _points.capacity() < pLen) {
@@ -367,7 +365,8 @@ public class GLPolyline extends GLShape2 implements
         }
         if (points.length > 0 && _closed) {
             ls.addPoint(points[0].getLongitude(), points[0].getLatitude(),
-                    Double.isNaN(points[0].getAltitude()) ? 0d : points[0].getAltitude());
+                    Double.isNaN(points[0].getAltitude()) ? 0d
+                            : points[0].getAltitude());
         }
 
         if (this.impl instanceof GLBatchPolygon)
@@ -532,7 +531,8 @@ public class GLPolyline extends GLShape2 implements
                             altitude, _height, origPoints,
                             _closed, simpleOutline);
                     _outlinePoints = Unsafe.allocateDirect(
-                            _outlinePointsPreForward.limit(), FloatBuffer.class);
+                            _outlinePointsPreForward.limit(),
+                            FloatBuffer.class);
                     _outlinePointsPreForward.rewind();
                 }
 
@@ -542,7 +542,8 @@ public class GLPolyline extends GLShape2 implements
             GLES20FixedPipeline.glPushMatrix();
             GLES20FixedPipeline.glLoadIdentity();
 
-            GLES20FixedPipeline.glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
+            GLES20FixedPipeline
+                    .glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
 
             GLES20FixedPipeline.glEnable(GLES20FixedPipeline.GL_BLEND);
             GLES20FixedPipeline.glBlendFunc(GLES20FixedPipeline.GL_SRC_ALPHA,
@@ -559,7 +560,8 @@ public class GLPolyline extends GLShape2 implements
                 GLES30.glEnable(GLES30.GL_POLYGON_OFFSET_FILL);
                 GLES30.glPolygonOffset(1.0f, 1.0f);
 
-                GLES20FixedPipeline.glVertexPointer(3, GLES20FixedPipeline.GL_FLOAT, 0, _3dPoints);
+                GLES20FixedPipeline.glVertexPointer(3,
+                        GLES20FixedPipeline.GL_FLOAT, 0, _3dPoints);
 
                 ortho.forward(_3dPointsPreForward, 3, _3dPoints, 3);
                 int pCount = _3dPoints.limit() / 3;
@@ -573,13 +575,16 @@ public class GLPolyline extends GLShape2 implements
                     // preserving correct back to front ordering.
                     GLES20FixedPipeline.glEnable(GLES30.GL_CULL_FACE);
                     GLES20FixedPipeline.glCullFace(GLES30.GL_FRONT);
-                    GLES20FixedPipeline.glDrawArrays(GLES30.GL_TRIANGLES, 0, pCount);
+                    GLES20FixedPipeline.glDrawArrays(GLES30.GL_TRIANGLES, 0,
+                            pCount);
 
                     GLES20FixedPipeline.glCullFace(GLES30.GL_BACK);
-                    GLES20FixedPipeline.glDrawArrays(GLES30.GL_TRIANGLES, 0, pCount);
+                    GLES20FixedPipeline.glDrawArrays(GLES30.GL_TRIANGLES, 0,
+                            pCount);
                     GLES20FixedPipeline.glDisable(GLES30.GL_CULL_FACE);
                 } else {
-                    GLES20FixedPipeline.glDrawArrays(GLES30.GL_TRIANGLES, 0, pCount);
+                    GLES20FixedPipeline.glDrawArrays(GLES30.GL_TRIANGLES, 0,
+                            pCount);
                 }
 
                 GLES30.glPolygonOffset(0.0f, 0.0f);
@@ -590,12 +595,15 @@ public class GLPolyline extends GLShape2 implements
             if (renderOutline && ortho.drawTilt > 0) {
                 ortho.forward(_outlinePointsPreForward, 3, _outlinePoints, 3);
                 GLES20FixedPipeline.glLineWidth(this.strokeWeight);
-                GLES20FixedPipeline.glVertexPointer(3, GLES30.GL_FLOAT, 0, _outlinePoints);
+                GLES20FixedPipeline.glVertexPointer(3, GLES30.GL_FLOAT, 0,
+                        _outlinePoints);
                 GLES20FixedPipeline.glColor4f(r * .9f, g * .9f, b * .9f, 1.0f);
-                GLES20FixedPipeline.glDrawArrays(GLES30.GL_LINES, 0, _outlinePoints.limit() / 3);
+                GLES20FixedPipeline.glDrawArrays(GLES30.GL_LINES, 0,
+                        _outlinePoints.limit() / 3);
             }
 
-            GLES20FixedPipeline.glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
+            GLES20FixedPipeline
+                    .glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
             GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_BLEND);
             GLES20FixedPipeline.glPopMatrix();
         }
@@ -750,6 +758,7 @@ public class GLPolyline extends GLShape2 implements
                     _label = GLText
                             .getInstance(textFormat);
                 }
+
                 if (Math.max(xmax - xmin, ymax - ymin) >= _lineLabelWidth) {
                     double halfLength = totalLength * 0.5;
                     int seg = -1;
@@ -766,36 +775,62 @@ public class GLPolyline extends GLShape2 implements
                     Vector2D center = polys.get(i).get(seg).add(segOffset);
                     segOffset = segOffset.normalize();
 
-                    start.x = (float) (center.x - segOffset.x);
-                    start.y = (float) (center.y - segOffset.y);
-                    end.x = (float) (center.x + segOffset.x);
-                    end.y = (float) (center.y + segOffset.y);
-                    buildLabel(ortho, start, end);
+                    boolean behindGlobe = false;
+                    if (ortho
+                            .getDisplayMode() == MapRenderer2.DisplayMode.Globe) {
 
-                    GLES20FixedPipeline.glPushMatrix();
-                    GLES20FixedPipeline.glTranslatef(_textPoint[0],
-                            _textPoint[1], 0f);
-                    GLES20FixedPipeline.glRotatef(_textAngle, 0f, 0f, 1f);
-                    GLES20FixedPipeline.glTranslatef(-_lineLabelWidth / 2,
-                            -_lineLabelHeight / 2 + _label.getDescent(), 0);
-                    GLES20FixedPipeline.glPushMatrix();
-                    GLES20FixedPipeline.glTranslatef(-8f,
-                            -_label.getDescent() - 4f, 0f);
-                    GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 0.8f);
-                    if (ninePatch != null)
-                        ninePatch.draw(_lineLabelWidth + 16f,
-                                _lineLabelHeight + 8f);
-                    GLES20FixedPipeline.glPopMatrix();
-                    for (int j = 0; j < _lineLabelArr.length; j++) {
+                        // find the middle segment that lines up with label center
+                        int middle = this.findMiddleVisibleSegment(ortho);
+                        if (middle >= 0 && middle < origPoints.length - 1) {
+                            GeoPoint a = origPoints[middle];
+                            GeoPoint b = origPoints[middle + 1];
+
+                            // interpolate the middle
+                            ortho.scratch.geo.set(
+                                    (a.getLatitude() + b.getLatitude()) * 0.5,
+                                    (a.getLongitude() + b.getLongitude()) * 0.5,
+                                    (a.getAltitude() + b.getAltitude()) * 0.5);
+
+                            ortho.scene.forward(ortho.scratch.geo,
+                                    ortho.scratch.pointD);
+
+                            // beyond the far depth range means behind globe
+                            behindGlobe = (ortho.scratch.pointD.z > 1.0);
+                        }
+                    }
+
+                    if (!behindGlobe) {
+                        start.x = (float) (center.x - segOffset.x);
+                        start.y = (float) (center.y - segOffset.y);
+                        end.x = (float) (center.x + segOffset.x);
+                        end.y = (float) (center.y + segOffset.y);
+                        buildLabel(ortho, start, end);
+
                         GLES20FixedPipeline.glPushMatrix();
-                        GLES20FixedPipeline.glTranslatef(0f,
-                                ((_lineLabelArr.length - 1) - j)
-                                        * _label.getCharHeight(),
-                                0f);
-                        _label.draw(_lineLabelArr[j], 1, 1, 1, 1);
+                        GLES20FixedPipeline.glTranslatef(_textPoint[0],
+                                _textPoint[1], 0f);
+                        GLES20FixedPipeline.glRotatef(_textAngle, 0f, 0f, 1f);
+                        GLES20FixedPipeline.glTranslatef(-_lineLabelWidth / 2,
+                                -_lineLabelHeight / 2 + _label.getDescent(), 0);
+                        GLES20FixedPipeline.glPushMatrix();
+                        GLES20FixedPipeline.glTranslatef(-8f,
+                                -_label.getDescent() - 4f, 0f);
+                        GLES20FixedPipeline.glColor4f(0f, 0f, 0f, 0.8f);
+                        if (ninePatch != null)
+                            ninePatch.draw(_lineLabelWidth + 16f,
+                                    _lineLabelHeight + 8f);
+                        GLES20FixedPipeline.glPopMatrix();
+                        for (int j = 0; j < _lineLabelArr.length; j++) {
+                            GLES20FixedPipeline.glPushMatrix();
+                            GLES20FixedPipeline.glTranslatef(0f,
+                                    ((_lineLabelArr.length - 1) - j)
+                                            * _label.getCharHeight(),
+                                    0f);
+                            _label.draw(_lineLabelArr[j], 1, 1, 1, 1);
+                            GLES20FixedPipeline.glPopMatrix();
+                        }
                         GLES20FixedPipeline.glPopMatrix();
                     }
-                    GLES20FixedPipeline.glPopMatrix();
                 }
             }
         }
@@ -1230,7 +1265,7 @@ public class GLPolyline extends GLShape2 implements
     protected void recomputeScreenRectangles(GLMapView ortho) {
         int maxIdx = (this.numPoints + (_closed ? 1 : 0)) * _verts2Size;
         _verts2.clear();
-        int partIdx = 0;
+        int partIdx = 1;
         int partCount = 0;
         PartitionRect partition = !_partitionRects.isEmpty()
                 ? _partitionRects.get(0)
@@ -1262,7 +1297,7 @@ public class GLPolyline extends GLShape2 implements
                         Math.max(partition.bottom, y));
             }
 
-            if (partIdx == PARTITION_SIZE - 1 || i == maxIdx - _verts2Size) {
+            if (partIdx == PARTITION_SIZE || i == maxIdx - _verts2Size) {
                 if (partCount >= _partitionRects.size())
                     _partitionRects.add(partition);
                 partition.endIndex = idx;

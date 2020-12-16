@@ -250,7 +250,7 @@ public class GeoFence {
                     : _mapItem;
             shape.toggleMetaData(menuState, _tracking);
             if (marker != null)
-                 marker.toggleMetaData(menuState, _tracking);
+                marker.toggleMetaData(menuState, _tracking);
         }
     }
 
@@ -366,8 +366,8 @@ public class GeoFence {
                 ? ((AnchoredMapItem) shape).getAnchorItem()
                 : mapItem;
         shape.removeMetaData(menuState);
-        
-        if (marker != null) 
+
+        if (marker != null)
             marker.removeMetaData(menuState);
 
         if (mapItem.getGroup() != null)

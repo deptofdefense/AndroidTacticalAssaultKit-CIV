@@ -21,7 +21,7 @@
             android:key="rab_bloodhound_zoom"
             android:title="@string/bloodhound_text8"
             android:defaultValue="true"
-            android:summary="@string/bloodhound_text9"/>
+            android:summary="@string/civ_bloodhound_text9"/>
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/bloodhoundETAPreferences">

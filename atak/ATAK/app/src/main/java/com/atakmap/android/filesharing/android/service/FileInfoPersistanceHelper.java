@@ -4,12 +4,13 @@ package com.atakmap.android.filesharing.android.service;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteBlobTooBigException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.filesystem.SecureDelete;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -36,6 +37,8 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
     private static String SAVED_TABLE_CREATE_STR = null;
     private static String LOG_TABLE_CREATE_STR = null;
     private static String LOG_TABLE_TRIGGER_SQL = null;
+
+    private final Set<FileTransferLog.Listener> _ftListeners = new HashSet<>();
 
     static {
         // Automatically create the DB table based on the FileInfo meta-data
@@ -171,13 +174,6 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    private void dropTables() {
-        SQLiteDatabase toDelete = this.getReadableDatabase();
-        if (toDelete != null) {
-            onUpgrade(toDelete, DATABASE_VERSION, DATABASE_VERSION);
-        }
-    }
-
     public void clearAll() {
         SecureDelete.deleteDatabase(this);
     }
@@ -209,7 +205,7 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
         return columns;
     }
 
-    public List<AndroidFileInfo> allFiles(TABLETYPE type) {
+    public synchronized List<AndroidFileInfo> allFiles(TABLETYPE type) {
         Cursor cursor = null;
         List<AndroidFileInfo> ret;
         SQLiteDatabase db;
@@ -224,9 +220,13 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
                 return null;
 
             ret = new LinkedList<>();
-            while (!cursor.isAfterLast()) {
-                ret.add(fromDbCursor(cursor));
-                cursor.moveToNext();
+            try {
+                while (!cursor.isAfterLast()) {
+                    ret.add(fromDbCursor(cursor));
+                    cursor.moveToNext();
+                }
+            } catch (SQLiteBlobTooBigException e) {
+                Log.e(TAG, "error listing the fileinfo files", e);
             }
         } finally {
             if (cursor != null)
@@ -266,37 +266,11 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
                                 .getColumnIndex(FileInfo.FILE_METADATA))));
     }
 
-    private AndroidFileInfo getFileInfoFromId(int id, TABLETYPE type) {
-        // make query
-        SQLiteDatabase db;
-        Cursor cursor = null;
-        try {
-            db = this.getWritableDatabase();
-            cursor = db.query(
-                    type.getTableName(), // -> DB table
-                    getFileInfoColumns(), // -> select
-                    FileInfo.ID_LABEL + "=?", // -> where clause (in prep stmt form)
-                    new String[] {
-                            Integer.toString(id)
-                    }, // -> replace ?'s in where clause
-                    null, null, null); // -> groupBy, having, orderBy
-
-            // advance cursor
-            if (!cursor.moveToFirst())
-                return null;
-
-            return fromDbCursor(cursor);
-        } finally {
-            if (cursor != null)
-                cursor.close();
-        }
-    }
-
     public AndroidFileInfo getFileInfoFromFilename(File file, TABLETYPE type) {
         return getFileInfoFromFilename(file.getName(), file.getParent(), type);
     }
 
-    public AndroidFileInfo getFileInfoFromFilename(String filename,
+    public synchronized AndroidFileInfo getFileInfoFromFilename(String filename,
             String destPath, TABLETYPE type) {
         // make query
         SQLiteDatabase db;
@@ -326,7 +300,8 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
         }
     }
 
-    public AndroidFileInfo getFileInfoFromUserLabel(String userLabel,
+    public synchronized AndroidFileInfo getFileInfoFromUserLabel(
+            String userLabel,
             TABLETYPE type) {
         // make query
         Cursor cursor = null;
@@ -365,7 +340,8 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
      * @param type
      * @return
      */
-    public AndroidFileInfo getFileInfoFromUserLabelHash(String userLabel,
+    public synchronized AndroidFileInfo getFileInfoFromUserLabelHash(
+            String userLabel,
             String sha256, TABLETYPE type) {
 
         // make query
@@ -406,80 +382,7 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
         }
     }
 
-    /**
-     * Search for a file with the specified file checksum. Use SHA256 if provided,
-     * otherwise use MD5
-     *
-     * @param sha256
-     * @param type
-     * @return
-     */
-    AndroidFileInfo getFileInfoFromHash(String sha256, TABLETYPE type) {
-
-        // make query
-        Cursor cursor = null;
-        SQLiteDatabase db;
-        try {
-            db = this.getWritableDatabase();
-            if (!FileSystemUtils.isEmpty(sha256)) {
-                cursor = db.query(
-                        type.getTableName(), // -> DB table
-                        getFileInfoColumns(), // -> select
-                        FileInfo.SHA256SUM_LABEL + "=?",
-                        // -> where clause (in prep stmt form)
-                        new String[] {
-                                sha256
-                        },
-                        // -> replace ?'s in where clause
-                        null, null, null); // -> groupBy, having, orderBy
-            }
-
-            if (cursor == null) {
-                Log.w(TAG, "SHA256 must be provided");
-                return null;
-            }
-
-            // advance cursor
-            if (!cursor.moveToFirst()) {
-                Log.d(TAG, "Found no files matching: " + sha256);
-                return null;
-            }
-
-            return fromDbCursor(cursor);
-        } finally {
-            if (cursor != null)
-                cursor.close();
-        }
-    }
-
-    private Long getYoungestFileTs(TABLETYPE type) {
-        // make query
-        Cursor cursor = null;
-        SQLiteDatabase db;
-        try {
-            db = this.getWritableDatabase();
-            cursor = db.query(
-                    type.getTableName(), // -> DB table
-                    new String[] {
-                            FileInfo.UPDATE_TIME_LABEL
-                    }, // -> select
-                    null, // -> where clause (in prep stmt form)
-                    null, // -> replace ?'s in where clause
-                    null, null, FileInfo.UPDATE_TIME_LABEL); // -> groupBy, having, orderBy
-
-            // advance cursor
-            if (!cursor.moveToFirst())
-                return null;
-
-            return cursor.getLong(cursor
-                    .getColumnIndex(FileInfo.UPDATE_TIME_LABEL));
-        } finally {
-            if (cursor != null)
-                cursor.close();
-        }
-    }
-
-    public int update(FileInfo file, TABLETYPE type) {
+    public synchronized int update(FileInfo file, TABLETYPE type) {
         ContentValues updateValues = new ContentValues();
         for (String col : getFileInfoColumns()) {
             if (!FileInfo.ID_LABEL.equals(col)) { // ignore ID
@@ -509,7 +412,7 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
 
     }
 
-    public boolean insert(FileInfo file, TABLETYPE type) {
+    public synchronized boolean insert(FileInfo file, TABLETYPE type) {
         ContentValues insertValues = new ContentValues();
         for (String col : getFileInfoColumns()) {
             if (!FileInfo.ID_LABEL.equals(col)) { // auto-generate ID
@@ -539,7 +442,7 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
 
     }
 
-    public boolean delete(FileInfo fi, TABLETYPE type) {
+    public synchronized boolean delete(FileInfo fi, TABLETYPE type) {
         if (fi == null)
             return false;
 
@@ -550,36 +453,6 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
         return numRowsUpdated > 0;
     }
 
-    /**
-     * Drop all files be re-creating database table
-     */
-    private void truncate(TABLETYPE type) {
-        // Drop
-        SQLiteDatabase db;
-        try {
-            db = this.getWritableDatabase();
-            db.execSQL(
-                    "DROP TABLE " + type.getTableName());
-            Log.d(TAG, "dropped table: " + type.getTableName());
-        } catch (Exception e) {
-            Log.e(TAG, "Exception while dropping TABLE " + type.getTableName(),
-                    e);
-        }
-
-        // Re-wrap
-        try {
-            db = this.getWritableDatabase();
-            db.execSQL(type.getTableCreateSQL());
-            Log.d(TAG,
-                    "created table: " + type.getTableName() + " with SQL: "
-                            + type.getTableCreateSQL());
-        } catch (Exception e) {
-            Log.e(TAG, "Exception while creating TABLE " + type.getTableName()
-                    + " with SQL: "
-                    + type.getTableCreateSQL(), e);
-        }
-    }
-
     public void purge() {
         purge(TABLETYPE.TRANSFER);
         purge(TABLETYPE.SAVED);
@@ -588,7 +461,7 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
     /**
      * Remove any entries which no longer exist on file system
      */
-    public void purge(TABLETYPE type) {
+    public synchronized void purge(TABLETYPE type) {
         try {
             Log.d(TAG, "Purging table: " + type.getTableName());
             List<AndroidFileInfo> files = this.allFiles(type);
@@ -596,7 +469,7 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
                 return;
 
             for (FileInfo file : files) {
-                if (!FileIOProviderFactory.exists(file.file())) {
+                if (!IOProviderFactory.exists(file.file())) {
                     this.delete(file, type);
                     Log.d(TAG, "Purged stale file: " + file.fileName());
                 }
@@ -619,7 +492,7 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
         return columns;
     }
 
-    public boolean insertLog(FileTransferLog log) {
+    public synchronized boolean insertLog(FileTransferLog log) {
         ContentValues insertValues = new ContentValues();
         for (String col : getLogColumns()) {
             if (!FileTransferLog.ID_LABEL.equals(col)) { // auto-generate ID
@@ -637,7 +510,7 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
         return false;
     }
 
-    public List<FileTransferLog> allLogs() {
+    public synchronized List<FileTransferLog> allLogs() {
         Cursor cursor = null;
         SQLiteDatabase db;
         List<FileTransferLog> ret;
@@ -685,7 +558,7 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
     /**
      * Drop all files by re-creating database table
      */
-    public void truncateLogs() {
+    public synchronized void truncateLogs() {
         // Drop
         SQLiteDatabase db;
         try {
@@ -709,8 +582,6 @@ public class FileInfoPersistanceHelper extends SQLiteOpenHelper {
         }
         onEvent(null, false);
     }
-
-    private final Set<FileTransferLog.Listener> _ftListeners = new HashSet<>();
 
     public void addFileTransferListener(FileTransferLog.Listener l) {
         synchronized (_ftListeners) {

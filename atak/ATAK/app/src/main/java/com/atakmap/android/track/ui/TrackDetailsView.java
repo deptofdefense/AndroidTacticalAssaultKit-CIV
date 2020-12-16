@@ -303,37 +303,45 @@ public class TrackDetailsView extends LinearLayout implements
 
         // Pan to track start point
         else if (id == R.id.track_details_startLayout) {
-            GeoPointMetaData gpm = _track.getStartPoint();
+            final GeoPointMetaData gpm = _track.getStartPoint();
             if (gpm != null)
                 zoomToPoint(gpm.get());
         }
 
         // Pan to track end point
         else if (id == R.id.track_details_distanceLayout) {
-            GeoPointMetaData gpm = _track.getEndPoint();
+            final GeoPointMetaData gpm = _track.getEndPoint();
             if (gpm != null)
                 zoomToPoint(gpm.get());
         }
 
         // Pan to minimum altitude point
-        else if (id == R.id.track_details_minAltLayout)
-            zoomToPoint(_track.getMinAlt().get());
+        else if (id == R.id.track_details_minAltLayout) {
+            final GeoPointMetaData gpm = _track.getMinAlt();
+            if (gpm != null)
+                zoomToPoint(gpm.get());
+        }
 
         // Pan to maximum altitude point
-        else if (id == R.id.track_details_maxAltLayout)
-            zoomToPoint(_track.getMaxAlt().get());
-
+        else if (id == R.id.track_details_maxAltLayout) {
+            final GeoPointMetaData gpm = _track.getMaxAlt();
+            if (gpm != null)
+                zoomToPoint(gpm.get());
+        }
         // Pan to maximum speed point
-        else if (id == R.id.track_details_maxSpeedLayout)
-            zoomToPoint(_track.getMaxSpeedLocation().get());
+        else if (id == R.id.track_details_maxSpeedLayout) {
+            final GeoPointMetaData gpm = _track.getMaxSpeedLocation();
+            if (gpm != null)
+                zoomToPoint(gpm.get());
 
+        }
         // Prompt the user to change track name
         else if (id == R.id.track_details_titleBtn) {
             final EditText editName = new EditText(ctx);
             editName.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
             editName.setText(_track.getTitle());
 
-            AlertDialog.Builder b = new AlertDialog.Builder(ctx);
+            final AlertDialog.Builder b = new AlertDialog.Builder(ctx);
             b.setTitle(R.string.enter_track_name);
             b.setView(editName);
             b.setPositiveButton(R.string.ok,
@@ -354,7 +362,7 @@ public class TrackDetailsView extends LinearLayout implements
 
         // Track line color
         else if (id == R.id.track_details_colorBtn) {
-            AlertDialog.Builder b = new AlertDialog.Builder(ctx);
+            final AlertDialog.Builder b = new AlertDialog.Builder(ctx);
             b.setTitle(R.string.select_track_color);
             ColorPalette palette = new ColorPalette(ctx, _track.getColor());
             b.setView(palette);
@@ -375,7 +383,7 @@ public class TrackDetailsView extends LinearLayout implements
 
         // Track line style
         else if (id == R.id.track_details_styleBtn) {
-            AlertDialog.Builder b = new AlertDialog.Builder(ctx);
+            final AlertDialog.Builder b = new AlertDialog.Builder(ctx);
             b.setTitle(R.string.select_track_style);
             final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(
                     ctx, android.R.layout.select_dialog_singlechoice);
@@ -414,7 +422,7 @@ public class TrackDetailsView extends LinearLayout implements
             } catch (Exception ignore) {
             }
 
-            AlertDialog.Builder b = new AlertDialog.Builder(ctx);
+            final AlertDialog.Builder b = new AlertDialog.Builder(ctx);
             b.setTitle(R.string.select_distance_units);
             b.setNegativeButton(R.string.cancel, null);
             b.setSingleChoiceItems(adapter, units,
@@ -466,7 +474,7 @@ public class TrackDetailsView extends LinearLayout implements
 
         // Remove track
         else if (id == R.id.track_details_delete && _track != null) {
-            AlertDialog.Builder b = new AlertDialog.Builder(ctx);
+            final AlertDialog.Builder b = new AlertDialog.Builder(ctx);
             b.setTitle(R.string.confirm_delete);
             b.setMessage(ctx.getString(R.string.delete) + _track.getTitle()
                     + ctx.getString(R.string.question_mark_symbol));

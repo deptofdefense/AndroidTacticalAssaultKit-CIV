@@ -5,10 +5,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.net.AtakAuthenticationHandlerHTTP;
 import javax.net.ssl.TrustManager;
 import com.atakmap.net.CertificateManager;
+
+import java.io.FileInputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -151,7 +153,7 @@ public class KMLNetworkLinkDownloader implements RequestListener {
         String uid = UUID.randomUUID().toString();
         File tmpDir = new File(
                 FileSystemUtils.getItem(FileSystemUtils.TMP_DIRECTORY), uid);
-        if (!FileIOProviderFactory.mkdirs(tmpDir)) {
+        if (!IOProviderFactory.mkdirs(tmpDir)) {
             Log.w(TAG,
                     "Failed to create directories: "
                             + tmpDir.getAbsolutePath());
@@ -247,7 +249,8 @@ public class KMLNetworkLinkDownloader implements RequestListener {
 
                         File fout = new File(request.getDir(),
                                 request.getFileName());
-                        FileOutputStream fos = FileIOProviderFactory.getOutputStream(fout);
+                        FileOutputStream fos = IOProviderFactory
+                                .getOutputStream(fout);
 
                         try {
                             FileSystemUtils.copy(input, fos);
@@ -268,7 +271,7 @@ public class KMLNetworkLinkDownloader implements RequestListener {
                             NetworkOperationManager.REQUEST_TYPE_GET_FILES), b);
 
                 } catch (Exception e) {
-                    Log.e(TAG, "error occured", e);
+                    Log.e(TAG, "error occurred", e);
                     onRequestConnectionError(new Request(
                             NetworkOperationManager.REQUEST_TYPE_GET_FILES),
                             new RequestManager.ConnectionError(-1,
@@ -540,12 +543,13 @@ public class KMLNetworkLinkDownloader implements RequestListener {
                 }
 
                 Kml kml;
-                try {
+                try (FileInputStream fis = IOProviderFactory
+                        .getInputStream(downloadedFile)) {
                     Log.d(TAG,
                             "Parsing downloaded file: "
                                     + downloadedFile.getAbsolutePath());
                     kml = _serializer
-                            .read(Kml.class, downloadedFile, false);
+                            .read(Kml.class, fis, false);
                 } catch (Exception e) {
                     Log.e(TAG,
                             "Remote KML Download Failed - Unable to de-serialize KML",

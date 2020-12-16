@@ -9,7 +9,6 @@ import android.preference.Preference;
 import android.preference.Preference.OnPreferenceClickListener;
 
 import com.atakmap.android.preference.PreferenceSearchIndex;
-import com.atakmap.app.BuildConfig;
 
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.android.util.ATAKConstants;
@@ -29,6 +28,7 @@ public class MainPreferencesFragment extends AtakPreferenceFragment implements
 
     public MainPreferencesFragment() {
         super(R.xml.main_preferences, R.string.settings);
+
     }
 
     @Override
@@ -75,7 +75,7 @@ public class MainPreferencesFragment extends AtakPreferenceFragment implements
                 break;
             case "about":
                 ATAKConstants.displayAbout(getActivity(),
-                        BuildConfig.SHOW_EULA);
+                        true);
                 return false;
         }
 
@@ -116,6 +116,8 @@ public class MainPreferencesFragment extends AtakPreferenceFragment implements
 
         Preference aboutPref = findPreference("about");
         aboutPref.setOnPreferenceClickListener(this);
+        aboutPref.setIcon(ATAKConstants.getIcon());
+
     }
 
     @Override

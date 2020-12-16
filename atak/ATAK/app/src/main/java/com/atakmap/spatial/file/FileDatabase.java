@@ -4,7 +4,6 @@ package com.atakmap.spatial.file;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 
@@ -14,7 +13,8 @@ import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.importexport.ImportReceiver;
 import com.atakmap.android.importexport.Importer;
 import com.atakmap.android.ipc.AtakBroadcast;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.android.overlay.MapOverlay;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
 import com.atakmap.android.maps.DefaultMapGroup;
@@ -30,7 +30,6 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.database.CursorIface;
-import com.atakmap.database.android.AndroidDatabaseAdapter;
 import com.atakmap.map.layer.feature.FeatureDataSource;
 import com.atakmap.map.layer.feature.ogr.style.FeatureStyle;
 import com.atakmap.map.layer.feature.ogr.style.FeatureStyleParser;
@@ -63,12 +62,13 @@ public abstract class FileDatabase extends CatalogDatabase implements
     final protected FileContentResolver contentResolver;
 
     protected MapGroup rootGroup = null;
+    protected MapOverlay overlay;
 
     public FileDatabase(final File file, final Context context,
             final MapView view) {
-        // XXX - 
-        super(new AndroidDatabaseAdapter(SQLiteDatabase.openOrCreateDatabase(
-                file, null)), new CatalogCurrencyRegistry());
+        // XXX -
+        super(IOProviderFactory.createDatabase(file),
+                new CatalogCurrencyRegistry());
 
         this.currencyRegistry.register(this);
 
@@ -100,6 +100,16 @@ public abstract class FileDatabase extends CatalogDatabase implements
         URIContentManager.getInstance().unregisterResolver(
                 this.contentResolver);
         this.contentResolver.dispose();
+
+        if (overlay != null) {
+            view.getMapOverlayManager().removeFilesOverlay(overlay);
+            overlay = null;
+        }
+        if (rootGroup != null) {
+            rootGroup.clearGroups();
+            rootGroup.clearItems();
+            rootGroup = null;
+        }
         super.close();
     }
 
@@ -197,7 +207,8 @@ public abstract class FileDatabase extends CatalogDatabase implements
     public final byte[] getAppData(File derivedFrom) {
         ByteBuffer retval = ByteBuffer.wrap(new byte[17]);
         retval.order(ByteOrder.BIG_ENDIAN);
-        retval.put(derivedFrom.isFile() ? (byte) 0x01 : (byte) 0x00);
+        retval.put(IOProviderFactory.isFile(derivedFrom) ? (byte) 0x01
+                : (byte) 0x00);
         retval.putLong(FileSystemUtils.getFileSize(derivedFrom));
         retval.putLong(FileSystemUtils.getLastModified(derivedFrom));
         return retval.array();
@@ -210,7 +221,7 @@ public abstract class FileDatabase extends CatalogDatabase implements
 
         ByteBuffer data = ByteBuffer.wrap(appData);
         data.order(ByteOrder.BIG_ENDIAN);
-        if ((data.get() == 0x01) != f.isFile())
+        if ((data.get() == 0x01) != IOProviderFactory.isFile(f))
             return false;
         if (data.getLong() != FileSystemUtils.getFileSize(f))
             return false;
@@ -240,7 +251,8 @@ public abstract class FileDatabase extends CatalogDatabase implements
                                 + geospatialDirInExternalStorage
                                         .getAbsolutePath());
                 if (geospatialDirInExternalStorage != null &&
-                        FileIOProviderFactory.isDirectory(geospatialDirInExternalStorage)) {
+                        IOProviderFactory
+                                .isDirectory(geospatialDirInExternalStorage)) {
                     List<File> geospatialFileList = addExistingFilesToDbInDir(
                             geospatialDirInExternalStorage);
                     Log.d(TAG, "Found files: " + geospatialFileList + " in: "
@@ -274,10 +286,13 @@ public abstract class FileDatabase extends CatalogDatabase implements
     protected final List<File> addExistingFilesToDbInDir(File fileDir) {
         List<File> filesAdded = new LinkedList<>();
         try {
-            if (fileDir != null && FileIOProviderFactory.listFiles(fileDir) != null) {
-                for (File fileToRead : FileIOProviderFactory.listFiles(fileDir)) {
-                    if (fileToRead != null && fileToRead.isFile()
-                            && fileToRead.canRead() && accept(fileToRead)) {
+            if (fileDir != null
+                    && IOProviderFactory.listFiles(fileDir) != null) {
+                for (File fileToRead : IOProviderFactory.listFiles(fileDir)) {
+                    if (fileToRead != null
+                            && IOProviderFactory.isFile(fileToRead)
+                            && IOProviderFactory.canRead(fileToRead)
+                            && accept(fileToRead)) {
                         try {
                             addToDbFromFile(fileToRead);
                             filesAdded.add(fileToRead);
@@ -315,8 +330,8 @@ public abstract class FileDatabase extends CatalogDatabase implements
         // rootGroup.setMetaString("overlay", "wkt");
         rootGroup.setMetaBoolean("ignoreOffscreen", true);
         rootGroup.setVisible(false);
-        view.getMapOverlayManager().addFilesOverlay(
-                new FileDatabaseMapGroupOverlay(view, rootGroup, this));
+        overlay = new FileDatabaseMapGroupOverlay(view, rootGroup, this);
+        view.getMapOverlayManager().addFilesOverlay(overlay);
 
         // add all cataloged items
         CatalogDatabase.CatalogCursor result = null;

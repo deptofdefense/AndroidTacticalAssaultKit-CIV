@@ -1,5 +1,7 @@
 #include "jdatabaseimpl.h"
 
+#include <sstream>
+
 #include <db/Database2.h>
 
 #include "common.h"
@@ -12,7 +14,7 @@ using namespace TAK::Engine::Util;
 using namespace TAKEngineJNI::Interop;
 
 JNIEXPORT jobject JNICALL Java_com_atakmap_database_impl_DatabaseImpl_openImpl
-  (JNIEnv *env, jclass clazz, jstring jpath, jboolean readOnly)
+  (JNIEnv *env, jclass clazz, jstring jpath, jstring mpassphrase, jint flags)
 {
     TAKErr code(TE_Ok);
     DatabasePtr retval(NULL, NULL);
@@ -23,24 +25,18 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_database_impl_DatabaseImpl_openImpl
         if(ATAKMapEngineJNI_checkOrThrow(env, code))
             return NULL;
     }
-    code = Databases_openDatabase(retval, cpath, readOnly);
-    if(ATAKMapEngineJNI_checkOrThrow(env, code))
-        return NULL;
-    return NewPointer(env, std::move(retval));
-}
-JNIEXPORT jobject JNICALL Java_com_atakmap_database_impl_DatabaseImpl_openOrCreateImpl
-  (JNIEnv *env, jclass clazz, jstring jpath)
-{
-    TAKErr code(TE_Ok);
-    DatabasePtr retval(NULL, NULL);
+    TAK::Engine::Port::String ckey;
+    std::uint8_t keylen = 0u;
+    if(mpassphrase) {
+        code = JNIStringUTF_get(ckey, *env, mpassphrase);
+        if(code == TE_Ok) {
 
-    TAK::Engine::Port::String cpath(":memory:");
-    if(jpath) {
-        code = JNIStringUTF_get(cpath, *env, jpath);
-        if(ATAKMapEngineJNI_checkOrThrow(env, code))
-            return NULL;
+            keylen = strlen(ckey);
+        } else {
+            // failed to get the passphrase, but try to proceed anyway
+        }
     }
-    code = Databases_openDatabase(retval, cpath, false);
+    code = Databases_openDatabase(retval, cpath, reinterpret_cast<const uint8_t *>(ckey.get()), keylen, flags&com_atakmap_database_impl_DatabaseImpl_OPEN_READONLY);
     if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return NULL;
     return NewPointer(env, std::move(retval));

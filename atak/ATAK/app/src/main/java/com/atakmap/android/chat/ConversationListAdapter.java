@@ -66,6 +66,17 @@ class ConversationListAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
+
+        /**
+         * Check to see if a plugin has been loaded that will supply a custom rendering capability
+         */
+        final ChatMesssageRenderer renderer = ChatManagerMapComponent
+                .getInstance().getChatMesssageRenderer();
+        if (renderer != null) {
+            return renderer.getView(position, convertView, parent,
+                    chatLines.get(position));
+        }
+
         ViewHolder holder;
         if (convertView == null) {
             convertView = LayoutInflater

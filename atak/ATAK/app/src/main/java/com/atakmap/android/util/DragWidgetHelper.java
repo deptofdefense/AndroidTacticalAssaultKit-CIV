@@ -15,7 +15,7 @@ public class DragWidgetHelper implements
 
     private PointF pointDown = null;
     private boolean dragging;
-    private SharedPreferences prefs;
+    private final SharedPreferences prefs;
     private final String preferenceKey;
     private final float DENSITY = MapView.DENSITY;
     private final MapView mapView;

@@ -631,6 +631,18 @@ namespace {
         if (URI_parse(&scheme, &authority, nullptr, &path, &query, &fragment, URI) != TE_Ok || scheme.get() == nullptr)
             return false;
 
+        // guard against nulls
+        if (!query)
+            query = "";
+        if (!fragment)
+            fragment = "";
+        if (!path)
+            path = "";
+        if (!authority)
+            authority = "";
+        if (!scheme)
+            scheme = "";
+
         int cmp = -1;
         TAK::Engine::Port::String_compareIgnoreCase(&cmp, "http", scheme);
         if (cmp != 0) {
@@ -643,12 +655,18 @@ namespace {
         TAK::Engine::Port::String filePathValue, dirPathValue, tilesetPathValue;
 
         IO_getName(fileName, path.get());
-
+        int tsCmp = -1;
+        bool isB3Dm = false;
+        if (fileName) {
+            String_compareIgnoreCase(&tsCmp, fileName, "tileset.json");
+            isB3Dm = String_endsWith(fileName, ".b3dm");
+        }
+        
         // Assume it is a base URI
-        if (!fileName) {
+        if (!fileName || (tsCmp != 0 && !isB3Dm)) {
             fileName = "tileset.json";
             StringBuilder sb;
-            StringBuilder_combine(sb, scheme, authority, path, "/tileset.json", query, fragment);
+            StringBuilder_combine(sb, scheme, ":", authority, "/tileset.json", query, fragment);
             filePathValue = sb.c_str();
             dirPathValue = URI;
             tilesetPathValue = filePathValue;

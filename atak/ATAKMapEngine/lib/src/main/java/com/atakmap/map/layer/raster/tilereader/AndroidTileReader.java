@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.io.ZipVirtualFile;
 
 import android.graphics.Bitmap;
@@ -36,7 +36,7 @@ public class AndroidTileReader extends TileReader {
             if(file instanceof ZipVirtualFile)
                 stream = ((ZipVirtualFile)file).openStream();
             else
-                stream = FileIOProviderFactory.getInputStream(file);
+                stream = IOProviderFactory.getInputStream(file);
             BitmapFactory.decodeStream(stream, null, opts);
             this.width = opts.outWidth;
             this.height = opts.outHeight;

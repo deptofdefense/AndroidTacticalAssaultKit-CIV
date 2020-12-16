@@ -8,6 +8,8 @@
 #include "internalutils.h"
 #include "threadedhandler.h"
 #include "commologger.h"
+#include "fileioprovider.h"
+#include "fileioprovidertracker.h"
 
 #include <Mutex.h>
 #include <Cond.h>
@@ -17,6 +19,7 @@
 
 #include <deque>
 #include <map>
+#include <memory>
 #include <stdexcept>
 
 
@@ -43,7 +46,7 @@ private:
 class SimpleFileIOManager : public ThreadedHandler
 {
 public:
-    SimpleFileIOManager(CommoLogger *logger, SimpleFileIO *io);
+    SimpleFileIOManager(CommoLogger *logger, SimpleFileIO *io, FileIOProviderTracker* factory);
     virtual ~SimpleFileIOManager();
 
     CommoResult uploadFile(int *xferId, const char *remoteURL,
@@ -80,7 +83,8 @@ private:
                   const size_t caCertLen,
                   const char *caCertPassword,
                   const char *remoteUsername,
-                  const char *remotePassword) COMMO_THROW (CommoResult);
+                  const char *remotePassword,
+                  std::shared_ptr<FileIOProvider>& provider) COMMO_THROW (CommoResult);
         ~IOContext();
 
         void openLocalFile() COMMO_THROW (IOStatusException);
@@ -113,7 +117,7 @@ private:
         char curlErrBuf[CURL_ERROR_SIZE];
         
         // Opened as up/download starts
-        FILE *localFile;
+        FileHandle *localFile;
 
         // Uploads: Set as upload starts by us
         // Downloads: Set as download progresses once it is known
@@ -122,6 +126,8 @@ private:
 
         // 0 at start, updated as transfer is ongoing by io callbacks
         uint64_t bytesTransferred;
+
+        std::shared_ptr<FileIOProvider> provider;
     };
 
     CommoLogger *logger;
@@ -145,6 +151,8 @@ private:
 
 
     CURLM *curlMultiCtx;
+
+    FileIOProviderTracker *providerTracker;
 
 
 

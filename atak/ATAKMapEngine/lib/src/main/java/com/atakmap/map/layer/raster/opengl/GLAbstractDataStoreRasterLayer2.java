@@ -39,6 +39,13 @@ public abstract class GLAbstractDataStoreRasterLayer2 extends GLAsynchronousLaye
     // GL Asynchronous Map Renderable
 
     @Override
+    protected void releaseImpl() {
+        super.releaseImpl();
+
+        this.renderable.clear();;
+    }
+
+    @Override
     protected Collection<GLMapLayer3> getRenderList() {
         return this.renderable;
     }

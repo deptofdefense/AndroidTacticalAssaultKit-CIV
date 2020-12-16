@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.os.Bundle;
 
 import com.atakmap.android.menu.MapMenuReceiver;
+import com.atakmap.android.menu.MapMenuReceiverCompat;
 import com.atakmap.coremap.log.Log;
 
 import java.lang.reflect.Method;
@@ -46,8 +47,8 @@ public class ToolManagerBroadcastReceiver extends BroadcastReceiver {
      */
     public void startTool(String identifier, Bundle extras) {
         // Make sure to close the radial (usually handled by MapMenuReceiver END_TOOL intent listener)
-        if (MapMenuReceiver.getInstance() != null)
-            MapMenuReceiver.getInstance().hideMenu();
+        if (MapMenuReceiverCompat.isNotNull())
+            MapMenuReceiverCompat.hideMenu();
 
         // Begin the tool synchronously
         beginTool(identifier, extras);

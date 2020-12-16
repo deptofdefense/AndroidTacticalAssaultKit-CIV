@@ -12,6 +12,8 @@
 #include "hwifscanner.h"
 #include "commotime.h"
 #include "commologger.h"
+#include "fileioprovider.h"
+#include "fileioprovidertracker.h"
 
 #include <Mutex.h>
 #include <Cond.h>
@@ -19,6 +21,7 @@
 #include "microhttpd.h"
 
 #include <string>
+#include <memory>
 
 
 namespace atakmap {
@@ -32,12 +35,14 @@ struct MPTransferSettings
     MPTransferSettings();
     // Allow copies
 
+    int getHttpPort();
     int getHttpsPort();
     int getNumTries();
     int getConnTimeoutSec();
     int getXferTimeoutSec();
     bool isServerTransferEnabled();
 
+    void setHttpPort(int port) COMMO_THROW (std::invalid_argument);
     void setHttpsPort(int port) COMMO_THROW (std::invalid_argument);
     void setNumTries(int nTries) COMMO_THROW (std::invalid_argument);
     void setConnTimeoutSec(int connTimeoutSec) COMMO_THROW (std::invalid_argument);
@@ -45,6 +50,7 @@ struct MPTransferSettings
     void setServerTransferEnabled(bool en);
 
 private:
+    int httpPort;
     int httpsPort;
     int nTries;
     int connTimeoutSec;
@@ -62,7 +68,8 @@ public:
                           StreamingSocketManagement *streamMgr,
                           HWIFScanner *hwIfScanner,
                           MissionPackageIO *io,
-                          const ContactUID *ourUID, std::string ourCallsign)
+                          const ContactUID *ourUID, std::string ourCallsign,
+                          FileIOProviderTracker* factory)
                           COMMO_THROW (std::invalid_argument);
     virtual ~MissionPackageManager();
 
@@ -148,6 +155,8 @@ private:
         const InternalContactUID *txRecipient;
         std::string detail;
         std::string rxFile;
+
+        FileIOProviderTracker* providerTracker;
     };
 
     struct TxTransferContext;
@@ -169,7 +178,9 @@ private:
             TOOLSET
         } State;
 
-        TxUploadContext(TxTransferContext *owner, const std::string &streamEndpoint,
+        TxUploadContext(TxTransferContext *owner,
+                        std::shared_ptr<FileIOProvider>& ioProvider,
+                        const std::string &streamEndpoint,
                         std::vector<const InternalContactUID *> *contacts = NULL);
         ~TxUploadContext();
 
@@ -194,6 +205,9 @@ private:
 
         std::string urlFromServer;
         uint64_t bytesTransferred;
+
+        std::shared_ptr<FileIOProvider> ioProvider;
+        FileHandle *localFile;
     };
 
     struct TxTransferContext {
@@ -244,7 +258,8 @@ private:
                             const MPTransferSettings &settings,
                             const std::string &localFilename,
                             const std::string &sourceStreamEndpoint,
-                            CoTFileTransferRequest *request);
+                            CoTFileTransferRequest *request,
+                            std::shared_ptr<FileIOProvider>& provider);
         ~FileTransferContext();
 
         CURLcode sslCtxSetup(CURL *curl, void *sslctx);
@@ -289,12 +304,13 @@ private:
         
         uint64_t bytesTransferred;
 
-        FILE *outputFile;
+        FileHandle *outputFile;
+
+        std::shared_ptr<FileIOProvider> provider;
 
     private:
         COMMO_DISALLOW_COPY(FileTransferContext);
     };
-
 
     CommoLogger *logger;
     MissionPackageIO *clientio;
@@ -369,6 +385,7 @@ private:
     static CURLcode curlSslCtxSetupRedir(CURL *curl, void *sslctx, void *privData);
     static CURLcode curlSslCtxSetupRedirUpload(CURL *curl, void *sslctx, void *privData);
     static size_t curlWriteCallback(char *buf, size_t size, size_t nmemb, void *userCtx);
+    static size_t curlReadCallback(char *buf, size_t size, size_t nmemb, void *userCtx);
     static size_t curlUploadWriteCallback(char *buf, size_t size, size_t nmemb, void *userCtx);
     static CURLcode curlUploadXferCallback(void *privData,
                                           curl_off_t dlTotal,
@@ -429,6 +446,7 @@ private:
     void uploadThreadInitCtx(TxUploadContext *upCtx) COMMO_THROW (std::invalid_argument);
     void uploadThreadUploadCompleted(TxUploadContext *upCtx, bool success);
 
+    FileIOProviderTracker* providerTracker;
 };
 
 

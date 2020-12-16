@@ -7,6 +7,7 @@ import android.content.res.AssetManager;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.feature.FeatureDataSource;
 import com.atakmap.map.layer.feature.geometry.Envelope;
@@ -42,7 +43,7 @@ public class LptFileDatabase extends FileDatabase {
     @Override
     public boolean accept(File file) {
         String lc = file.getName().toLowerCase(LocaleUtil.getCurrent());
-        return file.isFile() && lc.endsWith(EXTENSION);
+        return IOProviderFactory.isFile(file) && lc.endsWith(EXTENSION);
     }
 
     @Override
@@ -77,7 +78,7 @@ public class LptFileDatabase extends FileDatabase {
         Database msaccessDb = null;
         try {
             DatabaseBuilder db = new DatabaseBuilder();
-            db.setFile(lptFile);
+            db.setChannel(IOProviderFactory.getChannel(lptFile, "r"));
             db.setReadOnly(true);
             msaccessDb = db.open();
 

@@ -16,16 +16,16 @@ import com.atakmap.android.missionpackage.ui.MissionPackageListFileItem;
 import com.atakmap.android.missionpackage.ui.MissionPackageListGroup;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipFile;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import com.atakmap.coremap.locale.LocaleUtil;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * Zip all relevant shapefile physical files and add to Mission Package as a zip
@@ -404,8 +404,9 @@ public class MissionPackageShapefileHandler implements
         }
 
         // clean up unzip dir if necessary
-        if (FileSystemUtils.isFile(shpDir) && FileIOProviderFactory.isDirectory(shpDir)) {
-            File[] files = FileIOProviderFactory.listFiles(shpDir);
+        if (FileSystemUtils.isFile(shpDir)
+                && IOProviderFactory.isDirectory(shpDir)) {
+            File[] files = IOProviderFactory.listFiles(shpDir);
             if (files == null || files.length < 1)
                 FileSystemUtils.deleteDirectory(shpDir, false);
         }
@@ -415,8 +416,9 @@ public class MissionPackageShapefileHandler implements
                 MissionPackageFileIO.getMissionPackageFilesPath(atakDataDir
                         .getAbsolutePath()),
                 manifest.getUID());
-        if (FileIOProviderFactory.exists(unzipDir) && FileIOProviderFactory.isDirectory(unzipDir)) {
-            File[] files = FileIOProviderFactory.listFiles(unzipDir);
+        if (IOProviderFactory.exists(unzipDir)
+                && IOProviderFactory.isDirectory(unzipDir)) {
+            File[] files = IOProviderFactory.listFiles(unzipDir);
             if (files == null || files.length < 1)
                 FileSystemUtils.deleteDirectory(unzipDir, false);
         }

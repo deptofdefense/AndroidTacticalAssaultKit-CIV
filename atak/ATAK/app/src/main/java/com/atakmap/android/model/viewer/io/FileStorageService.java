@@ -7,7 +7,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.provider.OpenableColumns;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 
@@ -49,8 +49,9 @@ public final class FileStorageService {
 
         for (FileDto fileDto : fileDtos) {
             File file = createFile(fileDto.getFilename());
-            try (FileOutputStream fileOutputStream = FileIOProviderFactory.getOutputStream(
-                    file)) {
+            try (FileOutputStream fileOutputStream = IOProviderFactory
+                    .getOutputStream(
+                            file)) {
                 fileOutputStream.write(fileDto.getBytes());
                 Log.d(TAG, "wrote fileDto=" + fileDto);
             }
@@ -148,14 +149,15 @@ public final class FileStorageService {
         File f = new File(path);
         if (path.contains(".zip"))
             f = new ZipVirtualFile(path);
-        if (FileIOProviderFactory.exists(f))
+        if (IOProviderFactory.exists(f))
             return f;
         String filename = getFilename(uri);
         return new File(STORAGE_PATH, filename);
     }
 
     private static long getFileSize(File file) throws IOException {
-        try (RandomAccessFile raf = FileIOProviderFactory.getRandomAccessFile(file, "r")) {
+        try (RandomAccessFile raf = IOProviderFactory.getRandomAccessFile(file,
+                "r")) {
             return raf.length();
         }
     }
@@ -189,7 +191,8 @@ public final class FileStorageService {
         byte[] bytes = new byte[(int) size];
 
         File file = new File(STORAGE_PATH, filename);
-        try (RandomAccessFile raf = FileIOProviderFactory.getRandomAccessFile(file, "r")) {
+        try (RandomAccessFile raf = IOProviderFactory.getRandomAccessFile(file,
+                "r")) {
             raf.readFully(bytes);
         }
 
@@ -199,10 +202,10 @@ public final class FileStorageService {
     private static File createFile(String filename) throws IOException {
         File file = new File(STORAGE_PATH, filename);
         File dir = file.getParentFile();
-        if (FileIOProviderFactory.mkdirs(dir)) {
+        if (IOProviderFactory.mkdirs(dir)) {
             Log.d(TAG, "created directory=" + dir);
         }
-        if (file.createNewFile()) {
+        if (IOProviderFactory.createNewFile(file)) {
             Log.d(TAG, "Created file=" + file);
         }
         return file;

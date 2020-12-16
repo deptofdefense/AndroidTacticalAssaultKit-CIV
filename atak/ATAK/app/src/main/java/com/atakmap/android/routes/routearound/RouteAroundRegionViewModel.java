@@ -15,7 +15,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class RouteAroundRegionViewModel {
 
-    private RouteAroundRegionEventRelay relay = RouteAroundRegionEventRelay
+    private final RouteAroundRegionEventRelay relay = RouteAroundRegionEventRelay
             .getInstance();
     private RouteAroundRegionManager manager;
 
@@ -33,7 +33,7 @@ public class RouteAroundRegionViewModel {
         try {
             manager.saveManagerStateToFile(SERIALIZATION_FILE);
         } catch (IOException | JSONException e) {
-            Log.e(TAG, "error has occured", e);
+            Log.e(TAG, "error has occurred", e);
         }
     }
 

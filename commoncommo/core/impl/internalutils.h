@@ -5,11 +5,14 @@
 #include "commologger.h"
 #include "netinterface.h"
 #include "commoresult.h"
+#include "fileioprovider.h"
+#include "fileioprovidertracker.h"
 #include <string>
 #include <stdexcept>
 #include <curl/curl.h>
 #include "openssl/ssl.h"
 #include "openssl/pkcs12.h"
+#include <memory>
 
 
 #define COMMO_THROW(...)
@@ -113,8 +116,7 @@ public:
     // true if replacement succeeds, else false
     static bool urlReplacePort(std::string *url, int port);
 
-    static bool computeSha256Hash(std::string *hashOut, const char *filename);
-    static uint64_t computeFileSize(const char *filename) COMMO_THROW (std::invalid_argument);
+    static bool computeSha256Hash(std::string *hashOut, const char *filename, std::shared_ptr<FileIOProvider>& provider);
 
     // Reads certData and populates *cert, *privKey, and ca with 
     // main cert, private key, and supporting certs respectively.

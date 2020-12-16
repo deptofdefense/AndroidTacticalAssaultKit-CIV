@@ -205,62 +205,67 @@ public class RouteEditTool extends EditablePolylineEditTool implements
             String e = event.getType();
 
             // Add first waypoint or control point on map click
-            if (e.equals(MapEvent.MAP_CLICK)) {
-                if (_route.getNumPoints() == 0)
-                    addWayPoint(event, 0);
-                else
-                    addControlPoint(event, _route.getNumPoints());
-            }
+            switch (e) {
+                case MapEvent.MAP_CLICK:
+                    if (_route.getNumPoints() == 0)
+                        addWayPoint(event, 0);
+                    else
+                        addControlPoint(event, _route.getNumPoints());
+                    break;
 
-            // Add way point on long press
-            else if (e.equals(MapEvent.MAP_LONG_PRESS))
-                addWayPoint(event, _route.getNumPoints());
+                // Add way point on long press
+                case MapEvent.MAP_LONG_PRESS:
+                    addWayPoint(event, _route.getNumPoints());
+                    break;
 
-            // Add waypoint when long pressing a marker
-            else if (e.equals(MapEvent.ITEM_LONG_PRESS)) {
-                MapItem mi = event.getItem();
-                if (!(mi instanceof PointMapItem)
-                        || _route.hasMarker((PointMapItem) mi))
-                    return;
-                addWayPoint(((PointMapItem) mi).getGeoPointMetaData(),
-                        _route.getNumPoints());
-            }
-
-            // Map item tapped - multiple actions
-            else if (e.equals(MapEvent.ITEM_CLICK)) {
-                MapItem mi = event.getItem();
-
-                if (mi == null)
-                    return;
-
-                String type = mi.getType();
-                if (type.equals(Route.WAYPOINT_TYPE)
-                        || type.equals(Route.CONTROLPOINT_TYPE)
-                        || type.equals(_route.getType())) {
-
-                    if (!type.equals(Route.WAYPOINT_TYPE)
-                            && multipleVerticesHit())
+                // Add waypoint when long pressing a marker
+                case MapEvent.ITEM_LONG_PRESS: {
+                    MapItem mi = event.getItem();
+                    if (!(mi instanceof PointMapItem)
+                            || _route.hasMarker((PointMapItem) mi))
                         return;
-
-                    final String uid = mi.getUID();
-                    AtakBroadcast.getInstance().sendBroadcast(new Intent(
-                            FocusBroadcastReceiver.FOCUS)
-                                    .putExtra("uid", uid));
-                    AtakBroadcast.getInstance().sendBroadcast(new Intent(
-                            MapMenuReceiver.SHOW_MENU)
-                                    .putExtra("uid", uid));
-                    AtakBroadcast.getInstance().sendBroadcast(new Intent(
-                            CoordOverlayMapReceiver.SHOW_DETAILS)
-                                    .putExtra("uid", uid));
-                    return;
+                    addWayPoint(((PointMapItem) mi).getGeoPointMetaData(),
+                            _route.getNumPoints());
+                    break;
                 }
 
-                GeoPointMetaData point = findPoint(event);
-                if (point != null) {
-                    if (mi instanceof PointMapItem)
-                        addWayPoint(point, _route.getNumPoints());
-                    else
-                        addControlPoint(point, _route.getNumPoints());
+                // Map item tapped - multiple actions
+                case MapEvent.ITEM_CLICK: {
+                    MapItem mi = event.getItem();
+
+                    if (mi == null)
+                        return;
+
+                    String type = mi.getType();
+                    if (type.equals(Route.WAYPOINT_TYPE)
+                            || type.equals(Route.CONTROLPOINT_TYPE)
+                            || type.equals(_route.getType())) {
+
+                        if (!type.equals(Route.WAYPOINT_TYPE)
+                                && multipleVerticesHit())
+                            return;
+
+                        final String uid = mi.getUID();
+                        AtakBroadcast.getInstance().sendBroadcast(new Intent(
+                                FocusBroadcastReceiver.FOCUS)
+                                        .putExtra("uid", uid));
+                        AtakBroadcast.getInstance().sendBroadcast(new Intent(
+                                MapMenuReceiver.SHOW_MENU)
+                                        .putExtra("uid", uid));
+                        AtakBroadcast.getInstance().sendBroadcast(new Intent(
+                                CoordOverlayMapReceiver.SHOW_DETAILS)
+                                        .putExtra("uid", uid));
+                        return;
+                    }
+
+                    GeoPointMetaData point = findPoint(event);
+                    if (point != null) {
+                        if (mi instanceof PointMapItem)
+                            addWayPoint(point, _route.getNumPoints());
+                        else
+                            addControlPoint(point, _route.getNumPoints());
+                    }
+                    break;
                 }
             }
         }

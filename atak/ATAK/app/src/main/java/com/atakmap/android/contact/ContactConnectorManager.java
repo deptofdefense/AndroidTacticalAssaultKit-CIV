@@ -61,8 +61,8 @@ public class ContactConnectorManager {
         /**
          * Check if this handler supports the connector
          *
-         * @param connector
-         * @return
+         * @param connector the connector
+         * @return true if it is supported
          */
         public boolean isSupported(Connector connector) {
             return isSupported(connector.getConnectionType());
@@ -71,8 +71,8 @@ public class ContactConnectorManager {
         /**
          * Check if this handler supports the connector type
          *
-         * @param connectorType
-         * @return
+         * @param connectorType the connector type
+         * @return true if it is supported
          */
         public abstract boolean isSupported(String connectorType);
 
@@ -119,18 +119,18 @@ public class ContactConnectorManager {
                 String connectorAddress);
     }
 
-    private Context _context;
+    private final Context _context;
     private final SharedPreferences _prefs;
 
     /**
      * Currently support one dynamic handler per contact type
      */
-    private List<ContactConnectorHandler> _contactHandlers;
+    private final List<ContactConnectorHandler> _contactHandlers;
 
     /**
      * Have one default handler per contact type
      */
-    private List<ContactConnectorHandler> _defaultHandlers;
+    private final List<ContactConnectorHandler> _defaultHandlers;
 
     public ContactConnectorManager(Context context,
             SharedPreferences preferences) {
@@ -183,17 +183,17 @@ public class ContactConnectorManager {
      * Then falls back on default implementation if none is found or none is successful in
      * initiating contact
      *
-     * @param contact
-     * @param connector
-     * @return
+     * @param contact the contact to initate contact with
+     * @param connector the connector to use
+     * @return true if the initiation was sucessful otherwise false
      */
     public synchronized boolean initiateContact(IndividualContact contact,
             Connector connector) {
-
         if (contact == null || connector == null) {
             Log.w(TAG,
-                    "Contact or Connector not set correctly, unable to initateContact " +
-                            contact   + ": " + connector);
+                    "Contact or Connector not set correctly, unable to initateContact "
+                            +
+                            contact + ": " + connector);
             return false;
         }
 
@@ -210,7 +210,7 @@ public class ContactConnectorManager {
      * @param connectorType     required
      * @param contactUID        UID or address is required
      * @param connectorAddress  UID or address is required
-     * @return
+     * @return true if initiation was successful otherwise false
      */
     public synchronized boolean initiateContact(String connectorType,
             String contactUID, String connectorAddress) {
@@ -273,7 +273,7 @@ public class ContactConnectorManager {
      * initiating contact
      *
      * @param connectorType     required
-     * @return
+     * @return the handler
      */
     public synchronized ContactConnectorHandler getHandler(
             String connectorType) {

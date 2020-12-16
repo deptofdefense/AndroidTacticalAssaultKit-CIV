@@ -5,7 +5,7 @@ import android.content.Context;
 
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 import com.atakmap.android.androidtest.util.FileUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
@@ -70,7 +70,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
                 appContext.getCacheDir());
         try {
             f.deleteOnExit();
-            if (FileIOProviderFactory.exists(f)) {
+            if (IOProviderFactory.exists(f)) {
                 if (!f.delete()) {
                     throw new IllegalStateException();
                 }
@@ -106,8 +106,8 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
 
             FileSystemUtils.FileTreeData ftd = new FileSystemUtils.FileTreeData();
             FileSystemUtils.getFileData(f, ftd, Long.MAX_VALUE);
-            assertEquals(FileIOProviderFactory.length(f), ftd.size);
-            assertEquals(FileIOProviderFactory.lastModified(f), ftd.lastModified);
+            assertEquals(IOProviderFactory.length(f), ftd.size);
+            assertEquals(IOProviderFactory.lastModified(f), ftd.lastModified);
             assertEquals(1, ftd.numFiles);
         } finally {
             f.delete();
@@ -131,10 +131,13 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
             // NOTE: the actual FS may not be storing last modified at full
             // precision, so we need to utilize the actual value, not the
             // specified one
-            long greatestLastModified = FileIOProviderFactory.lastModified(files[0]);
+            long greatestLastModified = IOProviderFactory
+                    .lastModified(files[0]);
             for (int i = 1; i < files.length; i++)
-                if (FileIOProviderFactory.lastModified(files[i]) > greatestLastModified)
-                    greatestLastModified = FileIOProviderFactory.lastModified(files[i]);
+                if (IOProviderFactory
+                        .lastModified(files[i]) > greatestLastModified)
+                    greatestLastModified = IOProviderFactory
+                            .lastModified(files[i]);
 
             FileSystemUtils.FileTreeData ftd = new FileSystemUtils.FileTreeData();
             FileSystemUtils.getFileData(f, ftd, Long.MAX_VALUE);
@@ -168,7 +171,8 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
             FileSystemUtils.FileTreeData ftd = new FileSystemUtils.FileTreeData();
             FileSystemUtils.getFileData(f, ftd, limit);
             assertEquals(200, ftd.size);
-            assertEquals(FileIOProviderFactory.lastModified(files[0]), ftd.lastModified);
+            assertEquals(IOProviderFactory.lastModified(files[0]),
+                    ftd.lastModified);
             assertEquals(limit, ftd.numFiles);
         } finally {
             FileSystemUtils.delete(f);
@@ -253,7 +257,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
             };
 
             File f = new File(dir.file, base + ".dat");
-            f.createNewFile();
+            IOProviderFactory.createNewFile(f);
 
             final File result = FileSystemUtils.findFile(dir.file, base, exts);
 
@@ -275,7 +279,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
             };
 
             File f = new File(dir.file, base + exts[0]);
-            f.createNewFile();
+            IOProviderFactory.createNewFile(f);
 
             final File result = FileSystemUtils.findFile(dir.file, base, exts);
 
@@ -297,7 +301,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
             };
 
             File f = new File(dir.file, base + exts[4]);
-            f.createNewFile();
+            IOProviderFactory.createNewFile(f);
 
             final File result = FileSystemUtils.findFile(dir.file, base, exts);
 
@@ -329,7 +333,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
                 FileSystemUtils.createTempDir("testfile", ".dir",
                         appContext.getCacheDir()))) {
 
-            FileIOProviderFactory.setWritable(dir.file, false, true);
+            IOProviderFactory.setWritable(dir.file, false, true);
             assertFalse(FileSystemUtils.canWrite(dir.file));
         }
     }
@@ -352,8 +356,8 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
             for (int i = 0; i < arr.length; i++)
                 arr[i] = (byte) i;
 
-
-            try(FileOutputStream fos = FileIOProviderFactory.getOutputStream(f.file)) {
+            try (FileOutputStream fos = IOProviderFactory
+                    .getOutputStream(f.file)) {
                 fos.write(arr);
             }
 
@@ -381,12 +385,13 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
             for (int i = 0; i < arr.length; i++)
                 arr[i] = (byte) i;
 
-
-            try(FileOutputStream fos = FileIOProviderFactory.getOutputStream(f.file)) {
+            try (FileOutputStream fos = IOProviderFactory
+                    .getOutputStream(f.file)) {
                 fos.write(arr);
             }
 
-            try (FileInputStream fis = FileIOProviderFactory.getInputStream(f.file)) {
+            try (FileInputStream fis = IOProviderFactory
+                    .getInputStream(f.file)) {
                 byte[] result = FileSystemUtils.read(fis);
                 assertTrue(Arrays.equals(arr, result));
             }
@@ -414,13 +419,14 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
             for (int i = 0; i < arr.length; i++)
                 arr[i] = (byte) i;
 
-
-            try(FileOutputStream fos = FileIOProviderFactory.getOutputStream(orig.file)) {
+            try (FileOutputStream fos = IOProviderFactory
+                    .getOutputStream(orig.file)) {
                 fos.write(arr);
             }
 
             FileSystemUtils.copyFile(orig.file, copy.file, new byte[8192]);
-            assertEquals(FileIOProviderFactory.length(orig.file), FileIOProviderFactory.length(copy.file));
+            assertEquals(IOProviderFactory.length(orig.file),
+                    IOProviderFactory.length(copy.file));
 
             byte[] copyData = FileSystemUtils.read(copy.file);
             assertTrue(Arrays.equals(arr, copyData));
@@ -466,7 +472,8 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
             for (int i = 0; i < arr.length; i++)
                 arr[i] = (byte) i;
 
-            try(FileOutputStream fos = FileIOProviderFactory.getOutputStream(orig.file)) {
+            try (FileOutputStream fos = IOProviderFactory
+                    .getOutputStream(orig.file)) {
                 fos.write(arr);
             }
 
@@ -474,4 +481,32 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
             fail();
         }
     }
+
+    @Test
+    public void FileSystemUtils_deleteDirectory_false() throws IOException {
+        Context appContext = InstrumentationRegistry.getTargetContext();
+        File directory = new File(appContext.getFilesDir(), "runtime_test");
+
+        IOProviderFactory.mkdir(directory);
+
+        File f = File.createTempFile("testfile", ".dat",
+                directory);
+        byte[] arr = new byte[256];
+        for (int i = 0; i < arr.length; i++)
+            arr[i] = (byte) i;
+
+        try (FileOutputStream fos = IOProviderFactory.getOutputStream(f)) {
+            fos.write(arr);
+        }
+        assertTrue("tempfile exists", IOProviderFactory.exists(f));
+        assertTrue("tempfile directory exists",
+                IOProviderFactory.exists(directory));
+
+        FileSystemUtils.deleteDirectory(directory, false);
+        assertFalse("tempfile removed", IOProviderFactory.exists(f));
+        assertFalse("tempfile directory removed",
+                IOProviderFactory.exists(directory));
+
+    }
+
 }

@@ -30,6 +30,7 @@ import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.NotificationUtil;
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.comms.CotServiceRemote;
@@ -65,6 +66,8 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
     private MapView _mapView;
 
     private Context _context;
+
+    private ChatMesssageRenderer chatMesssageRenderer;
 
     // Main groups
     private static GroupContact rootGroup, userGroups, teamGroups, tadilJGroup;
@@ -430,7 +433,7 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
                             .getIpAddress(contact).getHost());
                 }
 
-            } catch (Exception e) {
+            } catch (Exception ignored) {
                 // Don't care...
             }
         }
@@ -442,10 +445,8 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
             NetConnectString netConnStr = NetConnectString
                     .fromString(netConnectString);
 
-            if (netConnStr != null && netConnStr.getProto() != null &&
-                    netConnStr.getProto().equalsIgnoreCase("stcp")) {
-                return true;
-            }
+            return netConnStr != null && netConnStr.getProto() != null &&
+                    netConnStr.getProto().equalsIgnoreCase("stcp");
         }
         return false;
     }
@@ -897,7 +898,7 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
         // list of contacts, but only if the contacts drop-down is closed
         // since we want to maintain active filters (see ATAK-13011)
         ContactPresenceDropdown contacts = CotMapComponent.getInstance()
-                    .getContactPresenceReceiver();
+                .getContactPresenceReceiver();
         if (contacts.isClosed()) {
             Contact c = Contacts.getInstance().getContactByUuid(targetUID);
             if (c instanceof GroupContact)
@@ -1061,7 +1062,7 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
             if (bundle != null)
                 ChatManagerMapComponent.getChatService().persistMessage(bundle);
         } catch (Exception e) {
-            Log.e(TAG, "error occured", e);
+            Log.e(TAG, "error occurred", e);
         }
     }
 
@@ -1233,6 +1234,9 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
         Contacts.getInstance().updateTotalUnreadCount();
     }
 
+    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
+            "public", "static", "final"
+    })
     public static String CHAT_ROOM_DROPDOWN_CLOSED = "com.atakmap.chat.chatroom_closed";
 
     public class ChatDropDownReceiver extends DropDownReceiver {
@@ -1276,7 +1280,7 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
     }
 
     public static class MessageDestination {
-        private List<Contact> dest = new ArrayList<>();
+        private final List<Contact> dest = new ArrayList<>();
 
         public MessageDestination(ArrayList<String> destinations) {
             if (destinations != null) {
@@ -1310,44 +1314,44 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
      * Receiver is used to mark a message received as "read" without
      * changing any other unread messages in the same ChatLineAdapter
      */
-    private BroadcastReceiver markMessageReadReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver markMessageReadReceiver = new BroadcastReceiver() {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (intent.getAction().equals("com.atakmap.chat.markmessageread")) {
+            final String action = intent.getAction();
+            if (action == null)
+                return;
 
-                //get bundle from intent
-                if (intent.hasExtra("chat_bundle")) {
-                    Bundle chatBundle = intent.getBundleExtra("chat_bundle");
-                    ConversationFragment convoFrag = getFragmentByConversationId(
-                            chatBundle
-                                    .getString("conversationId"));
+            final Bundle chatBundle = intent.getBundleExtra("chat_bundle");
+            if (chatBundle == null)
+                return;
 
-                    //check @null on Conversation Fragment
-                    if (convoFrag != null) {
-                        String messageId = chatBundle.getString("messageId");
+            if (action.equals("com.atakmap.chat.markmessageread")) {
+                ConversationFragment convoFrag = getFragmentByConversationId(
+                        chatBundle
+                                .getString("conversationId"));
 
-                        //check @null on messageId
-                        if (messageId == null) {
-                            return;
-                        }
+                //check @null on Conversation Fragment
+                if (convoFrag != null) {
+                    String messageId = chatBundle.getString("messageId");
 
-                        //get ListAdapter From Convo Fragment
-                        ConversationListAdapter adapter = convoFrag
-                                .getChatAdapter();
-                        if (adapter == null) {
-                            return;
-                        }
-                        adapter.markSingleRead(messageId);
+                    //check @null on messageId
+                    if (messageId == null) {
+                        return;
                     }
-                    Contacts.getInstance().updateTotalUnreadCount(); //update chat AB subscript
+
+                    //get ListAdapter From Convo Fragment
+                    ConversationListAdapter adapter = convoFrag
+                            .getChatAdapter();
+                    if (adapter == null) {
+                        return;
+                    }
+                    adapter.markSingleRead(messageId);
                 }
-            } else if (intent.getAction().equals(
+                Contacts.getInstance().updateTotalUnreadCount(); //update chat AB subscript
+            } else if (action.equals(
                     "com.atakmap.chatmessage.persistmessage")) {
-                Bundle chatBundle = intent.getBundleExtra("chat_bundle");
-                if (chatBundle != null) {
-                    addMessageToConversation(chatBundle);
-                }
+                addMessageToConversation(chatBundle);
             }
         }
     };
@@ -1373,4 +1377,21 @@ public class ChatManagerMapComponent extends AbstractMapComponent implements
             Contacts.getInstance().updateTotalUnreadCount();
         }
     };
+
+    /**
+     * Set up a custom renderer for the chat line.
+     * @param renderer the custom renderer or null if no renderer should be used.
+     */
+    public void registerChatMessageRenderer(ChatMesssageRenderer renderer) {
+        chatMesssageRenderer = renderer;
+    }
+
+    /**
+     * Package private ability for ConversationListAdapter to grab the renderer.
+     * @return the renderer
+     */
+    ChatMesssageRenderer getChatMesssageRenderer() {
+        return chatMesssageRenderer;
+    }
+
 }

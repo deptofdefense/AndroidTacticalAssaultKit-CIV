@@ -208,7 +208,7 @@ namespace {
 
 		ControlQueue() NOTHROWS;
 		~ControlQueue() NOTHROWS;
-		TAKErr queueWork(const std::shared_ptr<Work> &work, Stats *optStats = nullptr) NOTHROWS;
+		TAKErr queueWork(std::shared_ptr<Work> &&work, Stats *optStats = nullptr) NOTHROWS;
 		TAKErr awaitWork(std::shared_ptr<Work> &workPtr, int64_t milliLimit) NOTHROWS;
 		TAKErr takeWork(std::shared_ptr<Work> &workPtr) NOTHROWS;
 		TAKErr interrupt() NOTHROWS;
@@ -303,7 +303,7 @@ namespace {
 	ControlQueue::~ControlQueue() NOTHROWS
 	{ }
 
-	TAKErr ControlQueue::queueWork(const std::shared_ptr<Work> &work, Stats *optStats) NOTHROWS {
+	TAKErr ControlQueue::queueWork(std::shared_ptr<Work> &&work, Stats *optStats) NOTHROWS {
 		MonitorLockPtr lockPtr(nullptr, nullptr);
 		TAKErr code(MonitorLock_create(lockPtr, this->monitor));
 		TE_CHECKRETURN_CODE(code);
@@ -440,7 +440,7 @@ namespace {
 	{ }
 	
 	TAKErr ControlWorkerImpl::scheduleWork(std::shared_ptr<Work> work) NOTHROWS {
-		return controlQueue->queueWork(work);
+		return controlQueue->queueWork(std::move(work));
 	}
 
 	TAKErr ControlWorkerImpl::doAnyWork(int64_t millisecondLimit) NOTHROWS {
@@ -531,7 +531,7 @@ namespace {
 	}
 
 	TAKErr ThreadWorker::scheduleWork(std::shared_ptr<Work> work) NOTHROWS {
-		TAKErr code = controlQueue->queueWork(work);
+		TAKErr code = controlQueue->queueWork(std::move(work));
 		if (code == TE_Interrupted) {
 			return TE_Ok;
 		}
@@ -598,7 +598,7 @@ namespace {
 
 	TAKErr ThreadPoolWorker::scheduleWork(std::shared_ptr<Work> work) NOTHROWS {
 		ControlQueue::Stats stats;
-		TAKErr code = controlQueue->queueWork(work, &stats);
+		TAKErr code = controlQueue->queueWork(std::move(work), &stats);
 		if (code == TE_Ok && 
 			stats.waitingCount == 0 &&
 			stats.threadCount < this->maxThreadCount) {
@@ -662,17 +662,17 @@ SharedWorkerPtr makeFlexWorker() {
 
 
 
-SharedWorkerPtr TAK::Engine::Util::GeneralWorkers_flex() NOTHROWS {
+const SharedWorkerPtr& TAK::Engine::Util::GeneralWorkers_flex() NOTHROWS {
 	static SharedWorkerPtr inst = makeFlexWorker();
 	return inst;
 }
 
-SharedWorkerPtr TAK::Engine::Util::GeneralWorkers_single() NOTHROWS {
+const SharedWorkerPtr& TAK::Engine::Util::GeneralWorkers_single() NOTHROWS {
 	static SharedWorkerPtr inst = makeFixedWorker(1);
 	return inst;
 }
 
-SharedWorkerPtr TAK::Engine::Util::GeneralWorkers_cpu() NOTHROWS {
+const SharedWorkerPtr& TAK::Engine::Util::GeneralWorkers_cpu() NOTHROWS {
 	static SharedWorkerPtr inst = makeFixedWorker(4);
 	return inst;
 }
@@ -691,7 +691,7 @@ public:
 	}
 };
 
-SharedWorkerPtr TAK::Engine::Util::GeneralWorkers_immediate() NOTHROWS {
+const SharedWorkerPtr& TAK::Engine::Util::GeneralWorkers_immediate() NOTHROWS {
 	static SharedWorkerPtr inst = std::make_shared<ImmediateWorker>();
 	return inst;
 }

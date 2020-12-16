@@ -89,7 +89,8 @@ public class EmergencyTool extends DropDownReceiver implements
         sendSMSCB.setChecked(sharedPrefs.getBoolean(
                 EmergencyConstants.PREFERENCES_KEY_SMS_CHECKED, false));
 
-        int res = context.checkCallingOrSelfPermission(Manifest.permission.SEND_SMS);
+        int res = context
+                .checkCallingOrSelfPermission(Manifest.permission.SEND_SMS);
         if (res != PackageManager.PERMISSION_GRANTED) {
             sendSMSCB.setChecked(false);
             sendSMSCB.setVisibility(View.GONE);

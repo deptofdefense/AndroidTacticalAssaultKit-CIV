@@ -15,6 +15,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.track.TrackDetails;
 import com.atakmap.android.track.TrackHistoryDropDown;
 import com.atakmap.android.track.task.ExportTrackParams;
+import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -65,7 +66,7 @@ public class TrackExportDialog implements Dialog.OnClickListener {
 
         TileButtonDialog d = new TileButtonDialog(_mapView);
         d.addButton(R.drawable.ic_route, R.string.gpx_route_file);
-        d.addButton(R.drawable.ic_server_success, R.string.publish);
+        d.addButton(ATAKConstants.getServerConnection(true), R.string.publish);
         d.addButton(R.drawable.ic_kml, R.string.kml_file);
         d.addButton(R.drawable.ic_kmz, R.string.kmz_file);
         d.addButton(R.drawable.ic_gpx, R.string.gpx_file);

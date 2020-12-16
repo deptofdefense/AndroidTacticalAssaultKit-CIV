@@ -184,7 +184,7 @@ public class FieldUtils {
                 }
             }
             return field;
-        } catch (NoSuchFieldException e) {
+        } catch (NoSuchFieldException ignored) {
         }
         return null;
     }

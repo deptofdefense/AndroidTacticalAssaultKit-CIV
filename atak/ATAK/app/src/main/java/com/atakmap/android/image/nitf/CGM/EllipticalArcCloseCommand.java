@@ -8,7 +8,7 @@ import java.io.IOException;
  *
  */
 public class EllipticalArcCloseCommand extends EllipticalArcCommand {
-    private int type;
+    private final int type;
 
     public EllipticalArcCloseCommand(int ec, int eid, int l, DataInput in)
             throws IOException {

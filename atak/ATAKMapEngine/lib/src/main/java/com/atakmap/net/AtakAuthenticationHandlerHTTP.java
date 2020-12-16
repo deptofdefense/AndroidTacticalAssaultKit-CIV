@@ -90,7 +90,7 @@ public class AtakAuthenticationHandlerHTTP {
             int loginAttempts, boolean ignorePreviousFail, int[] badAccessCodes) throws IOException {
         
         final String site = conn.getURL().getHost();
-        
+
         Domain domain;
         synchronized(domains) {
             // NOTE: 'authenticatedDomains' isn't strictly protected as
@@ -189,7 +189,7 @@ public class AtakAuthenticationHandlerHTTP {
                                     uidpwdBase64 = encodeCredentials(uidpwd[0], uidpwd[1]);
                                     AtakAuthenticationDatabase.saveCredentials(
                                             AtakAuthenticationCredentials.TYPE_HTTP_BASIC_AUTH,
-                                            site, uidpwd[0], uidpwd[1], true);
+                                            site, uidpwd[0], uidpwd[1], false);
                                 }
                                 try {
                                     retval.stream = tryConnect(retval.conn, uidpwdBase64);

@@ -1,3 +1,4 @@
+
 package com.atakmap.android.maps.visibility;
 
 import java.util.ArrayList;

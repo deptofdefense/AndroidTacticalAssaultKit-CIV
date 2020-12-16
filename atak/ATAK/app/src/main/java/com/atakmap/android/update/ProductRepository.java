@@ -4,7 +4,7 @@ package com.atakmap.android.update;
 import android.content.Context;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.BufferedReader;
@@ -26,9 +26,9 @@ public class ProductRepository {
     /**
      * A file path for product.inf cache of the repo
      */
-    private String _localIndexCache;
+    private final String _localIndexCache;
 
-    private String _repoType;
+    private final String _repoType;
 
     private List<ProductInformation> _products;
 
@@ -376,10 +376,9 @@ public class ProductRepository {
 
         try {
             return parseRepo(context, in.getAbsolutePath(), repoType,
-                    new BufferedReader(FileIOProviderFactory.getFileReader(in)));
-        }
-        catch(IOException ex){
-            Log.w(TAG,"Failed parse: "+in.getAbsolutePath(), ex);
+                    new BufferedReader(IOProviderFactory.getFileReader(in)));
+        } catch (IOException ex) {
+            Log.w(TAG, "Failed parse: " + in.getAbsolutePath(), ex);
         }
 
         return null;
@@ -412,10 +411,12 @@ public class ProductRepository {
 
         try {
             final File parent = index.getParentFile();
-            if (!FileIOProviderFactory.exists(parent) && !FileIOProviderFactory.mkdirs(parent)) {
+            if (!IOProviderFactory.exists(parent)
+                    && !IOProviderFactory.mkdirs(parent)) {
                 Log.w(TAG, "unable to create directory: " + parent);
             }
-            FileSystemUtils.write(FileIOProviderFactory.getOutputStream(index), sb.toString());
+            FileSystemUtils.write(IOProviderFactory.getOutputStream(index),
+                    sb.toString());
             return true;
         } catch (IOException e) {
             Log.w(TAG, "Failed to save to: " + index.getAbsolutePath(), e);

@@ -19,5 +19,5 @@ public interface MapMenuFactory {
      * @param item providing attribution for menu creation logic.
      * @return fully formed MapMenuWidget instance.
      */
-    public MapMenuWidget create(MapItem item);
+    MapMenuWidget create(MapItem item);
 }

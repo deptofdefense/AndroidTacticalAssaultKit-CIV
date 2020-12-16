@@ -3,7 +3,7 @@ package com.atakmap.map.layer.model.contextcapture;
 import android.content.res.XmlResourceParser;
 import android.util.Xml;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -37,7 +37,7 @@ final class ContextCaptureGeoreferencer implements Georeferencer {
             if(path instanceof  ZipVirtualFile)
                 stream = ((ZipVirtualFile)path).openStream();
             else
-                stream = FileIOProviderFactory.getInputStream(path);
+                stream = IOProviderFactory.getInputStream(path);
             parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
             parser.setFeature(Xml.FEATURE_RELAXED, true);
@@ -174,7 +174,7 @@ final class ContextCaptureGeoreferencer implements Georeferencer {
                 f = new ZipVirtualFile(f);
             } catch(Throwable ignored) {}
         }
-        if(!FileIOProviderFactory.exists(f))
+        if(!IOProviderFactory.exists(f))
             return null;
         return f.getParentFile();
     }

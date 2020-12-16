@@ -3,12 +3,12 @@ package com.atakmap.android.maps.assets;
 
 import androidx.annotation.NonNull;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipFile;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-
-import com.atakmap.coremap.filesystem.FileSystemUtils;
 
 public class ArchiveMapAssetInputStream extends InputStream {
     private ZipFile _openZipFile;

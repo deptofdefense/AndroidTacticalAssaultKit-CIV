@@ -13,6 +13,8 @@ import android.webkit.WebViewClient;
 import android.webkit.WebResourceResponse;
 import android.widget.TabHost;
 import android.widget.TabHost.TabContentFactory;
+import android.widget.TextView;
+
 import com.atakmap.io.ZipVirtualFile;
 import java.io.IOException;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -51,56 +53,70 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
                 .getSystemService(
                         Service.LAYOUT_INFLATER_SERVICE);
 
-        this.htmlViewer = new WebView(mapView.getContext());
-        this.htmlViewer.setVerticalScrollBarEnabled(true);
-        this.htmlViewer.setHorizontalScrollBarEnabled(true);
+        WebView wv = null;
+        try {
+            wv = new WebView(mapView.getContext());
+        } catch (Exception e) {
+            Log.e(TAG, "error instantiating a webview", e);
+        }
 
-        WebSettings webSettings = this.htmlViewer.getSettings();
+        this.htmlViewer = wv;
 
-        // do not enable per security guidelines
-        //webSettings.setAllowFileAccessFromFileURLs(true);
-        //webSettings.setAllowUniversalAccessFromFileURLs(true);
+        if (htmlViewer != null) {
+            this.htmlViewer.setVerticalScrollBarEnabled(true);
+            this.htmlViewer.setHorizontalScrollBarEnabled(true);
 
-        webSettings.setBuiltInZoomControls(true);
-        webSettings.setDisplayZoomControls(false);
+            final WebSettings webSettings = this.htmlViewer.getSettings();
 
-        this.htmlViewer.setWebViewClient(new WebViewClient() {
-            @Override
-            public WebResourceResponse shouldInterceptRequest(WebView view,
-                    String url) {
-                //Log.d(TAG, "shouldInterceptRequest: " + url);
-                if (url.startsWith("file:///android_asset/")) {
-                    if (item == null)
-                        return null;
+            // do not enable per security guidelines
+            //webSettings.setAllowFileAccessFromFileURLs(true);
+            //webSettings.setAllowUniversalAccessFromFileURLs(true);
 
-                    String fName = item.getMetaString("file", null);
-                    if (fName != null) {
-                        fName = FileSystemUtils
-                                .sanitizeWithSpacesAndSlashes(fName);
-                        url = url.replaceAll("file:///android_asset/", "");
-                        Log.d(TAG, "zipFile: " + fName + " file: " + url);
+            webSettings.setBuiltInZoomControls(true);
+            webSettings.setDisplayZoomControls(false);
 
-                        try {
-                            ZipVirtualFile vf = new ZipVirtualFile(fName, url);
-                            return new WebResourceResponse("text/html",
-                                    FileSystemUtils.UTF8_CHARSET.name(), vf
-                                            .openStream());
-                        } catch (IOException ioe) {
-                            Log.d(TAG, "error reading: " + fName + " entry: "
-                                    + url, ioe);
+            this.htmlViewer.setWebViewClient(new WebViewClient() {
+                @Override
+                public WebResourceResponse shouldInterceptRequest(WebView view,
+                        String url) {
+                    //Log.d(TAG, "shouldInterceptRequest: " + url);
+                    if (url.startsWith("file:///android_asset/")) {
+                        if (item == null)
                             return null;
-                        } catch (Exception e) {
-                            Log.d(TAG, "error reading: " + fName + " entry: "
-                                    + url, e);
-                            return null; // general exception occured
+
+                        String fName = item.getMetaString("file", null);
+                        if (fName != null) {
+                            fName = FileSystemUtils
+                                    .sanitizeWithSpacesAndSlashes(fName);
+                            url = url.replaceAll("file:///android_asset/", "");
+                            Log.d(TAG, "zipFile: " + fName + " file: " + url);
+
+                            try {
+                                ZipVirtualFile vf = new ZipVirtualFile(fName,
+                                        url);
+                                return new WebResourceResponse("text/html",
+                                        FileSystemUtils.UTF8_CHARSET.name(), vf
+                                                .openStream());
+                            } catch (IOException ioe) {
+                                Log.d(TAG,
+                                        "error reading: " + fName + " entry: "
+                                                + url,
+                                        ioe);
+                                return null;
+                            } catch (Exception e) {
+                                Log.d(TAG,
+                                        "error reading: " + fName + " entry: "
+                                                + url,
+                                        e);
+                                return null; // general exception occurred
+                            }
                         }
                     }
+
+                    return null;
                 }
-
-                return null;
-            }
-        });
-
+            });
+        }
         this.itemViewer = (MapItemDetailsView) inflater.inflate(
                 R.layout.map_item_view, null);
         this.itemViewer.setDropDown(this);
@@ -172,7 +188,13 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
                     metadataTab.setContent(new TabContentFactory() {
                         @Override
                         public View createTabContent(String tag) {
-                            return htmlViewer;
+                            if (htmlViewer != null)
+                                return htmlViewer;
+                            else {
+                                final TextView tv = new TextView(context);
+                                tv.setText(R.string.webview_not_installed);
+                                return tv;
+                            }
                         }
                     });
 
@@ -182,14 +204,18 @@ public class FeaturesDetailsDropdownReceiver extends DropDownReceiver implements
 
                 this.itemViewer.setItem(getMapView(), item);
 
-                // cause subsequent calls to loadData not to fail - without this 
-                // the web view would remain inconsistent on subsequent concurrent opens
-                this.htmlViewer.loadUrl("about:blank");
+                if (htmlViewer != null) {
+                    // cause subsequent calls to loadData not to fail - without this
+                    // the web view would remain inconsistent on subsequent concurrent opens
+                    this.htmlViewer.loadUrl("about:blank");
 
-                String html = item.getMetaString("html", "No Metadata");
-                this.htmlViewer.loadDataWithBaseURL("file:///android_asset/",
-                        html, "text/html", FileSystemUtils.UTF8_CHARSET.name(),
-                        null);
+                    String html = item.getMetaString("html", "No Metadata");
+                    this.htmlViewer.loadDataWithBaseURL(
+                            "file:///android_asset/",
+                            html, "text/html",
+                            FileSystemUtils.UTF8_CHARSET.name(),
+                            null);
+                }
                 setSelected(item, "asset:/icons/outline.png");
 
                 if (!this.isVisible()) {

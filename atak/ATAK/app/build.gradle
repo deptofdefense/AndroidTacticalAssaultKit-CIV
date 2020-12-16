@@ -6,7 +6,7 @@ import java.util.regex.Pattern
 // ATAK_VERSION is for the version of ATAK that is being produced
 //              with some examples include 3.12.1, 3.13.0, 4.0.0
 //
-//   This is used as part of the API value
+//   This is used as part of the API value described as a major.minor.submajor build
 //
 // ATAK_VERSION_SUBMINOR is the subminor version of the build that would not
 //                       have any effect on the API version number that is used
@@ -20,10 +20,12 @@ import java.util.regex.Pattern
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-def ATAK_VERSION = "4.1.1"
-def ATAK_VERSION_SUBMINOR = ".17"
 
 buildscript {
+
+    ext.ATAK_VERSION = "4.2.0"
+    ext.ATAK_VERSION_SUBMINOR = ".0"
+
     ext.jacocoVersion = '0.8.5'
 
     ext.getValueFromPropertiesFile = { propFile, key ->
@@ -68,10 +70,10 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.6.3'
+        classpath 'com.android.tools.build:gradle:4.0.1'
         classpath "org.jacoco:org.jacoco.core:$jacocoVersion"
         if(isDevKitEnabled()) {
-            classpath 'com.atakmap.gradle:atak-gradle-devkit:1.0.0'
+            classpath 'com.atakmap.gradle:atak-gradle-devkit:2.0.0'
     }
     }
 }
@@ -114,16 +116,16 @@ dependencies {
      // paradigm that google has moved towards with breaking up the original 
      // android support libraries.  
 
-     implementation 'androidx.fragment:fragment:1.2.4'
-     implementation 'androidx.exifinterface:exifinterface:1.2.0'
+     implementation 'androidx.fragment:fragment:1.2.5'
+     implementation 'androidx.exifinterface:exifinterface:1.3.0'
      implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
 
-     androidTestImplementation 'androidx.test:runner:1.2.0'
-     androidTestImplementation 'androidx.test:rules:1.2.0'
+     androidTestImplementation 'androidx.test:runner:1.3.0'
+     androidTestImplementation 'androidx.test:rules:1.3.0'
      androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'
-     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
-     androidTestImplementation 'androidx.test.espresso:espresso-intents:3.2.0'
-     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+     androidTestImplementation 'androidx.test.espresso:espresso-intents:3.3.0'
+     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
 
      androidTestImplementation "org.mockito:mockito-core:3.3.0"
      androidTestImplementation 'org.powermock:powermock-module-junit4:2.0.2'
@@ -142,13 +144,6 @@ dependencies {
 
 }
 
-if(isDevKitEnabled()) {
-    devkit {
-        atakVersion = ATAK_VERSION
-        atakVersionSubminor = ATAK_VERSION_SUBMINOR
-    }
-}
-
 // Attempt to get a suitable version name for the plugin based on
 // either a git or svn repository
 def getVersionName() {
@@ -162,7 +157,7 @@ def getVersionName() {
         println("versionName[git]: $describe")
         return describe
     } catch (Exception ignored) {
-       println("error occured, using revision of 1")
+       println("error occurred, using revision of 1")
        return 1
     }
 }
@@ -192,7 +187,7 @@ def getVersionCode() {
             println("version[git]: $revision")
         }
     } catch (Exception ignored) {
-       println("error occured, using revision of 1")
+       println("error occurred, using revision of 1")
        ext.revision = 1
     }
 
@@ -214,7 +209,7 @@ def getVersionSource() {
             println("source[git]: $source")
         }
     } catch (Exception ignored) {
-       println("error occured, using source of BETA-trunk")
+       println("error occurred, using source of BETA-trunk")
        ext.source = "BETA-trunk"
     }
     return ext.source
@@ -270,54 +265,22 @@ android {
     flavorDimensions "application"
 
     productFlavors {
-
         civ { 
+            getIsDefault().set(true)
             dimension "application"
             applicationIdSuffix = ".civ"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
-            buildConfigField 'boolean', 'SHOW_EULA', 'true'
-            buildConfigField 'String', 'TAK_PREFERENCES_NAME', '"com.atakmap.civ_preferences"'
-            buildConfigField 'String', 'LEGACY_PREFERENCES_NAME', '"com.atakmap.app_preferences"'
-            buildConfigField 'boolean', 'HAS_FIRES', 'false'
-            buildConfigField 'boolean', 'MIL_CAPABILITIES', 'false'
-            buildConfigField 'String', 'REDEPLOY_VERSION', '"410c"'
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"420b"'
             ndk { abiFilters "armeabi-v7a", "arm64-v8a", "x86" }
         }
 
         civSmall {
-            // add in the enterprise Play Store compatible build since it is a derivation
-            // of the civ and should be  completely compatible   but will not run on x86
-            // devices. This is due to a  size limitation in the Blackberry MDM of under
-            // 100mb.
-
             dimension "application"
-            applicationIdSuffix = ".civ.compat.eps"
+            applicationIdSuffix = ".civ"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".CIV"]
-            buildConfigField 'boolean', 'SHOW_EULA', 'true'
-            buildConfigField 'String', 'TAK_PREFERENCES_NAME', '"com.atakmap.civ_preferences"'
-            buildConfigField 'String', 'LEGACY_PREFERENCES_NAME', '"com.atakmap.app_preferences"'
-            buildConfigField 'boolean', 'HAS_FIRES', 'false'
-            buildConfigField 'boolean', 'MIL_CAPABILITIES', 'false'
-            buildConfigField 'String', 'REDEPLOY_VERSION', '"410c"'
+            buildConfigField 'String', 'REDEPLOY_VERSION', '"420a"'
             ndk { abiFilters "arm64-v8a" }
         }
-        ////////////////////////////////////////////////////////////////////////////////////////
-        // Due to how this project is configured to do debug and release builds when the release 
-        // build is performed, splits are not currently a viable solution.  During the debug 
-        // build the split fails to pattern match.  Splits also do not achieve the other desired
-        // result of omiting other aspects of the full apk.   Please see the solution selected
-        // as the flavor civSmall
-        ////////////////////////////////////////////////////////////////////////////////////////
-        //splits {
-        // abi {
-        //   enable true
-        //   reset()
-        //   include "armeabi-v7a", "arm64-v8a", "x86"
-        //    universalApk true
-        //  }
-        //}
-
-
 
     }
 
@@ -424,7 +387,7 @@ android {
         }
 
         odk {
-            buildConfigField 'String', 'DEV_BANNER', '"DEVELOPER BUILD"'
+            buildConfigField 'String', 'DEV_BANNER', '"TEST BUILD"'
             debuggable true
             minifyEnabled true
             proguardFile 'proguard-odk.txt'
@@ -448,29 +411,17 @@ android {
         civ.java.srcDirs = ['src/civ/java', 'src/common/java']
         civ.assets.srcDir 'src/civ/assets'
         civ.res.srcDir 'src/civ/res'
+        civ.assets.srcDir 'src/full/assets'
 
         // for civSmall
         civSmall.java.srcDirs = ['src/civ/java', 'src/common/java']
         civSmall.assets.srcDir 'src/civ/assets'
         civSmall.res.srcDir 'src/civ/res'
-
-
-
-
-        // pull in the full 
-        civ.assets.srcDir 'src/full/assets'
-
-        // pull in the small 
         civSmall.assets.srcDir 'src/small/assets'
 
 
 
-        // Move the build types to build-types/<type>
-        // For instance, build-types/debug/java, build-types/debug/AndroidManifest.xml, ...
-        // This moves them out of them default location under src/<type>/... which would
-        // conflict with src/ being used by the main source set.
-        // Adding new build types or product flavors should be accompanied
-        // by a similar customization.
+
         debug.setRoot('build-types/debug')
         release.setRoot('build-types/release')
         sdk.setRoot('build-types/sdk')
@@ -482,7 +433,7 @@ android {
          // Or, if you prefer, you can continue to check for errors in release builds,
          // but continue the build even when errors are found:
          abortOnError true
-         disable "AppCompatCustomView", "AppCompatResource"
+         disable "AppCompatCustomView", "AppCompatResource" 
      }
     touch('ATAKMapEngine/lib/src/main/jniLibs/arm64-v8a/libtakengine.so')
     touch('ATAKMapEngine/lib/src/main/jniLibs/arm64-v8a/libgdal.so')
@@ -547,7 +498,7 @@ android.applicationVariants.all { variant ->
     tasks.getByName("compile${variant.name.capitalize()}JavaWithJavac").dependsOn("installDepends")
 }
 
-// copies over the 0.jar file which contains a completely deobfuscated jar file
+// copies over the minified.jar file which contains a completely deobfuscated jar file
 // of all the classes used when running ATAK to include the dependency libraries
 // such as the support libraries.
 task copyFilesDebug {
@@ -604,7 +555,53 @@ task copyFilesSdk {
 }
 
 
+configurations {
+    civilianApiJar {
+        canBeConsumed = true
+        canBeResolved = false
+    }
+    android.applicationVariants.matching { variant ->
+        'civ' == variant.flavorName
+    }.all { variant ->
+        "${variant.name}Mapping" {
+            canBeConsumed = true
+            canBeResolved = false
+        }
+    }
+}
+
+
 afterEvaluate {
+
+    artifacts {
+
+        // need an unobfuscated jar, which is provided by the "debug" build type
+        Task apiTask = project.tasks.findByName('minifyCivDebugWithProguard')
+        File apiJar = apiTask.outputs.files.filter {
+            'minified.jar' == it.name
+        }.singleFile
+
+        // one API jar to rule them all ...
+        civilianApiJar(apiJar) {
+            builtBy(apiTask)
+        }
+
+        android.applicationVariants.matching { variant ->
+            // our "core" is represented by the "civ" flavor only
+            'civ' == variant.flavorName
+        }.all { variant ->
+            // buildType specific artifacts ...
+            Task mappingTask = project.tasks.findByName("minify${variant.name.capitalize()}WithProguard")
+            File mappingFile = mappingTask.outputs.files.filter {
+                'mapping.txt' == it.name
+            }.singleFile
+
+            // the mapping artifact ...
+            "${variant.name}Mapping"(mappingFile) {
+                builtBy(mappingTask)
+            }
+        }
+    }
 
     // Needs to take into account flavors
     Task installReleaseTask =  project.tasks.findByName("install" + getCommandFlavor() + "Release")

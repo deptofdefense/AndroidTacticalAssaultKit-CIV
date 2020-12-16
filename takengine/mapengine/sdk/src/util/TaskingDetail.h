@@ -516,9 +516,9 @@ namespace TAK {
 
 			template <typename T>
 			TAKErr FutureTask<T>::cancel() NOTHROWS {
-				if (!impl)
+				if (!this->impl)
 					return TE_IllegalState;
-				return impl->preempt(TE_Canceled);
+				return this->impl->preempt(TE_Canceled);
 			}
 
 			template <typename T>
@@ -541,7 +541,7 @@ namespace TAK {
 
 			template <typename Func, typename ...Args>
 			inline FutureTask<TaskResultOfT<Func>>
-				Task_begin(SharedWorkerPtr &worker, Func func, Args &&...args) NOTHROWS {
+				Task_begin(const SharedWorkerPtr &worker, Func func, Args &&...args) NOTHROWS {
 
 				if (!worker) {
 					auto error = std::make_shared<AsyncResult<TaskResultOfT<Func>>>();

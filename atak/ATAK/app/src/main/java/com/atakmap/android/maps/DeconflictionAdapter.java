@@ -244,18 +244,7 @@ public class DeconflictionAdapter extends ArrayAdapter<MapItem> {
             shp = item;
 
         // Set icon
-        Drawable icon = shp.getIconDrawable();
-        if (icon != null) {
-            // Drawable icons (much more versatile)
-            holder.trackIcon.setImageDrawable(icon);
-            holder.trackIcon.setColorFilter(shp.getIconColor(),
-                    PorterDuff.Mode.MULTIPLY);
-        } else {
-            // Legacy icon handling
-            String iconUri = ATAKUtilities.getIconUri(shp);
-            ATAKUtilities.SetIcon(mContext, holder.trackIcon, iconUri,
-                    ATAKUtilities.getIconColor(shp));
-        }
+        ATAKUtilities.setIcon(holder.trackIcon, shp);
 
         holder.action.setOnClickListener(new OnClickListener() {
             @Override

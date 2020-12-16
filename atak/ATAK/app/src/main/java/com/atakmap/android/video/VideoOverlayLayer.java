@@ -20,7 +20,7 @@ public class VideoOverlayLayer extends AbstractLayer {
     private final GeoPoint lowerRight;
     private final GeoPoint lowerLeft;
 
-    private VideoMetadata vmd;
+    private final VideoMetadata vmd;
 
     private VideoFrameListener listener;
     private SurfaceTexture tex;

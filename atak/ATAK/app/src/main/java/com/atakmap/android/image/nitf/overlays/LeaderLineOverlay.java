@@ -24,7 +24,7 @@ public class LeaderLineOverlay extends FreeformOverlay {
     public static final String ID = "Leader Line";
 
     private String _label;
-    private RectF _labelBounds = new RectF();
+    private final RectF _labelBounds = new RectF();
     private boolean _boundsNeedUpdate = false;
 
     public LeaderLineOverlay(PolylineCommand line, List<Command> elements) {

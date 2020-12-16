@@ -5,6 +5,7 @@ import com.atakmap.interop.NativePeerManager;
 import com.atakmap.interop.Pointer;
 import com.atakmap.lang.ref.Cleaner;
 import com.atakmap.map.Interop;
+import com.atakmap.map.elevation.ElevationChunk;
 import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.model.Mesh;
@@ -37,7 +38,7 @@ public final class ElMgrTerrainRenderService extends TerrainRenderService {
     final ReadWriteLock rwlock = new ReadWriteLock();
     Object owner;
 
-    Map<Pointer, GLMapView.TerrainTile> lockedTiles = new HashMap<>();
+    Map<Pointer, TerrainTile> lockedTiles = new HashMap<>();
 
     ElMgrTerrainRenderService(long ctxptr) {
         this(create(ctxptr), null);
@@ -57,35 +58,46 @@ public final class ElMgrTerrainRenderService extends TerrainRenderService {
     }
 
     @Override
-    public int lock(GLMapView view, Collection<GLMapView.TerrainTile> tiles) {
+    public int lock(GLMapView view, Collection<TerrainTile> tiles) {
         this.rwlock.acquireRead();
         try {
             if(this.pointer.raw == 0L)
                 return -1;
             LinkedList<Pointer> tilePtrs = new LinkedList<>();
-            final int srcVersion = lock(this.pointer.raw, view.pointer.raw, tilePtrs);
+            final int srcVersion = lock(
+                    this.pointer.raw,
+                    (view != null) ? view.pointer.raw : 0L,
+                    tilePtrs);
             synchronized(lockedTiles) {
                 this.elevationStats.reset();
                 for(Pointer tilePtr : tilePtrs) {
-                    GLMapView.TerrainTile tile = lockedTiles.get(tilePtr);
+                    TerrainTile tile = lockedTiles.get(tilePtr);
                     if(tile == null) {
                         // interop
-                        tile = new GLMapView.TerrainTile();
-                        tile.aabb = new Envelope();
-                        TerrainTile_getAAbbWgs84(tilePtr.raw, tile.aabb);
-                        tile.skirtIndexOffset = TerrainTile_getSkirtIndexOffset(tilePtr.raw);
-                        tile.numIndices = TerrainTile_getNumIndices(tilePtr.raw);
-                        tile.model = ModelBuilder.build(Mesh_interop.create(TerrainTile_getMesh(tilePtr.raw)));
-                        tile.info = new ModelInfo();
-                        tile.info.srid = TerrainTile_getSrid(tilePtr.raw);
-                        tile.info.localFrame = TerrainTile_getLocalFrame(tilePtr.raw);
+                        tile = new TerrainTile(
+                            new ElevationChunk.Data(),
+                            TerrainTile_getNumIndices(tilePtr.raw),
+                            TerrainTile_getSkirtIndexOffset(tilePtr.raw),
+                            new Envelope(),
+                            TerrainTile_hasData(tilePtr.raw),
+                            TerrainTile_isHeightMap(tilePtr.raw),
+                            TerrainTile_getNumPostsX(tilePtr.raw),
+                            TerrainTile_getNumPostsY(tilePtr.raw),
+                            TerrainTile_isInvertYAxis(tilePtr.raw)
+                        );
+                        tile.data.value = Mesh_interop.create(TerrainTile_getMesh(tilePtr.raw));
+                        tile.data.srid = TerrainTile_getSrid(tilePtr.raw);
+                        tile.data.localFrame = TerrainTile_getLocalFrame(tilePtr.raw);
+                        tile.data.interpolated = true;
+
+                        TerrainTile_getAAbbWgs84(tilePtr.raw, tile.aabbWgs84);
 
                         lockedTiles.put(tilePtr, tile);
                     }
                     tiles.add(tile);
 
-                    this.elevationStats.observe(tile.aabb.minZ);
-                    this.elevationStats.observe(tile.aabb.maxZ);
+                    this.elevationStats.observe(tile.aabbWgs84.minZ);
+                    this.elevationStats.observe(tile.aabbWgs84.maxZ);
                 }
             }
 
@@ -109,17 +121,17 @@ public final class ElMgrTerrainRenderService extends TerrainRenderService {
     }
 
     @Override
-    public void unlock(Collection<GLMapView.TerrainTile> tiles) {
+    public void unlock(Collection<TerrainTile> tiles) {
         this.rwlock.acquireRead();
         try {
             int idx = 0;
             Pointer[] unlocked = new Pointer[tiles.size()];
             synchronized(lockedTiles) {
-                for(GLMapView.TerrainTile tile : tiles) {
-                    Iterator<Map.Entry<Pointer, GLMapView.TerrainTile>> it;
+                for(TerrainTile tile : tiles) {
+                    Iterator<Map.Entry<Pointer, TerrainTile>> it;
                     it = lockedTiles.entrySet().iterator();
                     while(it.hasNext()) {
-                        Map.Entry<Pointer, GLMapView.TerrainTile> entry = it.next();
+                        Map.Entry<Pointer, TerrainTile> entry = it.next();
                         if(entry.getValue() != tile)
                             continue;
                         unlocked[idx++] = entry.getKey();
@@ -167,4 +179,9 @@ public final class ElMgrTerrainRenderService extends TerrainRenderService {
     static native Matrix TerrainTile_getLocalFrame(long pointer);
     static native int TerrainTile_getSrid(long pointer);
     static native void TerrainTile_getAAbbWgs84(long pointer, Envelope aabb_wgs84);
+    static native boolean TerrainTile_hasData(long pointer);
+    static native boolean TerrainTile_isHeightMap(long pointer);
+    static native int TerrainTile_getNumPostsX(long pointer);
+    static native int TerrainTile_getNumPostsY(long pointer);
+    static native boolean TerrainTile_isInvertYAxis(long pointer);
 }

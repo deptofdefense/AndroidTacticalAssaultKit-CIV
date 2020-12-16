@@ -236,7 +236,7 @@ std::shared_ptr<Bitmap2> AsyncBitmapLoader2::decodeUriFn(void *opaque)
     DataInput2Ptr ctx(nullptr, nullptr);
     code = handler->second.handler->handleURI(ctx, uri->c_str());
     if (code != TE_Ok)
-        throw new std::runtime_error("failed to handle URI");
+        throw std::runtime_error("failed to handle URI");
 
     BitmapPtr b(nullptr, nullptr);
     code = BitmapFactory2_decode(b, *ctx, nullptr);
@@ -244,7 +244,7 @@ std::shared_ptr<Bitmap2> AsyncBitmapLoader2::decodeUriFn(void *opaque)
     ctx.reset();
 
     if (!success)
-        throw new std::runtime_error("failed to decode bitmap");
+        throw std::runtime_error("failed to decode bitmap");
 
     return std::shared_ptr<Bitmap2>(std::move(b));
 }

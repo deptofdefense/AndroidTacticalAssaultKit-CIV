@@ -477,47 +477,41 @@ public class BluetoothManager {
 
             Log.d(TAG, "no supported bluetooth devices are paired");
             if (adapter.startDiscovery()) {
-                if (context != null) {
-                    mapView.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(
-                                    context,
-                                    R.string.bt_classic_time,
-                                    Toast.LENGTH_LONG).show();
-                            Log.d(TAG,
-                                    "Starting scan for supported BT devices");
-                        }
-                    });
-                }
-            } else {
-                if (context != null) {
-                    mapView.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(context, R.string.bt_classic_error,
-                                    Toast.LENGTH_SHORT)
-                                    .show();
-                            Log.w(TAG, "Unable to start BT scan");
-                        }
-                    });
-                }
-            }
-
-        } else {
-            Log.d(TAG, "attempting connect to " + devices.size()
-                    + " bt devices");
-            if (context != null) {
                 mapView.post(new Runnable() {
                     @Override
                     public void run() {
                         Toast.makeText(
                                 context,
                                 R.string.bt_classic_time,
-                                Toast.LENGTH_SHORT).show();
+                                Toast.LENGTH_LONG).show();
+                        Log.d(TAG,
+                                "Starting scan for supported BT devices");
+                    }
+                });
+            } else {
+                mapView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(context, R.string.bt_classic_error,
+                                Toast.LENGTH_SHORT)
+                                .show();
+                        Log.w(TAG, "Unable to start BT scan");
                     }
                 });
             }
+
+        } else {
+            Log.d(TAG, "attempting connect to " + devices.size()
+                    + " bt devices");
+            mapView.post(new Runnable() {
+                @Override
+                public void run() {
+                    Toast.makeText(
+                            context,
+                            R.string.bt_classic_time,
+                            Toast.LENGTH_SHORT).show();
+                }
+            });
 
             for (final BluetoothDevice d : devices) {
                 try {
@@ -572,7 +566,6 @@ public class BluetoothManager {
 
     public void dispose() {
         unregisterReceivers();
-        context = null;
     }
 
     void registerReceiversAsNeeded() {

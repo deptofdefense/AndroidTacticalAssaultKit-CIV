@@ -78,8 +78,8 @@ public class GLInstancedMesh extends GLInstancedRenderable {
 
     private static Integer _programID;
 
-    private Mesh _subject;
-    private MaterialManager _matmgr;
+    private final Mesh _subject;
+    private final MaterialManager _matmgr;
 
     private int[] _posBuffer, _normalBuffer, _texBuffer;
     private GLMaterial[] _materials;

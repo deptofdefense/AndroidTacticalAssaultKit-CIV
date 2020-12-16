@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <inttypes.h>
 #include <string.h>
+#include <memory>
 
 using namespace atakmap::commoncommo;
 using namespace atakmap::commoncommo::impl;
@@ -21,7 +22,8 @@ namespace {
 }
 
 SimpleFileIOManager::SimpleFileIOManager(CommoLogger *logger,
-        SimpleFileIO *io) :
+        SimpleFileIO *io,
+        FileIOProviderTracker* factory) :
                 ThreadedHandler(2, THREAD_NAMES), logger(logger),
                 clientio(io),
                 nextId(0),
@@ -33,7 +35,8 @@ SimpleFileIOManager::SimpleFileIOManager(CommoLogger *logger,
                 statusUpdates(),
                 statusUpdatesMutex(),
                 statusUpdatesMonitor(),
-                curlMultiCtx(NULL)
+                curlMultiCtx(NULL),
+                providerTracker(factory)
 {
     curlMultiCtx = curl_multi_init();
 
@@ -378,7 +381,7 @@ void SimpleFileIOManager::ioThreadProcess()
 size_t SimpleFileIOManager::curlWriteCallback(char *buf, size_t size, size_t nmemb, void *userCtx)
 {
     IOContext *ioCtx = (IOContext *)userCtx;
-    size_t n = fwrite(buf, size, nmemb, ioCtx->localFile);
+    size_t n = ioCtx->provider->write(buf, size, nmemb, ioCtx->localFile);
 
     return n * size;
 }
@@ -387,7 +390,7 @@ size_t SimpleFileIOManager::curlWriteCallback(char *buf, size_t size, size_t nme
 size_t SimpleFileIOManager::curlReadCallback(char *buf, size_t size, size_t nmemb, void *userCtx)
 {
     IOContext *ioCtx = (IOContext *)userCtx;
-    size_t n = fread(buf, size, nmemb, ioCtx->localFile);
+    size_t n = ioCtx->provider->read(buf, size, nmemb, ioCtx->localFile);
 
     return n * size;
 }
@@ -640,20 +643,22 @@ atakmap::commoncommo::CommoResult SimpleFileIOManager::queueFileIO(
         PGSC::Thread::LockPtr lock(NULL, NULL);
         PGSC::Thread::Lock_create(lock, notRunningRequestsMutex);
 
+        auto provider(providerTracker->getCurrentProvider());
         IOContext *ctx = new IOContext(this, forUpload, nextId,
                                        remoteURL, localFileName,
                                        caCert, caCertLen, caCertPassword,
-                                       remoteUsername, remotePassword);
+                                       remoteUsername, remotePassword,
+                                       provider);
         InternalUtils::logprintf(logger, CommoLogger::LEVEL_INFO,
             "SimpleIO: Creating %s transfer transaction - id %d URL %s local file %s",
             ctx->isUpload ? "upload" : "download",
             ctx->id, ctx->remoteURL.c_str(), ctx->localFileName.c_str());
-        
+
         nextId++;
-        
+
         // Place transfer in non-run queue until caller starts transfer
         notRunningRequests[ctx->id] = ctx;
-        
+
         *xferId = ctx->id;
 
     } catch (CommoResult &e) {
@@ -696,7 +701,8 @@ SimpleFileIOManager::IOContext::IOContext(
                   const size_t caCertLen,
                   const char *caCertPassword,
                   const char *remoteUsername,
-                  const char *remotePassword) COMMO_THROW (CommoResult) :
+                  const char *remotePassword,
+                  std::shared_ptr<FileIOProvider>& provider) COMMO_THROW (CommoResult) :
                           owner(owner),
                           isUpload(isUpload),
                           id(id),
@@ -713,7 +719,8 @@ SimpleFileIOManager::IOContext::IOContext(
                           curlErrBuf(),
                           localFile(NULL),
                           localFileLen(0),
-                          bytesTransferred(0)
+                          bytesTransferred(0),
+                          provider(provider)
 {
     // Check URL and see if protocol is supported and if it is ssl based
     size_t n = this->remoteURL.find(':');
@@ -785,10 +792,10 @@ void SimpleFileIOManager::IOContext::openLocalFile() COMMO_THROW (IOStatusExcept
         // Get file size
         if (!getFileSize(&localFileLen, localFileName.c_str()))
             throw IOStatusException(FILEIO_LOCAL_FILE_OPEN_FAILURE, "Could not determine file size - check path and permissions");
-        
-        localFile = fopen(localFileName.c_str(), "rb");
+
+        localFile = provider->open(localFileName.c_str(), "rb");
     } else {
-        localFile = fopen(localFileName.c_str(), "wb");
+        localFile = provider->open(localFileName.c_str(), "wb");
     }
     if (!localFile)
         throw IOStatusException(FILEIO_LOCAL_FILE_OPEN_FAILURE, "Could not open file - check path and permissions");
@@ -797,7 +804,7 @@ void SimpleFileIOManager::IOContext::openLocalFile() COMMO_THROW (IOStatusExcept
 void SimpleFileIOManager::IOContext::closeLocalFile()
 {
     if (localFile != NULL) {
-        fclose(localFile);
+        provider->close(localFile);
         localFile = NULL;
     }
 }

@@ -17,6 +17,8 @@ namespace TAK {
                  * 1440 2-byte integer values. Each row corresponding to a latitude, with the first row
                  * corresponding to +90 degrees (90 North). The integer values must be in centimeters.
                  * <p/>   Heavily based on the Nasa World Wind file of the same name.
+                 *
+                 * @author Andrew Scally
                  */
                 class ENGINE_API EGM96
                 {

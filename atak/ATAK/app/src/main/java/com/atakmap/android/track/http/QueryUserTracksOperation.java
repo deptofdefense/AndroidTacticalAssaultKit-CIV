@@ -5,6 +5,7 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
@@ -18,7 +19,7 @@ import com.atakmap.comms.http.TakHttpClient;
 import com.atakmap.comms.http.TakHttpException;
 import com.atakmap.comms.http.TakHttpResponse;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.kml.FeatureHandler;
@@ -98,7 +99,7 @@ public final class QueryUserTracksOperation extends HTTPOperation {
                     .getSystemService(Context.NOTIFICATION_SERVICE);
 
             Notification.Builder builder;
-            if (android.os.Build.VERSION.SDK_INT < 26) {
+            if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                 builder = new Notification.Builder(context);
             } else {
                 builder = new Notification.Builder(context,
@@ -153,7 +154,7 @@ public final class QueryUserTracksOperation extends HTTPOperation {
                     tempFileName);
             Log.d(TAG,
                     "processing response into file: " + temp.getAbsolutePath());
-            FileOutputStream fos = FileIOProviderFactory.getOutputStream(temp);
+            FileOutputStream fos = IOProviderFactory.getOutputStream(temp);
 
             // stream in content, keep user notified on progress
             builder.setProgress(100, 1, false);
@@ -188,7 +189,7 @@ public final class QueryUserTracksOperation extends HTTPOperation {
                 throw new ConnectionException("Failed to download data");
             }
 
-            long downloadSize = FileIOProviderFactory.length(temp);
+            long downloadSize = IOProviderFactory.length(temp);
             Log.d(TAG, "Parsing downloaded file: " + temp.getAbsolutePath());
 
             // update notification

@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Concrete class representing a 2D or 3D polygon.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Dec 11, 2014
+////      Dec 11, 2014  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -96,7 +96,7 @@ class ENGINE_API Polygon
              const std::vector<LineString>& interiorRings);
 
     ~Polygon ()
-        throw ();
+        NOTHROWS;
 
     //
     // The compiler-generated copy constructor and assignment operator are
@@ -115,7 +115,7 @@ class ENGINE_API Polygon
 
     void
     clear ()
-        throw ()
+        NOTHROWS
       { rings.clear (); }
 
     LineString

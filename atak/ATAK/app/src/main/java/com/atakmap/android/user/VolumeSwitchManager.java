@@ -29,7 +29,7 @@ public class VolumeSwitchManager implements OnKeyListener {
     private boolean enabled = true;
 
     private VolumeSwitchAction vsa = null;
-    private LayerCycleVolumeAction lcva;
+    private final LayerCycleVolumeAction lcva;
 
     /**
      *  If the volume switch is actively being intercepted by ATAK, the following method will be

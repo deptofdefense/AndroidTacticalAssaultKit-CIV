@@ -30,7 +30,7 @@ public class MetricsApi {
 
     private static LocalBroadcastManager lbm;
 
-    private static List<BroadcastReceiver> registered = new ArrayList<>();
+    private static final List<BroadcastReceiver> registered = new ArrayList<>();
 
     /**
      * Must be called only once by the AtakBroadcast class. 

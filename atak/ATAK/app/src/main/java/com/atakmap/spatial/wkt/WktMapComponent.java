@@ -4,6 +4,8 @@ package com.atakmap.spatial.wkt;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+
+import com.atakmap.android.data.ClearContentRegistry;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.database.sqlite.SQLiteException;
 import android.net.Uri;
@@ -18,15 +20,16 @@ import com.atakmap.android.importexport.ExporterManager;
 import com.atakmap.android.importexport.Importer;
 import com.atakmap.android.importexport.ImporterManager;
 import com.atakmap.android.importexport.MarshalManager;
-import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.android.update.AppVersionUpgrade;
 import com.atakmap.app.DeveloperOptions;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
+import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
 import com.atakmap.map.layer.feature.FeatureDataSourceContentFactory;
 import com.atakmap.map.layer.feature.FeatureLayer;
@@ -56,13 +59,15 @@ import org.gdal.ogr.ogr;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import com.atakmap.coremap.locale.LocaleUtil;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class WktMapComponent extends AbstractMapComponent {
 
@@ -75,9 +80,17 @@ public class WktMapComponent extends AbstractMapComponent {
 
     private DataSourceFeatureDataStore spatialDb;
     private Set<FileDatabase> fileDatabases;
-    private Map<String, SpatialDbContentSource> contentSources;
+    private Map<String, ContentSource> contentSources;
     private FeatureLayer layer;
     private MapView mapView;
+    private BroadcastReceiver detailsDropdownReceiver;
+    /**
+     * Token indicating that previously installed providers were invalidated.
+     * On provider change, this flag should be set to <code>true</code>, then
+     * assigned a new <code>false</code> instance. Background tasks may take a
+     * local reference to track changes.
+     */
+    private AtomicBoolean providerInvalidatedToken = new AtomicBoolean(false);
 
     private void initComponents(Context context, MapView view) {
         FeatureDataSourceContentFactory
@@ -88,69 +101,13 @@ public class WktMapComponent extends AbstractMapComponent {
         // Initialize the Spatial DB
         Log.d(TAG, "Initializing SpatialDb");
 
-        if (DeveloperOptions.getIntOption("feature-metadata-enabled", 1) == 0) {
-            if (FileIOProviderFactory.exists(SPATIAL_DB_DIR))
-                FileSystemUtils.deleteDirectory(SPATIAL_DB_DIR, false);
+        ClearContentRegistry.getInstance().registerListener(dataMgmtReceiver);
 
-            if (DeveloperOptions.getIntOption("force-overlays-rebuild",
-                    0) == 1) {
-                FileSystemUtils.deleteFile(SPATIAL_DB_FILE);
-            }
+        refreshPersistedComponents(view);
 
-            this.spatialDb = new PersistentDataSourceFeatureDataStore(
-                    SPATIAL_DB_FILE);
-        } else {
-            if (FileIOProviderFactory.exists(SPATIAL_DB_FILE))
-                FileSystemUtils.deleteFile(SPATIAL_DB_FILE);
-
-            if (DeveloperOptions.getIntOption("force-overlays-rebuild", 0) == 1)
-                FileSystemUtils.deleteDirectory(SPATIAL_DB_DIR, true);
-
-            OgrFeatureDataSource.metadataEnabled = true;
-            this.spatialDb = new PersistentDataSourceFeatureDataStore2(
-                    SPATIAL_DB_DIR);
-        }
-        this.layer = new FeatureLayer("Spatial Database", this.spatialDb);
-
-        this.contentSources = new HashMap<>();
-
-        SpatialDbContentSource contentSource;
-
-        contentSource = new KmlFileSpatialDb(this.spatialDb);
-        contentSource.setContentResolver(new KmlContentResolver(view,
-                this.spatialDb));
-        this.contentSources.put(contentSource.getType(), contentSource);
-
-        contentSource = new ShapefileSpatialDb(this.spatialDb);
-        contentSource.setContentResolver(new ShapefileContentResolver(view,
-                this.spatialDb));
-        this.contentSources.put(contentSource.getType(), contentSource);
-
-        contentSource = new GpxFileSpatialDb(this.spatialDb);
-        contentSource.setContentResolver(new GpxContentResolver(view,
-                this.spatialDb));
-        this.contentSources.put(contentSource.getType(), contentSource);
-
-        FeatureDataStoreDeepMapItemQuery query = new FeatureDataStoreDeepMapItemQuery(
-                this.layer);
-        for (SpatialDbContentSource spatialDbContentSource : this.contentSources
-                .values()) {
-            contentSource = spatialDbContentSource;
-            FeatureDataStoreMapOverlay overlay = new FeatureDataStoreMapOverlay(
-                    context, spatialDb, contentSource.getType(),
-                    contentSource.getGroupName(), contentSource.getIconPath(),
-                    query,
-                    contentSource.getContentType(),
-                    contentSource.getFileMimeType());
-            mapView.getMapOverlayManager().addFilesOverlay(overlay);
-        }
-
-        this.fileDatabases = new HashSet<>();
-
+        // `dataMgmtReceiver` works off the current references, no persisted state
         DocumentedIntentFilter intentFilter = new DocumentedIntentFilter();
         intentFilter.addAction(DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION);
-        AtakBroadcast.getInstance().registerReceiver(dataMgmtReceiver,
-                intentFilter);
 
         //register Overlay Manager exporters
         ExporterManager.registerExporter(
@@ -165,14 +122,6 @@ public class WktMapComponent extends AbstractMapComponent {
                 GpxFileSpatialDb.GPX_CONTENT_TYPE.toUpperCase(LocaleUtil
                         .getCurrent()),
                 GpxFileSpatialDb.GPX_FILE_ICON_ID, GPXExportMarshal.class);
-
-        DocumentedIntentFilter i = new DocumentedIntentFilter();
-        i.addAction(FeaturesDetailsDropdownReceiver.SHOW_DETAILS,
-                "Show feature details");
-        i.addAction(FeaturesDetailsDropdownReceiver.TOGGLE_VISIBILITY,
-                "Toggle feature visibility");
-        this.registerReceiver(context,
-                new FeaturesDetailsDropdownReceiver(view, this.spatialDb), i);
     }
 
     @Override
@@ -187,87 +136,14 @@ public class WktMapComponent extends AbstractMapComponent {
 
         initComponents(appCtx, mapView);
 
-        // Spawn a new thread to initialize this component,
-        // so ATAK can continue to run in the background as
-        // we're doing the FS/KML/DB operations.
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    long s = SystemClock.elapsedRealtime();
-
-                    // see if the atak/overlays exists, and, if not, create it
-                    File overlaysDir = FileSystemUtils.getItem("overlays");
-                    if (!FileIOProviderFactory.exists(overlaysDir))
-                        if (!FileIOProviderFactory.mkdirs(overlaysDir)) {
-                            Log.e(TAG, "Failure to make directory " +
-                                    overlaysDir.getAbsolutePath());
-                        }
-
-                    // if any files were moved by AppVersionUpgrade, make the data
-                    // store do a refresh prior to the full scan to reduce the
-                    // number of changes in the transaction
-                    if (AppVersionUpgrade.OVERLAYS_MIGRATED) {
-                        spatialDb.beginBulkModification();
-                        try {
-                            spatialDb.refresh();
-                        } finally {
-                            spatialDb.endBulkModification(true);
-                        }
-                    }
-
-                    if (DeveloperOptions.getIntOption(
-                            "feature-metadata-enabled", 1) != 0)
-                        mapView.addLayer(MapView.RenderStack.VECTOR_OVERLAYS,
-                                0,
-                                layer);
-
-                    synchronized (WktMapComponent.this) {
-                        //TODO do we need a FileDatabaseImporter wrapper like WktImporter?
-
-                        FileDatabase db = new LptFileDatabase(appCtx, mapView);
-                        ImporterManager.registerImporter(db);
-                        fileDatabases.add(db);
-
-                        db = new DrwFileDatabase(appCtx, mapView);
-                        ImporterManager.registerImporter(db);
-                        fileDatabases.add(db);
-
-                        // TODO: add this back when GeoJson actually parses the files
-                        //db = new GeoJsonFileDatabase(appCtx, mapView);
-                        //ImporterManager.registerImporter(db);
-                    }
-
-                    fullScan();
-
-                    Log.d(TAG, "initialized: "
-                            + (SystemClock.elapsedRealtime() - s) + "ms");
-                } catch (NullPointerException e) {
-                    Log.e(TAG,
-                            "Initialization failed, application may have exited prior to completion",
-                            e);
-                }
-            }
-        }, "WktMapInitThread");
-        t.setPriority(Thread.NORM_PRIORITY);
-
-        for (SpatialDbContentSource source : this.contentSources.values()) {
-            // XXX - resolve type v. content type post 3.3
-            ImporterManager.registerImporter(new WktImporter(source.getType(),
-                    source));
-            ImporterManager.registerImporter(new WktImporter(source
-                    .getContentType(), source));
-        }
         MarshalManager.registerMarshal(ShapefileMarshal.INSTANCE);
-
-        t.start();
     }
 
     @Override
     protected void onDestroyImpl(Context context, MapView view) {
-
         if (dataMgmtReceiver != null) {
-            AtakBroadcast.getInstance().unregisterReceiver(dataMgmtReceiver);
+            ClearContentRegistry.getInstance()
+                    .unregisterListener(dataMgmtReceiver);
             dataMgmtReceiver = null;
         }
 
@@ -281,8 +157,13 @@ public class WktMapComponent extends AbstractMapComponent {
             fileDatabases.clear();
 
             if (contentSources != null) {
-                for (SpatialDbContentSource s : this.contentSources.values())
-                    s.dispose();
+                for (ContentSource entry : this.contentSources.values()) {
+                    // remove the overlay
+                    view.getMapOverlayManager()
+                            .removeFilesOverlay(entry.overlay);
+                    // dispose the source
+                    entry.impl.dispose();
+                }
                 contentSources.clear();
             }
         }
@@ -290,7 +171,211 @@ public class WktMapComponent extends AbstractMapComponent {
 
     /**************************************************************************/
 
-    private void fullScan() {
+    private synchronized void refreshPersistedComponents(MapView view) {
+        final Context context = view.getContext();
+
+        // reset the invalidation token (stops any on going scans)
+        providerInvalidatedToken.set(true);
+        providerInvalidatedToken = new AtomicBoolean(false);
+
+        int layerIdx = 0;
+
+        // unregister details dropdown receiver
+        if (this.detailsDropdownReceiver != null) {
+            this.unregisterReceiver(context, this.detailsDropdownReceiver);
+            ((FeaturesDetailsDropdownReceiver) this.detailsDropdownReceiver)
+                    .dispose();
+            this.detailsDropdownReceiver = null;
+        }
+        // remove feature layer
+        if (layer != null) {
+            List<Layer> layers = view
+                    .getLayers(MapView.RenderStack.VECTOR_OVERLAYS);
+            layerIdx = layers.indexOf(this.layer);
+            if (layerIdx < 0)
+                layerIdx = 0;
+            mapView.removeLayer(MapView.RenderStack.VECTOR_OVERLAYS, layer);
+        }
+        // close content sources
+        if (contentSources != null) {
+            for (ContentSource entry : this.contentSources.values()) {
+                // remove importers
+                ImporterManager.unregisterImporter(entry.typeImporter);
+                ImporterManager.unregisterImporter(entry.contentTypeImporter);
+                // remove the overlay
+                view.getMapOverlayManager().removeFilesOverlay(entry.overlay);
+                // dispose the source
+                entry.impl.dispose();
+            }
+            contentSources.clear();
+        }
+        // close spatial DB
+        if (this.spatialDb != null) {
+            this.spatialDb.dispose();
+        }
+        // close file databases
+        if (fileDatabases != null) {
+            for (FileDatabase db : fileDatabases) {
+                ImporterManager.unregisterImporter(db);
+                db.close();
+            }
+            fileDatabases.clear();
+        }
+
+        // see if the atak/overlays exists, and, if not, create it
+        File overlaysDir = FileSystemUtils.getItem("overlays");
+        if (!IOProviderFactory.exists(overlaysDir) &&
+                !IOProviderFactory.mkdirs(overlaysDir)) {
+
+            Log.e(TAG, "Failure to make directory "
+                    + overlaysDir.getAbsolutePath());
+        }
+        // open spatial DB
+        if (DeveloperOptions.getIntOption("feature-metadata-enabled", 1) == 0) {
+            if (IOProviderFactory.exists(SPATIAL_DB_DIR))
+                FileSystemUtils.deleteDirectory(SPATIAL_DB_DIR, false);
+
+            if (DeveloperOptions.getIntOption("force-overlays-rebuild",
+                    0) == 1) {
+                FileSystemUtils.deleteFile(SPATIAL_DB_FILE);
+            }
+
+            this.spatialDb = new PersistentDataSourceFeatureDataStore(
+                    SPATIAL_DB_FILE);
+        } else {
+            if (IOProviderFactory.exists(SPATIAL_DB_FILE))
+                FileSystemUtils.deleteFile(SPATIAL_DB_FILE);
+
+            if (DeveloperOptions.getIntOption("force-overlays-rebuild", 0) == 1)
+                FileSystemUtils.deleteDirectory(SPATIAL_DB_DIR, true);
+
+            OgrFeatureDataSource.metadataEnabled = true;
+            this.spatialDb = new PersistentDataSourceFeatureDataStore2(
+                    SPATIAL_DB_DIR);
+        }
+
+        this.layer = new FeatureLayer("Spatial Database", this.spatialDb);
+        // open content sources
+        if (this.contentSources == null)
+            this.contentSources = new HashMap<>();
+
+        FeatureDataStoreDeepMapItemQuery query = new FeatureDataStoreDeepMapItemQuery(
+                this.layer);
+
+        SpatialDbContentSource contentSource;
+
+        contentSource = new KmlFileSpatialDb(this.spatialDb);
+        contentSource.setContentResolver(new KmlContentResolver(view,
+                this.spatialDb));
+        this.contentSources.put(contentSource.getType(),
+                new ContentSource(context, contentSource, query));
+
+        contentSource = new ShapefileSpatialDb(this.spatialDb);
+        contentSource.setContentResolver(new ShapefileContentResolver(view,
+                this.spatialDb));
+        this.contentSources.put(contentSource.getType(),
+                new ContentSource(context, contentSource, query));
+
+        contentSource = new GpxFileSpatialDb(this.spatialDb);
+        contentSource.setContentResolver(new GpxContentResolver(view,
+                this.spatialDb));
+        this.contentSources.put(contentSource.getType(),
+                new ContentSource(context, contentSource, query));
+
+        // add the overlays
+        for (ContentSource entry : this.contentSources
+                .values()) {
+            mapView.getMapOverlayManager().addFilesOverlay(entry.overlay);
+        }
+
+        for (ContentSource source : this.contentSources.values()) {
+            ImporterManager.registerImporter(source.typeImporter);
+            ImporterManager.registerImporter(source.contentTypeImporter);
+        }
+        // XXX - open file DBs
+        if (this.fileDatabases == null)
+            this.fileDatabases = new HashSet<>();
+        // XXX - register details dropdown receiver
+        this.detailsDropdownReceiver = new FeaturesDetailsDropdownReceiver(view,
+                this.spatialDb);
+        DocumentedIntentFilter i = new DocumentedIntentFilter();
+        i.addAction(FeaturesDetailsDropdownReceiver.SHOW_DETAILS,
+                "Show feature details");
+        i.addAction(FeaturesDetailsDropdownReceiver.TOGGLE_VISIBILITY,
+                "Toggle feature visibility");
+        this.registerReceiver(context,
+                detailsDropdownReceiver, i);
+        // start background initialization
+        this.backgroundInit(this.spatialDb);
+    }
+
+    private void backgroundInit(final DataSourceFeatureDataStore fdb) {
+        final AtomicBoolean cancelToken = this.providerInvalidatedToken;
+
+        // Spawn a new thread to initialize this component,
+        // so ATAK can continue to run in the background as
+        // we're doing the FS/KML/DB operations.
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    long s = SystemClock.elapsedRealtime();
+
+                    // if any files were moved by AppVersionUpgrade, make the data
+                    // store do a refresh prior to the full scan to reduce the
+                    // number of changes in the transaction
+                    if (AppVersionUpgrade.OVERLAYS_MIGRATED) {
+                        fdb.beginBulkModification();
+                        try {
+                            fdb.refresh();
+                        } finally {
+                            fdb.endBulkModification(true);
+                        }
+                    }
+
+                    synchronized (WktMapComponent.this) {
+                        // check for provider change
+                        if (cancelToken.get())
+                            return;
+
+                        if (DeveloperOptions.getIntOption(
+                                "feature-metadata-enabled", 1) != 0)
+                            mapView.addLayer(
+                                    MapView.RenderStack.VECTOR_OVERLAYS,
+                                    0,
+                                    layer);
+                        //TODO do we need a FileDatabaseImporter wrapper like WktImporter?
+
+                        final Context appCtx = mapView.getContext();
+                        FileDatabase db = new LptFileDatabase(appCtx, mapView);
+                        ImporterManager.registerImporter(db);
+                        fileDatabases.add(db);
+
+                        db = new DrwFileDatabase(appCtx, mapView);
+                        ImporterManager.registerImporter(db);
+                        fileDatabases.add(db);
+
+                        // TODO: add this back when GeoJson actually parses the files
+                        //db = new GeoJsonFileDatabase(appCtx, mapView);
+                        //ImporterManager.registerImporter(db);
+                    }
+
+                    fullScan(cancelToken);
+
+                    Log.d(TAG, "initialized: "
+                            + (SystemClock.elapsedRealtime() - s) + "ms");
+                } catch (NullPointerException e) {
+                    Log.e(TAG,
+                            "Initialization failed, application may have exited prior to completion",
+                            e);
+                }
+            }
+        }, "WktMapInitThread");
+        t.setPriority(Thread.NORM_PRIORITY);
+        t.start();
+    }
+
+    private void fullScan(AtomicBoolean cancelToken) {
         synchronized (this) {
 
             try {
@@ -300,12 +385,28 @@ public class WktMapComponent extends AbstractMapComponent {
                     this.spatialDb.beginBulkModification();
                 boolean success = false;
                 try {
+                    // check if cancelled
+                    if (cancelToken.get())
+                        return;
+
                     // refresh the data store and drop all invalid entries
                     this.spatialDb.refresh();
 
-                    // Add existing content to the resolvers
-                    for (SpatialDbContentSource s : this.contentSources
+                    // check if cancelled
+                    if (cancelToken.get())
+                        return;
+
+                    Collection<SpatialDbContentSource> sources = new ArrayList<>(
+                            this.contentSources.size());
+                    for (ContentSource entry : this.contentSources
                             .values()) {
+                        sources.add(entry.impl);
+                    }
+
+                    // Add existing content to the resolvers
+                    for (SpatialDbContentSource s : sources) {
+                        if (cancelToken.get())
+                            return;
                         SpatialDbContentResolver res = s.getContentResolver();
                         if (res != null)
                             res.scan(s);
@@ -314,14 +415,18 @@ public class WktMapComponent extends AbstractMapComponent {
                     final String[] mountPoints = FileSystemUtils
                             .findMountPoints();
 
+                    if (cancelToken.get())
+                        return;
+
                     // single "Overlays" directory scan
                     File overlaysDir;
                     for (String mountPoint : mountPoints) {
                         overlaysDir = new File(mountPoint, "overlays");
                         OverlaysScanner.scan(this.spatialDb,
                                 overlaysDir,
-                                this.contentSources.values(),
-                                this.fileDatabases);
+                                sources,
+                                this.fileDatabases,
+                                cancelToken);
                     }
 
                     success = true;
@@ -408,16 +513,13 @@ public class WktMapComponent extends AbstractMapComponent {
         }
     }
 
-    private BroadcastReceiver dataMgmtReceiver = new BroadcastReceiver() {
-
+    ClearContentRegistry.ClearContentListener dataMgmtReceiver = new ClearContentRegistry.ClearContentListener() {
         @Override
-        public void onReceive(Context context, Intent intent) {
+        public void onClearContent(boolean clearmaps) {
             Log.d(TAG, "Deleting spatial data");
 
             //Clean up Spatial DBs
             final String[] mountPoints = FileSystemUtils.findMountPoints();
-            Iterator<SpatialDbContentSource> iter = contentSources.values()
-                    .iterator();
 
             // build out the list of all files in the features database
             Set<File> spatialDbFilesToDelete = new HashSet<>();
@@ -435,8 +537,8 @@ public class WktMapComponent extends AbstractMapComponent {
             }
 
             // clear out the feature DB, per content
-            while (iter.hasNext()) {
-                SpatialDbContentSource contentSource = iter.next();
+            for (ContentSource entry : contentSources.values()) {
+                SpatialDbContentSource contentSource = entry.impl;
                 // delete from DB
                 contentSource.deleteAll();
 
@@ -444,14 +546,15 @@ public class WktMapComponent extends AbstractMapComponent {
                 for (String mountPoint : mountPoints) {
                     File scanDir = new File(mountPoint,
                             contentSource.getFileDirectoryName());
-                    if (FileIOProviderFactory.exists(scanDir) && FileIOProviderFactory.isDirectory(scanDir))
+                    if (IOProviderFactory.exists(scanDir)
+                            && IOProviderFactory.isDirectory(scanDir))
                         FileSystemUtils.deleteDirectory(scanDir, true);
                 }
             }
 
             // delete any remaining files that may have been externally imported
             for (File overlayFile : spatialDbFilesToDelete)
-                if (FileIOProviderFactory.exists(overlayFile))
+                if (IOProviderFactory.exists(overlayFile))
                     FileSystemUtils.deleteFile(overlayFile);
 
             //Clean up File Databases
@@ -478,10 +581,36 @@ public class WktMapComponent extends AbstractMapComponent {
                 for (String mountPoint : mountPoints) {
                     File scanDir = new File(mountPoint, fileDatabase
                             .getFileDirectory().getName());
-                    if (FileIOProviderFactory.exists(scanDir) && FileIOProviderFactory.isDirectory(scanDir))
+                    if (IOProviderFactory.exists(scanDir)
+                            && IOProviderFactory.isDirectory(scanDir))
                         FileSystemUtils.deleteDirectory(scanDir, true);
                 }
             }
         }
     };
+
+    private final class ContentSource {
+        final SpatialDbContentSource impl;
+        final MapOverlay overlay;
+        final Importer typeImporter;
+        final Importer contentTypeImporter;
+
+        ContentSource(Context context, SpatialDbContentSource src,
+                FeatureDataStoreDeepMapItemQuery query) {
+            this.impl = src;
+
+            this.overlay = new FeatureDataStoreMapOverlay(
+                    context, this.impl.getDatabase(), this.impl.getType(),
+                    this.impl.getGroupName(), this.impl.getIconPath(),
+                    query,
+                    this.impl.getContentType(),
+                    this.impl.getFileMimeType());
+
+            // XXX - resolve type v. content type post 3.3
+            this.typeImporter = new WktImporter(impl.getType(), impl);
+            this.contentTypeImporter = new WktImporter(impl.getContentType(),
+                    impl);
+
+        }
+    }
 }

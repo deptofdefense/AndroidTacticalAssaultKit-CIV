@@ -44,5 +44,7 @@
 
     <dimen name="button_small">32dp</dimen>
 
+    <dimen name="top_bar_button_padding">5dp</dimen>
+
 </resources>
 

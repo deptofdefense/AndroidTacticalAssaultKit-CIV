@@ -21,17 +21,20 @@ import com.atakmap.map.layer.opengl.GLLayer2;
 import com.atakmap.map.layer.opengl.GLLayerFactory;
 import com.atakmap.map.layer.opengl.GLLayerSpi2;
 
-public class GeopackageMapComponent
-        extends AbstractMapComponent {
+public class GeopackageMapComponent extends AbstractMapComponent {
 
     public static final String TAG = "GeopackageMapComponent";
     private GeoPackageImporter packageImporter;
+    private MapView mapView;
 
     @Override
     public void onCreate(Context context,
             Intent intent,
             MapView view) {
 
+        this.mapView = view;
+
+        // register the layer renderer
         GLLayerFactory.register(new GLLayerSpi2() {
             @Override
             public GLLayer2 create(Pair<MapRenderer, Layer> arg) {
@@ -43,7 +46,6 @@ public class GeopackageMapComponent
                 FeatureDataStore dataStore = layer.getDataStore();
                 if (!(dataStore instanceof GeoPackageFeatureDataStore))
                     return null;
-
                 return new GLBatchGeometryFeatureDataStoreRenderer(
                         arg.first, layer);
             }
@@ -54,24 +56,15 @@ public class GeopackageMapComponent
             }
         });
 
+        // importer framework registration
         ImportExportMapComponent.getInstance()
                 .addImporterClass(GeoPackageImporter.getImportResolver());
-
-        packageImporter = new GeoPackageImporter(view, "Geopackage",
-                "resource://" + R.drawable.gpkg);
-
-        //
-        // Load prior imports and any available overlays.  Register for imports.
-        //
-        packageImporter.loadImports();
-        packageImporter.loadOverlays(FileSystemUtils.getItems("overlays"));
-        ImporterManager.registerImporter(packageImporter);
+        initDb();
     }
 
     @Override
     protected void onDestroyImpl(Context context,
             MapView view) {
-
         if (packageImporter != null) {
             ImporterManager.unregisterImporter(packageImporter);
             packageImporter.dispose();
@@ -98,4 +91,23 @@ public class GeopackageMapComponent
     public void onResume(Context context,
             MapView view) {
     }
+
+    private void initDb() {
+        // flush any stored content/state
+        if (packageImporter != null) {
+            ImporterManager.unregisterImporter(packageImporter);
+            packageImporter.dispose();
+            packageImporter = null;
+        }
+
+        //
+        // Load prior imports and any available overlays.  Register for imports.
+        //
+        packageImporter = new GeoPackageImporter(this.mapView, "Geopackage",
+                "resource://" + R.drawable.gpkg);
+        packageImporter.loadImports();
+        packageImporter.loadOverlays(FileSystemUtils.getItems("overlays"));
+        ImporterManager.registerImporter(packageImporter);
+    }
+
 }

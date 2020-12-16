@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" >
+
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp" >
+
+        <TextView
+            android:id="@+id/radio_title"
+            style="@style/RadioTitle"
+            android:text="Generic Radio" />
+
+        <TextView
+            android:id="@+id/radio_subtitle"
+            style="@style/RadioSubTitle"
+            android:layout_below="@+id/radio_title"
+            android:text="version number"
+            android:visibility="visible" />
+
+        <TextView
+            android:id="@+id/radio_state"
+            style="@style/RadioState"
+            android:layout_below="@+id/radio_subtitle"
+            android:text="status of the radio"
+            android:visibility="visible" />
+
+        <ImageButton
+            android:id="@+id/fakeArrow"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentEnd="true"
+            android:background="#00000000"
+            android:src="@drawable/arrowright"
+            android:visibility="invisible"  />
+
+
+        <ImageButton
+            android:id="@+id/radio_info"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:layout_centerVertical="true"
+            android:layout_toStartOf="@id/fakeArrow"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/radio_icon" />
+
+
+        <ImageButton
+            android:id="@+id/node_info"
+            style="@style/darkButton"
+            android:padding="6dp"
+            android:layout_centerVertical="true"
+            android:layout_toStartOf="@id/radio_info"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/node_icon" />
+
+    </RelativeLayout>
+
+</LinearLayout>

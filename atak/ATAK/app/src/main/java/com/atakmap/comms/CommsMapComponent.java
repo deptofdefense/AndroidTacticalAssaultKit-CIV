@@ -12,7 +12,7 @@ import java.io.ByteArrayOutputStream;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.net.CertificateManager;
 
@@ -39,6 +39,8 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.MissionPackagePreferenceListener;
 import com.atakmap.android.missionpackage.MissionPackageReceiver;
 import com.atakmap.android.missionpackage.http.MissionPackageDownloader;
+
+import com.atakmap.android.http.rest.ServerVersion;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.comms.app.CotPortListActivity.CotPort;
 import com.atakmap.comms.missionpackage.MPReceiveInitiator;
@@ -77,7 +79,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
 
     private static CommsMapComponent _instance;
 
-    private int SCAN_WAIT = 45 * 1000; // 45 seconds
+    private final int SCAN_WAIT = 45 * 1000; // 45 seconds
 
     /**
      *  Status of an import, either one of
@@ -251,6 +253,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
     private Thread scannerThread;
     private boolean rescan = true;
     private boolean pppIncluded = false;
+    private OutboundLogger outboundLogger;
 
     private volatile boolean nonStreamsEnabled;
     private volatile boolean filesharingEnabled;
@@ -331,7 +334,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
                     "initialized the common communication layer native libraries");
         }
 
-        loggers.add(new OutboundLogger(context));
+        this.outboundLogger = new OutboundLogger(context);
+        loggers.add(this.outboundLogger);
         try {
             Log.d(TAG,
                     "acquire the multicast lock so the wifi does not deep sleep");
@@ -420,6 +424,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
                     commo.setMissionPackageTransferTimeout(xferTimeout);
                     commo.setMissionPackageHttpsPort(SslNetCotPort
                             .getServerApiPort(SslNetCotPort.Type.SECURE));
+                    commo.setMissionPackageHttpPort(SslNetCotPort
+                            .getServerApiPort(SslNetCotPort.Type.UNSECURE));
                 } catch (CommoException ex) {
                     // if these fail, ignore error - not fatal
                     Log.e(TAG,
@@ -502,12 +508,33 @@ public class CommsMapComponent extends AbstractMapComponent implements
         AtakBroadcast.getInstance().registerSystemReceiver(rescanReceiver,
                 new DocumentedIntentFilter(
                         NetworkDeviceManager.CONFIG_ALTERED));
-
+        commo.registerFileIOProvider(new com.atakmap.comms.FileIOProvider());
         _instance = this;
         cotService = new CotService(context);
 
         // TAK server singleton for developer convenience
         this.takServerListener = new TAKServerListener(view);
+
+    }
+
+    /**
+     * Registers a FileIOProvider with Commo
+     * @param provider The provider to register
+     */
+    public void registerFileIOProvider(FileIOProvider provider) {
+        if (commo != null) {
+            commo.registerFileIOProvider(provider);
+        }
+    }
+
+    /**
+     * Unregisters a FileIOProvider from Commo
+     * @param provider The provider to unregister
+     */
+    public void unregisterFileIOProvider(FileIOProvider provider) {
+        if (commo != null) {
+            commo.unregisterFileIOProvider(provider);
+        }
     }
 
     /**
@@ -596,6 +623,10 @@ public class CommsMapComponent extends AbstractMapComponent implements
                 case CotMapComponent.PREF_API_SECURE_PORT:
                     commo.setMissionPackageHttpsPort(SslNetCotPort
                             .getServerApiPort(SslNetCotPort.Type.SECURE));
+                    break;
+                case CotMapComponent.PREF_API_UNSECURE_PORT:
+                    commo.setMissionPackageHttpPort(SslNetCotPort
+                            .getServerApiPort(SslNetCotPort.Type.UNSECURE));
                     break;
                 case "networkMeshKey":
                     String meshKey = prefs.getString(key, null);
@@ -823,7 +854,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
 
             recreateAllIns();
             recreateAllOuts();
-            mpio.reconfigLocalWebServer();
+            mpio.reconfigLocalWebServer(httpsCertFile);
         }
     }
 
@@ -865,7 +896,6 @@ public class CommsMapComponent extends AbstractMapComponent implements
     @Override
     public void onDestroyImpl(Context context, MapView view) {
         rescan = false;
-
         if (multicastLock != null)
             multicastLock.release();
 
@@ -1444,7 +1474,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
         String oldStreamId = null;
         String errReason = null;
 
-        Integer notifyId = null;
+        Integer notifyId;
         synchronized (streamPorts) {
             notifyId = streamNotificationIds.get(uniqueKey);
             if (notifyId == null) {
@@ -1467,7 +1497,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
             }
 
             if (isNowEnabled && !missingParams) {
-                StreamingNetInterface netIface = null;
+                StreamingNetInterface netIface;
                 CoTMessageType[] types = new CoTMessageType[] {
                         CoTMessageType.CHAT,
                         CoTMessageType.SITUATIONAL_AWARENESS
@@ -1578,7 +1608,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
                 try {
                     logger.logSend(e, endpoint);
                 } catch (Exception err) {
-                    Log.e(TAG, "error occured with a logger", err);
+                    Log.e(TAG, "error occurred with a logger", err);
                 }
             }
 
@@ -1631,7 +1661,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
                     try {
                         logger.logSend(e, "broadcast");
                     } catch (Exception err) {
-                        Log.e(TAG, "error occured with a logger", err);
+                        Log.e(TAG, "error occurred with a logger", err);
                     }
                 }
 
@@ -1662,7 +1692,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
                     try {
                         logger.logSend(e, toUIDs);
                     } catch (Exception err) {
-                        Log.e(TAG, "error occured with a logger", err);
+                        Log.e(TAG, "error occurred with a logger", err);
                     }
                 }
 
@@ -1722,7 +1752,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
                 try {
                     logger.logSend(e, "mission " + mission);
                 } catch (Exception err) {
-                    Log.e(TAG, "error occured with a logger", err);
+                    Log.e(TAG, "error occurred with a logger", err);
                 }
             }
 
@@ -1769,7 +1799,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
                 try {
                     logger.logSend(e, CotService.SERVER_ONLY_CONTACT);
                 } catch (Exception err) {
-                    Log.e(TAG, "error occured with a logger", err);
+                    Log.e(TAG, "error occurred with a logger", err);
                 }
             }
 
@@ -1842,7 +1872,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
                         : null;
                 logger.logReceive(cotEvent, rxEndpointId, appsStreamEndpoint);
             } catch (Exception err) {
-                Log.e(TAG, "error occured with a logger", err);
+                Log.e(TAG, "error occurred with a logger", err);
             }
         }
 
@@ -2121,7 +2151,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
         port.setErrorString(errMsg);
     }
 
-    public void setServerVersion(String connectString, String version) {
+    public void setServerVersion(String connectString, ServerVersion version) {
         CotPort port;
         synchronized (streamPorts) {
             port = streamPorts.get(connectString);
@@ -2219,7 +2249,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
         }
     }
 
-    private BroadcastReceiver rescanReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver rescanReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             triggerIfaceRescan();
@@ -2327,24 +2357,22 @@ public class CommsMapComponent extends AbstractMapComponent implements
         }
 
         public boolean reconfigFileSharing() {
-
             if (commo == null)
                 return false;
 
-
-            boolean ret = reconfigLocalWebServer();
+            boolean ret = reconfigLocalWebServer(httpsCertFile);
             // Now make MPs via server match
             commo.setMissionPackageViaServerEnabled(ret);
             return ret;
         }
 
         private byte[] getHttpsServerCert() throws CommoException {
-            if (FileIOProviderFactory.exists(httpsCertFile)) {
+            if (IOProviderFactory.exists(httpsCertFile)) {
                 FileInputStream fis = null;
                 try {
                     Log.d(TAG, "HttpsCert examining existing cert file");
                     KeyStore p12 = KeyStore.getInstance("pkcs12");
-                    fis = FileIOProviderFactory.getInputStream(httpsCertFile);
+                    fis = IOProviderFactory.getInputStream(httpsCertFile);
                     p12.load(fis, "atakatak".toCharArray());
                     Enumeration<String> aliases = p12.aliases();
                     int n = 0;
@@ -2367,8 +2395,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
                     fis.close();
                     Log.d(TAG,
                             "HttpsCert existing file looks valid, re-using it");
-                    fis = FileIOProviderFactory.getInputStream(httpsCertFile);
-                    long len = FileIOProviderFactory.length(httpsCertFile);
+                    fis = IOProviderFactory.getInputStream(httpsCertFile);
+                    long len = IOProviderFactory.length(httpsCertFile);
                     if (len > Integer.MAX_VALUE)
                         throw new IllegalArgumentException(
                                 "Existing cert is way too large!");
@@ -2395,10 +2423,14 @@ public class CommsMapComponent extends AbstractMapComponent implements
                 }
             }
 
+            if (!IOProviderFactory.exists(httpsCertFile.getParentFile()))
+                IOProviderFactory.mkdirs(httpsCertFile.getParentFile());
+
             // Generate new cert
             byte[] cert = commo.generateSelfSignedCert("atakatak");
             try {
-                FileOutputStream fos = FileIOProviderFactory.getOutputStream(httpsCertFile);
+                FileOutputStream fos = IOProviderFactory
+                        .getOutputStream(httpsCertFile);
                 fos.write(cert);
                 fos.close();
                 Log.d(TAG, "HttpsCert new cert stored for later use");
@@ -2409,7 +2441,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
 
         }
 
-        private boolean reconfigLocalWebServer() {
+        private boolean reconfigLocalWebServer(File certFile) {
             if (filesharingEnabled) {
                 if (!nonStreamsEnabled) {
                     // Disable the local web server but return true anyway
@@ -2446,8 +2478,9 @@ public class CommsMapComponent extends AbstractMapComponent implements
                             + " port may already be in use or certs are invalid.  Local https server is disabled.",
                             ex);
                     // Delete the https certificate in case it was invalid
-                    if (!FileSystemUtils.deleteFile(httpsCertFile)) {
-                        Log.e(TAG, "could not delete certificate file: " + httpsCertFile);
+                    if (!FileSystemUtils.deleteFile(certFile)) {
+                        Log.e(TAG, "could not delete certificate file: "
+                                + certFile);
                     }
                     // Not considering this fatal error for now - it will be in the future
                 }
@@ -2547,7 +2580,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
         public void missionPackageSendStatusUpdate(
                 MissionPackageSendStatusUpdate statusUpdate) {
             // One of the transfers had some status change
-            MPTransferInfo info = null;
+            MPTransferInfo info;
             MPSendListener.UploadStatus uploadStatus = null;
             boolean sendComplete = false;
             boolean success = false;
@@ -2814,4 +2847,13 @@ public class CommsMapComponent extends AbstractMapComponent implements
         }
     }
 
+    public void setMissionPackageHttpPort(int missionPackageHttpPort) {
+        try {
+            commo.setMissionPackageHttpPort(missionPackageHttpPort);
+        } catch (CommoException e) {
+            Log.e(TAG,
+                    "setMissionPackageHttpPort failed!",
+                    e);
+        }
+    }
 }

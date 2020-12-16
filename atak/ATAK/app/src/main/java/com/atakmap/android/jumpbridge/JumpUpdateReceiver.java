@@ -15,7 +15,7 @@ import com.atakmap.android.maps.Marker;
  */
 public abstract class JumpUpdateReceiver {
 
-    private List<Pair<FieldOptions, Unit>> configMap = new ArrayList<>();
+    private final List<Pair<FieldOptions, Unit>> configMap = new ArrayList<>();
 
     /**
      * Add a field to listen for updates to.

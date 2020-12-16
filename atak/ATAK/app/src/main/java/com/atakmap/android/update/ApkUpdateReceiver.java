@@ -157,7 +157,8 @@ public class ApkUpdateReceiver extends BroadcastReceiver {
 
                     Drawable icon = AppMgmtUtils.getAppDrawable(context, pkg);
                     if (icon != null)
-                        dialog.setIcon(AppMgmtUtils.getDialogIcon(context, icon));
+                        dialog.setIcon(
+                                AppMgmtUtils.getDialogIcon(context, icon));
                     else
                         dialog.setIcon(R.drawable.ic_menu_plugins);
                     dialog.setCancelable(false);

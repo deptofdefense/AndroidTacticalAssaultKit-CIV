@@ -3,11 +3,11 @@ package com.atakmap.android.importfiles.sort;
 
 import android.content.Context;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.raster.ImageryFileType;
-import com.atakmap.map.layer.raster.ImageryFileType.AbstractFileType;
 
 import java.io.File;
 import java.util.Set;
@@ -15,8 +15,10 @@ import java.util.Set;
 /**
  * Sorts ATAK "Native" Imagery. Note legacy Tilesets are handled via <code>ImportTilesetSort</code>
  * 
- * 
+ * @deprecated Dead code, replaced by {@link ImportLayersSort}
  */
+@Deprecated
+@DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
 public class ImportImagerySort extends ImportInternalSDResolver {
 
     private static final String TAG = "ImportImagerySort";
@@ -39,7 +41,8 @@ public class ImportImagerySort extends ImportInternalSDResolver {
     public boolean match(File file) {
 
         try {
-            AbstractFileType fileType = ImageryFileType.getFileType(file);
+            ImageryFileType.AbstractFileType fileType = ImageryFileType
+                    .getFileType(file);
             if (fileType == null)
                 return false;
 
@@ -79,7 +82,8 @@ public class ImportImagerySort extends ImportInternalSDResolver {
     public File getDestinationPath(File file) {
         // Note this get called multiple times per file... if any speed concerns
         // arise on running through all the AbstractFileType matchers, then fix here
-        AbstractFileType fileType = ImageryFileType.getFileType(file);
+        ImageryFileType.AbstractFileType fileType = ImageryFileType
+                .getFileType(file);
         if (fileType == null) {
             Log.d(TAG,
                     "Unable to determine Imagery type for "

@@ -2,8 +2,6 @@
 package com.atakmap.android.icons;
 
 import android.content.Context;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -15,6 +13,8 @@ import com.atakmap.android.user.icon.Icon2525bPallet;
 import com.atakmap.android.user.icon.SpotMapPallet;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.database.CursorIface;
+import com.atakmap.database.DatabaseIface;
 
 import org.simpleframework.xml.Attribute;
 
@@ -290,7 +290,7 @@ public class UserIcon {
         return (fileName + id).hashCode();
     }
 
-    static UserIcon fromCursor(Cursor cursor, boolean bBitMap) {
+    static UserIcon fromCursor(CursorIface cursor, boolean bBitMap) {
         Bitmap bitMap = null;
         if (bBitMap) {
             bitMap = UserIcon.decodeBitMap(cursor.getBlob(cursor
@@ -497,7 +497,7 @@ public class UserIcon {
         if (queryUri != null) {
             try {
                 u = Uri.parse(queryUri);
-            } catch (Throwable uriIsBad) {
+            } catch (Throwable ignored) {
             }
         }
         if (u == null) {
@@ -534,16 +534,16 @@ public class UserIcon {
             return null;
         }
 
-        SQLiteDatabase database = UserIconDatabase.instance(context)
+        DatabaseIface database = UserIconDatabase.instance(context)
                 .getReadableDatabase();
         if (database == null) {
             Log.w(TAG, "Failed to obtain database" + query);
             return null;
         }
 
-        Cursor result = null;
+        CursorIface result = null;
         try {
-            result = database.rawQuery(query, null);
+            result = database.query(query, null);
             if (result.moveToNext()) {
                 return result.getBlob(0);
             }

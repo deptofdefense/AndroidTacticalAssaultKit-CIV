@@ -2,13 +2,15 @@
 package com.atakmap.android.update;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 
-import java.io.IOException;
 import com.atakmap.android.bluetooth.BluetoothDevicesConfig;
 import com.atakmap.android.data.DataMgmtReceiver;
 import com.atakmap.android.favorites.FavoriteListAdapter;
@@ -20,9 +22,11 @@ import com.atakmap.app.R;
 import com.atakmap.app.BuildConfig;
 import com.atakmap.app.preferences.GeocoderPreferenceFragment;
 import com.atakmap.app.preferences.PreferenceControl;
+import com.atakmap.app.system.FlavorProvider;
+import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.comms.SslNetCotPort;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
@@ -55,59 +59,56 @@ public class AppVersionUpgrade {
         final boolean redeploy = !version.equals(BuildConfig.REDEPLOY_VERSION);
         Log.d(TAG, "force redeploying the documentation: " + redeploy);
 
-        FileSystemUtils.copyFromAssetsToStorageFile(
-                context.getApplicationContext(),
-                "support/docs/ATAK_User_Guide.pdf",
+        File userGuideFile = new File(FileSystemUtils.getRoot(),
                 FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar + "docs"
-                        + File.separatorChar + "ATAK_User_Guide.pdf",
-                redeploy);
-
-        FileSystemUtils.copyFromAssetsToStorageFile(
-                context.getApplicationContext(),
-                "support/docs/ATAK_Change_Log.pdf",
-                FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar + "docs"
-                        + File.separatorChar + "ATAK_Change_Log.pdf",
-                redeploy);
+                        + File.separatorChar + "ATAK_User_Guide.pdf");
+        if (!userGuideFile.exists() || redeploy) {
+            userGuideFile.getParentFile().mkdirs();
+            try (FileOutputStream pdfStream = new FileOutputStream(
+                    userGuideFile)) {
+                FileSystemUtils.copyFromAssets(
+                        context.getApplicationContext(),
+                        "support/docs/ATAK_User_Guide.pdf",
+                        pdfStream);
+            } catch (IOException e) {
+                Log.d(TAG, "could not copy ATAK_User_Guide.pdf to "
+                        + userGuideFile.getAbsolutePath(), e);
+            }
+        }
 
         // for internation builds these files will be empty
         File docFile = FileSystemUtils.getItem(
                 FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar + "docs"
                         + File.separatorChar + "ATAK_User_Guide.pdf");
-        if (FileIOProviderFactory.length(docFile) == 0)
-            if (!FileIOProviderFactory.delete(docFile))
+        if (docFile.length() == 0)
+            if (docFile.delete())
                 Log.d(TAG, "could not delete the empty document file");
 
         docFile = FileSystemUtils.getItem(
                 FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar + "docs"
                         + File.separatorChar + "ATAK_Change_Log.pdf");
-        if (FileIOProviderFactory.length(docFile) == 0)
-            if (!FileIOProviderFactory.delete(docFile))
+        if (docFile.length() == 0)
+            if (docFile.delete())
                 Log.d(TAG, "unable to delete empty document file");
 
         try {
             File f = FileSystemUtils.getItem("support/support.inf");
-            String s = FileSystemUtils.copyStreamToString(f);
+            String s = FileSystemUtils.copyStreamToString(
+                    new FileInputStream(f),
+                    true,
+                    FileSystemUtils.UTF8_CHARSET);
             if (s.contains("atakmap.com")) {
                 Log.d(TAG, "removing outdated support.inf file");
-                if (!FileIOProviderFactory.delete(f))
+                if (f.delete())
                     Log.d(TAG, "unable to delete outdated support.inf file");
             }
 
         } catch (java.io.IOException ignored) {
         }
 
-        if (FileSystemUtils.assetExists(context.getApplicationContext(),
-                "support/docs/ATAK_NGA_PFI_Validation_MFR.pdf")) {
-
-            FileSystemUtils.copyFromAssetsToStorageFile(
-                    context.getApplicationContext(),
-                    "support/docs/ATAK_NGA_PFI_Validation_MFR.pdf",
-                    FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar
-                            + "docs"
-                            + File.separatorChar
-                            + "ATAK_NGA_PFI_Validation_MFR.pdf",
-                    false);
-        }
+        FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+        if (fp != null)
+            fp.deployDocumentation();
 
         if (!prefs.getBoolean("wms_deployed", false) || redeploy) {
             // make sure the WMS sources actually are redeployed
@@ -138,22 +139,17 @@ public class AppVersionUpgrade {
                     "NRL-NAIP-(CONUS).xml");
             _copyWMSSource(context.getApplicationContext(), prefs,
                     "NRL-OpenStreetMap.xml");
-            if (FileSystemUtils.assetExists(context.getApplicationContext(),
-                    "wms/DigitalGlobe-NGA_MostAesthetic.xmle")) {
-                _copyWMSSource(context.getApplicationContext(), prefs,
-                        "DigitalGlobe-NGA_MostAesthetic.xmle");
-            }
-            if (FileSystemUtils.assetExists(context.getApplicationContext(),
-                    "wms/DigitalGlobe-NGA_MostCurrent.xmle")) {
-                _copyWMSSource(context.getApplicationContext(), prefs,
-                        "DigitalGlobe-NGA_MostCurrent.xmle");
-            }
 
-            if (FileSystemUtils.assetExists(context.getApplicationContext(),
-                    "wms/DigitalGlobe-NGA_LeastClouds.xmle")) {
-                _copyWMSSource(context.getApplicationContext(), prefs,
-                        "DigitalGlobe-NGA_LeastClouds.xmle");
-            }
+            if (fp != null)
+                fp.deployWMSPointers();
+
+            // ATAK-14138 - Default to OpenStreetMap
+            SharedPreferences.Editor e = prefs.edit();
+            e.putString("lastViewedLayer.active", "Mobile");
+            e.putString("MobileLayerSelectionAdapter.selected",
+                    "NRL-OpenStreetMap");
+            e.apply();
+
             prefs.edit().putBoolean("wms_deployed", true).apply();
         }
 
@@ -317,13 +313,15 @@ public class AppVersionUpgrade {
         }
 
         File dir = FileSystemUtils.getItem(AppMgmtUtils.APK_DIR);
-        if (FileIOProviderFactory.exists(dir) && FileIOProviderFactory.isDirectory(dir)) {
-            File[] list = FileIOProviderFactory.listFiles(dir, AppMgmtUtils.APK_FilenameFilter);  
+        if (IOProviderFactory.exists(dir)
+                && IOProviderFactory.isDirectory(dir)) {
+            File[] list = IOProviderFactory.listFiles(dir,
+                    AppMgmtUtils.APK_FilenameFilter);
             if (list != null) {
                 File destDir = FileSystemUtils
                         .getItem(
                                 BundledProductProvider.LOCAL_BUNDLED_REPO_PATH);
-                if (!FileIOProviderFactory.mkdirs(destDir)) {
+                if (!IOProviderFactory.mkdirs(destDir)) {
                     Log.d(TAG, "could not make: " + destDir);
                 }
                 for (File aList : list) {
@@ -338,19 +336,14 @@ public class AppVersionUpgrade {
 
             // write .nomedia file so these icons don't show up in the gallery
             File nomedia = new File(dir, ".nomedia");
-            if (!FileIOProviderFactory.exists(nomedia))
-                try {
-                    nomedia.createNewFile();
-                } catch (IOException ioe) {
-                    Log.e(TAG, "error creating .nomedia file", ioe);
-                }
+            IOProviderFactory.createNewFile(nomedia);
 
         }
 
         //In support of refactoring done in ATAK 3.8
         File geofences = FileSystemUtils.getItem(
                 "Databases" + File.separatorChar + "geofence.sqlite");
-        if (FileIOProviderFactory.exists(geofences)) {
+        if (IOProviderFactory.exists(geofences)) {
             //TODO import existing geofences under new method
             FileSystemUtils.deleteFile(geofences);
         }
@@ -391,6 +384,7 @@ public class AppVersionUpgrade {
                 "Migration complete in seconds: "
                         + (android.os.SystemClock.elapsedRealtime() - start)
                                 / 1000D);
+
     }
 
     public static void migrate(String oldFile, String newFile) {
@@ -440,22 +434,24 @@ public class AppVersionUpgrade {
         boolean moved;
         for (String mountPoint : mountPoints) {
             imageryDir = new File(mountPoint, "imagery");
-            if (!FileIOProviderFactory.exists(imageryDir)) {
-                if (!FileIOProviderFactory.mkdirs(imageryDir))
+            if (!IOProviderFactory.exists(imageryDir)) {
+                if (!IOProviderFactory.mkdirs(imageryDir))
                     Log.e(TAG, "Error creating directories");
             }
             for (String legacyNativeDir : legacyNativeDirs) {
                 legacyDir = new File(mountPoint, legacyNativeDir);
                 Log.i(TAG, "Shuffling " + legacyDir);
-                if (!FileIOProviderFactory.exists(legacyDir) || !FileIOProviderFactory.isDirectory(legacyDir))
+                if (!IOProviderFactory.exists(legacyDir)
+                        || !IOProviderFactory.isDirectory(legacyDir))
                     continue;
 
-                contents = FileIOProviderFactory.listFiles(legacyDir);
+                contents = IOProviderFactory.listFiles(legacyDir);
                 allMoved = true;
                 if (contents != null) {
                     for (File content : contents) {
-                        moved = FileIOProviderFactory.renameTo(content, new File(imageryDir,
-                                content.getName()));
+                        moved = IOProviderFactory.renameTo(content,
+                                new File(imageryDir,
+                                        content.getName()));
                         changed |= moved;
                         allMoved &= moved;
                         Log.i(TAG, "Try move " + content + " -> "
@@ -470,30 +466,34 @@ public class AppVersionUpgrade {
             }
 
             imageryMobileDir = new File(mountPoint, "imagery/mobile");
-            if (!FileIOProviderFactory.exists(imageryMobileDir)) {
+            if (!IOProviderFactory.exists(imageryMobileDir)) {
 
-                if (!FileIOProviderFactory.mkdirs(imageryMobileDir)) {
+                if (!IOProviderFactory.mkdirs(imageryMobileDir)) {
                     Log.w(TAG, "Error creating directory: " + imageryMobileDir);
                 }
             }
             for (String legacyMobileDir : legacyMobileDirs) {
                 legacyDir = new File(mountPoint, legacyMobileDir);
                 Log.i(TAG, "Shuffling " + legacyDir);
-                if (!FileIOProviderFactory.exists(legacyDir) || !FileIOProviderFactory.isDirectory(legacyDir))
+                if (!IOProviderFactory.exists(legacyDir)
+                        || !IOProviderFactory.isDirectory(legacyDir))
                     continue;
 
-                contents = FileIOProviderFactory.listFiles(legacyDir);
+                contents = IOProviderFactory.listFiles(legacyDir);
                 allMoved = true;
                 if (contents != null) {
                     for (File content : contents) {
                         if (content.getName()
                                 .toLowerCase(LocaleUtil.getCurrent())
                                 .endsWith(".kmz"))
-                            moved = FileIOProviderFactory.renameTo(content, new File(imageryDir,
-                                    content.getName()));
+                            moved = IOProviderFactory.renameTo(content,
+                                    new File(imageryDir,
+                                            content.getName()));
                         else
-                            moved = FileIOProviderFactory.renameTo(content, new File(
-                                    imageryMobileDir, content.getName()));
+                            moved = IOProviderFactory.renameTo(content,
+                                    new File(
+                                            imageryMobileDir,
+                                            content.getName()));
                         changed |= moved;
                         allMoved &= moved;
                         Log.i(TAG, "Try move " + content + " -> "
@@ -535,15 +535,17 @@ public class AppVersionUpgrade {
             for (String legacyDir1 : legacyDirs) {
                 legacyDir = new File(mountPoint, legacyDir1);
                 Log.i(TAG, "Shuffling " + legacyDir);
-                if (!FileIOProviderFactory.exists(legacyDir) || !FileIOProviderFactory.isDirectory(legacyDir))
+                if (!IOProviderFactory.exists(legacyDir)
+                        || !IOProviderFactory.isDirectory(legacyDir))
                     continue;
 
-                contents = FileIOProviderFactory.listFiles(legacyDir);
+                contents = IOProviderFactory.listFiles(legacyDir);
                 allMoved = true;
                 if (contents != null) {
                     for (File content : contents) {
-                        moved = FileIOProviderFactory.renameTo(content, new File(overlaysDir,
-                                content.getName()));
+                        moved = IOProviderFactory.renameTo(content,
+                                new File(overlaysDir,
+                                        content.getName()));
                         changed |= moved;
                         allMoved &= moved;
                         Log.i(TAG, "Try move " + content + " -> "
@@ -562,7 +564,7 @@ public class AppVersionUpgrade {
 
     /**
      * Move logs/* into support/logs/*
-     * @return true if the shuffle occured correctly.
+     * @return true if the shuffle occurred correctly.
      */
     private static boolean shuffleDir(final File legacyDir, final File newDir) {
         boolean changed = false;
@@ -570,20 +572,21 @@ public class AppVersionUpgrade {
         boolean moved;
 
         Log.i(TAG, "Shuffling " + legacyDir + ", to " + newDir);
-        if (!FileIOProviderFactory.exists(legacyDir) || !FileIOProviderFactory.isDirectory(legacyDir))
+        if (!IOProviderFactory.exists(legacyDir)
+                || !IOProviderFactory.isDirectory(legacyDir))
             return false;
 
-        if (!FileIOProviderFactory.exists(newDir)) {
-            boolean r = FileIOProviderFactory.mkdirs(newDir);
+        if (!IOProviderFactory.exists(newDir)) {
+            boolean r = IOProviderFactory.mkdirs(newDir);
             if (!r)
                 Log.d(TAG, "could not wrap: " + newDir);
         }
 
-        File[] contents = FileIOProviderFactory.listFiles(legacyDir);
+        File[] contents = IOProviderFactory.listFiles(legacyDir);
         allMoved = true;
         if (contents != null) {
             for (File content : contents) {
-                moved = FileIOProviderFactory.renameTo(content, new File(newDir,
+                moved = IOProviderFactory.renameTo(content, new File(newDir,
                         content.getName()));
                 changed |= moved;
                 allMoved &= moved;
@@ -609,7 +612,8 @@ public class AppVersionUpgrade {
 
         //if the file has not already been written to device attempt to copy it
         File dst = FileSystemUtils.getItem("imagery/mobile/mapsources/" + file);
-        if (!FileIOProviderFactory.exists(dst) || (!prefs.getBoolean("wms_deployed", false))) {
+        if (!IOProviderFactory.exists(dst)
+                || (!prefs.getBoolean("wms_deployed", false))) {
             Log.d(TAG, "redeploy: " + file);
             if (FileSystemUtils.copyFromAssetsToStorageFile(
                     context, "wms/" + file,

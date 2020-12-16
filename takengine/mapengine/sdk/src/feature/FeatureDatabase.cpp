@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Implementation of FeatureDatabase class.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Jan 24, 2015
+////      Jan 24, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -141,7 +141,7 @@ struct FeaturesSchemaMgr
     bool
     checkSchemaObjects (db::Database&)
         const
-        throw () override;
+        NOTHROWS override;
 
     void
     createSchemaObjects (db::Database&)
@@ -150,12 +150,12 @@ struct FeaturesSchemaMgr
     void
     dropSchemaObjects (db::Database&)
         const
-        throw () override;
+        NOTHROWS override;
 
     unsigned long
     getSchemaVersion ()
         const
-        throw () override
+        NOTHROWS override
       { return FEATURE_SCHEMA_VERSION; }
   };
 
@@ -187,7 +187,7 @@ class FeatureDatabase::Factory
 
 
     ~Factory ()
-        throw () override
+        NOTHROWS override
       { }
 
     //
@@ -197,7 +197,7 @@ class FeatureDatabase::Factory
     FeatureDatabase*
     getDatabase (const char* filePath)
         const
-        throw ()
+        NOTHROWS
       {
         db::Database *db = db::openDatabase(filePath);
 
@@ -255,7 +255,7 @@ class FeatureDatabase::Factory
     DatabaseWrapper*
     createDatabaseWrapper (db::Database* db)
         const
-        throw () override
+        NOTHROWS override
       { return new FeatureDatabase (db); }
   };
 
@@ -420,7 +420,7 @@ deleteGroup (db::Database& db,
 bool
 FeaturesSchemaMgr::checkSchemaObjects (db::Database& db)
     const
-    throw ()
+    NOTHROWS
 try
   {
     const std::vector<TAK::Engine::Port::String> tableNames (db::getTableNames (db));
@@ -511,7 +511,7 @@ FeaturesSchemaMgr::createSchemaObjects (db::Database& db)
 void
 FeaturesSchemaMgr::dropSchemaObjects (db::Database& db)
     const
-    throw ()
+    NOTHROWS
   {
     try
       {

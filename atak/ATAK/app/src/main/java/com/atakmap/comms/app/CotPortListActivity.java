@@ -25,6 +25,7 @@ import android.widget.Toast;
 
 import com.atakmap.android.metrics.activity.MetricActivity;
 import com.atakmap.android.preference.AtakPreferenceFragment;
+import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.app.R;
 import com.atakmap.comms.CotService;
 import com.atakmap.comms.CotServiceRemote;
@@ -208,10 +209,12 @@ public abstract class CotPortListActivity extends MetricActivity {
 
             if (destination.isConnected())
                 holder.connected
-                        .setImageResource(R.drawable.ic_server_success);
+                        .setImageResource(
+                                ATAKConstants.getServerConnection(true));
             else
                 holder.connected
-                        .setImageResource(R.drawable.ic_server_error);
+                        .setImageResource(
+                                ATAKConstants.getServerConnection(false));
 
             String error = destination.getErrorString();
             if (!FileSystemUtils.isEmpty(error)) {
@@ -509,7 +512,7 @@ public abstract class CotPortListActivity extends MetricActivity {
             try {
                 NavUtils.navigateUpFromSameTask(this);
             } catch (IllegalArgumentException iae) {
-                Log.d(TAG, "error occured", iae);
+                Log.d(TAG, "error occurred", iae);
                 finish();
             }
             return true;

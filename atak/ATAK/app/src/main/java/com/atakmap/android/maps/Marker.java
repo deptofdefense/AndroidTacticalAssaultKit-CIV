@@ -15,6 +15,7 @@ import android.os.Bundle;
 import android.util.Pair;
 
 import com.atakmap.android.util.AttachmentManager;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.conversions.Span;
@@ -1339,6 +1340,8 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
         return new GPXExportWrapper(wp);
     }
 
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public static Marker toMarker(String json_string) {
         try {
             org.json.JSONObject json = new org.json.JSONObject(json_string);
@@ -1367,6 +1370,8 @@ public class Marker extends PointMapItem implements Exportable, Capturable {
         }
     }
 
+    @Deprecated
+    @DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
     public String toJSON() {
         final Map<String, Object> bundle = new HashMap<>();
         setMetaString("geopoint", getPoint().toStringRepresentation());

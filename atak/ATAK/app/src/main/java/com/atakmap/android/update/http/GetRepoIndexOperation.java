@@ -4,6 +4,7 @@ package com.atakmap.android.update.http;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 
 import com.atakmap.android.http.rest.DownloadProgressTracker;
@@ -17,8 +18,6 @@ import com.atakmap.comms.http.HttpUtil;
 import com.atakmap.comms.http.TakHttpClient;
 import com.atakmap.comms.http.TakHttpException;
 import com.atakmap.comms.http.TakHttpResponse;
-import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.foxykeep.datadroid.exception.ConnectionException;
@@ -167,14 +166,15 @@ public final class GetRepoIndexOperation extends HTTPOperation {
 
             File contentFile = new File(fileRequest.getDir(),
                     fileRequest.getFileName());
-            if (FileIOProviderFactory.exists(contentFile)) {
+            if (contentFile.exists()) {
                 //For now we just re-download since we don't currently have a way to get the HASH
                 //of the server side file
                 Log.d(TAG,
                         "Overwriting file: "
                                 + contentFile.getAbsolutePath()
                                 + " of size: "
-                                + FileIOProviderFactory.length(contentFile) + " with new size: "
+                                + contentFile.length()
+                                + " with new size: "
                                 + contentLength);
             }
 
@@ -220,7 +220,7 @@ public final class GetRepoIndexOperation extends HTTPOperation {
                         .getSystemService(Context.NOTIFICATION_SERVICE);
             }
             Notification.Builder builder;
-            if (android.os.Build.VERSION.SDK_INT < 26) {
+            if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                 builder = new Notification.Builder(context);
             } else {
                 builder = new Notification.Builder(context,
@@ -244,7 +244,7 @@ public final class GetRepoIndexOperation extends HTTPOperation {
                 FileOutputStream fos = null;
                 InputStream in = null;
                 try {
-                    fos = FileIOProviderFactory.getOutputStream(contentFile);
+                    fos = new FileOutputStream(contentFile);
                     in = resEntity.getContent();
                     while ((len = in.read(buf)) > 0) {
                         fos.write(buf, 0, len);
@@ -353,12 +353,12 @@ public final class GetRepoIndexOperation extends HTTPOperation {
             }
 
             // Now verify we got download correctly
-            if (!FileSystemUtils.isFile(contentFile)) {
-                FileSystemUtils.delete(contentFile);
+                if (!contentFile.exists()) {
+                    contentFile.delete();
                 throw new ConnectionException("Failed to download data");
             }
 
-            long downloadSize = FileIOProviderFactory.length(contentFile);
+            long downloadSize = contentFile.length();
             long stopTime = System.currentTimeMillis();
 
             Log.d(TAG, String.format(LocaleUtil.getCurrent(),

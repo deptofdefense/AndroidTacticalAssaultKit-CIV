@@ -30,7 +30,7 @@ public class SpeedFormatter implements
     private int currentSpeedFormat;
     private final SharedPreferences _pref;
 
-    private String[] speedArray;
+    private final String[] speedArray;
 
     private SpeedFormatter() {
 

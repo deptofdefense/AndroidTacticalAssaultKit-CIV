@@ -39,7 +39,7 @@ public class RelockWidget extends LinearLayoutWidget implements
 
     private String _uid;
     private long _visibleTime = -1;
-    private ProgressWidget timeBar;
+    private final ProgressWidget timeBar;
 
     RelockWidget(MapView mapView) {
         _mapView = mapView;

@@ -20,7 +20,7 @@ public class RegionSelectionMethodDialog {
     private final MapView mapView;
     private final Context pluginContext;
 
-    private static String TAG = "RegionSelectionMethodDialog";
+    private static final String TAG = "RegionSelectionMethodDialog";
 
     public RegionSelectionMethodDialog(Context pluginContext, MapView mapView) {
         this.pluginContext = pluginContext;

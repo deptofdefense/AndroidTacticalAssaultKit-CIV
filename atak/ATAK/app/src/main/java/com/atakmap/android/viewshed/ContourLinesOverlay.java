@@ -30,7 +30,7 @@ import com.atakmap.android.maps.graphics.GLQuadtreeNode2;
 import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.maps.coords.GeoBounds;
@@ -40,6 +40,8 @@ import com.atakmap.map.AtakMapView;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.elevation.ElevationData;
 import com.atakmap.map.elevation.ElevationManager;
+import com.atakmap.map.gdal.GdalLibrary;
+import com.atakmap.map.gdal.VSIFileFileSystemHandler;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureCursor;
@@ -98,16 +100,16 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
     private boolean visible;
     private String workingPath;
     private PersistentDataSourceFeatureDataStore2 contourDataStore;
-    private String myDir;
+    private final String myDir;
     private final ArrayList<Polyline> polylines = new ArrayList<>();
     private GLOverlay _glOverlay;
-    private GLLayerSpi2 SPI2;
-    private DefaultMapGroup mapGroup;
-    private MapView mapView;
-    private SharedPreferences prefs;
+    private final GLLayerSpi2 SPI2;
+    private final DefaultMapGroup mapGroup;
+    private final MapView mapView;
+    private final SharedPreferences prefs;
 
     //flag to track if the current generation process should be cancelled and the current state
-    private AtomicBoolean isCancelled = new AtomicBoolean(false);
+    private final AtomicBoolean isCancelled = new AtomicBoolean(false);
 
     private final Set<OnLayerVisibleChangedListener> visibleChangedListeners;
 
@@ -150,11 +152,11 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
         File programDataContourLinesDirectory = new File(
                 FileSystemUtils.getItem(FileSystemUtils.TMP_DIRECTORY),
                 "ContourLinesWorkingDirectory");
-        if (!FileIOProviderFactory.exists(programDataContourLinesDirectory))
-            if (!FileIOProviderFactory.mkdirs(programDataContourLinesDirectory)) {
+        if (!IOProviderFactory.exists(programDataContourLinesDirectory))
+            if (!IOProviderFactory.mkdirs(programDataContourLinesDirectory)) {
                 Log.d(TAG, "could not make the contour lines directory: "
                         + programDataContourLinesDirectory);
-        }
+            }
 
         try {
             workingPath = programDataContourLinesDirectory.getAbsolutePath()
@@ -184,12 +186,12 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
         File dir = new File(FileSystemUtils
                 .getItem(FileSystemUtils.EXPORT_DIRECTORY).getPath()
                 + "/testContourDir/" + "Files");
-        if (!FileIOProviderFactory.exists(dir)&& !FileIOProviderFactory.mkdirs(dir)) {
+        if (!IOProviderFactory.exists(dir) && !IOProviderFactory.mkdirs(dir)) {
             toast("failed to create the directory");
         }
 
         //clear out any files added to DS to reduce size of DS when re generating
-        File[] files = FileIOProviderFactory.listFiles(dir);
+        File[] files = IOProviderFactory.listFiles(dir);
         if (files != null) {
             for (File f : files) {
                 try {
@@ -328,10 +330,11 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
         File folder = new File(
                 FileSystemUtils.getItem(FileSystemUtils.EXPORT_DIRECTORY)
                         .getPath() + "/testContourDir/" + "Files");
-        if (!FileIOProviderFactory.exists(folder) && !FileIOProviderFactory.mkdirs(folder)) {
+        if (!IOProviderFactory.exists(folder)
+                && !IOProviderFactory.mkdirs(folder)) {
             toast("failed to create the folder");
         }
-        File[] files = FileIOProviderFactory.listFiles(new File(filePath));
+        File[] files = IOProviderFactory.listFiles(new File(filePath));
 
         if (files != null) {
             for (File f : files) {
@@ -357,12 +360,13 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
         File folder = new File(
                 FileSystemUtils.getItem(FileSystemUtils.EXPORT_DIRECTORY)
                         .getPath() + "/testContourDir/" + "Files");
-        if (!FileIOProviderFactory.exists(folder) && !FileIOProviderFactory.mkdirs(folder)) {
+        if (!IOProviderFactory.exists(folder)
+                && !IOProviderFactory.mkdirs(folder)) {
             //Failed
             toast("failed to create the folder");
         }
 
-        final File[] files = FileIOProviderFactory.listFiles(folder);
+        final File[] files = IOProviderFactory.listFiles(folder);
         if (files != null) {
             for (File f : files) {
                 try {
@@ -888,9 +892,9 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
 
     class ContourRunnable implements Runnable {
 
-        private String _dtedPath;
-        private String _myDirectory;
-        private double _progressStep;
+        private final String _dtedPath;
+        private final String _myDirectory;
+        private final double _progressStep;
 
         ContourRunnable(String dtedPath, String myDirectory,
                 double progressStep) {
@@ -906,14 +910,16 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
                     .equalsIgnoreCase("ft"))
                 interval = interval * ConversionFactors.FEET_TO_METERS;
 
-            Dataset dataset = gdal.Open(_dtedPath, gdalconst.GA_ReadOnly);
+            Dataset dataset = GdalLibrary.openDatasetFromFile(
+                    new File(_dtedPath), gdalconst.GA_ReadOnly);
             if (dataset == null)
                 return;
 
             //create a temp file to store of created shape file
             String tempFileName = UUID.randomUUID().toString();
             File myDir2 = new File(_myDirectory + "/" + tempFileName);
-            if (!FileIOProviderFactory.exists(myDir2) && !FileIOProviderFactory.mkdirs(myDir2)) {
+            if (!IOProviderFactory.exists(myDir2)
+                    && !IOProviderFactory.mkdirs(myDir2)) {
                 toast("failed to create the directory");
                 return;
             }
@@ -929,9 +935,13 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
             if (driver == null)
                 return;
 
+            String path = myDir2.getAbsolutePath();
+            if (!IOProviderFactory.isDefault()) {
+                path = VSIFileFileSystemHandler.PREFIX + path;
+            }
             //create datasource that will contain the shape features created
             DataSource dataSource = driver
-                    .CreateDataSource(myDir2.getAbsolutePath());
+                    .CreateDataSource(path);
             if (dataSource == null)
                 return;
             String projectionString = dataset.GetProjection();
@@ -1046,7 +1056,7 @@ public class ContourLinesOverlay extends AbstractHierarchyListItem
         private final MapRenderer renderContext;
         private GLMapGroup2 _rootObserver;
         private GLQuadtreeNode2 renderer;
-        private ContourLinesOverlay _layer;
+        private final ContourLinesOverlay _layer;
 
         public GLOverlay(MapRenderer rendererContext,
                 ContourLinesOverlay layer) {

@@ -9,13 +9,14 @@ import com.atakmap.coremap.maps.coords.*;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.opengl.GLMapBatchable;
+import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.opengl.*;
 
 import java.nio.*;
 
-public class GLDogHouse extends GLMapItem implements
-        GLMapBatchable, Doghouse.DoghouseChangeListener {
+public class GLDogHouse extends AbstractGLMapItem2 implements
+        Doghouse.DoghouseChangeListener {
 
     private static final float SEGMENT_SIZE = 120f;
 
@@ -23,7 +24,7 @@ public class GLDogHouse extends GLMapItem implements
     private static final double NOSE_ANGLE = 120d; // degrees
 
     private Doghouse _doghouse;
-    private MapView _mapView;
+    private final MapView _mapView;
     private double sinBearing;
     private double cosBearing;
     private double sinRotate90;
@@ -32,7 +33,7 @@ public class GLDogHouse extends GLMapItem implements
     private double cosMHalfNoseAngle;
     private double sinPHalfNoseAngle;
     private double cosPHalfNoseAngle;
-    private float _textMidline;
+    private final float _textMidline;
     private FloatBuffer _vertices;
     private GLText _glText;
     private long _currentDraw;
@@ -42,7 +43,7 @@ public class GLDogHouse extends GLMapItem implements
     // TODO: this needs to directly extend AbstractGLMapItem2 in the future
     // TODO: I want to have width and height that dictate the shape of these
     public GLDogHouse(MapRenderer surface, Doghouse dh) {
-        super(surface, dh);
+        super(surface, dh, GLMapView.RENDER_PASS_SURFACE);
         _doghouse = dh;
         _mapView = MapView.getMapView();
         _currentDraw = 0L;
@@ -74,123 +75,25 @@ public class GLDogHouse extends GLMapItem implements
         _textMidline = (float) (c / 2.0d);
     }
 
-    // TODO: update batch to match drawing code in `draw()`
-    public void batch(GLMapView view, GLRenderBatch batch) {
-        if (_doghouse == null
-                || _mapView.getMapResolution() > (double) _doghouse
-                        .getMaxVisibleScale()) {
+    @Override
+    public void draw(GLMapView ortho, int renderPass) {
+        // check that the current render pass is GLMapView.RENDER_PASS_SURFACE
+        if ((renderPass & this.renderPass) == 0) {
+            // not a SURFACE render pass, move along
             return;
         }
-
-        int rows = _doghouse.size();
-        double translation = _doghouse.getTotalTranslation();
-        double bearing = _doghouse.getBearing();
-        int strokeWidth = _doghouse.getStrokeWidth();
-        int strokeColor = _doghouse.getStrokeColor();
-        float[] shadeColor = _doghouse.getShadeColor();
-        float[] textColor = _doghouse.getTextColor();
-
-        setConversions(bearing - view.drawRotation);
-
-        GeoPoint midpoint = _doghouse.getNose();
-        PointF midpointF = view.forward(midpoint);
-
-        int nX = (int) (midpointF.x + translation * sinRotate90);
-        int nY = (int) (midpointF.y + translation * cosRotate90);
-        PointF nose = new PointF(new Point(nX, nY));
-
-        int tRX = (int) (nose.x - SEGMENT_SIZE * sinMHalfNoseAngle);
-        int tRY = (int) (nose.y - SEGMENT_SIZE * cosMHalfNoseAngle);
-        PointF topRight = new PointF(new Point(tRX, tRY));
-
-        int tLX = (int) (nose.x - SEGMENT_SIZE * sinPHalfNoseAngle);
-        int tLY = (int) (nose.y - SEGMENT_SIZE * cosPHalfNoseAngle);
-        PointF topLeft = new PointF(new Point(tLX, tLY));
-
-        int bRX = (int) (tRX - SEGMENT_SIZE * rows * 0.5 * sinBearing);
-        int bRY = (int) (tRY - SEGMENT_SIZE * rows * 0.5 * cosBearing);
-        PointF bottomRight = new PointF(new Point(bRX, bRY));
-
-        int bLX = (int) (tLX - SEGMENT_SIZE * rows * 0.5 * sinBearing);
-        int bLY = (int) (tLY - SEGMENT_SIZE * rows * 0.5 * cosBearing);
-        PointF bottomLeft = new PointF(new Point(bLX, bLY));
-
-        // pack the vertices in the buffer in counter-clockwise order
-        _vertices.clear();
-        _vertices.put(nose.x);
-        _vertices.put(nose.y);
-        _vertices.put(topLeft.x);
-        _vertices.put(topLeft.y);
-        _vertices.put(bottomLeft.x);
-        _vertices.put(bottomLeft.y);
-        _vertices.put(bottomRight.x);
-        _vertices.put(bottomRight.y);
-        _vertices.put(topRight.x);
-        _vertices.put(topRight.y);
-        _vertices.flip();
-
-        batch.addTriangleFan(
-                _vertices,
-                shadeColor[1],
-                shadeColor[2],
-                shadeColor[3],
-                shadeColor[0]);
-
-        batch.addLineLoop(
-                _vertices,
-                strokeWidth,
-                Color.red(strokeColor) / 255f,
-                Color.green(strokeColor) / 255f,
-                Color.blue(strokeColor) / 255f,
-                Color.alpha(strokeColor) / 255f);
-
-        // stop batch long enough to rotate text
-        batch.end();
-        GLES20FixedPipeline.glPushMatrix();
-        GLES20FixedPipeline.glTranslatef(bottomLeft.x, bottomLeft.y, 0.0f);
-        GLES20FixedPipeline.glRotatef(
-                (float) bearing * -1f,
-                0.0f,
-                0.0f,
-                1.0f);
-
-        batch.begin();
-        for (int line = 0; line < rows; line++) {
-            String displayData = _doghouse.getData(line);
-            String glString = GLText.localize(displayData);
-            float textWidth = _glText.getStringWidth(glString);
-            _glText.batch(
-                    batch,
-                    glString,
-                    _textMidline - textWidth / 2.0f,
-                    (float) ((SEGMENT_SIZE
-                            * (rows - line))
-                            * 0.5d),
-                    textColor[1],
-                    textColor[2],
-                    textColor[3],
-                    textColor[0]);
-        }
-
-        batch.end();
-        GLES20FixedPipeline.glPopMatrix();
-        batch.begin();
-    }
-
-    @Override
-    public void draw(GLMapView view) {
         synchronized (_lock) {
             if (_doghouse == null
-                    || view.drawMapResolution > (double) _doghouse
+                    || ortho.drawMapResolution > (double) _doghouse
                             .getMaxVisibleScale()) {
                 return;
             }
         }
 
-        if (_currentDraw != view.drawVersion) {
+        if (_currentDraw != ortho.drawVersion) {
             _recompute = true;
         }
-        _currentDraw = view.drawVersion;
+        _currentDraw = ortho.drawVersion;
 
         if (_vertices == null) {
             return;
@@ -218,7 +121,7 @@ public class GLDogHouse extends GLMapItem implements
                 translation *= -1; // go the other way
             }
 
-            bearing = _doghouse.getBearing() - view.drawRotation;
+            bearing = _doghouse.getBearing() - ortho.drawRotation;
             strokeWidth = _doghouse.getStrokeWidth();
             strokeColor = _doghouse.getStrokeColor();
             shadeColor = _doghouse.getShadeColor();
@@ -232,7 +135,7 @@ public class GLDogHouse extends GLMapItem implements
             synchronized (_lock) {
                 midpoint = _doghouse.getNose();
             }
-            PointF midpointF = view.forward(midpoint);
+            PointF midpointF = ortho.forward(midpoint);
 
             int nX = (int) (midpointF.x + translation * sinRotate90);
             int nY = (int) (midpointF.y + translation * cosRotate90);
@@ -255,11 +158,11 @@ public class GLDogHouse extends GLMapItem implements
             PointF bottomLeft = new PointF(new Point(bLX, bLY));
 
             GeoPoint[] geoPoints = new GeoPoint[] {
-                    view.inverse(nose),
-                    view.inverse(topLeft),
-                    view.inverse(bottomLeft),
-                    view.inverse(bottomRight),
-                    view.inverse(topRight),
+                    ortho.inverse(nose),
+                    ortho.inverse(topLeft),
+                    ortho.inverse(bottomLeft),
+                    ortho.inverse(bottomRight),
+                    ortho.inverse(topRight),
             };
             computeGeoBounds(geoPoints);
 
@@ -417,10 +320,10 @@ public class GLDogHouse extends GLMapItem implements
             for (GeoPoint gp : points) {
                 double lat = gp.getLatitude();
                 double lon = gp.getLongitude();
-                south = lat < south ? lat : south;
-                west = lon < west ? lon : west;
-                north = lat > north ? lat : north;
-                east = lon > east ? lon : east;
+                south = Math.min(lat, south);
+                west = Math.min(lon, west);
+                north = Math.max(lat, north);
+                east = Math.max(lon, east);
             }
         }
 
@@ -430,6 +333,6 @@ public class GLDogHouse extends GLMapItem implements
                 _doghouse.setPoints(points);
             }
         }
-        OnBoundsChanged();
+        dispatchOnBoundsChanged();
     }
 }

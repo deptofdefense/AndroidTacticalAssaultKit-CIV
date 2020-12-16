@@ -158,7 +158,7 @@ namespace TAK {
 			*/
 			template <typename Func, typename ...Args>
 			inline FutureTask<TaskResultOfT<Func>>
-				Task_begin(SharedWorkerPtr &worker, Func func, Args &&...args) NOTHROWS;
+				Task_begin(const SharedWorkerPtr &worker, Func func, Args &&...args) NOTHROWS;
 		}
 	}
 }

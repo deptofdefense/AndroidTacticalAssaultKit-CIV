@@ -34,10 +34,7 @@ public class EncryptedPanEditTextPreference extends PanEditTextPreference {
 
         String text = MapView.getMapView().getContext()
                 .getString(R.string.defaultTrustStorePassword);
-        if (credentials != null
-                &&
-                !AtakAuthenticationCredentials.TYPE_UNKNOWN
-                        .equals(credentials.type)) {
+        if (credentials != null) {
             text = credentials.password;
         }
 

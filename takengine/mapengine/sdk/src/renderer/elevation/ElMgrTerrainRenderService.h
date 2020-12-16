@@ -8,6 +8,9 @@
 #include "thread/Monitor.h"
 #include "thread/Thread.h"
 #include "thread/ThreadPool.h"
+#include "util/BlockPoolAllocator.h"
+#include "util/Error.h"
+#include "util/PoolAllocator.h"
 
 namespace TAK {
     namespace Engine {
@@ -20,10 +23,10 @@ namespace TAK {
                     class SourceRefresh;
                     struct WorldTerrain
                     {
-                        int srid;
-                        int sourceVersion;
-                        int sceneVersion;
-                        int terrainVersion;
+                        int srid {-1};
+                        int sourceVersion {-1};
+                        int sceneVersion {-1};
+                        int terrainVersion {-1};
                         std::vector<std::shared_ptr<const TerrainTile>> tiles;
 
                         friend class ElMgrTerrainRenderService::QuadNode;
@@ -31,8 +34,8 @@ namespace TAK {
                     struct Request
                     {
                         TAK::Engine::Core::MapSceneModel2 scene;
-                        int srid;
-                        int sceneVersion;
+                        int srid {-1};
+                        int sceneVersion {-1};
                     };
                 public :
                     ElMgrTerrainRenderService(TAK::Engine::Core::RenderContext &ctx) NOTHROWS;
@@ -40,6 +43,7 @@ namespace TAK {
                     ~ElMgrTerrainRenderService() NOTHROWS;
                 public : // TerrainRenderService
                     int getTerrainVersion() const NOTHROWS;
+                    Util::TAKErr lock(Port::Collection<std::shared_ptr<const TerrainTile>> &value) NOTHROWS;
                     Util::TAKErr lock(Port::Collection<std::shared_ptr<const TerrainTile>> &value, const TAK::Engine::Core::MapSceneModel2 &view, const int srid, const int sceneVersion) NOTHROWS;
                     Util::TAKErr unlock(Port::Collection<std::shared_ptr<const TerrainTile>> &tiles) NOTHROWS;
                     Util::TAKErr getElevation(double *value, const double latitude, const double longitude) const NOTHROWS;
@@ -76,6 +80,9 @@ namespace TAK {
                     bool reset = false;
                     std::size_t numPosts;
                     double resadj;
+
+                    Util::BlockPoolAllocator meshAllocator;
+                    Util::PoolAllocator<TerrainTile> tileAllocator;
 
                     bool terminate;
 

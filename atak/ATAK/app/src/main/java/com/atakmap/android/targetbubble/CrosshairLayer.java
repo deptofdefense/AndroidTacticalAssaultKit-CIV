@@ -12,7 +12,7 @@ public final class CrosshairLayer extends AbstractLayer {
     }
 
     private int color;
-    private Set<OnCrosshairColorChangedListener> listeners = Collections2
+    private final Set<OnCrosshairColorChangedListener> listeners = Collections2
             .newIdentityHashSet();
 
     public CrosshairLayer(String name) {

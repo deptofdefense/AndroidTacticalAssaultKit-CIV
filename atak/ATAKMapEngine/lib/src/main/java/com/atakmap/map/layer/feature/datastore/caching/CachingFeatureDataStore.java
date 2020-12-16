@@ -14,7 +14,7 @@ import android.graphics.Point;
 import android.util.LruCache;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
@@ -643,7 +643,7 @@ public class CachingFeatureDataStore extends AbstractReadOnlyFeatureDataStore2 i
      */
     private static boolean loadCacheNode(int clientVersion, File cacheDir, CacheNode node, int limit, FIDBuffer fidBuffer, boolean terminalOnly) {
         File cacheFile = new File(new File(cacheDir, String.valueOf(node.level)), String.valueOf(node.index));
-        if(!FileIOProviderFactory.exists(cacheFile))
+        if(!IOProviderFactory.exists(cacheFile))
             return false;
         try {
             FeatureDataStore2 swap;
@@ -800,7 +800,7 @@ public class CachingFeatureDataStore extends AbstractReadOnlyFeatureDataStore2 i
 
             if(cacheDir != null) {
                 File cacheFile = new File(new File(cacheDir, String.valueOf(node.level)), String.valueOf(node.index));
-                if (!FileIOProviderFactory.exists(cacheFile.getParentFile()) && !cacheFile.getParentFile().mkdirs()) {
+                if (!IOProviderFactory.exists(cacheFile.getParentFile()) && !cacheFile.getParentFile().mkdirs()) {
                      Log.d(TAG, "error creating: " + cacheFile);
                 }
 
@@ -808,17 +808,17 @@ public class CachingFeatureDataStore extends AbstractReadOnlyFeatureDataStore2 i
                 try {
                     long s = System.currentTimeMillis();
                     File cacheSwapDir = new File(cacheDir, ".swap");
-                    if (!FileIOProviderFactory.exists(cacheSwapDir) && !FileIOProviderFactory.mkdirs(cacheSwapDir)) {
+                    if (!IOProviderFactory.exists(cacheSwapDir) && !IOProviderFactory.mkdirs(cacheSwapDir)) {
                        Log.d(TAG, "error creating: " + cacheSwapDir);
                     }
                     
-                    cacheSwap = File.createTempFile("cache", ".swap", cacheSwapDir);
+                    cacheSwap = IOProviderFactory.createTempFile("cache", ".swap", cacheSwapDir);
                     FeatureQueryParameters cacheParams = new FeatureQueryParameters();
                     cacheParams.limit = limit;
                     CacheFile.createCacheFile(clientVersion, node.level, node.index, node.timestamp, swap, cacheParams, cacheSwap.getAbsolutePath());
-                    if(FileIOProviderFactory.exists(cacheFile))
+                    if(IOProviderFactory.exists(cacheFile))
                         FileSystemUtils.delete(cacheFile);
-                    if(!FileIOProviderFactory.renameTo(cacheSwap, cacheFile))
+                    if(!IOProviderFactory.renameTo(cacheSwap, cacheFile))
                         throw new IOException("Unable to rename cache swap file");
                     else
                         cacheSwap = null;

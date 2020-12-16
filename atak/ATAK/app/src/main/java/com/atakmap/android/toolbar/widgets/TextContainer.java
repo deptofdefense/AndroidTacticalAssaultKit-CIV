@@ -51,16 +51,18 @@ public class TextContainer implements MapWidget.OnClickListener, Runnable,
     private final MarkerIconWidget _widget;
     private String _prompt = "";
 
-    private Icon icon_lit, icon_unlit, icon_blank;
+    private final Icon icon_lit;
+    private final Icon icon_unlit;
+    private final Icon icon_blank;
 
     private MapTextFormat textFormat = MapView.getDefaultTextFormat();
 
     private int color = DEFAULT_COLOR;
 
     boolean displaying = false;
-    private SharedPreferences _prefs;
+    private final SharedPreferences _prefs;
 
-    private View hint_view;
+    private final View hint_view;
 
     private TextContainer() {
         _mapView = MapView.getMapView();

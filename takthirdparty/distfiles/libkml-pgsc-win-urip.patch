@@ -73,14 +73,15 @@ diff -U 10 -r libkml.vanilla/third_party/uriparser-0.7.5/win32/Visual_Studio_200
      <ConfigurationType>StaticLibrary</ConfigurationType>
      <PlatformToolset>v140</PlatformToolset>
      <CharacterSet>Unicode</CharacterSet>
-     <WholeProgramOptimization>true</WholeProgramOptimization>
-   </PropertyGroup>
+-    <WholeProgramOptimization>true</WholeProgramOptimization>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
++  </PropertyGroup>
 +  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
 +    <ConfigurationType>StaticLibrary</ConfigurationType>
 +    <PlatformToolset>v140</PlatformToolset>
 +    <CharacterSet>Unicode</CharacterSet>
-+    <WholeProgramOptimization>true</WholeProgramOptimization>
-+  </PropertyGroup>
++    <WholeProgramOptimization>false</WholeProgramOptimization>
+   </PropertyGroup>
    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
      <ConfigurationType>StaticLibrary</ConfigurationType>
      <PlatformToolset>v140</PlatformToolset>

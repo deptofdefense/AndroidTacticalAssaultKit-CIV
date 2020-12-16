@@ -22,6 +22,7 @@ jobs:
         sudo apt-get install dos2unix
         sudo apt-get install autoconf
         sudo apt-get install automake
+        sudo apt-get install g++
         sudo apt-get install libtool
         sudo apt-get install patch
         sudo apt-get install make
@@ -92,6 +93,7 @@ jobs:
         cp ./atak/ATAK/app/build/outputs/apk/civ/sdk/*-sdk.apk ./pluginsdk/atak.apk
         cp ./atak/ATAK/app/build/libs/main.jar ./pluginsdk
         cp ./atak/ATAK/app/src/civ/assets/support/license/LICENSE.txt ./pluginsdk
+        cp -r ./plugin-examples ./pluginsdk/
         echo "ATAK CIV SDK `git rev-parse --short HEAD` (`git show -s --format=%ct`)" > pluginsdk/VERSION.txt
         rm -rf javadoc
         mkdir -p tmp/src

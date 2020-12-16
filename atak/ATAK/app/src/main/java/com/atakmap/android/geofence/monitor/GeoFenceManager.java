@@ -107,7 +107,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
         _component.addGeoFenceChangedListener(this);
         _toRemove = new ArrayList<>();
         _deferredAdds = new HashMap<>();
-        _spatialCalc = new SpatialCalculator();
+        _spatialCalc = new SpatialCalculator(true);
         _monitorIteration = 0;
         initialize();
     }
@@ -997,7 +997,7 @@ public class GeoFenceManager implements GeoFenceComponent.GeoFenceListener,
 
         private static final String TAG = "InitGeoFenceTask";
 
-        private boolean _bGetLastState;
+        private final boolean _bGetLastState;
 
         InitGeoFenceTask(GeoFenceManager manager, boolean bGetLastState,
                 boolean imported) {

@@ -7,6 +7,7 @@
 package com.atakmap.map.layer.raster.tilereader;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.database.*;
 
 import java.io.*;
@@ -55,7 +56,7 @@ public class TileCache {
 
     /** Creates a new instance of TileReader */
     public TileCache(String path, TileReader reader) {
-        this.tileDatabase = Databases.openOrCreateDatabase(path);
+        this.tileDatabase = IOProviderFactory.createDatabase(new File(path));
         ensureTileCache(this.tileDatabase);
 
         this.tableName = "tilecache";
@@ -639,7 +640,7 @@ public class TileCache {
     public static void createTileCacheDatabase(String tilecacheDatabasePath) {
         DatabaseIface database = null;
         try {
-            database = Databases.openOrCreateDatabase(tilecacheDatabasePath);
+            database = IOProviderFactory.createDatabase(new File(tilecacheDatabasePath));
             ensureTileCache(database);
         } finally {
             if (database != null)

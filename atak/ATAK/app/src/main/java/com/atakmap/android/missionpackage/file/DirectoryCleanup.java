@@ -3,7 +3,7 @@ package com.atakmap.android.missionpackage.file;
 
 import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -120,24 +120,25 @@ public class DirectoryCleanup {
         private static void delete(String path, long cutoff) {
             Log.d(TAG, "Deleting: " + path);
             File dir = new File(path);
-            if (!FileIOProviderFactory.exists(dir) || !FileIOProviderFactory.isDirectory(dir)) {
+            if (!IOProviderFactory.exists(dir)
+                    || !IOProviderFactory.isDirectory(dir)) {
                 Log.w(TAG, "Path does not exist: " + path);
                 return;
             }
 
-            File[] files = FileIOProviderFactory.listFiles(dir);
+            File[] files = IOProviderFactory.listFiles(dir);
             if (files == null || files.length < 1)
                 return;
 
             for (File file : files) {
-                if (file == null || !FileIOProviderFactory.exists(file))
+                if (file == null || !IOProviderFactory.exists(file))
                     continue;
 
-                if (FileIOProviderFactory.isDirectory(file)) {
+                if (IOProviderFactory.isDirectory(file)) {
                     delete(file.getAbsolutePath(), cutoff);
                     FileSystemUtils.delete(file);
                 } else {
-                    if (FileIOProviderFactory.lastModified(file) < cutoff) {
+                    if (IOProviderFactory.lastModified(file) < cutoff) {
                         Log.d(TAG, "Deleting: " + file.getAbsolutePath());
                         FileSystemUtils.deleteFile(file);
                     }

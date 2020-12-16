@@ -374,7 +374,11 @@ namespace {
 
         if (tile->content.uri.get() != nullptr && tile->content.uri != "") {
             TAK::Engine::Port::StringBuilder fullURI;
-            if (TAK::Engine::Port::StringBuilder_combine(fullURI, args->baseURI, TAK::Engine::Port::Platform_pathSep(), tile->content.uri) != TE_Ok) {
+            
+            if (TAK::Engine::Port::String_endsWith(args->baseURI, "/") || TAK::Engine::Port::String_endsWith(args->baseURI, "\\")) {
+                if (TAK::Engine::Port::StringBuilder_combine(fullURI, args->baseURI, tile->content.uri) != TE_Ok)
+                    return TE_Err;
+            } else if (TAK::Engine::Port::StringBuilder_combine(fullURI, args->baseURI, TAK::Engine::Port::Platform_pathSep(), tile->content.uri) != TE_Ok) {
                 return TE_Err;
             }
 

@@ -2,13 +2,15 @@
 package com.atakmap.android.routes;
 
 import android.location.Location;
+import android.net.Uri;
 import android.os.SystemClock;
 import android.util.Pair;
 
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.routes.nav.NavigationCue;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.DatabaseInformation;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.database.CursorIface;
@@ -86,7 +88,7 @@ final class RouteNavigatorEngine {
             + "', 'routeline', 4326, 'LINESTRING', 'XY')";
 
     //NOTE:: This is here for debugging purposes only.  It is easy to test queries on the desktop.
-    private static boolean EXPORT_DB_ON_CLOSE = false;
+    private static final boolean EXPORT_DB_ON_CLOSE = false;
 
     private DatabaseIface _db;
     private File _dbDir;
@@ -109,36 +111,14 @@ final class RouteNavigatorEngine {
         }
 
         // Make sure the necessary directory structure exists
-        if (!FileIOProviderFactory.exists(_dbFile.getParentFile())) {
-            if (!FileIOProviderFactory.mkdirs(_dbFile.getParentFile())) {
+        if (!IOProviderFactory.exists(_dbFile.getParentFile())) {
+            if (!IOProviderFactory.mkdirs(_dbFile.getParentFile())) {
                 Log.d(TAG, "could not wrap: " + _dbFile.getParentFile());
             }
         }
 
         // Get the DB opened up and initialized
-        try {
-            _db = Databases.openOrCreateDatabase(_dbFile
-                    .toString());
-
-            String query = "SELECT InitSpatialMetadata()";
-
-            final int major = FeatureSpatialDatabase
-                    .getSpatialiteMajorVersion(_db);
-            final int minor = FeatureSpatialDatabase
-                    .getSpatialiteMinorVersion(_db);
-
-            Log.d(TAG, "RouteNavigatorEngine using Spatialite version: "
-                    + major + "." + minor);
-
-            if (major > 4 || (major == 4 && minor >= 1))
-                query = "SELECT InitSpatialMetadata(1)";
-            else
-                query = "SELECT InitSpatialMetadata()";
-
-            _db.execute(query, null);
-        } catch (Exception e) {
-            Log.e(TAG, "Unable to open RouteNavigatorEngine database", e);
-        }
+        initDb();
 
         // Get our points table setup
         try {
@@ -1178,7 +1158,6 @@ final class RouteNavigatorEngine {
         if (isShutdown) {
             return;
         }
-
         Thread t = new Thread("routenavengine-shutdown") {
             @Override
             public void run() {
@@ -1301,6 +1280,43 @@ final class RouteNavigatorEngine {
         }
 
         return points;
+    }
+
+    private void initDb() {
+        try {
+            final DatabaseIface oldDb = _db;
+
+            _db = IOProviderFactory.createDatabase(
+                    new DatabaseInformation(Uri.fromFile(_dbFile)));
+            lineId = -1;
+            isMarkerTransactionOpen = false;
+
+            try {
+                if (oldDb != null)
+                    oldDb.close();
+            } catch (Exception ignored) {
+                Log.e(TAG, "Old route navigator engine db close unsuccessful");
+            }
+
+            String query = "SELECT InitSpatialMetadata()";
+
+            final int major = FeatureSpatialDatabase
+                    .getSpatialiteMajorVersion(_db);
+            final int minor = FeatureSpatialDatabase
+                    .getSpatialiteMinorVersion(_db);
+
+            Log.d(TAG, "RouteNavigatorEngine using Spatialite version: "
+                    + major + "." + minor);
+
+            if (major > 4 || (major == 4 && minor >= 1))
+                query = "SELECT InitSpatialMetadata(1)";
+            else
+                query = "SELECT InitSpatialMetadata()";
+
+            _db.execute(query, null);
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to open RouteNavigatorEngine database", e);
+        }
     }
 
     private static class PointComparator implements

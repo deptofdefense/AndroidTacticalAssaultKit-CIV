@@ -380,74 +380,80 @@
                     android:layout_marginEnd="5dp"
                     android:layout_marginStart="5dp" />
             </LinearLayout>
-            
-            <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="2dp"
-                android:layout_marginTop="2dp"
-                android:background="@drawable/jm_layout_bg"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:paddingBottom="3dp"
-                android:paddingTop="3dp" >
 
-                <RelativeLayout
+            <TableLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <TableRow
                     android:layout_width="fill_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="2dp"
+                    android:layout_marginTop="2dp"
+                    android:background="@drawable/jm_layout_bg"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:paddingEnd="5dp" >
-
+                    android:paddingBottom="3dp"
+                    android:paddingTop="3dp" >
                     <TextView
-                        android:id="@+id/colorLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_alignParentStart="true"
-                        android:layout_centerVertical="true"
                         android:text="@string/details_text10"
                         android:textColor="@color/heading_yellow"
                         android:textSize="@dimen/labelFontSize" />
-
                     <ImageButton
-                        android:id="@+id/fovColorButton"
+                        android:id="@+id/fillColorBtn"
                         android:layout_width="40dp"
                         android:layout_height="40dp"
                         android:layout_marginStart="8dp"
                         android:padding="9dp"
-                        style="@android:style/Widget.Holo.Button"
-                        android:layout_toEndOf="@id/colorLabel"
+                        style="@style/darkButton"
                         android:src="@drawable/color_rectangle" />
-                </RelativeLayout>
-
-                <RelativeLayout
-                    android:layout_width="fill_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingEnd="5dp" >
-
-                    <TextView
-                        android:id="@+id/alphaLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentStart="true"
-                        android:layout_centerVertical="true"
-                        android:text="@string/details_text11"
-                        android:textColor="@color/heading_yellow"
-                        android:textSize="@dimen/labelFontSize" />
-
                     <SeekBar
-                        android:id="@+id/alphaSeek"
-                        android:layout_width="fill_parent"
+                        android:id="@+id/fillAlphaSeek"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_toEndOf="@id/alphaLabel"
+                        android:layout_weight="1"
                         android:layout_marginBottom="2dp"
                         android:layout_marginStart="5dp"
                         android:layout_marginEnd="5dp"
-                        android:layout_marginTop="2dp" />
-                </RelativeLayout>
-
-            </LinearLayout>
-
+                        android:layout_marginTop="2dp"
+                        android:max="255"/>
+                </TableRow>
+                <TableRow
+                    android:layout_width="fill_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="2dp"
+                    android:layout_marginTop="2dp"
+                    android:background="@drawable/jm_layout_bg"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingBottom="3dp"
+                    android:paddingTop="3dp" >
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/outline_colon"
+                        android:textColor="@color/heading_yellow"
+                        android:textSize="@dimen/labelFontSize" />
+                    <ImageButton
+                        android:id="@+id/strokeColorBtn"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="8dp"
+                        android:padding="9dp"
+                        style="@style/darkButton"
+                        android:src="@drawable/color_rectangle" />
+                    <SeekBar
+                        android:id="@+id/strokeWeightSeek"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginBottom="2dp"
+                        android:layout_marginStart="5dp"
+                        android:layout_marginTop="2dp"
+                        android:max="100"/>
+                </TableRow>
+            </TableLayout>
 
             <LinearLayout
                 android:id="@+id/dgAddressLayout"

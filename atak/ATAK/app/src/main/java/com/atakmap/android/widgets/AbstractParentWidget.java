@@ -13,6 +13,8 @@ import org.w3c.dom.Node;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -20,7 +22,7 @@ public abstract class AbstractParentWidget extends MapWidget2 implements
         AtakMapView.OnActionBarToggledListener {
 
     // Lock to prevent weird stuff like doing the same undo twice
-    private final List<MapWidget> _childWidgets = new ArrayList<>();
+    private final WidgetList _childWidgets = new WidgetList();
     private final ConcurrentLinkedQueue<OnWidgetListChangedListener> _onWidgetListChanged = new ConcurrentLinkedQueue<>();
 
     public interface OnWidgetListChangedListener {
@@ -30,6 +32,31 @@ public abstract class AbstractParentWidget extends MapWidget2 implements
         void onWidgetRemoved(AbstractParentWidget parent, int index,
                 MapWidget child);
     }
+
+    // Comparator for visual draw order of widgets
+    // MUST only be used in a sync block on _childWidgets
+    private final Comparator<MapWidget> _visualComparator = new Comparator<MapWidget>() {
+        @Override
+        public int compare(MapWidget o1, MapWidget o2) {
+            // First sort by Z-order
+            int zComp = Double.compare(o2.getZOrder(), o1.getZOrder());
+            if (zComp != 0)
+                return zComp;
+
+            // Then fallback to child position in list
+            int c1 = _childWidgets.indexOf(o1);
+            int c2 = _childWidgets.indexOf(o2);
+            if (c1 != -1 && c2 != -1)
+                return Integer.compare(c1, c2);
+
+            // No child index on either
+            if (c1 == -1 && c2 == -1)
+                return 0;
+            else if (c1 == -1)
+                return -1;
+            return 1;
+        }
+    };
 
     public AbstractParentWidget() {
 
@@ -69,6 +96,19 @@ public abstract class AbstractParentWidget extends MapWidget2 implements
     public List<MapWidget> getChildWidgets() {
         synchronized (_childWidgets) {
             return new ArrayList<>(_childWidgets);
+        }
+    }
+
+    /**
+     * Get the list of child widgets sorted by their draw order
+     * Sort priority: z-order -> list order
+     * @return
+     */
+    public List<MapWidget> getSortedWidgets() {
+        synchronized (_childWidgets) {
+            List<MapWidget> sorted = new ArrayList<>(_childWidgets);
+            Collections.sort(sorted, _visualComparator);
+            return sorted;
         }
     }
 
@@ -173,26 +213,29 @@ public abstract class AbstractParentWidget extends MapWidget2 implements
      */
     @Override
     public MapWidget seekHit(MotionEvent event, float x, float y) {
-        if (!isVisible())
+        if (!isVisible() || !isTouchable())
             return null;
 
+        // Iterate through visually-sorted list of widgets backwards so we hit
+        // detect the stuff on top first
+        List<MapWidget> widgets = getSortedWidgets();
+        Collections.reverse(widgets);
+
         MapWidget hit = null;
-        synchronized (_childWidgets) {
-            for (MapWidget w : _childWidgets) {
-                if (!w.isVisible())
-                    continue;
-                float lx = x - w.getPointX();
-                float ly = y - w.getPointY();
-                MapWidget c;
-                if (w instanceof MapWidget2)
-                    c = ((MapWidget2) w).seekHit(event, lx, ly);
-                else
-                    c = w.seekHit(lx, ly);
-                if (hit == null)
-                    hit = c;
-                else if (c != null && c.getZOrder() < hit.getZOrder()) {
-                    hit = c;
-                }
+        for (MapWidget w : widgets) {
+            if (!w.isVisible())
+                continue;
+            float lx = x - w.getPointX();
+            float ly = y - w.getPointY();
+            MapWidget c;
+            if (w instanceof MapWidget2)
+                c = ((MapWidget2) w).seekHit(event, lx, ly);
+            else
+                c = w.seekHit(lx, ly);
+            if (hit == null)
+                hit = c;
+            else if (c != null && c.getZOrder() < hit.getZOrder()) {
+                hit = c;
             }
         }
         return hit;

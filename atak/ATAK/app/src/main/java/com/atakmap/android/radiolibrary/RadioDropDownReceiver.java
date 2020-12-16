@@ -92,7 +92,7 @@ public class RadioDropDownReceiver extends DropDownReceiver {
 
     // provide a mapping between a registered radio control and the separator line 
     // so that if it is removed, the line will be removed as well.
-    private Map<View, View> controlLines = new HashMap<>();
+    private final Map<View, View> controlLines = new HashMap<>();
 
     /**
      * Allows for external addition of control view for a radio.

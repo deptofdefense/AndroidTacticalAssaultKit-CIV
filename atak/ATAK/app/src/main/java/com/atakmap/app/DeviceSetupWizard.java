@@ -1,6 +1,9 @@
 
 package com.atakmap.app;
 
+import java.util.List;
+import java.util.Properties;
+
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -16,6 +19,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.update.AppMgmtActivity;
 import com.atakmap.app.preferences.MyPreferenceFragment;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
+import com.atakmap.comms.CotService;
 import com.atakmap.comms.NetConnectString;
 import com.atakmap.comms.TAKServer;
 import com.atakmap.comms.app.CotStreamListActivity;
@@ -36,9 +40,9 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
 
     private static final String TAG = "DeviceSetupWizard";
 
-    private ATAKActivity _context;
-    private MapView _mapView;
-    private SharedPreferences _controlPrefs;
+    private final ATAKActivity _context;
+    private final MapView _mapView;
+    private final SharedPreferences _controlPrefs;
 
     /**
      * Store state of wizard, so we can maintain integrity of wizard steps e.g. user click twice
@@ -48,7 +52,7 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
      * his selection on the first page
      */
     private int wizardPage;
-    private int wizardPageTotal;
+    private final int wizardPageTotal;
 
     DeviceSetupWizard(ATAKActivity context, MapView mapView,
             SharedPreferences controlPrefs) {
@@ -159,25 +163,29 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
      * There might be a pretty way to to it though.
      */
     private void init_creds() {
-        final SharedPreferences prefs = _context
-                .getSharedPreferences("cot_streams", Context.MODE_PRIVATE);
 
-        int count = prefs.getInt("count", -1);
-        if (count == -1) {
+        List<Properties> cotStreamProperties = CotService
+                .loadCotStreamProperties(_context);
+        if (cotStreamProperties == null || cotStreamProperties.size() == 0) {
             return;
         }
 
-        // iterate over connections
-        for (int i = 0; i < count; ++i) { //and grab their info
-            final String desc = prefs.getString("description" + i, "");
-            boolean isEnabled = prefs.getBoolean("enabled" + i, true);
-            boolean useAuth = prefs.getBoolean("useAuth" + i, false);
-            final String connectString = prefs
-                    .getString(TAKServer.CONNECT_STRING_KEY
-                            + i, "");
-            final String cacheCreds = prefs.getString("cacheCreds" + i, "");
-            final boolean enrollForCertificateWithTrust = prefs.getBoolean(
-                    "enrollForCertificateWithTrust" + i, false);
+        for (Properties properties : cotStreamProperties) {
+
+            final String desc = properties
+                    .getProperty("description", "");
+            boolean isEnabled = !properties
+                    .getProperty("enabled", "1").equals("0");
+            ;
+            boolean useAuth = !properties
+                    .getProperty("useAuth", "0").equals("0");
+            final String connectString = properties
+                    .getProperty(TAKServer.CONNECT_STRING_KEY, "");
+            final String cacheCreds = properties
+                    .getProperty("cacheCreds", "");
+            final boolean enrollForCertificateWithTrust = !properties
+                    .getProperty("enrollForCertificateWithTrust", "0")
+                    .equals("0");
 
             if (!isEnabled) {
                 continue;
@@ -217,7 +225,7 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
                         && clientCertCredentials.password != null) {
 
                     // if the cert was expired, re-enroll for a new one
-                    AtakCertificateDatabase.CeritficateValidity validity = AtakCertificateDatabase
+                    AtakCertificateDatabase.CertificateValidity validity = AtakCertificateDatabase
                             .checkValidity(clientCert,
                                     clientCertCredentials.password);
                     if (validity == null || !validity.isValid()) {

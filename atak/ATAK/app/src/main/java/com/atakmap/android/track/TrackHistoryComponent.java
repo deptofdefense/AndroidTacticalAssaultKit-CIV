@@ -3,6 +3,8 @@ package com.atakmap.android.track;
 
 import android.content.Context;
 import android.content.Intent;
+
+import com.atakmap.android.data.ClearContentRegistry;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -60,6 +62,9 @@ public class TrackHistoryComponent extends AbstractMapComponent {
                 AtakBroadcast.getInstance().registerReceiver(breadRec,
                         breadFilter);
 
+                ClearContentRegistry.getInstance()
+                        .registerListener(breadRec.dataMgmtReceiver);
+
                 _trackHistoryDropDown = new TrackHistoryDropDown(view,
                         trackGroup);
                 DocumentedIntentFilter dropDownFilter = new DocumentedIntentFilter();
@@ -92,8 +97,10 @@ public class TrackHistoryComponent extends AbstractMapComponent {
     protected void onDestroyImpl(Context context, MapView view) {
 
         if (breadRec != null) {
-            breadRec.dispose();
+            ClearContentRegistry.getInstance()
+                    .unregisterListener(breadRec.dataMgmtReceiver);
             AtakBroadcast.getInstance().unregisterReceiver(breadRec);
+            breadRec.dispose();
             breadRec = null;
         }
 

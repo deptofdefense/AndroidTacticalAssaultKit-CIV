@@ -10,6 +10,8 @@ import com.atakmap.android.config.FiltersConfig.Filter;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapGroup.MapItemsCallback;
 import com.atakmap.android.user.FilterMapOverlay;
+import com.atakmap.app.system.FlavorProvider;
+import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
@@ -17,6 +19,7 @@ import org.simpleframework.xml.Attribute;
 import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -207,6 +210,37 @@ public class MapOverlayConfig {
     }
 
     public String getTitle() {
+
+        return translate(title);
+
+    }
+
+    private String translate(String title) {
+        if (title.startsWith("filter_title_")) {
+            try {
+                Class<?> c = com.atakmap.app.R.string.class;
+                Field f = null;
+                FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+                if (fp != null && fp.hasMilCapabilities()) {
+                    try {
+                        f = c.getField("mil_" + title);
+                    } catch (Exception ignored) {
+                    }
+                }
+
+                if (f == null)
+                    f = c.getField("civ_" + title);
+
+                int i = f.getInt(null);
+                Context ctx = com.atakmap.android.maps.MapView.getMapView()
+                        .getContext();
+                if (ctx != null)
+                    return ctx.getString(i);
+            } catch (Exception e) {
+                //                Log.e(TAG, "error, could not find id: " + pam.title, e);
+                Log.e(TAG, "error, could not find id: " + title);
+            }
+        }
         return title;
     }
 

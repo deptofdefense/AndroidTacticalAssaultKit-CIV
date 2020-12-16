@@ -963,7 +963,7 @@ public class CoordDialogView extends LinearLayout implements
                     if (gp != null)
                         _setPoint(GeoPointMetaData.wrap(gp));
                 } catch (Exception e) {
-                    Log.e(TAG, "error occured", e);
+                    Log.e(TAG, "error occurred", e);
                 }
             }
         });
@@ -983,7 +983,7 @@ public class CoordDialogView extends LinearLayout implements
                     if (gp != null)
                         _setPoint(GeoPointMetaData.wrap(gp));
                 } catch (Exception e) {
-                    Log.e(TAG, "error occured", e);
+                    Log.e(TAG, "error occurred", e);
                 }
             }
         });

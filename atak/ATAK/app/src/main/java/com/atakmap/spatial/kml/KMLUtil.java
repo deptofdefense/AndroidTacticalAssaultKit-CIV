@@ -11,13 +11,14 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.track.crumb.CrumbPoint;
 import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
-
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
-
 import com.atakmap.spatial.file.export.KMZFolder;
+import com.atakmap.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipFile;
 import com.ekito.simpleKML.model.Boundary;
 import com.ekito.simpleKML.model.Coordinate;
 import com.ekito.simpleKML.model.Coordinates;
@@ -51,19 +52,15 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
-import com.atakmap.coremap.locale.LocaleUtil;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
 
 /**
  * Utilities for extracting relevant data from a KML Convert data to/from KML
@@ -718,10 +715,10 @@ public class KMLUtil {
      * @param idlWrap180 True if this polygon crosses the IDL but requires point unwrapping
      */
     public static Polygon createPolygonWithLinearRing(GeoPointMetaData[] points,
-                                                      String id, boolean excludeAltitude, boolean idlWrap180) {
-        return createPolygonWithLinearRing(points, id, excludeAltitude, idlWrap180, Double.NaN);
+            String id, boolean excludeAltitude, boolean idlWrap180) {
+        return createPolygonWithLinearRing(points, id, excludeAltitude,
+                idlWrap180, Double.NaN);
     }
-
 
     /**
      * Create a Polygon element containing an outer LinearRing Automatically closes ring if not
@@ -733,7 +730,8 @@ public class KMLUtil {
      * @param height the height in meters for the Polygon, Double.NaN if no height known.
      */
     public static Polygon createPolygonWithLinearRing(GeoPointMetaData[] points,
-            String id, boolean excludeAltitude, boolean idlWrap180, double height) {
+            String id, boolean excludeAltitude, boolean idlWrap180,
+            double height) {
         Polygon polygon = new Polygon();
         polygon.setId(id);
         if (excludeAltitude)
@@ -762,7 +760,8 @@ public class KMLUtil {
             double unwrap = 0;
             if (idlWrap180)
                 unwrap = firstPoint.get().getLongitude() > 0 ? 360 : -360;
-            Coordinate c = convertKmlCoord(firstPoint, excludeAltitude, unwrap, height);
+            Coordinate c = convertKmlCoord(firstPoint, excludeAltitude, unwrap,
+                    height);
             if (c != null)
                 coordsString += c;
         }
@@ -876,8 +875,9 @@ public class KMLUtil {
     }
 
     public static String convertKmlCoords(GeoPointMetaData[] points,
-                                          boolean excludeAltitude, boolean idlWrap180) {
-        return convertKmlCoords(points, excludeAltitude, idlWrap180, Double.NaN);
+            boolean excludeAltitude, boolean idlWrap180) {
+        return convertKmlCoords(points, excludeAltitude, idlWrap180,
+                Double.NaN);
     }
 
     public static String convertKmlCoords(GeoPointMetaData[] points,
@@ -891,7 +891,8 @@ public class KMLUtil {
 
         StringBuilder sb = new StringBuilder();
         for (GeoPointMetaData point : points) {
-            Coordinate c = convertKmlCoord(point, excludeAltitude, unwrap, height);
+            Coordinate c = convertKmlCoord(point, excludeAltitude, unwrap,
+                    height);
             if (c != null)
                 sb.append(c);
         }
@@ -909,10 +910,9 @@ public class KMLUtil {
      * @return the KML Coordinate
      */
     public static Coordinate convertKmlCoord(GeoPointMetaData point,
-                                             boolean excludeAltitude, double unwrap) {
+            boolean excludeAltitude, double unwrap) {
         return convertKmlCoord(point, excludeAltitude, unwrap, Double.NaN);
     }
-
 
     /**
      * Convert a geopoint with height into a KML Coordinate.  With KML, the representation is the
@@ -1145,9 +1145,10 @@ public class KMLUtil {
 
                     FileOutputStream fileOutStream = null;
                     try {
-                        tempFile = File.createTempFile(tempName, ".kml",
+                        tempFile = IOProviderFactory.createTempFile(tempName,
+                                ".kml",
                                 tmpDir);
-                        fileOutStream = FileIOProviderFactory.getOutputStream(
+                        fileOutStream = IOProviderFactory.getOutputStream(
                                 tempFile);
                         FileSystemUtils.copy(zip.getInputStream(ze),
                                 fileOutStream);
@@ -1235,8 +1236,8 @@ public class KMLUtil {
         }
 
         File parent = file.getParentFile();
-        if (!FileIOProviderFactory.exists(parent))
-            if (!FileIOProviderFactory.mkdirs(parent))
+        if (!IOProviderFactory.exists(parent))
+            if (!IOProviderFactory.mkdirs(parent))
                 Log.w(TAG,
                         "Failed to create directory(s)"
                                 + parent.getAbsolutePath());
@@ -1244,7 +1245,7 @@ public class KMLUtil {
         PrintWriter out = null;
         try {
             out = new PrintWriter(new BufferedWriter(
-                    FileIOProviderFactory.getFileWriter(file)));
+                    IOProviderFactory.getFileWriter(file)));
             if (!kml.startsWith("<?xml")) {
                 out.println(XML_PROLOG);
             }

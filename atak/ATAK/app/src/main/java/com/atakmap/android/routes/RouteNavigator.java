@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import com.atakmap.android.attachment.layer.AttachmentBillboardLayer;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.comms.ReportingRate;
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -18,6 +19,7 @@ import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.layer.Layer;
 
 import java.util.Collection;
 import java.util.List;
@@ -38,12 +40,13 @@ public class RouteNavigator {
 
     //-------------------- Fields ---------------------------
     private PointMapItem self;
-    private Collection<RouteNavigatorListener> routeNavigatorListeners = new ConcurrentLinkedQueue<>();
+    private final Collection<RouteNavigatorListener> routeNavigatorListeners = new ConcurrentLinkedQueue<>();
     private final BroadcastReceiver navReceiver;
     private final BroadcastReceiver gpsReceiver;
     private final DocumentedIntentFilter navFilter;
     private final DocumentedIntentFilter gpsFilter;
     private final SharedPreferences navPrefs;
+    private AttachmentBillboardLayer billboardLayer;
 
     //-------------------- Properties ---------------------------
     private volatile boolean navigating = false;
@@ -92,10 +95,11 @@ public class RouteNavigator {
      */
     private Thread updateThread = null;
 
-    RouteNavigator(final MapView mapView,
-            final MapGroup navGroup) {
+    RouteNavigator(final MapView mapView, final MapGroup navGroup,
+            final AttachmentBillboardLayer billboardLayer) {
         this.mapView = mapView;
         this.navGroup = navGroup;
+        this.billboardLayer = billboardLayer;
 
         navPrefs = PreferenceManager.getDefaultSharedPreferences(mapView
                 .getContext());
@@ -254,6 +258,8 @@ public class RouteNavigator {
         fireOnNavigationStarting();
         navigating = true;
         navigate();
+        billboardLayer.setVisible(navPrefs.getBoolean(
+                "route_billboard_enabled", true));
         Log.d(TAG, "navigating route: " + route);
         fireOnNavigationStarted();
         return true;
@@ -277,6 +283,8 @@ public class RouteNavigator {
      */
     synchronized public void stopNavigating() {
         Log.d(TAG, "stopping navigation");
+
+        billboardLayer.setVisible(false);
 
         if (navigating && route != null) {
 

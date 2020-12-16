@@ -35,7 +35,7 @@ class HostileManagerAdapter extends BaseAdapter {
     private final List<Marker> _list; //List to monitor
     private final SharedPreferences prefs;
     private int selectedIndex = -1;
-    private HostileManagerDropDownReceiver hmddr;
+    private final HostileManagerDropDownReceiver hmddr;
 
     HostileManagerAdapter(final HostileManagerDropDownReceiver hmddr,
             List<Marker> list) {

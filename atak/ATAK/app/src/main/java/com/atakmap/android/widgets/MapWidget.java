@@ -7,6 +7,7 @@ import android.view.MotionEvent;
 import com.atakmap.android.config.ConfigEnvironment;
 import com.atakmap.android.config.ConfigFactory;
 import com.atakmap.android.config.DataParser;
+import com.atakmap.android.maps.MapItem;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
 import org.w3c.dom.NamedNodeMap;
@@ -14,9 +15,13 @@ import org.w3c.dom.Node;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class MapWidget {
+
+    private final static AtomicLong serialIdGenerator = new AtomicLong(0L);
 
     /**
      * Default value of the zOrder property
@@ -35,6 +40,7 @@ public class MapWidget {
 
     private double _zOrder = ZORDER_DEFAULT;
     private boolean _visible = true;
+    private final long _serialID;
 
     AbstractParentWidget parent;
 
@@ -67,6 +73,7 @@ public class MapWidget {
     }
 
     public MapWidget() {
+        _serialID = serialIdGenerator.incrementAndGet();
     }
 
     public static class Factory implements ConfigFactory<MapWidget> {
@@ -312,5 +319,20 @@ public class MapWidget {
     protected void onVisibleChanged() {
         for (OnVisibleChangedListener l : _onVisibleChanged)
             l.onVisibleChanged(this);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        MapWidget mapWidget = (MapWidget) o;
+        return _serialID == mapWidget._serialID;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_serialID);
     }
 }

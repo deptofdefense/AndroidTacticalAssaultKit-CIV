@@ -23,12 +23,12 @@ public class MapTargetBubble extends AbstractLayer {
     private final ConcurrentLinkedQueue<OnScaleChangedListener> _onScaleChangedListener = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<OnCrosshairColorChangedListener> _onCrosshairColorChangedListener = new ConcurrentLinkedQueue<>();
 
-    private Polygon viewport;
+    private final Polygon viewport;
 
-    private boolean coordExtraction;
+    private final boolean coordExtraction;
 
-    private Globe globe;
-    private CrosshairLayer crosshair;
+    private final Globe globe;
+    private final CrosshairLayer crosshair;
     private double _latitude;
     private double _longitude;
     private double _scale;
@@ -145,12 +145,16 @@ public class MapTargetBubble extends AbstractLayer {
      * Returns an appropriate map scale for displaying the content in the bubble based on the
      * available layers.
      * 
-     * @return
+     * @return the map scale.
      */
     public double getMapScale() {
         return _scale;
     }
 
+    /**
+     * Sets the map scale for displaying the content of the bubble based on the available layers
+     * @param scale the scale to set
+     */
     public void setMapScale(double scale) {
         _scale = scale;
         onScaleChanged();

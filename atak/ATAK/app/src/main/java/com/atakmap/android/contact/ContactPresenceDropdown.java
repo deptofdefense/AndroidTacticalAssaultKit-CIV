@@ -66,7 +66,7 @@ import com.atakmap.app.R;
 import com.atakmap.comms.ReportingRate;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
@@ -794,10 +794,11 @@ public class ContactPresenceDropdown extends DropDownReceiver
                 + File.separator + "contacts.txt";
         try {
             File f = new File(path);
-            if (FileIOProviderFactory.isDirectory(f))
+            if (IOProviderFactory.isDirectory(f))
                 FileSystemUtils.deleteDirectory(f, false);
-            if (FileIOProviderFactory.exists(f)) {
-                BufferedReader reader = new BufferedReader(FileIOProviderFactory.getFileReader(f));
+            if (IOProviderFactory.exists(f)) {
+                BufferedReader reader = new BufferedReader(
+                        IOProviderFactory.getFileReader(f));
                 try {
                     String line;
                     while ((line = reader.readLine()) != null) {
@@ -814,7 +815,7 @@ public class ContactPresenceDropdown extends DropDownReceiver
 
             } else {
                 File fd = (new File(path)).getParentFile();
-                if (!FileIOProviderFactory.mkdir(fd))
+                if (!IOProviderFactory.mkdir(fd))
                     Log.w(TAG,
                             "Failed to create directory: "
                                     + fd.getAbsolutePath());
@@ -844,12 +845,13 @@ public class ContactPresenceDropdown extends DropDownReceiver
         try {
             File f = new File(path);
             File fd = f.getParentFile();
-            if (!FileIOProviderFactory.exists(fd) && !FileIOProviderFactory.mkdir(fd)) {
+            if (!IOProviderFactory.exists(fd) && !IOProviderFactory.mkdir(fd)) {
                 Log.w(TAG, "Failed to create directory"
                         + fd.getAbsolutePath());
                 return;
             }
-            BufferedWriter writer = new BufferedWriter(FileIOProviderFactory.getFileWriter(f));
+            BufferedWriter writer = new BufferedWriter(
+                    IOProviderFactory.getFileWriter(f));
             try {
                 for (String uid : _favUIDs)
                     writer.write(uid + "\n");

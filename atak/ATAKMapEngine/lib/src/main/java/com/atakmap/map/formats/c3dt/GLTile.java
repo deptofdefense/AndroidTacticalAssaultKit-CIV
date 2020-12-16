@@ -211,7 +211,7 @@ final class GLTile implements ContentSource.OnContentChangedListener {
 
                 // store last load time for retry on failure
                 this.contentLoadTime = System.currentTimeMillis();
-                if(this.content.getState() == GLContent.State.Failed) {
+                if(this.content == null || this.content.getState() == GLContent.State.Failed) {
                     source.addOnContentChangedListener(this);
                 }
             }

@@ -20,7 +20,7 @@ class ENGINE_API GeoPoint;
 class ENGINE_API MapControllerFocusPointChangedListener
 {
 public :
-    virtual ~MapControllerFocusPointChangedListener () throw () = 0;
+    virtual ~MapControllerFocusPointChangedListener() NOTHROWS = 0;
     virtual void mapControllerFocusPointChanged(AtakMapController *controller, const atakmap::math::Point<float> * const focus) = 0;
 };
 

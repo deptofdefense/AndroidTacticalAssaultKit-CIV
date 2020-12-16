@@ -37,23 +37,23 @@ namespace TAK
                 public:
                     void resetFont() NOTHROWS;
                     uint32_t addLabel(GLLabel& label) NOTHROWS;
-                    void removeLabel(uint32_t id) NOTHROWS;
-                    void setGeometry(uint32_t id, const TAK::Engine::Feature::Geometry2& geometry) NOTHROWS;
-                    void setAltitudeMode(uint32_t id, const TAK::Engine::Feature::AltitudeMode altitudeMode) NOTHROWS;
-                    void setText(uint32_t id, const TAK::Engine::Port::String text) NOTHROWS;
-                    void setVisible(uint32_t id, const bool visible) NOTHROWS;
-                    void setAlwaysRender(uint32_t id, const bool alwaysRender) NOTHROWS;
-                    void setMaxDrawResolution(uint32_t id, const double maxDrawResolution) NOTHROWS;
-                    void setAlignment(uint32_t id, const TextAlignment alignment) NOTHROWS;
-                    void setVerticalAlignment(uint32_t id, const VerticalAlignment alignment) NOTHROWS;
-                    void setDesiredOffset(uint32_t id, const Math::Point2<double>& desiredOffset) NOTHROWS;
-                    void setColor(uint32_t id, const int color) NOTHROWS;
-                    void setBackColor(uint32_t id, const int color) NOTHROWS;
-                    void setFill(uint32_t id, const bool fill) NOTHROWS;
-                    void getSize(uint32_t id, atakmap::math::Rectangle<double>& sizeRect) NOTHROWS;
+                    void removeLabel(const uint32_t id) NOTHROWS;
+                    void setGeometry(const uint32_t id, const TAK::Engine::Feature::Geometry2& geometry) NOTHROWS;
+                    void setAltitudeMode(const uint32_t id, const TAK::Engine::Feature::AltitudeMode altitude_mode) NOTHROWS;
+                    void setText(const uint32_t id, const TAK::Engine::Port::String text) NOTHROWS;
+                    void setVisible(const uint32_t id, const bool visible) NOTHROWS;
+                    void setAlwaysRender(const uint32_t id, const bool always_render) NOTHROWS;
+                    void setMaxDrawResolution(const uint32_t id, const double max_draw_resolution) NOTHROWS;
+                    void setAlignment(const uint32_t id, const TextAlignment alignment) NOTHROWS;
+                    void setVerticalAlignment(const uint32_t id, const VerticalAlignment alignment) NOTHROWS;
+                    void setDesiredOffset(const uint32_t id, const Math::Point2<double>& desired_offset) NOTHROWS;
+                    void setColor(const uint32_t id, const int color) NOTHROWS;
+                    void setBackColor(const uint32_t id, const int color) NOTHROWS;
+                    void setFill(const uint32_t id, const bool fill) NOTHROWS;
+                    void getSize(const uint32_t id, atakmap::math::Rectangle<double>& size_rect) NOTHROWS;
                     void setVisible(const bool visible) NOTHROWS;
                 public:
-                    void draw(const GLMapView2& view, const int renderPass) NOTHROWS override;
+                    void draw(const GLMapView2& view, const int render_pass) NOTHROWS override;
                     void release() NOTHROWS override;
                     int getRenderPass() NOTHROWS override;
                     void start() NOTHROWS override;
@@ -66,14 +66,14 @@ namespace TAK
                     bool absoluteLabelRotation;
                     int64_t labelFadeTimer;
                 private:
-                    std::map<uint32_t, GLLabel> m_labels;
-                    uint32_t m_mapIdx;
-                    uint32_t m_alwaysRenderIdx;
-                    int m_drawVersion;
-                    bool m_replaceLabels;
-                    Thread::Mutex mutex;
-                    std::unique_ptr<TAK::Engine::Renderer::GLRenderBatch2> batch;
-                    bool m_visible;
+                    std::map<uint32_t, GLLabel> labels_;
+                    uint32_t map_idx_;
+                    uint32_t always_render_idx_;
+                    int draw_version_;
+                    bool replace_labels_;
+                    Thread::Mutex mutex_;
+                    std::unique_ptr<TAK::Engine::Renderer::GLRenderBatch2> batch_;
+                    bool visible_;
                 };
 
                 typedef std::unique_ptr<GLLabelManager, void(*)(const GLLabelManager*)> GLLabelManagerPtr;

@@ -16,7 +16,7 @@ import static java.lang.Math.sin;
  *             {@link GeoPoint}
  */
 @Deprecated
-@DeprecatedApi(since="4.1", forRemoval = true, removeAt = "4.4")
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public final class DistanceCalculations {
 
     private static final String TAG = "DistanceCalculations";

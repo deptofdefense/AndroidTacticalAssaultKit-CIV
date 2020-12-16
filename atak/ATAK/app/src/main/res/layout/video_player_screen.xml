@@ -106,7 +106,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical" >
 
-                <SeekBar
+                <com.atakmap.android.video.BufferSeekBar
                     android:id="@+id/fmvSeekBar"
                     android:minWidth="96dp"
                     android:layout_width="fill_parent"

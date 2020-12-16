@@ -163,7 +163,6 @@ public abstract class Shape extends MapItem implements Capturable {
         _onStrokeWeightChanged.remove(listener);
     }
 
-
     /**
      * Add a point changed property listener
      *
@@ -172,7 +171,6 @@ public abstract class Shape extends MapItem implements Capturable {
     public void addOnPointsChangedListener(OnPointsChangedListener listener) {
         _onPointsChanged.add(listener);
     }
-
 
     /**
      * Remove a point changed property listener
@@ -385,7 +383,7 @@ public abstract class Shape extends MapItem implements Capturable {
     }
 
     /**
-     * Provides the center point for the Shape, or null if an error has occured.
+     * Provides the center point for the Shape, or null if an error has occurred.
      */
     public GeoPointMetaData getCenter() {
         final GeoPoint[] points = this.getPoints();

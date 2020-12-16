@@ -16,7 +16,7 @@ final class DataIngestReport {
 
     private static class DataIngestError {
         public String description;
-        Exception exeception = null;
+        Exception exception = null;
 
         public DataIngestError(String desc) {
             this.description = desc;
@@ -24,14 +24,14 @@ final class DataIngestReport {
 
         DataIngestError(String desc, Exception execept) {
             this.description = desc;
-            this.exeception = execept;
+            this.exception = execept;
         }
 
         public String toString() {
             if (description != null)
                 return description;
-            if (this.exeception != null)
-                return ""+this.exeception.getMessage();
+            if (this.exception != null)
+                return "" + this.exception.getMessage();
             return "";
         }
     }

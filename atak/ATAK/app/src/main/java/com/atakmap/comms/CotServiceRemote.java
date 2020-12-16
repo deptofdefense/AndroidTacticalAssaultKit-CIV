@@ -6,6 +6,7 @@ import java.util.List;
 
 import android.os.Bundle;
 
+import com.atakmap.android.cot.CotMapComponent;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.cot.event.CotEvent;
@@ -14,7 +15,7 @@ import com.atakmap.coremap.cot.event.CotEvent;
  */
 public class CotServiceRemote {
 
-    private static List<CotServiceRemote> queued = new ArrayList<>();
+    private final static List<CotServiceRemote> queued = new ArrayList<>();
 
     private CotEventListener cel;
 
@@ -198,13 +199,27 @@ public class CotServiceRemote {
     }
 
     /**
+     * Gets the CoTService if it is valid otherwise returns null.
+     * @return null if the CoTService is not valid.
+     */
+    private static CotService getCotService() {
+        final CommsMapComponent cmc = CommsMapComponent.getInstance();
+        if (cmc != null) {
+            return cmc.getCotService();
+        }
+        return null;
+    }
+
+    /**
      * Request an input be added for the local network.
      * @param input this is the ConnectString as shown in CotOutputsListActivity
      * @param meta contained in CotPortListActivity.CotPort is all of the values that can be put in
      *             the bundle.
      */
     public void addInput(final String input, final Bundle meta) {
-        CommsMapComponent.getInstance().getCotService().addInput(input, meta);
+        CotService cs = getCotService();
+        if (cs != null)
+            cs.addInput(input, meta);
     }
 
     /**
@@ -212,7 +227,9 @@ public class CotServiceRemote {
      * @param input the input as described by a string.
      */
     public void removeInput(final String input) {
-        CommsMapComponent.getInstance().getCotService().removeInput(input);
+        CotService cs = getCotService();
+        if (cs != null)
+            cs.removeInput(input);
     }
 
     /**
@@ -222,8 +239,9 @@ public class CotServiceRemote {
      *             the bundle.
      */
     public void addOutput(final String output, final Bundle meta) {
-        CommsMapComponent.getInstance().getCotService()
-                .addOutput(output, meta);
+        CotService cs = getCotService();
+        if (cs != null)
+            cs.addOutput(output, meta);
     }
 
     /**
@@ -231,7 +249,9 @@ public class CotServiceRemote {
      * @param output the output as described by a string
      */
     public void removeOutput(final String output) {
-        CommsMapComponent.getInstance().getCotService().removeOutput(output);
+        CotService cs = getCotService();
+        if (cs != null)
+            cs.removeOutput(output);
     }
 
     /**
@@ -240,8 +260,9 @@ public class CotServiceRemote {
      *      * wild card "**" to remove all streams.
      */
     public final void removeStream(String connectString) {
-        CommsMapComponent.getInstance().getCotService()
-                .removeStreaming(connectString);
+        CotService cs = getCotService();
+        if (cs != null)
+            cs.removeStreaming(connectString, false);
     }
 
     /**
@@ -251,20 +272,23 @@ public class CotServiceRemote {
      */
     public final void addStream(final String connectString,
             final Bundle params) {
-        CommsMapComponent.getInstance().getCotService()
-                .addStreaming(connectString, params);
+        CotService cs = getCotService();
+        if (cs != null)
+            cs.addStreaming(connectString, params);
     }
 
     public final void setCredentialsForStream(String connectString,
             String username, String password) {
-        CommsMapComponent.getInstance().getCotService()
-                .setCredentialsForStream(connectString, username, password);
+        CotService cs = getCotService();
+        if (cs != null)
+            cs.setCredentialsForStream(connectString, username, password);
     }
 
     public final void setUseAuthForStream(String connectString,
             boolean useAuth) {
-        CommsMapComponent.getInstance().getCotService()
-                .setUseAuthForStream(connectString, useAuth);
+        CotService cs = getCotService();
+        if (cs != null)
+            cs.setUseAuthForStream(connectString, useAuth);
     }
 
     /**

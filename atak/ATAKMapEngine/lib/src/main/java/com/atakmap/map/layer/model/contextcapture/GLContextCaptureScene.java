@@ -4,7 +4,7 @@ import android.graphics.BitmapFactory;
 
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -58,8 +58,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+import com.atakmap.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipFile;
 
 /** @deprecated PROTOTYPE CODE; SUBJECT TO REMOVAL AT ANY TIME; DO NOT CREATE DIRECT DEPENDENCIES */
 @Deprecated
@@ -500,7 +500,7 @@ ebi = System.currentTimeMillis();
 
                 context.requestRefresh();
             } catch(IOException e) {
-                Log.w(TAG, "Failed to initialize model from " + info.uri + " [" + FileIOProviderFactory.exists(new File(info.uri)) + "]", e);
+                Log.w(TAG, "Failed to initialize model from " + info.uri + " [" + IOProviderFactory.exists(new File(info.uri)) + "]", e);
             } finally {
                 if(zip != null)
                     try {
@@ -635,7 +635,7 @@ ebi = System.currentTimeMillis();
     }
 
     static TileGrid loadMetadata(File file, ModelInfo info) throws IOException, JSONException {
-        if(!FileIOProviderFactory.exists(file))
+        if(!IOProviderFactory.exists(file))
             return null;
 
         TileGrid grid = new TileGrid();
@@ -707,8 +707,8 @@ ebi = System.currentTimeMillis();
     }
 
     static void saveMetadata(File file, TileGrid grid) throws IOException, JSONException {
-        if(!FileIOProviderFactory.exists(file.getParentFile()))
-            if (!FileIOProviderFactory.mkdirs(file.getParentFile())) {
+        if(!IOProviderFactory.exists(file.getParentFile()))
+            if (!IOProviderFactory.mkdirs(file.getParentFile())) {
                Log.e(TAG, "unable to make the parent directory for: " + file);
             }
 
@@ -768,7 +768,7 @@ ebi = System.currentTimeMillis();
 
         FileOutputStream stream = null;
         try {
-            stream = FileIOProviderFactory.getOutputStream(file);
+            stream = IOProviderFactory.getOutputStream(file);
             FileSystemUtils.write(stream, metadata.toString());
         } finally {
             if(stream != null)
@@ -879,7 +879,7 @@ ebi = System.currentTimeMillis();
                     if (textureUri.contains(".zip"))
                         stream = (new ZipVirtualFile(textureUri)).openStream();
                     else
-                        stream = FileIOProviderFactory.getInputStream(new File(textureUri));
+                        stream = IOProviderFactory.getInputStream(new File(textureUri));
                     BitmapFactory.decodeStream(stream, null, opts);
                     if(opts.outWidth > maxWidth)
                         maxWidth = opts.outWidth;

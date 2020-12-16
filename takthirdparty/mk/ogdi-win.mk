@@ -1,7 +1,7 @@
 include mk/ogdi-common.mk
 
 
-ogdi_nmake_opts=BUILD_DEBUG=$(win32_debug_yesno)                            \
+ogdi_nmake_opts=BUILD_DEBUG=$(win_debug_yesno)                              \
 
 
 # This is phony because we always want to be invoking ogdi make to be sure

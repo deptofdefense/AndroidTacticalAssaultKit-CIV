@@ -26,6 +26,8 @@ gdal_kdu=$(gdal_kdu_$(GDAL_USE_KDU))
 gdal_win64_win64=WIN64=yes
 gdal_win64_win32=
 
+gdal_pdfium_libdir=$(OUTDIR_CYGSAFE)/pdfium/lib
+
 gdal_config=MRSID_DSDK_DIR=$(OUTDIR_CYGSAFE)/mrsid                           \
 ZLIB_EXTERNAL_LIB=1                                                          \
 ZLIB_INC="-I$(OUTDIR_CYGSAFE)/include /DZLIB_WINAPI /DZLIB_DLL"              \
@@ -50,6 +52,9 @@ LIBKML_LIBS="$$LIBKML_LIBRARY/libkmlbase.lib                                 \
 $(gdal_kdu)                                                                  \
 MRSID_RASTER_DIR=$(OUTDIR_CYGSAFE)/mrsid                                     \
 MRSID_RDLLBUILD=YES                                                          \
+PDFIUM_ENABLED=YES                                                           \
+PDFIUM_CFLAGS="-I$(OUTDIR_CYGSAFE)/pdfium/ -I$(OUTDIR_CYGSAFE)/pdfium/public -I$(OUTDIR_CYGSAFE)/pdfium/core" \
+PDFIUM_LIBS="$(gdal_pdfium_libdir)/pdfium.lib $(gdal_pdfium_libdir)/bigint.lib $(gdal_pdfium_libdir)/fdrm.lib $(gdal_pdfium_libdir)/formfiller.lib $(gdal_pdfium_libdir)/fpdfapi.lib $(gdal_pdfium_libdir)/fpdfdoc.lib $(gdal_pdfium_libdir)/fpdftext.lib $(gdal_pdfium_libdir)/freetype.lib $(gdal_pdfium_libdir)/fxcodec.lib $(gdal_pdfium_libdir)/fxcrt.lib $(gdal_pdfium_libdir)/fxedit.lib $(gdal_pdfium_libdir)/fxge.lib $(gdal_pdfium_libdir)/pdfwindow.lib $(gdal_pdfium_libdir)/fx_agg.lib $(gdal_pdfium_libdir)/fx_lcms2.lib $(gdal_pdfium_libdir)/fx_libjpeg.lib $(gdal_pdfium_libdir)/fx_libopenjpeg.lib $(gdal_pdfium_libdir)/fx_zlib.lib gdi32.lib kernel32.lib advapi32.lib" \
 PROJ_DIR=$(OUTDIR_CYGSAFE)/proj                                              \
 PROJ_INCLUDE=-I$(OUTDIR_CYGSAFE)/proj/src                                    \
 PROJ_LIBRARY=$(OUTDIR_CYGSAFE)/lib/proj_i.lib                                \

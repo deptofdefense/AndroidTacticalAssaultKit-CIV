@@ -109,6 +109,12 @@
 -dontwarn com.iai.**
 -dontwarn org.simpleframework.**
 
+# for system level interfaces so there are no colisions between the abstract
+# class and the interface at the time of obfuscation
+-keep class com.atakmap.app.system.AbstractSystemComponent {*;}
+-keep interface com.atakmap.app.system.FlavorProvider {*;}
+
+
 -keep class android.database.** {*;}
 -keep class android.support.** {*;}
 -keep class com.healthmarketscience.** {*;}
@@ -244,10 +250,17 @@
 -keep class com.hoho.android.usbserial.** {*;}
 
 # Native code
+-keep class com.atakmap.android.maps.MapTextFormat {*;}
+-keep class com.atakmap.database.Bindable {*;}
+-keep class com.atakmap.database.CursorIface {*;}
+-keep class com.atakmap.database.DatabaseIface {*;}
+-keep class com.atakmap.database.QueryIface {*;}
 -keep class com.atakmap.database.RowIterator {*;}
+-keep class com.atakmap.database.StatementIface {*;}
 -keep class com.atakmap.interop.NotifyCallback {*;}
 -keep class com.atakmap.interop.Pointer {*;}
 -keep class com.atakmap.interop.ProgressCallback {*;}
+-keep class com.atakmap.io.ProtocolHandler {*;}
 -keep class com.atakmap.map.AtakMapView {*;}
 -keep class com.atakmap.map.AtakMapView$* {*;}
 -keep class com.atakmap.map.AtakMapController {*;}
@@ -267,6 +280,11 @@
 -keep class com.atakmap.map.elevation.ElevationSourceManager$* {*;}
 -keep class com.atakmap.map.elevation.NativeElevationSource {*;}
 -keep class com.atakmap.map.elevation.NativeElevationSource$* {*;}
+-keep class com.atakmap.map.formats.c3dt.ContentSource {*;}
+-keep class com.atakmap.map.formats.c3dt.GLTFBitmap {*;}
+-keep class com.atakmap.map.formats.c3dt.GLTF {*;}
+-keep class com.atakmap.map.gdal.VSIStatBuf {*;}
+-keep class com.atakmap.map.gdal.VSIJFileFilesystemHandler {*;}
 -keep class com.atakmap.map.layer.Layer {*;}
 -keep class com.atakmap.map.layer.Layer$* {*;}
 -keep class com.atakmap.map.layer.NativeLayer {*;}

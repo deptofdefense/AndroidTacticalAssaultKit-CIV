@@ -7,7 +7,7 @@ import android.content.Intent;
 import android.net.Uri;
 
 import com.atakmap.android.util.AttachmentManager;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.filesystem.HashingUtils;
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.image.ImageContainer;
@@ -81,11 +81,11 @@ public class AttachmentBroadcastReceiver extends DropDownReceiver implements
                                 + ".png";
                         File cf = new File(cache);
                         //Log.d(TAG, "deleting thumb: " + cf);
-                        if (FileIOProviderFactory.exists(cf))
+                        if (IOProviderFactory.exists(cf))
                             FileSystemUtils.delete(cf);
                     }
                 } catch (Exception e) {
-                    Log.d(TAG, "error occured", e);
+                    Log.d(TAG, "error occurred", e);
                 }
                 // Include default directory to delete, in case files is empty
                 String fPath = AttachmentManager.getFolderPath(item.getUID());
@@ -96,7 +96,7 @@ public class AttachmentBroadcastReceiver extends DropDownReceiver implements
                 }
                 // Delete attachment directories
                 for (File dir : dirs) {
-                    if (FileIOProviderFactory.exists(dir)) {
+                    if (IOProviderFactory.exists(dir)) {
                         Log.d(TAG, "Removing attachments directory " + fPath);
                         FileSystemUtils.deleteDirectory(dir, false);
                     }
@@ -247,7 +247,7 @@ public class AttachmentBroadcastReceiver extends DropDownReceiver implements
                     file.getParentFile(), file.getName())) {
                 File nitfXml = new File(file.getParent(), file.getName()
                         + ".aux.xml");
-                if (FileIOProviderFactory.exists(nitfXml))
+                if (IOProviderFactory.exists(nitfXml))
                     manifest.addFile(nitfXml, uid);
             }
 

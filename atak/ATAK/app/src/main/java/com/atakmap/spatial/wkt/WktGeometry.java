@@ -28,6 +28,11 @@ public abstract class WktGeometry {
         this.style = style;
     }
 
+    /**
+     * Parses a well known text geometry and creates a list of WktGeometry objects
+     * @param text the well known text
+     * @return the list of WtkGeometry objects
+     */
     public static List<? extends WktGeometry> parse(String text) {
         LinkedList<WktGeometry> ret = new LinkedList<>();
         String geomType = getGeomType(text);
@@ -51,12 +56,23 @@ public abstract class WktGeometry {
         return ret;
     }
 
+    /**
+     * Parses a well known binary geometry and creates a list of WktGeometry objects
+     * @param wkb the well known binary
+     * @return the list of WtkGeometry objects
+     */
     public static List<? extends WktGeometry> fromWkb(ByteBuffer wkb) {
         throw new UnsupportedOperationException();
     }
 
-    // http://www.gaia-gis.it/gaia-sins/BLOB-Geometry.html
-
+    /**
+     * Implementation from http://www.gaia-gis.it/gaia-sins/BLOB-Geometry.html
+     * @param name the name of the spatial lite blob
+     * @param blob the blob
+     * @param style the styling for the blob
+     * @param retval the list of map items to return
+     * @return the number of items.
+     */
     public static int fromSpatiaLiteBlob(String name, ByteBuffer blob,
             FeatureStyle style,
             List<MapItem> retval) {
@@ -106,6 +122,15 @@ public abstract class WktGeometry {
         return 0;
     }
 
+    /**
+     * Implementation from http://www.gaia-gis.it/gaia-sins/BLOB-Geometry.html
+     * @param name the name of the spatial lite blob
+     * @param blob the blob
+     * @param style the styling for the blob
+     * @param requiredClass the classtype to restrict to.
+     * @param retval the list of map items to return
+     * @return the number of items.
+     */
     public static int fromSpatiaLiteBlobCollectionEntity(String name,
             ByteBuffer blob,
             FeatureStyle style, int requiredClass, List<MapItem> retval) {

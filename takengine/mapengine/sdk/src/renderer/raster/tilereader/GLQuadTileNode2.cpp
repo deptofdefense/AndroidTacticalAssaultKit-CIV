@@ -266,6 +266,9 @@ TAKErr GLQuadTileNode2::create(GLQuadTileNode2Ptr &value, GLQuadTileNode2 *paren
 GLQuadTileNode2::GLQuadTileNode2()
     : core_(nullptr),
       current_request_id_(0),
+      current_request_level_(0),
+      current_request_row_(0),
+      current_request_col_(0),
       current_request_id_valid_(false),
       texture_(nullptr, nullptr),
       tile_row_(-1),
@@ -276,6 +279,8 @@ GLQuadTileNode2::GLQuadTileNode2()
       tile_src_y_(0),
       tile_src_width_(0),
       tile_src_height_(0),
+      tile_width_(0),
+      tile_height_(0),
       texture_coordinates_(nullptr, Memory_array_deleter_const<float>),
       texture_coordinates_capacity_(0),
       vertex_coordinates_(nullptr, Memory_array_deleter_const<float>),
@@ -336,7 +341,7 @@ GLQuadTileNode2::~GLQuadTileNode2()
     if (this->root_ == this && this->core_) {
         delete this->core_;
         this->core_ = nullptr;
-    } else {
+    } else if (this->core_) {
         this->core_->vertexResolver->nodeDestroying(this);
     }
 }
@@ -616,9 +621,11 @@ void GLQuadTileNode2::release() NOTHROWS
         this->borrowing_from_ = nullptr;
     }
     if (this == this->root_) {
-        // vertex resolver is to be released prior to I2G functions
-        core_->vertexResolver->release();
-        this->core_->progressiveLoading = false;
+        if (core_) {
+            // vertex resolver is to be released prior to I2G functions
+            core_->vertexResolver->release();
+            this->core_->progressiveLoading = false;
+        }
     } else {
         this->parent_ = nullptr;
     }
@@ -632,7 +639,8 @@ void GLQuadTileNode2::release() NOTHROWS
 void GLQuadTileNode2::super_release()
 {
     this->current_request_id_valid_ = false;
-    this->core_->tileReader->asyncAbort(*this);
+    if (this->core_)
+        this->core_->tileReader->asyncAbort(*this);
     {
         Thread::Lock lock(queued_callbacks_mutex_);
         for (IOCallbackOpaque *cbo : queued_callbacks_)

@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">مرحبا أداة العالم</string>
+    <string name="hello_world">Hello World</string>
+    <!-- description -->
+    <string name="app_desc">Hello World Plugin</string>
+    <!-- Button Descriptions-->
+    <string name="largerButton">Enlarge and move the dropdown</string>
+    <string name="smallerButton">Enlarge and move the dropdown</string>
+    <string name="showSeachIcon">Show a custom map widget</string>
+    <string name="fly">Pan to a location on the map</string>
+    <string name="specialWheelMarker">Create a marker with an special radial menu</string>
+    <string name="addAnAircraft">Create an aircraft marker</string>
+    <string name="staleoutMarker">Create a marker that will stale out</string>
+    <string name="addStream">Connect to a content stream</string>
+    <string name="removeStream">Remove the content stream</string>
+    <string name="itemInspect">Inspect the CoT of a map item</string>
+    <string name="customType">Create a custom type of marker</string>
+    <string name="listRoutes">List all of the routes on the map</string>
+    <string name="addXRoute">Add a route to the map</string>
+    <string name="reXRoute">Reroute the route on the map</string>
+    <string name="emergency">Create an emergency 911 alert</string>
+    <string name="no_emergency">Remove the emergency 911 alert</string>
+    <string name="addRectangle">Draw a rectangle on the map</string>
+    <string name="drawShapes">Draw a shape on the map</string>
+    <string name="rbcircle">Draw a Range and Bearing circle on the map</string>
+    <string name="externalGps">Simulate an attached GPS</string>
+    <string name="surfaceAtCenter">Display the surface height at the center of the screen</string>
+    <string name="fakeContentProvider">Connect to a fake content provider</string>
+    <string name="pluginNotification">Display an android notification</string>
+    <string name="notificationSpammer">Spam android notifications</string>
+    <string name="cameraLauncher">Launch the camera</string>
+    <string name="imageAttach">Create a marker with an attached image</string>
+    <string name="webView">Demonstrate how to launch a plugin with a web view.</string>
+    <string name="addLayer">Demonstrate how to add a layer.</string>
+    <string name="speechToText">Display a Speech to Text example</string>
+    <string name="hookNavigation">A simple example that hooks into navigation events and toasts events pertaining to navigation.</string>
+    <!-- Text to speech-->
+    <string name="action_settings">Settings</string>
+    <string name="speech_prompt_numeric_grid_zone">Please say the 2 digits of the Grid Zone&#8230;</string>
+    <string name="speech_prompt_alpha_grid_zone">Please say the 1 letter of the Grid Zone&#8230;</string>
+    <string name="speech_prompt_square_id">"Please say the two letter Square Identifier&#8230;</string>
+    <string name="speech_prompt_easting">Please say the five digit easting&#8230;</string>
+    <string name="speech_prompt_northing">Please say the five digit northing&#8230;</string>
+    <string name="speech_not_supported">Sorry! Your device doesn\'t support speech input</string>
+    <string name="tap_on_mic">Tap on mic to speak</string>
+    <string name="tap_to_speak_mgrs_loc">Tap to state the Coordinates and Marker Type</string>
+    <string name="tap_to_speak_mgrs">Tap to state the MGRS Coordinates</string>
+    <string name="tap_to_speak_marker_type">Tap to state the Marker Type</string>
+    <string name="marker_type">Marker Type</string>
+    <string name="drop_marker">Drop Marker</string>
+    <string name="mgrs">MGRS Coordinates</string>
+    <string name="speech_hint_12345">12345</string>
+    <string name="speech_hint_hostile">Hostile</string>
+    <string name="speech_hint_u">U</string>
+    <string name="speech_hint_47">47</string>
+    <string name="speech_hint_AA">AA</string>
+
+    <string name="example_header">Header Example</string>
+    <string name="example_footer">Footer Example</string>
+    <string name="example_layer_description">This is an example layer.</string>
+    <!-- Speech to Activity-->
+    <string name="speech_prompt_Activity">Say what you want to do</string>
+    <string name="speechToActivity">Tell ATAK what you want to do</string>
+    <string name="activity_not_found">Activity not found</string>
+    <!-- Arrays of words for SpeechToActivity-->
+    <string-array name="drop_a_array">
+        <item>dropped</item>
+        <item>drop a</item>
+        <item>put a</item>
+        <item>place a</item>
+        <item>plot a</item>
+    </string-array>
+    <string-array name="at_array">
+        <item>at</item>
+        <item>by</item>
+        <item>around</item>
+        <item>near</item>
+        <item>on</item>
+    </string-array>
+    <string-array name="quick_array">
+        <item>quick</item>
+        <item>drive</item>
+        <item>go to</item>
+    </string-array>
+    <string-array name="navigate_array">
+        <item>navigate</item>
+        <item>route</item>
+        <item>drive</item>
+        <item>go to</item>
+    </string-array>
+    <string-array name="from_array">
+        <item>from</item>
+    </string-array>
+    <string-array name="bloodhound_array">
+        <item>bloodhound to a</item>
+        <item>bloodhound to</item>
+        <item>bloodhound</item>
+        <item>Bloodhound</item>
+    </string-array>
+    <string-array name="a_array">
+        <item>dropped</item>
+        <item>a</item>
+        <item>an</item>
+        <item>the</item>
+        <item>drop</item>
+        <item>put</item>
+        <item>place</item>
+    </string-array>
+    <!-- word arrays for speechPointDropper-->
+    <string-array name="hostile_array">
+        <item>enemy</item>
+        <item>hostile</item>
+        <item>hostile marker</item>
+        <item>hostile point</item>
+        <item>hostel</item>
+        <item>hot style</item>
+        <item>hospital</item>
+        <item>hostiles</item>
+    </string-array>
+    <string-array name="unknown_array">
+        <item>unknown marker</item>
+        <item>unknown point</item>
+        <item>unknown</item>
+        <item>known</item>
+    </string-array>
+    <string-array name="friendly_array">
+        <item>friendly</item>
+        <item>friendly marker</item>
+        <item>friendly point</item>
+        <item>friend</item>
+        <item>buddy</item>
+    </string-array>
+    <string-array name="neutral_array">
+        <item>neutral</item>
+        <item>neutral marker</item>
+        <item>neutral point</item>
+        <item>new troll</item>
+    </string-array>
+    <string-array name="spotmap_array">
+        <item>spotmap</item>
+        <item>spot map</item>
+        <item>spot</item>
+        <item>point</item>
+    </string-array>
+    <string-array name="letter_array">
+        <item>B,be</item>
+        <item>B,bee</item>
+        <item>C,sea</item>
+        <item>C,see</item>
+        <item>D,dee</item>
+        <item>J,jay</item>
+        <item>N,end</item>
+        <item>N,and</item>
+        <item>O,oh</item>
+        <item>P,pee</item>
+        <item>Q,queue</item>
+        <item>Q,que</item>
+        <item>R,are</item>
+        <item>T,tea</item>
+        <item>T,tee</item>
+        <item>U,you</item>
+        <item>X,ex</item>
+        <item>Y,why</item>
+    </string-array>
+    <!-- Bloodhound words -->
+    <string-array name="callsign_array">
+        <item>callsign</item>
+        <item>marker</item>
+        <item>user</item>
+        <item>point</item>
+    </string-array>
+    <string-array name="route_array">
+        <item>route</item>
+        <item>root</item>
+    </string-array>
+    <string name="Manual_mode">Please enter target manually</string>
+    <string name="Remove_item_warn">"Are you sure you want to remove "</string>
+    <string name="activity_found">Activity Found</string>
+    <string name="addToolbarItem">Sample of how to add / remove a toolbar item</string>
+    <string name="bumpControl">Demonstrates how to use the accelerometer</string>
+    <string name="cancel_btn">Cancel</string>
+    <string name="confirm_btn">Confirm</string>
+    <string name="customMenuDefault">Create a custom menu default for friendly types that is a copy of the hostile menu.   When unselected it will change it back.</string>
+    <string name="dropRoute">Drop a new route on the map without displaying the option dialog</string>
+    <string name="full_example_summary">Shows a quick example of how to reference both a title and a summary as a String resource</string>
+    <string name="full_example_title">Full String Example</string>
+    <string name="issLocation">Demonstrates how to plot the ISS location from a open source site</string>
+    <string name="sensorFOV">Demonstrates how to plot a sensor Field of View</string>
+    <string name="summary">Shows a quick test of launching the file browser</string>
+
+    <string name="videoLauncher">Example of how to display a video with an overlay layer</string>
+
+    <string name="route_exporter_name">Hello World Route Exporter</string>
+
+    <string name="country_prompt">Choose a country</string>
+
+    <string-array name="country_arrays">
+        <item>Malaysia</item>
+        <item>United States</item>
+        <item>Indonesia</item>
+        <item>France</item>
+        <item>Italy</item>
+        <item>Singapore</item>
+        <item>New Zealand</item>
+        <item>India</item>
+    </string-array>
+
+
+</resources>

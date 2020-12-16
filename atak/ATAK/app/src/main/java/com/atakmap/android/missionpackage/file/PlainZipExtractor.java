@@ -7,7 +7,7 @@ import com.atakmap.android.importfiles.sort.ImportCotSort;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.missionpackage.MissionPackageUtils;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.BufferedOutputStream;
@@ -18,6 +18,7 @@ import java.io.StringBufferInputStream;
 import java.util.ArrayList;
 import java.util.List;
 import com.atakmap.coremap.locale.LocaleUtil;
+
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -73,11 +74,11 @@ public class PlainZipExtractor implements IMissionPackageExtractor {
         ZipOutputStream zos = null;
         try {
             // read in from plain old zip
-            zin = new ZipInputStream(FileIOProviderFactory.getInputStream(inZip));
+            zin = new ZipInputStream(IOProviderFactory.getInputStream(inZip));
             ZipEntry zinEntry = null;
 
             // write out to mission package zip
-            FileOutputStream fos = FileIOProviderFactory.getOutputStream(outZip);
+            FileOutputStream fos = IOProviderFactory.getOutputStream(outZip);
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             // iterate all zip entries
@@ -195,7 +196,8 @@ public class PlainZipExtractor implements IMissionPackageExtractor {
             zos = null;
 
             // now see if out zip was created successfully
-            if (!FileSystemUtils.isFile(outZip) || FileIOProviderFactory.length(outZip) < 1) {
+            if (!FileSystemUtils.isFile(outZip)
+                    || IOProviderFactory.length(outZip) < 1) {
                 Log.e(TAG,
                         "Failed to create file: " + outZip.getAbsolutePath());
                 return null;
@@ -265,7 +267,8 @@ public class PlainZipExtractor implements IMissionPackageExtractor {
                 .getName()
                 .toLowerCase(LocaleUtil.getCurrent())
                 .startsWith(
-                        MissionPackageBuilder.MANIFEST_PATH + File.separator)) {
+                        (MissionPackageBuilder.MANIFEST_PATH + File.separator)
+                                .toLowerCase(LocaleUtil.getCurrent()))) {
             Log.d(TAG, "Skipping manifest: " + zinEntry.getName());
             return ZipEntryAction.OMIT;
         }

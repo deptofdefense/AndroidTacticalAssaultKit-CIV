@@ -548,4 +548,18 @@ public class MapOverlayParent extends AbstractMapOverlay2 {
             return (MapOverlayParent) existing;
         }
     }
+
+    public static MapOverlayParent getParent(MapView mapView, String id) {
+        MapOverlay existing = mapView.getMapOverlayManager().getOverlay(id);
+        if (existing == null) {
+            return null;
+        } else if (!(existing instanceof MapOverlayParent)) {
+            Log.w(TAG, "Overlay already exists, but not a MapOverlayParent: "
+                    + id);
+            return null;
+        } else {
+            //Log.d(TAG, "MapOverlayParent already exists: " + id)
+            return (MapOverlayParent) existing;
+        }
+    }
 }

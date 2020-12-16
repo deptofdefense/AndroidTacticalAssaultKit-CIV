@@ -126,7 +126,7 @@
         <CheckBoxPreference
             android:title="@string/globe_display"
             android:summary="@string/globe_display_summary"
-            android:defaultValue="false"
+            android:defaultValue="true"
             android:key="atakGlobeModeEnabled" />
 
     </PreferenceCategory>

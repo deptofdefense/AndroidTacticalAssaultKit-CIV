@@ -12,7 +12,7 @@ import com.atakmap.android.model.viewer.processing.TextureHelper;
 import com.atakmap.android.vehicle.model.VehicleModelCache;
 import com.atakmap.android.vehicle.model.VehicleModelInfo;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.layer.feature.geometry.Envelope;
@@ -234,7 +234,8 @@ public class VehicleModelCaptureRequest implements GLOffscreenCaptureRequest {
         if (_outFile != null) {
             // Create icon output directory
             File dir = _outFile.getParentFile();
-            if (dir == null || !FileIOProviderFactory.exists(dir) && !FileIOProviderFactory.mkdirs(dir)) {
+            if (dir == null || !IOProviderFactory.exists(dir)
+                    && !IOProviderFactory.mkdirs(dir)) {
                 Log.w(TAG, "Failed to create dirs: " + dir);
                 return;
             }
@@ -399,7 +400,7 @@ public class VehicleModelCaptureRequest implements GLOffscreenCaptureRequest {
                     totalV += (r + g + b) / 3;
                     pixelCount++;
                 }
-                if(pixelCount > 0)
+                if (pixelCount > 0)
                     totalV /= pixelCount;
                 setStrokeColor(totalV < 40 ? Color.GRAY : Color.BLACK);
             }

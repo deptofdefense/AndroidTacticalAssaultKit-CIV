@@ -334,7 +334,7 @@ public class CotMarkerRefresher {
         AtakBroadcast.getInstance().unregisterReceiver(timeDriftDetected);
     }
 
-    private BroadcastReceiver timeDriftDetected = new BroadcastReceiver() {
+    private final BroadcastReceiver timeDriftDetected = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             synchronized (_markers) {

@@ -160,7 +160,10 @@ public final class CameraController {
                                 boolean animate) {
 
         final MapSceneModel currentModel = renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
-        rotateToImpl(renderer, currentModel, currentModel.camera.azimuth + theta, focus, animate);
+        if(currentModel.camera.perspective)
+            tiltRotateToImpl_perspective(renderer, currentModel, currentModel.camera.azimuth+theta, 90d+currentModel.camera.elevation, focus, animate);
+        else
+            tiltRotateToImpl_ortho(renderer, currentModel, currentModel.camera.azimuth+theta, 90d+currentModel.camera.elevation, focus, animate);
     }
 
     public static void rotateTo(MapRenderer2 renderer,
@@ -169,30 +172,59 @@ public final class CameraController {
                                 boolean animate) {
 
         final MapSceneModel currentModel = renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
-
-        rotateToImpl(renderer, currentModel, theta, focus, animate);
+        if(currentModel.camera.perspective)
+            tiltRotateToImpl_perspective(renderer, currentModel, theta, 90d+currentModel.camera.elevation, focus, animate);
+        else
+            tiltRotateToImpl_ortho(renderer, currentModel, theta, 90d+currentModel.camera.elevation, focus, animate);
     }
 
-    private static void rotateToImpl(MapRenderer2 renderer,
+    public static void tiltBy(MapRenderer2 renderer,
+                              double theta,
+                              GeoPoint focus,
+                              boolean animate) {
+
+        final MapSceneModel currentModel = renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
+        if(currentModel.camera.perspective)
+            tiltRotateToImpl_perspective(renderer, currentModel, currentModel.camera.azimuth, 90d+currentModel.camera.elevation + theta, focus, animate);
+        else
+            tiltRotateToImpl_ortho(renderer, currentModel, currentModel.camera.azimuth, 90d+currentModel.camera.elevation + theta, focus, animate);
+    }
+
+    public static void tiltTo(MapRenderer2 renderer,
+                              double theta,
+                              GeoPoint focus,
+                              boolean animate) {
+
+        final MapSceneModel currentModel = renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
+        if(currentModel.camera.perspective)
+            tiltRotateToImpl_perspective(renderer, currentModel, currentModel.camera.azimuth, theta, focus, animate);
+        else
+            tiltRotateToImpl_ortho(renderer, currentModel, currentModel.camera.azimuth, theta, focus, animate);
+    }
+
+    private static void tiltRotateToImpl_ortho(MapRenderer2 renderer,
                                      MapSceneModel currentModel,
-                                     double theta,
+                                     double newRotation,
+                                     double newTilt,
                                      GeoPoint focus,
                                      boolean animate) {
 
         final RenderSurface surface = renderer.getRenderContext().getRenderSurface();
-        double newRot = theta;
+
+        newTilt = MathUtils.clamp(newTilt, 0, 85);
 
         // Don't zoom to NaN
-        if (Double.isNaN (newRot))
+        if (Double.isNaN (newRotation) || Double.isNaN(newTilt))
             return;
 
-        GeoPoint mapCenter = GeoPoint.createMutable();
-        currentModel.mapProjection.inverse(currentModel.camera.target, mapCenter);
-        final float focusPoint_x = surface.getWidth() / 2 + renderer.getFocusPointOffsetX();
-        final float focusPoint_y = surface.getHeight() / 2 + renderer.getFocusPointOffsetY();
+        final float focusPoint_x = currentModel.focusx;
+        final float focusPoint_y = currentModel.focusy;
+
+        PointD focusxyz = new PointD(0d, 0d, 0d);
+        currentModel.mapProjection.forward(focus, focusxyz);
 
         MapSceneModel nadirSurface = new MapSceneModel(surface.getDpi(),
-                surface.getWidth(), surface.getHeight(),
+                currentModel.width, currentModel.height,
                 currentModel.mapProjection,
                 new GeoPoint(focus.getLatitude(), focus.getLongitude()),
                 focusPoint_x, focusPoint_y,
@@ -203,34 +235,33 @@ public final class CameraController {
 
         // compute cam->tgt range
         double rangeSurface = MathUtils.distance(
-                nadirSurface.camera.location.x, nadirSurface.camera.location.y, nadirSurface.camera.location.z,
-                nadirSurface.camera.target.x, nadirSurface.camera.target.y, nadirSurface.camera.target.z
+                nadirSurface.camera.location.x*nadirSurface.displayModel.projectionXToNominalMeters, nadirSurface.camera.location.y*nadirSurface.displayModel.projectionYToNominalMeters, nadirSurface.camera.location.z*nadirSurface.displayModel.projectionZToNominalMeters,
+                nadirSurface.camera.target.x*nadirSurface.displayModel.projectionXToNominalMeters, nadirSurface.camera.target.y*nadirSurface.displayModel.projectionYToNominalMeters, nadirSurface.camera.target.z*nadirSurface.displayModel.projectionZToNominalMeters
         );
 
 
-        PointD point2Proj = nadirSurface.mapProjection.forward(focus, null);
-
-        double rangeElevated = MathUtils.distance(
-                nadirSurface.camera.location.x, nadirSurface.camera.location.y, nadirSurface.camera.location.z,
-                point2Proj.x, point2Proj.y, point2Proj.z
+        // range between camera and focus location
+        double rangeCamFocus = MathUtils.distance(
+                nadirSurface.camera.location.x*nadirSurface.displayModel.projectionXToNominalMeters, nadirSurface.camera.location.y*nadirSurface.displayModel.projectionYToNominalMeters, nadirSurface.camera.location.z*nadirSurface.displayModel.projectionZToNominalMeters,
+                focusxyz.x*nadirSurface.displayModel.projectionXToNominalMeters, focusxyz.y*nadirSurface.displayModel.projectionYToNominalMeters, focusxyz.z*nadirSurface.displayModel.projectionZToNominalMeters
         );
 
         // scale resolution by cam->'point' distance
-        final double resolutionAtElevated = currentModel.gsd * (rangeSurface / rangeElevated);
+        final double resolutionAtElevated = currentModel.gsd * (rangeCamFocus / rangeSurface);
 
         PointD focusBy = new PointD(0d, 0d, 0d);
         currentModel.forward(focus, focusBy);
 
         // construct model to 'point' at altitude with scaled resolution with rotate/tilt
         MapSceneModel scene = new MapSceneModel(surface.getDpi(),
-                surface.getWidth(),
-                surface.getHeight(),
+                currentModel.width,
+                currentModel.height,
                 currentModel.mapProjection,
                 focus,
                 focusPoint_x,
                 focusPoint_y,
-                newRot,
-                90d+currentModel.camera.elevation,
+                newRotation,
+                newTilt,
                 resolutionAtElevated,
                 true
         );
@@ -238,34 +269,16 @@ public final class CameraController {
         // obtain new center
         GeoPoint focusGeo2 =  scene.inverse(new PointF(focusPoint_x, focusPoint_y), null);
         if(focusGeo2 == null) {
-            Log.w(TAG, "Unable to compute new rotation center: focus=" + focus + " new rotation=" + newRot);
+            Log.w(TAG, "Unable to compute new rotation center: focus=" + focus + " new rotation=" + newRotation);
             return;
         }
 
-        renderer.lookAt(focusGeo2, currentModel.gsd, newRot, 90d+currentModel.camera.elevation, animate);
+        renderer.lookAt(focusGeo2, currentModel.gsd, newRotation, newTilt, animate);
     }
 
-    public static void tiltBy(MapRenderer2 renderer,
-                              double theta,
-                              GeoPoint focus,
-                              boolean animate) {
-
-        final MapSceneModel currentModel = renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
-        tiltToImpl(renderer, currentModel, 90d+currentModel.camera.elevation + theta, focus, animate);
-    }
-
-    public static void tiltTo(MapRenderer2 renderer,
-                              double theta,
-                              GeoPoint focus,
-                              boolean animate) {
-
-        final MapSceneModel currentModel = renderer.getMapSceneModel(false, MapRenderer2.DisplayOrigin.UpperLeft);
-
-        tiltToImpl(renderer, currentModel, theta, focus, animate);
-    }
-
-    private static void tiltToImpl(MapRenderer2 renderer,
+    private static void tiltRotateToImpl_perspective(MapRenderer2 renderer,
                                    MapSceneModel currentModel,
+                                   double newRotation,
                                    double newTilt,
                                    GeoPoint focus,
                                    boolean animate) {
@@ -275,66 +288,61 @@ public final class CameraController {
         final RenderSurface surface = renderer.getRenderContext().getRenderSurface();
 
         // Don't zoom to NaN
-        if (Double.isNaN (newTilt))
+        if (Double.isNaN (newTilt) || Double.isNaN(newRotation))
             return;
 
-        GeoPoint mapCenter = GeoPoint.createMutable();
-        currentModel.mapProjection.inverse(currentModel.camera.target, mapCenter);
-        final float focusPoint_x = surface.getWidth() / 2 + renderer.getFocusPointOffsetX();
-        final float focusPoint_y = surface.getHeight() / 2 + renderer.getFocusPointOffsetY();
+        final float focusPoint_x = currentModel.focusx;
+        final float focusPoint_y = currentModel.focusy;
 
-        MapSceneModel nadirSurface = new MapSceneModel(surface.getDpi(),
-                surface.getWidth(), surface.getHeight(),
-                currentModel.mapProjection,
-                new GeoPoint(focus.getLatitude(), focus.getLongitude()),
-                focusPoint_x, focusPoint_y,
-                0d,
-                0d,
-                currentModel.gsd,
-                true);
+        PointD focusxyz = new PointD(0d, 0d, 0d);
+        currentModel.mapProjection.forward(focus, focusxyz);
 
-        // compute cam->tgt range
-        double rangeSurface = MathUtils.distance(
-                nadirSurface.camera.location.x, nadirSurface.camera.location.y, nadirSurface.camera.location.z,
-                nadirSurface.camera.target.x, nadirSurface.camera.target.y, nadirSurface.camera.target.z
+        // determine the GSD at the focus point
+
+        // range between camera and target location
+        double rangeCamTgt = MathUtils.distance(
+                currentModel.camera.location.x*currentModel.displayModel.projectionXToNominalMeters, currentModel.camera.location.y*currentModel.displayModel.projectionYToNominalMeters, currentModel.camera.location.z*currentModel.displayModel.projectionZToNominalMeters,
+                currentModel.camera.target.x*currentModel.displayModel.projectionXToNominalMeters, currentModel.camera.target.y*currentModel.displayModel.projectionYToNominalMeters, currentModel.camera.target.z*currentModel.displayModel.projectionZToNominalMeters
         );
 
-
-        PointD point2Proj = nadirSurface.mapProjection.forward(focus, null);
-
-        double rangeElevated = MathUtils.distance(
-                nadirSurface.camera.location.x, nadirSurface.camera.location.y, nadirSurface.camera.location.z,
-                point2Proj.x, point2Proj.y, point2Proj.z
+        // range between camera and focus location
+        double rangeCamFocus = MathUtils.distance(
+                currentModel.camera.location.x*currentModel.displayModel.projectionXToNominalMeters, currentModel.camera.location.y*currentModel.displayModel.projectionYToNominalMeters, currentModel.camera.location.z*currentModel.displayModel.projectionZToNominalMeters,
+                focusxyz.x*currentModel.displayModel.projectionXToNominalMeters, focusxyz.y*currentModel.displayModel.projectionYToNominalMeters, focusxyz.z*currentModel.displayModel.projectionZToNominalMeters
         );
 
-        // scale resolution by cam->'point' distance
-        final double resolutionAtElevated = currentModel.gsd * (rangeSurface / rangeElevated);
-
-        PointD focusBy = new PointD(0d, 0d, 0d);
-        currentModel.forward(focus, focusBy);
+        // GSD at focus point
+        final double gsdAtFocus = currentModel.gsd*(rangeCamFocus/rangeCamTgt);
 
         // construct model to 'point' at altitude with scaled resolution with rotate/tilt
         MapSceneModel scene = new MapSceneModel(surface.getDpi(),
-                surface.getWidth(),
-                surface.getHeight(),
+                currentModel.width,
+                currentModel.height,
                 currentModel.mapProjection,
                 focus,
                 focusPoint_x,
                 focusPoint_y,
-                currentModel.camera.azimuth,
+                newRotation,
                 newTilt,
-                resolutionAtElevated,
+                gsdAtFocus,
                 true
         );
 
-        // obtain new center
+        // obtain new center on surface
         GeoPoint focusGeo2 =  scene.inverse(new PointF(focusPoint_x, focusPoint_y), null);
         if(focusGeo2 == null) {
             Log.w(TAG, "Unable to compute new tilt center: focus=" + focus + " new tilt=" + newTilt);
             return;
         }
 
-        renderer.lookAt(focusGeo2, currentModel.gsd, currentModel.camera.azimuth, newTilt, animate);
+        PointD focusSurfaceProj = new PointD(0d, 0d, 0d);
+        scene.mapProjection.forward(focusGeo2, focusSurfaceProj);
+        double rangeSurfaceFocus = MathUtils.distance(
+                scene.camera.location.x*scene.displayModel.projectionXToNominalMeters, scene.camera.location.y*scene.displayModel.projectionYToNominalMeters, scene.camera.location.z*scene.displayModel.projectionZToNominalMeters,
+                focusSurfaceProj.x*scene.displayModel.projectionXToNominalMeters, focusSurfaceProj.y*scene.displayModel.projectionYToNominalMeters, focusSurfaceProj.z*scene.displayModel.projectionZToNominalMeters
+        );
+
+        renderer.lookAt(focusGeo2, gsdAtFocus*(rangeSurfaceFocus/rangeCamFocus), newRotation, newTilt, animate);
     }
 
 

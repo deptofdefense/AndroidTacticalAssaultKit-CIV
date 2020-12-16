@@ -4,6 +4,7 @@ package com.atakmap.android.maps;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -11,23 +12,29 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.util.Collections2;
 
-import java.util.Collections;
-import java.util.IdentityHashMap;
 import java.util.Set;
 
 public abstract class AbstractMapComponent implements MapComponent {
 
     private final Set<BroadcastReceiver> registeredReceivers;
+    private final Set<MapOverlay> registeredOverlays;
     private OnAllComponentsCreatedCallback allComponentsCreatedCallback;
+    private final boolean removeReceiversOnDestroy;
 
     public static final String TAG = "AbstractMapComponent";
 
     protected AbstractMapComponent() {
-        this.registeredReceivers = Collections
-                .newSetFromMap(
-                        new IdentityHashMap<BroadcastReceiver, Boolean>());
+        this(false);
+    }
+
+    protected AbstractMapComponent(boolean removeReceiversOnDestroy) {
+        this.removeReceiversOnDestroy = removeReceiversOnDestroy;
+        this.registeredReceivers = Collections2.newIdentityHashSet();
+        this.registeredOverlays = Collections2.newIdentityHashSet();
         this.allComponentsCreatedCallback = null;
     }
 
@@ -75,8 +82,19 @@ public abstract class AbstractMapComponent implements MapComponent {
             this.registeredReceivers.remove(receiver);
     }
 
+    protected final synchronized void addOverlay(MapView view, MapOverlay o) {
+        if (this.registeredOverlays.add(o))
+            view.getMapOverlayManager().addOverlay(o);
+    }
+
+    protected final synchronized void removeOverlay(MapView view,
+            MapOverlay o) {
+        if (this.registeredOverlays.remove(o))
+            view.getMapOverlayManager().removeOverlay(o);
+    }
+
     /**
-     * This method is invoked as a subset of the onDestroy call as part of the 
+     * This method is invoked as a subset of the onDestroy call as part of the
      * MapComponent lifecycle.
      */
     protected abstract void onDestroyImpl(Context context, MapView view);
@@ -92,6 +110,10 @@ public abstract class AbstractMapComponent implements MapComponent {
         synchronized (this) {
             for (BroadcastReceiver registeredReceiver : this.registeredReceivers)
                 this.unregisterReceiverImpl(registeredReceiver, false);
+            if (this.removeReceiversOnDestroy)
+                this.registeredReceivers.clear();
+            for (MapOverlay o : this.registeredOverlays)
+                this.removeOverlay(view, o);
         }
     }
 

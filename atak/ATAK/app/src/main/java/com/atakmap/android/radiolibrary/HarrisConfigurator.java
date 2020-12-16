@@ -21,10 +21,10 @@ import java.util.List;
 
 public class HarrisConfigurator {
 
-    private String TAG = "HarrisConfigurator";
+    private final String TAG = "HarrisConfigurator";
     private String callsign;
     private boolean localreport = false;
-    private Context context;
+    private final Context context;
 
     public HarrisConfigurator(Context context) {
         this.context = context;
@@ -38,7 +38,7 @@ public class HarrisConfigurator {
         context.unregisterReceiver(attached);
     }
 
-    private BroadcastReceiver attached = new BroadcastReceiver() {
+    private final BroadcastReceiver attached = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
@@ -162,7 +162,7 @@ public class HarrisConfigurator {
 
             write(port, "NORMAL\r");
         } catch (Exception e) {
-            Log.e(TAG, "error occured during configuration", e);
+            Log.e(TAG, "error occurred during configuration", e);
         }
     }
 

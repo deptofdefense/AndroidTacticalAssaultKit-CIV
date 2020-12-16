@@ -54,7 +54,7 @@
                 android:id="@+id/ftp_add_host"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:imeOptions="actionNext"
+                android:imeOptions="flagNoFullscreen|actionNext"
                 android:inputType="textNoSuggestions" />
         </LinearLayout>
 
@@ -76,7 +76,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:inputType="number" 
-                android:imeOptions="actionNext" />
+                android:imeOptions="flagNoFullscreen|actionNext" />
         </LinearLayout>
         
         <LinearLayout
@@ -96,7 +96,7 @@
                 android:id="@+id/ftp_server_path"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:imeOptions="actionNext"
+                android:imeOptions="flagNoFullscreen|actionNext"
                 android:inputType="textNoSuggestions" />
         </LinearLayout>
         
@@ -117,7 +117,7 @@
                 android:id="@+id/ftp_username"
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
-                android:imeOptions="actionNext"
+                android:imeOptions="flagNoFullscreen|actionNext"
                 android:inputType="textNoSuggestions" />
         </LinearLayout>
         
@@ -139,7 +139,7 @@
                 android:layout_width="fill_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textPassword"
-                android:imeOptions="actionDone" />
+                android:imeOptions="flagNoFullscreen|actionDone" />
         </LinearLayout>
     </LinearLayout>
 

@@ -21,9 +21,10 @@ public class AlertDialogHelper {
      * @param percentageWidth the percentage of the screen to use as expressed by a number between 0 and 1
      */
     public static void adjustWidth(final AlertDialog alertDialog,
-                                   double percentageWidth) {
+            double percentageWidth) {
         adjustWidth(alertDialog, percentageWidth, STANDARD_MAXIMUM_WIDTH);
     }
+
     /**
      * Helper method for setting the width of an AlertDialog to either be 70% of the
      * window size capped by a maximum width.

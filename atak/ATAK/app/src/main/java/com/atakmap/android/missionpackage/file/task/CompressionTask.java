@@ -12,7 +12,7 @@ import com.atakmap.android.missionpackage.file.MissionPackageBuilder;
 import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -116,8 +116,8 @@ public class CompressionTask extends MissionPackageBaseTask {
         if (FileSystemUtils.isFile(contents.getPath())) {
             fileInfo.setUserName(receiver.getMapView().getDeviceCallsign());
             fileInfo.setUserLabel(contents.getName());
-            fileInfo.setSizeInBytes((int) FileIOProviderFactory.length(file));
-            fileInfo.setUpdateTime(FileIOProviderFactory.lastModified(file));
+            fileInfo.setSizeInBytes((int) IOProviderFactory.length(file));
+            fileInfo.setUpdateTime(IOProviderFactory.lastModified(file));
             fileInfo.computeSha256sum();
             fileInfo.setFileMetadata(localManifestXml);
             db.update(fileInfo, TABLETYPE.SAVED);

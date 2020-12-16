@@ -1,6 +1,6 @@
 package com.atakmap.map.layer.model.assimp;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.model.ModelSpi;
@@ -171,8 +171,8 @@ public class ATAKAiIOSystem implements AiIOSystem<AiIOStream>, Disposable {
     }
 
     static File findObj(File f) {
-        if(FileIOProviderFactory.isDirectory(f)) {
-            File[] children = FileIOProviderFactory.listFiles(f);
+        if(IOProviderFactory.isDirectory(f)) {
+            File[] children = IOProviderFactory.listFiles(f);
             if (children != null) {
                 for(File c : children) {
                     File r = findObj(c);
@@ -190,13 +190,13 @@ public class ATAKAiIOSystem implements AiIOSystem<AiIOStream>, Disposable {
 
     InputStreamAiIOStream openFile(String path) throws IOException {
         File f = new File(path);
-        if(FileIOProviderFactory.exists(f))
-            return new InputStreamAiIOStream(FileIOProviderFactory.getInputStream(f), FileIOProviderFactory.length(f), callback, maxProgress);
+        if(IOProviderFactory.exists(f))
+            return new InputStreamAiIOStream(IOProviderFactory.getInputStream(f), IOProviderFactory.length(f), callback, maxProgress);
         try {
             ZipVirtualFile zf = new ZipVirtualFile(f.getPath());
-            if (FileIOProviderFactory.exists(zf))
+            if (IOProviderFactory.exists(zf))
                 return new ZipVirualFileAiIOStream(zf, callback, maxProgress);
-        } catch(Throwable t) {}
+        } catch(Throwable ignored) {}
         return null;
     }
 
@@ -235,11 +235,11 @@ public class ATAKAiIOSystem implements AiIOSystem<AiIOStream>, Disposable {
     @Override
     public boolean exists(String path) {
         File f = new File(path);
-        if(FileIOProviderFactory.exists(f))
+        if(IOProviderFactory.exists(f))
             return true;
         try {
             ZipVirtualFile zf = new ZipVirtualFile(f.getPath());
-            return FileIOProviderFactory.exists(zf);
+            return IOProviderFactory.exists(zf);
         } catch(Throwable t) {
             return false;
         }

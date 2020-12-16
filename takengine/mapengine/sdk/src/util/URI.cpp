@@ -112,7 +112,7 @@ TAKErr TAK::Engine::Util::URI_getParent(Port::String* result, const char* URI) N
     if (!authority)
         return TE_InvalidArg;
 
-    std::string authStr = authority;
+    std::string authStr = authority.get();
     if (authStr.size() > 0 && authStr.back() == '/')
         authority = authStr.substr(0, authStr.size() - 1).c_str();
 

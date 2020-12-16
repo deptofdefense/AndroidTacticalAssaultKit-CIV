@@ -20,6 +20,8 @@ import com.atakmap.android.util.ServerListDialog;
 import com.atakmap.app.R;
 import com.atakmap.comms.CommsMapComponent;
 import com.atakmap.comms.NetConnectString;
+import com.atakmap.comms.TAKServer;
+import com.atakmap.comms.TAKServerListener;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CotStreamListener;
@@ -105,8 +107,8 @@ public class CotMapServerListener extends CotStreamListener implements
         String connectString = port.getConnectString();
 
         // not sure how the _component can be null at this point, but received a crash where it was.
-        if (_component == null) 
-             return;
+        if (_component == null)
+            return;
 
         _component.connected(port, connected);
 
@@ -295,9 +297,9 @@ public class CotMapServerListener extends CotStreamListener implements
      * Helper util to find a contact in a list, by UID
      * If multiple callsigns for a given UID, return most recent
      *
-     * @param contacts
-     * @param uid
-     * @return
+     * @param contacts the list of contacts
+     * @param uid the uid to search on
+     * @return returns the most recent contact that matches the UID.
      */
     public static ServerContact getContact(List<ServerContact> contacts,
             String uid) {
@@ -322,9 +324,9 @@ public class CotMapServerListener extends CotStreamListener implements
     /**
      * Helper to find callsign of user in a list, by UID
      *
-     * @param contacts
-     * @param uid
-     * @return
+     * @param contacts the list of contacts
+     * @param uid the uid for the contact to look for
+     * @return the callsign of the matching contact
      */
     public static String getCallsign(List<ServerContact> contacts, String uid) {
         ServerContact c = getContact(contacts, uid);
@@ -347,8 +349,8 @@ public class CotMapServerListener extends CotStreamListener implements
      * Get the Server Version for the specific hostname e.g. gov.atakserver.com
      * Note, NetConnectString format is also accepted
      *
-     * @param hostname
-     * @return
+     * @param hostname the server hostname
+     * @return the version of the server.
      */
     public synchronized ServerVersion getServerVersion(String hostname) {
         if (serverVersionMap == null || serverVersionMap.isEmpty())
@@ -375,8 +377,8 @@ public class CotMapServerListener extends CotStreamListener implements
     /**
      * Set server version and return previous value, or null if none set
      *
-     * @param ver
-     * @return
+     * @param ver the server version to set the server to.
+     * @return the previous value.
      */
     public synchronized ServerVersion setServerVersion(ServerVersion ver) {
         if (ver == null || !ver.isValid()) {
@@ -526,6 +528,7 @@ public class CotMapServerListener extends CotStreamListener implements
 
             }
 
+            String connectString = initialRequest.getServerConnectString();
             String response = resultData
                     .getString(GetServerVersionOperation.PARAM_RESPONSE);
             if (FileSystemUtils.isEmpty(response)) {
@@ -543,21 +546,19 @@ public class CotMapServerListener extends CotStreamListener implements
                 }
             } else {
                 Log.d(TAG, "Got server version of size " + response.length()
-                        + " from: " + initialRequest.getServerConnectString());
+                        + " from: " + connectString);
 
                 ServerVersion version = null;
 
                 //parse response
                 if (!initialRequest.isGetConfig()) {
                     Log.d(TAG, "Parsed response version: " + response);
-                    version = new ServerVersion(
-                            initialRequest.getServerConnectString(), response);
+                    version = new ServerVersion(connectString, response);
                 } else {
                     Log.d(TAG, "Parsed response config: " + response);
 
                     try {
-                        version = ServerVersion.fromJSON(initialRequest
-                                .getServerConnectString(),
+                        version = ServerVersion.fromJSON(connectString,
                                 new JSONObject(response));
                     } catch (JSONException e) {
                         Log.w(TAG, "Failed to parse server version response: "
@@ -569,20 +570,24 @@ public class CotMapServerListener extends CotStreamListener implements
                         && version.hasVersion()) {
                     //update version on the persistent stream (local copy)
                     CotPortListActivity.CotPort input = findExistingStream(
-                            initialRequest.getServerConnectString());
+                            connectString);
                     if (input != null) {
                         Log.d(TAG, _name + ":Set version: "
                                 + version.getVersion());
-                        input.setServerVersion(version.getVersion());
+                        input.setServerVersion(version);
                     }
 
                     //update version on the cot service stream (actual copy)
                     CommsMapComponent cinst = CommsMapComponent.getInstance();
                     if (cinst != null) {
-                        cinst.setServerVersion(
-                                initialRequest.getServerConnectString(),
-                                version.getVersion());
+                        cinst.setServerVersion(connectString, version);
                     }
+
+                    // Update for TAKServerListener (used by various components)
+                    TAKServer server = TAKServerListener.getInstance()
+                            .findServer(connectString);
+                    if (server != null)
+                        server.setServerVersion(version);
 
                     //update version cache, for other components to query
                     CotMapComponent inst = CotMapComponent.getInstance();

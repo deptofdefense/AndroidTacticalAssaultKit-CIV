@@ -18,7 +18,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
@@ -302,8 +302,8 @@ public class CoordinatedTime implements Parcelable {
             // XXX Designate for refactoring. Should happen higher up?
             Log.e(TAG, msg);
             if (directory != null) {
-                if (!FileIOProviderFactory.exists(directory)) {
-                    if (!FileIOProviderFactory.mkdirs(directory)) {
+                if (!IOProviderFactory.exists(directory)) {
+                    if (!IOProviderFactory.mkdirs(directory)) {
                         Log.w(TAG, "Failed to create: " + directory);
                     }
                 }
@@ -312,8 +312,9 @@ public class CoordinatedTime implements Parcelable {
                 OutputStreamWriter osw = null;
                 try {
                     w = new PrintWriter(osw = new OutputStreamWriter(
-                            FileIOProviderFactory.getOutputStream(new File(directory,
-                                    "bad_time.txt"), true),
+                            IOProviderFactory
+                                    .getOutputStream(new File(directory,
+                                            "bad_time.txt"), true),
                             FileSystemUtils.UTF8_CHARSET));
                     w.append(msg).append("\r\n");
                     e.printStackTrace(w);

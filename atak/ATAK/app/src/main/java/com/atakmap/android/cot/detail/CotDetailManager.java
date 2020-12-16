@@ -9,6 +9,7 @@ import com.atakmap.android.geofence.data.GeoFenceDetailHandler;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
+import com.atakmap.android.routes.cot.MarkerIncludedRouteDetailHandler;
 import com.atakmap.android.toolbars.BullseyeDetailHandler;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.coremap.cot.event.CotDetail;
@@ -235,7 +236,7 @@ public class CotDetailManager {
 
     private static class ProcessSet {
 
-        private CotDetail detail;
+        private final CotDetail detail;
         private final Set<CotDetailHandler> handlers;
         private final Set<MarkerDetailHandler> markerHandlers;
 
@@ -281,6 +282,7 @@ public class CotDetailManager {
         registerHandler(new BullseyeDetailHandler(_mapView));
         registerHandler(new LabelDetailHandler());
         registerHandler(new StrokeFillDetailHandler());
+        registerHandler(new MarkerIncludedRouteDetailHandler());
 
         // This uses special "injection" logic, which seems unnecessary...
         // XXX - I'm not going to mess with it right now

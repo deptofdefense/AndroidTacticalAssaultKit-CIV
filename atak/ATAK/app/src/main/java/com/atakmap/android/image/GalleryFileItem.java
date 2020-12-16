@@ -22,15 +22,15 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
+import com.atakmap.map.gdal.GdalLibrary;
 
 import org.apache.sanselan.formats.tiff.TiffImageMetadata;
 import org.apache.sanselan.formats.tiff.constants.TiffConstants;
 import org.gdal.gdal.Dataset;
-import org.gdal.gdal.gdal;
 
 import java.io.File;
 
@@ -169,16 +169,16 @@ public class GalleryFileItem extends AbstractChildlessListItem implements
                 .getHandler(this.file);
 
         TiffImageMetadata exif = null;
-        long modTime = FileIOProviderFactory.lastModified(file);
+        long modTime = IOProviderFactory.lastModified(file);
         String caption = null;
         GeoPoint location = null;
 
         File dir = file.getParentFile();
         String name = file.getName();
         if (ImageDropDownReceiver.ImageFileFilter.accept(dir, name)
-                && FileIOProviderFactory.exists(file)) {
+                && IOProviderFactory.exists(file)) {
             if (ImageContainer.NITF_FilenameFilter.accept(dir, name)) {
-                Dataset nitf = gdal.Open(file.getAbsolutePath());
+                Dataset nitf = GdalLibrary.openDatasetFromFile(file);
                 if (nitf != null) {
                     caption = NITFHelper.getTitle(nitf);
                     location = NITFHelper.getCenterLocation(nitf);

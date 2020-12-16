@@ -170,12 +170,12 @@ public class AtakLayerDrawableUtil {
 
         icon.mutate();
         if (!icon.setDrawableByLayerId(R.id.ic_badge, badge)) {
-            Log.d(TAG, "error occured replacing the badge on a layer");
+            Log.d(TAG, "error occurred replacing the badge on a layer");
         }
 
         if (baseDrawable != null) {
             if (!icon.setDrawableByLayerId(R.id.details_base, baseDrawable)) {
-                Log.d(TAG, "error occured replacing the base on a layer");
+                Log.d(TAG, "error occurred replacing the base on a layer");
             }
         }
     }

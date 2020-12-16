@@ -89,7 +89,7 @@ import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
@@ -510,7 +510,7 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
                     .getMissionPackageFilesPath(FileSystemUtils.getRoot()
                             .getAbsolutePath());
             File dir = new File(filesDir, group.getManifest().getUID());
-            if (FileIOProviderFactory.exists(dir))
+            if (IOProviderFactory.exists(dir))
                 FileSystemUtils.deleteDirectory(dir, false);
             if (bToast)
                 toast(R.string.deleting_mission_package);
@@ -754,8 +754,12 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
                             File f2 = new File(existing.getGroup()
                                     .getManifest()
                                     .getPath());
-                            if (!FileIOProviderFactory.exists(f1) || (FileIOProviderFactory.exists(f2) &&
-                                    FileIOProviderFactory.lastModified(f1) < FileIOProviderFactory.lastModified(f2))) {
+                            if (!IOProviderFactory.exists(f1)
+                                    || (IOProviderFactory.exists(f2) &&
+                                            IOProviderFactory.lastModified(
+                                                    f1) < IOProviderFactory
+                                                            .lastModified(
+                                                                    f2))) {
                                 // Don't replace existing package
                                 Log.d(TAG, "Skipping older package: " + f1);
                                 continue;
@@ -1228,7 +1232,8 @@ public class MissionPackageMapOverlay extends AbstractMapOverlay2 implements
         Log.d(TAG, "Deleting " + mpm.getName() + "@" + src);
         // see if its worth the overhead of an async task
         if (onUI && FileSystemUtils.isFile(src)
-                && FileIOProviderFactory.length(src) > SMALLMISSIONPACKAGE_SIZE_INBYTES)
+                && IOProviderFactory
+                        .length(src) > SMALLMISSIONPACKAGE_SIZE_INBYTES)
             new DeleteFileTask(mpm, _receiver, null).execute();
         else {
             if (toast)

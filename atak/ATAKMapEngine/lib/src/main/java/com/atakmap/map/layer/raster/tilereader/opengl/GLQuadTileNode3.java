@@ -2416,7 +2416,7 @@ public class GLQuadTileNode3 implements
                         if (this.queue.size() < 1) {
                             try {
                                 this.syncOn.wait();
-                            } catch (InterruptedException e) {
+                            } catch (InterruptedException ignored) {
                             }
                             continue;
                         }

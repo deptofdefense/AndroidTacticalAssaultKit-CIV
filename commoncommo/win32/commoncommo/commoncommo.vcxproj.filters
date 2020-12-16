@@ -104,6 +104,15 @@
     <ClInclude Include="..\..\core\include\cloudio.h">
       <Filter>Header Files\publicapi</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\core\impl\plaintextfileIOProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\include\fileioprovider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\core\impl\fileioprovidertracker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\core\impl\commo.cpp">
@@ -194,6 +203,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\core\impl\httpsproxy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\impl\plaintextfileIOProvider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\core\impl\fileioproviderfactory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

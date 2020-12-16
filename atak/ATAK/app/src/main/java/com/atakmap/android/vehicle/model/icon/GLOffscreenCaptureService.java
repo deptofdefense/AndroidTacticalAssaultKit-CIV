@@ -44,7 +44,7 @@ public class GLOffscreenCaptureService implements Runnable {
     private EGLSurface _eglSurface;
     private int _texWidth, _texHeight;
     private int[] _texIdBuf, _fboBuf, _depthBuf;
-    private GLOffscreenCaptureParams _params = new GLOffscreenCaptureParams();
+    private final GLOffscreenCaptureParams _params = new GLOffscreenCaptureParams();
     private IntBuffer _pixelBuf;
     private boolean _active = true;
 

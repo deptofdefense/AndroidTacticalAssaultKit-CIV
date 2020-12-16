@@ -25,7 +25,7 @@ public class SMSGenerator {
 
     public static final String TAG = "SMSGenerator";
     // Fields that appear within the encrypted, encoded SMS message.
-    static private byte version = 1;
+    static private final byte version = 1;
 
     /** Generates a simple SMS message, intended to be converted into CoT format
      *
@@ -58,7 +58,7 @@ public class SMSGenerator {
             res = Base64.encode(res, Base64.DEFAULT);
             return new String(res, FileSystemUtils.UTF8_CHARSET);
         } catch (Exception e) {
-            Log.e(TAG, "error occured", e);
+            Log.e(TAG, "error occurred", e);
             return null;
         }
     }

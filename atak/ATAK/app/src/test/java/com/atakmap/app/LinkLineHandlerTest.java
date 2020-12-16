@@ -450,7 +450,7 @@ public class LinkLineHandlerTest {
         return childItem;
     }
 
-    private class LinkLineTestObject {
+    private static class LinkLineTestObject {
         private final MapEventDispatcher mapEventDispatcher = new MapEventDispatcher();
         MapGroupItemsChangedEventForwarder _mapGroupItemsChangedEventForwarder = new MapGroupItemsChangedEventForwarder(
                 mapEventDispatcher);

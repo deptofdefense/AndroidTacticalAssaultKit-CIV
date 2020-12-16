@@ -1,14 +1,15 @@
 
 package com.atakmap.android.filesharing.android.service;
 
-import android.os.FileObserver;
-
 import com.atakmap.android.filesharing.android.service.DirectoryWatcher.FileUpdateCallback.OPERATION;
 import com.atakmap.android.filesharing.android.service.FileInfoPersistanceHelper.TABLETYPE;
 import com.atakmap.android.filesystem.ContentTypeMapper;
+import com.atakmap.android.importexport.ImportExportMapComponent;
+import com.atakmap.android.importexport.ImportListener;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.os.FileObserver;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -17,7 +18,7 @@ import java.io.FileFilter;
  * Observe changes to directory and reflect changes
  * in a db, and optionally notify a callback listener
  */
-public class DirectoryWatcher extends FileObserver {
+public class DirectoryWatcher extends FileObserver implements ImportListener {
 
     private static final String TAG = "DirectoryWatcher";
 
@@ -93,12 +94,12 @@ public class DirectoryWatcher extends FileObserver {
 
         // create directory if it does not exist
         final File dir = new File(absolutePath);
-        if (!FileIOProviderFactory.exists(dir)) {
+        if (!IOProviderFactory.exists(dir)) {
             Log.d(TAG, "Creating directory: " + absolutePath);
-            if (!FileIOProviderFactory.mkdirs(dir))
+            if (!IOProviderFactory.mkdirs(dir))
                 Log.e(TAG, "Failed to create directory: " + absolutePath);
         } else {
-            if (!FileIOProviderFactory.isDirectory(dir))
+            if (!IOProviderFactory.isDirectory(dir))
                 Log.e(TAG, absolutePath + " is not a directory");
         }
 
@@ -109,13 +110,13 @@ public class DirectoryWatcher extends FileObserver {
     protected void processDirectory() {
 
         File f = new File(absolutePath);
-        File[] fileList = FileIOProviderFactory.listFiles(f);
+        File[] fileList = IOProviderFactory.listFiles(f);
         if (fileList == null) {
             // Matt, couldn't this just be an empty directory?
             Log.e(TAG, "somehow watching a file instead of a directory");
         } else {
             for (File i : fileList) {
-                if (i != null && !FileIOProviderFactory.isDirectory(i)) {
+                if (i != null && !IOProviderFactory.isDirectory(i)) {
                     if (_ignoreExistingFiles) {
                         // see if file is already in DB, if not add it
                         FileInfo fi = FileInfoPersistanceHelper.instance()
@@ -190,6 +191,14 @@ public class DirectoryWatcher extends FileObserver {
     }
 
     @Override
+    public void onFileSorted(File src, File dst) {
+        if (dst.getAbsolutePath().startsWith(absolutePath)) {
+            String path = dst.getAbsolutePath().replaceFirst(absolutePath, "");
+            onEvent(CLOSE_WRITE, path);
+        }
+    }
+
+    @Override
     public void onEvent(int event, String path) {
         // Log.d(TAG, "A file event (" + event + ") occurred in path: " + path);
 
@@ -203,7 +212,7 @@ public class DirectoryWatcher extends FileObserver {
         // TODO remove this listener, and any sublisteners...
         // for now if directory change, ignore it
         File file = new File(getPath(), path);
-        if (FileIOProviderFactory.isDirectory(file)) {
+        if (IOProviderFactory.isDirectory(file)) {
             Log.d(TAG,
                     "(" + getEventString(event)
                             + ") ignoring directory event for "
@@ -223,8 +232,8 @@ public class DirectoryWatcher extends FileObserver {
         // insert or update DB for these events
         if ((FileObserver.CREATE & event) != 0 ||
                 (FileObserver.MODIFY & event) != 0 ||
-                (FileObserver.MOVED_TO & event) != 0 ||
-                (FileObserver.CLOSE_WRITE & event) != 0) {
+                (MOVED_TO & event) != 0 ||
+                (CLOSE_WRITE & event) != 0) {
 
             op = OPERATION.ADD;
 
@@ -261,8 +270,8 @@ public class DirectoryWatcher extends FileObserver {
                 // }
             }
 
-        } else if ((FileObserver.DELETE & event) != 0 ||
-                (FileObserver.MOVED_FROM & event) != 0) {
+        } else if ((DELETE & event) != 0 ||
+                (MOVED_FROM & event) != 0) {
 
             op = OPERATION.REMOVE;
             // remove from db for these events
@@ -300,13 +309,13 @@ public class DirectoryWatcher extends FileObserver {
                 return "CREATE";
             case FileObserver.MODIFY:
                 return "MODIFY";
-            case FileObserver.MOVED_TO:
+            case MOVED_TO:
                 return "MOVED_TO";
-            case FileObserver.CLOSE_WRITE:
+            case CLOSE_WRITE:
                 return "CLOSE_WRITE";
-            case FileObserver.DELETE:
+            case DELETE:
                 return "DELETE";
-            case FileObserver.MOVED_FROM:
+            case MOVED_FROM:
                 return "MOVED_FROM";
         }
 
@@ -340,5 +349,18 @@ public class DirectoryWatcher extends FileObserver {
      */
     public String getUserName() {
         return "local";
+    }
+
+    @Override
+    public void startWatching() {
+        if (!IOProviderFactory.isDefault())
+            ImportExportMapComponent.getInstance().addImportListener(this);
+        super.startWatching();
+    }
+
+    @Override
+    public void stopWatching() {
+        super.stopWatching();
+        ImportExportMapComponent.getInstance().removeImportListener(this);
     }
 }

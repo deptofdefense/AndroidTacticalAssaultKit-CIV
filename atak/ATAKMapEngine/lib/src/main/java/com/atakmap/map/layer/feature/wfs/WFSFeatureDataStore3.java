@@ -23,7 +23,7 @@ import org.gdal.osr.CoordinateTransformation;
 import org.gdal.osr.SpatialReference;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
@@ -32,7 +32,6 @@ import com.atakmap.database.IteratorCursor;
 import com.atakmap.database.QueryIface;
 import com.atakmap.database.RowIteratorWrapper;
 import com.atakmap.database.StatementIface;
-import com.atakmap.map.AtakMapView;
 import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.feature.AbstractFeatureDataStore;
 import com.atakmap.map.layer.feature.AbstractFeatureDataStore2;
@@ -96,7 +95,7 @@ public class WFSFeatureDataStore3 extends AbstractFeatureDataStore implements Ru
         
         this.uri = uri;
 
-        if(FileIOProviderFactory.exists(workingDir) && workingDir.isFile())
+        if(IOProviderFactory.exists(workingDir) && IOProviderFactory.isFile(workingDir))
             FileSystemUtils.delete(workingDir);
 
         // XXX - 
@@ -104,8 +103,8 @@ public class WFSFeatureDataStore3 extends AbstractFeatureDataStore implements Ru
             if (!workingDir.delete()) { 
                 Log.d(TAG, "could not delete: " + workingDir);
             }
-        if(!FileIOProviderFactory.exists(workingDir)) {
-            if (!FileIOProviderFactory.mkdirs(workingDir)) {
+        if(!IOProviderFactory.exists(workingDir)) {
+            if (!IOProviderFactory.mkdirs(workingDir)) {
                 Log.d(TAG, "could not mkdir: " + workingDir);
             }
         }
@@ -212,15 +211,15 @@ public class WFSFeatureDataStore3 extends AbstractFeatureDataStore implements Ru
             File indexDbFile = new File(this.workingDir, "index.sqlite");
             boolean checkSchema;
             do {
-                checkSchema = FileIOProviderFactory.exists(indexDbFile);
+                checkSchema = IOProviderFactory.exists(indexDbFile);
                 // try to open the database. if the database somehow became
                 // corrupted, delete the file and start anew
                 try {
-                    indexDatabase = Databases.openOrCreateDatabase(indexDbFile.getAbsolutePath());
+                    indexDatabase = IOProviderFactory.createDatabase(indexDbFile);
                     indexDatabase.execute("PRAGMA journal_mode = WAL", null);
                     break;
                 } catch(Throwable t) {
-                    if(FileIOProviderFactory.exists(indexDbFile) && !indexDbFile.delete())
+                    if(IOProviderFactory.exists(indexDbFile) && !indexDbFile.delete())
                         throw new RuntimeException("Unable to delete file", t);
                 }
             } while(true);
@@ -978,12 +977,12 @@ public class WFSFeatureDataStore3 extends AbstractFeatureDataStore implements Ru
             // create new DB
             final File layerDbFile;
             try {
-                layerDbFile = File.createTempFile("layer" + this.db.fsid, ".sqlite", WFSFeatureDataStore3.this.workingDir);
+                layerDbFile = IOProviderFactory.createTempFile("layer" + this.db.fsid, ".sqlite", WFSFeatureDataStore3.this.workingDir);
             } catch(IOException e) {
                 throw new RuntimeException(e);
             }
 
-            if(FileIOProviderFactory.exists(layerDbFile))
+            if(IOProviderFactory.exists(layerDbFile))
                 FileSystemUtils.delete(layerDbFile);
             
             Log.d(TAG, "refreshing layer " + layer.GetName() + "(" + layerDbFile.getAbsolutePath() + ")");

@@ -35,7 +35,7 @@
                     android:layout_height="match_parent"
                     android:layout_weight="1"
                     android:padding="5dp"
-                    android:text="@string/suppression"
+                    android:text="@string/indirect_fire"
                     android:textSize="12sp"
                     android:layout_gravity="center"/>
 

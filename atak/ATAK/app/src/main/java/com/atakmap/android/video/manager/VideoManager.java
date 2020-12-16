@@ -5,8 +5,8 @@ import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.video.ConnectionEntry;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProvider;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -65,7 +65,8 @@ public class VideoManager {
             return;
 
         _instance = this;
-        if (!FileIOProviderFactory.exists(ENTRIES_DIR) && !FileIOProviderFactory.mkdirs(ENTRIES_DIR))
+        if (!IOProviderFactory.exists(ENTRIES_DIR)
+                && !IOProviderFactory.mkdirs(ENTRIES_DIR))
             Log.w(TAG, "Failed to create entries dir");
 
         // Register the content resolver
@@ -79,7 +80,8 @@ public class VideoManager {
         List<ConnectionEntry> entries = new ArrayList<>();
 
         // Read from the entries directory
-        File[] files = FileIOProviderFactory.listFiles(ENTRIES_DIR, VideoFileWatcher.XML_FILTER);
+        File[] files = IOProviderFactory.listFiles(ENTRIES_DIR,
+                VideoFileWatcher.XML_FILTER);
         if (!FileSystemUtils.isEmpty(files)) {
             for (File f : files)
                 entries.addAll(_xmlHandler.parse(f));
@@ -98,6 +100,7 @@ public class VideoManager {
         _contentResolver.dispose();
         _scanner.dispose();
         _entries.clear();
+        _instance = null;
     }
 
     /**
@@ -247,7 +250,7 @@ public class VideoManager {
                 for (ConnectionEntry c : children)
                     removeEntry(c);
             }
-            if (!FileIOProviderFactory.delete(file, FileIOProvider.SECURE_DELETE))
+            if (!IOProviderFactory.delete(file, IOProvider.SECURE_DELETE))
                 return;
         }
 
@@ -285,7 +288,7 @@ public class VideoManager {
             return null;
         if (removed.isRemote()) {
             File file = new File(ENTRIES_DIR, uid + ".xml");
-            if (FileIOProviderFactory.exists(file))
+            if (IOProviderFactory.exists(file))
                 FileSystemUtils.delete(file);
         }
         removed.dispose();

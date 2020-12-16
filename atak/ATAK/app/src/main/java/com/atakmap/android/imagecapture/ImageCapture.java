@@ -19,11 +19,12 @@ import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.lang.Unsafe;
+import com.atakmap.map.gdal.VSIFileFileSystemHandler;
 import com.atakmap.map.layer.AbstractLayer;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.MultiLayer;
@@ -236,7 +237,11 @@ public class ImageCapture extends AbstractLayer {
      * @return Newly created data set (null if failed)
      */
     public Dataset createDataset(Driver driver, File file, int w, int h) {
-        return driver.Create(file.getAbsolutePath(), w, h, 3,
+        String path = file.getAbsolutePath();
+        if (!IOProviderFactory.isDefault()) {
+            path = VSIFileFileSystemHandler.PREFIX + path;
+        }
+        return driver.Create(path, w, h, 3,
                 getTIFFOptions());
     }
 
@@ -400,7 +405,8 @@ public class ImageCapture extends AbstractLayer {
 
     protected void saveKMZ(File outImage, File tmpDir,
             ImageCapturePP postDraw) {
-        if (FileIOProviderFactory.exists(tmpDir) || FileIOProviderFactory.mkdir(tmpDir)) {
+        if (IOProviderFactory.exists(tmpDir)
+                || IOProviderFactory.mkdir(tmpDir)) {
             String name = outImage.getName();
             String path = outImage.getAbsolutePath();
             path = path.substring(0, path.lastIndexOf("."));
@@ -471,7 +477,7 @@ public class ImageCapture extends AbstractLayer {
                 + "</kml>";
         try {
             PrintWriter out = new PrintWriter(new OutputStreamWriter(
-                    FileIOProviderFactory.getOutputStream(new File(dir, "doc.kml")),
+                    IOProviderFactory.getOutputStream(new File(dir, "doc.kml")),
                     FileSystemUtils.UTF8_CHARSET.name()));
             out.println(docSkel);
             out.close();

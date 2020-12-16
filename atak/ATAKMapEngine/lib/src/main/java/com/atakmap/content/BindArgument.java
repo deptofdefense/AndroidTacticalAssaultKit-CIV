@@ -2,11 +2,15 @@ package com.atakmap.content;
 
 import java.util.Collection;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.database.Bindable;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.QueryIface;
 
+/** @deprecated to be removed without replacement */
+@Deprecated
+@DeprecatedApi(since = "4.1.1", forRemoval = true, removeAt = "4.4")
 public final class BindArgument {
 
     private int type;

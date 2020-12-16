@@ -46,7 +46,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -98,9 +98,9 @@ public class RouteCreationDialog extends BroadcastReceiver implements
     private int _pendingLookups = 0;
     private List<Map.Entry<String, RoutePlannerInterface>> _planners;
     private RoutePlannerInterface _autoPlan;
-    private File recentlyUsed = FileSystemUtils
+    private final File recentlyUsed = FileSystemUtils
             .getItem("tools/route/recentlyused.txt");
-    private LayoutInflater _inflater;
+    private final LayoutInflater _inflater;
 
     public RouteCreationDialog(final MapView mapView) {
         _mapView = mapView;
@@ -157,7 +157,8 @@ public class RouteCreationDialog extends BroadcastReceiver implements
         openRouteAroundManager.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                RouteAroundRegionManagerView regionManagerView = new RouteAroundRegionManagerView(mapView,
+                RouteAroundRegionManagerView regionManagerView = new RouteAroundRegionManagerView(
+                        mapView,
                         new RouteAroundRegionViewModel(_routeAroundManager));
                 AlertDialog dialog = new AlertDialog.Builder(_context)
                         .setTitle(R.string.manage_route_around_regions)
@@ -189,8 +190,9 @@ public class RouteCreationDialog extends BroadcastReceiver implements
 
         loadRecentlyUsed();
 
-        if (!FileIOProviderFactory.exists(recentlyUsed.getParentFile()) && !FileIOProviderFactory.mkdirs(recentlyUsed
-                .getParentFile())) {
+        if (!IOProviderFactory.exists(recentlyUsed.getParentFile())
+                && !IOProviderFactory.mkdirs(recentlyUsed
+                        .getParentFile())) {
             Log.d(TAG, "error making: " + recentlyUsed.getParentFile());
         }
     }
@@ -203,11 +205,11 @@ public class RouteCreationDialog extends BroadcastReceiver implements
         String line;
         RECENT_ADDRESSES.clear();
 
-        if (FileIOProviderFactory.exists(recentlyUsed)) {
+        if (IOProviderFactory.exists(recentlyUsed)) {
             try {
                 reader = new BufferedReader(
                         new InputStreamReader(
-                                FileIOProviderFactory.getInputStream(recentlyUsed),
+                                IOProviderFactory.getInputStream(recentlyUsed),
                                 FileSystemUtils.UTF8_CHARSET));
 
                 while ((line = reader.readLine()) != null) {
@@ -239,7 +241,8 @@ public class RouteCreationDialog extends BroadcastReceiver implements
 
         BufferedWriter bufferedWriter = null;
         try {
-            bufferedWriter = new BufferedWriter(FileIOProviderFactory.getFileWriter(recentlyUsed));
+            bufferedWriter = new BufferedWriter(
+                    IOProviderFactory.getFileWriter(recentlyUsed));
 
             for (Pair<String, GeoPointMetaData> item : RECENT_ADDRESSES) {
                 bufferedWriter.write(item.first + "\t" + item.second + "\n");
@@ -260,10 +263,11 @@ public class RouteCreationDialog extends BroadcastReceiver implements
 
     /** DEPRECIATED: This is the old API. Use the version with 5 arguments (which is actually static) */
     static void setupPlanSpinner(final Spinner spinner,
-                                 final List<Entry<String, RoutePlannerInterface>> _planners,
-                                 final LinearLayout routePlanOptions,
-                                 final AlertDialog addrDialog) {
-        setupPlanSpinner(spinner, _planners, routePlanOptions, addrDialog, _routeAroundOptions);
+            final List<Entry<String, RoutePlannerInterface>> _planners,
+            final LinearLayout routePlanOptions,
+            final AlertDialog addrDialog) {
+        setupPlanSpinner(spinner, _planners, routePlanOptions, addrDialog,
+                _routeAroundOptions);
     }
 
     /** 
@@ -410,7 +414,8 @@ public class RouteCreationDialog extends BroadcastReceiver implements
         View routePlanView = LayoutInflater.from(_context).inflate(
                 R.layout.route_planner_options_layout, _mapView, false);
 
-        LinearLayout topLevelLayout = addressEntryView.findViewById(R.id.top_level_layout);
+        LinearLayout topLevelLayout = addressEntryView
+                .findViewById(R.id.top_level_layout);
         topLevelLayout.addView(routePlanView);
 
         _startAddr = addressEntryView.findViewById(R.id.route_start_address);
@@ -427,10 +432,14 @@ public class RouteCreationDialog extends BroadcastReceiver implements
             _startAddr.setVisibility(View.GONE);
             _destAddr.setVisibility(View.GONE);
         }
-        addressEntryView.findViewById(R.id.route_start_address_clear).setOnClickListener(this);
-        addressEntryView.findViewById(R.id.route_dest_address_clear).setOnClickListener(this);
-        addressEntryView.findViewById(R.id.route_start_map_select).setOnClickListener(this);
-        addressEntryView.findViewById(R.id.route_dest_map_select).setOnClickListener(this);
+        addressEntryView.findViewById(R.id.route_start_address_clear)
+                .setOnClickListener(this);
+        addressEntryView.findViewById(R.id.route_dest_address_clear)
+                .setOnClickListener(this);
+        addressEntryView.findViewById(R.id.route_start_map_select)
+                .setOnClickListener(this);
+        addressEntryView.findViewById(R.id.route_dest_map_select)
+                .setOnClickListener(this);
         addressEntryView.findViewById(R.id.route_start_address_history)
                 .setOnClickListener(this);
         addressEntryView.findViewById(R.id.route_dest_address_history)

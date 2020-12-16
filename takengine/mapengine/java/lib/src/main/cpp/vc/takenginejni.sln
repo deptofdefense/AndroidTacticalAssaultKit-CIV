@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.960
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30503.244
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "takenginejni", "takenginejni.vcxproj", "{569DE0A6-A114-4937-AF4D-18664F7CE160}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -25,12 +25,10 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{569DE0A6-A114-4937-AF4D-18664F7CE160}.Debug|x64.ActiveCfg = Debug|x64
 		{569DE0A6-A114-4937-AF4D-18664F7CE160}.Debug|x64.Build.0 = Debug|x64
-		{569DE0A6-A114-4937-AF4D-18664F7CE160}.Debug|x86.ActiveCfg = Debug|Win32
-		{569DE0A6-A114-4937-AF4D-18664F7CE160}.Debug|x86.Build.0 = Debug|Win32
+		{569DE0A6-A114-4937-AF4D-18664F7CE160}.Debug|x86.ActiveCfg = Debug|x64
 		{569DE0A6-A114-4937-AF4D-18664F7CE160}.Release|x64.ActiveCfg = Release|x64
 		{569DE0A6-A114-4937-AF4D-18664F7CE160}.Release|x64.Build.0 = Release|x64
-		{569DE0A6-A114-4937-AF4D-18664F7CE160}.Release|x86.ActiveCfg = Release|Win32
-		{569DE0A6-A114-4937-AF4D-18664F7CE160}.Release|x86.Build.0 = Release|Win32
+		{569DE0A6-A114-4937-AF4D-18664F7CE160}.Release|x86.ActiveCfg = Release|x64
 		{C75405B7-D03D-4070-8C75-F23CA2B4FDFE}.Debug|x64.ActiveCfg = Debug|x64
 		{C75405B7-D03D-4070-8C75-F23CA2B4FDFE}.Debug|x64.Build.0 = Debug|x64
 		{C75405B7-D03D-4070-8C75-F23CA2B4FDFE}.Debug|x86.ActiveCfg = Debug|Win32

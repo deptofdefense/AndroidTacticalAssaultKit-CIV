@@ -5,14 +5,14 @@
 ////    DESCRIPTION:    Concrete class representing a collection of 2D or 3D
 ////                    geometric elements.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Dec 12, 2014
+////      Dec 12, 2014  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -106,7 +106,7 @@ class ENGINE_API GeometryCollection
     }
 
     ~GeometryCollection ()
-        throw ()
+        NOTHROWS
     { clear(); }
 
     //
@@ -137,13 +137,13 @@ class ENGINE_API GeometryCollection
 
     void
     clear()
-        throw ();
+        NOTHROWS;
 
     std::pair<GeometryVector::const_iterator,
               GeometryVector::const_iterator>
     contents ()
         const
-        throw ()
+        NOTHROWS
       { return std::make_pair (elements.begin (), elements.end ()); }
 
     //
@@ -151,7 +151,7 @@ class ENGINE_API GeometryCollection
     //
     void
     remove (const Geometry *)
-        throw ();
+        NOTHROWS;
 
 
     //==================================

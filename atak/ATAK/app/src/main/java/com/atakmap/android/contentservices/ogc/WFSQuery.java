@@ -132,10 +132,10 @@ public final class WFSQuery implements ServiceQuery {
 
     private static class WFSService implements Service {
 
-        private String name;
-        private String url;
-        private String layer;
-        private int color;
+        private final String name;
+        private final String url;
+        private final String layer;
+        private final int color;
 
         WFSService(String name, String url, String layer, int color) {
             this.name = name;

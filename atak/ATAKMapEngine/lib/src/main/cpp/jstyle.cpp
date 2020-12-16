@@ -441,24 +441,24 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_style_Style_Composi
 
 
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_style_Style_PatternStrokeStyle_1create
-  (JNIEnv *env, jclass clazz, jlong pattern, jint patternLen, jint color, jfloat width)
+  (JNIEnv *env, jclass clazz, jint factor, jshort pattern, jint color, jfloat width)
 {
     TAKErr code(TE_Ok);
     StylePtr retval(nullptr, nullptr);
-    code = PatternStrokeStyle_create(retval, pattern, patternLen, color, width);
+    code = PatternStrokeStyle_create(retval, factor, pattern, color, width);
     if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return NULL;
     return NewPointer(env, std::move(retval));
 }
-JNIEXPORT jlong JNICALL Java_com_atakmap_map_layer_feature_style_Style_PatternStrokeStyle_1getPattern
+JNIEXPORT jshort JNICALL Java_com_atakmap_map_layer_feature_style_Style_PatternStrokeStyle_1getPattern
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
     STYLE_IMPL_ACCESSOR_BODY(PatternStrokeStyle, getPattern)
 }
-JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_style_Style_PatternStrokeStyle_1getPatternLength
+JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_style_Style_PatternStrokeStyle_1getFactor
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
-    STYLE_IMPL_ACCESSOR_BODY(PatternStrokeStyle, getPatternLength)
+    STYLE_IMPL_ACCESSOR_BODY(PatternStrokeStyle, getFactor)
 }
 JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_style_Style_PatternStrokeStyle_1getColor
   (JNIEnv *env, jclass clazz, jlong ptr)

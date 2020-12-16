@@ -8,6 +8,7 @@
 #include <core/Projection2.h>
 #include <core/ProjectionFactory3.h>
 #include <util/Memory.h>
+#include <cmath>
 
 using namespace TAK::Engine::Core;
 using namespace TAK::Engine::Math;

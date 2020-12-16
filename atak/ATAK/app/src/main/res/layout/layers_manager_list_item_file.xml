@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingStart="36dp"
+    android:paddingEnd="@dimen/auto_space_big"
+    android:paddingTop="@dimen/auto_space_big"
+    android:paddingBottom="@dimen/auto_space_big"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:descendantFocusability="blocksDescendants"
+    android:background="@drawable/overlay_title_background">
+
+    <TextView
+        android:id="@+id/file_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textColor="#FFF"
+        android:textSize="16sp"
+        android:text="@string/name"/>
+
+    <TextView
+        android:id="@+id/file_size"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/auto_margin"
+        android:text="@string/size"/>
+
+    <ImageButton
+        android:id="@+id/file_delete"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:padding="@dimen/auto_space_big"
+        android:src="@drawable/ic_menu_delete"
+        style="@style/darkButton"/>
+
+</LinearLayout>

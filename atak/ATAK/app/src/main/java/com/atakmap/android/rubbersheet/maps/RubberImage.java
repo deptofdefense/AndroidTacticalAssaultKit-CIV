@@ -9,12 +9,15 @@ import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.rubbersheet.data.BitmapPyramid;
 import com.atakmap.android.rubbersheet.data.RubberImageData;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.coremap.maps.coords.Vector2D;
 import com.atakmap.map.AtakMapView;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 
 /**
  * The "rubber sheet" image with rectangle controls
@@ -97,7 +100,11 @@ public class RubberImage extends AbstractSheet {
     public static RubberImage create(MapView mv, RubberImageData data) {
         BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(data.file.getAbsolutePath(), opts);
+        try (FileInputStream fis = IOProviderFactory
+                .getInputStream(data.file)) {
+            BitmapFactory.decodeStream(fis, null, opts);
+        } catch (IOException ignored) {
+        }
         float width = opts.outWidth, height = opts.outHeight;
         if (width <= 0 || height <= 0)
             return null;

@@ -3,7 +3,6 @@ package com.atakmap.android.maps.graphics.widgets;
 
 import android.util.Pair;
 
-import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.graphics.GLTriangle;
 import com.atakmap.android.widgets.MapWidget;
 import com.atakmap.android.widgets.CenterBeadWidget;
@@ -14,9 +13,6 @@ import com.atakmap.opengl.GLES20FixedPipeline;
 public class GLCenterBeadWidget extends GLShapeWidget {
 
     GLTriangle.Strip _crossHairLine;
-
-    private static final float LINE_WIDTH = (float) Math
-            .ceil(1f * MapView.DENSITY);
 
     private final CenterBeadWidget sw;
     private final AtakMapView mapView;
@@ -65,99 +61,85 @@ public class GLCenterBeadWidget extends GLShapeWidget {
 
     @Override
     public void drawWidgetContent() {
-        if (getSurface() != null) {
+        if (!sw.isVisible())
+            return;
 
-            if (!sw.isVisible())
-                return;
+        float density = (float) (orthoView.getSurface().getMapView()
+                .getDisplayDpi() / 240d);
+        float radius = 50f * density;
+        float diameter = radius * 2;
+        float d8 = diameter / 8, d32 = diameter / 32;
+        float left = orthoView.focusx - radius;
+        float bottom = (orthoView.getTop() - orthoView.focusy) - radius;
 
-            int sheight = getSurface().getHeight();
-            int swidth = getSurface().getWidth();
+        GLES20FixedPipeline.glPushMatrix();
 
-            float size = 50f * MapView.DENSITY;
-            final float _left = swidth / 2f - size;
-            final float _right = swidth / 2f + size;
-            final float _top = sheight / 2f - size;
-            float _bottom = sheight / 2f + size;
+        GLES20FixedPipeline.glColor4f(1f, 0f, 0f, .70f);
+        GLES20FixedPipeline.glLoadIdentity();
 
-            final float width = _right - _left;
-            float height = _top - _bottom;
+        GLES20FixedPipeline.glTranslatef(left + radius + d8,
+                bottom + radius - 1f, 0f);
+        GLES20FixedPipeline.glScalef(radius, 4f, 1f);
+        _crossHairLine.draw();
 
-            // shift the bottom and the height by the size of the actionbar
-            _bottom = _bottom - (mapView.getDefaultActionBarHeight() / 2f);
+        GLES20FixedPipeline.glLoadIdentity();
+        GLES20FixedPipeline.glTranslatef(left + radius + d32,
+                bottom + radius, 0f);
+        GLES20FixedPipeline.glScalef(radius, 1, 1f);
+        _crossHairLine.draw();
 
-            GLES20FixedPipeline.glPushMatrix();
+        GLES20FixedPipeline.glLoadIdentity();
+        GLES20FixedPipeline.glTranslatef(left - d8,
+                bottom + radius - 1f, 0f);
+        GLES20FixedPipeline.glScalef(radius, 4f, 1f);
+        _crossHairLine.draw();
 
-            GLES20FixedPipeline.glColor4f(1f, 0f, 0f, .70f);
-            GLES20FixedPipeline.glLoadIdentity();
+        GLES20FixedPipeline.glLoadIdentity();
+        GLES20FixedPipeline.glTranslatef(left - d32,
+                bottom + radius, 0f);
+        GLES20FixedPipeline.glScalef(radius, 1f, 1f);
+        _crossHairLine.draw();
 
-            GLES20FixedPipeline.glTranslatef(_left + width / 2 + width / 8,
-                    _bottom + height / 2 - 1f, 0f);
-            GLES20FixedPipeline.glScalef(width / 2, 4f, 1f);
-            _crossHairLine.draw();
+        GLES20FixedPipeline.glLoadIdentity();
+        GLES20FixedPipeline.glTranslatef(left + radius - 1f,
+                bottom + radius + d8, 0f);
+        GLES20FixedPipeline.glScalef(4f, radius, 1f);
+        _crossHairLine.draw();
 
-            GLES20FixedPipeline.glLoadIdentity();
-            GLES20FixedPipeline.glTranslatef(_left + width / 2 + width / 32,
-                    _bottom + height / 2, 0f);
-            GLES20FixedPipeline.glScalef(width / 2, 1, 1f);
-            _crossHairLine.draw();
+        GLES20FixedPipeline.glLoadIdentity();
+        GLES20FixedPipeline.glTranslatef(left + radius,
+                bottom + radius + d32, 0f);
+        GLES20FixedPipeline.glScalef(1f, radius, 1f);
+        _crossHairLine.draw();
 
-            GLES20FixedPipeline.glLoadIdentity();
-            GLES20FixedPipeline.glTranslatef(_left - width / 8,
-                    _bottom + height / 2 - 1f, 0f);
-            GLES20FixedPipeline.glScalef(width / 2, 4f, 1f);
-            _crossHairLine.draw();
+        GLES20FixedPipeline.glLoadIdentity();
+        GLES20FixedPipeline.glTranslatef(left + radius - 1f,
+                bottom - d8, 0f);
+        GLES20FixedPipeline.glScalef(4f, radius, 1f);
+        _crossHairLine.draw();
 
-            GLES20FixedPipeline.glLoadIdentity();
-            GLES20FixedPipeline.glTranslatef(_left - width / 32,
-                    _bottom + height / 2, 0f);
-            GLES20FixedPipeline.glScalef(width / 2, 1f, 1f);
-            _crossHairLine.draw();
+        GLES20FixedPipeline.glLoadIdentity();
+        GLES20FixedPipeline.glTranslatef(left + radius,
+                bottom - d32, 0f);
+        GLES20FixedPipeline.glScalef(1f, radius, 1f);
+        _crossHairLine.draw();
 
-            GLES20FixedPipeline.glLoadIdentity();
-            GLES20FixedPipeline.glTranslatef(_left + width / 2 - 1f,
-                    _bottom + height / 2 + height / 8,
-                    0f);
-            GLES20FixedPipeline.glScalef(4f, height / 2, 1f);
-            _crossHairLine.draw();
+        // center dot (black outline, red center)
+        GLES20FixedPipeline.glLoadIdentity();
+        GLES20FixedPipeline.glColor4f(0f, 0f, 0f, .70f);
+        GLES20FixedPipeline.glTranslatef(left + radius - 3,
+                bottom + radius - 3, 0f);
+        GLES20FixedPipeline.glScalef(7f, 7f, 1f);
+        _crossHairLine.draw();
 
-            GLES20FixedPipeline.glLoadIdentity();
-            GLES20FixedPipeline.glTranslatef(_left + width / 2,
-                    _bottom + height / 2 + height / 32,
-                    0f);
-            GLES20FixedPipeline.glScalef(1f, height / 2, 1f);
-            _crossHairLine.draw();
+        GLES20FixedPipeline.glLoadIdentity();
+        GLES20FixedPipeline.glColor4f(1f, 0f, 0f, .70f);
+        GLES20FixedPipeline.glTranslatef(left + radius - 2,
+                bottom + radius - 2, 0f);
+        GLES20FixedPipeline.glScalef(5f, 5f, 1f);
+        _crossHairLine.draw();
 
-            GLES20FixedPipeline.glLoadIdentity();
-            GLES20FixedPipeline.glTranslatef(_left + width / 2 - 1f,
-                    _bottom - height / 8, 0f);
-            GLES20FixedPipeline.glScalef(4f, height / 2, 1f);
-            _crossHairLine.draw();
-
-            GLES20FixedPipeline.glLoadIdentity();
-            GLES20FixedPipeline.glTranslatef(_left + width / 2,
-                    _bottom - height / 32, 0f);
-            GLES20FixedPipeline.glScalef(1f, height / 2, 1f);
-            _crossHairLine.draw();
-
-            // center dot (black outline, red center)
-            GLES20FixedPipeline.glLoadIdentity();
-            GLES20FixedPipeline.glColor4f(0f, 0f, 0f, .70f);
-            GLES20FixedPipeline.glTranslatef(_left + width / 2 - 3,
-                    _bottom + height / 2 - 3,
-                    0f);
-            GLES20FixedPipeline.glScalef(7f, 7f, 1f);
-            _crossHairLine.draw();
-
-            GLES20FixedPipeline.glLoadIdentity();
-            GLES20FixedPipeline.glColor4f(1f, 0f, 0f, .70f);
-            GLES20FixedPipeline.glTranslatef(_left + width / 2 - 2,
-                    _bottom + height / 2 - 2,
-                    0f);
-            GLES20FixedPipeline.glScalef(5f, 5f, 1f);
-            _crossHairLine.draw();
-
-            GLES20FixedPipeline.glPopMatrix();
-        }
+        GLES20FixedPipeline.glPopMatrix();
     }
 
     @Override

@@ -8,7 +8,7 @@ using namespace atakmap::db;
 
 
 Cursor::~Cursor()
-    throw ()
+    NOTHROWS
 { }
 
 

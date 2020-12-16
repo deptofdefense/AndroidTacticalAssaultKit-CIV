@@ -7,10 +7,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.drawable.ShapeDrawable;
-import android.graphics.drawable.shapes.RectShape;
-import android.graphics.drawable.shapes.Shape;
 import android.text.Editable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -30,6 +26,7 @@ import android.widget.Spinner;
 import com.atakmap.android.drawing.details.GenericDetailsView;
 import com.atakmap.android.hashtags.view.RemarksLayout;
 import com.atakmap.android.ipc.AtakBroadcast;
+import com.atakmap.android.maps.Shape;
 import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.android.util.SimpleItemSelectedListener;
 
@@ -46,6 +43,7 @@ import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.SensorFOV;
 import com.atakmap.android.maps.SensorFOV.OnMetricsChangedListener;
 import com.atakmap.android.util.ATAKUtilities;
+import com.atakmap.android.util.SimpleSeekBarChangeListener;
 import com.atakmap.android.video.AddEditAlias;
 import com.atakmap.android.video.AddEditAlias.AliasModifiedListener;
 import com.atakmap.android.video.ConnectionEntry;
@@ -57,9 +55,12 @@ import com.atakmap.coremap.conversions.AngleUtilities;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
+import com.atakmap.math.MathUtils;
 
 public class SensorDetailsView extends GenericPointDetailsView implements
-        OnMetricsChangedListener, AliasModifiedListener {
+        OnMetricsChangedListener, Shape.OnFillColorChangedListener,
+        Shape.OnStrokeColorChangedListener, Shape.OnStrokeWeightChangedListener,
+        AliasModifiedListener, View.OnClickListener {
 
     public static final String TAG = "SensorDetailsView";
     public static final int MAX_SENSOR_RANGE = 15000;
@@ -82,8 +83,7 @@ public class SensorDetailsView extends GenericPointDetailsView implements
 
     private boolean isInitalized = false;
     private EditText nameET;
-    private Button videoAliasButton;
-    private ImageButton selectVideoAliasButton;
+    private Button sensorVideoUrlBtn;
     private EditText rangeET;
     private Spinner directionAzimuthSpin;
     private EditText directionET;
@@ -92,11 +92,11 @@ public class SensorDetailsView extends GenericPointDetailsView implements
     private SeekBar directionSeek;
     private SeekBar fovSeek;
     private RemarksLayout remarksLayout;
-    private SeekBar alphaSeek;
     private CheckBox fovVisibleCB;
-    private Button placeSensorButton;
-    private ImageButton _colorButton;
-
+    private ImageButton _strokeColorBtn;
+    private SeekBar _strokeWeightSeek;
+    private ImageButton _fillColorBtn;
+    private SeekBar _fillAlphaSeek;
     private Button _coordButton;
 
     private boolean ignoreRangeUpdate = false;
@@ -138,45 +138,10 @@ public class SensorDetailsView extends GenericPointDetailsView implements
             }
         });
 
-        final SensorDetailsView self = this;
-        videoAliasButton = this.findViewById(R.id.sensorVideoUrlBtn);
-        videoAliasButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                AddEditAlias aea = new AddEditAlias(getContext());
+        sensorVideoUrlBtn = this.findViewById(R.id.sensorVideoUrlBtn);
+        sensorVideoUrlBtn.setOnClickListener(this);
 
-                String videoUID = sensorItem.getMetaString("videoUID", "");
-                ConnectionEntry entry = VideoManager.getInstance()
-                        .getEntry(videoUID);
-
-                //show the view to enter a new alias or modify an existing one
-                aea.addEditConnection(entry, self);
-            }
-        });
-
-        selectVideoAliasButton = this
-                .findViewById(R.id.videoAliasButton);
-        selectVideoAliasButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //show video alias selector
-                VideoListDialog d = new VideoListDialog(_mapView);
-                d.show(false, new VideoListDialog.Callback() {
-                    @Override
-                    public void onVideosSelected(List<ConnectionEntry> s) {
-                        if (s.isEmpty())
-                            return;
-                        ConnectionEntry ce = s.get(0);
-                        videoAliasButton.setText(ce.getAlias());
-                        sensorItem.setMetaString("videoUID", ce.getUID());
-                        sensorItem.setMetaString("videoUrl",
-                                ConnectionEntry.getURL(ce, false));
-                        sensorItem.persist(_mapView.getMapEventDispatcher(),
-                                null, this.getClass());
-                    }
-                });
-            }
-        });
+        findViewById(R.id.videoAliasButton).setOnClickListener(this);
 
         fovVisibleCB = this.findViewById(R.id.fovVisibilityCB);
         fovVisibleCB.setOnCheckedChangeListener(new OnCheckedChangeListener() {
@@ -184,7 +149,8 @@ public class SensorDetailsView extends GenericPointDetailsView implements
             public void onCheckedChanged(CompoundButton buttonView,
                     boolean isChecked) {
                 sensorFOV.setVisible(isChecked);
-                sensorItem.toggleMetaData(SensorDetailHandler.HIDE_FOV, !isChecked);
+                sensorItem.toggleMetaData(SensorDetailHandler.HIDE_FOV,
+                        !isChecked);
                 sensorItem.persist(_mapView.getMapEventDispatcher(), null,
                         this.getClass());
             }
@@ -242,7 +208,7 @@ public class SensorDetailsView extends GenericPointDetailsView implements
                             currentSel));
                     rangeET.setSelection(s.length());
                 } catch (IndexOutOfBoundsException ioobe) {
-                    Log.d(TAG, "error occured setting the selection");
+                    Log.d(TAG, "error occurred setting the selection");
                 }
             }
         });
@@ -359,25 +325,16 @@ public class SensorDetailsView extends GenericPointDetailsView implements
             }
         });
 
-        directionSeek.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                directionET.setText(
-                        String.valueOf(directionSeek.getProgress() + 1));
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                directionET.requestFocus();
-            }
-
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress,
-                    boolean fromUser) {
-                directionET.setText(
-                        String.valueOf(directionSeek.getProgress() + 1));
-            }
-        });
+        directionSeek
+                .setOnSeekBarChangeListener(new SimpleSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress,
+                            boolean fromUser) {
+                        directionET.setText(
+                                String.valueOf(
+                                        directionSeek.getProgress() + 1));
+                    }
+                });
 
         fovET = this.findViewById(R.id.fovET);
         fovSeek = this.findViewById(R.id.fovSeek);
@@ -411,17 +368,7 @@ public class SensorDetailsView extends GenericPointDetailsView implements
                 fovET.setSelection(s.length());
             }
         });
-        fovSeek.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                fovET.setText(String.valueOf(fovSeek.getProgress()));
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                fovET.requestFocus();
-            }
-
+        fovSeek.setOnSeekBarChangeListener(new SimpleSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress,
                     boolean fromUser) {
@@ -447,12 +394,7 @@ public class SensorDetailsView extends GenericPointDetailsView implements
 
         _coordButton.setText(_unitPrefs.formatPoint(
                 _point.getGeoPointMetaData(), true));
-        _coordButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                _onCoordSelected();
-            }
-        });
+        _coordButton.setOnClickListener(this);
 
         formatAddress();
 
@@ -469,152 +411,228 @@ public class SensorDetailsView extends GenericPointDetailsView implements
             }
         });
 
-        alphaSeek = this.findViewById(R.id.alphaSeek);
-        alphaSeek.setMax(100);
-        alphaSeek.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                sensorItem.setMetaDouble(SensorDetailHandler.FOV_ALPHA,
-                        seekBar.getProgress() / 100d);
-                sensorItem.persist(_mapView.getMapEventDispatcher(), null,
-                        this.getClass());
-            }
+        _fillAlphaSeek = this.findViewById(R.id.fillAlphaSeek);
+        _fillAlphaSeek
+                .setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+                        sensorItem.persist(_mapView.getMapEventDispatcher(),
+                                null,
+                                this.getClass());
+                    }
 
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                clearFocus();
-            }
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+                        clearFocus();
+                    }
 
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress,
-                    boolean fromUser) {
-                double alpha = progress / 100d;
-                //dont save if value is already equal
-                if (sensorItem.hasMetaValue(SensorDetailHandler.FOV_ALPHA)) {
-                    double savedVal = sensorItem.getMetaDouble(
-                            SensorDetailHandler.FOV_ALPHA, 0.3d);
-                    if (Double.compare(savedVal, alpha) == 0)
-                        return;
-                }
-                sensorFOV.setAlpha((float) alpha);
-                sensorItem.setMetaDouble(SensorDetailHandler.FOV_ALPHA, alpha);
-                sensorItem.persist(_mapView.getMapEventDispatcher(), null,
-                        this.getClass());
-            }
-        });
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress,
+                            boolean fromUser) {
+                        double alpha = progress / 255d;
+                        sensorItem.setMetaDouble(SensorDetailHandler.FOV_ALPHA,
+                                alpha);
+                        sensorFOV.setAlpha((float) alpha);
+                    }
+                });
 
-        _colorButton = this.findViewById(R.id.fovColorButton);
+        _strokeWeightSeek = findViewById(R.id.strokeWeightSeek);
+        _strokeWeightSeek
+                .setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+                        sensorItem.persist(_mapView.getMapEventDispatcher(),
+                                null,
+                                this.getClass());
+                    }
 
-        _colorButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                _onColorSelected();
-            }
-        });
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+                        clearFocus();
+                    }
+
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int prog,
+                            boolean fromUser) {
+                        double weight = prog / 20d;
+                        sensorItem.setMetaDouble(
+                                SensorDetailHandler.STROKE_WEIGHT,
+                                weight);
+                        sensorFOV.setStrokeWeight(weight);
+                    }
+                });
+
+        _strokeColorBtn = findViewById(R.id.strokeColorBtn);
+        _strokeColorBtn.setOnClickListener(this);
+
+        _fillColorBtn = findViewById(R.id.fillColorBtn);
+        _fillColorBtn.setOnClickListener(this);
+
         _updateColorButtonDrawable();
 
-        placeSensorButton = this
-                .findViewById(R.id.placeEndPointButton);
-        placeSensorButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                SensorDetailHandler
-                        .selectFOVEndPoint(sensorMarker, false, true);
-            }
-        });
+        findViewById(R.id.placeEndPointButton).setOnClickListener(this);
 
         isInitalized = true;
     }
 
     @Override
+    public void onClick(View v) {
+        int id = v.getId();
+
+        // Edit associated video alias
+        if (v == sensorVideoUrlBtn) {
+            AddEditAlias aea = new AddEditAlias(getContext());
+
+            String videoUID = sensorItem.getMetaString("videoUID", "");
+            ConnectionEntry entry = VideoManager.getInstance()
+                    .getEntry(videoUID);
+
+            //show the view to enter a new alias or modify an existing one
+            aea.addEditConnection(entry, this);
+        }
+
+        // Show video alias selector
+        else if (id == R.id.videoAliasButton) {
+            VideoListDialog d = new VideoListDialog(_mapView);
+            d.show(false, new VideoListDialog.Callback() {
+                @Override
+                public void onVideosSelected(List<ConnectionEntry> s) {
+                    if (s.isEmpty())
+                        return;
+                    ConnectionEntry ce = s.get(0);
+                    sensorVideoUrlBtn.setText(ce.getAlias());
+                    sensorItem.setMetaString("videoUID", ce.getUID());
+                    sensorItem.setMetaString("videoUrl",
+                            ConnectionEntry.getURL(ce, false));
+                    sensorItem.persist(_mapView.getMapEventDispatcher(),
+                            null, this.getClass());
+                }
+            });
+        }
+
+        // Set center coordinate
+        else if (v == _coordButton)
+            _onCoordSelected();
+
+        // Change stroke or fill color
+        else if (v == _fillColorBtn || v == _strokeColorBtn) {
+            final boolean fill = v == _fillColorBtn;
+            int color = fill ? sensorFOV.getFillColor()
+                    : sensorFOV.getStrokeColor();
+            AlertDialog.Builder b = new AlertDialog.Builder(getContext());
+            b.setTitle(R.string.point_dropper_text21);
+            ColorPalette palette = new ColorPalette(getContext(), color);
+            b.setView(palette);
+            final AlertDialog alert = b.create();
+            OnColorSelectedListener l = new OnColorSelectedListener() {
+                @Override
+                public void onColorSelected(int color, String label) {
+                    alert.dismiss();
+                    if (fill) {
+                        int a = sensorFOV.getFillColor() >> 24;
+                        sensorFOV.setFillColor((a << 24) | (color & 0xFFFFFF));
+                    } else
+                        sensorFOV.setStrokeColor(color);
+                    _updateColorButtonDrawable();
+                }
+            };
+            palette.setOnColorSelectedListener(l);
+            alert.show();
+        }
+
+        // Change sensor end point
+        else if (id == R.id.placeEndPointButton)
+            SensorDetailHandler.selectFOVEndPoint(sensorMarker, false, true);
+    }
+
+    @Override
     public void _updateColorButtonDrawable() {
-        Shape rect = new RectShape();
-        rect.resize(50, 50);
-        ShapeDrawable color = new ShapeDrawable();
-        color.setBounds(0, 0, 50, 50);
-        color.setIntrinsicHeight(50);
-        color.setIntrinsicWidth(50);
         if (sensorFOV == null)
             return;
         float[] colorArray = sensorFOV.getColor();
         sensorItem.setMetaDouble(SensorDetailHandler.FOV_RED, colorArray[0]);
         sensorItem.setMetaDouble(SensorDetailHandler.FOV_GREEN, colorArray[1]);
         sensorItem.setMetaDouble(SensorDetailHandler.FOV_BLUE, colorArray[2]);
+        sensorItem.setMetaInteger(SensorDetailHandler.STROKE_COLOR,
+                sensorFOV.getStrokeColor());
         sensorItem.persist(_mapView.getMapEventDispatcher(), null,
                 this.getClass());
-        int col = Color.argb(255, (int) (colorArray[0] * 255),
-                (int) (colorArray[1] * 255), (int) (colorArray[2] * 255));
-        color.getPaint().setColor(col);
-        color.setShape(rect);
-
-        _colorButton.setImageDrawable(color);
-    }
-
-    @Override
-    protected void _onColorSelected(int color, String label) {
-        sensorFOV.setColor(Color.red(color) / 255f, Color.green(color) / 255f,
-                Color.blue(color) / 255f);
-        _updateColorButtonDrawable();
+        _fillColorBtn.setColorFilter(0xFF000000 |
+                (sensorFOV.getFillColor() & 0xFFFFFF));
+        _strokeColorBtn.setColorFilter(0xFF000000 |
+                (sensorFOV.getStrokeColor() & 0xFFFFFF));
     }
 
     public void setSensorMarker(String uid) {
         //find the marker, and set the UI to the values
         MapItem mi = _mapView.getMapItem(uid);
-        if (mi != null) {
-            if (mi.getType().equals("b-m-p-s-p-loc")) {
-                sensorItem = mi;
-                sensorMarker = (Marker) sensorItem;
-                sensorUID = uid;
-                MapItem sfov = _mapView.getMapItem(uid
-                        + SensorDetailHandler.UID_POSTFIX);
-                if (sfov instanceof SensorFOV)
-                    sensorFOV = (SensorFOV) sfov;
-                if (sfov == null) {
-                    //if no sensor FOV was found create a default sensor FOV and set it to not be visible
-                    SensorDetailHandler.addFovToMap(sensorMarker, 270, 45, 100,
-                            new float[] {
-                                    1, 1, 1, 0.3f
-                            }, false);
+        if (mi == null || !mi.getType().equals("b-m-p-s-p-loc"))
+            return;
 
-                    sensorItem.setMetaBoolean(SensorDetailHandler.HIDE_FOV,
-                            true);
-                    sensorItem.persist(_mapView.getMapEventDispatcher(), null,
-                            this.getClass());
+        removeListeners();
 
-                    sfov = _mapView.getMapItem(uid
-                            + SensorDetailHandler.UID_POSTFIX);
-                    if (sfov instanceof SensorFOV)
-                        sensorFOV = (SensorFOV) sfov;
-                    if (sensorFOV == null) {
-                        Log.e(TAG, "sensor field of view was not found: " +
-                                (uid + SensorDetailHandler.UID_POSTFIX));
-                        return;
-                    }
-                }
+        sensorItem = mi;
+        sensorMarker = (Marker) sensorItem;
+        sensorUID = uid;
+        MapItem sfov = _mapView.getMapItem(uid
+                + SensorDetailHandler.UID_POSTFIX);
+        if (sfov instanceof SensorFOV)
+            sensorFOV = (SensorFOV) sfov;
+        if (sfov == null) {
+            //if no sensor FOV was found create a default sensor FOV and set it to not be visible
+            SensorDetailHandler.addFovToMap(sensorMarker, 270, 45, 100,
+                    new float[] {
+                            1, 1, 1, 0.3f
+                    }, false);
 
-                if (!isInitalized)
-                    _init();
+            sensorItem.setMetaBoolean(SensorDetailHandler.HIDE_FOV,
+                    true);
+            sensorItem.persist(_mapView.getMapEventDispatcher(), null,
+                    this.getClass());
 
-                if (sensorItem
-                        .hasMetaValue(SensorDetailHandler.MAG_REF_ATTRIBUTE)) {
-                    int i = sensorItem.getMetaInteger(
-                            SensorDetailHandler.MAG_REF_ATTRIBUTE, 0);
-                    if (i != 0)
-                        directionAzimuthSpin.setSelection(1);
-                }
-
-                updateFOVDetails();
-
-                sensorFOV.addOnMetricsChangedListener(this);
-                sensorMarker.addOnPointChangedListener(this);
+            sfov = _mapView.getMapItem(uid
+                    + SensorDetailHandler.UID_POSTFIX);
+            if (sfov instanceof SensorFOV)
+                sensorFOV = (SensorFOV) sfov;
+            if (sensorFOV == null) {
+                Log.e(TAG, "sensor field of view was not found: " +
+                        (uid + SensorDetailHandler.UID_POSTFIX));
+                return;
             }
         }
+
+        if (!isInitalized)
+            _init();
+
+        if (sensorItem
+                .hasMetaValue(SensorDetailHandler.MAG_REF_ATTRIBUTE)) {
+            int i = sensorItem.getMetaInteger(
+                    SensorDetailHandler.MAG_REF_ATTRIBUTE, 0);
+            if (i != 0)
+                directionAzimuthSpin.setSelection(1);
+        }
+
+        updateFOVDetails();
+
+        sensorFOV.addOnMetricsChangedListener(this);
+        sensorFOV.addOnStrokeWeightChangedListener(this);
+        sensorFOV.addOnStrokeColorChangedListener(this);
+        sensorFOV.addOnFillColorChangedListener(this);
+        sensorMarker.addOnPointChangedListener(this);
     }
 
     @Override
     public void onClose() {
-        if (sensorFOV != null)
+        removeListeners();
+    }
+
+    private void removeListeners() {
+        if (sensorFOV != null) {
             sensorFOV.removeOnMetricsChangedListener(this);
+            sensorFOV.removeOnStrokeWeightChangedListener(this);
+            sensorFOV.removeOnStrokeColorChangedListener(this);
+            sensorFOV.removeOnFillColorChangedListener(this);
+        }
         if (sensorMarker != null)
             sensorMarker.removeOnPointChangedListener(this);
     }
@@ -631,9 +649,9 @@ public class SensorDetailsView extends GenericPointDetailsView implements
                 ConnectionEntry entry = VideoManager.getInstance()
                         .getEntry(videoUID);
                 if (entry != null && entry.isRemote())
-                    videoAliasButton.setText(entry.getAlias());
+                    sensorVideoUrlBtn.setText(entry.getAlias());
                 else
-                    videoAliasButton.setText(sensorItem.getMetaString(
+                    sensorVideoUrlBtn.setText(sensorItem.getMetaString(
                             "videoUrl", "None"));
 
                 remarksLayout.setText(sensorItem.getMetaString("remarks", ""));
@@ -650,20 +668,15 @@ public class SensorDetailsView extends GenericPointDetailsView implements
                     directionET.setText(String.valueOf((int) sensorFOV
                             .getAzimuth()));
                 fovET.setText(String.valueOf((int) sensorFOV.getFOV()));
-                if (sensorItem.hasMetaValue(SensorDetailHandler.FOV_ALPHA)) {
-                    final double i = sensorItem.getMetaDouble(
-                            SensorDetailHandler.FOV_ALPHA, 0.3d);
-                    if (i >= 0 && i <= 1)
-                        ((Activity) _mapView.getContext())
-                                .runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        int prog = (int) (i * 100d);
-                                        alphaSeek.setProgress(prog);
-                                    }
-                                });
-                } else
-                    alphaSeek.setProgress(30);
+
+                double a = MathUtils.clamp(sensorItem.getMetaDouble(
+                        SensorDetailHandler.FOV_ALPHA, 0.3d), 0, 1);
+                _fillAlphaSeek.setProgress((int) (a * 255));
+
+                double sw = sensorItem.getMetaDouble(
+                        SensorDetailHandler.STROKE_WEIGHT, 0);
+                _strokeWeightSeek.setProgress((int) (sw * 20));
+
                 if (sensorItem.hasMetaValue(SensorDetailHandler.HIDE_FOV))
                     fovVisibleCB.setChecked(false);
 
@@ -736,12 +749,6 @@ public class SensorDetailsView extends GenericPointDetailsView implements
             public void run() {
                 _coordButton.setText(_unitPrefs.formatPoint(
                         _point.getGeoPointMetaData(), true));
-                _coordButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        _onCoordSelected();
-                    }
-                });
                 formatAddress();
             }
         });
@@ -753,26 +760,6 @@ public class SensorDetailsView extends GenericPointDetailsView implements
         updateFOVDetails();
     }
 
-    @Override
-    protected void _onColorSelected() {
-        AlertDialog.Builder b = new AlertDialog.Builder(getContext())
-                .setTitle(R.string.point_dropper_text21);
-        ShapeDrawable drawable = (ShapeDrawable) _colorButton.getDrawable();
-        ColorPalette palette = new ColorPalette(getContext(), drawable
-                .getPaint().getColor());
-        b.setView(palette);
-        final AlertDialog alert = b.create();
-        OnColorSelectedListener l = new OnColorSelectedListener() {
-            @Override
-            public void onColorSelected(int color, String label) {
-                alert.cancel();
-                _onColorSelected(color, label);
-            }
-        };
-        palette.setOnColorSelectedListener(l);
-        alert.show();
-    }
-
     /**
      * If the user modified the associated video alias, update the name 
      * and save the URL
@@ -780,7 +767,7 @@ public class SensorDetailsView extends GenericPointDetailsView implements
     @Override
     public void aliasModified(ConnectionEntry selected) {
         if (selected == null) {
-            videoAliasButton.setText(R.string.none);
+            sensorVideoUrlBtn.setText(R.string.none);
             sensorItem.setMetaString("videoUID", "");
             sensorItem.persist(
                     _mapView.getMapEventDispatcher(), null,
@@ -788,14 +775,30 @@ public class SensorDetailsView extends GenericPointDetailsView implements
 
             return;
         }
-        videoAliasButton.setText(selected.getAlias());
+        sensorVideoUrlBtn.setText(selected.getAlias());
         ConnectionEntry entry = VideoManager.getInstance()
                 .getEntry(selected.getUID());
         if (entry != null && entry.isRemote()) {
-            sensorItem.setMetaString("videoUrl", ConnectionEntry.getURL(entry, false));
+            sensorItem.setMetaString("videoUrl",
+                    ConnectionEntry.getURL(entry, false));
             sensorItem.setMetaString("videoUID", entry.getUID());
             sensorItem.persist(_mapView.getMapEventDispatcher(), null,
                     getClass());
         }
+    }
+
+    @Override
+    public void onStrokeColorChanged(Shape s) {
+        updateFOVDetails();
+    }
+
+    @Override
+    public void onFillColorChanged(Shape s) {
+        updateFOVDetails();
+    }
+
+    @Override
+    public void onStrokeWeightChanged(Shape s) {
+        updateFOVDetails();
     }
 }

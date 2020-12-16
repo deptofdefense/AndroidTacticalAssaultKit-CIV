@@ -7,7 +7,9 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.Base64;
 
+import com.atakmap.android.data.ClearContentRegistry;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.network.ui.CredentialsPreference;
 import com.atakmap.android.util.NotificationUtil;
@@ -15,16 +17,24 @@ import com.atakmap.app.R;
 import com.atakmap.comms.app.CotPortListActivity.CotPort;
 import com.atakmap.comms.app.TLSUtils;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.net.AtakAuthenticationCredentials;
 import com.atakmap.net.AtakAuthenticationDatabaseIFace;
 import com.atakmap.net.AtakCertificateDatabase;
 import com.atakmap.net.AtakCertificateDatabaseIFace;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
-public class CotService implements OnSharedPreferenceChangeListener {
+public class CotService implements OnSharedPreferenceChangeListener,
+        ClearContentRegistry.ClearContentListener {
 
     public static final String TAG = "CotService";
 
@@ -37,13 +47,15 @@ public class CotService implements OnSharedPreferenceChangeListener {
     private int multicastTTL;
     private int udpNoDataTimeout;
 
-    private SharedPreferences prefs;
+    private final SharedPreferences prefs;
 
-    private Context context;
+    private final Context context;
 
     private static final Object staticDatabaseIFaceLock = new Object();
     private static AtakCertificateDatabaseIFace _staticAtakCertificateDatabase = null;
     private static AtakAuthenticationDatabaseIFace _staticAtakAuthenticationDatabase = null;
+
+    private static final Object propertyFileLock = new Object();
 
     /**
      * The cot service responsible for persisting and restoring the CoT ports used by the system.
@@ -84,6 +96,11 @@ public class CotService implements OnSharedPreferenceChangeListener {
                 prefs.getBoolean(
                         "enableNonStreamingConnections", true));
 
+        // upgrade all legacy persisted information
+        upgradeLegacyConfiguration("cot_streams");
+        upgradeLegacyConfiguration("cot_inputs");
+        upgradeLegacyConfiguration("cot_outputs");
+
         Log.i(TAG, "Loading inputs, outputs and streams");
         if (!_loadSavedInputs()
                 && prefs.getBoolean("createDefaultCoTInputs", true)) {
@@ -97,11 +114,13 @@ public class CotService implements OnSharedPreferenceChangeListener {
             Log.d(TAG, "error loading save streams");
         }
 
+        ClearContentRegistry.getInstance().registerListener(this);
+
     }
 
     @Override
-    public void onSharedPreferenceChanged(SharedPreferences prefs,
-            String key) {
+    public void onSharedPreferenceChanged(final SharedPreferences prefs,
+            final String key) {
         if (key.compareTo("udpNoDataTimeout") == 0) {
             try {
                 udpNoDataTimeout = Integer.parseInt(prefs.getString(
@@ -126,10 +145,9 @@ public class CotService implements OnSharedPreferenceChangeListener {
                         .getString("tcpConnectTimeout", "20")) * 1000;
                 CommsMapComponent.getInstance().setTcpConnTimeout(
                         tcpConnectTimeout);
-                //CommsMapComponent.getInstance().setTCPConnectTimeout()
             } catch (NumberFormatException e) {
                 Log.e(TAG,
-                        "number format exception occured trying to parse tcpConnectTimeout",
+                        "number format exception occurred trying to parse tcpConnectTimeout",
                         e);
             }
         } else if (key.compareTo("locationCallsign") == 0) {
@@ -146,26 +164,38 @@ public class CotService implements OnSharedPreferenceChangeListener {
     }
 
     private boolean _loadSavedInputs() {
-        boolean r = false;
-        SharedPreferences prefs = context.getSharedPreferences("cot_inputs",
-                Context.MODE_PRIVATE);
-        int count = prefs.getInt("count", -1);
-        if (count != -1) {
-            for (int i = 0; i < count; ++i) {
-                String desc = prefs.getString("description" + i, "");
-                String connectString = prefs
-                        .getString(TAKServer.CONNECT_STRING_KEY + i, "");
+        synchronized (propertyFileLock) {
+            final File[] inputs = IOProviderFactory
+                    .listFiles(getConnectionsDir(context, "cot_inputs"));
+            if (inputs == null)
+                return false;
+            for (File config : inputs) {
+                final Properties props = new Properties();
+                try (FileInputStream fis = IOProviderFactory
+                        .getInputStream(config)) {
+                    props.load(fis);
+                } catch (IOException | IllegalArgumentException e) {
+                    Log.w(TAG, "Failed to read input config file", e);
+                    // If a failure has occurred for an existing Input, then the user might lose that
+                    // address and port without realizing it.   Go ahead an trigger a reload of all
+                    // of the basic "default" addresses and ports
+                    IOProviderFactory.delete(config);
+                    return false;
+                }
+                String desc = props.getProperty("description", "");
+                String connectString = props
+                        .getProperty(TAKServer.CONNECT_STRING_KEY, null);
                 if (connectString != null) {
-                    boolean isEnabled = prefs.getBoolean("enabled" + i, true);
+                    boolean isEnabled = !props.getProperty("enabled", "1")
+                            .equals("0");
                     Bundle input = new Bundle();
                     input.putString("description", desc);
                     input.putBoolean("enabled", isEnabled);
                     addInput(connectString, input);
                 }
             }
-            r = true;
         }
-        return r;
+        return true;
     }
 
     void removeInput(final String connectString) {
@@ -489,7 +519,7 @@ public class CotService implements OnSharedPreferenceChangeListener {
         Log.d(TAG, "Validating certificate for: " + hostname);
 
         //check if certificate is valid
-        AtakCertificateDatabase.CeritficateValidity validity = TLSUtils
+        AtakCertificateDatabase.CertificateValidity validity = TLSUtils
                 .validateCert(hostname);
         if (validity == null) {
             Log.w(TAG, "Cert invalid for: " + hostname);
@@ -538,29 +568,29 @@ public class CotService implements OnSharedPreferenceChangeListener {
      * Allows for removal of a streaming connection based on it's connect string or 
      * wild card "**" to remove all streams.
      */
-    void removeStreaming(final String connectString) {
+    void removeStreaming(final String connectString, boolean soft) {
 
         if (connectString.equals("**")) {
-            SharedPreferences prefs = context.getSharedPreferences(
-                    "cot_streams",
-                    Context.MODE_PRIVATE);
-            int count = prefs.getInt("count", -1);
-            if (count != -1) {
+            final File[] configs = IOProviderFactory
+                    .listFiles(getConnectionsDir(context, "cot_streams"));
+            if (configs != null) {
                 List<String> connectionList = new ArrayList<>();
-                for (int i = 0; i < count; ++i) {
+                for (File config : configs) {
                     connectionList
-                            .add(prefs.getString(
-                                    TAKServer.CONNECT_STRING_KEY + i, ""));
+                            .add(configFileNameToConnectString(
+                                    config.getName()));
                 }
                 for (String cString : connectionList) {
                     Log.d(TAG, "wildcard removal stream: " + cString);
                     CommsMapComponent.getInstance().removeStreaming(cString);
-                    _removeSavedInputOutput("cot_streams", cString);
+                    if (!soft)
+                        _removeSavedInputOutput("cot_streams", cString);
                 }
             }
         } else {
             CommsMapComponent.getInstance().removeStreaming(connectString);
-            _removeSavedInputOutput("cot_streams", connectString);
+            if (!soft)
+                _removeSavedInputOutput("cot_streams", connectString);
         }
     }
 
@@ -619,248 +649,340 @@ public class CotService implements OnSharedPreferenceChangeListener {
     }
 
     private boolean _loadSavedOutputs() {
-        boolean r = false;
-        SharedPreferences prefs = context.getSharedPreferences("cot_outputs",
-                Context.MODE_PRIVATE);
-        int count = prefs.getInt("count", -1);
-        if (count != -1) {
-            for (int i = 0; i < count; ++i) {
-                String desc = prefs.getString("description" + i, "");
-                String connectString = prefs
-                        .getString(TAKServer.CONNECT_STRING_KEY + i, "");
-                if (connectString != null) {
-                    boolean isEnabled = prefs.getBoolean("enabled" + i, true);
-                    Bundle output = new Bundle();
-                    output.putString("description", desc);
-                    output.putBoolean("enabled", isEnabled);
-                    addOutput(connectString, output);
-                }
+        final File[] outputs = IOProviderFactory
+                .listFiles(getConnectionsDir(context, "cot_outputs"));
+        if (outputs == null)
+            return false;
+        for (File config : outputs) {
+            final Properties props = new Properties();
+            try (FileInputStream fis = IOProviderFactory
+                    .getInputStream(config)) {
+                props.load(fis);
+            } catch (IOException | IllegalArgumentException e) {
+                Log.w(TAG, "Failed to read output config file", e);
+                // If a failure has occurred for an existing output, then the user might lose that
+                // address and port without realizing it.   Go ahead an trigger a reload of all
+                // of the basic "default" addresses and ports
+                IOProviderFactory.delete(config);
+                return false;
             }
-            r = true;
+
+            String desc = props.getProperty("description", "");
+            String connectString = props
+                    .getProperty(TAKServer.CONNECT_STRING_KEY, null);
+            if (connectString != null) {
+                boolean isEnabled = !props.getProperty("enabled", "1")
+                        .equals("0");
+                Bundle output = new Bundle();
+                output.putString("description", desc);
+                output.putBoolean("enabled", isEnabled);
+                addOutput(connectString, output);
+            }
         }
-        return r;
+        return true;
     }
 
-    private boolean _loadSavedStreams() {
-        boolean r = false;
-        SharedPreferences prefs = context.getSharedPreferences("cot_streams",
-                Context.MODE_PRIVATE);
-        int count = prefs.getInt("count", -1);
-        if (count != -1) {
-            for (int i = 0; i < count; ++i) {
-                String desc = prefs.getString("description" + i, "");
-                String connectString = prefs
-                        .getString(TAKServer.CONNECT_STRING_KEY + i, "");
-                boolean isEnabled = prefs.getBoolean("enabled" + i, true);
-                boolean isCompressed = prefs.getBoolean("compress" + i, false);
-                boolean useAuth = prefs.getBoolean("useAuth" + i, false);
-                boolean enrollForCertificateWithTrust = prefs.getBoolean(
-                        "enrollForCertificateWithTrust" + i, false);
-
-                Bundle input = new Bundle();
-                input.putString("description", desc);
-                input.putBoolean("enabled", isEnabled);
-                input.putBoolean("compress", isCompressed);
-                input.putBoolean("connected", false);
-                input.putBoolean("useAuth", useAuth);
-                input.putBoolean("enrollForCertificateWithTrust",
-                        enrollForCertificateWithTrust);
-
-                NetConnectString ncs = NetConnectString
-                        .fromString(connectString);
-
-                if (ncs == null) {
-                    Log.w(TAG, "Skipping invalid stream: " + i + ", "
-                            + connectString);
-                    continue;
-                }
-
-                String username = null;
-                String password = null;
-                AtakAuthenticationCredentials credentials = getAuthenticationDatabase()
-                        .getCredentialsForType(
-                                AtakAuthenticationCredentials.TYPE_COT_SERVICE,
-                                ncs.getHost());
-                if (credentials != null) {
-                    username = credentials.username;
-                    password = credentials.password;
-                }
-
-                // pull the policy from the prefs and apply to stream
-                String cacheCreds = prefs.getString("cacheCreds" + i, "");
-                input.putString("cacheCreds", cacheCreds);
-
-                // look at the policy to figure out what to apply back to stream
-                if (cacheCreds != null && (cacheCreds.equals(context
-                        .getString(R.string.cache_creds_both))
-                        ||
-                        cacheCreds.equals(context
-                                .getString(R.string.cache_creds_username)))) {
-                    input.putString("username", (username == null) ? ""
-                            : username);
-                }
-
-                if (cacheCreds != null && cacheCreds.equals(context
-                        .getString(R.string.cache_creds_both))) {
-                    input.putString("password", (password == null) ? ""
-                            : password);
-                }
-
-                addStreaming(connectString, input);
-            }
-            r = true;
-        }
-        return r;
-    }
-
-    private void _saveInputOutput(String prefsName, String connectString,
-            Bundle data) {
+    private void upgradeLegacyConfiguration(String prefsName) {
         SharedPreferences prefs = context.getSharedPreferences(prefsName,
                 Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        int index = _findSavedInputOutputIndex(prefs, connectString);
-        if (index == -1) {
-            index = prefs.getInt("count", 0);
-            editor.putInt("count", index + 1);
-            editor.putString(TAKServer.CONNECT_STRING_KEY + index,
-                    connectString);
-        }
-        boolean enabled = data.getBoolean("enabled", true);
-        editor.putBoolean("enabled" + index, enabled);
-        editor.putString("description" + index, data.getString("description"));
-        editor.putBoolean("compress" + index,
-                data.getBoolean("compress", false));
+        int count = prefs.getInt("count", 0);
+        for (int i = 0; i < count; ++i) {
+            String desc = prefs.getString("description" + i, "");
+            String connectString = prefs
+                    .getString(TAKServer.CONNECT_STRING_KEY + i, "");
+            boolean isEnabled = prefs.getBoolean("enabled" + i, true);
+            boolean isCompressed = prefs.getBoolean("compress" + i, false);
+            boolean useAuth = prefs.getBoolean("useAuth" + i, false);
+            boolean enrollForCertificateWithTrust = prefs.getBoolean(
+                    "enrollForCertificateWithTrust" + i, false);
 
-        boolean useAuth = data.getBoolean("useAuth", false);
-        editor.putBoolean("useAuth" + index, useAuth);
-
-        String cacheCreds = data.getString("cacheCreds");
-        if (!FileSystemUtils.isEmpty(cacheCreds)) {
-            editor.putString("cacheCreds" + index, cacheCreds);
-            String cacheUsername = (cacheCreds
-                    .equals(context.getString(R.string.cache_creds_both))
-                    || cacheCreds
-                            .equals(context
-                                    .getString(R.string.cache_creds_username)))
-                                            ? data.getString("username")
-                                            : "";
-            String cachePassword = cacheCreds
-                    .equals(context.getString(R.string.cache_creds_both))
-                            ? data.getString("password")
-                            : "";
+            Bundle input = new Bundle();
+            input.putString("description", desc);
+            input.putBoolean("enabled", isEnabled);
+            input.putBoolean("compress", isCompressed);
+            input.putBoolean("connected", false);
+            input.putBoolean("useAuth", useAuth);
+            input.putBoolean("enrollForCertificateWithTrust",
+                    enrollForCertificateWithTrust);
 
             NetConnectString ncs = NetConnectString
                     .fromString(connectString);
 
-            getAuthenticationDatabase().saveCredentialsForType(
-                    AtakAuthenticationCredentials.TYPE_COT_SERVICE,
-                    ncs.getHost(),
-                    (cacheUsername == null) ? "" : cacheUsername,
-                    (cachePassword == null) ? "" : cachePassword,
-                    true);
+            if (ncs == null) {
+                Log.w(TAG, "Skipping invalid stream: " + i + ", "
+                        + connectString);
+                continue;
+            }
 
-            AtakBroadcast
-                    .getInstance()
-                    .sendBroadcast(
-                            new Intent(
-                                    CredentialsPreference.CREDENTIALS_UPDATED)
-                                            .putExtra(
-                                                    "type",
-                                                    AtakAuthenticationCredentials.TYPE_COT_SERVICE)
-                                            .putExtra("host", ncs.getHost()));
+            String username = null;
+            String password = null;
+            AtakAuthenticationCredentials credentials = getAuthenticationDatabase()
+                    .getCredentialsForType(
+                            AtakAuthenticationCredentials.TYPE_COT_SERVICE,
+                            ncs.getHost());
+            if (credentials != null) {
+                username = credentials.username;
+                password = credentials.password;
+            }
+
+            // pull the policy from the prefs and apply to stream
+            String cacheCreds = prefs.getString("cacheCreds" + i, "");
+            input.putString("cacheCreds", cacheCreds);
+
+            // look at the policy to figure out what to apply back to stream
+            if (cacheCreds != null && (cacheCreds.equals(context
+                    .getString(R.string.cache_creds_both))
+                    ||
+                    cacheCreds.equals(context
+                            .getString(R.string.cache_creds_username)))) {
+                input.putString("username", (username == null) ? ""
+                        : username);
+            }
+
+            if (cacheCreds != null && cacheCreds.equals(context
+                    .getString(R.string.cache_creds_both))) {
+                input.putString("password", (password == null) ? ""
+                        : password);
+            }
+
+            _saveInputOutput(prefsName, connectString, input);
         }
 
-        editor.putString("caPassword" + index, data.getString("caPassword"));
-        editor.putString("clientPassword" + index,
-                data.getString("clientPassword"));
-        editor.putString("caLocation" + index, data.getString("caLocation"));
-        editor.putString("certificateLocation" + index,
-                data.getString("certificateLocation"));
-        editor.putBoolean("enrollForCertificateWithTrust" + index,
-                data.getBoolean("enrollForCertificateWithTrust", false));
+        prefs.edit().clear().apply();
+    }
 
-        editor.apply();
+    public static List<Properties> loadCotStreamProperties(Context context) {
+        List<Properties> results = new ArrayList<>();
+
+        final File[] streams = IOProviderFactory
+                .listFiles(getConnectionsDir(context, "cot_streams"));
+        if (streams == null)
+            return null;
+        for (File config : streams) {
+            final Properties props = new Properties();
+            try (FileInputStream fis = IOProviderFactory
+                    .getInputStream(config)) {
+                props.load(fis);
+            } catch (IOException | IllegalArgumentException e) {
+                Log.w(TAG, "Failed to read streaming config file", e);
+                // If a failure has occurred for an existing output, then the it probably needs to be
+                // deleted.
+                IOProviderFactory.delete(config);
+                continue;
+            }
+
+            results.add(props);
+        }
+
+        return results;
+    }
+
+    private boolean _loadSavedStreams() {
+
+        List<Properties> cotStreamProperties = loadCotStreamProperties(context);
+        if (cotStreamProperties == null || cotStreamProperties.size() == 0) {
+            return false;
+        }
+
+        for (Properties props : cotStreamProperties) {
+
+            String desc = props.getProperty("description", "");
+            String connectString = props
+                    .getProperty(TAKServer.CONNECT_STRING_KEY, "");
+            boolean isEnabled = !props.getProperty("enabled", "1").equals("0");
+            boolean isCompressed = !props.getProperty("compress", "0")
+                    .equals("0");
+            boolean useAuth = !props.getProperty("useAuth", "0").equals("0");
+            boolean enrollForCertificateWithTrust = !props.getProperty(
+                    "enrollForCertificateWithTrust", "0").equals("0");
+
+            Bundle input = new Bundle();
+            input.putString("description", desc);
+            input.putBoolean("enabled", isEnabled);
+            input.putBoolean("compress", isCompressed);
+            input.putBoolean("connected", false);
+            input.putBoolean("useAuth", useAuth);
+            input.putBoolean("enrollForCertificateWithTrust",
+                    enrollForCertificateWithTrust);
+
+            NetConnectString ncs = NetConnectString
+                    .fromString(connectString);
+
+            if (ncs == null) {
+                Log.w(TAG, "Skipping invalid stream, "
+                        + connectString);
+                continue;
+            }
+
+            String username = null;
+            String password = null;
+            AtakAuthenticationCredentials credentials = getAuthenticationDatabase()
+                    .getCredentialsForType(
+                            AtakAuthenticationCredentials.TYPE_COT_SERVICE,
+                            ncs.getHost());
+            if (credentials != null) {
+                username = credentials.username;
+                password = credentials.password;
+            }
+
+            // pull the policy from the prefs and apply to stream
+            String cacheCreds = props.getProperty("cacheCreds", "");
+            input.putString("cacheCreds", cacheCreds);
+
+            // look at the policy to figure out what to apply back to stream
+            if (cacheCreds != null && (cacheCreds.equals(context
+                    .getString(R.string.cache_creds_both))
+                    ||
+                    cacheCreds.equals(context
+                            .getString(R.string.cache_creds_username)))) {
+                input.putString("username", (username == null) ? ""
+                        : username);
+            }
+
+            if (cacheCreds != null && cacheCreds.equals(context
+                    .getString(R.string.cache_creds_both))) {
+                input.putString("password", (password == null) ? ""
+                        : password);
+            }
+
+            addStreaming(connectString, input);
+        }
+        return true;
+    }
+
+    public static File getConnectionsDir(Context context, String type) {
+        File connections = new File(context.getFilesDir(), "cotservice");
+        if (!FileSystemUtils.isEmpty(type))
+            connections = new File(connections, type);
+        return connections;
+    }
+
+    private static String connectStringToConfigFileName(String connectString) {
+        return Base64.encodeToString(
+                connectString.getBytes(FileSystemUtils.UTF8_CHARSET),
+                Base64.NO_WRAP);
+    }
+
+    private static String configFileNameToConnectString(String filename) {
+        return new String(
+                Base64.decode(filename.getBytes(FileSystemUtils.UTF8_CHARSET),
+                        Base64.NO_WRAP),
+                FileSystemUtils.UTF8_CHARSET);
+    }
+
+    public static File getConnectionConfig(Context context, String type,
+            String connectString) {
+        return new File(getConnectionsDir(context, type),
+                connectStringToConfigFileName(connectString));
+    }
+
+    private void _saveInputOutput(String prefsName, String connectString,
+            Bundle data) {
+        synchronized (propertyFileLock) {
+            Properties props = new Properties();
+            props.setProperty(TAKServer.CONNECT_STRING_KEY, connectString);
+            boolean enabled = data.getBoolean("enabled", true);
+            props.setProperty("enabled", enabled ? "1" : "0");
+            setStringProperty(props, data, "description");
+            props.setProperty("compress",
+                    data.getBoolean("compress", false) ? "1" : "0");
+
+            boolean useAuth = data.getBoolean("useAuth", false);
+            props.setProperty("useAuth", useAuth ? "1" : "0");
+
+            String cacheCreds = data.getString("cacheCreds");
+            if (!FileSystemUtils.isEmpty(cacheCreds)) {
+                props.setProperty("cacheCreds", cacheCreds);
+                String cacheUsername = (cacheCreds
+                        .equals(context.getString(R.string.cache_creds_both))
+                        || cacheCreds
+                                .equals(context
+                                        .getString(
+                                                R.string.cache_creds_username)))
+                                                        ? data.getString(
+                                                                "username")
+                                                        : "";
+                String cachePassword = cacheCreds
+                        .equals(context.getString(R.string.cache_creds_both))
+                                ? data.getString("password")
+                                : "";
+
+                NetConnectString ncs = NetConnectString
+                        .fromString(connectString);
+
+                getAuthenticationDatabase().saveCredentialsForType(
+                        AtakAuthenticationCredentials.TYPE_COT_SERVICE,
+                        ncs.getHost(),
+                        (cacheUsername == null) ? "" : cacheUsername,
+                        (cachePassword == null) ? "" : cachePassword,
+                        true);
+
+                AtakBroadcast
+                        .getInstance()
+                        .sendBroadcast(
+                                new Intent(
+                                        CredentialsPreference.CREDENTIALS_UPDATED)
+                                                .putExtra(
+                                                        "type",
+                                                        AtakAuthenticationCredentials.TYPE_COT_SERVICE)
+                                                .putExtra("host",
+                                                        ncs.getHost()));
+            }
+
+            setStringProperty(props, data, "caPassword");
+            setStringProperty(props, data, "clientPassword");
+            setStringProperty(props, data, "caLocation");
+            setStringProperty(props, data, "certificateLocation");
+            props.setProperty("enrollForCertificateWithTrust",
+                    data.getBoolean("enrollForCertificateWithTrust", false)
+                            ? "1"
+                            : "0");
+
+            final File configFile = getConnectionConfig(context, prefsName,
+                    connectString);
+            if (!IOProviderFactory.exists(configFile.getParentFile()))
+                IOProviderFactory.mkdirs(configFile.getParentFile());
+
+            try (FileOutputStream fos = IOProviderFactory
+                    .getOutputStream(configFile)) {
+                props.store(fos, null);
+            } catch (IOException e) {
+                Log.w(TAG,
+                        "Failed to save network connection " + connectString);
+            }
+        }
     }
 
     private void _removeSavedInputOutput(String prefsName,
             String connectString) {
-        SharedPreferences prefs = context.getSharedPreferences(prefsName,
-                Context.MODE_PRIVATE);
-        int index = _findSavedInputOutputIndex(prefs, connectString);
-        int count = prefs.getInt("count", 0);
 
-        if (index != -1) {
-            SharedPreferences.Editor editor = prefs.edit();
-            for (int i = index; i < count - 1; ++i) {
-                editor.putString("description" + i,
-                        prefs.getString("description" + (i + 1), ""));
-                editor.putString(TAKServer.CONNECT_STRING_KEY + i,
-                        prefs.getString(TAKServer.CONNECT_STRING_KEY + (i + 1),
-                                ""));
-                editor.putBoolean("useAuth" + i,
-                        prefs.getBoolean("useAuth" + (i + 1), false));
-                editor.putBoolean("enabled" + i,
-                        prefs.getBoolean("enabled" + (i + 1), false));
-                editor.putBoolean("compress" + i,
-                        prefs.getBoolean("compress" + (i + 1), false));
-                editor.putString("cacheCreds" + i,
-                        prefs.getString("cacheCreds" + (i + 1), ""));
-                editor.putBoolean(
-                        "enrollForCertificateWithTrust" + i,
-                        prefs.getBoolean("enrollForCertificateWithTrust"
-                                + (i + 1), false));
-            }
+        NetConnectString ncs = NetConnectString.fromString(connectString);
+        String server = ncs.getHost();
 
-            editor.remove("description" + (count - 1));
-            editor.remove("connectionString" + (count - 1));
-            editor.remove("useAuth" + (count - 1));
-            editor.remove("enabled" + (count - 1));
-            editor.remove("compress" + (count - 1));
-            editor.remove("cacheCreds" + (count - 1));
-            editor.remove("enrollForCertificateWithTrust" + (count - 1));
+        getAuthenticationDatabase().invalidateForType(
+                AtakAuthenticationCredentials.TYPE_COT_SERVICE,
+                server);
 
-            NetConnectString ncs = NetConnectString.fromString(connectString);
-            String server = ncs.getHost();
+        getCertificateDatabase().deleteCertificateForTypeAndServer(
+                AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
+                server);
 
-            getAuthenticationDatabase().invalidateForType(
-                    AtakAuthenticationCredentials.TYPE_COT_SERVICE,
-                    server);
+        getCertificateDatabase().deleteCertificateForTypeAndServer(
+                AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA, server);
 
-            getCertificateDatabase().deleteCertificateForTypeAndServer(
-                    AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
-                    server);
+        getAuthenticationDatabase().invalidateForType(
+                AtakAuthenticationCredentials.TYPE_clientPassword, server);
 
-            getCertificateDatabase().deleteCertificateForTypeAndServer(
-                    AtakCertificateDatabaseIFace.TYPE_TRUST_STORE_CA, server);
+        getAuthenticationDatabase().invalidateForType(
+                AtakAuthenticationCredentials.TYPE_caPassword, server);
 
-            getAuthenticationDatabase().invalidateForType(
-                    AtakAuthenticationCredentials.TYPE_clientPassword, server);
-
-            getAuthenticationDatabase().invalidateForType(
-                    AtakAuthenticationCredentials.TYPE_caPassword, server);
-
-            editor.putInt("count", count - 1);
-            editor.apply();
-        }
-    }
-
-    private int _findSavedInputOutputIndex(SharedPreferences prefs,
-            String connectString) {
-        int index = -1;
-        int count = prefs.getInt("count", 0);
-        for (int i = 0; i < count; ++i) {
-            if (connectString
-                    .equals(prefs.getString(TAKServer.CONNECT_STRING_KEY + i,
-                            ""))) {
-                index = i;
-                break;
-            }
-        }
-        return index;
+        final File configFile = getConnectionConfig(context, prefsName,
+                connectString);
+        IOProviderFactory.delete(configFile, IOProvider.SECURE_DELETE);
     }
 
     public void onDestroy() {
-        Log.i(TAG, "onDestroy()");
+        ClearContentRegistry.getInstance().unregisterListener(this);
     }
 
     public static void setCertificateDatabase(
@@ -885,10 +1007,50 @@ public class CotService implements OnSharedPreferenceChangeListener {
         Log.d(TAG, "setting _staticAtakAuthenticationDatabase");
     }
 
+    public void refreshAllStreams() {
+        removeAllStreams(true);
+        _loadSavedStreams();
+    }
+
+    private void removeAllStreams(boolean soft) {
+        Log.d(TAG, "reconnectStreams");
+        Bundle b = CommsMapComponent.getInstance().getAllPortsBundle();
+        Bundle[] streams = (Bundle[]) b.getParcelableArray("streams");
+        if (streams != null) {
+            for (Bundle sb : streams) {
+                String connStr = sb.getString(CotPort.CONNECT_STRING_KEY);
+                if (connStr != null) {
+                    removeStreaming(connStr, soft);
+                }
+            }
+        }
+    }
+
     public static AtakAuthenticationDatabaseIFace getAuthenticationDatabase() {
         synchronized (staticDatabaseIFaceLock) {
             return _staticAtakAuthenticationDatabase;
         }
     }
 
+    private static void setStringProperty(Properties props, Bundle bundle,
+            String key) {
+        if (bundle.getString(key) != null)
+            props.setProperty(key, bundle.getString(key));
+    }
+
+    @Override
+    public void onClearContent(boolean clearmaps) {
+        final String[] types = new String[] {
+                "cot_streams", "cot_inputs", "cot_outputs"
+        };
+        for (String type : types) {
+            final File dir = getConnectionsDir(context, type);
+            final File[] inputs = IOProviderFactory.listFiles(dir);
+            if (inputs != null)
+                for (File config : inputs) {
+                    IOProviderFactory.delete(config);
+                }
+            IOProviderFactory.delete(dir);
+        }
+    }
 }

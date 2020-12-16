@@ -306,11 +306,14 @@ public abstract class SpecialPointButtonTool extends Tool {
             _marker.setClickable(true);
 
         }
-        Intent intent = new Intent(
-                "com.atakmap.android.action.SHOW_POINT_DETAILS");
-        intent.putExtra("uid", uid);
-        AtakBroadcast.getInstance().sendBroadcast(intent);
-        addMarker();
+
+        if (_marker.hasMetaValue("previouslyDisplayed")) {
+            Intent intent = new Intent(
+                    "com.atakmap.android.action.SHOW_POINT_DETAILS");
+            intent.putExtra("uid", uid);
+            AtakBroadcast.getInstance().sendBroadcast(intent);
+            addMarker();
+        }
         //_marker.setVisible(true);
     }
 
@@ -403,6 +406,14 @@ public abstract class SpecialPointButtonTool extends Tool {
 
             _marker.setPoint(gp);
             _marker.setVisible(true);
+            _marker.setMetaBoolean("previouslyDisplayed", true);
+
+            Intent intent = new Intent(
+                    "com.atakmap.android.action.SHOW_POINT_DETAILS");
+            intent.putExtra("uid", _marker.getUID());
+            AtakBroadcast.getInstance().sendBroadcast(intent);
+            addMarker();
+
         }
     };
 

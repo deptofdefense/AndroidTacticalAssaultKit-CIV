@@ -17,6 +17,7 @@
 #include <Mutex.h>
 #include <Cond.h>
 #include <Lock.h>
+#include <memory>
 
 #include <deque>
 
@@ -312,7 +313,8 @@ struct CommoImpl
                 simpleIOMgmt(NULL),
                 crypto(NULL),
                 urlMgmt(NULL),
-                cloudMgmt(NULL)
+                cloudMgmt(NULL),
+                providerTracker(NULL)
     {
         this->ourUID = new InternalContactUID(ourUID);
         scanner = new HWIFScanner(logger, addrMode);
@@ -324,7 +326,8 @@ struct CommoImpl
         contactMgmt = new ContactManager(logger, dgMgmt, tcpMgmt, streamMgmt);
         listenerMgmt = new CoTListenerManagement(logger);
         crypto = new CryptoUtil(logger);
-        urlMgmt = new URLRequestManager(logger);
+        providerTracker = new FileIOProviderTracker();
+        urlMgmt = new URLRequestManager(logger, providerTracker);
         cloudMgmt = new CloudIOManager(logger, urlMgmt);
 
         scanner->addListener(dgMgmt);
@@ -359,6 +362,7 @@ struct CommoImpl
         delete urlMgmt;
         delete httpsProxy;
         delete missionPkgMgmt;
+        delete providerTracker;
         delete contactMgmt;
         delete dgMgmt;
         delete tcpMgmt;
@@ -376,7 +380,8 @@ struct CommoImpl
                                             streamMgmt,
                                             scanner, missionPackageIO,
                                             this->ourUID,
-                                            this->ourCallsign);
+                                            this->ourCallsign,
+                                            this->providerTracker);
         streamMgmt->addStreamingMessageListener(missionPkgMgmt);
         dgMgmt->addDatagramReceiver(missionPkgMgmt);
         tcpMgmt->addMessageReceiver(missionPkgMgmt);
@@ -389,7 +394,7 @@ struct CommoImpl
         PGSC::Thread::Lock_create(lock, mpMutex);
         if (simpleIOMgmt)
             throw std::invalid_argument("Already initialized");
-        simpleIOMgmt = new SimpleFileIOManager(logger, simpleIO);
+        simpleIOMgmt = new SimpleFileIOManager(logger, simpleIO, this->providerTracker);
     }
 
     void setCallsign(const char *cs) {
@@ -413,6 +418,22 @@ struct CommoImpl
         }
     }
 
+    void registerFileIOProvider(std::shared_ptr<FileIOProvider>& ioProvider) {
+        PGSC::Thread::LockPtr lock(NULL, NULL);
+        PGSC::Thread::Lock_create(lock, mpMutex);
+        if (providerTracker) {
+            providerTracker->registerProvider(ioProvider);
+        }
+    }
+
+    void deregisterFileIOProvider(const FileIOProvider& ioProvider) {
+        PGSC::Thread::LockPtr lock(NULL, NULL);
+        PGSC::Thread::Lock_create(lock, mpMutex);
+        if (providerTracker) {
+            providerTracker->deregisterProvider(ioProvider);
+        }
+    }
+
 
 
     CommoLogger *logger;
@@ -432,6 +453,7 @@ struct CommoImpl
     CryptoUtil *crypto;
     URLRequestManager *urlMgmt;
     CloudIOManager *cloudMgmt;
+    FileIOProviderTracker *providerTracker;
 };
 
 
@@ -494,6 +516,16 @@ void Commo::shutdown()
 void Commo::setCallsign(const char *cs)
 {
     impl->setCallsign(cs);
+}
+
+void Commo::registerFileIOProvider(std::shared_ptr<FileIOProvider>& provider)
+{
+    impl->registerFileIOProvider(provider);
+}
+
+void Commo::deregisterFileIOProvider(const FileIOProvider& provider)
+{
+    impl->deregisterFileIOProvider(provider);
 }
 
 void Commo::setWorkaroundQuirks(int quirksMask) {
@@ -654,6 +686,17 @@ void Commo::setMissionPackageViaServerEnabled(bool enabled)
 {
     impl->mpSettings.setServerTransferEnabled(enabled);
     impl->copyMPSettings();
+}
+
+CommoResult Commo::setMissionPackageHttpPort(int port)
+{
+    try {
+        impl->mpSettings.setHttpPort(port);
+        impl->copyMPSettings();
+        return COMMO_SUCCESS;
+    } catch (std::invalid_argument &) {
+        return COMMO_ILLEGAL_ARGUMENT;
+    }
 }
 
 CommoResult Commo::setMissionPackageHttpsPort(int port)

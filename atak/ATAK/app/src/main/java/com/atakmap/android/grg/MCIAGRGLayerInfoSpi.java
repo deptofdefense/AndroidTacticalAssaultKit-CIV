@@ -2,11 +2,11 @@
 package com.atakmap.android.grg;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
-
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.io.ZipVirtualFile;
+import com.atakmap.map.gdal.VSIFileFileSystemHandler;
 import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
 import com.atakmap.map.layer.feature.FeatureDataStore.FeatureQueryParameters;
 import com.atakmap.map.layer.feature.PersistentDataSourceFeatureDataStore;
@@ -22,8 +22,8 @@ import com.atakmap.math.PointD;
 import com.atakmap.spatial.file.ShapefileSpatialDb;
 import com.atakmap.spi.InteractiveServiceProvider;
 
-import org.gdal.gdal.Driver;
 import org.gdal.gdal.Dataset;
+import org.gdal.gdal.Driver;
 import org.gdal.gdal.gdal;
 import org.gdal.ogr.DataSource;
 import org.gdal.ogr.FeatureDefn;
@@ -67,6 +67,8 @@ public class MCIAGRGLayerInfoSpi extends AbstractDatasetDescriptorSpi {
         final String prefix;
         if (file instanceof ZipVirtualFile)
             prefix = "/vsizip";
+        else if (!IOProviderFactory.isDefault())
+            prefix = VSIFileFileSystemHandler.PREFIX;
         else
             prefix = "";
 
@@ -78,7 +80,8 @@ public class MCIAGRGLayerInfoSpi extends AbstractDatasetDescriptorSpi {
 
         DataSourceFeatureDataStore spatialdb = null;
         try {
-            File spatialdbFile = File.createTempFile("layer", ".private",
+            File spatialdbFile = IOProviderFactory.createTempFile("layer",
+                    ".private",
                     workingDir);
             spatialdb = new PersistentDataSourceFeatureDataStore(spatialdbFile);
 
@@ -231,7 +234,7 @@ public class MCIAGRGLayerInfoSpi extends AbstractDatasetDescriptorSpi {
     }
 
     private static Map<String, File> discoverMCIAGRG(File dir, int limit) {
-        if (!FileIOProviderFactory.isDirectory(dir))
+        if (!IOProviderFactory.isDirectory(dir))
             return Collections.emptyMap();
 
         final String prefix;
@@ -249,7 +252,7 @@ public class MCIAGRGLayerInfoSpi extends AbstractDatasetDescriptorSpi {
 
         Map<String, File> retval = new HashMap<>();
 
-        File[] children = FileIOProviderFactory.listFiles(dir);
+        File[] children = IOProviderFactory.listFiles(dir);
         String extension;
         DataSource dataSource;
         Layer layer;
@@ -268,8 +271,10 @@ public class MCIAGRGLayerInfoSpi extends AbstractDatasetDescriptorSpi {
             if (extension.equals("SHP") && schemas.size() > 0) {
                 dataSource = null;
                 try {
-                    dataSource = ogr.Open(prefix
-                            + children[i].getAbsolutePath());
+                    String path = prefix + children[i].getAbsolutePath();
+                    if (!IOProviderFactory.isDefault())
+                        path = VSIFileFileSystemHandler.PREFIX + path;
+                    dataSource = ogr.Open(path);
                     if (dataSource != null) {
                         final int numLayers = dataSource.GetLayerCount();
                         layer_loop: for (int j = 0; j < numLayers; j++) {

@@ -29,7 +29,7 @@ public class ZMistView extends LinearLayout {
 
     Map<Integer, Object> _zMists;
 
-    private Context _context;
+    private final Context _context;
     private PointMapItem _marker;
     private MapView _mapView;
 

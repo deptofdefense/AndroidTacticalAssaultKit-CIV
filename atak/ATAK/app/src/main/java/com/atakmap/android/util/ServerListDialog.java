@@ -226,10 +226,12 @@ public class ServerListDialog {
             holder.txtLabel.setText(server.getDescription());
             if (server.isConnected()) {
                 holder.imgIcon
-                        .setImageResource(R.drawable.ic_server_success);
+                        .setImageResource(
+                                ATAKConstants.getServerConnection(true));
             } else {
                 holder.imgIcon
-                        .setImageResource(R.drawable.ic_server_error);
+                        .setImageResource(
+                                ATAKConstants.getServerConnection(false));
             }
 
             return row;

@@ -21,12 +21,12 @@ import android.widget.TextView;
 import android.graphics.Color;
 import android.widget.AdapterView;
 
+import com.atakmap.android.data.ClearContentRegistry;
 import com.atakmap.android.drawing.mapItems.DrawingCircle;
 import com.atakmap.android.geofence.data.GeoFenceConstants;
 import com.atakmap.android.util.SimpleItemSelectedListener;
 
 import com.atakmap.android.contact.ContactPresenceDropdown;
-import com.atakmap.android.data.DataMgmtReceiver;
 import com.atakmap.android.drawing.mapItems.DrawingShape;
 import com.atakmap.android.editableShapes.Rectangle;
 import com.atakmap.android.geofence.alert.GeoFenceAlerting;
@@ -259,11 +259,15 @@ public class GeoFenceReceiver extends BroadcastReceiver implements
                             message, message,
                             ShapeUtils.getZoomShapeIntent(item));
             }
-        } else if (DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION.equals(intent
-                .getAction())) {
-            _database.clearAll();
         }
     }
+
+    ClearContentRegistry.ClearContentListener ccl = new ClearContentRegistry.ClearContentListener() {
+        @Override
+        public void onClearContent(boolean clearmaps) {
+            _database.clearAll();
+        }
+    };
 
     private void displayGeofence(final Context context, final MapItem item) {
         //see if this is a new GeoFence, or an edit

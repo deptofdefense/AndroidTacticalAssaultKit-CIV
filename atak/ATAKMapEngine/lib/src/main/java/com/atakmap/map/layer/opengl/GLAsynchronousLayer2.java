@@ -75,7 +75,7 @@ public abstract class GLAsynchronousLayer2<Pending> extends GLAsynchronousMapRen
         while(this.servicingRequest) {
             try {
                 this.wait(100);
-            } catch(InterruptedException e) {}
+            } catch(InterruptedException ignored) {}
         }
     }
 

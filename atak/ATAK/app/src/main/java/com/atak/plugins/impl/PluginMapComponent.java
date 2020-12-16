@@ -8,20 +8,30 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.preference.PreferenceManager;
-
+import android.view.MotionEvent;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.MapActivity;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.tools.menu.ActionMenuData;
+import com.atakmap.android.update.AppMgmtActivity;
+import com.atakmap.android.util.ATAKConstants;
+import com.atakmap.android.widgets.LinearLayoutWidget;
+import com.atakmap.android.widgets.MapWidget;
+import com.atakmap.android.widgets.MarkerIconWidget;
+import com.atakmap.android.widgets.ProgressWidget;
+import com.atakmap.android.widgets.RootLayoutWidget;
 import com.atakmap.app.ATAKApplication;
 import com.atakmap.app.R;
+import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.maps.assets.Icon;
 import com.atakmap.filesystem.HashingUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -45,11 +55,13 @@ public class PluginMapComponent extends AbstractMapComponent implements
     private Context context;
     private SharedPreferences prefs;
     private AtakPluginRegistry pluginRegistry;
+    private MapView mapView;
 
     @Override
     public void onCreate(final Context context, final Intent intent,
             final MapView mapViewFinal) {
 
+        this.mapView = mapViewFinal;
         this.context = context;
         prefs = PreferenceManager
                 .getDefaultSharedPreferences(context);
@@ -117,14 +129,14 @@ public class PluginMapComponent extends AbstractMapComponent implements
                 .initialize(mapViewFinal);
         Log.d(TAG,
                 "Starting up with plugin-api version: "
-                        + AtakPluginRegistry.getPluginApiVersion(context,
-                                context.getPackageName(), false));
+                        + ATAKConstants.getPluginApi(false));
 
         prefs.registerOnSharedPreferenceChangeListener(this);
 
         // grab preference that says that ATAK exited uncleanly last time
         boolean atakExitedUncleanlyLastTime = prefs.getBoolean(
                 "pluginSafeMode", false);
+
         Log.d(TAG, "Detected that app's last shutdown was "
                 + (atakExitedUncleanlyLastTime ? "NOT clean" : "clean"));
 
@@ -138,7 +150,7 @@ public class PluginMapComponent extends AbstractMapComponent implements
             AtakBroadcast.getInstance().sendBroadcast(toolsintent);
 
             // ...then don't scan for plugins, and don't bother setting the "unclean" flag
-            finished();
+            finished(true);
             return;
         }
 
@@ -165,9 +177,10 @@ public class PluginMapComponent extends AbstractMapComponent implements
                                                 DialogInterface dialog,
                                                 int id) {
                                             dialog.dismiss();
-                                            AtakPluginRegistry.get()
+                                            boolean trusted = AtakPluginRegistry
+                                                    .get()
                                                     .scanAndLoadPlugins(null);
-                                            finished();
+                                            finished(trusted);
                                         }
                                     })
                             .setNeutralButton("Skip Plugin Loading\nOnce",
@@ -179,7 +192,7 @@ public class PluginMapComponent extends AbstractMapComponent implements
                                             Log.d(TAG,
                                                     "Skipping plugin loading");
                                             dialog.dismiss();
-                                            finished();
+                                            finished(true);
                                         }
                                     })
                             .setNegativeButton(
@@ -197,7 +210,8 @@ public class PluginMapComponent extends AbstractMapComponent implements
                                                             "atakPluginScanningOnStartup",
                                                             false)
                                                     .apply();
-                                            finished();
+                                            // since no plugins have been loaded...
+                                            finished(true);
                                         }
                                     })
                             .create();
@@ -207,12 +221,12 @@ public class PluginMapComponent extends AbstractMapComponent implements
         } else {
             Log.d(TAG,
                     "automatically loading plugins because app exited cleanly last shutdown");
-            AtakPluginRegistry.get().scanAndLoadPlugins(null);
-            finished();
+            boolean trusted = AtakPluginRegistry.get().scanAndLoadPlugins(null);
+            finished(trusted);
         }
     }
 
-    private void finished() {
+    private void finished(boolean trusted) {
         Log.d(TAG, "finished loading plugins, without error");
 
         // running this on the ui thread so that state saver does not start prematurely
@@ -227,6 +241,89 @@ public class PluginMapComponent extends AbstractMapComponent implements
             }
         });
 
+        if (!trusted)
+            constructAndDisplayWarning();
+    }
+
+    private void constructAndDisplayWarning() {
+        // show fading widget on the bottom if it is untrusted
+        final RootLayoutWidget root = (RootLayoutWidget) mapView
+                .getComponentExtra("rootLayoutWidget");
+        final LinearLayoutWidget notification = new LinearLayoutWidget(
+                LinearLayoutWidget.WRAP_CONTENT,
+                LinearLayoutWidget.WRAP_CONTENT,
+                LinearLayoutWidget.HORIZONTAL);
+        notification.setPoint(0, mapView.getHeight() - 150);
+
+        final MarkerIconWidget untrust = new MarkerIconWidget();
+        untrust.setIcon(createIcon(R.drawable.untrusted));
+        untrust.setSize(42, 42);
+        notification.addWidget(untrust);
+
+        final ProgressWidget timeBar = new ProgressWidget();
+        timeBar.setMax(5000);
+        timeBar.setHeight(42);
+        timeBar.setMargins(0f, MapView.DENSITY * 42f, 0f,
+                MapView.DENSITY * -6f);
+        timeBar.setWidth(300);
+        notification.addWidget(timeBar);
+
+        untrust.addOnClickListener(new MapWidget.OnClickListener() {
+            @Override
+            public void onMapWidgetClick(MapWidget widget, MotionEvent event) {
+                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(
+                        context);
+                alertBuilder
+                        .setTitle(R.string.plugin_warning)
+                        .setMessage(
+                                R.string.plugin_warning_message)
+                        .setPositiveButton(R.string.see_more,
+                                new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog,
+                                            int which) {
+                                        Activity a = ((Activity) context);
+                                        Intent mgmtPlugins = new Intent(a,
+                                                AppMgmtActivity.class);
+                                        a.startActivityForResult(mgmtPlugins,
+                                                ToolsPreferenceFragment.APP_MGMT_REQUEST_CODE);
+                                    }
+                                })
+                        .setNegativeButton(R.string.cancel, null);
+                alertBuilder.create().show();
+            }
+        });
+
+        root.addWidget(notification);
+
+        Thread t = new Thread() {
+            public void run() {
+                for (int i = 0; i < 13; ++i) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException ignored) {
+                    }
+                    if (i < 12)
+                        timeBar.setProgress(5000 - (i * 500));
+                }
+                root.removeWidget(notification);
+            }
+        };
+        t.start();
+    }
+
+    private Icon createIcon(final int icon) {
+        Icon.Builder b = new Icon.Builder();
+        b.setAnchor(0, 0);
+        b.setColor(Icon.STATE_DEFAULT, Color.WHITE);
+        b.setSize(42, 42);
+
+        final String uri = "android.resource://"
+                + mapView.getContext().getPackageName()
+                + "/" + icon;
+
+        b.setImageUri(Icon.STATE_DEFAULT, uri);
+        return b.build();
     }
 
     @Override

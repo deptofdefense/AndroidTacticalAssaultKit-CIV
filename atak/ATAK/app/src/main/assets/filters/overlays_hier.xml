@@ -61,8 +61,8 @@
         </overlay>
     </overlay>
     <!-- parent overlay id is optional, and is overriden if an overlay is nested in this config/XML -->
-    <overlay id='affiliations' parent='markerroot' title='CoT 2525B' icon='asset://icons/affiliations.png' order='1' litmusFilter="a-">
-        <overlay id='hostile' title='Hostile Markers' icon='asset://icons/target.png' order='0'>
+    <overlay id='affiliations' parent='markerroot' title='filter_title_markers' icon='asset://icons/affiliations.png' order='1' litmusFilter="a-">
+        <overlay id='hostile' title='filter_title_hostiles' icon='asset://icons/target.png' order='0'>
             <filter type='a-h'/>
             <filter type='a-j'/>
             <filter type='a-k'/>

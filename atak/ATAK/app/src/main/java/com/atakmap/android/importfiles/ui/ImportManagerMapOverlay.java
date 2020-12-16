@@ -38,7 +38,9 @@ import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.DeepMapItemQuery;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.missionpackage.api.MissionPackageApi;
 import com.atakmap.android.missionpackage.file.MissionPackageFileIO;
+import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.overlay.AbstractMapOverlay2;
 import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.android.util.ATAKUtilities;
@@ -46,7 +48,7 @@ import com.atakmap.app.ATAKActivity;
 import com.atakmap.app.R;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.kml.KMLUtil;
@@ -307,7 +309,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
                 return null;
             String localPath = _resource.getLocalPath();
             int icon = !FileSystemUtils.isEmpty(localPath)
-                    && FileIOProviderFactory.exists(new File(localPath))
+                    && IOProviderFactory.exists(new File(localPath))
                             ? R.drawable.importmgr_status_green
                             : R.drawable.importmgr_status_red;
             return _context.getDrawable(icon);
@@ -392,7 +394,8 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
                 File tmp = FileSystemUtils
                         .getItem(FileSystemUtils.TMP_DIRECTORY);
                 if (event == null || !event.isValid()
-                        || !FileIOProviderFactory.exists(tmp) && !FileIOProviderFactory.mkdirs(tmp)) {
+                        || !IOProviderFactory.exists(tmp)
+                                && !IOProviderFactory.mkdirs(tmp)) {
                     Log.w(TAG, "Faild to send Remote Resource CoT");
                     Toast.makeText(_context,
                             R.string.importmgr_failed_to_send_resource,
@@ -401,9 +404,10 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
                 }
 
                 File cotFile = new File(tmp, FileSystemUtils
-                        .sanitizeFilename(event.getUID() + ".cot"));
+                        .sanitizeFilename(getTitle() + ".cot"));
                 try {
-                    FileSystemUtils.write(FileIOProviderFactory.getOutputStream(cotFile),
+                    FileSystemUtils.write(
+                            IOProviderFactory.getOutputStream(cotFile),
                             event.toString());
                 } catch (Exception e) {
                     Log.e(TAG, "Failed to write remote resource CoT", e);
@@ -413,10 +417,15 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
                     return;
                 }
 
+                // Create temp manifest with the proper name
+                MissionPackageManifest manifest = MissionPackageApi
+                        .CreateTempManifest(getTitle(), true, true, null);
+                manifest.addFile(cotFile, null);
+
                 SendDialog.Builder b = new SendDialog.Builder(_view);
                 b.setName(getTitle());
                 b.setIcon(getIconDrawable());
-                b.addFile(cotFile);
+                b.setMissionPackage(manifest);
                 b.show();
             }
 
@@ -518,7 +527,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
         List<RemoteResource> ret = new ArrayList<>();
         boolean bInternal = isInternal(dir);
         File resourceFile = new File(dir, ImportManagerView.XML_FILEPATH);
-        if (!FileIOProviderFactory.exists(resourceFile)) {
+        if (!IOProviderFactory.exists(resourceFile)) {
             Log.d(TAG,
                     "Did not find resource file: "
                             + resourceFile.getAbsolutePath());
@@ -569,7 +578,7 @@ public class ImportManagerMapOverlay extends AbstractMapOverlay2
     private void flush(String dir, boolean onlyIfExists) {
         boolean bInternal = isInternal(dir);
         File resourceFile = new File(dir, ImportManagerView.XML_FILEPATH);
-        if (onlyIfExists && !FileIOProviderFactory.exists(resourceFile))
+        if (onlyIfExists && !IOProviderFactory.exists(resourceFile))
             return;
 
         RemoteResources rs = new RemoteResources();

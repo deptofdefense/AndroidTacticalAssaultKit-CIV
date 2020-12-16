@@ -8,6 +8,7 @@ import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
+import com.atakmap.app.system.ResourceUtil;
 
 /**
  * Provide for fires related preferences to be set within ATAK.   Fires
@@ -24,8 +25,12 @@ public class FiresMapComponent extends AbstractMapComponent {
 
         ToolsPreferenceFragment.register(
                 new ToolsPreferenceFragment.ToolPreference(
-                        context.getString(R.string.fire_control_prefs),
-                        context.getString(R.string.adjust_fire_settings),
+                        ResourceUtil.getString(context,
+                                R.string.civ_fire_control_prefs,
+                                R.string.fire_control_prefs),
+                        ResourceUtil.getString(context,
+                                R.string.civ_adjust_fire_settings,
+                                R.string.adjust_fire_settings),
                         "firesPreference",
                         context.getResources().getDrawable(
                                 R.drawable.ic_menu_fires),

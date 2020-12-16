@@ -13,9 +13,9 @@
             android:defaultValue="true"
             android:key="volumemapswitcher" />
        <CheckBoxPreference
-           android:title="@string/enable_grg_interact"
+           android:title="@string/civ_enable_grg_interact"
            android:key="prefs_layer_grg_map_interaction"
-           android:summary="@string/enable_grg_interact_summ"
+           android:summary="@string/civ_enable_grg_interact_summ"
            android:defaultValue="true"/>
 
     </PreferenceCategory>

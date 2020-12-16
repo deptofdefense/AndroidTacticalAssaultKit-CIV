@@ -10,8 +10,10 @@
 #include <platformstl/filesystem/readdir_sequence.hpp>
 #include <platformstl/filesystem/path.hpp>
 
+#include "port/STLVectorAdapter.h"
 #include "thread/Lock.h"
 #include "thread/Mutex.h"
+#include "util/IO2.h"
 #include "util/Memory.h"
 
 namespace {
@@ -41,7 +43,6 @@ namespace {
 }
 
 using namespace atakmap::util;
-
 
 DataInput::DataInput() : swappingEndian(false)
 {
@@ -416,52 +417,19 @@ atakmap::util::createTempDir(const char* parentPath,
     const char* prefix,
     const char* suffix)
 {
+    using namespace TAK::Engine::Util;
+    TAK::Engine::Port::String tmpdir;
+    TAKErr code = IO_createTempDirectory(tmpdir, prefix, suffix, parentPath);
+    if(code == TE_TimedOut || !tmpdir)
+        return nullptr;
+    else if(code != TE_Ok)
+        throw IO_Error(MEM_FN("createTempDir") "Call to mkdtemp failed");
 
-    static TAK::Engine::Thread::Mutex mtx;
-#if _MSC_VER >= 1900
-    // P_tmpdir doesn't exist.  Use TMP environment variable.
-    static const char* P_tmpdir(std::getenv("TMP"));
-#endif
-    TAK::Engine::Thread::Lock lock(mtx);
-    for (int i = 0; i < 20; i++) {
-		typedef std::unique_ptr<char[]> mutable_buffer;
-        std::ostringstream tmpStrm;
-
-        tmpStrm << (parentPath ? parentPath : P_tmpdir) << '/'
-            << (prefix ? prefix : "") << "XXXXXX";
-		const std::size_t tmpLength = tmpStrm.str().length();
-		mutable_buffer tmpPath(new char[tmpLength + 1]);
-		tmpStrm.str().copy(tmpPath.get(), tmpLength);
-		tmpPath.get()[tmpStrm.str().length()] = 0;
-
-        if (!mkdtemp(tmpPath.get()))
-        {
-            throw IO_Error(MEM_FN("createTempDir") "Call to mkdtemp failed");
-        }
-
-        if (suffix) {
-            //
-            // Attempt to create a directory with the suffixed name.  If successful,
-            // remove the original tmp directory and return the suffixed name.
-            //
-			std::string suffixPath(tmpPath.get());
-			suffixPath.append(suffix);
-            if (platformstl::filesystem_traits<char>::file_exists(suffixPath.c_str()))
-                continue;
-
-            if (platformstl::create_directory_recurse(suffixPath.c_str()))
-            {
-                platformstl::remove_directory_recurse(tmpPath.get());
-				mutable_buffer suffixBuffer(new char[suffixPath.length() + 1]);
-				suffixPath.copy(suffixBuffer.get(), suffixPath.length());
-				suffixBuffer.get()[suffixPath.length()] = 0;
-				tmpPath.swap(suffixBuffer);
-            }
-        }
-
-        return tmpPath.release();
-    }
-    return nullptr;
+    const std::size_t len = strlen(tmpdir);
+    array_ptr<char> dupe(new char[len+1u]);
+    memcpy(dupe.get(), tmpdir.get(), sizeof(char)*len);
+    dupe[len] = '\0';
+    return dupe.release();
 }
 
 std::string atakmap::util::trimASCII(const std::string &src)
@@ -565,29 +533,36 @@ atakmap::util::splitString(const std::string &str, const std::string &delimiters
 std::string
 atakmap::util::getDirectoryForFile(const char *filepath)
 {
-    platformstl::basic_path<char> p(filepath);
-    if (p.has_sep())
-        return std::string(filepath);
-    p = p.pop();
-    return std::string(p.c_str());
+    using namespace TAK::Engine::Util;
+    TAK::Engine::Port::String value;
+    TAKErr code = IO_getParentFile(value, filepath);
+    if(code != TE_Ok)
+        throw IO_Error("IO_getParentFile failed");
+    return std::string(value);
 }
 
 
 std::string
 atakmap::util::getFileName(const char *filepath)
 {
-    platformstl::basic_path<char> p(filepath);
-    return std::string(p.get_file());
+    using namespace TAK::Engine::Util;
+    TAK::Engine::Port::String value;
+    TAKErr code = IO_getName(value, filepath);
+    if(code != TE_Ok)
+        throw IO_Error("IO_getName failed");
+    return std::string(value);
 }
 
 
 std::string
 atakmap::util::getFileAsAbsolute(const char *file)
 {
-    platformstl::basic_path<char> f(file);
-    f.make_absolute();
-    return std::string(f.c_str());
-
+    using namespace TAK::Engine::Util;
+    TAK::Engine::Port::String value;
+    TAKErr code = IO_getAbsolutePath(value, file);
+    if(code != TE_Ok)
+        throw IO_Error("IO_getAbsolutePath failed");
+    return std::string(value);
 }
 
 
@@ -595,89 +570,40 @@ atakmap::util::getFileAsAbsolute(const char *file)
 std::string
 atakmap::util::computeRelativePath(const char *basePath, const char *filePath)
 {
-    platformstl::basic_path<char> base(basePath);
-    platformstl::basic_path<char> file(filePath);
-
-    // Make both absolute
-    base = base.make_absolute();
-    file = file.make_absolute();
-
-    // Compare paths up to inequality point.
-    const char *baseStr = base.c_str();
-    const char *fileStr = file.c_str();
-    size_t i = 0;
-    while (baseStr[i] == fileStr[i] && baseStr[i] != '\0' && baseStr[i] != '\0')
-    {
-        i++;
-    }
-    platformstl::basic_path<char> commonPath(baseStr, i);
-    if (commonPath.empty())
-        // Nothing in common
-        return std::string(filePath);
-
-    // Count pop's on base to equality point.
-    platformstl::basic_path<char> ret;
-    while (!base.empty()) {
-        if (base.equal(commonPath))
-            break;
-        base.pop();
-        ret.push("..");
-    }
-
-    // Put remainder of original file path on from equality point forward.
-    size_t remains = file.size() - i;
-    while (remains > 0 && (fileStr[i] == '/' || fileStr[i] == '\\')) {
-        // skip separator
-        i++;
-        remains--;
-    }
-    if (remains > 0)
-        ret.push(platformstl::basic_path<char>(fileStr + i, remains));
-
-    return std::string(ret.c_str());
+    using namespace TAK::Engine::Util;
+    TAK::Engine::Port::String value;
+    TAKErr code = IO_getRelativePath(value, basePath, filePath);
+    if(code != TE_Ok)
+        throw IO_Error("IO_getRelativePath failed");
+    return std::string(value);
 }
 
 
 bool
 atakmap::util::deletePath(const char* path)
 {
-    typedef platformstl::filesystem_traits<char>        FS_Traits;
-
-    return path
-        && (FS_Traits::is_file(path)
-            ? FS_Traits::delete_file(path)
-            : platformstl::remove_directory_recurse(path));
+    using namespace TAK::Engine::Util;
+    return (IO_delete(path) == TE_Ok);
 }
 
 
 std::vector<std::string>
 atakmap::util::getDirContents(const char *path, DirContentsAcceptFilter filter)
 {
-    typedef platformstl::filesystem_traits<char>        FS_Traits;
-    typedef platformstl::readdir_sequence               DirSequence;
+    using namespace TAK::Engine::Util;
 
     std::vector<std::string> result;
+    std::vector<TAK::Engine::Port::String> contents;
+    TAK::Engine::Port::STLVectorAdapter<TAK::Engine::Port::String> contents_w;
+    if(IO_listFiles(contents_w, path, TELFM_Immediate, nullptr))
+        return result;
 
-    FS_Traits::stat_data_type statData;
-
-    if (path && FS_Traits::stat(path, &statData))
+    for (auto dIter(contents.begin());
+        dIter != contents.end();
+        ++dIter)
     {
-        if (FS_Traits::is_directory(&statData))
-        {
-            DirSequence dirSeq(path,
-                DirSequence::files
-                | DirSequence::directories
-                | DirSequence::fullPath
-                | DirSequence::absolutePath);
-
-            for (DirSequence::const_iterator dIter(dirSeq.begin());
-                dIter != dirSeq.end();
-                ++dIter)
-            {
-                if (!filter || filter(*dIter))
-                    result.push_back(*dIter);
-            }
-        }
+        if (!filter || filter((*dIter).get()))
+            result.push_back((*dIter).get());
     }
 
     return result;
@@ -688,72 +614,18 @@ atakmap::util::getDirContents(const char *path, DirContentsAcceptFilter filter)
 unsigned long
 atakmap::util::getFileCount(const char* path)
 {
-    typedef platformstl::filesystem_traits<char>        FS_Traits;
-    typedef platformstl::readdir_sequence               DirSequence;
-
-    unsigned long result(0);
-    FS_Traits::stat_data_type statData;
-
-    if (path && FS_Traits::stat(path, &statData))
-    {
-        if (FS_Traits::is_file(&statData))
-        {
-            result = 1;
-        }
-        else if (FS_Traits::is_directory(&statData))
-        {
-            DirSequence dirSeq(path,
-                DirSequence::files
-                | DirSequence::directories
-                | DirSequence::fullPath
-                | DirSequence::absolutePath);
-
-            for (DirSequence::const_iterator dIter(dirSeq.begin());
-                dIter != dirSeq.end();
-                ++dIter)
-            {
-                result += getFileCount(*dIter);
-            }
-        }
-    }
-
-    return result;
+    using namespace TAK::Engine::Util;
+    std::size_t value;
+    return (IO_getFileCount(&value, path) == TE_Ok) ? static_cast<unsigned long>(value) : 0u;
 }
 
 
 unsigned long
 atakmap::util::getFileSize(const char* path)
 {
-    typedef platformstl::filesystem_traits<char>        FS_Traits;
-    typedef platformstl::readdir_sequence               DirSequence;
-
-    unsigned long result(0);
-    FS_Traits::stat_data_type statData;
-
-    if (path && FS_Traits::stat(path, &statData))
-    {
-        if (FS_Traits::is_file(&statData))
-        {
-            result = static_cast<unsigned long>(FS_Traits::get_file_size(statData));
-        }
-        else if (FS_Traits::is_directory(&statData))
-        {
-            DirSequence dirSeq(path,
-                DirSequence::files
-                | DirSequence::directories
-                | DirSequence::fullPath
-                | DirSequence::absolutePath);
-
-            for (DirSequence::const_iterator dIter(dirSeq.begin());
-                dIter != dirSeq.end();
-                ++dIter)
-            {
-                result += getFileSize(*dIter);
-            }
-        }
-    }
-
-    return result;
+    using namespace TAK::Engine::Util;
+    int64_t value;
+    return (IO_length(&value, path) == TE_Ok) ? static_cast<unsigned long>(value) : 0u;
 }
 
 
@@ -761,42 +633,9 @@ atakmap::util::getFileSize(const char* path)
 unsigned long
 atakmap::util::getLastModified(const char* path)
 {
-    typedef platformstl::filesystem_traits<char>        FS_Traits;
-    typedef platformstl::readdir_sequence               DirSequence;
-
-    unsigned long result(0);
-    FS_Traits::stat_data_type statData;
-
-    if (path && FS_Traits::stat(path, &statData))
-    {
-        if (FS_Traits::is_file(&statData))
-        {
-#ifdef PLATFORMSTL_OS_IS_UNIX
-            result = statData.st_mtime * 1000 + statData.st_mtimensec / 1000000;
-#else
-            result = (static_cast<uint64_t> (statData.ftLastWriteTime.dwHighDateTime)
-                << 32 | statData.ftLastWriteTime.dwLowDateTime)
-                / 10000;
-#endif
-        }
-        else if (FS_Traits::is_directory(&statData))
-        {
-            DirSequence dirSeq(path,
-                DirSequence::files
-                | DirSequence::directories
-                | DirSequence::fullPath
-                | DirSequence::absolutePath);
-
-            for (DirSequence::const_iterator dIter(dirSeq.begin());
-                dIter != dirSeq.end();
-                ++dIter)
-            {
-                result = std::max(result, getLastModified(*dIter));
-            }
-        }
-    }
-
-    return result;
+    using namespace TAK::Engine::Util;
+    int64_t value;
+    return (IO_getLastModified(&value, path) == TE_Ok) ? static_cast<unsigned long>(value) : 0u;
 }
 
 
@@ -804,7 +643,9 @@ atakmap::util::getLastModified(const char* path)
 bool
 atakmap::util::isDirectory(const char* path)
 {
-    return path && platformstl::filesystem_traits<char>::is_directory(path);
+    using namespace TAK::Engine::Util;
+    bool value;
+    return (IO_isDirectory(&value, path) == TE_Ok) ? value : false;
 }
 
 
@@ -812,7 +653,9 @@ atakmap::util::isDirectory(const char* path)
 bool
 atakmap::util::isFile(const char* path)
 {
-    return path && platformstl::filesystem_traits<char>::is_file(path);
+    using namespace TAK::Engine::Util;
+    bool value;
+    return (IO_isFile(&value, path) == TE_Ok) ? value : false;
 }
 
 
@@ -820,21 +663,27 @@ atakmap::util::isFile(const char* path)
 bool
 atakmap::util::pathExists(const char* path)
 {
-    return path && platformstl::filesystem_traits<char>::file_exists(path);
+    using namespace TAK::Engine::Util;
+    bool value;
+    return (IO_exists(&value, path) == TE_Ok) ? value : false;
 }
 
 
 bool
 atakmap::util::removeDir(const char* dirPath)
 {
-    return dirPath ? platformstl::remove_directory_recurse(dirPath) : false;
+    using namespace TAK::Engine::Util;
+    if(!isDirectory(dirPath))
+        return false;
+    return IO_delete(dirPath) == TE_Ok;
 }
 
 
 bool
 atakmap::util::createDir(const char* dirPath)
 {
-    return dirPath ? platformstl::create_directory_recurse(dirPath) : false;
+    using namespace TAK::Engine::Util;
+    return IO_mkdirs(dirPath) == TE_Ok;
 }
 
 ///

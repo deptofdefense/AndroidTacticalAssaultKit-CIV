@@ -5,6 +5,7 @@ import android.app.Notification;
 import android.app.Notification.Builder;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
 
 import com.atakmap.android.ftp.request.FtpStoreFileRequest;
@@ -15,7 +16,7 @@ import com.atakmap.commoncommo.CommoException;
 import com.atakmap.comms.CommsFileTransferListener;
 import com.atakmap.comms.CommsMapComponent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.foxykeep.datadroid.exception.ConnectionException;
 import com.foxykeep.datadroid.exception.DataException;
@@ -56,7 +57,7 @@ public final class FtpStoreFileOperation extends NetworkOperation {
             }
 
             File file = new File(fileUploadRequest.getFileToSend());
-            if (!FileIOProviderFactory.exists(file)) {
+            if (!IOProviderFactory.exists(file)) {
                 throw new DataException(file.getName() + " does not exist");
             }
 
@@ -70,7 +71,7 @@ public final class FtpStoreFileOperation extends NetworkOperation {
                     .getSystemService(Context.NOTIFICATION_SERVICE);
             Notification.Builder builder;
 
-            if (android.os.Build.VERSION.SDK_INT < 26) {
+            if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                 builder = new Notification.Builder(context);
             } else {
                 builder = new Notification.Builder(context,
@@ -105,7 +106,8 @@ public final class FtpStoreFileOperation extends NetworkOperation {
             }
 
             CommsFileTransferListener listener = new NotificationStreamListener(
-                    fileUploadRequest.getNotificationId(), FileIOProviderFactory.length(file),
+                    fileUploadRequest.getNotificationId(),
+                    IOProviderFactory.length(file),
                     notifyManager, builder);
             int port = fileUploadRequest.getPort();
             if (port <= 0)
@@ -142,7 +144,8 @@ public final class FtpStoreFileOperation extends NetworkOperation {
             long stopTime = System.currentTimeMillis();
             Log.d(TAG, String.format(LocaleUtil.getCurrent(),
                     "File size %f KB sent in %f seconds",
-                    FileIOProviderFactory.length(file) / 1024F, (stopTime - startTime) / 1000F));
+                    IOProviderFactory.length(file) / 1024F,
+                    (stopTime - startTime) / 1000F));
 
             Bundle bundle = new Bundle();
             bundle.putParcelable(PARAM_FILE, fileUploadRequest);
@@ -177,7 +180,7 @@ public final class FtpStoreFileOperation extends NetworkOperation {
         private final int notificationId;
         private final long totalLength;
         private long lastTransferCount;
-        private DownloadProgressTracker progressTracker;
+        private final DownloadProgressTracker progressTracker;
         private final NotificationManager notifyManager;
         private final Builder builder;
 

@@ -47,7 +47,7 @@ final class ContentLoader extends ResourceManager.Job implements Disposable {
                     this.done = true;
                     return;
                 }
-            } catch(Throwable t) {
+            } catch(Throwable ignored) {
 
             }
         } while(false);

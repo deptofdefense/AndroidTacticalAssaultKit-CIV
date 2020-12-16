@@ -24,11 +24,11 @@ public class ServerGroup {
     public static final String GROUP_LIST_MATCHER = "com.bbn.marti.remote.groups.Group";
     public static final String PATH_ALL_GROUPS = "api/groups/all";
 
-    private String name;
-    private String direction;
-    private long created;
-    private String type;
-    private int bitpos;
+    private final String name;
+    private final String direction;
+    private final long created;
+    private final String type;
+    private final int bitpos;
 
     public ServerGroup(String name, String direction, long created,
             String type, int bitpos) {

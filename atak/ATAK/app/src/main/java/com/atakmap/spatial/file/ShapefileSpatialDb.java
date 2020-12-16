@@ -3,20 +3,19 @@ package com.atakmap.spatial.file;
 
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.locale.LocaleUtil;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.feature.DataSourceFeatureDataStore;
 import com.atakmap.map.layer.feature.FeatureDataSource;
+import com.atakmap.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipFile;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import com.atakmap.coremap.locale.LocaleUtil;
-
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 import java.util.Enumeration;
-import com.atakmap.coremap.log.Log;
 
 /**
  * Support ingesting ESRI Shapefiles
@@ -28,7 +27,8 @@ public class ShapefileSpatialDb extends OgrSpatialDb {
     private final static FileFilter SHP_FILTER = new FileFilter() {
         @Override
         public boolean accept(File arg0) {
-            return (FileIOProviderFactory.isDirectory(arg0) || arg0.getName().endsWith(".shp"));
+            return (IOProviderFactory.isDirectory(arg0)
+                    || arg0.getName().endsWith(".shp"));
         }
 
     };
@@ -83,7 +83,7 @@ public class ShapefileSpatialDb extends OgrSpatialDb {
 
     @Override
     public int processAccept(File file, int depth) {
-        if (file.isFile() && file.canRead()) {
+        if (IOProviderFactory.isFile(file) && IOProviderFactory.canRead(file)) {
             String lc = file.getName().toLowerCase(LocaleUtil.getCurrent());
             if (lc.endsWith(".shp"))
                 return PROCESS_ACCEPT;

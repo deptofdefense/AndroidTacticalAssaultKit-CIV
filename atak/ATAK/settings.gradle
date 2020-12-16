@@ -8,10 +8,3 @@ include ':MapCoreInterfaces:lib'
 include ':ATAKMapEngine'
 project(':ATAKMapEngine').projectDir = new File(settingsDir, '../ATAKMapEngine')
 include ':ATAKMapEngine:lib'
-
-include ':authdb'
-project(':authdb').projectDir = new File(settingsDir, '../authdb')
-include ':authdb:lib'
-include ':certdb'
-project(':certdb').projectDir = new File(settingsDir, '../certdb')
-include ':certdb:lib'

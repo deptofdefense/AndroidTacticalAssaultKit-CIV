@@ -4,8 +4,6 @@ package com.atakmap.android.bloodhound.util;
 import android.os.Handler;
 import android.os.Looper;
 
-import androidx.core.util.Consumer;
-
 import com.atakmap.android.bloodhound.BloodHoundPreferences;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
@@ -29,6 +27,8 @@ import com.atakmap.coremap.maps.coords.NorthReference;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import androidx.core.util.Consumer;
+
 /**
  * This class handles the behavior of the bloodhound link
  * managed by the bloodhound tool. This is in contrast to {@see BloodHoundLink},
@@ -43,12 +43,17 @@ public class BloodHoundToolLink implements MapItem.OnGroupChangedListener,
 
     private final static String TAG = "BloodHoundToolLink";
     private final BloodHoundPreferences _prefs;
-    private int outerColor;
-    private Angle _bearingUnits;
-    private NorthReference _northReference;
-    private OnDeleteListener _onDelete;
-    private PointMapItem _startItem;
-    private PointMapItem _endItem;
+    private final int outerColor;
+    private final Angle _bearingUnits;
+    private final NorthReference _northReference;
+    private final OnDeleteListener _onDelete;
+    private final PointMapItem _startItem;
+    private final PointMapItem _endItem;
+
+    private RerouteThread rerouteTask;
+
+    public RangeAndBearingMapItem line;
+    public final Route route;
 
     // Cached values of the start/end item points
     // So we know whether or not we need to calculate a reroute.
@@ -62,62 +67,65 @@ public class BloodHoundToolLink implements MapItem.OnGroupChangedListener,
 
     // Runs in the background to update
     // the bloodhound route when appropriate.
-    private Thread newRerouteTask() {
-        return new Thread() {
 
-            private boolean running = true;
+    class RerouteThread extends Thread {
+        private boolean cancelled;
 
-            @Override
-            public void interrupt() {
-                running = false;
-            }
+        /**
+         * Signals the RerouteThread that it has been cancelled.
+         */
+        public void cancel() {
+            cancelled = true;
+            interrupt();
+        }
 
-            @Override
-            public void run() {
-                while (running) {
-                    try {
+        @Override
+        public void run() {
+            while (!cancelled) {
+                try {
+                    long waitTime = Math.round(Double
+                            .parseDouble(_prefs.get(
+                                    "bloodhound_reroute_timer_pref", "1.0"))
+                            * 1000.0);
+                    Thread.sleep(waitTime);
+                } catch (InterruptedException ignored) {
+                }
 
-                        Long waitTime = Math.round(Double
-                                .parseDouble(_prefs.get(
-                                        "bloodhound_reroute_timer_pref", "1.0"))
-                                * 1000.0);
-                        Thread.sleep(waitTime);
-                    } catch (InterruptedException ignored) {
-                    } // ignored
-                    Log.d(TAG, "Start rerouting loop.");
-                    synchronized (route) {
-                        PointMapItem endOfRoute = route
-                                .getPointMapItem(route.getNumPoints() - 2);
-                        PointMapItem beginningOfRoute = route
-                                .getPointMapItem(1);
-                        if (_endItem != null && _endItem.getPoint() != null
-                                && endOfRoute != null) {
+                synchronized (route) {
+                    if (cancelled)
+                        return;
 
-                            double distanceToEnd = GeoCalculations.distanceTo(
-                                    _endItem.getPoint(), endOfRoute.getPoint());
-                            double distanceToBeginning = GeoCalculations
-                                    .distanceTo(_startItem.getPoint(),
-                                            beginningOfRoute.getPoint());
+                    Log.d(TAG, "start rerouting loop...");
 
-                            // Threshold for a point to deviate from the route before recalculating
-                            double rerouteDistance = Double.parseDouble(_prefs.get(
-                                    "bloodhound_reroute_distance_pref", "20.0"));
-                            if ((distanceToEnd >= rerouteDistance
-                                    || distanceToBeginning >= rerouteDistance) && pointsChanged()) {
-                                Log.d(TAG, "Rerouting bloodhound link");
-                                calculateRoute();
-                            }
+                    PointMapItem endOfRoute = route
+                            .getPointMapItem(route.getNumPoints() - 2);
+                    PointMapItem beginningOfRoute = route
+                            .getPointMapItem(1);
+
+                    if (_endItem != null && _endItem.getPoint() != null
+                            && endOfRoute != null) {
+
+                        final double distanceToEnd = GeoCalculations.distanceTo(
+                                _endItem.getPoint(), endOfRoute.getPoint());
+                        final double distanceToBeginning = GeoCalculations
+                                .distanceTo(_startItem.getPoint(),
+                                        beginningOfRoute.getPoint());
+
+                        // Threshold for a point to deviate from the route before recalculating
+                        double rerouteDistance = Double.parseDouble(_prefs.get(
+                                "bloodhound_reroute_distance_pref", "20.0"));
+
+                        if ((distanceToEnd >= rerouteDistance
+                                || distanceToBeginning >= rerouteDistance)
+                                && pointsChanged()) {
+                            Log.d(TAG, "rerouting bloodhound link");
+                            calculateRoute();
                         }
                     }
                 }
             }
-        };
+        }
     }
-
-    private Thread rerouteTask;
-
-    public RangeAndBearingMapItem line;
-    public final Route route;
 
     /** Sets the color of the bloodhound link. */
     public void setColor(int color) {
@@ -143,7 +151,7 @@ public class BloodHoundToolLink implements MapItem.OnGroupChangedListener,
                     //    return;
                     lastPoint = item.getPoint();
 
-                    PointMapItem endMarker =  route
+                    PointMapItem endMarker = route
                             .getPointMapItem(route.getNumPoints() - 1);
                     if (endMarker != null) {
                         endMarker.setPoint(item.getPoint());
@@ -161,25 +169,21 @@ public class BloodHoundToolLink implements MapItem.OnGroupChangedListener,
         @Override
         public void onPointChanged(PointMapItem item) {
             if (route != null && item != null) {
-
                 //broken
                 //if (lastPoint != null && lastPoint.distanceTo(item.getPoint()) < 2)
                 //    return;
                 lastPoint = item.getPoint();
 
-
                 Marker startMarker = (Marker) route.getPointMapItem(0);
-                if (startMarker != null) {
 
-                    try { 
-                        startMarker.setPoint(item.getPoint());
-                        RouteUpdating.truncateRouteBeginning(_startItem.getPoint(),
-                                route);
-                    } catch (IllegalStateException iae) { 
-                       Log.e(TAG, "error occured during route truncation", iae);
-                       // route is likely recalculating and the point cannot be found 
-                       // TODO: Bedell will need to look into how this is caused
-                    }
+                if (startMarker != null) {
+                    Log.d(TAG, "Item UID: " + item.getUID());
+                    Log.d(TAG, "Start marker UID: " + startMarker.getUID());
+
+                    // TODO: startMarker.setPoint(item.getPoint()) warrants further attention here
+                    //                    startMarker.setPoint(item.getPoint());
+                    RouteUpdating.truncateRouteBeginning(_startItem.getPoint(),
+                            route);
                 }
             }
         }
@@ -229,7 +233,9 @@ public class BloodHoundToolLink implements MapItem.OnGroupChangedListener,
      *
      * @param onSuccessListener Callback to preform some action on successful route generation.
      */
-    public synchronized void toggleRoute(final Runnable onSuccessListener, final Runnable onRouteCancelled, final Consumer<Exception> onException) {
+    public synchronized void toggleRoute(final Runnable onSuccessListener,
+            final Runnable onRouteCancelled,
+            final Consumer<Exception> onException) {
         if (isLine()) {
             if (!_calculatingRoute) {
                 // Plan the route
@@ -270,7 +276,7 @@ public class BloodHoundToolLink implements MapItem.OnGroupChangedListener,
                             _calculatingRoute = false;
 
                             // Start a new rerouting thread
-                            rerouteTask = newRerouteTask();
+                            rerouteTask = new RerouteThread();
                             rerouteTask.start();
 
                             onSuccessListener.run();
@@ -280,14 +286,16 @@ public class BloodHoundToolLink implements MapItem.OnGroupChangedListener,
             }
         } else {
             // Hide the route (This should be cached so we don't have to re-calculate
-            // the route unnescesarily.
+            // the route unnecessarily.
             synchronized (route) {
                 route.setVisible(false);
-            }
 
-            // Stop the rerouting task.
-            if (rerouteTask != null)
-                rerouteTask.interrupt();
+                // Stop the rerouting task.
+                if (rerouteTask != null) {
+                    rerouteTask.cancel();
+                    rerouteTask = null;
+                }
+            }
 
             _startItem.removeOnPointChangedListener(_beginItemListener);
             _endItem.removeOnPointChangedListener(_endItemListener);
@@ -314,21 +322,27 @@ public class BloodHoundToolLink implements MapItem.OnGroupChangedListener,
         });
     }
 
-    private synchronized void calculateRoute(final Runnable onRouteCalculated, final Runnable onRouteCancelled, final Consumer<Exception> onException) {
+    private synchronized void calculateRoute(final Runnable onRouteCalculated,
+            final Runnable onRouteCancelled,
+            final Consumer<Exception> onException) {
         if (_routePlanner != null && !_calculatingRoute) {
-            Log.d(TAG, "Route not currently being calculated, continuing to calculate route");
+            Log.d(TAG,
+                    "Route not currently being calculated, continuing to calculate route");
             synchronized (route) {
                 // Update cached points
                 _startItemPoint = _startItem.getPoint();
                 _endItemPoint = _endItem.getPoint();
 
                 // Plan the route
-                if (!RouteMapReceiver.getInstance().getRouteGroup().containsItem(route)) {
-                    RouteMapReceiver.getInstance().getRouteGroup().addItem(route);
+                if (!RouteMapReceiver.getInstance().getRouteGroup()
+                        .containsItem(route)) {
+                    RouteMapReceiver.getInstance().getRouteGroup()
+                            .addItem(route);
                     if (route.getNumPoints() == 0) {
                         // Make the last point on the route a waypoint instead of a control point.
                         route.addMarker(
-                                Route.createWayPoint(_endItem.getGeoPointMetaData(),
+                                Route.createWayPoint(
+                                        _endItem.getGeoPointMetaData(),
                                         UUID.randomUUID().toString()));
                         // Make the first point on the route a waypoint instead of a control point.
                         route.addMarker(0,
@@ -401,12 +415,14 @@ public class BloodHoundToolLink implements MapItem.OnGroupChangedListener,
             }
         }
     }
+
     public void delete() {
         _onDelete.onDelete(this);
     }
 
     private boolean pointsChanged() {
-        return _startItem.getPoint() != _startItemPoint || _endItem.getPoint() != _endItemPoint;
+        return _startItem.getPoint() != _startItemPoint
+                || _endItem.getPoint() != _endItemPoint;
     }
 
     // What is this the uid of?
@@ -429,14 +445,24 @@ public class BloodHoundToolLink implements MapItem.OnGroupChangedListener,
         this._endItemPoint = endItem.getPoint();
 
         this.line = this.createLine(startItem, endItem);
-        this.route = RouteMapReceiver.getInstance().getNewRoute(UUID.randomUUID().toString());
+        this.route = RouteMapReceiver.getInstance()
+                .getNewRoute(UUID.randomUUID().toString());
 
         // very important to solve ATAK-13102
         this.route.setMetaBoolean("nevercot", true);
 
         this.route.setEditable(false);
         this.route.setTouchable(false);
+
+        // See ATAK-13090
+        // "removable" is assumed true by default, so we have to explicitly set
+        // it to false. We also want to disable the remove button on the radial,
+        // but radial buttons can only be disabled using the presence or absence
+        // of a meta boolean (as opposed to the actual value). So we need to
+        // create a separate meta boolean that's only present when the remove
+        // button should be disabled.
         this.route.setMetaBoolean("removable", false);
+        this.route.setMetaBoolean("nonremovable", true);
 
         this.route.setColor(outerColor);
         this.route.setFillColor(outerColor);

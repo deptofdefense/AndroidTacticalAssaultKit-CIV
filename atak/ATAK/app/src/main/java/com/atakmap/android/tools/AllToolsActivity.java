@@ -96,7 +96,7 @@ public class AllToolsActivity extends MetricActivity implements
 
     }
 
-    private BroadcastReceiver _quitReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver _quitReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             AllToolsActivity.this.finish();
@@ -117,7 +117,7 @@ public class AllToolsActivity extends MetricActivity implements
             try {
                 NavUtils.navigateUpFromSameTask(this);
             } catch (IllegalArgumentException iae) {
-                Log.d(TAG, "error occured", iae);
+                Log.d(TAG, "error occurred", iae);
                 finish();
             }
             return true;
@@ -410,7 +410,9 @@ public class AllToolsActivity extends MetricActivity implements
                                                     + orientation);
                                     Toast.makeText(
                                             AllToolsActivity.this,
-                                            R.string.tool_text8 + newLabel,
+                                            AllToolsActivity.this.getString(
+                                                    R.string.tool_text8)
+                                                    + newLabel,
                                             Toast.LENGTH_SHORT)
                                             .show();
                                     return;

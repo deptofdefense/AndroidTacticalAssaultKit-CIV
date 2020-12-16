@@ -45,6 +45,7 @@ public class NavigationInstrumentPanel implements
     private static final String VOICE_CUE_PREFERENCE_KEY = "useRouteVoiceCues";
     private float density = MapView.DENSITY;
     private MarkerIconWidget volumeWidget;
+    private MarkerIconWidget billboardWidget;
     private boolean isdistanceAndETACheckpointBased = true;
     private boolean isInAutoSkipMode = true;
 
@@ -161,14 +162,11 @@ public class NavigationInstrumentPanel implements
     @Override
     public void onSharedPreferenceChanged(SharedPreferences p, String key) {
         if (key.equals(VOICE_CUE_PREFERENCE_KEY)) {
-            boolean voice_cue = PreferenceManager
-                    .getDefaultSharedPreferences(mapView.getContext())
-                    .getBoolean(VOICE_CUE_PREFERENCE_KEY, true);
-            if (volumeWidget != null) {
-                updateVolumeWidget(volumeWidget,
-                        miniButtonSize, miniButtonSize, !voice_cue);
-            }
-        }
+            boolean voice_cue = _prefs.getBoolean(key, true);
+            if (volumeWidget != null)
+                updateVolumeWidget(volumeWidget, !voice_cue);
+        } else if (key.equals("route_billboard_enabled"))
+            updateBillboardWidget();
     }
 
     @Override
@@ -542,7 +540,7 @@ public class NavigationInstrumentPanel implements
         return buildMarkerWidget(imgId, 1, size, size, 0, 0, 0, 0);
     }
 
-    private Icon buildMarkerIcon(int resourceID, float opaqueness, int width,
+    private Icon buildMarkerIcon(int resourceID, float alpha, int width,
             int height) {
         Context context = mapView.getContext();
 
@@ -553,11 +551,20 @@ public class NavigationInstrumentPanel implements
         Icon.Builder builder = new Icon.Builder();
         builder.setAnchor(0, 0);
         builder.setColor(Icon.STATE_DEFAULT,
-                Color.argb((int) (255 * opaqueness), 255, 255, 255));
+                Color.argb((int) (255 * alpha), 255, 255, 255));
         builder.setSize(width, height);
 
         builder.setImageUri(Icon.STATE_DEFAULT, uri);
         return builder.build();
+    }
+
+    private Icon buildMiniIcon(int resourceID, float alpha) {
+        return buildMarkerIcon(resourceID, alpha, miniButtonSize,
+                miniButtonSize);
+    }
+
+    private Icon buildMiniIcon(int resourceID) {
+        return buildMiniIcon(resourceID, 1);
     }
 
     /**
@@ -786,9 +793,9 @@ public class NavigationInstrumentPanel implements
         int miniButtonXOffset = 38;
 
         final MarkerIconWidget prevWidget = buildMiniButton(
-                R.drawable.nav_left_manual, 0.8f, miniButtonSize);
+                R.drawable.nav_left_manual, 0.8f);
         final MarkerIconWidget nextWidget = buildMiniButton(
-                R.drawable.nav_right_manual, 0.8f, miniButtonSize);
+                R.drawable.nav_right_manual, 0.8f);
 
         prevWidget.addOnClickListener(new MapWidget.OnClickListener() {
             @Override
@@ -796,12 +803,10 @@ public class NavigationInstrumentPanel implements
 
                 if (isInAutoSkipMode) {
                     isInAutoSkipMode = false;
-                    prevWidget.setIcon(buildMarkerIcon(
-                            R.drawable.nav_left_manual, 1, miniButtonSize,
-                            miniButtonSize));
-                    nextWidget.setIcon(buildMarkerIcon(
-                            R.drawable.nav_right_manual, 1, miniButtonSize,
-                            miniButtonSize));
+                    prevWidget.setIcon(buildMiniIcon(
+                            R.drawable.nav_left_manual));
+                    nextWidget.setIcon(buildMiniIcon(
+                            R.drawable.nav_right_manual));
                 }
 
                 if (stateManager != null)
@@ -815,12 +820,10 @@ public class NavigationInstrumentPanel implements
 
                 if (isInAutoSkipMode) {
                     isInAutoSkipMode = false;
-                    prevWidget.setIcon(buildMarkerIcon(
-                            R.drawable.nav_left_manual, 1, miniButtonSize,
-                            miniButtonSize));
-                    nextWidget.setIcon(buildMarkerIcon(
-                            R.drawable.nav_right_manual, 1, miniButtonSize,
-                            miniButtonSize));
+                    prevWidget.setIcon(buildMiniIcon(
+                            R.drawable.nav_left_manual));
+                    nextWidget.setIcon(buildMiniIcon(
+                            R.drawable.nav_right_manual));
                 }
 
                 if (stateManager != null)
@@ -865,11 +868,21 @@ public class NavigationInstrumentPanel implements
     }
 
     private void updateVolumeWidget(MarkerIconWidget widget,
-            int height, int width, boolean useMuteIcon) {
+            boolean useMuteIcon) {
         int volumeResourceId = useMuteIcon ? R.drawable.nav_mute
                 : R.drawable.nav_speak;
+        widget.setIcon(buildMiniIcon(volumeResourceId));
+    }
 
-        widget.setIcon(buildMarkerIcon(volumeResourceId, 1, width, height));
+    private void updateBillboardWidget() {
+        if (billboardWidget != null) {
+            boolean enabled = _prefs.getBoolean("route_billboard_enabled",
+                    true);
+            billboardWidget.setIcon(buildMiniIcon(enabled
+                    ? R.drawable.nav_billboard
+                    : R.drawable.nav_billboard_disabled,
+                    enabled ? 1.0f : 0.8f));
+        }
     }
 
     /** 
@@ -891,11 +904,10 @@ public class NavigationInstrumentPanel implements
 
     }
 
-    private MarkerIconWidget buildVolumeWidget(int height,
-            int width, boolean useMuteIcon) {
+    private MarkerIconWidget buildVolumeWidget(boolean useMuteIcon) {
         MarkerIconWidget widget = createMiniMarkerIconWidget();
         widget.setName("VolumeWidget");
-        updateVolumeWidget(widget, height, width, useMuteIcon);
+        updateVolumeWidget(widget, useMuteIcon);
         return widget;
     }
 
@@ -918,25 +930,21 @@ public class NavigationInstrumentPanel implements
         speedUnitsTextWidget = new TextWidget("", new MapTextFormat(
                 Typeface.DEFAULT, (int) (18 * scale)), false);
 
+        float midButtonY = (height - miniButtonSize / 2.0f) * density;
+
         //-------------------- Build Exit Nav Button ---------------------------
         final MarkerIconWidget exitNavWidget = new MarkerIconWidget() {
             @Override
             public void setMarkerHitBounds(int left, int top, int right,
                     int bottom) {
-
                 // enlarge the touch space of the close button
-                super.setMarkerHitBounds(-1 * (miniButtonSize / 4), -1
-                        * (miniButtonSize / 4),
-                        miniButtonSize + (miniButtonSize / 4),
-                        miniButtonSize + (miniButtonSize / 4));
-
+                super.setMarkerHitBounds(-1 * miniButtonSize,
+                        -1 * miniButtonSize,
+                        miniButtonSize, miniButtonSize);
             }
         };
 
-        exitNavWidget.setIcon(buildMarkerIcon(R.drawable.nav_exit_button_img,
-                1,
-                miniButtonSize,
-                miniButtonSize));
+        exitNavWidget.setIcon(buildMiniIcon(R.drawable.nav_exit_button_img));
 
         exitNavWidget.addOnClickListener(new MapWidget.OnClickListener() {
             @Override
@@ -946,18 +954,39 @@ public class NavigationInstrumentPanel implements
             }
         });
 
-        exitNavWidget.setPoint(-(miniButtonSize / 4f) * density,
-                (height - miniButtonSize / 2.0f) * density);
+        exitNavWidget.setPoint(-(miniButtonSize / 4f) * density, midButtonY);
         //exitNavWidget.setMarkerHitBounds(0, 0, closeWidgetSize, closeWidgetSize);
+
+        //-------------------- Toggle Billboards Button ---------------------------
+        billboardWidget = new MarkerIconWidget() {
+            @Override
+            public void setMarkerHitBounds(int l, int t, int r, int b) {
+                super.setMarkerHitBounds(-1 * miniButtonSize,
+                        -1 * miniButtonSize,
+                        miniButtonSize, miniButtonSize);
+            }
+        };
+
+        updateBillboardWidget();
+
+        billboardWidget.addOnClickListener(new MapWidget.OnClickListener() {
+            @Override
+            public void onMapWidgetClick(MapWidget widget, MotionEvent event) {
+                _prefs.edit().putBoolean("route_billboard_enabled",
+                        !_prefs.getBoolean("route_billboard_enabled", true))
+                        .apply();
+            }
+        });
+
+        billboardWidget.setPoint((miniButtonSize / 1.075f) * density,
+                midButtonY + (miniButtonSize * 0.2f) * density);
 
         //-------------------- Build Volume Widget ---------------------------
         boolean voice_cue = PreferenceManager
                 .getDefaultSharedPreferences(mapView.getContext())
                 .getBoolean(VOICE_CUE_PREFERENCE_KEY, true);
 
-        volumeWidget = buildVolumeWidget(
-                miniButtonSize, miniButtonSize,
-                !voice_cue);
+        volumeWidget = buildVolumeWidget(!voice_cue);
 
         volumeWidget.addOnClickListener(new MapWidget.OnClickListener() {
             @Override
@@ -966,8 +995,7 @@ public class NavigationInstrumentPanel implements
                         .getDefaultSharedPreferences(mapView.getContext())
                         .getBoolean(VOICE_CUE_PREFERENCE_KEY, true);
 
-                updateVolumeWidget(volumeWidget,
-                        miniButtonSize, miniButtonSize, !voice_cue);
+                updateVolumeWidget(volumeWidget, !voice_cue);
 
                 // need to invert this as part of the tap.
                 PreferenceManager
@@ -979,22 +1007,22 @@ public class NavigationInstrumentPanel implements
         });
 
         volumeWidget.setPoint((width - (miniButtonSize * 0.75f)) * density,
-                (height - miniButtonSize / 2.0f) * density);
+                midButtonY);
 
         //-------------------- Build Layers ---------------------------
 
         root.addWidget(speedTextWidget);
         root.addWidget(speedUnitsTextWidget);
         root.addWidget(exitNavWidget);
+        root.addWidget(billboardWidget);
         root.addWidget(volumeWidget);
 
         return root;
     }
 
-    private MarkerIconWidget buildMiniButton(int imgResource, float opaquness,
-            int size) {
+    private MarkerIconWidget buildMiniButton(int imgResource, float opaquness) {
         MarkerIconWidget widget = createMiniMarkerIconWidget();
-        widget.setIcon(buildMarkerIcon(imgResource, opaquness, size, size));
+        widget.setIcon(buildMiniIcon(imgResource, opaquness));
         return widget;
     }
 

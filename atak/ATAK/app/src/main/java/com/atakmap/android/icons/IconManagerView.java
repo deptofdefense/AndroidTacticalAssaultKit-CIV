@@ -28,6 +28,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.user.icon.Icon2525bPallet;
 import com.atakmap.android.user.icon.SpotMapPallet;
 import com.atakmap.app.R;
+import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 
@@ -88,6 +89,9 @@ public class IconManagerView extends LinearLayout {
 
             Button btnDefaultCoTMapping = findViewById(
                     R.id.iconmgr_iconset_defaultCoTMapping);
+            btnDefaultCoTMapping.setText(
+                    ResourceUtil.getResource(R.string.civ_default_cot_mapping,
+                            R.string.default_cot_mapping));
             btnDefaultCoTMapping.setOnClickListener(new OnClickListener() {
 
                 @Override
@@ -126,10 +130,12 @@ public class IconManagerView extends LinearLayout {
         final String[] items = new String[count];
         if (!FileSystemUtils.isEmpty(currentMapping)
                 && currentMapping.equals(Icon2525bPallet.COT_MAPPING_2525B))
-            items[0] = _context.getString(R.string.s2525B)
+            items[0] = ResourceUtil.getString(_context, R.string.civ_s2525B,
+                    R.string.s2525B)
                     + _context.getString(R.string.mapping_selected);
         else
-            items[0] = _context.getString(R.string.s2525B);
+            items[0] = ResourceUtil.getString(_context, R.string.civ_s2525B,
+                    R.string.s2525B);
 
         if (!FileSystemUtils.isEmpty(currentMapping)
                 && currentMapping.equals(SpotMapPallet.COT_MAPPING_SPOTMAP))

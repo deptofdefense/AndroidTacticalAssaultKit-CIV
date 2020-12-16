@@ -6,7 +6,8 @@ import android.preference.PreferenceManager;
 import android.util.Base64;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
 
@@ -34,6 +35,8 @@ public class AtakAuthenticationDatabase {
     private static File databaseFile;
     private static boolean initialized = false;
     private static AtakAuthenticationDatabaseAdapter authenticationDatabaseAdapter;
+    private static Context ctx;
+
 
     /**
      * Returns an adapter class used to access the authdb native library.
@@ -90,7 +93,6 @@ public class AtakAuthenticationDatabase {
         return HashingUtils.sha256sum(databaseId + deviceId);
     }
 
-
     /**
      * Called during application startup to initialize the underlying sqlcipher database. When
      * called for the first time, the database will be created. Subsequent calls will open the
@@ -100,26 +102,32 @@ public class AtakAuthenticationDatabase {
      * @return void
      */
     public static void initialize(Context context) {
-
         synchronized (getAdapter().lock) {
+            if(ctx == null)
+                ctx = context;
             try {
                 if (!initialized) {
                     databaseFile = context.getDatabasePath("credentials.sqlite");
-
-                    String pwd = getPwd(
-                            context,
-                            Base64.encodeToString(
-                                    databaseFile.getAbsolutePath().getBytes(FileSystemUtils.UTF8_CHARSET), Base64.NO_WRAP),
-                            deviceId);
-                    if (pwd == null) {
-                        return;
+                    String pwd = null;
+                    // if the default provider is in effect, use the legacy
+                    // password to unlock, otherwise defer to the provider's
+                    // mechanism
+                    if(IOProviderFactory.isDefault()) {
+                        pwd = getPwd(
+                                context,
+                                Base64.encodeToString(
+                                        databaseFile.getAbsolutePath().getBytes(FileSystemUtils.UTF8_CHARSET), Base64.NO_WRAP),
+                                deviceId);
+                        if (pwd == null) {
+                            return;
+                        }
                     }
 
                     File parent = databaseFile.getParentFile();
-                    if(parent != null && !FileIOProviderFactory.exists(parent)){
+                    if(parent != null && !IOProviderFactory.exists(parent)){
                         Log.d(TAG, "Creating private database directory: "
                                 + parent.getAbsolutePath());
-                        if(!FileIOProviderFactory.mkdirs(parent)){
+                        if(!IOProviderFactory.mkdirs(parent)){
                             Log.w(TAG, "Failed to create private database directory: "
                                     + parent.getAbsolutePath());
                         }
@@ -136,7 +144,8 @@ public class AtakAuthenticationDatabase {
                                 .openOrCreateDatabase(databaseFile.getAbsolutePath(), pwd) == 0;
                     }
 
-                    getAdapter().deleteExpiredCredentials(System.currentTimeMillis());
+                    if(initialized)
+                        getAdapter().deleteExpiredCredentials(System.currentTimeMillis());
                 }
 
                 if (!initialized) {
@@ -174,7 +183,7 @@ public class AtakAuthenticationDatabase {
      */
     public static void clear() {
         synchronized (getAdapter().lock) {
-            getAdapter().clear(databaseFile);
+            IOProviderFactory.delete(databaseFile, IOProvider.SECURE_DELETE);
         }
     }
 
@@ -238,9 +247,8 @@ public class AtakAuthenticationDatabase {
      *
      * @param type Credential type per TYPE_ constants in AtakAuthenticationCredentials
      * @param site FQDN or IP to associate credentials with
-     * @param username
-     * @param password
-     * @return void
+     * @param username the username to save
+     * @param password the password to save
      */
     public static void saveCredentials(
             String type,

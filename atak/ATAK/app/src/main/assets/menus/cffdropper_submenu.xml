@@ -5,4 +5,8 @@
     <button onClick='actions/drop5Line.xml'
             prefValue='cff'
             icon='icons/cff.png'/>
+    <button onClick='actions/dropcffplus.xml'
+            prefValue='cffplus'
+            icon='icons/cffplus.png'/>
+
 </menu>

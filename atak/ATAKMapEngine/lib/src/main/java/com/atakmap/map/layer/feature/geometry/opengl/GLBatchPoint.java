@@ -416,7 +416,7 @@ public class GLBatchPoint extends GLBatchGeometry {
 
                 GLES20FixedPipeline.glTranslatef(textTx, textTy, 0f);
 
-                if (!labelRotationAbsolute) {
+                if (labelRotationAbsolute || ortho.drawTilt > 0) {
                     // rotate relative to screen up
                     GLES20FixedPipeline.glRotatef(labelRotation, 0f, 0f, 1f);
                 } else {
@@ -680,30 +680,16 @@ public class GLBatchPoint extends GLBatchGeometry {
             final float lru = (iconX + iconHeight - 1.0f) / textureSize;
             final float lrv = iconY / textureSize;
 
-
-            if(view.drawTilt > 0d) {
-                batch.batch(this.textureId,
-                            ulx, uly, zpos,
-                            lrx, uly, zpos,
-                            lrx, lry, zpos,
-                            ulx, lry, zpos,
-                            ulu, ulv,
-                            lru, ulv,
-                            lru, lrv,
-                            ulu, lrv,
-                            this.colorR, this.colorG, this.colorB, this.colorA);        
-            } else {
-                batch.batch(this.textureId,
-                            ulx, uly,
-                            lrx, uly,
-                            lrx, lry,
-                            ulx, lry,
-                            ulu, ulv,
-                            lru, ulv,
-                            lru, lrv,
-                            ulu, lrv,
-                            this.colorR, this.colorG, this.colorB, this.colorA);                
-            }
+            batch.batch(this.textureId,
+                        ulx, uly, zpos,
+                        lrx, uly, zpos,
+                        lrx, lry, zpos,
+                        ulx, lry, zpos,
+                        ulu, ulv,
+                        lru, ulv,
+                        lru, lrv,
+                        ulu, lrv,
+                        this.colorR, this.colorG, this.colorB, this.colorA);
         }
         // if the displayLables preference is checked display the text if
         // the marker requested to always have the text show or if the scale is zoomed in enough
@@ -766,7 +752,7 @@ public class GLBatchPoint extends GLBatchGeometry {
                 // reset the matrix and set up for the rotation
                 Matrix.setIdentityM(view.scratch.matrixF, 0);
                 Matrix.translateM(view.scratch.matrixF, 0, xpos, ypos, zpos);
-                if (labelRotationAbsolute) {
+                if (labelRotationAbsolute || view.drawTilt > 0) {
                     Matrix.rotateM(view.scratch.matrixF, 0, labelRotation, 0, 0, 1);
                 } else {
                     Matrix.rotateM(view.scratch.matrixF, 0, (float) view.drawRotation + labelRotation, 0, 0, 1);
@@ -931,5 +917,9 @@ public class GLBatchPoint extends GLBatchGeometry {
             }
             iconLoaders.remove(iconUri);
         }
+    }
+
+    public static void invalidateIconAtlas() {
+        ICON_ATLAS.release();
     }
 }

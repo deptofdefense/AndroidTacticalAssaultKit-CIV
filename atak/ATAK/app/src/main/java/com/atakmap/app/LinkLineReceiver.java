@@ -18,7 +18,7 @@ public class LinkLineReceiver extends BroadcastReceiver {
     private final MapGroup _searchGroup;
     private final MapGroup _linkGroup;
     private final MapView mapView;
-    private LinkLineHandler linkLineHandler;
+    private final LinkLineHandler linkLineHandler;
 
     /**
      * Generates a Broadcast receiver that generates a link between a first and a second UID.

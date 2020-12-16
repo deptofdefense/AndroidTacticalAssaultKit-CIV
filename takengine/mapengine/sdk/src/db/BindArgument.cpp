@@ -11,11 +11,14 @@ using namespace TAK::Engine::Util;
 
 BindArgument::BindArgument() NOTHROWS :
     type(Query::TEFT_Null),
+    value(),
     owns(false)
-{}
+{
+}
 
 BindArgument::BindArgument(int val) NOTHROWS :
     type(Query::TEFT_Integer),
+    value(),
     owns(false)
 {
     value.l = val;
@@ -23,6 +26,7 @@ BindArgument::BindArgument(int val) NOTHROWS :
 
 BindArgument::BindArgument(int64_t val) NOTHROWS :
     type(Query::TEFT_Integer),
+    value(),
     owns(false)
 {
     value.l = val;
@@ -30,6 +34,7 @@ BindArgument::BindArgument(int64_t val) NOTHROWS :
 
 BindArgument::BindArgument(double val) NOTHROWS :
     type(Query::TEFT_Float),
+    value(),
     owns(false)
 {
     value.d = val;
@@ -37,6 +42,7 @@ BindArgument::BindArgument(double val) NOTHROWS :
 
 BindArgument::BindArgument(const char *val) NOTHROWS :
     type(val ? Query::TEFT_String : Query::TEFT_Null),
+    value(),
     owns(false)
 {
     value.s = val;
@@ -44,6 +50,7 @@ BindArgument::BindArgument(const char *val) NOTHROWS :
 
 BindArgument::BindArgument(const uint8_t *val, const std::size_t valLen) NOTHROWS :
     type((val && valLen) ? Query::TEFT_Blob : Query::TEFT_Null),
+    value(),
     owns(false)
 {
     value.b.data = val;
@@ -52,8 +59,8 @@ BindArgument::BindArgument(const uint8_t *val, const std::size_t valLen) NOTHROW
 
 BindArgument::BindArgument(const BindArgument &other) NOTHROWS :
     type(other.type),
-    owns(false),
-    value(other.value)
+    value(other.value),
+    owns(false)
 {
     if (other.owns)
         this->own();

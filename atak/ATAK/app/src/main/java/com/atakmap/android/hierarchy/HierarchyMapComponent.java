@@ -18,7 +18,7 @@ import java.util.ArrayList;
  */
 public class HierarchyMapComponent extends AbstractWidgetMapComponent {
 
-    private HierarchyListReceiver _hierarchyListReceiver;
+    protected HierarchyListReceiver _hierarchyListReceiver;
 
     @Override
     public void onCreateWidgets(Context context, Intent intent, MapView view) {

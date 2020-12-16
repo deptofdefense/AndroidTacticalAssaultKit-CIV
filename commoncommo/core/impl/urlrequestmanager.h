@@ -7,6 +7,8 @@
 #include "internalutils.h"
 #include "threadedhandler.h"
 #include "commologger.h"
+#include "fileioprovider.h"
+#include "fileioprovidertracker.h"
 
 #include <Mutex.h>
 #include <Cond.h>
@@ -16,6 +18,7 @@
 
 #include <deque>
 #include <map>
+#include <memory>
 #include <stdexcept>
 
 
@@ -126,7 +129,7 @@ private:
 class URLRequestManager : public ThreadedHandler
 {
 public:
-    URLRequestManager(CommoLogger *logger);
+    URLRequestManager(CommoLogger *logger, FileIOProviderTracker* factory);
     virtual ~URLRequestManager();
 
     void initRequest(int *xferId, URLRequestIO *io,
@@ -146,7 +149,8 @@ private:
         IOContext(URLRequestManager *owner,
                   URLRequest *req,
                   URLRequestIO *io,
-                  int id);
+                  int id,
+                  std::shared_ptr<FileIOProvider>& provider);
         ~IOContext();
 
         void openLocalFile() COMMO_THROW (IOStatusException);
@@ -167,9 +171,9 @@ private:
 
         // buffer for CURL to store errors
         char curlErrBuf[CURL_ERROR_SIZE];
-        
+
         // Opened as up/download starts. NULL for non-file requests
-        FILE *localFile;
+        FileHandle *localFile;
 
         // Uploads: Set as upload starts by us
         // Downloads: Set as download progresses once it is known
@@ -178,6 +182,8 @@ private:
 
         // 0 at start, updated as transfer is ongoing by io callbacks
         uint64_t bytesTransferred;
+
+        std::shared_ptr<FileIOProvider> provider;
     };
 
     CommoLogger *logger;
@@ -208,6 +214,8 @@ private:
 
 
     CURLM *curlMultiCtx;
+
+    FileIOProviderTracker* providerTracker;
 
 
 

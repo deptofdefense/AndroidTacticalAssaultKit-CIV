@@ -1,7 +1,7 @@
 package com.atakmap.map.formats.c3dt;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.io.UriFactory;
 
 import org.json.JSONArray;
@@ -72,7 +72,7 @@ final class B3DM {
         return parse(ByteBuffer.wrap(bytes), Util.resolve(uri), handler);
     }
     public static B3DM parse(File file) throws JSONException, IOException {
-        if(!FileIOProviderFactory.exists(file))
+        if(!IOProviderFactory.exists(file))
             return null;
         return parse(ByteBuffer.wrap(FileSystemUtils.read(file)), file.getParentFile().toString(), null);
     }
@@ -121,7 +121,7 @@ final class B3DM {
                         b3dm.featureTable.json = new JSONObject();
                         b3dm.featureTable.json.put("RTC_CENTER", cesium_rtc);
                     } while(false);
-                } catch(Throwable t) {
+                } catch(Throwable ignored) {
 
                 }
             }

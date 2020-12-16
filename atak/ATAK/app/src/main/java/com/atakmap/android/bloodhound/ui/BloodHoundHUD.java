@@ -36,7 +36,7 @@ public class BloodHoundHUD extends TextWidget
 
     private BloodHoundTool _bloodhoundTool;
 
-    private LinearLayoutWidget layoutWidget;
+    private final LinearLayoutWidget layoutWidget;
 
     public void setToolbarButton(BloodHoundTool button) {
         _bloodhoundTool = button;

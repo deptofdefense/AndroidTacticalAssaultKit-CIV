@@ -49,7 +49,7 @@ public final class GeoChatService implements
     private static String storedStreamingContactEndpoint = null;
 
     // Connectivity to CotService
-    private CotServiceRemote cotRemote;
+    private final CotServiceRemote cotRemote;
 
     // DB
     private final ChatDatabase chatDb;
@@ -508,8 +508,14 @@ public final class GeoChatService implements
         return chatDb.getGroupInfo(groupName);
     }
 
+    /**
+     * Given a CoT message in bundle form, add the message to the chat database and return the list
+     * of ids in string form.
+     * @param cotMessage the message bundle
+     * @return the list of database identifiers in string form.
+     */
     public List<String> persistMessage(Bundle cotMessage) {
-        ArrayList<String> ret = new ArrayList<>();
+        final List<String> ret = new ArrayList<>();
 
         //Log.d(TAG, "Persist Chat message: " + chatMessageBundle);
         List<Long> ids = chatDb.addChat(cotMessage);

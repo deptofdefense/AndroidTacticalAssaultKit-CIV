@@ -3,6 +3,7 @@ package com.atakmap.commoncommo;
 import java.io.File;
 import java.util.Vector;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.net.URI;
 import java.util.Map;
 import java.util.List;
@@ -28,6 +29,8 @@ public class Commo {
      * the local mission package serving web server should be disabled
      */ 
     public static final int MPIO_LOCAL_PORT_DISABLE = -1;
+
+    private static Map<FileIOProvider, Long> ioProviders = new IdentityHashMap<FileIOProvider, Long>();
 
     // XXX - removed due to removal of load function, see below
     //private static boolean nativeLoaded;
@@ -464,6 +467,21 @@ public class Commo {
         setMPViaServerEnabledNative(nativePtr, enabled);
     }
 
+
+    /**
+     * Sets the TCP port number to use when contacting a TAK
+     * Server's http web api. Default is port 8080.
+     *
+     * @param serverPort tcp port to use
+     * @throw CommoException if the port number is out of range
+     */
+    public void setMissionPackageHttpPort(int serverPort)
+                                              throws CommoException
+    {
+        if (!setMissionPackageHttpPortNative(nativePtr, serverPort))
+            throw new CommoException("value out of range");
+    }
+    
 
     /**
      * Sets the TCP port number to use when contacting a TAK
@@ -1548,6 +1566,42 @@ public class Commo {
         cl.add(destination);
         return sendMissionPackageInit(cl, file, xferFileName, xferName);
     }
+	
+    /**
+     * Registers a native FileIOProvider, causing the provided FileIOProvider
+     * to be used for all future IO transactions until such time where it is
+     * unregistered via unregisterFileIOProvider().  The default FileIOProvider
+     * if none is registered does simple file-based IO using operating system
+     * provided calls.
+     *
+     * @param provider The FileIOProvider to register
+     */
+    public synchronized void registerFileIOProvider(FileIOProvider provider){
+        if(provider == null)
+            throw new NullPointerException("Provider may not be null");
+        // check if already registered
+        if(ioProviders.containsKey(provider))
+            return;
+        final long providerPtr = registerFileIOProviderNative(nativePtr, provider);
+        if(providerPtr == 0L)
+            throw new RuntimeException("Failed to register provider");
+        ioProviders.put(provider, Long.valueOf(providerPtr));
+    }
+	
+    /**
+     * Unregisters a native FileIOProvider and reverts to the default provider.
+     * The default FileIOProvider does simple file-based IO using operating
+     * system provided calls.
+     *
+     * @param provider The FileIOProvider to register
+     */
+    public synchronized void unregisterFileIOProvider(FileIOProvider provider){
+        final Long providerPtr = ioProviders.remove(provider);
+        // not registered
+        if(providerPtr == 0L)
+            return;
+        deregisterFileIOProviderNative(nativePtr, providerPtr.longValue());
+    }
 
 
     /**
@@ -1857,6 +1911,8 @@ public class Commo {
                                    String certPass) throws CommoException;
     static native void setMPViaServerEnabledNative(long nativePtr, 
                                    boolean enabled);
+    static native boolean setMissionPackageHttpPortNative(long nativePtr,
+                                   int serverPort);
     static native boolean setMissionPackageHttpsPortNative(long nativePtr,
                                    int serverPort);
     static native boolean setMissionPackageNumTriesNative(long nativePtr,
@@ -2009,5 +2065,7 @@ public class Commo {
 
     static native boolean initNativeLibrariesNative();
 
-
+    static synchronized native long registerFileIOProviderNative(long nativePtr, FileIOProvider provider);
+	
+    static synchronized native void deregisterFileIOProviderNative(long nativePtr, long providerPtr);
 }

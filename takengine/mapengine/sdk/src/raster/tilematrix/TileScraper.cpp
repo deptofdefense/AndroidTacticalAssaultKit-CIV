@@ -52,11 +52,11 @@ TileScraper::~TileScraper()
 
 void TileScraper::run() {
     if(request->maxThreads > 1)
-        downloader = std::unique_ptr<Downloader>(new TileScraper::MultiThreadDownloader(callback.get(), request->maxThreads));
+        downloader = std::unique_ptr<Downloader>(new TileScraper::MultiThreadDownloader(callback, request->maxThreads));
     else
-        downloader = std::unique_ptr<Downloader>(new TileScraper::LegacyDownloader(callback.get()));
+        downloader = std::unique_ptr<Downloader>(new TileScraper::LegacyDownloader(callback));
 
-    downloader->download(scrapeContext.get());
+    downloader->download(scrapeContext);
 }
 
 Util::TAKErr TAK::Engine::Raster::TileMatrix::TileScraper_estimateTileCount(int &value, TileClient *client, CacheRequest *request)
@@ -76,7 +76,7 @@ TileScraper::TilePoint::TilePoint(int row, int column) : r(row), c(column)
 
 /**************************************************************************/
 
-TileScraper::DownloadTask::DownloadTask(ScrapeContext *context, size_t tileZ, size_t tileX, size_t tileY) : context(context), tileX(tileX), tileY(tileY), tileZ(tileZ)
+TileScraper::DownloadTask::DownloadTask(std::shared_ptr<ScrapeContext> context, size_t tileZ, size_t tileX, size_t tileY) : context(context), tileX(tileX), tileY(tileY), tileZ(tileZ)
 {
 }
 
@@ -96,7 +96,7 @@ Util::TAKErr TileScraper::DownloadTask::run()
         size_t len;
         err = this->context->client->getTileData(d, &len, this->tileZ, this->tileX, this->tileY);
 
-        if (err == Util::TE_Ok && d != nullptr) {
+        if (err == Util::TE_Ok && d.get() != nullptr) {
             // valid entry in cache
             this->context->sink->setTile(this->tileZ, this->tileX, this->tileY, d.get(), len, TAK::Engine::Port::Platform_systime_millis() + context->request->expirationOffset);
             success = true;
@@ -324,7 +324,7 @@ int TileScraper::ScrapeContext::getNumTilesDownloaded() {
 
 /**************************************************************************/
 
-TileScraper::Downloader::Downloader(CacheRequestListener *callback) : callback(callback), levelStartTiles(0)
+TileScraper::Downloader::Downloader(std::shared_ptr<CacheRequestListener> callback) : callback(callback), levelStartTiles(0)
 {
 }
 
@@ -332,11 +332,11 @@ TileScraper::Downloader::~Downloader()
 {
 }
 
-void TileScraper::Downloader::reportStatus(ScrapeContext *downloadContext)
+void TileScraper::Downloader::reportStatus(std::shared_ptr<ScrapeContext> downloadContext)
 {
     const int numDownload = downloadContext->getNumTilesDownloaded();
 
-    if (callback != nullptr) {
+    if (callback.get() != nullptr) {
         callback->onRequestProgress(downloadContext->currentLevelIdx,
             (int)downloadContext->levels.size(),
             numDownload - this->levelStartTiles,
@@ -346,32 +346,32 @@ void TileScraper::Downloader::reportStatus(ScrapeContext *downloadContext)
     }            
 }
 
-void TileScraper::Downloader::onDownloadEnter(ScrapeContext *context)
+void TileScraper::Downloader::onDownloadEnter(std::shared_ptr<ScrapeContext> context)
 {
 }
 
-void TileScraper::Downloader::onDownloadExit(ScrapeContext *context, int jobStatus)
+void TileScraper::Downloader::onDownloadExit(std::shared_ptr<ScrapeContext> context, int jobStatus)
 {
 }
 
-bool TileScraper::Downloader::checkReadyForDownload(ScrapeContext *context)
+bool TileScraper::Downloader::checkReadyForDownload(std::shared_ptr<ScrapeContext> context)
 {
     return true;
 }
 
-void TileScraper::Downloader::onLevelDownloadComplete(ScrapeContext *context)
+void TileScraper::Downloader::onLevelDownloadComplete(std::shared_ptr<ScrapeContext> context)
 {
 }
 
-void TileScraper::Downloader::onLevelDownloadStart(ScrapeContext *context)
+void TileScraper::Downloader::onLevelDownloadStart(std::shared_ptr<ScrapeContext> context)
 {
 }
 
-bool TileScraper::Downloader::download(ScrapeContext *downloadContext)
+bool TileScraper::Downloader::download(std::shared_ptr<ScrapeContext> downloadContext)
 {
     Util::Logger_log(Util::LogLevel::TELL_Debug, "%s Starting download of %s cache...", TAG, downloadContext->client->getName());
 
-    if(callback != nullptr)
+    if (callback.get() != nullptr)
         callback->onRequestStarted();
 
     reportStatus(downloadContext);
@@ -399,7 +399,7 @@ bool TileScraper::Downloader::download(ScrapeContext *downloadContext)
             while (true) {
                 // check for error
                 if (downloadContext->hadDownloadError()) {
-                    if (callback != nullptr)
+                    if (callback.get() != nullptr)
                         callback->onRequestError(nullptr, true);
 
                     Util::Logger_log(Util::LogLevel::TELL_Debug, "%s Lost network connection during map download.", TAG);
@@ -408,7 +408,7 @@ bool TileScraper::Downloader::download(ScrapeContext *downloadContext)
                 } else
                     // check for cancel
                     if (downloadContext->request->canceled) {
-                        if (callback != nullptr)
+                    if (callback.get() != nullptr)
                             callback->onRequestCanceled();
                         return false;
                     }
@@ -440,7 +440,7 @@ bool TileScraper::Downloader::download(ScrapeContext *downloadContext)
 
     bool retval;
     if (code == Util::TE_Ok) {
-        if (callback != nullptr)
+        if (callback.get() != nullptr)
             callback->onRequestComplete();
         retval = true;
     } else {
@@ -452,7 +452,7 @@ bool TileScraper::Downloader::download(ScrapeContext *downloadContext)
 }
 
 
-TileScraper::MultiThreadDownloader::MultiThreadDownloader(CacheRequestListener *callback, int numDownloadThreads) : 
+TileScraper::MultiThreadDownloader::MultiThreadDownloader(std::shared_ptr<CacheRequestListener> callback, int numDownloadThreads) : 
     Downloader(callback), queue(), shutdown(false), terminate(false), queueMonitor(), poolSize(numDownloadThreads), pool(NULL, NULL)
 {
     Thread::ThreadPool_create(pool, poolSize, TileScraper::MultiThreadDownloader::threadEntry, this);
@@ -468,23 +468,23 @@ TileScraper::MultiThreadDownloader::~MultiThreadDownloader()
     pool->joinAll();
 }
 
-void TileScraper::MultiThreadDownloader::flush(ScrapeContext *downloadContext, bool reportStatus)
+void TileScraper::MultiThreadDownloader::flush(std::shared_ptr<ScrapeContext> context, bool reportStatus)
 {
     // wait for queue to empty 
     while (this->queue.size() > 0) {
         // check for cancel
-        if (downloadContext->request->canceled)
+        if (context->request->canceled)
             break;
 
         Thread::Thread_sleep(50);
 
         // report status
         if (reportStatus)
-            this->reportStatus(downloadContext);
+            this->reportStatus(context);
     }
 }
 
-void TileScraper::MultiThreadDownloader::onDownloadExit(ScrapeContext *context, int jobStatus)
+void TileScraper::MultiThreadDownloader::onDownloadExit(std::shared_ptr<ScrapeContext> context, int jobStatus)
 {
     this->flush(context, false);
     {
@@ -494,17 +494,17 @@ void TileScraper::MultiThreadDownloader::onDownloadExit(ScrapeContext *context, 
     }
 }
 
-bool TileScraper::MultiThreadDownloader::checkReadyForDownload(ScrapeContext *context)
+bool TileScraper::MultiThreadDownloader::checkReadyForDownload(std::shared_ptr<ScrapeContext> context)
 {
     Thread::Monitor::Lock mLock(queueMonitor);
     return (this->queue.size() < (3u * static_cast<std::size_t>(poolSize)));
 }
 
-void TileScraper::MultiThreadDownloader::onLevelDownloadComplete(ScrapeContext *downloadContext) {
-    this->flush(downloadContext, true);
+void TileScraper::MultiThreadDownloader::onLevelDownloadComplete(std::shared_ptr<ScrapeContext> context) {
+    this->flush(context, true);
 }
 
-Util::TAKErr TileScraper::MultiThreadDownloader::downloadTileImpl(ScrapeContext *context, int tileLevel,
+Util::TAKErr TileScraper::MultiThreadDownloader::downloadTileImpl(std::shared_ptr<ScrapeContext> context, int tileLevel,
                 int tileX, int tileY)
 {
     Thread::Monitor::Lock mLock(queueMonitor);
@@ -544,7 +544,7 @@ void TileScraper::MultiThreadDownloader::threadRun()
 
 
 
-TileScraper::LegacyDownloader::LegacyDownloader(CacheRequestListener *callback) : Downloader(callback)
+TileScraper::LegacyDownloader::LegacyDownloader(std::shared_ptr<CacheRequestListener> callback) : Downloader(callback)
 {
 }
 
@@ -552,7 +552,7 @@ TileScraper::LegacyDownloader::~LegacyDownloader()
 {
 }
 
-Util::TAKErr TileScraper::LegacyDownloader::downloadTileImpl(ScrapeContext *context, int tileLevel,
+Util::TAKErr TileScraper::LegacyDownloader::downloadTileImpl(std::shared_ptr<ScrapeContext> context, int tileLevel,
                 int tileX, int tileY)
 {
     DownloadTask t(context, tileLevel, tileX, tileY);

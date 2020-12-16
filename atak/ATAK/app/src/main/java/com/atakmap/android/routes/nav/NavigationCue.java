@@ -50,9 +50,9 @@ public class NavigationCue {
         }
     }
 
-    private String id;
-    private String voiceCue;
-    private String textCue;
+    private final String id;
+    private final String voiceCue;
+    private final String textCue;
 
     private List<ConditionalNavigationCue> _cues = new ArrayList<>();
 

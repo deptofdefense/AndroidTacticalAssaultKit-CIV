@@ -18,7 +18,7 @@ import java.io.IOException;
 public class MenuMapComponent extends AbstractMapComponent {
 
     private static final String _TAG = "MenuMapComponent";
-    private MenuMapAdapter _adapter;
+    protected MenuMapAdapter _adapter;
     private MapView _mapView;
     private MenuLayoutWidget _menuLayout;
 

@@ -27,13 +27,14 @@ public class TileButtonView extends View {
     private final Matrix _mat;
     private final float _dp;
     private Drawable _icon;
-    private int _iconSize;
+    private final int _iconSize;
     private String _text = "";
-    private int _maxSize, _minSize;
-    private int _textColor;
+    private final int _maxSize;
+    private final int _minSize;
+    private final int _textColor;
 
-    private List<String> scrList = new ArrayList<>();
-    private StringBuilder scrBuilder = new StringBuilder();
+    private final List<String> scrList = new ArrayList<>();
+    private final StringBuilder scrBuilder = new StringBuilder();
 
     public TileButtonView(Context context) {
         this(context, null);

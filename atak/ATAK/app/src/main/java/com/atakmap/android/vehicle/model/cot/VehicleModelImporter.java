@@ -98,8 +98,8 @@ public class VehicleModelImporter extends MapItemImporter {
                     null, gpmd);
 
             // Remove invalid precision location detail
-            CotDetail pl = cot.findDetail(PrecisionLocationHandler
-                    .PRECISIONLOCATION);
+            CotDetail pl = cot
+                    .findDetail(PrecisionLocationHandler.PRECISIONLOCATION);
             cot.getDetail().removeChild(pl);
         }
 

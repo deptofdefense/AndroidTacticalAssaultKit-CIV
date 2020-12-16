@@ -88,7 +88,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
     private boolean displayLabel; // set by isBatchable,
                                   // used by batch()
     private int _labelTextSize;
-    private Typeface _labelTypeface;
+    private final Typeface _labelTypeface;
 
     private static GLImageCache.Entry _alertImageEntry;
     private static ByteBuffer tiltLineBuffer = null;
@@ -614,7 +614,8 @@ public class GLMarker2 extends GLPointMapItem2 implements
     }
 
     private float[] getDrawPosition(GLMapView ortho) {
-        ortho.scratch.geo.set(this.latitude, ortho.idlHelper.wrapLongitude(this.longitude));
+        ortho.scratch.geo.set(this.latitude,
+                ortho.idlHelper.wrapLongitude(this.longitude));
 
         // Offset the height if the marker has a "height" meta value, which it should have if
         // a shape was extruded in GLPolyline
@@ -779,7 +780,7 @@ public class GLMarker2 extends GLPointMapItem2 implements
         // Legacy min render scale
         if (subject.hasMetaValue("minRenderScale")
                 && ortho.drawMapScale >= subject.getMetaDouble(
-                "minRenderScale", DEFAULT_MIN_RENDER_SCALE))
+                        "minRenderScale", DEFAULT_MIN_RENDER_SCALE))
             return true;
 
         // Ensure map resolution is within range
@@ -952,7 +953,8 @@ public class GLMarker2 extends GLPointMapItem2 implements
                     }
                     if (_icon.getWidth() > 0) {
                         offtx = scale
-                                * ((_icon.getWidth() / 2f) - _icon.getAnchorX());
+                                * ((_icon.getWidth() / 2f)
+                                        - _icon.getAnchorX());
                     }
                 } else {
                     offy = _glText.getDescent() + _textHeight / 2f;

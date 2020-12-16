@@ -12,7 +12,7 @@ SharedState::SharedState() : state_(Initial) {}
 
 SharedState::SharedState(int state) : state_(state) {}
 
-SharedState::~SharedState() throw()
+SharedState::~SharedState() NOTHROWS
 { }
 
 int SharedState::getState() const {

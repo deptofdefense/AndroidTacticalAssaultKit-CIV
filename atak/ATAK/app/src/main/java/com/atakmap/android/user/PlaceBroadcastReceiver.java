@@ -33,7 +33,7 @@ public class PlaceBroadcastReceiver extends BroadcastReceiver {
      * @param intent the intent
      *
      * Do Not Use "com.atakmap.android.maps.PLACE" instead use MarkerCreator to create and place
-     * your markers.
+     * your markers.  This should only be used by the radial menu actions.
      * @deprecated use MarkerCreator to create and place markers
      */
     @Deprecated
@@ -83,6 +83,10 @@ public class PlaceBroadcastReceiver extends BroadcastReceiver {
             if (intent.getStringExtra("five_line") != null &&
                     intent.getStringExtra("five_line").equals("true")) {
                 markerCreator.setShowFiveLine(true);
+            }
+
+            if (intent.getStringExtra("action") != null) {
+                markerCreator.setAction(intent.getStringExtra("action"));
             }
 
             if (intent.hasExtra("show_new_radial") &&

@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Concrete default OGR driver definition class.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Apr 17, 2015
+////      Apr 17, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -84,7 +84,7 @@ class ENGINE_API DefaultDriverDefinition
                              unsigned int version);
 
     ~DefaultDriverDefinition ()
-        throw ()
+        NOTHROWS
       { }
 
 
@@ -96,13 +96,13 @@ class ENGINE_API DefaultDriverDefinition
     const char*
     getDriverName ()
         const
-        throw ()
+        NOTHROWS
       { return driverName; }
 
     FeatureDataSource::FeatureDefinition::Encoding
     getFeatureEncoding ()
         const
-        throw ()
+        NOTHROWS
       { return encoding; }
 
     //
@@ -120,7 +120,7 @@ class ENGINE_API DefaultDriverDefinition
     const char*
     getType ()
         const
-        throw ()
+        NOTHROWS
       { return driverType; }
 
     bool
@@ -131,7 +131,7 @@ class ENGINE_API DefaultDriverDefinition
     unsigned int
     parseVersion ()
         const
-        throw ()
+        NOTHROWS
       { return version; }
 
     //

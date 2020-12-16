@@ -13,7 +13,7 @@ import com.atakmap.android.hierarchy.filters.MultiFilter;
 import com.atakmap.android.hierarchy.items.AbstractChildlessListItem;
 import com.atakmap.android.hierarchy.items.MapItemUser;
 import com.atakmap.android.math.MathUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
 import org.apache.sanselan.formats.tiff.TiffImageMetadata;
@@ -528,8 +528,9 @@ public class ImageGalleryBlobAdapter
             MediaMetadataRetriever retriever = new MediaMetadataRetriever();
 
             try {
-                tmpFile = File.createTempFile("vidblob", null);
-                fos = FileIOProviderFactory.getOutputStream(tmpFile);
+                tmpFile = IOProviderFactory.createTempFile("vidblob", null,
+                        null);
+                fos = IOProviderFactory.getOutputStream(tmpFile);
                 fos.write(blobItem.getImageBytes());
                 fos.close();
                 fos = null;
@@ -598,11 +599,11 @@ public class ImageGalleryBlobAdapter
         FileCache.Reservation<File> reservation = fileCache.reserve(cacheFile);
 
         if (reservation != null) {
-            if (!FileIOProviderFactory.exists(cacheFile)) {
+            if (!IOProviderFactory.exists(cacheFile)) {
                 FileOutputStream fos = null;
 
                 try {
-                    fos = FileIOProviderFactory.getOutputStream(cacheFile);
+                    fos = IOProviderFactory.getOutputStream(cacheFile);
                     fos.write(blobItem.getImageBytes());
                 } catch (Exception e) {
                     FileSystemUtils.delete(cacheFile);

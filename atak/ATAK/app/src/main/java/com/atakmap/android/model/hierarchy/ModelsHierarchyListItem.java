@@ -48,9 +48,9 @@ public class ModelsHierarchyListItem extends AbstractHierarchyListItem2
 
     private static final String TAG = "ModelsHierarchyListItem";
 
-    private MapView view;
-    private FeatureLayer3 layer;
-    private FeatureDataStore2 dataStore;
+    private final MapView view;
+    private final FeatureLayer3 layer;
+    private final FeatureDataStore2 dataStore;
     private boolean vizSupported;
     private final List<HierarchyListItem> baseChildren = new ArrayList<>();
 

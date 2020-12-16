@@ -109,7 +109,7 @@ public class DangerCloseReceiver extends DropDownReceiver implements
     private ImageButton back;
     private Button delete;
     private ImageButton exit;
-    private SharedPreferences _prefs;
+    private final SharedPreferences _prefs;
 
     private Spinner menu_options;
 

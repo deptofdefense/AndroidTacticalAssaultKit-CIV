@@ -2,8 +2,9 @@
 package com.atakmap.map.layer.raster.gdal;
 
 import android.graphics.Bitmap;
-import com.atakmap.coremap.log.Log;
 
+import com.atakmap.coremap.log.Log;
+import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.raster.drg.DRGTileReader;
 import com.atakmap.map.layer.raster.tilereader.TileCacheData;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
@@ -26,9 +27,6 @@ public class GdalTileReader extends TileReader {
 
         @Override
         public TileReader create(String uri, TileReaderFactory.Options opts) {
-            if(uri.charAt(0) != '/')
-                return null;
-
             // XXX - short circuit is here as moving it further up would
             //       involve unwinding the use of GLGdalMapLayer2 which needs
             //       to be fully traced for potential issues. This achieves
@@ -44,7 +42,7 @@ public class GdalTileReader extends TileReader {
 
             Throwable error = null;
             try {
-                Dataset dataset = gdal.Open(uri);
+                Dataset dataset = GdalLibrary.openDatasetFromPath(uri);
                 if(dataset != null) {
                     int tileWidth = 0;
                     int tileHeight = 0;
@@ -79,8 +77,11 @@ public class GdalTileReader extends TileReader {
             
             Dataset dataset = null;
             try {
-                dataset = gdal.Open(uri);
+                dataset = GdalLibrary.openDatasetFromPath(uri);
                 return (dataset != null);
+            } catch (Exception e) { 
+                Log.e(TAG, "unexpected error opening: " + uri, e);
+                return false;
             } finally {
                 if(dataset != null)
                     dataset.delete();

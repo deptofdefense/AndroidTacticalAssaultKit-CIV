@@ -110,8 +110,8 @@ public final class PostErrorLogsOperation extends HTTPOperation {
             try {
                 if (client != null)
                     client.shutdown();
-            } catch (Exception ignore) {
-                Log.d(TAG, "Failed to shutdown the client", ignore);
+            } catch (Exception e) {
+                Log.d(TAG, "Failed to shutdown the client", e);
             }
         }
     }

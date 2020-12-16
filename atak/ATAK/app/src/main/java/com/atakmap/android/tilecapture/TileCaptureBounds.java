@@ -3,6 +3,7 @@ package com.atakmap.android.tilecapture;
 
 import android.graphics.Matrix;
 
+import com.atakmap.annotations.ModifierApi;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 
 /**
@@ -25,6 +26,9 @@ public class TileCaptureBounds extends GeoBounds {
     public int imageHeight;
 
     // Correction for tiles being captured
+    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
+            "final", "public"
+    })
     public Matrix tileToPixel = new Matrix();
 
     public TileCaptureBounds(GeoBounds bounds) {

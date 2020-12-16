@@ -31,7 +31,7 @@ public class MedicalLineBroadcastReceiver
 
     public static final String TAG = "MedicalLineBroadcastReceiver";
 
-    private ModificationCallback mcb = new ModificationCallback();
+    private final ModificationCallback mcb = new ModificationCallback();
 
     private final MedLineView _mlv;
     private final MapGroup _mapGroup;

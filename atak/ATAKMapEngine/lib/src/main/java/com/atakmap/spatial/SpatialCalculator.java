@@ -15,8 +15,9 @@ import android.content.Context;
 import android.database.sqlite.SQLiteException;
 import android.os.Environment;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.Databases;
@@ -115,6 +116,11 @@ public final class SpatialCalculator {
     
     private File spatialdbFile;
     private DatabaseIface database;
+
+    /** Flag to tell clients that this calculator instance has been disposed */
+    private boolean disposed = false;
+    /** Indicator of 2D vs 3D points */
+    private final int dimension;
     
     private String[] arr1;
     private String[] arr2;
@@ -146,9 +152,66 @@ public final class SpatialCalculator {
     private StatementIface updateGeomBlob;
     private StatementIface updateGeomWkt;
 
+    /**
+     * Marking this constructor for removal.
+     * @deprecated use the Builder instead
+     */
+    @DeprecatedApi(since = "4.2.0", forRemoval = true)
+    public SpatialCalculator(){
+        this(false);
+    }
+
+    /**
+     * Marking this constructor for removal.
+     *
+     * Examples:
+     * <pre>
+     *     // A standard SpatialCalculator
+     *     // formerly new SpatialCalculator();
+     *     new SpatialCalculator.Builder().build();
+     *
+     *     // A SpatialCalculator in memory
+     *     // formerly new SpatialCalculator(true);
+     *     new SpatialCalculator.Builder().inMemory().build();
+     *
+     *     // Allow Point feature Z data to pass through the calculator
+     *     // Wasn't available previously
+     *     new SpatialCalculator.Builder().includePointZDimension().build();
+     *
+     *     // In memory, and with Z data
+     *     // Wasn't available previously
+     *     new SpatialCalculator.Builder().inMemory().includePointZDimension().build();
+     * </pre>
+     *
+     * @deprecated use the Builder instead
+     */
+    @DeprecatedApi(since = "4.2.0", forRemoval = true)
     public SpatialCalculator(boolean memory){
+        this.dimension = 2;
         File tempDir = getRuntimeTempDir();
         memory |= (tempDir == null);
+        try{
+            File dbFile = null;
+            if(!memory) {
+                dbFile = IOProviderFactory.createTempFile("spatialcalc", ".tmp", getRuntimeTempDir());
+                dbFile.deleteOnExit();
+            }
+            init(dbFile);
+        }catch(Exception e){
+            SQLiteException toThrow = new SQLiteException();
+            toThrow.initCause(e);
+            throw toThrow;
+        }
+    }
+
+    /**
+     * A new private constructor that takes Builder instance.
+     * @param builder A Builder instance to initialize from
+     */
+    private SpatialCalculator(Builder builder) {
+        this.dimension = builder.dimension;
+        File tempDir = getRuntimeTempDir();
+        boolean memory = builder.inMemory | (tempDir == null);
         try{
             File dbFile = null;
             if(!memory) {
@@ -162,16 +225,13 @@ public final class SpatialCalculator {
             throw toThrow;
         }
     }
-    
-    public SpatialCalculator(){
-        this(false);
-    }
+
     /**
      * Creates a new instance.
      */
     private void init(File dbFile) {
         this.spatialdbFile = dbFile;
-        this.database = Databases.openOrCreateDatabase(this.spatialdbFile != null ? this.spatialdbFile.getAbsolutePath() : ":memory:");
+        this.database = IOProviderFactory.createDatabase(dbFile);
         
         CursorIface result;
 
@@ -196,14 +256,17 @@ public final class SpatialCalculator {
         }
 
         this.database.execute(
-               "CREATE TABLE Calculator (id INTEGER PRIMARY KEY AUTOINCREMENT)",
-               null);
+                "CREATE TABLE Calculator (id INTEGER PRIMARY KEY AUTOINCREMENT)",
+                null);
 
+        // if includeZ is true, use the XYZ dimension model
+        final String dimensionModel = this.dimension == 3 ? "XYZ" : "XY";
         result = null;
         try {
-            result = this.database.query(
-                    "SELECT AddGeometryColumn(\'Calculator\', \'geom\', 4326, \'GEOMETRY\', \'XY\')",
-                    null);
+            String query = String.format(
+                    "SELECT AddGeometryColumn(\'Calculator\', \'geom\', 4326, \'GEOMETRY\', \'%s\')",
+                    dimensionModel);
+            result = this.database.query(query, null);
             result.moveToNext();
         } finally {
             if (result != null)
@@ -339,9 +402,25 @@ public final class SpatialCalculator {
                     FileSystemUtils.delete(this.spatialdbFile);
             }
 
+            this.disposed = true;
         }
     }
 
+    /**
+     * Calling any method on this calculator after <code>dispose()</code>
+     * has been called will lead to undefined behavior.
+     *
+     * It is recommended that you check for <code>!calc.isDisposed()</code>
+     * before making any calls.
+     *
+     * @return true if this calculator has had its <code>dispose()</code>
+     *          method called, or if it is in the middle of initializing
+     *          i.e. <code>init()</code> has not returned. Returns false
+     *          otherwise.
+     */
+    public boolean isDisposed() {
+        return this.disposed;
+    }
     
     private void stmtClose(final StatementIface s) { 
        if (s != null)
@@ -391,51 +470,74 @@ public final class SpatialCalculator {
 
     /**
      * Creates a new point in the calculator's memory.
+     *
+     * If 3D Point features are enabled, check if the altitude
+     * information by <code>point.isAltitudeValid()</code>.
+     *
+     * If it is valid, allow that data to pass through. Otherwise,
+     * set it to 0.0d (clamped to the ground) by default.
      * 
-     * @param point The point
+     * @param point A GeoPoint instance to create a feature Point from
      * 
      * @return  A handle to the point created in the calculator's memory.
      */
     public long createPoint(GeoPoint point) {
-        try {
-            if(this.insertPoint == null)
-                this.insertPoint = this.database.compileStatement("INSERT INTO Calculator (geom) VALUES(MakePoint(?, ?, 4326))");
-            
-            this.insertPoint.bind(1, point.getLongitude());
-            this.insertPoint.bind(2, point.getLatitude());
-            this.insertPoint.execute();
-            
-            return Databases.lastInsertRowId(this.database);
-        } finally {
-            if(this.insertPoint != null)
-                this.insertPoint.clearBindings();
+        Point pt;
+        if (this.dimension == 3) {
+            double z = point.isAltitudeValid() ? point.getAltitude() : 0.0d;
+            pt = new Point(point.getLongitude(), point.getLatitude(), z);
+        } else {
+            pt = new Point(point.getLongitude(), point.getLatitude());
         }
+        return this.createPoint(pt);
     }
-    
+
     /**
      * Creates a new point in the calculator's memory.
-     * 
-     * @param point The point
-     * 
+     *
+     * If 3D Point features are enabled, a 3D point feature
+     * will be created.
+     *
+     * This method <emph>does not</emph> make any attempt to
+     * determine the validity of the Z field.
+     *
+     * @param point A Point feature instance to copy
+     *
      * @return  A handle to the point created in the calculator's memory.
      */
     public long createPoint(Point point) {
+        final double[] bindArgs = new double[this.dimension];
+
+        bindArgs[0] = point.getX();
+        bindArgs[1] = point.getY();
+        if (this.dimension == 3) {
+            bindArgs[2] = point.getZ();
+        }
+
         try {
-            if(this.insertPoint == null)
-                this.insertPoint = this.database.compileStatement("INSERT INTO Calculator (geom) VALUES(MakePoint(?, ?, 4326))");
-            
-            this.insertPoint.bind(1, point.getX());
-            this.insertPoint.bind(2, point.getY());
-            
+            if(this.insertPoint == null) {
+                String spatialiteFunc = this.dimension == 3 ? "MakePointZ" : "MakePoint";
+                // a more dimension agnostic approach would use StringBuilder and a loop
+                // but we're limited to 2 or 3 dimensions so this is fine
+                String placeholders = this.dimension == 3 ? "?, ?, ?" : "?, ?";
+                String formatter = "INSERT INTO Calculator (geom) VALUES(%s(%s, 4326))";
+                String statement = String.format(formatter, spatialiteFunc, placeholders);
+                this.insertPoint = this.database.compileStatement(statement);
+            }
+
+            for (int i = 0; i < this.dimension; i++) {
+                this.insertPoint.bind(i + 1, bindArgs[i]);
+            }
+
             this.insertPoint.execute();
-            
+
             return Databases.lastInsertRowId(this.database);
         } finally {
             if(this.insertPoint != null)
                 this.insertPoint.clearBindings();
         }
     }
-    
+
     /**
      * Creates a new linestring in the calculator's memory.
      * 
@@ -671,7 +773,7 @@ public final class SpatialCalculator {
      * @return  The specified geometry from the calculator's memory as a
      *          SpataiLite blob.
      *          
-     * @see http://www.gaia-gis.it/gaia-sins/BLOB-Geometry.html
+     * @see <a href=http://www.gaia-gis.it/gaia-sins/BLOB-Geometry.html>BLOB-Geometry</a>
      */
     public byte[] getGeometryAsBlob(long handle) {
         CursorIface result = null;
@@ -1601,16 +1703,16 @@ public final class SpatialCalculator {
      * @return
      */
     private static File getRuntimeTempDir() {
-        if(!FileIOProviderFactory.exists(_tmpDir)) {
+        if(!IOProviderFactory.exists(_tmpDir)) {
             do {
-                if(FileIOProviderFactory.mkdirs(_tmpDir))
+                if(IOProviderFactory.mkdirs(_tmpDir))
                     break;
                 if(_tmpDir == DEFAULT_TMP_DIR)
                     break;
                 _tmpDir = DEFAULT_TMP_DIR;
             } while(true);
             // if the temporary directory does not exist, no runtime temp dir
-            if(!FileIOProviderFactory.exists(_tmpDir))
+            if(!IOProviderFactory.exists(_tmpDir))
                 return null;
 
             // try to create the runtime temp dir
@@ -1638,7 +1740,7 @@ public final class SpatialCalculator {
             @Override
             public void run() {
                 try {
-                    final String[] children = FileIOProviderFactory.list(dir, new FilenameFilter() {
+                    final String[] children = IOProviderFactory.list(dir, new FilenameFilter() {
                         @Override
                         public boolean accept(File dir, String filename) {
                             return filename.startsWith("spatialcalc");
@@ -1889,6 +1991,30 @@ public final class SpatialCalculator {
         
         public final int getDimension() {
             return this.dimension;
+        }
+    }
+
+    /**
+     * A small Builder class for configuring a SpatialCalculator instance.
+     */
+    public static class Builder {
+        /** Backed by an in-memory database or not */
+        private boolean inMemory = false;
+        /** Indicator of 2D vs 3D points */
+        private int dimension = 2;
+
+        public Builder inMemory() {
+            this.inMemory = true;
+            return this;
+        }
+
+        public Builder includePointZDimension() {
+            this.dimension = 3;
+            return this;
+        }
+
+        public SpatialCalculator build() {
+            return new SpatialCalculator(this);
         }
     }
 }

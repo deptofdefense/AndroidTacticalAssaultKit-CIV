@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Implementation of Polygon class.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Dec 11, 2014
+////      Dec 11, 2014  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -136,7 +136,7 @@ Polygon::Polygon (const LineString& exteriorRing,
   }
 
 Polygon::~Polygon ()
-    throw ()
+    NOTHROWS
     { }
 
 void

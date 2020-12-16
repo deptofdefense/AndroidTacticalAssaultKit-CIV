@@ -55,19 +55,21 @@ public class PluginLayoutInflater {
                 // system and not from this application.   Warn users for future SDK's
                 // that this might not work when running debug versions - so it can be
                 // checked.
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && BuildConfig.DEBUG)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                        && BuildConfig.DEBUG)
                     Log.e(TAG,
                             "may need to revisit double reflection trick: PluginLayoutInflator");
                 final Method xgetDeclaredField = Class.class
                         .getDeclaredMethod("getDeclaredField",
                                 String.class);
-                f = (Field) xgetDeclaredField.invoke(LayoutInflater.class,"sConstructorMap");
+                f = (Field) xgetDeclaredField.invoke(LayoutInflater.class,
+                        "sConstructorMap");
             }
-            
-            f.setAccessible(true);
-            final Map sConstructorMap = (Map) f.get(null);
-            sConstructorMap.clear();
-
+            if (f != null) {
+                f.setAccessible(true);
+                final Map sConstructorMap = (Map) f.get(null);
+                sConstructorMap.clear();
+            }
             //Log.d(TAG, "cleared out the constructor map");
         } catch (Exception e) {
             // intentionally catch any and all possible exceptions

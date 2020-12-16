@@ -66,8 +66,7 @@ public class MapGroupHierarchyListItem extends AbstractHierarchyListItem2
     protected final MapGroup.MapItemsCallback itemFilter;
 
     protected int deepCount;
-    protected final Map<MapGroup, HierarchyListItem> groupMap
-            = new HashMap<>();
+    protected final Map<MapGroup, HierarchyListItem> groupMap = new HashMap<>();
 
     protected Comparator<HierarchyListItem> order;
 

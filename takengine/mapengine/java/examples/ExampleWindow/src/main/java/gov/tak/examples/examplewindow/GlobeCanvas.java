@@ -5,6 +5,7 @@ import com.atakmap.map.Globe;
 import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.opengl.GLBaseMap;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.util.ConfigOptions;
 import com.jogamp.opengl.*;
 import com.jogamp.opengl.awt.GLCanvas;
 import com.jogamp.opengl.awt.GLJPanel;
@@ -47,6 +48,10 @@ public class GlobeCanvas extends GLCanvas implements GLEventListener, GlobeCompo
     @Override
     public void init(GLAutoDrawable drawable) {
         JOGLGLES.init(drawable);
+        if(ConfigOptions.getOption("disable-vsync", 0) == 1) {
+            GL gl = drawable.getGL();
+            gl.setSwapInterval(0);
+        }
 
         // create the Globe renderer and start it
         glglobe = new GLMapView(new JOGLRenderContext(drawable), globe, 0, 0, this.getWidth(), this.getHeight());

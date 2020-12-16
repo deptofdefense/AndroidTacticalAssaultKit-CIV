@@ -57,7 +57,7 @@ namespace TAK {
 
                     struct ViewState {
                         TAK::Engine::Core::MapSceneModel2 sceneModel;
-                        double displayResolution;
+                        double displayResolution {0.0};
                     };
 
                     struct DrawState2 {

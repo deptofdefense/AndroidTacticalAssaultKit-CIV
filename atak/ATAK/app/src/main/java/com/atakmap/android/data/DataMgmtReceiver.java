@@ -23,7 +23,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.filesystem.SecureDelete;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
@@ -48,7 +48,6 @@ public class DataMgmtReceiver extends BroadcastReceiver {
      * @deprecated
      */
     final public static String ZEROIZE_CONFIRMED_ACTION = "com.atakmap.app.ZEROIZE_CONFIRMED";
-
 
     final public static String ZEROIZE_CLEAR_MAPS = "com.atakmap.app.ZEROIZE_CLEAR_MAPS";
 
@@ -169,7 +168,8 @@ public class DataMgmtReceiver extends BroadcastReceiver {
         for (String file : files) {
             for (String mountPoint : mountPoints) {
                 File toDelete = new File(mountPoint, file);
-                if (FileIOProviderFactory.exists(toDelete) && !FileIOProviderFactory.isDirectory(toDelete))
+                if (IOProviderFactory.exists(toDelete)
+                        && !IOProviderFactory.isDirectory(toDelete))
                     FileSystemUtils.deleteFile(toDelete);
             }
         }
@@ -183,7 +183,8 @@ public class DataMgmtReceiver extends BroadcastReceiver {
         for (String dir : dirs) {
             for (String mountPoint : mountPoints) {
                 File toDelete = new File(mountPoint, dir);
-                if (FileIOProviderFactory.exists(toDelete) && FileIOProviderFactory.isDirectory(toDelete))
+                if (IOProviderFactory.exists(toDelete)
+                        && IOProviderFactory.isDirectory(toDelete))
                     SecureDelete.deleteDirectory(toDelete, bContentOnly);
             }
         }

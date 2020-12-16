@@ -8,92 +8,52 @@ import com.atakmap.android.maps.Shape.OnPointsChangedListener;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.layer.feature.geometry.LineString;
+import com.atakmap.map.layer.feature.geometry.Polygon;
+import com.atakmap.map.layer.feature.geometry.opengl.GLBatchPolygon;
+import com.atakmap.map.layer.feature.style.BasicFillStyle;
+import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
+import com.atakmap.map.layer.feature.style.CompositeStyle;
+import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.opengl.GLMapView;
-import com.atakmap.opengl.GLES20FixedPipeline;
 
-import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
+import java.util.ArrayList;
 
 public class GLSensorFOV extends GLShape implements OnMetricsChangedListener,
         OnPointsChangedListener {
 
-    private final static int NUM_SLICES = 8;
+    private final static int SLICES_PER_90 = 8;
 
     GeoPoint _point;
     float _azimuth = 0f;
     float _fov = 10f;
 
-    float _red = 1f;
-    float _green = 1f;
-    float _blue = 1f;
-    float _alpha = 0.3f;
-
     float _extent;
-    private FloatBuffer _verts;
+    private final GLBatchPolygon _poly;
 
     public GLSensorFOV(MapRenderer surface, SensorFOV subject) {
         super(surface, subject);
-        _setMetrics(subject.getAzimuth(), subject.getFOV(),
-                subject.getExtent(), subject.getColor());
+        _poly = new GLBatchPolygon(surface);
         _point = subject.getPoint().get();
-        float[] color = subject.getColor();
-        if (color.length != 4) {
-            _red = color[0];
-            _green = color[1];
-            _blue = color[2];
-            _alpha = color[3];
-        }
+        _setMetrics(subject.getAzimuth(), subject.getFOV(),
+                subject.getExtent());
+        refreshStyle();
+    }
+
+    private void refreshStyle() {
+        boolean stroke = strokeWeight > 0;
+        ArrayList<Style> composite = new ArrayList<>();
+        composite.add(new BasicFillStyle(this.fillColor));
+        if (stroke)
+            composite.add(
+                    new BasicStrokeStyle(this.strokeColor, this.strokeWeight));
+        Style s = new CompositeStyle(composite.toArray(new Style[0]));
+        _poly.setStyle(s);
     }
 
     @Override
     public void draw(GLMapView ortho) {
-        if (_verts == null) {
-            _verts = com.atakmap.lang.Unsafe
-                    .allocateDirect((2 + NUM_SLICES) * 4 * 2)
-                    .order(ByteOrder.nativeOrder())
-                    .asFloatBuffer();
-        }
-
-        // XXX - not the most efficient mechanism, but it effectively restricts
-        //       the cone to the extent/FOV. at a mimium, the cone verts should
-        //       probably be computed every time the point/metrics change to
-        //       avoid intra-frame overhead. we could consider scaling the unit
-        //       cone by the extent converted to pixels, however, resolutions
-        //       reported are nominal and computed pixel extents would vary with
-        //       latitude.
-
-        int idx = 0;
-
-        ortho.scratch.geo.set(_point);
-        ortho.forward(ortho.scratch.geo, ortho.scratch.pointF);
-        _verts.put(idx++, ortho.scratch.pointF.x);
-        _verts.put(idx++, ortho.scratch.pointF.y);
-
-        for (int i = 0; i <= NUM_SLICES; i++) {
-            ortho.scratch.geo.set(DistanceCalculations.metersFromAtBearing(
-                    _point, _extent,
-                    _azimuth - (_fov / 2.0f) + ((_fov / NUM_SLICES) * i)));
-            ortho.forward(ortho.scratch.geo, ortho.scratch.pointF);
-            _verts.put(idx++, ortho.scratch.pointF.x);
-            _verts.put(idx++, ortho.scratch.pointF.y);
-        }
-
-        GLES20FixedPipeline
-                .glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-
-        GLES20FixedPipeline.glVertexPointer(2, GLES20FixedPipeline.GL_FLOAT, 0,
-                _verts);
-        GLES20FixedPipeline.glEnable(GLES20FixedPipeline.GL_BLEND);
-
-        GLES20FixedPipeline.glColor4f(_red, _green, _blue, _alpha);
-        GLES20FixedPipeline
-                .glDrawArrays(GLES20FixedPipeline.GL_TRIANGLE_FAN, 0,
-                        _verts.limit() / 2);
-
-        GLES20FixedPipeline
-                .glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-        GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_BLEND);
-
+        _poly.draw(ortho);
     }
 
     @Override
@@ -120,12 +80,11 @@ public class GLSensorFOV extends GLShape implements OnMetricsChangedListener,
         final float azimuth = fov.getAzimuth();
         final float f = fov.getFOV();
         final float extent = fov.getExtent();
-        final float[] color = fov.getColor();
 
         renderContext.queueEvent(new Runnable() {
             @Override
             public void run() {
-                _setMetrics(azimuth, f, extent, color);
+                _setMetrics(azimuth, f, extent);
             }
         });
     }
@@ -138,6 +97,7 @@ public class GLSensorFOV extends GLShape implements OnMetricsChangedListener,
             @Override
             public void run() {
                 _point = point;
+                updatePolygon();
                 // update the bounds and notify the listeners
                 sfov.getBounds(bounds);
                 OnBoundsChanged();
@@ -145,15 +105,62 @@ public class GLSensorFOV extends GLShape implements OnMetricsChangedListener,
         });
     }
 
-    private void _setMetrics(float azimuth, float fov, float extent,
-            float[] color) {
+    @Override
+    public void onFillColorChanged(Shape shape) {
+        super.onFillColorChanged(shape);
+        renderContext.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                refreshStyle();
+            }
+        });
+    }
+
+    @Override
+    public void onStrokeColorChanged(Shape shape) {
+        super.onStrokeColorChanged(shape);
+        renderContext.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                refreshStyle();
+            }
+        });
+    }
+
+    @Override
+    public void onStrokeWeightChanged(Shape shape) {
+        super.onStrokeWeightChanged(shape);
+        renderContext.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                refreshStyle();
+            }
+        });
+    }
+
+    private void _setMetrics(float azimuth, float fov, float extent) {
         _azimuth = azimuth;
         _fov = fov;
         _extent = extent;
-        _red = color[0];
-        _green = color[1];
-        _blue = color[2];
-        _alpha = color[3];
+        updatePolygon();
     }
 
+    private void updatePolygon() {
+        LineString ls = new LineString(3);
+
+        int numSlices = SLICES_PER_90 * (int) Math.ceil(_fov / 90);
+
+        ls.addPoint(_point.getLongitude(), _point.getLatitude(), 0);
+
+        for (int i = 0; i <= numSlices; i++) {
+            GeoPoint gp = DistanceCalculations.metersFromAtBearing(
+                    _point, _extent,
+                    _azimuth - (_fov / 2.0f) + ((_fov / numSlices) * i));
+            ls.addPoint(gp.getLongitude(), gp.getLatitude(), 0);
+        }
+
+        ls.addPoint(_point.getLongitude(), _point.getLatitude(), 0);
+
+        _poly.setGeometry(new Polygon(ls));
+    }
 }

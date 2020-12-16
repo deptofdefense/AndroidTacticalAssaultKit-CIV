@@ -31,7 +31,6 @@ import com.atakmap.android.gui.RangeAndBearingTableHandler;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.maps.Shape;
-import com.atakmap.android.toolbar.Tool;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;

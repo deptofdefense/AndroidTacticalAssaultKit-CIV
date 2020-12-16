@@ -37,7 +37,8 @@ class NotificationFader implements
             try {
                 if (s != null)
                     fadeTimeout = Long.parseLong(s) * 1000;
-            } catch (Exception ignored) { }
+            } catch (Exception ignored) {
+            }
             Log.d(TAG,
                     "changing the fade timeout for notifications (cotservice) to "
                             + fadeTimeout);

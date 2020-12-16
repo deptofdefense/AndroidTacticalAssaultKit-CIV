@@ -51,7 +51,7 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
     private boolean _clampToGround;
     private double _unwrap;
 
-    private GLBatchLineString impl;
+    private final GLBatchLineString impl;
     private int color = -1;
     private boolean outline = false;
     private byte pattern = (byte) 0xFF;
@@ -358,6 +358,11 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
 
         for (int x = 0; x < pts.length; x++) {
             GeoPoint gp = pts[x];
+            if (!gp.isAltitudeValid()) {
+                double alt = ortho.getTerrainMeshElevation(gp.getLatitude(),
+                        gp.getLongitude());
+                gp = new GeoPoint(gp.getLatitude(), gp.getLongitude(), alt);
+            }
             forward(ortho, gp, ortho.scratch.pointF, _unwrap);
             points[2 * x] = ortho.scratch.pointF.x;
             points[2 * x + 1] = ortho.scratch.pointF.y;

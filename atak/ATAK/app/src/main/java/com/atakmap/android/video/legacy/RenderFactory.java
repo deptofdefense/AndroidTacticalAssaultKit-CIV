@@ -121,7 +121,7 @@ public class RenderFactory {
     private static class SurfaceRenderer implements SurfaceHolder.Callback,
             VideoConsumer {
         private boolean surfaceActive;
-        private SurfaceHolder surfaceHolder;
+        private final SurfaceHolder surfaceHolder;
         int dx, dy;
 
         private VideoFrameConverter converter;
@@ -132,7 +132,7 @@ public class RenderFactory {
         private long time;
         private int count;
 
-        private VideoMediaFormat fmt;
+        private final VideoMediaFormat fmt;
 
         /**
          * Create a SurfaceRenderer against the Surface in the passed
@@ -356,10 +356,10 @@ public class RenderFactory {
                 "   gl_FragColor = vec4(r, g, b, 1.0);\n" +
                 "}\n";
 
-        private float[] mMVPMatrix = new float[16];
-        private float[] mProjMatrix = new float[16];
-        private float[] mMMatrix = new float[16];
-        private float[] mVMatrix = new float[16];
+        private final float[] mMVPMatrix = new float[16];
+        private final float[] mProjMatrix = new float[16];
+        private final float[] mMMatrix = new float[16];
+        private final float[] mVMatrix = new float[16];
 
         private int mTexture;
         private int mProgram;

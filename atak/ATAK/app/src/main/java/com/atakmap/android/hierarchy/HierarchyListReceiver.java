@@ -73,7 +73,7 @@ import com.atakmap.android.tools.ActionBarReceiver;
 import com.atakmap.android.tools.ActionBarView;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.GpxFileSpatialDb;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
@@ -121,29 +121,34 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         return _instance;
     }
 
-    private HIERARCHY_MODE mode = HIERARCHY_MODE.NONE;
+    protected HIERARCHY_MODE mode = HIERARCHY_MODE.NONE;
     private final Stack<HIERARCHY_MODE> previousMode = new Stack<>();
     private final double[] overlayManagerSizeValues = new double[4];
     private final MapOverlayManager overlayManager;
-    private final HierarchyManagerView content;
-    private HierarchyListAdapter adapter;
-    private final View titleBar, actionsLayout;
-    private final LinearLayout customView, listHeader, listFooter;
-    private final Button titleTextButton;
-    private final EditText searchText;
-    private final Context _context;
-    private final MapView _mapView;
+    protected HierarchyManagerView content;
+    protected HierarchyListAdapter adapter;
+    protected View titleBar;
+    protected View actionsLayout;
+    protected LinearLayout customView;
+    protected LinearLayout listHeader;
+    protected LinearLayout listFooter;
+    protected Button titleTextButton;
+    protected EditText searchText;
+    protected final Context _context;
+    protected final MapView _mapView;
     private final SharedPreferences prefs;
     private HierarchyListItem selectedItem = null;
-    private final View checkAllLayout;
-    private final ImageView checkAll;
+    protected View checkAllLayout;
+    protected ImageView checkAll;
     private int checkAllState;
-    private final CheckBox showAll;
-    private final ListView listView;
-    private final ImageButton backBtn, hierarchyClearBtn, multiSelectBtn,
-            searchBtn;
-    private final SortSpinner sortSpinner;
-    private final ProgressBar searchProgress;
+    protected CheckBox showAll;
+    protected ListView listView;
+    protected ImageButton backBtn;
+    protected ImageButton hierarchyClearBtn;
+    protected ImageButton multiSelectBtn;
+    protected ImageButton searchBtn;
+    protected SortSpinner sortSpinner;
+    protected ProgressBar searchProgress;
     private final HierarchyListDropDown overlayManagerDropDown;
 
     // List UID which OM navigates to initially
@@ -757,8 +762,9 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
                         File exportDir = FileSystemUtils
                                 .getItem(FileSystemUtils.EXPORT_DIRECTORY);
 
-                        if (exportDir != null && FileIOProviderFactory.exists(exportDir)
-                                && FileIOProviderFactory.isDirectory(exportDir))
+                        if (exportDir != null
+                                && IOProviderFactory.exists(exportDir)
+                                && IOProviderFactory.isDirectory(exportDir))
                             startDirectory = exportDir.getAbsolutePath();
                         else
                             startDirectory = Environment
@@ -1089,7 +1095,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
     /**
      * This sets up the Overlay Manager Action bar to the current mode
      */
-    void setViewToMode() {
+    public void setViewToMode() {
         if (adapter == null || !overlayManagerDropDown.isVisible())
             return;
 
@@ -1290,7 +1296,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
      * @param parent Parent view group
      * @param child Child view
      */
-    private static void replaceView(ViewGroup parent, View child) {
+    protected static void replaceView(ViewGroup parent, View child) {
         if (parent == null)
             return;
 

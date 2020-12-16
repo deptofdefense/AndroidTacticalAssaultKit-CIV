@@ -21,11 +21,11 @@ public class DragMarkerHelper {
 
     private static final String TAG = "DragMarkerHelper";
 
-    private MapView mapView;
+    private final MapView mapView;
     private Marker marker;
     private boolean dragging = false, draggable = false;
     private MapEventDispatcher.MapEventDispatchListener dropEvent;
-    private Marker dragMarker;
+    private final Marker dragMarker;
 
     private final MapGroup rootGroup;
     private final MapEventDispatcher dispatcher;
@@ -60,12 +60,13 @@ public class DragMarkerHelper {
 
     public static Marker createDragMarker() {
         Marker marker = new Marker(UUID.randomUUID().toString());
-        marker.addOnPointChangedListener(new PointMapItem.OnPointChangedListener() {
-            @Override
-            public void onPointChanged(PointMapItem item) {
-                getInstance().updateWidget(item);
-            }
-        });
+        marker.addOnPointChangedListener(
+                new PointMapItem.OnPointChangedListener() {
+                    @Override
+                    public void onPointChanged(PointMapItem item) {
+                        getInstance().updateWidget(item);
+                    }
+                });
         marker.addOnGroupChangedListener(new MapItem.OnGroupChangedListener() {
             @Override
             public void onItemAdded(MapItem item, MapGroup group) {

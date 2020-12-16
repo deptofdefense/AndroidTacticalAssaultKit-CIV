@@ -38,7 +38,7 @@ public final class DropDown {
     private double _widthFraction = .5;
     private double _heightFraction = 1;
     private OnStateListener listener;
-    private DropDownReceiver ddr;
+    private final DropDownReceiver ddr;
 
     DropDown(final Fragment fragment, boolean ignoreBackButton,
             final DropDownReceiver ddr) {

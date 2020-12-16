@@ -165,5 +165,5 @@ public class GeoFenceDatabase {
         fenceList.clear();
     }
 
-    private List<GeoFence> fenceList = new ArrayList<>();
+    private final List<GeoFence> fenceList = new ArrayList<>();
 }

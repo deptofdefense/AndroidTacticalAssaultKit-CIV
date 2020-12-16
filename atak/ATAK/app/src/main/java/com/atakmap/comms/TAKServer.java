@@ -3,6 +3,7 @@ package com.atakmap.comms;
 
 import android.os.Bundle;
 
+import com.atakmap.android.http.rest.ServerVersion;
 import com.atakmap.comms.app.CotPortListActivity;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
@@ -22,6 +23,7 @@ public class TAKServer {
     public static final String CONNECTED_KEY = "connected";
     public static final String ERROR_KEY = "error";
     public static final String SERVER_VERSION_KEY = "serverVersion";
+    public static final String SERVER_API_KEY = "serverAPI";
     public static final String USEAUTH_KEY = "useAuth";
     public static final String USERNAME_KEY = "username";
     public static final String ENROLL_FOR_CERT_KEY = "enrollForCertificateWithTrust";
@@ -75,12 +77,21 @@ public class TAKServer {
         return null;
     }
 
+    public void setServerVersion(ServerVersion version) {
+        setServerVersion(version.getVersion());
+        this.data.putInt(SERVER_API_KEY, version.getApiVersion());
+    }
+
     public void setServerVersion(String version) {
         this.data.putString(SERVER_VERSION_KEY, version);
     }
 
     public String getServerVersion() {
         return this.data.getString(SERVER_VERSION_KEY);
+    }
+
+    public int getServerAPI() {
+        return this.data.getInt(SERVER_API_KEY, -1);
     }
 
     public void setErrorString(String error) {

@@ -7,7 +7,7 @@ import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.android.contentservices.Service;
 import com.atakmap.android.contentservices.ServiceType;
@@ -56,7 +56,8 @@ public class WebMapLayerService implements Service {
         File f = null;
         try {
             f = impl.writeMobacXML(style);
-            FileSystemUtils.copyStream(FileIOProviderFactory.getInputStream(f), true, sink,
+            FileSystemUtils.copyStream(IOProviderFactory.getInputStream(f),
+                    true, sink,
                     false);
         } finally {
             if (f != null)

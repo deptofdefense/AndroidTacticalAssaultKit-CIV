@@ -13,7 +13,7 @@ import android.os.Bundle;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.app.R;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.android.metrics.MetricsApi;
 import java.util.HashMap;
@@ -22,6 +22,7 @@ import java.io.File;
 
 import android.os.Build;
 import android.app.NotificationChannel;
+import com.atakmap.annotations.ModifierApi;
 
 public class NotificationUtil {
 
@@ -101,11 +102,26 @@ public class NotificationUtil {
     /**
      * Color choices for icons.
      */
+    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
+            "public", "static", "final"
+    })
     public static NotificationColor GREEN = new NotificationColor(Color.GREEN);
+    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
+            "public", "static", "final"
+    })
     public static NotificationColor RED = new NotificationColor(Color.RED);
+    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
+            "public", "static", "final"
+    })
     public static NotificationColor YELLOW = new NotificationColor(
             Color.YELLOW);
+    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
+            "public", "static", "final"
+    })
     public static NotificationColor WHITE = new NotificationColor(Color.WHITE);
+    @ModifierApi(since = "4.2", target = "4.5", modifiers = {
+            "public", "static", "final"
+    })
     public static NotificationColor BLUE = new NotificationColor(Color.BLUE);
 
     public static final String TAG = "NotificationUtil";
@@ -133,7 +149,7 @@ public class NotificationUtil {
          */
         final String model = android.os.Build.MODEL;
         final File f = new File("/proc/NettWarrior/nwplatform");
-        if (model.equals("SM-G900T") && FileIOProviderFactory.exists(f)) {
+        if (model.equals("SM-G900T") && IOProviderFactory.exists(f)) {
             nwDevice = true;
             Log.d(TAG,
                     "NettWarrior S5 Detected with possible notification bug.");
@@ -534,7 +550,7 @@ public class NotificationUtil {
         synchronized (builders) {
             Notification.Builder nBuilder = builders.get(notifyId);
             if (nBuilder == null) {
-                if (android.os.Build.VERSION.SDK_INT < 26) {
+                if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                     nBuilder = new Notification.Builder(ctx);
                 } else {
                     if (chime) {
@@ -650,7 +666,7 @@ public class NotificationUtil {
             if (nm != null)
                 nm.cancel(notifyId);
         } catch (Exception e) {
-            Log.d(TAG, "device error occured during notification cancelation");
+            Log.d(TAG, "device error occurred during notification cancelation");
         }
         synchronized (builders) {
             builders.remove(notifyId);

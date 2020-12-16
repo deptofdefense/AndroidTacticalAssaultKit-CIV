@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Abstract base class for a database wrapper.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Mar 18, 2015
+////      Mar 18, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -107,7 +107,7 @@ class DatabaseWrapper
 
     virtual
     ~DatabaseWrapper ()
-        throw ();
+        NOTHROWS;
 
     //
     // A protected constructor is declared below.  The compiler is unable to
@@ -159,13 +159,13 @@ class DatabaseWrapper
     Database&
     getDatabase ()
         const
-        throw ()
+        NOTHROWS
       { return *database; }
 
     TAK::Engine::Thread::Mutex&
     getMutex ()
         const
-        throw ()
+        NOTHROWS
       { return mutex; }
 
 
@@ -259,7 +259,7 @@ class DatabaseWrapper::Factory
 
     virtual
     ~Factory ()
-        throw ()
+        NOTHROWS
       { }
 
     //
@@ -269,7 +269,7 @@ class DatabaseWrapper::Factory
     DatabaseWrapper*
     getDatabaseWrapper (Database*)
         const
-        throw ();
+        NOTHROWS;
 
 
                                         //====================================//
@@ -290,7 +290,7 @@ class DatabaseWrapper::Factory
     DatabaseWrapper*
     createDatabaseWrapper (Database*)
         const
-        throw ()
+        NOTHROWS
         = 0;
   };
 
@@ -313,7 +313,7 @@ class DatabaseWrapper::SchemaManager
 
     virtual
     ~SchemaManager ()
-        throw ()
+        NOTHROWS
       { }
 
     //
@@ -324,7 +324,7 @@ class DatabaseWrapper::SchemaManager
     bool
     checkSchemaObjects (Database&)
         const
-        throw ()
+        NOTHROWS
         = 0;
 
     //
@@ -348,7 +348,7 @@ class DatabaseWrapper::SchemaManager
     void
     dropSchemaObjects (Database&)
         const
-        throw ()
+        NOTHROWS
         = 0;
 
     //
@@ -360,7 +360,7 @@ class DatabaseWrapper::SchemaManager
     unsigned long
     getSchemaVersion ()
         const
-        throw ()
+        NOTHROWS
         = 0;
   };
 

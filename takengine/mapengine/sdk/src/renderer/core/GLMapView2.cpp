@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <list>
+#include <sstream>
 
 #include <GLES2/gl2.h>
 
@@ -10,12 +11,14 @@
 #include "core/LegacyAdapters.h"
 #include "core/ProjectionFactory.h"
 #include "core/ProjectionFactory3.h"
+#include "feature/GeometryTransformer.h"
 #include "feature/LineString2.h"
 #include "feature/Envelope2.h"
 #include "math/AABB.h"
 #include "math/Statistics.h"
 #include "math/Rectangle.h"
 #include "math/Ellipsoid2.h"
+#include "math/Frustum2.h"
 #include "math/Frustum2.h"
 #include "math/Sphere2.h"
 #include "math/Mesh.h"
@@ -24,7 +27,9 @@
 #include "port/STLVectorAdapter.h"
 #include "port/STLListAdapter.h"
 #include "raster/osm/OSMUtils.h"
+#include "renderer/GLDepthSampler.h"
 #include "renderer/GLES20FixedPipeline.h"
+#include "renderer/GLOffscreenFramebuffer.h"
 #include "renderer/GLTexture2.h"
 #include "renderer/GLSLUtil.h"
 #include "renderer/GLWireframe.h"
@@ -34,6 +39,7 @@
 #include "renderer/core/GLLayerFactory2.h"
 #include "renderer/core/GLLabelManager.h"
 #include "renderer/elevation/ElMgrTerrainRenderService.h"
+#include "thread/Monitor.h"
 #include "util/ConfigOptions.h"
 #include "util/Memory.h"
 #include "util/MathUtils.h"
@@ -210,23 +216,93 @@ using namespace atakmap::renderer;
     "  gl_FragColor = texture2D(uTexture, vTexPos)*uColor;\n"\
     "}"
 #endif
-//
-//"  gl_FragColor = vec4(vTexPos.xy, 0.0, 1.0);\n" \
-//
-//"  vec3 color = vec3(0.0);\n" \
-//    "  if(vTexPos.x < 0.0)\n" \
-//    "    color.r = 1.0;\n" \
-//    "  else if(vTexPos.x > 0.0)\n" \
-//    "    color.b = 1.0;\n" \
-//    "  else\n" \
-//    "    color.g = 1.0;\n" \
-//    "  gl_FragColor = vec4(color.rgb, 1.0);\n" \
+// depth shaders
+// XXX - `floatBitsToInt` producing undesirable results on Android/desktop GL, but spot on in ANGLE. Further debugging required
+#define USE_GLSL_FLOATBITSTOINT 0
+#if USE_GLSL_FLOATBITSTOINT
+#define PACK_DEPTH_FN_SRC \
+"vec4 PackDepth(float v) {\n" \
+"  int bs = floatBitsToInt(v);\n" \
+"  int a = (bs>>24)&0xFF;\n" \
+"  int b = (bs>>16)&0xFF;\n" \
+"  int c = (bs>>8)&0xFF;\n" \
+"  int d = bs&0xFF;\n" \
+"  float na = float(a)/255.0;\n" \
+"  float nb = float(b)/255.0;\n" \
+"  float nc = float(c)/255.0;\n" \
+"  float nd = float(d)/255.0;\n" \
+"  return vec4(na, nb, nc, nd);\n" \
+"}\n"
 
-//    "  gl_FragColor.a = dx*dy;\n"
-/*
+#else
+#define PACK_DEPTH_FN_SRC \
+"vec4 PackDepth(float v) {\n" \
+"  vec4 r = vec4(1.,255.,65025.,16581375.) * v;\n" \
+"  r = fract(r);\n" \
+"  r -= r.yzww * vec4(1.0/255.0,1.0/255.0,1.0/255.0,0.0);\n" \
+"  return r;\n" \
+"}\n"
+#endif
 
+#define DEPTH_ECEF_VERT_LO_SHADER_SRC \
+    "#version 300 es\n" \
+    "precision highp float;\n" \
+    "uniform mat4 uMVP;\n" \
+    "uniform mat4 uLocalTransform[3];\n" \
+    "uniform float uElevationScale;\n" \
+    "in vec3 aVertexCoords;\n" \
+    "out float vDepth;\n" \
+    LLA2ECEF_FN_SRC \
+    "void main() {\n" \
+    "  vec4 lla = uLocalTransform[0] * vec4(aVertexCoords, 1.0);\n" \
+    "  lla = lla / lla.w;\n" \
+    "  vec3 ecef = lla2ecef(vec3(lla.xy, lla.z*uElevationScale));\n" \
+    "  gl_Position = uMVP * vec4(ecef.xyz, 1.0);\n" \
+    "  vDepth = (gl_Position.z + 1.0) * 0.5;" \
+    "}"
 
-*/
+#define DEPTH_ECEF_VERT_MD_SHADER_SRC \
+    "#version 300 es\n" \
+    "precision highp float;\n" \
+    "uniform mat4 uMVP;\n" \
+    "uniform mat4 uLocalTransform[3];\n" \
+    "uniform float uElevationScale;\n" \
+    "in vec3 aVertexCoords;\n" \
+    "out float vDepth;\n" \
+    "void main() {\n" \
+    "  vec4 lla = uLocalTransform[0] * vec4(aVertexCoords.xyz, 1.0);\n" \
+    "  lla /= lla.w;\n" \
+    "  vec4 llaLocal = uLocalTransform[1] * lla;\n" \
+    "  vec4 lla2ecef_in = vec4(llaLocal.xy, llaLocal.x*llaLocal.y, 1.0);\n" \
+    "  lla2ecef_in /= lla2ecef_in.w;\n" \
+    "  vec4 ecefSurface = uLocalTransform[2] * lla2ecef_in;\n" \
+    "  ecefSurface /= ecefSurface.w;\n" \
+    "  vec3 ecef = vec3(ecefSurface.xy * (1.0 + llaLocal.z / 6378137.0), ecefSurface.z * (1.0 + llaLocal.z / 6356752.3142));\n" \
+    "  gl_Position = uMVP * vec4(ecef.xyz, 1.0);\n" \
+    "  vDepth = (gl_Position.z + 1.0) * 0.5;" \
+    "}"
+
+#define DEPTH_PLANAR_VERT_SHADER_SRC \
+    "#version 300 es\n" \
+    "precision highp float;\n" \
+    "uniform mat4 uMVP;\n" \
+    "uniform float uElevationScale;\n" \
+    "in vec3 aVertexCoords;\n" \
+    "out float vDepth;\n" \
+    "void main() {\n" \
+    "  gl_Position = uMVP * vec4(aVertexCoords.xy, aVertexCoords.z*uElevationScale, 1.0);\n" \
+    "  vDepth = (gl_Position.z + 1.0) * 0.5;" \
+    "}"
+#define DEPTH_FRAG_SHADER_SRC \
+    "#version 300 es\n" \
+    "precision mediump float;\n" \
+    "in float vDepth;\n" \
+    "out vec4 vFragColor;\n" \
+    PACK_DEPTH_FN_SRC \
+    "void main(void) {\n" \
+    "  vFragColor = PackDepth(vDepth);\n" \
+    "}"
+
 #define IS_TINY(v) \
     (std::abs(v) <= _EPSILON)
 #define IS_TINYF(v) \
@@ -283,6 +359,49 @@ namespace {
     {
         std::size_t width;
         std::size_t height;
+    };
+
+    struct AsyncSurfaceIntersectBundle
+    {
+        float x;
+        float y;
+        GLMapView2 *view;
+        GeoPoint2 result;
+        TAKErr code;
+        bool done;
+        Monitor *monitor;
+    };
+
+    struct AsyncSurfacePickBundle
+    {
+        float x;
+        float y;
+        GLMapView2 *view;
+        std::shared_ptr<const TerrainTile> result;
+        TAKErr code;
+        bool done;
+        Monitor *monitor;
+    };
+
+    class DebugTimer
+    {
+    public :
+        DebugTimer(const char *text, GLMapView2 &view_) NOTHROWS:
+            start(Platform_systime_millis()),
+            view(view_)
+        {
+            msg << text;
+        }
+    public :
+        void stop() NOTHROWS
+        {
+            msg << " " << (Platform_systime_millis() - start) << "ms";
+            view.addRenderDiagnosticMessage(msg.str().c_str());
+        }
+    private :
+        std::ostringstream msg;
+        GLMapView2 &view;
+        int64_t start;
     };
 
     bool hasSettled(double dlat, double dlng, double dscale, double drot, double dtilt, double dfocusX, double dfocusY) NOTHROWS;
@@ -430,19 +549,68 @@ namespace {
 
         return code;
     }
-    TAKErr createOffscreenShaders(OffscreenShaders *value, const char *hiVertShaderSrc, const char *loVertShaderSrc, const char *fragShaderSrc) NOTHROWS
+    TAKErr createOffscreenShaders(OffscreenShaders *value,
+                                  const char *hiVertShaderSrc, const char *mdVertShaderSrc, const char *loVertShaderSrc,
+                                  const char *fragShaderSrc) NOTHROWS
     {
         TAKErr code(TE_Ok);
-        code = createOffscreenShader(&value->hi, hiVertShaderSrc, fragShaderSrc);
-        TE_CHECKRETURN_CODE(code);
-        code = createOffscreenShader(&value->lo, loVertShaderSrc, fragShaderSrc);
-        TE_CHECKRETURN_CODE(code);
+        if(hiVertShaderSrc) {
+            code = createOffscreenShader(&value->hi, hiVertShaderSrc, fragShaderSrc);
+            TE_CHECKRETURN_CODE(code);
+        }
+        if(mdVertShaderSrc) {
+            code = createOffscreenShader(&value->md, mdVertShaderSrc, fragShaderSrc);
+            TE_CHECKRETURN_CODE(code);
+        }
+        if(loVertShaderSrc) {
+            code = createOffscreenShader(&value->lo, loVertShaderSrc, fragShaderSrc);
+            TE_CHECKRETURN_CODE(code);
+        }
 
         return code;
     }
 
-    void drawTerrainTilesImpl(const GLMapView2::State *renderPasses, const std::size_t numRenderPasses, const OffscreenShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const GLTexture2 &texture, const std::vector<std::shared_ptr<const TerrainTile>> &terrainTiles, const float r, const float g, const float b, const float a) NOTHROWS;
-    void drawTerrainTileImpl(const GLMapView2::State &state, const OffscreenShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const TerrainTile &tile, const float r, const float g, const float b, const float a) NOTHROWS;
+    //https://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
+    template <typename T>
+    int sgn(T val)
+    {
+        return (T(0) < val) - (val < T(0));
+    }
+
+    TAKErr validateSceneModel(GLMapView2 *view, const std::size_t width, const std::size_t height) NOTHROWS;
+
+    struct TerrainTileColorMode {
+        bool id;
+        float r;
+        float g;
+        float b;
+        float a;
+
+        TerrainTileColorMode() :
+            TerrainTileColorMode(false)
+        {}
+
+        TerrainTileColorMode(const float r_, const float g_, const float b_, const float a_) :
+            id(false),
+            r(r_),
+            g(g_),
+            b(b_),
+            a(a_)
+        {}
+
+        TerrainTileColorMode(const bool id_) :
+            id(id_),
+            r(1.f),
+            g(1.f),
+            b(1.f),
+            a(1.f)
+        {}
+    };
+
+    void drawTerrainTiles(GLMapView2 &view, const std::vector<std::shared_ptr<const TerrainTile>> &terrainTiles, const std::vector<std::size_t> &visibleTiles, const OffscreenShaders &ecef, const OffscreenShaders &planar, const GLTexture2 &tex, const std::size_t drawSurfaceWidth, const std::size_t drawSurfaceHeight, const TerrainTileColorMode &color) NOTHROWS;
+    void drawTerrainTilesImpl(const GLMapView2::State *renderPasses, const std::size_t numRenderPasses, const OffscreenShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const GLTexture2 &texture, const std::vector<std::shared_ptr<const TerrainTile>> &terrainTiles, const std::vector<std::size_t> &visTiles, const TerrainTileColorMode &color) NOTHROWS;
+    void drawTerrainTileImpl(const GLMapView2::State &state, const OffscreenShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const TerrainTile &tile, const bool drawSkirt, const float r, const float g, const float b, const float a) NOTHROWS;
+    void drawTerrainMeshes(GLMapView2 &view, const std::vector<std::shared_ptr<const TerrainTile>> &terrainTile, const OffscreenShaders &ecef, const OffscreenShaders &planar, const GLTexture2 &whitePixel) NOTHROWS;
     void drawTerrainMeshesImpl(const GLMapView2::State &renderPass, const OffscreenShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const std::vector<std::shared_ptr<const TerrainTile>> &terrainTiles, const float r, const float g, const float b, const float a) NOTHROWS;
     void drawTerrainMeshImpl(const GLMapView2::State &state, const OffscreenShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const TerrainTile &tile, const float r, const float g, const float b, const float a) NOTHROWS;
     TAKErr lla2ecef_transform(Matrix2 *value, const Projection2 &ecef, const Matrix2 *localFrame) NOTHROWS;
@@ -455,14 +623,21 @@ public:
         lastTerrainVersion(-1),
         hfactor(NAN),
         terrainEnabled(1),
-        lastElevationQuery(0LL)
+        lastElevationQuery(0LL),
+        depthSamplerFbo(nullptr, nullptr)
     {
-        ecef.hi.base.handle = 0;
-        ecef.md.base.handle = 0;
-        ecef.lo.base.handle = 0;
-        planar.hi.base.handle = 0;
-        planar.md.base.handle = 0;
-        planar.lo.base.handle = 0;
+        ecef.color.hi.base.handle = 0;
+        ecef.depth.hi.base.handle = 0;
+        ecef.color.md.base.handle = 0;
+        ecef.depth.md.base.handle = 0;
+        ecef.color.lo.base.handle = 0;
+        ecef.depth.lo.base.handle = 0;
+        planar.color.hi.base.handle = 0;
+        planar.depth.hi.base.handle = 0;
+        planar.color.md.base.handle = 0;
+        planar.depth.md.base.handle = 0;
+        planar.color.lo.base.handle = 0;
+        planar.depth.lo.base.handle = 0;
 
         fbo[0] = 0u;
         fbo[1] = 0u;
@@ -481,12 +656,20 @@ public:
     double hfactor = NAN;
     int terrainEnabled;
 
-    OffscreenShaders ecef;
-    OffscreenShaders planar;
+    struct {
+        OffscreenShaders color;
+        OffscreenShaders depth;
+    } ecef;
+    struct {
+        OffscreenShaders color;
+        OffscreenShaders depth;
+    } planar;
 
     Statistics elevationStats;
     int64_t lastElevationQuery;
     std::vector<std::shared_ptr<const TerrainTile>> terrainTiles;
+    std::vector<std::size_t> visibleTiles;
+    GLOffscreenFramebufferPtr depthSamplerFbo;
 };
 
 struct GLMapView2::AsyncRunnable
@@ -505,22 +688,22 @@ struct GLMapView2::AsyncRunnable
     bool enqueued;
 
     struct {
-        float x;
-        float y;
+        float x {0};
+        float y {0};
     } focus;
     struct {
-        double lat;
-        double lon;
-        double scale;
-        double rot;
-        double tilt;
-        float factor;
+        double lat {0};
+        double lon {0};
+        double scale {0};
+        double rot {0};
+        double tilt {0};
+        float factor {0};
     } target;
     struct {
-        std::size_t width;
-        std::size_t height;
+        std::size_t width {0};
+        std::size_t height {0};
     } resize;
-    int srid;
+    int srid {-1};
     struct {
         std::list<std::shared_ptr<GLLayer2>> renderables;
         std::list<std::shared_ptr<GLLayer2>> releasables;
@@ -578,13 +761,16 @@ GLMapView2::GLMapView2(RenderContext &ctx, AtakMapView &aview,
     dbgdrawflags(4),
     poleInView(false),
     debugDrawMesh(false),
+    debugDrawDepth(false),
     suspendMeshFetch(false),
     tiltSkewOffset(DEFAULT_TILT_SKEW_OFFSET),
     tiltSkewMult(DEFAULT_TILT_SKEW_MULT),
     displayDpi(aview.getDisplayDpi()),
     continuousScrollEnabled(aview.isContinuousScrollEnabled()),
     hardwareTransformResolutionThreshold(1.0),
-    layerRenderersMutex(TEMT_Recursive)
+    layerRenderersMutex(TEMT_Recursive),
+    diagnosticMessagesEnabled(false),
+    inRenderPump(false)
 {
     verticalFlipTranslateHeight = top - bottom + 1;
     verticalFlipTranslate.translate(0, static_cast<double>(verticalFlipTranslateHeight));
@@ -621,6 +807,9 @@ GLMapView2::GLMapView2(RenderContext &ctx, AtakMapView &aview,
     this->renderPasses[0u].viewport.height = static_cast<float>(top-bottom);
 
     this->renderPass = this->renderPasses;
+
+    this->diagnosticMessagesEnabled = !!ConfigOptions_getIntOptionOrDefault("glmapview.render-diagnostics", 0);
+    this->gpuTerrainIntersect = !!ConfigOptions_getIntOptionOrDefault("glmapview.gpu-terrain-intersect", 0);
 }
 
 
@@ -704,6 +893,18 @@ TAKErr GLMapView2::stop() NOTHROWS
     this->terrain->stop();
 
     return TE_Ok;
+}
+
+void GLMapView2::setRenderDiagnosticsEnabled(const bool enabled) NOTHROWS
+{
+    diagnosticMessagesEnabled = enabled;
+}
+void GLMapView2::addRenderDiagnosticMessage(const char *msg) NOTHROWS
+{
+    if (!msg)
+        return;
+    if(diagnosticMessagesEnabled)
+        diagnosticMessages.push_back(msg);
 }
 
 TAKErr GLMapView2::registerControl(const Layer2 &layer, const char *type, void *ctrl) NOTHROWS
@@ -925,6 +1126,11 @@ RenderContext &GLMapView2::getRenderContext() const NOTHROWS
 }
 void GLMapView2::initOffscreenShaders() NOTHROWS
 {
+    GLOffscreenFramebuffer::Options opts;
+    opts.colorFormat = GL_RGBA;
+    opts.colorType = GL_UNSIGNED_BYTE;
+    GLOffscreenFramebuffer_create(offscreen->depthSamplerFbo, 4, 4, opts);
+
     this->offscreen->whitePixel.reset(new GLTexture2(1u, 1u, Bitmap2::RGB565));
     this->offscreen->whitePixel->setMinFilter(GL_NEAREST);
     this->offscreen->whitePixel->setMagFilter(GL_NEAREST);
@@ -934,13 +1140,26 @@ void GLMapView2::initOffscreenShaders() NOTHROWS
     }
 
     // set up the offscreen shaders
-    createOffscreenShaders(&offscreen->ecef, OFFSCREEN_PLANAR_VERT_SHADER_SRC, OFFSCREEN_ECEF_VERT_LO_SHADER_SRC, OFFSCREEN_FRAG_SHADER_SRC);
-    createOffscreenShader(&offscreen->ecef.md, OFFSCREEN_ECEF_VERT_MD_SHADER_SRC, OFFSCREEN_FRAG_SHADER_SRC);
-    offscreen->ecef.hi_threshold = 1.5;
-    offscreen->ecef.md_threshold = 100.0;
-    createOffscreenShaders(&offscreen->planar, OFFSCREEN_PLANAR_VERT_SHADER_SRC, OFFSCREEN_PLANAR_VERT_SHADER_SRC, OFFSCREEN_FRAG_SHADER_SRC);
-    offscreen->planar.hi_threshold = 0.0;
-    offscreen->planar.md_threshold = 0.0;
+    createOffscreenShaders(&offscreen->ecef.color,
+            OFFSCREEN_PLANAR_VERT_SHADER_SRC, OFFSCREEN_ECEF_VERT_MD_SHADER_SRC, OFFSCREEN_ECEF_VERT_LO_SHADER_SRC,
+            OFFSCREEN_FRAG_SHADER_SRC);
+    offscreen->ecef.color.hi_threshold = 1.5;
+    offscreen->ecef.color.md_threshold = 100.0;
+    createOffscreenShaders(&offscreen->ecef.depth,
+                           DEPTH_PLANAR_VERT_SHADER_SRC, DEPTH_ECEF_VERT_MD_SHADER_SRC, DEPTH_ECEF_VERT_LO_SHADER_SRC,
+                           DEPTH_FRAG_SHADER_SRC);
+    offscreen->ecef.depth.hi_threshold = 1.5;
+    offscreen->ecef.depth.md_threshold = 100.0;
+    createOffscreenShaders(&offscreen->planar.color,
+                           OFFSCREEN_PLANAR_VERT_SHADER_SRC, OFFSCREEN_PLANAR_VERT_SHADER_SRC, OFFSCREEN_PLANAR_VERT_SHADER_SRC,
+                           OFFSCREEN_FRAG_SHADER_SRC);
+    offscreen->planar.color.hi_threshold = 0.0;
+    offscreen->planar.color.md_threshold = 0.0;
+    createOffscreenShaders(&offscreen->planar.depth,
+                           DEPTH_PLANAR_VERT_SHADER_SRC, DEPTH_PLANAR_VERT_SHADER_SRC, DEPTH_PLANAR_VERT_SHADER_SRC,
+                           DEPTH_FRAG_SHADER_SRC);
+    offscreen->planar.depth.hi_threshold = 0.0;
+    offscreen->planar.depth.md_threshold = 0.0;
 }
 bool GLMapView2::initOffscreenRendering() NOTHROWS
 {
@@ -1033,43 +1252,6 @@ bool GLMapView2::initOffscreenRendering() NOTHROWS
 
     return fboCreated;
 }
-TAKErr GLMapView2::validateSceneModel(const std::size_t width, const std::size_t height) NOTHROWS
-{
-    TAKErr code(TE_Ok);
-    if (this->sceneModelVersion != this->drawVersion) {
-        const std::size_t vflipHeight = height;
-        if (vflipHeight != this->verticalFlipTranslateHeight) {
-            this->verticalFlipTranslate.setToTranslate(0, static_cast<double>(vflipHeight));
-            this->verticalFlipTranslateHeight = vflipHeight;
-        }
-
-        this->scene.set(view.getDisplayDpi(),
-            width,
-            height,
-            this->drawSrid,
-            GeoPoint2(this->drawLat, this->drawLng),
-            this->focusx,
-            this->focusy,
-            this->drawRotation,
-            this->drawTilt,
-            this->drawMapResolution);
-
-        // account for flipping of y-axis for OpenGL coordinate space
-        this->scene.inverseTransform.concatenate(this->verticalFlipTranslate);
-        this->scene.inverseTransform.concatenate(xformVerticalFlipScale());
-
-        this->scene.forwardTransform.preConcatenate(xformVerticalFlipScale());
-        this->scene.forwardTransform.preConcatenate(this->verticalFlipTranslate);
-
-        refreshSceneMatrices();
-
-        // mark as valid
-        this->sceneModelVersion = this->drawVersion;
-    }
-
-    return code;
-}
-
 void GLMapView2::mapMoved(atakmap::core::AtakMapView* map_view, bool animate)
 {
     atakmap::core::GeoPoint p;
@@ -1416,6 +1598,37 @@ void GLMapView2::render() NOTHROWS
 
     this->prepareScene();
     this->drawRenderables();
+
+    const int64_t renderPumpElapsed = Platform_systime_millis()-tick;
+
+    if (diagnosticMessagesEnabled) {
+        std::ostringstream dbg;
+        dbg << "render pump " << renderPumpElapsed << "ms";
+        diagnosticMessages.push_back(dbg.str());
+        GLText2 *text = GLText2_intern(TextFormatParams(24));
+        if (text) {
+            TextFormat2 &fmt = text->getTextFormat();
+            atakmap::renderer::GLES20FixedPipeline::getInstance()->glPushMatrix();
+            atakmap::renderer::GLES20FixedPipeline::getInstance()->glTranslatef(16, top - 32 - fmt.getCharHeight(), 0);
+
+            text->draw("Renderer Diagnostics", 1, 0, 0, 1);
+            
+
+            for (auto it = diagnosticMessages.begin(); it != diagnosticMessages.end(); it++) {
+                atakmap::renderer::GLES20FixedPipeline::getInstance()->glTranslatef(0, -fmt.getCharHeight() + 4, 0);
+                text->draw((*it).c_str(), 1, 0, 0, 1);
+            }
+            atakmap::renderer::GLES20FixedPipeline::getInstance()->glPopMatrix();
+        }
+        diagnosticMessages.clear();
+    }
+}
+void GLMapView2::release() NOTHROWS
+{
+    for(auto it = renderables.begin(); it != renderables.end(); it++)
+        (*it)->release();
+    if(basemap)
+        basemap->release();
 }
 
 void GLMapView2::prepareScene() NOTHROWS
@@ -1427,7 +1640,7 @@ void GLMapView2::prepareScene() NOTHROWS
     }
 
     // validate scene model
-    this->validateSceneModel(static_cast<size_t>(view.getWidth()), static_cast<size_t>(view.getHeight()));
+    validateSceneModel(this, static_cast<size_t>(view.getWidth()), static_cast<size_t>(view.getHeight()));
     this->oscene = this->scene;
 
     this->near = static_cast<float>(scene.camera.near);
@@ -1548,13 +1761,16 @@ void GLMapView2::drawRenderables() NOTHROWS
 
     bool terrainUpdate = !offscreen.get() || (offscreen->lastTerrainVersion != terrain->getTerrainVersion());
     if(offscreen.get() && !offscreen->terrainTiles.empty())
-        terrainUpdate |= (offscreen->terrainTiles[0]->data->srid != drawSrid);
+        terrainUpdate |= (offscreen->terrainTiles[0]->data.srid != drawSrid);
     if(offscreen.get() && !offscreen->terrainTiles.empty())
         terrainUpdate &= !suspendMeshFetch;
 
-    std::list<std::shared_ptr<const TerrainTile>> terrainTiles;
-    int terrainTilesVersion = -1;
     if (terrainUpdate) {
+        DebugTimer te_timer("Terrain Update", *this);
+
+        std::list<std::shared_ptr<const TerrainTile>> terrainTiles;
+        int terrainTilesVersion = -1;
+
         STLListAdapter<std::shared_ptr<const TerrainTile>> tta(terrainTiles);
         terrainTilesVersion = terrain->getTerrainVersion();
         terrain->lock(tta, this->renderPasses[0u].scene, 4326, this->renderPasses[0u].drawVersion);
@@ -1574,6 +1790,57 @@ void GLMapView2::drawRenderables() NOTHROWS
             if (!focusTileValid)
                 this->focusEstimation.tile.reset();
         }
+
+        {
+            WriteLock lock(this->offscreenMutex);
+
+            if (!offscreen->terrainTiles.empty()) {
+                STLVectorAdapter<std::shared_ptr<const TerrainTile>> toUnlock(offscreen->terrainTiles);
+                this->terrain->unlock(toUnlock);
+            }
+
+            this->offscreen->terrainTiles.clear();
+
+            for (auto tile = terrainTiles.cbegin(); tile != terrainTiles.cend(); tile++)
+                this->offscreen->terrainTiles.push_back(*tile);
+            this->offscreen->lastTerrainVersion = terrainTilesVersion;
+        }
+
+        te_timer.stop();
+    }
+
+    if(diagnosticMessagesEnabled) {
+        std::ostringstream strm;
+        strm << "Terrain tiles " << offscreen->terrainTiles.size()
+             << " (instances " << TerrainTile::getLiveInstances() << "/" << TerrainTile::getTotalInstances()
+             << " allocs " << TerrainTile::getHeapAllocations() << ")";
+        addRenderDiagnosticMessage(strm.str().c_str());
+    }
+    // frustum cull the visible tiles
+    if (this->offscreen.get()) {
+        DebugTimer vistiles_timer("Visible Terrain Tile Culling", *this);
+        this->offscreen->visibleTiles.clear();
+        this->offscreen->visibleTiles.reserve(this->offscreen->terrainTiles.size());
+
+        const bool handleIdlCrossing = this->scene.displayModel->earth->getGeomClass() == GeometryModel2::PLANE && this->crossesIDL;
+        Matrix2 m(scene.camera.projection);
+        m.concatenate(scene.camera.modelView);
+        Frustum2 frustum(m);
+        for (std::size_t i = 0u; i < this->offscreen->terrainTiles.size(); i++) {
+            // compute AABB in WCS and check for intersection with the frustum
+            TAK::Engine::Feature::Envelope2 aabbWCS(this->offscreen->terrainTiles[i]->aabb_wgs84);
+            TAK::Engine::Feature::GeometryTransformer_transform(&aabbWCS, aabbWCS, 4326, drawSrid);
+            if (frustum.intersects(AABB(Point2<double>(aabbWCS.minX, aabbWCS.minY, aabbWCS.minZ), Point2<double>(aabbWCS.maxX, aabbWCS.maxY, aabbWCS.maxZ)))) {
+                this->offscreen->visibleTiles.push_back(i);
+            } else if (handleIdlCrossing && drawLng*((aabbWCS.minX+aabbWCS.maxX)/2.0) < 0 &&
+                frustum.intersects(
+                    AABB(Point2<double>(aabbWCS.minX-(360.0*sgn((aabbWCS.minX+aabbWCS.maxX)/2.0)), aabbWCS.minY, aabbWCS.minZ),
+                         Point2<double>(aabbWCS.maxX-(360.0*sgn((aabbWCS.minX+aabbWCS.maxX)/2.0)), aabbWCS.maxY, aabbWCS.maxZ)))) {
+
+                this->offscreen->visibleTiles.push_back(i);
+            }
+        }
+        vistiles_timer.stop();
     }
 
     if (offscreenSurfaceRendering) {
@@ -1595,7 +1862,8 @@ void GLMapView2::drawRenderables() NOTHROWS
             State stack;
             State_save(&stack, *this);
 
-            if (this->focusEstimation.sceneModelVersion != this->sceneModelVersion || this->focusEstimation.terrainVersion != terrainTilesVersion) {
+            DebugTimer focusest_timer("Focus Estimation", *this);
+            if (this->focusEstimation.sceneModelVersion != this->sceneModelVersion || this->focusEstimation.terrainVersion != this->offscreen->lastTerrainVersion) {
                 if (intersectWithTerrainImpl(&focusEstimation.point, this->focusEstimation.tile, this->scene, focusx, top-focusy) != TE_Ok) {
                     GeoPoint altAdjustedCenter;
                     view.getPoint(&altAdjustedCenter, true);
@@ -1603,15 +1871,16 @@ void GLMapView2::drawRenderables() NOTHROWS
                 }
 
                 this->focusEstimation.sceneModelVersion = this->sceneModelVersion;
-                this->focusEstimation.terrainVersion = terrainTilesVersion;
+                this->focusEstimation.terrainVersion = this->offscreen->lastTerrainVersion;
             }
+            focusest_timer.stop();
 
             // adjust the center
             drawLat = focusEstimation.point.latitude;
             drawLng = focusEstimation.point.longitude;
 
             sceneModelVersion = ~sceneModelVersion;
-            validateSceneModel(scene.width, scene.height);
+            validateSceneModel(this, scene.width, scene.height);
             updateBoundsImpl(this, this->continuousScrollEnabled);
 
             // reconstruct the bounds for the base renderpass
@@ -1717,13 +1986,18 @@ void GLMapView2::drawRenderables() NOTHROWS
         renderPasses[0u].basemap &= !renderPasses[i].basemap;
         renderPasses[0u].debugDrawBounds &= !renderPasses[i].debugDrawBounds;
     }
+
+    inRenderPump = true;
+
 #if 1
+    DebugTimer offscreenPass_timer("Offscreen Render Passes", *this);
     // render all offscreen passes
     for (std::size_t i = this->numRenderPasses; i > 0u; i--) {
         if (!renderPasses[i - 1u].texture)
             continue;
         this->drawRenderables(this->renderPasses[i - 1u]);
     }
+    offscreenPass_timer.stop();
 #endif
     // if tilt, reset the FBO to the display and render the captured scene
 #if !__EXP_XRAY_MODE
@@ -1743,21 +2017,6 @@ void GLMapView2::drawRenderables() NOTHROWS
             glDepthFunc(GL_LEQUAL);
         }
         
-        if(terrainUpdate) {
-            WriteLock lock(this->offscreenMutex);
-
-            if (!offscreen->terrainTiles.empty()) {
-                STLVectorAdapter<std::shared_ptr<const TerrainTile>> toUnlock(offscreen->terrainTiles);
-                this->terrain->unlock(toUnlock);
-            }
-
-            this->offscreen->terrainTiles.clear();
-
-            for (auto tile = terrainTiles.cbegin(); tile != terrainTiles.cend(); tile++)
-                this->offscreen->terrainTiles.push_back(*tile);
-            this->offscreen->lastTerrainVersion = terrainTilesVersion;
-        }
-
         glViewport(static_cast<GLint>(renderPasses[0u].viewport.x), static_cast<GLint>(renderPasses[0u].viewport.y), static_cast<GLsizei>(renderPasses[0u].viewport.width), static_cast<GLsizei>(renderPasses[0u].viewport.height));
 
         GLES20FixedPipeline::getInstance()->glMatrixMode(GLES20FixedPipeline::MatrixMode::MM_GL_PROJECTION);
@@ -1799,7 +2058,7 @@ void GLMapView2::drawRenderables() NOTHROWS
             //if (GLMAPVIEW2_DEPTH_ENABLED) {
             //    glDepthFunc(GL_LEQUAL);
             //}
-
+            DebugTimer terrainDepth_timer("Render Terrain", *this);
             // if not doing offscreen rendering, we want to write to the terrain to the depth buffer, but not update the color buffer
             if(!offscreenSurfaceRendering)
                 glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -1815,6 +2074,7 @@ void GLMapView2::drawRenderables() NOTHROWS
             // re-enable color mask
             if(!offscreenSurfaceRendering)
                 glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+            terrainDepth_timer.stop();
         }
     }
 
@@ -1830,16 +2090,21 @@ void GLMapView2::drawRenderables() NOTHROWS
     }
 #endif
 #if 1
+    DebugTimer onscreenPasses_timer("On Screen Render Passes", *this);
     // execute all on screen passes
     for (std::size_t i = this->numRenderPasses; i > 0u; i--) {
         if (renderPasses[i - 1u].texture)
             continue;
         this->drawRenderables(this->renderPasses[i - 1u]);
     }
+    onscreenPasses_timer.stop();
 
+    DebugTimer labels_timer("Labels", *this);
     if (labelManager)
         labelManager->draw(*this, RenderPass::Sprites);
+    labels_timer.stop();
 
+    DebugTimer uipass_timer("UI Pass", *this);
     // execute UI pass
     {
         // clear the depth buffer
@@ -1851,7 +2116,9 @@ void GLMapView2::drawRenderables() NOTHROWS
         uipass.renderPass = RenderPass::UserInterface;
         this->drawRenderables(uipass);
     }
+    uipass_timer.stop();
 #endif
+    inRenderPump = false;
 }
 
 void GLMapView2::drawRenderables(const GLMapView2::State &renderState) NOTHROWS
@@ -1909,260 +2176,21 @@ void GLMapView2::drawRenderables(const GLMapView2::State &renderState) NOTHROWS
 
 void GLMapView2::drawTerrainTiles(const GLTexture2 &tex, const std::size_t drawSurfaceWidth, const std::size_t drawSurfaceHeight) NOTHROWS
 {
-    // XXX - select shader
-    OffscreenShaders *shaders;
-    Matrix2 localFrame[MAX_LOCAL_TRANSFORMS];
-    std::size_t numLocalFrames = 0u;
-    if(this->scene.displayModel->earth->getGeomClass() == TAK::Engine::Math::GeometryModel2::ELLIPSOID) {
-        shaders = &offscreen->ecef;
-        if(this->drawMapResolution <= shaders->hi_threshold) {
-            Matrix2 tx;
-            tx.setToTranslate(drawLng, drawLat, 0.0);
-            lla2ecef_transform(&localFrame[0], *scene.projection, &tx);
-            localFrame[0].translate(-drawLng, -drawLat, 0.0);
-            numLocalFrames++;
-        } else if (this->drawMapResolution <= shaders->md_threshold) {
-            const auto &ellipsoid = static_cast<const Ellipsoid2 &>(*this->scene.displayModel->earth);
 
-            const double a = ellipsoid.radiusX;
-            const double b = ellipsoid.radiusZ;
-
-            const double cosLat0d = cos(drawLat*M_PI/180.0);
-            const double cosLng0d = cos(drawLng*M_PI/180.0);
-            const double sinLat0d = sin(drawLat*M_PI/180.0);
-            const double sinLng0d = sin(drawLng*M_PI/180.0);
-
-            const double a2_b2 = (a*a)/(b*b);
-            const double b2_a2 = (b*b)/(a*a);
-            const double cden = sqrt((cosLat0d*cosLat0d) + (b2_a2 * (sinLat0d*sinLat0d)));
-            const double lden = sqrt((a2_b2 * (cosLat0d*cosLat0d)) + (sinLat0d*sinLat0d));
-
-            // scale by ellipsoid radii
-            localFrame[2].setToScale(a/cden, a/cden, b/lden);
-            // calculate coefficients for lat/lon => ECEF conversion, using small angle approximation
-            localFrame[2].concatenate(Matrix2(
-                -cosLat0d*sinLng0d, -cosLng0d*sinLat0d, sinLat0d*sinLng0d, cosLat0d*cosLng0d,
-                cosLat0d*cosLng0d, -sinLat0d*sinLng0d, -sinLat0d*cosLng0d, cosLat0d*sinLng0d,
-                0, cosLat0d, 0, sinLat0d,
-                0, 0, 0, 1
-            ));
-            // convert degrees to radians
-            localFrame[2].scale(M_PI/180.0, M_PI/180.0, M_PI/180.0*M_PI/180.0);
-            numLocalFrames++;
-
-            // degrees are relative to focus
-            localFrame[1].setToTranslate(-drawLng, -drawLat, 0);
-            numLocalFrames++;
-
-            // degrees are relative to focus
-            localFrame[0].setToIdentity();
-            numLocalFrames++;
-        }
-    } else {
-        shaders = &offscreen->planar;
-    }
-
-    OffscreenShader &shader = (this->drawMapResolution <= shaders->hi_threshold) ?
-        shaders->hi :
-        (this->drawMapResolution <= shaders->md_threshold) ?
-            shaders->md : shaders->lo;
-
-    glUseProgram(shader.base.handle);
-    int activeTexture[1];
-    glGetIntegerv(GL_ACTIVE_TEXTURE, activeTexture);
-    glBindTexture(GL_TEXTURE_2D, tex.getTexId());
-
-    glEnable(GL_BLEND);
+    if(debugDrawDepth)
+        ::drawTerrainTiles(*this, offscreen->terrainTiles, offscreen->visibleTiles, offscreen->ecef.depth, offscreen->planar.depth, tex, drawSurfaceWidth, drawSurfaceHeight, TerrainTileColorMode(1.f, 1.f, 1.f, 1.f));
+    else {
+            glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    glUniform1i(shader.base.uTexture, activeTexture[0] - GL_TEXTURE0);
-    glUniform4f(shader.base.uColor, 1.0, 1.0, 1.0, terrainBlendFactor);
-    glUniform1f(shader.uTexWidth, static_cast<float>(tex.getTexWidth()));
-    glUniform1f(shader.uTexHeight, static_cast<float>(tex.getTexHeight()));
+        ::drawTerrainTiles(*this, offscreen->terrainTiles, offscreen->visibleTiles, offscreen->ecef.color, offscreen->planar.color, tex, drawSurfaceWidth, drawSurfaceHeight, TerrainTileColorMode(1.f, 1.f, 1.f, (float)terrainBlendFactor));
 
-    glUniform1f(shader.uElevationScale, offscreen->terrainEnabled ? static_cast<float>(this->elevationScaleFactor) : 0.0f);
-
-    // first pass
-    {
-        // construct the MVP matrix
-        Matrix2 mvp;
-        if (this->scene.camera.mode == MapCamera2::Perspective) {
-            mvp = this->scene.camera.projection;
-            mvp.concatenate(this->scene.camera.modelView);
-        } else {
-            // projection
-            float matrixF[16u];
-            atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, matrixF);
-            for(std::size_t i = 0u; i < 16u; i++)
-                mvp.set(i%4, i/4, matrixF[i]);
-            // model-view
-            mvp.concatenate(this->scene.forwardTransform);
-        }
-        drawTerrainTilesImpl(renderPasses, numRenderPasses, shader, mvp, localFrame, numLocalFrames, tex, offscreen->terrainTiles, 1.0, 1.0, 1.0, terrainBlendFactor);
+        glDisable(GL_BLEND);
     }
-
-    if(this->scene.displayModel->earth->getGeomClass() == GeometryModel2::PLANE && this->crossesIDL) {
-        State stack;
-        State_save(&stack, *this);
-        // reconstruct the scene model in the secondary hemisphere
-        if (idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper::West)
-            this->drawLng += 360.0;
-        else if (idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper::East)
-            this->drawLng -= 360.0;
-        else {
-            Logger_log(TELL_Error, "GLMapView::drawTerrainTiles : invalid primary hemisphere " + idlHelper.getPrimaryHemisphere());
-            return;
-        }
-
-        this->sceneModelVersion = ~this->sceneModelVersion;
-        this->validateSceneModel(this->scene.width, this->scene.height);
-
-        // construct the MVP matrix
-        Matrix2 mvp;
-        // projectino
-        float matrixF[16u];
-        atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, matrixF);
-        for(std::size_t i = 0u; i < 16u; i++)
-            mvp.set(i%4, i/4, matrixF[i]);
-        // model-view
-        mvp.concatenate(this->scene.forwardTransform);
-
-        drawTerrainTilesImpl(renderPasses, numRenderPasses, shader, mvp, localFrame, numLocalFrames, *offscreen->texture, offscreen->terrainTiles, 1.0, 1.0, 1.0, terrainBlendFactor);
-
-        State_restore(this, stack);
-    }
-    glDisable(GL_BLEND);
-
-    glUseProgram(0);
 }
-
 void GLMapView2::drawTerrainMeshes() NOTHROWS
 {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // select shader
-    OffscreenShaders *shaders;
-    Matrix2 localFrame[MAX_LOCAL_TRANSFORMS];
-    std::size_t numLocalFrames = 0u;
-    if(this->scene.displayModel->earth->getGeomClass() == TAK::Engine::Math::GeometryModel2::ELLIPSOID) {
-        shaders = &offscreen->ecef;
-        if(this->drawMapResolution <= shaders->hi_threshold) {
-            Matrix2 tx;
-            tx.setToTranslate(drawLng, drawLat, 0.0);
-            lla2ecef_transform(&localFrame[0], *scene.projection, &tx);
-            localFrame[0].translate(-drawLng, -drawLat, 0.0);
-            numLocalFrames++;
-        } else if (this->drawMapResolution <= shaders->md_threshold) {
-            const auto &ellipsoid = static_cast<const Ellipsoid2 &>(*this->scene.displayModel->earth);
-
-            const double a = ellipsoid.radiusX;
-            const double b = ellipsoid.radiusZ;
-
-            const double cosLat0d = cos(drawLat*M_PI/180.0);
-            const double cosLng0d = cos(drawLng*M_PI/180.0);
-            const double sinLat0d = sin(drawLat*M_PI/180.0);
-            const double sinLng0d = sin(drawLng*M_PI/180.0);
-
-            const double a2_b2 = (a*a)/(b*b);
-            const double b2_a2 = (b*b)/(a*a);
-            const double cden = sqrt((cosLat0d*cosLat0d) + (b2_a2 * (sinLat0d*sinLat0d)));
-            const double lden = sqrt((a2_b2 * (cosLat0d*cosLat0d)) + (sinLat0d*sinLat0d));
-
-            // scale by ellipsoid radii
-            localFrame[2].setToScale(a/cden, a/cden, b/lden);
-            // calculate coefficients for lat/lon => ECEF conversion, using small angle approximation
-            localFrame[2].concatenate(Matrix2(
-                -cosLat0d*sinLng0d, -cosLng0d*sinLat0d, sinLat0d*sinLng0d, cosLat0d*cosLng0d,
-                cosLat0d*cosLng0d, -sinLat0d*sinLng0d, -sinLat0d*cosLng0d, cosLat0d*sinLng0d,
-                0, cosLat0d, 0, sinLat0d,
-                0, 0, 0, 1
-            ));
-            // convert degrees to radians
-            localFrame[2].scale(M_PI/180.0, M_PI/180.0, M_PI/180.0*M_PI/180.0);
-            numLocalFrames++;
-
-            // degrees are relative to focus
-            localFrame[1].setToTranslate(-drawLng, -drawLat, 0);
-            numLocalFrames++;
-
-            // degrees are relative to focus
-            localFrame[0].setToIdentity();
-            numLocalFrames++;
-        }
-    } else {
-        shaders = &offscreen->planar;
-    }
-
-    OffscreenShader &shader = (this->drawMapResolution <= shaders->hi_threshold) ?
-        shaders->hi :
-        (this->drawMapResolution <= shaders->md_threshold) ?
-            shaders->md : shaders->lo;
-
-    glUseProgram(shader.base.handle);
-    int activeTexture[1];
-    glGetIntegerv(GL_ACTIVE_TEXTURE, activeTexture);
-    glBindTexture(GL_TEXTURE_2D, this->offscreen->whitePixel->getTexId());
-
-    glUniform1i(shader.base.uTexture, activeTexture[0] - GL_TEXTURE0);
-    glUniform4f(shader.base.uColor, 1.0, 1.0, 1.0, 1.0);
-    glUniform1f(shader.uTexWidth, static_cast<float>(offscreen->whitePixel->getTexWidth()));
-    glUniform1f(shader.uTexHeight, static_cast<float>(offscreen->whitePixel->getTexHeight()));
-
-    glUniform1f(shader.uElevationScale, offscreen->terrainEnabled ? static_cast<float>(this->elevationScaleFactor) : 0.0f);
-
-    // first pass
-    {
-        // construct the MVP matrix
-        Matrix2 mvp;
-        // projectino
-        float matrixF[16u];
-        atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, matrixF);
-        for(std::size_t i = 0u; i < 16u; i++)
-            mvp.set(i%4, i/4, matrixF[i]);
-        // model-view
-        mvp.concatenate(this->scene.forwardTransform);
-
-        drawTerrainMeshesImpl(renderPasses[0], shader, mvp, localFrame, numLocalFrames, offscreen->terrainTiles, 0, 1, 0, 1);
-    }
-
-    // first pass -- vertex coords
-    if(this->scene.displayModel->earth->getGeomClass() == GeometryModel2::PLANE && this->crossesIDL) {
-        State stack;
-        State_save(&stack, *this);
-        // reconstruct the scene model in the secondary hemisphere
-        if (idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper::West)
-            this->drawLng += 360.0;
-        else if (idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper::East)
-            this->drawLng -= 360.0;
-        else {
-            Logger_log(TELL_Error, "GLMapView::drawTerrainMeshes : invalid primary hemisphere " + idlHelper.getPrimaryHemisphere());
-            return;
-        }
-
-        this->sceneModelVersion = ~this->sceneModelVersion;
-        this->validateSceneModel(this->scene.width, this->scene.height);
-
-        State idlPass;
-        State &state = renderPasses[0];
-        createOffscreenSceneModel(&idlPass, *this, state.drawMapResolution, state.drawTilt, state.scene.width, state.scene.height, static_cast<float>(state.left), static_cast<float>(state.bottom), static_cast<float>(state.right - state.left), static_cast<float>(state.top - state.bottom));
-
-        // construct the MVP matrix
-        Matrix2 mvp;
-        // projectino
-        float matrixF[16u];
-        atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, matrixF);
-        for(std::size_t i = 0u; i < 16u; i++)
-            mvp.set(i%4, i/4, matrixF[i]);
-        // model-view
-        mvp.concatenate(this->scene.forwardTransform);
-
-        drawTerrainMeshesImpl(idlPass, shader, mvp, localFrame, numLocalFrames, offscreen->terrainTiles, 0, 1, 0, 1);
-
-        State_restore(this, stack);
-    }
-
-    glUseProgram(0);
+    ::drawTerrainMeshes(*this, offscreen->terrainTiles, offscreen->ecef.color, offscreen->planar.color, *offscreen->whitePixel);
 }
 
 void GLMapView2::drawTerrainMesh(const ElevationChunk::Data &tile) NOTHROWS
@@ -2393,15 +2421,6 @@ TAKErr GLMapView2::constructOffscreenRenderPass(const bool preserveBounds, const
     return TE_Ok;
 }
 
-void GLMapView2::refreshSceneMatrices() NOTHROWS
-{
-    // fill the forward matrix for the Model-View
-    double matrixD[16];
-    this->scene.forwardTransform.get(matrixD, Matrix2::COLUMN_MAJOR);
-    for (int i = 0; i < 16; i++)
-        this->sceneModelForwardMatrix[i] = (float)matrixD[i];
-}
-
 bool GLMapView2::animate() NOTHROWS
 {
     if (settled)
@@ -2507,11 +2526,11 @@ TAKErr GLMapView2::getTerrainMeshElevation(double *value, const double latitude,
                     // terrain tile mesh and obtain the height at the
                     // intersection
                     Projection2Ptr proj(nullptr, nullptr);
-                    if (ProjectionFactory3_create(proj, (*tile)->data->srid) != TE_Ok)
+                    if (ProjectionFactory3_create(proj, (*tile)->data.srid) != TE_Ok)
                         continue;
 
                     Matrix2 invLocalFrame;
-                    (*tile)->data->localFrame.createInverse(&invLocalFrame);
+                    (*tile)->data.localFrame.createInverse(&invLocalFrame);
 
                     // obtain the ellipsoid surface point
                     Point2<double> surface;
@@ -2526,13 +2545,13 @@ TAKErr GLMapView2::getTerrainMeshElevation(double *value, const double latitude,
                     invLocalFrame.transform(&above, above);
 
                     // construct the geometry model and compute the intersection
-                    TAK::Engine::Math::Mesh model((*tile)->data->value, nullptr);
+                    TAK::Engine::Math::Mesh model((*tile)->data.value, nullptr);
 
                     Point2<double> isect;
                     if (!model.intersect(&isect, Ray2<double>(above, Vector4<double>(surface.x - above.x, surface.y - above.y, surface.z - above.z))))
                         continue;
 
-                    (*tile)->data->localFrame.transform(&isect, isect);
+                    (*tile)->data.localFrame.transform(&isect, isect);
                     GeoPoint2 geoIsect;
                     if (proj->inverse(&geoIsect, isect) != TE_Ok)
                         continue;
@@ -2557,13 +2576,13 @@ TAKErr GLMapView2::getTerrainMeshElevation(double *value, const double latitude,
                     TAK::Engine::Math::Point2<double> p;
 
                     // obtain the four surrounding posts to interpolate from
-                    (*tile)->data->value->getPosition(&p, (postT*(*tile)->posts_x)+postL);
+                    (*tile)->data.value->getPosition(&p, (postT*(*tile)->posts_x)+postL);
                     const double ul = p.z;
-                    (*tile)->data->value->getPosition(&p, (postT*(*tile)->posts_x)+postR);
+                    (*tile)->data.value->getPosition(&p, (postT*(*tile)->posts_x)+postR);
                     const double ur = p.z;
-                    (*tile)->data->value->getPosition(&p, (postB*(*tile)->posts_x)+postR);
+                    (*tile)->data.value->getPosition(&p, (postB*(*tile)->posts_x)+postR);
                     const double lr = p.z;
-                    (*tile)->data->value->getPosition(&p, (postB*(*tile)->posts_x)+postL);
+                    (*tile)->data.value->getPosition(&p, (postB*(*tile)->posts_x)+postL);
                     const double ll = p.z;
 
                     // interpolate the height
@@ -2571,7 +2590,7 @@ TAKErr GLMapView2::getTerrainMeshElevation(double *value, const double latitude,
                             MathUtils_clamp(postX-(double)postL, 0.0, 1.0),
                             MathUtils_clamp(postY-(double)postT, 0.0, 1.0));
                     // transform the height back to HAE
-                    (*tile)->data->localFrame.transform(&p, p);
+                    (*tile)->data.localFrame.transform(&p, p);
                     elevation = p.z;
                     code = TE_Ok;
                 }
@@ -2670,163 +2689,285 @@ TAKErr intersectWithTerrainTileImpl(GeoPoint2 *value, const TerrainTile &tile, c
         return TE_Done;
 
     const int sceneSrid = scene.projection->getSpatialReferenceID();
-    std::shared_ptr<ElevationChunk::Data> node(tile.data);
-    if (node->srid != sceneSrid) {
-        if (tile.data_proj.get() && tile.data_proj->srid == sceneSrid) {
+    ElevationChunk::Data node(tile.data);
+    if (node.srid != sceneSrid) {
+        if (tile.data_proj.value && tile.data_proj.srid == sceneSrid) {
             node = tile.data_proj;
         } else {
-            ElevationChunkDataPtr data_proj(new ElevationChunk::Data(), Memory_deleter_const<ElevationChunk::Data>);
+            ElevationChunk::Data data_proj;
 
             MeshPtr transformed(nullptr, nullptr);
-            VertexDataLayout srcLayout(node->value->getVertexDataLayout());
+            VertexDataLayout srcLayout(node.value->getVertexDataLayout());
             MeshTransformOptions transformedOpts;
             MeshTransformOptions srcOpts;
             srcOpts.layout = VertexDataLayoutPtr(&srcLayout, Memory_leaker_const<VertexDataLayout>);
-            srcOpts.srid = node->srid;
-            srcOpts.localFrame = Matrix2Ptr(&node->localFrame, Memory_leaker_const<Matrix2>);
+            srcOpts.srid = node.srid;
+            srcOpts.localFrame = Matrix2Ptr(&node.localFrame, Memory_leaker_const<Matrix2>);
             MeshTransformOptions dstOpts;
             dstOpts.srid = sceneSrid;
-            code = Mesh_transform(transformed, &transformedOpts, *node->value, srcOpts, dstOpts, nullptr);
+            code = Mesh_transform(transformed, &transformedOpts, *node.value, srcOpts, dstOpts, nullptr);
             TE_CHECKRETURN_CODE(code);
 
-            data_proj->srid = transformedOpts.srid;
+            data_proj.srid = transformedOpts.srid;
             if(transformedOpts.localFrame.get())
-                data_proj->localFrame = *transformedOpts.localFrame;
-            data_proj->value = std::move(transformed);
-            node = std::move(data_proj);
+                data_proj.localFrame = *transformedOpts.localFrame;
+            data_proj.value = std::move(transformed);
+            node = data_proj;
 
             // XXX - 
-            const_cast<TerrainTile &>(tile).data_proj = node;
+            const_cast<TerrainTile &>(tile).data_proj = data_proj;
         }
     }
 
-    TAK::Engine::Math::Mesh mesh(node->value, &node->localFrame);
+    TAK::Engine::Math::Mesh mesh(node.value, &node.localFrame);
     return scene.inverse(value, Point2<float>(x, y), mesh);
 }
 
 TAKErr GLMapView2::intersectWithTerrainImpl(GeoPoint2 *value, std::shared_ptr<const TerrainTile> &focusTile, const MapSceneModel2 &map_scene, const float x, const float y) const NOTHROWS
 {
-    TAKErr code(TE_Ok);
-    ReadLock lock(this->offscreenMutex);
-    TE_CHECKRETURN_CODE(lock.status);
+    if(gpuTerrainIntersect) {
+        GeoPoint2 depthResult;
+        TAKErr depthCode;
+        depthCode = scene.inverse(&depthResult, Point2<float>(x, y));
+        std::shared_ptr<const TerrainTile> pickTile;
+        if (context.isRenderThread()) {
+            const bool current = context.isAttached();
+            if (!current)
+                context.attach();
+            depthCode = glPickTerrainTile(pickTile, const_cast<GLMapView2 *>(this), map_scene, x, y);
+            if (!current)
+                context.detach();
+        } else {
+            Monitor monitor;
+            AsyncSurfacePickBundle glarg;
+            glarg.done = false;
+            glarg.monitor = &monitor;
+            glarg.x = x;
+            glarg.y = y;
+            glarg.code = TE_Done;
+            glarg.view = const_cast<GLMapView2*>(this);
+            context.queueEvent(GLMapView2::glPickTerrainTile2, std::unique_ptr<void, void(*)(const void *)>(&glarg, Memory_leaker_const<void>));
 
-    if (!this->offscreen.get() || this->offscreen->terrainTiles.empty())
-    {
-        code = map_scene.inverse(value, Point2<float>(x, y));
-        TE_CHECKRETURN_CODE(code);
-
-        return code;
-    }
-
-    const int sceneSrid = map_scene.projection->getSpatialReferenceID();
-
-    Point2<double> camdir;
-    Vector2_subtract<double>(&camdir, map_scene.camera.location, map_scene.camera.target);
-    // scale by nominal display model meters
-    camdir.x *= map_scene.displayModel->projectionXToNominalMeters;
-    camdir.y *= map_scene.displayModel->projectionYToNominalMeters;
-    camdir.z *= map_scene.displayModel->projectionZToNominalMeters;
-
-    double mag;
-    Vector2_length(&mag, camdir);
-    mag = std::max(mag, 2000.0);
-
-    // scale the direction vector
-    Vector2_multiply(&camdir, camdir, mag*2.0);
-
-    Point2<double> loc(map_scene.camera.target);
-    // scale by nominal display model meters
-    loc.x *= map_scene.displayModel->projectionXToNominalMeters;
-    loc.y *= map_scene.displayModel->projectionYToNominalMeters;
-    loc.z *= map_scene.displayModel->projectionZToNominalMeters;
-
-    // add the scaled camera direction
-    Vector2_add(&loc, loc, camdir);
-
-    GeoPoint2 candidate;
-    double candidateDistSq = NAN;
-
-    // check the previous tile containing the focus point first to obtain an initial candidate
-    if (this->focusEstimation.tile.get() && intersectsAABB(&candidate, map_scene, this->focusEstimation.tile->aabb_wgs84, x, y)) {
-        ElevationChunk::Data &node = *this->focusEstimation.tile->data;
-
-        TAK::Engine::Math::Mesh mesh(node.value, &node.localFrame);
-        if(intersectWithTerrainTileImpl(&candidate, *focusEstimation.tile, map_scene, x, y) == TE_Ok) {
-            Point2<double> proj;
-            map_scene.projection->forward(&proj, candidate);
-            // convert hit to nominal display model meters
-            proj.x *= map_scene.displayModel->projectionXToNominalMeters;
-            proj.y *= map_scene.displayModel->projectionYToNominalMeters;
-            proj.z *= map_scene.displayModel->projectionZToNominalMeters;
-
-            const double dx = proj.x - loc.x;
-            const double dy = proj.y - loc.y;
-            const double dz = proj.z - loc.z;
-            candidateDistSq = ((dx*dx) + (dy*dy) + (dz*dz));
-
-            *value = candidate;
+            Monitor::Lock lock(monitor);
+            if (!glarg.done)
+                lock.wait(3000);
+            depthCode = glarg.code;
+            if (depthCode == TE_Ok)
+                pickTile = glarg.result;
         }
-    }
 
-    // compare all other tiles with the candidate derived from focus or earth surface
-    for (std::size_t i = 0; i < this->offscreen->terrainTiles.size(); i++) {
-        const TerrainTile &tile = *this->offscreen->terrainTiles[i];
-        // skip checking focus twice
-        if (focusTile.get() && focusTile.get() == &tile)
-            continue;
+        if (depthCode == TE_Ok) {
+            depthCode = intersectWithTerrainTileImpl(&depthResult, *pickTile, map_scene, x, y);
+            if (depthCode != TE_Ok)
+                depthResult = GeoPoint2(NAN, NAN);
+        }
+        *value = depthResult;
+        if (depthCode != TE_Ok)
+            scene.inverse(value, Point2<float>(x, y));
+        return depthCode;
+    } else {
+        TAKErr code(TE_Ok);
+        ReadLock lock(this->offscreenMutex);
+        TE_CHECKRETURN_CODE(lock.status);
 
-        // if the tile doesn't have data, skip -- we've already computed surface intersection above
-        if (!tile.hasData)
-            continue;
+        if (!this->offscreen.get() || this->offscreen->terrainTiles.empty())
+        {
+            code = map_scene.inverse(value, Point2<float>(x, y));
+            TE_CHECKRETURN_CODE(code);
 
-        // check isect on AABB
-        if (!intersectsAABB(&candidate, map_scene, tile.aabb_wgs84, x, y)) {
-            // no AABB isect, continue
-            continue;
-        } else if(!isnan(candidateDistSq)) {               
-            // if we have a candidate and the AABB intersection is further
-            // than the candidate distance, any content intersect is going to
-            // be further
-            Point2<double> proj;
-            map_scene.projection->forward(&proj, candidate);
-            // convert hit to nominal display model meters
-            proj.x *= map_scene.displayModel->projectionXToNominalMeters;
-            proj.y *= map_scene.displayModel->projectionYToNominalMeters;
-            proj.z *= map_scene.displayModel->projectionZToNominalMeters;
+            return code;
+        }
 
-            const double dx = proj.x - loc.x;
-            const double dy = proj.y - loc.y;
-            const double dz = proj.z - loc.z;
-            const double distSq = ((dx*dx) + (dy*dy) + (dz*dz));
+        const int sceneSrid = map_scene.projection->getSpatialReferenceID();
 
-            if (distSq > candidateDistSq)
+        Point2<double> camdir;
+        Vector2_subtract<double>(&camdir, map_scene.camera.location, map_scene.camera.target);
+        // scale by nominal display model meters
+        camdir.x *= map_scene.displayModel->projectionXToNominalMeters;
+        camdir.y *= map_scene.displayModel->projectionYToNominalMeters;
+        camdir.z *= map_scene.displayModel->projectionZToNominalMeters;
+
+        double mag;
+        Vector2_length(&mag, camdir);
+        mag = std::max(mag, 2000.0);
+
+        // scale the direction vector
+        Vector2_multiply(&camdir, camdir, mag * 2.0);
+
+        Point2<double> loc(map_scene.camera.target);
+        // scale by nominal display model meters
+        loc.x *= map_scene.displayModel->projectionXToNominalMeters;
+        loc.y *= map_scene.displayModel->projectionYToNominalMeters;
+        loc.z *= map_scene.displayModel->projectionZToNominalMeters;
+
+        // add the scaled camera direction
+        Vector2_add(&loc, loc, camdir);
+
+        GeoPoint2 candidate;
+        double candidateDistSq = NAN;
+
+        // check the previous tile containing the focus point first to obtain an initial candidate
+        if (this->focusEstimation.tile.get() && intersectsAABB(&candidate, map_scene, this->focusEstimation.tile->aabb_wgs84, x, y)) {
+            const ElevationChunk::Data& node = this->focusEstimation.tile->data;
+
+            TAK::Engine::Math::Mesh mesh(node.value, &node.localFrame);
+            if (intersectWithTerrainTileImpl(&candidate, *focusEstimation.tile, map_scene, x, y) == TE_Ok) {
+                Point2<double> proj;
+                map_scene.projection->forward(&proj, candidate);
+                // convert hit to nominal display model meters
+                proj.x *= map_scene.displayModel->projectionXToNominalMeters;
+                proj.y *= map_scene.displayModel->projectionYToNominalMeters;
+                proj.z *= map_scene.displayModel->projectionZToNominalMeters;
+
+                const double dx = proj.x - loc.x;
+                const double dy = proj.y - loc.y;
+                const double dz = proj.z - loc.z;
+                candidateDistSq = ((dx * dx) + (dy * dy) + (dz * dz));
+
+                *value = candidate;
+            }
+        }
+
+        // compare all other tiles with the candidate derived from focus or earth surface
+        for (std::size_t i = 0; i < this->offscreen->terrainTiles.size(); i++) {
+            const TerrainTile& tile = *this->offscreen->terrainTiles[i];
+            // skip checking focus twice
+            if (focusTile.get() && focusTile.get() == &tile)
                 continue;
+
+            // if the tile doesn't have data, skip -- we've already computed surface intersection above
+            if (!tile.hasData)
+                continue;
+
+            // check isect on AABB
+            if (!intersectsAABB(&candidate, map_scene, tile.aabb_wgs84, x, y)) {
+                // no AABB isect, continue
+                continue;
+            } else if (!isnan(candidateDistSq)) {
+                // if we have a candidate and the AABB intersection is further
+                // than the candidate distance, any content intersect is going to
+                // be further
+                Point2<double> proj;
+                map_scene.projection->forward(&proj, candidate);
+                // convert hit to nominal display model meters
+                proj.x *= map_scene.displayModel->projectionXToNominalMeters;
+                proj.y *= map_scene.displayModel->projectionYToNominalMeters;
+                proj.z *= map_scene.displayModel->projectionZToNominalMeters;
+
+                const double dx = proj.x - loc.x;
+                const double dy = proj.y - loc.y;
+                const double dz = proj.z - loc.z;
+                const double distSq = ((dx * dx) + (dy * dy) + (dz * dz));
+
+                if (distSq > candidateDistSq)
+                    continue;
+            }
+
+            // do the raycast into the mesh
+            code = intersectWithTerrainTileImpl(&candidate, tile, map_scene, x, y);
+            if (code != TE_Ok)
+                continue;
+
+            Point2<double> proj;
+            map_scene.projection->forward(&proj, candidate);
+            // convert hit to nominal display model meters
+            proj.x *= map_scene.displayModel->projectionXToNominalMeters;
+            proj.y *= map_scene.displayModel->projectionYToNominalMeters;
+            proj.z *= map_scene.displayModel->projectionZToNominalMeters;
+
+            const double dx = proj.x - loc.x;
+            const double dy = proj.y - loc.y;
+            const double dz = proj.z - loc.z;
+            const double distSq = ((dx * dx) + (dy * dy) + (dz * dz));
+            if (isnan(candidateDistSq) || distSq < candidateDistSq) {
+                *value = candidate;
+                candidateDistSq = distSq;
+                focusTile = this->offscreen->terrainTiles[i];
+            }
         }
 
-        // do the raycast into the mesh
-        code = intersectWithTerrainTileImpl(&candidate, tile, map_scene, x, y);
-        if (code != TE_Ok)
-            continue;
-
-        Point2<double> proj;
-        map_scene.projection->forward(&proj, candidate);
-        // convert hit to nominal display model meters
-        proj.x *= map_scene.displayModel->projectionXToNominalMeters;
-        proj.y *= map_scene.displayModel->projectionYToNominalMeters;
-        proj.z *= map_scene.displayModel->projectionZToNominalMeters;
-
-        const double dx = proj.x - loc.x;
-        const double dy = proj.y - loc.y;
-        const double dz = proj.z - loc.z;
-        const double distSq = ((dx*dx) + (dy*dy) + (dz*dz));
-        if (isnan(candidateDistSq) || distSq < candidateDistSq) {
-            *value = candidate;
-            candidateDistSq = distSq;
-            focusTile = this->offscreen->terrainTiles[i];
-        }
+        if (isnan(candidateDistSq)) scene.inverse(value, Point2<float>(x, y));
+        return isnan(candidateDistSq) ? TE_Err : TE_Ok;
     }
+}
+void GLMapView2::glPickTerrainTile2(void* opaque) NOTHROWS
+{
+    auto arg = static_cast<AsyncSurfacePickBundle*>(opaque);
+    arg->code = GLMapView2::glPickTerrainTile(arg->result, arg->view, arg->view->scene, arg->x, arg->y);
 
-    return isnan(candidateDistSq) ? TE_Err : TE_Ok;
+    Monitor::Lock lock(*arg->monitor);
+    arg->done = true;
+    lock.signal();
+}
+TAKErr GLMapView2::glPickTerrainTile(std::shared_ptr<const Elevation::TerrainTile>& value, GLMapView2* pview, const TAK::Engine::Core::MapSceneModel2& map_scene, const float x, const float y) NOTHROWS
+{
+    GLMapView2& view = *pview;
+    glViewport(static_cast<GLint>(view.renderPasses[0u].viewport.x), static_cast<GLint>(view.renderPasses[0u].viewport.y), static_cast<GLsizei>(view.renderPasses[0u].viewport.width), static_cast<GLsizei>(view.renderPasses[0u].viewport.height));
+
+    GLES20FixedPipeline::getInstance()->glMatrixMode(GLES20FixedPipeline::MatrixMode::MM_GL_PROJECTION);
+    GLES20FixedPipeline::getInstance()->glOrthof(static_cast<float>(view.renderPasses[0u].left), static_cast<float>(view.renderPasses[0u].right), static_cast<float>(view.renderPasses[0u].bottom), static_cast<float>(view.renderPasses[0u].top), view.renderPasses[0u].near, view.renderPasses[0u].far);
+
+    GLES20FixedPipeline::getInstance()->glMatrixMode(GLES20FixedPipeline::MatrixMode::MM_GL_MODELVIEW);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_TRUE);
+
+    GLint viewport[4];
+    GLint boundFbo;
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, (GLint *)&boundFbo);
+    GLboolean blend_enabled = glIsEnabled(GL_BLEND);
+
+    glClearColor(0.f, 0.f, 0.f, 0.f);
+
+    GLOffscreenFramebuffer* fbo = view.offscreen->depthSamplerFbo.get();
+    fbo->bind();
+
+    glViewport(-(int)x + fbo->width / 2, -(int)y + fbo->height / 2, viewport[2], viewport[3]);
+
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(fbo->width / 2 - 1, fbo->height / 2 - 1, 3, 3);
+
+    glDisable(GL_BLEND);
+
+    // XXX - 
+    const std::size_t nrp = view.numRenderPasses;
+    State rp0;
+    view.numRenderPasses = 1u;
+    view.renderPasses[0].texture = view.offscreen->whitePixel->getTexId();
+    ::drawTerrainTiles(view, view.offscreen->terrainTiles, view.offscreen->visibleTiles, view.offscreen->ecef.color, view.offscreen->planar.color, *view.offscreen->whitePixel, view.scene.width, view.scene.height, TerrainTileColorMode(true));
+    view.numRenderPasses = nrp;
+    view.renderPasses[0].texture = GL_NONE;
+
+    uint32_t pixel = 0;
+    glReadPixels(fbo->width / 2, fbo->height / 2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, &pixel);
+
+    //XXX-- need to flip pixel if GPU endianness != CPU endianness
+    const uint8_t b0 = ((pixel >> 24) & 0xFF);
+    const uint8_t b1 = ((pixel >> 16) & 0xFF);
+    const uint8_t b2 = ((pixel >> 8) & 0xFF);
+    const uint8_t b3 = (pixel & 0xFF);
+
+    pixel = (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
+
+    glDisable(GL_SCISSOR_TEST);
+    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+
+    if (blend_enabled)
+        glEnable(GL_BLEND);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, boundFbo);
+    if(!view.inRenderPump)
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    else
+        Logger_log(TELL_Warning, "GLMapView2::intersectWithTerrain invoked on GL thread during render pump");
+
+    if (!pixel)
+        return TE_Done;
+
+    value = view.offscreen->terrainTiles[pixel];
+    return TE_Ok;
 }
 
 double GLMapView2::getRecommendedGridSampleDistance() NOTHROWS
@@ -2855,6 +2996,10 @@ GLMapView2::State::State() NOTHROWS :
     southBound(-90.0),
     northBound(90.0),
     eastBound(180.0),
+    left(0),
+    right(0),
+    top(0),
+    bottom(0),
     near(1.f),
     far(-1.f),
     drawSrid(-1),
@@ -3498,7 +3643,7 @@ namespace
         struct ViewportPoint
         {
             GeoPoint2 lla;
-            bool valid;
+            bool valid {false};
             Point2<float> xy;
         };
 
@@ -3794,26 +3939,251 @@ namespace
         value->eastBound = east;
         return TE_Ok;
     }
+    TAKErr validateSceneModel(GLMapView2 *view, const std::size_t width, const std::size_t height) NOTHROWS
+    {
+        TAKErr code(TE_Ok);
+        if (view->sceneModelVersion != view->drawVersion) {
+            const std::size_t vflipHeight = height;
+            if (vflipHeight != view->verticalFlipTranslateHeight) {
+                view->verticalFlipTranslate.setToTranslate(0, static_cast<double>(vflipHeight));
+                view->verticalFlipTranslateHeight = vflipHeight;
+            }
 
-    void drawTerrainTilesImpl(const GLMapView2::State *renderPasses, const std::size_t numRenderPasses, const OffscreenShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const GLTexture2 &texture, const std::vector<std::shared_ptr<const TerrainTile>> &terrainTiles, const float r, const float g, const float b, const float a) NOTHROWS
+            view->scene.set(view->view.getDisplayDpi(),
+                            width,
+                            height,
+                            view->drawSrid,
+                            GeoPoint2(view->drawLat, view->drawLng),
+                            view->focusx,
+                            view->focusy,
+                            view->drawRotation,
+                            view->drawTilt,
+                            view->drawMapResolution);
+
+            // account for flipping of y-axis for OpenGL coordinate space
+            view->scene.inverseTransform.concatenate(view->verticalFlipTranslate);
+            view->scene.inverseTransform.concatenate(xformVerticalFlipScale());
+
+            view->scene.forwardTransform.preConcatenate(xformVerticalFlipScale());
+            view->scene.forwardTransform.preConcatenate(view->verticalFlipTranslate);
+
+            {
+                // fill the forward matrix for the Model-View
+                double matrixD[16];
+                view->scene.forwardTransform.get(matrixD, Matrix2::COLUMN_MAJOR);
+                for (int i = 0; i < 16; i++)
+                    view->sceneModelForwardMatrix[i] = (float)matrixD[i];
+            }
+
+            // mark as valid
+            view->sceneModelVersion = view->drawVersion;
+        }
+
+        return code;
+    }
+    void drawTerrainTiles(GLMapView2 &view, const std::vector<std::shared_ptr<const TerrainTile>> &terrainTiles, const std::vector<std::size_t> &visibleTiles, const OffscreenShaders &ecef, const OffscreenShaders &planar, const GLTexture2 &tex, const std::size_t drawSurfaceWidthx, const std::size_t drawSurfaceHeightx, const TerrainTileColorMode &color) NOTHROWS
+    {
+        // XXX - select shader
+        const OffscreenShaders *shaders;
+        Matrix2 localFrame[MAX_LOCAL_TRANSFORMS];
+        std::size_t numLocalFrames = 0u;
+        if(view.scene.displayModel->earth->getGeomClass() == TAK::Engine::Math::GeometryModel2::ELLIPSOID) {
+            shaders = &ecef;
+            if(view.drawMapResolution <= shaders->hi_threshold) {
+                Matrix2 tx;
+                tx.setToTranslate(view.drawLng, view.drawLat, 0.0);
+                lla2ecef_transform(&localFrame[0], *view.scene.projection, &tx);
+                localFrame[0].translate(-view.drawLng, -view.drawLat, 0.0);
+                numLocalFrames++;
+            } else if (view.drawMapResolution <= shaders->md_threshold) {
+                const auto &ellipsoid = static_cast<const Ellipsoid2 &>(*view.scene.displayModel->earth);
+
+                const double a = ellipsoid.radiusX;
+                const double b = ellipsoid.radiusZ;
+
+                const double cosLat0d = cos(view.drawLat*M_PI/180.0);
+                const double cosLng0d = cos(view.drawLng*M_PI/180.0);
+                const double sinLat0d = sin(view.drawLat*M_PI/180.0);
+                const double sinLng0d = sin(view.drawLng*M_PI/180.0);
+
+                const double a2_b2 = (a*a)/(b*b);
+                const double b2_a2 = (b*b)/(a*a);
+                const double cden = sqrt((cosLat0d*cosLat0d) + (b2_a2 * (sinLat0d*sinLat0d)));
+                const double lden = sqrt((a2_b2 * (cosLat0d*cosLat0d)) + (sinLat0d*sinLat0d));
+
+                // scale by ellipsoid radii
+                localFrame[2].setToScale(a/cden, a/cden, b/lden);
+                // calculate coefficients for lat/lon => ECEF conversion, using small angle approximation
+                localFrame[2].concatenate(Matrix2(
+                        -cosLat0d*sinLng0d, -cosLng0d*sinLat0d, sinLat0d*sinLng0d, cosLat0d*cosLng0d,
+                        cosLat0d*cosLng0d, -sinLat0d*sinLng0d, -sinLat0d*cosLng0d, cosLat0d*sinLng0d,
+                        0, cosLat0d, 0, sinLat0d,
+                        0, 0, 0, 1
+                ));
+                // convert degrees to radians
+                localFrame[2].scale(M_PI/180.0, M_PI/180.0, M_PI/180.0*M_PI/180.0);
+                numLocalFrames++;
+
+                // degrees are relative to focus
+                localFrame[1].setToTranslate(-view.drawLng, -view.drawLat, 0);
+                numLocalFrames++;
+
+                // degrees are relative to focus
+                localFrame[0].setToIdentity();
+                numLocalFrames++;
+            }
+        } else {
+            shaders = &planar;
+        }
+
+        const OffscreenShader &shader = (view.drawMapResolution <= shaders->hi_threshold) ?
+                                  shaders->hi :
+                                  (view.drawMapResolution <= shaders->md_threshold) ?
+                                  shaders->md : shaders->lo;
+#if 0
+        float r_, g_, b_, a_;
+        if (view.drawMapResolution <= shaders->hi_threshold) {
+            r_ = 1.f;
+            g_ = 1.f;
+            b_ = 1.f;
+            a_ = 1.f;
+        }
+        else if (view.drawMapResolution <= shaders->md_threshold) {
+            r_ = 1.f;
+            g_ = 1.f;
+            b_ = 0.f;
+            a_ = 1.f;
+        }
+        else {
+            r_ = 1.f;
+            g_ = 0.f;
+            b_ = 0.f;
+            a_ = 1.f;
+        }
+#endif
+
+        glUseProgram(shader.base.handle);
+        int activeTexture[1];
+        glGetIntegerv(GL_ACTIVE_TEXTURE, activeTexture);
+        glBindTexture(GL_TEXTURE_2D, tex.getTexId());
+
+        glUniform1i(shader.base.uTexture, activeTexture[0] - GL_TEXTURE0);
+        glUniform1f(shader.uTexWidth, static_cast<float>(tex.getTexWidth()));
+        glUniform1f(shader.uTexHeight, static_cast<float>(tex.getTexHeight()));
+
+        // XXX - terrain enabled
+        glUniform1f(shader.uElevationScale, static_cast<float>(view.elevationScaleFactor));
+
+        // first pass
+        {
+            // construct the MVP matrix
+            Matrix2 mvp;
+            if (view.scene.camera.mode == MapCamera2::Perspective) {
+                mvp = view.scene.camera.projection;
+                mvp.concatenate(view.scene.camera.modelView);
+            } else {
+                // projection
+                float matrixF[16u];
+                atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, matrixF);
+                for(std::size_t i = 0u; i < 16u; i++)
+                    mvp.set(i%4, i/4, matrixF[i]);
+                // model-view
+                mvp.concatenate(view.scene.forwardTransform);
+            }
+            drawTerrainTilesImpl(view.renderPasses, view.numRenderPasses, shader, mvp, localFrame, numLocalFrames, tex, terrainTiles, visibleTiles, color);
+        }
+
+        if(view.crossesIDL &&
+            ((view.scene.displayModel->earth->getGeomClass() == GeometryModel2::PLANE) ||
+             (&shader != &shaders->lo))) {
+
+            GLMapView2::State stack;
+            State_save(&stack, view);
+
+            if(view.scene.displayModel->earth->getGeomClass() == GeometryModel2::PLANE) {
+                // reconstruct the scene model in the secondary hemisphere
+                if (view.idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper::West)
+                    view.drawLng += 360.0;
+                else if (view.idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper::East)
+                    view.drawLng -= 360.0;
+                else {
+                    Logger_log(TELL_Error, "GLMapView::drawTerrainTiles : invalid primary hemisphere %d", (int)view.idlHelper.getPrimaryHemisphere());
+                    return;
+                }
+
+                view.sceneModelVersion = ~view.sceneModelVersion;
+                validateSceneModel(&view, view.scene.width, view.scene.height);
+            } else if(&shader == &shaders->hi) {
+                // reconstruct the scene model in the secondary hemisphere
+                if (view.idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper::West)
+                    localFrame[0].translate(-360.0, 0.0, 0.0);
+                else if (view.idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper::East)
+                    localFrame[0].translate(360.0, 0.0, 0.0);
+                else {
+                    Logger_log(TELL_Error, "GLMapView::drawTerrainTiles : invalid primary hemisphere %d", (int)view.idlHelper.getPrimaryHemisphere());
+                    return;
+                }
+            } else if(&shader == &shaders->md) {
+                // reconstruct the scene model in the secondary hemisphere
+                if (view.idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper::West)
+                    localFrame[1].translate(-360.0, 0.0, 0.0);
+                else if (view.idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper::East)
+                    localFrame[1].translate(360.0, 0.0, 0.0);
+                else {
+                    Logger_log(TELL_Error, "GLMapView::drawTerrainTiles : invalid primary hemisphere %d", (int)view.idlHelper.getPrimaryHemisphere());
+                    return;
+                }
+            }
+
+            // construct the MVP matrix
+            Matrix2 mvp;
+            // projectino
+            float matrixF[16u];
+            atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, matrixF);
+            for(std::size_t i = 0u; i < 16u; i++)
+                mvp.set(i%4, i/4, matrixF[i]);
+            // model-view
+            mvp.concatenate(view.scene.forwardTransform);
+
+            drawTerrainTilesImpl(view.renderPasses, view.numRenderPasses, shader, mvp, localFrame, numLocalFrames, tex, terrainTiles, visibleTiles, color);
+
+            State_restore(&view, stack);
+        }
+
+        glUseProgram(0);
+    }
+    void drawTerrainTilesImpl(const GLMapView2::State *renderPasses, const std::size_t numRenderPasses, const OffscreenShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const GLTexture2 &texture, const std::vector<std::shared_ptr<const TerrainTile>> &terrainTiles, const std::vector<std::size_t> &visTiles, const TerrainTileColorMode &color) NOTHROWS
     {
         glEnableVertexAttribArray(shader.base.aVertexCoords);
 
         // draw terrain tiles
-        for (auto tile = terrainTiles.begin(); tile != terrainTiles.end(); tile++) {
+        for (std::size_t idx = 0u; idx < visTiles.size(); idx++) {
+            auto tile = terrainTiles[visTiles[idx]];
             for (std::size_t i = numRenderPasses; i > 0; i--) {
                 if (renderPasses[i - 1u].texture) {
                     const GLMapView2::State &s = renderPasses[i - 1u];
                     const bool swapHemi = s.crossesIDL &&
-                        ((s.drawLng < 0.0 && ((*tile)->aabb_wgs84.minX + (*tile)->aabb_wgs84.maxX) / 2.0 > 0.0) ||
-                         (s.drawLng > 0.0 && ((*tile)->aabb_wgs84.minX + (*tile)->aabb_wgs84.maxX) / 2.0 < 0.0));
+                        ((s.drawLng < 0.0 && (tile->aabb_wgs84.minX + tile->aabb_wgs84.maxX) / 2.0 > 0.0) ||
+                         (s.drawLng > 0.0 && (tile->aabb_wgs84.minX + tile->aabb_wgs84.maxX) / 2.0 < 0.0));
 
+                    float r, g, b, a;
+                    if (color.id) {
+                        r = ((visTiles[idx] >> 24) & 0xFF) / 255.f;
+                        g = ((visTiles[idx] >> 16) & 0xFF) / 255.f;
+                        b = ((visTiles[idx] >> 8) & 0xFF) / 255.f;
+                        a = (visTiles[idx] & 0xFF) / 255.f;
+                    } else {
+                        r = color.r;
+                        g = color.g;
+                        b = color.b;
+                        a = color.a;
+                    }
                     if (!swapHemi) {
-                        drawTerrainTileImpl(s, shader, mvp, local, numLocal, **tile, r, g, b, a);
+                        drawTerrainTileImpl(s, shader, mvp, local, numLocal, *tile, color.id || a == 1.f, r, g, b, a);
                     } else {
                         GLMapView2::State s2(s);
                         s2.scene.forwardTransform.translate(s.drawLng > 0.0 ? 360.0 : -360.0, 0.0, 0.0);
-                        drawTerrainTileImpl(s2, shader, mvp, local, numLocal, **tile, r, g, b, a);
+                        drawTerrainTileImpl(s2, shader, mvp, local, numLocal, *tile, color.id || a == 1.f, r, g, b, a);
                     }
                 }
             }
@@ -3844,12 +4214,12 @@ namespace
         glUniformMatrix4fv(location, static_cast<GLsizei>(count), false, matrixF);
     }
 
-    void drawTerrainTileImpl(const GLMapView2::State &state, const OffscreenShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const TerrainTile &tile, const float r, const float g, const float b, const float a) NOTHROWS
+    void drawTerrainTileImpl(const GLMapView2::State &state, const OffscreenShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const TerrainTile &tile, const bool drawSkirt, const float r, const float g, const float b, const float a) NOTHROWS
     {
         TAKErr code(TE_Ok);
 
         int drawMode;
-        switch (tile.data->value->getDrawMode()) {
+        switch (tile.data.value->getDrawMode()) {
             case TEDM_Triangles:
                 drawMode = GL_TRIANGLES;
                 break;
@@ -3868,12 +4238,12 @@ namespace
         if(shader.uLocalTransform < 0) {
             for(std::size_t i = numLocal; i >= 1; i--)
                 matrix.concatenate(local[i-1u]);
-            matrix.concatenate(tile.data->localFrame);
+            matrix.concatenate(tile.data.localFrame);
         } else {
             Matrix2 mx[MAX_LOCAL_TRANSFORMS];
             for(std::size_t i = numLocal; i >= 1; i--)
                 mx[i-1u].set(local[i-1u]);
-            mx[0].concatenate(tile.data->localFrame);
+            mx[0].concatenate(tile.data.localFrame);
             glUniformMatrix4v(shader.uLocalTransform, mx, numLocal ? numLocal : 1u);
         }
 
@@ -3883,7 +4253,7 @@ namespace
         matrix.set(state.scene.forwardTransform);
         if (shader.uLocalTransform < 0) {
             // offscreen is in LLA, so we only need to convert the tile vertices from the LCS to WCS
-            matrix.concatenate(tile.data->localFrame);
+            matrix.concatenate(tile.data.localFrame);
         }
 
         glUniformMatrix4(shader.uModelViewOffscreen, matrix);
@@ -3893,6 +4263,7 @@ namespace
         glUniform1f(shader.uOffscreenViewportWidth, state.viewport.width);
         glUniform1f(shader.uOffscreenViewportHeight, state.viewport.height);
 
+        glUniform4f(shader.base.uColor, r, g, b, a);
 #if 0
         if (depthEnabled) {
 #else
@@ -3908,10 +4279,10 @@ namespace
                     GLES20FixedPipeline.glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
         */
 
-        const bool hasWinding = (tile.data->value->getFaceWindingOrder() != TEWO_Undefined);
+        const bool hasWinding = (tile.data.value->getFaceWindingOrder() != TEWO_Undefined);
         if (hasWinding) {
             glEnable(GL_CULL_FACE);
-            switch (tile.data->value->getFaceWindingOrder()) {
+            switch (tile.data.value->getFaceWindingOrder()) {
                 case TEWO_Clockwise:
                     glFrontFace(GL_CW);
                     break;
@@ -3919,19 +4290,19 @@ namespace
                     glFrontFace(GL_CCW);
                     break;
                 default:
-                    Logger_log(TELL_Error, "GLMapView2::drawTerrainTile : undefined winding order %d", tile.data->value->getFaceWindingOrder());
+                    Logger_log(TELL_Error, "GLMapView2::drawTerrainTile : undefined winding order %d", tile.data.value->getFaceWindingOrder());
                     return;
             }
             glCullFace(GL_BACK);
         }
 
         // render offscreen texture
-        const VertexDataLayout &layout = tile.data->value->getVertexDataLayout();
+        const VertexDataLayout &layout = tile.data.value->getVertexDataLayout();
 
         // XXX - VBO
         // XXX - assumes ByteBuffer
         const void *vertexCoords;
-        code = tile.data->value->getVertices(&vertexCoords, TEVA_Position);
+        code = tile.data.value->getVertices(&vertexCoords, TEVA_Position);
         if (code != TE_Ok) {
             Logger_log(TELL_Error, "GLMapView2::drawTerrainTile : failed to obtain vertex coords, code=%d", code);
             return;
@@ -3939,9 +4310,9 @@ namespace
 
         glVertexAttribPointer(shader.base.aVertexCoords, 3u, GL_FLOAT, false, static_cast<GLsizei>(layout.position.stride), static_cast<const uint8_t *>(vertexCoords) + layout.position.offset);
 
-        if (tile.data->value->isIndexed()) {
+        if (tile.data.value->isIndexed()) {
             DataType indexType;
-            tile.data->value->getIndexType(&indexType);
+            tile.data.value->getIndexType(&indexType);
             int glIndexType;
             switch(indexType) {
                 case TEDT_UInt8 :
@@ -3958,16 +4329,145 @@ namespace
                     return;
             }
 
-            std::size_t numIndices = (a < 1.0f) ? tile.skirtIndexOffset : tile.data->value->getNumIndices();
-            glDrawElements(drawMode, static_cast<GLsizei>(numIndices), glIndexType, static_cast<const uint8_t *>(tile.data->value->getIndices()) + tile.data->value->getIndexOffset());
+            std::size_t numIndices = drawSkirt ? tile.data.value->getNumIndices() : tile.skirtIndexOffset;
+            glDrawElements(drawMode, static_cast<GLsizei>(numIndices), glIndexType, static_cast<const uint8_t *>(tile.data.value->getIndices()) + tile.data.value->getIndexOffset());
         } else {
-            glDrawArrays(drawMode, 0u, static_cast<GLsizei>(tile.data->value->getNumVertices()));
+            glDrawArrays(drawMode, 0u, static_cast<GLsizei>(tile.data.value->getNumVertices()));
         }
 
         if (hasWinding)
             glDisable(GL_CULL_FACE);
     }
 
+    void drawTerrainMeshes(GLMapView2 &view, const std::vector<std::shared_ptr<const TerrainTile>> &terrainTiles, const OffscreenShaders &ecef, const OffscreenShaders &planar, const GLTexture2 &whitePixel) NOTHROWS
+    {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        // select shader
+        const OffscreenShaders *shaders;
+        Matrix2 localFrame[MAX_LOCAL_TRANSFORMS];
+        std::size_t numLocalFrames = 0u;
+        if(view.scene.displayModel->earth->getGeomClass() == TAK::Engine::Math::GeometryModel2::ELLIPSOID) {
+            shaders = &ecef;
+            if(view.drawMapResolution <= shaders->hi_threshold) {
+                Matrix2 tx;
+                tx.setToTranslate(view.drawLng, view.drawLat, 0.0);
+                lla2ecef_transform(&localFrame[0], *view.scene.projection, &tx);
+                localFrame[0].translate(-view.drawLng, -view.drawLat, 0.0);
+                numLocalFrames++;
+            } else if (view.drawMapResolution <= shaders->md_threshold) {
+                const auto &ellipsoid = static_cast<const Ellipsoid2 &>(*view.scene.displayModel->earth);
+
+                const double a = ellipsoid.radiusX;
+                const double b = ellipsoid.radiusZ;
+
+                const double cosLat0d = cos(view.drawLat*M_PI/180.0);
+                const double cosLng0d = cos(view.drawLng*M_PI/180.0);
+                const double sinLat0d = sin(view.drawLat*M_PI/180.0);
+                const double sinLng0d = sin(view.drawLng*M_PI/180.0);
+
+                const double a2_b2 = (a*a)/(b*b);
+                const double b2_a2 = (b*b)/(a*a);
+                const double cden = sqrt((cosLat0d*cosLat0d) + (b2_a2 * (sinLat0d*sinLat0d)));
+                const double lden = sqrt((a2_b2 * (cosLat0d*cosLat0d)) + (sinLat0d*sinLat0d));
+
+                // scale by ellipsoid radii
+                localFrame[2].setToScale(a/cden, a/cden, b/lden);
+                // calculate coefficients for lat/lon => ECEF conversion, using small angle approximation
+                localFrame[2].concatenate(Matrix2(
+                        -cosLat0d*sinLng0d, -cosLng0d*sinLat0d, sinLat0d*sinLng0d, cosLat0d*cosLng0d,
+                        cosLat0d*cosLng0d, -sinLat0d*sinLng0d, -sinLat0d*cosLng0d, cosLat0d*sinLng0d,
+                        0, cosLat0d, 0, sinLat0d,
+                        0, 0, 0, 1
+                ));
+                // convert degrees to radians
+                localFrame[2].scale(M_PI/180.0, M_PI/180.0, M_PI/180.0*M_PI/180.0);
+                numLocalFrames++;
+
+                // degrees are relative to focus
+                localFrame[1].setToTranslate(-view.drawLng, -view.drawLat, 0);
+                numLocalFrames++;
+
+                // degrees are relative to focus
+                localFrame[0].setToIdentity();
+                numLocalFrames++;
+            }
+        } else {
+            shaders = &planar;
+        }
+
+        const OffscreenShader &shader = (view.drawMapResolution <= shaders->hi_threshold) ?
+                                        shaders->hi :
+                                        (view.drawMapResolution <= shaders->md_threshold) ?
+                                        shaders->md : shaders->lo;
+
+        glUseProgram(shader.base.handle);
+        int activeTexture[1];
+        glGetIntegerv(GL_ACTIVE_TEXTURE, activeTexture);
+        glBindTexture(GL_TEXTURE_2D, whitePixel.getTexId());
+
+        glUniform1i(shader.base.uTexture, activeTexture[0] - GL_TEXTURE0);
+        glUniform4f(shader.base.uColor, 1.0, 1.0, 1.0, 1.0);
+        glUniform1f(shader.uTexWidth, static_cast<float>(whitePixel.getTexWidth()));
+        glUniform1f(shader.uTexHeight, static_cast<float>(whitePixel.getTexHeight()));
+
+        // XXX - terrain enabled
+        glUniform1f(shader.uElevationScale, static_cast<float>(view.elevationScaleFactor));
+
+        // first pass
+        {
+            // construct the MVP matrix
+            Matrix2 mvp;
+            // projectino
+            float matrixF[16u];
+            atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, matrixF);
+            for(std::size_t i = 0u; i < 16u; i++)
+                mvp.set(i%4, i/4, matrixF[i]);
+            // model-view
+            mvp.concatenate(view.scene.forwardTransform);
+
+            drawTerrainMeshesImpl(view.renderPasses[0], shader, mvp, localFrame, numLocalFrames, terrainTiles, 0, 1, 0, 1);
+        }
+
+        // first pass -- vertex coords
+        if(view.scene.displayModel->earth->getGeomClass() == GeometryModel2::PLANE && view.crossesIDL) {
+            GLMapView2::State stack;
+            State_save(&stack, view);
+            // reconstruct the scene model in the secondary hemisphere
+            if (view.idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper::West)
+                view.drawLng += 360.0;
+            else if (view.idlHelper.getPrimaryHemisphere() == GLAntiMeridianHelper::East)
+                view.drawLng -= 360.0;
+            else {
+                Logger_log(TELL_Error, "GLMapView::drawTerrainMeshes : invalid primary hemisphere %d", (int)view.idlHelper.getPrimaryHemisphere());
+                return;
+            }
+
+            view.sceneModelVersion = ~view.sceneModelVersion;
+            validateSceneModel(&view, view.scene.width, view.scene.height);
+
+            GLMapView2::State idlPass;
+            GLMapView2::State &state = view.renderPasses[0];
+            createOffscreenSceneModel(&idlPass, view, state.drawMapResolution, state.drawTilt, state.scene.width, state.scene.height, static_cast<float>(state.left), static_cast<float>(state.bottom), static_cast<float>(state.right - state.left), static_cast<float>(state.top - state.bottom));
+
+            // construct the MVP matrix
+            Matrix2 mvp;
+            // projectino
+            float matrixF[16u];
+            atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, matrixF);
+            for(std::size_t i = 0u; i < 16u; i++)
+                mvp.set(i%4, i/4, matrixF[i]);
+            // model-view
+            mvp.concatenate(view.scene.forwardTransform);
+
+            drawTerrainMeshesImpl(idlPass, shader, mvp, localFrame, numLocalFrames, terrainTiles, 0, 1, 0, 1);
+
+            State_restore(&view, stack);
+        }
+
+        glUseProgram(0);
+    }
     void drawTerrainMeshesImpl(const GLMapView2::State &renderPass, const OffscreenShader &shader, const Matrix2 &mvp, const Matrix2 *local, const std::size_t numLocal, const std::vector<std::shared_ptr<const TerrainTile>> &terrainTiles, const float r, const float g, const float b, const float a) NOTHROWS
     {
         glUniform1f(shader.uOffscreenViewportX, 0);
@@ -3992,7 +4492,7 @@ namespace
         TAKErr code(TE_Ok);
 
         int drawMode;
-        switch (tile.data->value->getDrawMode()) {
+        switch (tile.data.value->getDrawMode()) {
             case TEDM_Triangles:
                 drawMode = GL_TRIANGLES;
                 break;
@@ -4014,12 +4514,12 @@ namespace
         if(shader.uLocalTransform < 0) {
             for(std::size_t i = numLocal; i >= 1; i--)
                 matrix.concatenate(local[i-1u]);
-            matrix.concatenate(tile.data->localFrame);
+            matrix.concatenate(tile.data.localFrame);
         } else {
             Matrix2 mx[MAX_LOCAL_TRANSFORMS];
             for(std::size_t i = numLocal; i >= 1; i--)
                 mx[i-1u].set(local[i-1u]);
-            mx[0].concatenate(tile.data->localFrame);
+            mx[0].concatenate(tile.data.localFrame);
             glUniformMatrix4v(shader.uLocalTransform, mx, numLocal ? numLocal : 1u);
         }
 
@@ -4029,7 +4529,7 @@ namespace
         matrix.set(state.scene.forwardTransform);
         if(shader.uLocalTransform < 0) {
             // offscreen is in LLA, so we only need to convert the tile vertices from the LCS to WCS
-            matrix.concatenate(tile.data->localFrame);
+            matrix.concatenate(tile.data.localFrame);
         }
 
         glUniformMatrix4(shader.uModelViewOffscreen, matrix);
@@ -4043,12 +4543,12 @@ namespace
         }
 
         // render offscreen texture
-        const VertexDataLayout &layout = tile.data->value->getVertexDataLayout();
+        const VertexDataLayout &layout = tile.data.value->getVertexDataLayout();
 
         // XXX - VBO
         // XXX - assumes ByteBuffer
         const void *vertexCoords;
-        code = tile.data->value->getVertices(&vertexCoords, TEVA_Position);
+        code = tile.data.value->getVertices(&vertexCoords, TEVA_Position);
         if (code != TE_Ok) {
             Logger_log(TELL_Error, "GLMapView2::drawTerrainTile : failed to obtain vertex coords, code=%d", code);
             return;
@@ -4060,14 +4560,14 @@ namespace
         array_ptr<uint8_t> wireframeIndices;
         int glIndexType = GL_NONE;
 
-        if (tile.data->value->isIndexed()) {
-            const GLuint numMeshIndices = DEBUG_DRAW_MESH_SKIRT ? static_cast<GLuint>(tile.data->value->getNumIndices()) : static_cast<GLuint>(tile.skirtIndexOffset);
+        if (tile.data.value->isIndexed()) {
+            const GLuint numMeshIndices = DEBUG_DRAW_MESH_SKIRT ? static_cast<GLuint>(tile.data.value->getNumIndices()) : static_cast<GLuint>(tile.skirtIndexOffset);
             GLWireframe_getNumWireframeElements(&numIndicesWireframe, drawMode, numMeshIndices);
 
-            const void *srcIndices = static_cast<const uint8_t *>(tile.data->value->getIndices()) + tile.data->value->getIndexOffset();
+            const void *srcIndices = static_cast<const uint8_t *>(tile.data.value->getIndices()) + tile.data.value->getIndexOffset();
 
             DataType indexType;
-            tile.data->value->getIndexType(&indexType);
+            tile.data.value->getIndexType(&indexType);
             switch(indexType) {
                 case TEDT_UInt8 :
                     glIndexType = GL_UNSIGNED_BYTE;
@@ -4091,18 +4591,18 @@ namespace
                     return;
             }
         } else {
-            GLWireframe_getNumWireframeElements(&numIndicesWireframe, drawMode, static_cast<GLuint>(tile.data->value->getNumVertices()));
+            GLWireframe_getNumWireframeElements(&numIndicesWireframe, drawMode, static_cast<GLuint>(tile.data.value->getNumVertices()));
 
             DataType indexType;
-            tile.data->value->getIndexType(&indexType);
-            if (tile.data->value->getNumVertices() < 0xFFFFu) {
+            tile.data.value->getIndexType(&indexType);
+            if (tile.data.value->getNumVertices() < 0xFFFFu) {
                 glIndexType = GL_UNSIGNED_SHORT;
                 wireframeIndices.reset(new uint8_t[numIndicesWireframe * sizeof(uint16_t)]);
-                GLWireframe_deriveIndices(reinterpret_cast<uint16_t *>(wireframeIndices.get()), drawMode, static_cast<GLuint>(tile.data->value->getNumVertices()));
+                GLWireframe_deriveIndices(reinterpret_cast<uint16_t *>(wireframeIndices.get()), drawMode, static_cast<GLuint>(tile.data.value->getNumVertices()));
             } else {
                 glIndexType = GL_UNSIGNED_INT;
                 wireframeIndices.reset(new uint8_t[numIndicesWireframe * sizeof(uint32_t)]);
-                GLWireframe_deriveIndices(reinterpret_cast<uint32_t *>(wireframeIndices.get()), drawMode, static_cast<GLuint>(tile.data->value->getNumVertices()));
+                GLWireframe_deriveIndices(reinterpret_cast<uint32_t *>(wireframeIndices.get()), drawMode, static_cast<GLuint>(tile.data.value->getNumVertices()));
             }
         }
 

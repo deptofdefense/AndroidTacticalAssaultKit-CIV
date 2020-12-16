@@ -74,7 +74,13 @@ namespace
 
 MapSceneModel2::MapSceneModel2() NOTHROWS :
     earth(nullptr, nullptr),
-    projection(nullptr, nullptr)
+    projection(nullptr, nullptr),
+    displayDpi(NAN),
+    width(0),
+    height(0),
+    focusX(NAN),
+    focusY(NAN),
+    gsd(NAN)
 {}
 
 MapSceneModel2::MapSceneModel2(double displayDPI, std::size_t width, std::size_t height, int srid, const GeoPoint2 &focusGeo, float focusX,
@@ -828,7 +834,14 @@ namespace
         Matrix2 xproj;
         if(cameraMode == MapCamera2::Scale) {
             double xEyePosLength;
-            Vector2_length(&xEyePosLength, xEyePosMeters);
+            if (displayModel.earth->getGeomClass() == GeometryModel2::PLANE) {
+                Point2<double> eye_tgt(xEyePosMeters);
+                Vector2_subtract(&eye_tgt, xEyePosMeters, _posTargetMeters);
+                Vector2_length(&xEyePosLength, eye_tgt);
+                xEyePosLength += Datum2::WGS84.reference.semiMajorAxis;
+            } else { // ellipsoid
+                Vector2_length(&xEyePosLength, xEyePos);
+            }
             xproj.setToScale(1.0 / (aspect*scale),
                 1.0 / (scale),
                 -1.0 / (xEyePosLength));

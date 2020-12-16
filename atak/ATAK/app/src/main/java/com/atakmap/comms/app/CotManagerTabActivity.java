@@ -8,8 +8,11 @@ import android.os.Parcelable;
 import android.widget.TabHost;
 
 import com.atakmap.android.metrics.activity.MetricTabActivity;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class CotManagerTabActivity extends MetricTabActivity {
 
     @Override

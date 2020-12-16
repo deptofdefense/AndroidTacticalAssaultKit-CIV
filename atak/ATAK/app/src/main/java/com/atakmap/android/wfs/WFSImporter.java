@@ -16,7 +16,7 @@ import android.os.Bundle;
 
 import com.atakmap.android.importexport.AbstractImporter;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.filesystem.HashingUtils;
@@ -35,7 +35,7 @@ public class WFSImporter extends AbstractImporter {
 
     private final static String TAG = "WFSImporter";
 
-    private static Set<String> SUPPORTED_MIME_TYPES = new HashSet<>();
+    private static final Set<String> SUPPORTED_MIME_TYPES = new HashSet<>();
     static {
         SUPPORTED_MIME_TYPES.add(MIME_URL);
         SUPPORTED_MIME_TYPES.add(MIME_XML);
@@ -106,8 +106,8 @@ public class WFSImporter extends AbstractImporter {
         final File workingDir;
         try {
             workingDir = getWorkingDir(HashingUtils.md5sum(config));
-            if (!FileIOProviderFactory.exists(workingDir)) {
-                boolean s = FileIOProviderFactory.mkdirs(workingDir);
+            if (!IOProviderFactory.exists(workingDir)) {
+                boolean s = IOProviderFactory.mkdirs(workingDir);
                 if (!s)
                     Log.e(TAG, "could not make wfs working directory: "
                             + workingDir);
@@ -124,7 +124,7 @@ public class WFSImporter extends AbstractImporter {
         String name = (schema != null) ? schema.getName() : address;
         final FeatureLayer layer = new FeatureLayer(name, dataStore);
 
-        this.wfs.add(uri.toString(), layer);
+        this.wfs.add(uri.toString(), mime, layer);
 
         return ImportResult.SUCCESS;
     }

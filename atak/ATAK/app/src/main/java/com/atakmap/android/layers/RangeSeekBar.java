@@ -80,7 +80,7 @@ public class RangeSeekBar<T extends Number> extends ImageView {
     private float mDownMotionX;
     private int mActivePointerId = INVALID_POINTER_ID;
 
-    private int mScaledTouchSlop;
+    private final int mScaledTouchSlop;
     private boolean mIsDragging;
 
     /**

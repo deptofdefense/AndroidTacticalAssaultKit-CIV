@@ -22,10 +22,13 @@ import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
+import com.atakmap.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -36,8 +39,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.UUID;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 public class IconsMapAdapter extends BroadcastReceiver {
 
@@ -75,7 +76,7 @@ public class IconsMapAdapter extends BroadcastReceiver {
     public static synchronized UserIconDatabase initializeUserIconDB(
             Context context, SharedPreferences prefs) {
         File iconDB = new File(UserIconDatabase.DATABASE_NAME);
-        boolean iconDBexists = FileIOProviderFactory.exists(iconDB);
+        boolean iconDBexists = IOProviderFactory.exists(iconDB);
 
         //check if the latest default iconset is loaded
         String versionCode = String.valueOf(ATAKConstants.getVersionCode());
@@ -90,41 +91,23 @@ public class IconsMapAdapter extends BroadcastReceiver {
         if (!iconDBexists
                 || !versionCode.equals(currentVersion)) {
             Log.d(TAG, "Replacing iconset version: " + currentVersion);
-            if (initializeIconsetDB(context)) {
-                //if the copy succeeded, make a note in the preferences
-                Editor editor = prefs.edit();
-                editor.putString("iconset.default.loaded.version", versionCode);
-                editor.apply();
-                Log.d(TAG, "Updated to iconset version: " + versionCode);
-            }
+            //if the copy succeeded, make a note in the preferences
+            Editor editor = prefs.edit();
+            editor.putString("iconset.default.loaded.version", versionCode);
+            editor.apply();
+            Log.d(TAG, "Updated to iconset version: " + versionCode);
+
+            // XXX - this is not per-provider sufficient
+
+            // delete the file, this will trigger the UserIconDatabase to rebuild
+            IOProviderFactory.delete(new File(UserIconDatabase.DATABASE_NAME),
+                    IOProvider.SECURE_DELETE);
         } else {
             Log.d(TAG,
                     "Already running latest iconset version: " + versionCode);
         }
 
-        //setup DB
         return UserIconDatabase.instance(context);
-    }
-
-    /**
-     * Load an iconset packaged in APK as asset file
-     *
-     * @param context the context to use when initializing the database
-     * @return true if the iconset database initializes correctly.
-     */
-    private static boolean initializeIconsetDB(Context context) {
-        Log.d(TAG, "Deploying asset iconset database");
-
-        String assetPath = "dbs" + File.separatorChar + "iconsets.sqlite";
-        String outputPath = "Databases" + File.separatorChar
-                + "iconsets.sqlite";
-        if (!FileSystemUtils.copyFromAssetsToStorageFile(context,
-                assetPath, outputPath, true)) {
-            Log.w(TAG, "Failed to extract iconset database: " + outputPath);
-            return false;
-        }
-
-        return true;
     }
 
     /**
@@ -277,7 +260,7 @@ public class IconsMapAdapter extends BroadcastReceiver {
         UserIconSet iconset;
         long start = android.os.SystemClock.elapsedRealtime();
 
-        if (file == null || !FileIOProviderFactory.exists(file)) {
+        if (file == null || !IOProviderFactory.exists(file)) {
             Log.w(TAG,
                     "ZIP does not exist: "
                             + (file == null ? "null" : file.getAbsolutePath()));

@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Abstract base class for a database statement.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Dec 21, 2014
+////      Dec 21, 2014  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -91,7 +91,7 @@ class Statement
 
     virtual
     ~Statement ()                       // Derived destructor should call close.
-        throw ()
+        NOTHROWS
         = 0;
 
     //

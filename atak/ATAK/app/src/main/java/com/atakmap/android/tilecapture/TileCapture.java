@@ -21,11 +21,12 @@ import com.atakmap.android.tilecapture.reader.NativeTileReader;
 import com.atakmap.android.tilecapture.reader.TileBitmap;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.Vector2D;
+import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.Layer;
 import com.atakmap.map.layer.raster.AbstractRasterLayer2;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
@@ -44,7 +45,6 @@ import com.atakmap.math.PointD;
 import com.atakmap.util.ConfigOptions;
 
 import org.gdal.gdal.Dataset;
-import org.gdal.gdal.gdal;
 import org.gdal.gdalconst.gdalconst;
 
 import java.io.File;
@@ -218,7 +218,7 @@ public class TileCapture extends DatasetTileReader {
 
         File bmFile = new File(FileSystemUtils.getItem(
                 FileSystemUtils.TMP_DIRECTORY), "worldmap_4326.png");
-        if (!FileIOProviderFactory.exists(bmFile)) {
+        if (!IOProviderFactory.exists(bmFile)) {
             try {
                 GLCapture.compress(bmp, 100, Bitmap.CompressFormat.PNG,
                         bmFile, false);
@@ -233,7 +233,7 @@ public class TileCapture extends DatasetTileReader {
                 new GeoPoint(-90, 180), new GeoPoint(-90, -180)
         };
 
-        Dataset ds = gdal.Open(bmFile.getAbsolutePath());
+        Dataset ds = GdalLibrary.openDatasetFromFile(bmFile);
         if (ds == null) {
             Log.e(TAG, "gdal.Open failed " + bmFile);
             return null;
@@ -255,7 +255,7 @@ public class TileCapture extends DatasetTileReader {
     private double _levelTransitionAdj;
     private double _gsd;
     private int _srid;
-    private Vector2D[] _tmpVec = new Vector2D[] {
+    private final Vector2D[] _tmpVec = new Vector2D[] {
             new Vector2D(0, 0), new Vector2D(0, 0), new Vector2D(0, 0)
     };
 
@@ -697,7 +697,8 @@ public class TileCapture extends DatasetTileReader {
                     path = path.substring(URIScheme.FILE.length())
                             .replace("%20", " ")
                             .replace("%23", "#");
-                Dataset ds = gdal.Open(path, gdalconst.GA_ReadOnly);
+                Dataset ds = GdalLibrary.openDatasetFromFile(new File(path),
+                        gdalconst.GA_ReadOnly);
                 return ds != null ? new GdalTileReader(info, ds)
                         : new NativeTileReader(info);
             }

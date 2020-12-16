@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.raster.controls.TileClientControl;
 import com.atakmap.map.layer.raster.tilepyramid.AbstractTilePyramidTileReader;
@@ -27,7 +28,7 @@ public class MobacTileReader extends AbstractTilePyramidTileReader {
         @Override
         public TileReader create(String uri, Options options) {
             File file = new File(uri);
-            if(!file.exists())
+            if(!IOProviderFactory.exists(file))
                 return null;
             
             try {
@@ -52,7 +53,7 @@ public class MobacTileReader extends AbstractTilePyramidTileReader {
         @Override
         public boolean isSupported(String uri) {
             File file = new File(uri);
-            if(!file.exists())
+            if(!IOProviderFactory.exists(file))
                 return false;
 
             try {

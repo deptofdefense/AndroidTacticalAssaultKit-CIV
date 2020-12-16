@@ -28,7 +28,6 @@ namespace {
 TileReader2::TileReader2(const char *uri_) NOTHROWS
     : uri(uri_),
       asynchronousIO(nullptr),
-      disposeIO(false),
       asyncRequestId(1),
       readLock(Thread::TEMT_Recursive),
       valid(true),
@@ -57,20 +56,17 @@ TileReader2::~TileReader2()
         TE_CHECKBREAK_CODE(code);
     } while (false);
 
-    // if we are the exclusive owner of the async I/O thread, release it
-    if (disposeIO)
-        delete asynchronousIO;
+    asynchronousIO.reset();
 }
 
-void TileReader2::installAsynchronousIO(AsynchronousIO *io)
+void TileReader2::installAsynchronousIO(std::shared_ptr<AsynchronousIO> io)
 {
     if (this->asynchronousIO != nullptr)
         return;
 
     this->asynchronousIO = io;
     if (!this->asynchronousIO) {
-        this->asynchronousIO = new AsynchronousIO();
-        disposeIO = true;
+        this->asynchronousIO = std::make_shared<AsynchronousIO>();
     }
 }
 

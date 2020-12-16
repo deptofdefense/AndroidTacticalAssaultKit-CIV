@@ -260,7 +260,7 @@ public final class Models {
                     // the mesh triangles when searching for intersection
                     ray = inverse(ray, localFrame);
                     isectIsLocal = (localFrame != null);
-                } catch (NoninvertibleTransformException e) {}
+                } catch (NoninvertibleTransformException ignored) {}
 
                 // check for AABB intersection first, if no AABB intersect, then skip
                 if (!aabbIntersects(m.getAABB(), isectIsLocal ? null : localFrame, ray))

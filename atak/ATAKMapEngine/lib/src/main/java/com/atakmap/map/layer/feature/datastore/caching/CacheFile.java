@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.map.layer.feature.AttributeSet;
 import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.Feature;
@@ -252,11 +252,9 @@ public final class CacheFile implements Disposable {
     /**************************************************************************/
     
     public static void createCacheFile(int clientVersion, int level, int index, long timestamp, FeatureDataStore2 features, FeatureQueryParameters params, String path) throws IOException, DataStoreException {
-        FileOutputStream stream = null;
         FileChannel channel = null;
         try {
-            stream = FileIOProviderFactory.getOutputStream(new File(path));
-            channel = stream.getChannel();
+            channel = IOProviderFactory.getChannel(new File(path), "rw");
             
             ByteBuffer buf = ByteBuffer.allocate(24);
             buf.put(MAGIC_NUMBER);
@@ -274,19 +272,15 @@ public final class CacheFile implements Disposable {
             
             fmt.writeCache(channel, buf.order(), level, index, timestamp, features, params);
         } finally {
-            if(stream != null)
-                stream.close();
             if(channel != null)
                 channel.close();
         }
     }
     
     public static CacheFile readCacheFile(String path) throws IOException {
-        FileInputStream stream = null;
         FileChannel channel = null;
         try {
-            stream = FileIOProviderFactory.getInputStream(new File(path));
-            channel = stream.getChannel();
+            channel = IOProviderFactory.getChannel(new File(path), "r");
             
             ByteBuffer buf = ByteBuffer.allocate(24);
             int retval = channel.read(buf);
@@ -337,15 +331,12 @@ public final class CacheFile implements Disposable {
                 final CacheFile retFile = new CacheFile(clientVersion, metadata, fmt, ctx, channel);
                 ctx = null;
                 channel = null;
-                stream = null;
                 return retFile;
             } finally {
                 if(ctx != null)
                     fmt.closeFormatContext(ctx);
             }
         } finally {
-            if(stream != null)
-                stream.close();
             if(channel != null)
                 channel.close();
         }

@@ -7,8 +7,8 @@ import java.util.Set;
 import com.atakmap.content.CatalogCurrencyRegistry;
 import com.atakmap.content.CatalogDatabase;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProvider;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.Databases;
@@ -287,9 +287,9 @@ public class FeatureSpatialDatabase extends CatalogDatabase {
         String dbPath = Databases.getDatabaseFile(this.database);
         if (dbPath != null) {
             File dbFile = new File(FileSystemUtils.sanitizeWithSpacesAndSlashes(dbPath));
-            if (FileIOProviderFactory.exists(dbFile)) {
+            if (IOProviderFactory.exists(dbFile)) {
                 this.database.close();
-                final boolean deleted = FileIOProviderFactory.delete(dbFile, FileIOProvider.SECURE_DELETE);
+                final boolean deleted = IOProviderFactory.delete(dbFile, IOProvider.SECURE_DELETE);
                 this.database = openCreateDatabase(dbFile);
                 if (deleted)
                     return;
@@ -481,7 +481,7 @@ public class FeatureSpatialDatabase extends CatalogDatabase {
     /**************************************************************************/
 
     private static DatabaseIface openCreateDatabase(File file) {
-        return Databases.openOrCreateDatabase(file.getAbsolutePath());
+        return IOProviderFactory.createDatabase(file);
     }
 
     private static int databaseVersion() {

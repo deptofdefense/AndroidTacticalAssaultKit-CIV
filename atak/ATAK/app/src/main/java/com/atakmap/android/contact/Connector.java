@@ -90,11 +90,8 @@ public abstract class Connector {
                 c.getConnectionType()))
             return false;
 
-        if (!FileSystemUtils.isEquals(getConnectionString(),
-                c.getConnectionString()))
-            return false;
-
-        return true;
+        return FileSystemUtils.isEquals(getConnectionString(),
+                c.getConnectionString());
     }
 
     @Override

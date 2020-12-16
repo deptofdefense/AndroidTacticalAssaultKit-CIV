@@ -254,7 +254,7 @@ namespace TAK {
             private :
                 struct LT_featureSetName
                 {
-                    bool operator()(const std::shared_ptr<const FeatureDb> &a, const std::shared_ptr<const FeatureDb> &b)
+                    bool operator()(const std::shared_ptr<const FeatureDb> &a, const std::shared_ptr<const FeatureDb> &b) const
                     {
                         if (a->name && b->name) {
                             return (TAK::Engine::Port::String_strcasecmp(a->name, b->name)<0);

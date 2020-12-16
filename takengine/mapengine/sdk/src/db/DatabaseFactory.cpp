@@ -30,11 +30,16 @@ TAKErr TAK::Engine::DB::DatabaseFactory_unRegisterProvider(const DatabaseProvide
 
 TAKErr TAK::Engine::DB::DatabaseFactory_create(DatabasePtr &result, const DatabaseInformation &dbInformation) NOTHROWS {
     TAKErr code = TE_Unsupported;
-    auto registry = getGlobalDatabaseFactoryRegistry().read();
-    for (const auto &entry : registry->priority_map) {
-        code = entry->create(result, dbInformation);
-        if (code == TE_Ok)
-            break;
+    const char* tmpUri;
+    dbInformation.getUri(&tmpUri);
+
+    if(!tmpUri){
+        DefaultDatabaseProvider defaultProvider;
+        code = defaultProvider.create(result, dbInformation);
+    } else{
+        auto registry = getGlobalDatabaseFactoryRegistry().read();
+        if(registry->priority_map.size())
+            code = registry->priority_map[registry->priority_map.size()-1u]->create(result, dbInformation);
     }
     return code;
 }

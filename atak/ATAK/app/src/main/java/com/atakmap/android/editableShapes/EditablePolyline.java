@@ -1342,7 +1342,6 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
         return mapScale >= DEFAULT_MIN_RENDER_VERTS;
     }
 
-
     @Deprecated
     private boolean forceAltitude = false;
 
@@ -1379,7 +1378,9 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
             synchronized (EditablePolyline.this) {
                 Integer index = EditablePolyline.this.markerToIndex.get(item);
                 if (index == null)
-                    throw new IllegalStateException("could not find index of the item");
+                    throw new IllegalStateException("Item with UID "
+                            + item.getUID() + " not found in line");
+
                 GeoPoint gp = item.getPoint();
                 GeoPointMetaData gpm = GeoPointMetaData.wrap(gp)
                         .setAltitudeSource(item.getMetaString(
@@ -2024,12 +2025,12 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
         GeoPointMetaData textLoc;
         GeoPointMetaData[] pts = this.getMetaDataPoints();
 
-        boolean clampToGroundKMLElevation = Double.isNaN(getHeight()) || Double.compare(getHeight(), 0.0)  == 0;
+        boolean clampToGroundKMLElevation = Double.isNaN(getHeight())
+                || Double.compare(getHeight(), 0.0) == 0;
 
         // reintroduce legacy behavior
         if (forceAltitude)
             clampToGroundKMLElevation = false;
-
 
         if (this.isClosed()) {
             Polygon lr = KMLUtil.createPolygonWithLinearRing(pts,

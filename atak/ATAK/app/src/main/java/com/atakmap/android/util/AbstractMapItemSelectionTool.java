@@ -42,7 +42,7 @@ public abstract class AbstractMapItemSelectionTool extends Tool implements
     private final TextContainer _container;
     private MapItem _item;
 
-    private DeconflictionListener decon = new DeconflictionListener() {
+    private final DeconflictionListener decon = new DeconflictionListener() {
         public void onConflict(final SortedSet<MapItem> hitItems) {
             List<MapItem> list = new ArrayList<>(hitItems);
             hitItems.clear();

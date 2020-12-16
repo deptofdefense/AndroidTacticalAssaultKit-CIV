@@ -22,7 +22,7 @@ public class NavigationZoomService implements
      * Fields and Properties
      *******************************************************************************/
 
-    private double desiredZoom = 1.120997868311173E-4;
+    private final double desiredZoom = 1.120997868311173E-4;
     private double maneuverDesiredZoom = 3.600922593220702E-4;
     private double cachedZoomLevel = 0;
     private RouteNavigator routeNavigator;

@@ -47,7 +47,7 @@ namespace TAK {
                 * existing bindings; bindings must always be explicitly cleared via
                 * {@link #clearBindings()}.
                 */
-                virtual TAK::Engine::Util::TAKErr reset() throw () = 0;
+                virtual TAK::Engine::Util::TAKErr reset() NOTHROWS = 0;
 #endif
             };
         }

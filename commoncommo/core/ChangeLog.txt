@@ -1,3 +1,26 @@
+** Release 2020-09-29
+NEW FEATURES
+* File-based I/O is now performed through a layer of abstraction allowing
+  the client application to supply an alternate file open/read/close
+  mechanism. If no alternate I/O implementation is registered,
+  the default implementation uses the underlying OS/libc's simple file IO 
+  to mimic behavior of previous Commo releases.
+* TCP port used for http interactions with TAK server (primarily mission
+  package transfers via a TAK server) is now configurable (similar to how
+  the same port setting for https interactions was in prior versions).  The
+  default for this new setting is port 8080, which emulates the behavior of
+  prior Commo versions.
+
+API CHANGES
+* Java only: Addition of Commo::registerFileIOProvider() and
+  Commo::deregisterFileIOProvider() plus supporting interfaces to implement
+  the new file-based I/O abstraction feature detailed above.  Support
+  for other languages is not planned and will default to the legacy file
+  I/O behavior.
+* Added Commo::setMissionPackageHttpPort() to provide the TAK server http 
+  port use described in the new feature, above.
+
+
 ** Release 2020-06-09
 NEW FEATURES
 * The "CloudClient" API now includes a method by which to request

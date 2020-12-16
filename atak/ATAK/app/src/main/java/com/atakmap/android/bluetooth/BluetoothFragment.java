@@ -42,9 +42,18 @@ public class BluetoothFragment implements OnSharedPreferenceChangeListener {
     // per Matt's request to have ATAK turn off BT iff ATAK is the starter
     private boolean atakStartedBluetooth = false;
 
-    public void onStart() {
+    public synchronized void onStart() {
         if (context == null) {
             this.context = MapView.getMapView().getContext();
+
+            FileSystemUtils.ensureDataDirectory(BluetoothDevicesConfig.DIRNAME,
+                    false);
+            FileSystemUtils.copyFromAssetsToStorageFile(context,
+                    BluetoothDevicesConfig.DEFAULT_BLUETOOTH_CONFIG,
+                    BluetoothDevicesConfig.CONFIG_FILE_PATH, false);
+
+            manager.setContext(context);
+
             this.prefs = PreferenceManager.getDefaultSharedPreferences(context);
 
             // this is icky, we have to do an initial register of
@@ -52,12 +61,6 @@ public class BluetoothFragment implements OnSharedPreferenceChangeListener {
             // by the Bluetooth broadcast receivers
             registerAllReceivers();
 
-            FileSystemUtils.ensureDataDirectory(BluetoothDevicesConfig.DIRNAME,
-                    false);
-            FileSystemUtils.copyFromAssetsToStorageFile(context,
-                    BluetoothDevicesConfig.DEFAULT_BLUETOOTH_CONFIG,
-                    BluetoothDevicesConfig.CONFIG_FILE_PATH, false);
-            manager.setContext(context);
             prefs.registerOnSharedPreferenceChangeListener(this);
 
         }

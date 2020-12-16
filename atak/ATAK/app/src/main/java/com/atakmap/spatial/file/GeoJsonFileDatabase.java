@@ -7,6 +7,7 @@ import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.comms.http.HttpUtil;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.feature.FeatureDataSource;
 
@@ -29,7 +30,7 @@ public class GeoJsonFileDatabase extends FileDatabase {
     public boolean accept(File file) {
         // XXX - extension ???
         //String lc = file.getName().toLowerCase(LocaleUtil.getCurrent());
-        return file.isFile();
+        return IOProviderFactory.isFile(file);
     }
 
     @Override

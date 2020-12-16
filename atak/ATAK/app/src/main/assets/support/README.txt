@@ -45,8 +45,6 @@ The following formats are supported:
     KMZ
     MrSID
     NITF
-    PFI
-    PRI
     RPF
 
 For the best performance, it is recommended that you organize your imagery directory such that each dataset
@@ -54,10 +52,6 @@ gets its own subdirectory under imagery. Small datasets (less than 5000 chips) w
 ATAK starts to make sure they are up to date.  Large datasets (more than 5000) chips will not be checked. If
 you have a large dataset and it has changed, you can force a refresh by selecting the dataset for import
 using the Import Manager.
-
-PFI and PRI imagery can be placed in the /imagery directory. The app supports extraction of 3D coordinate
-data (latitude, longitude, elevation and error) from PFI v4.0 files; previous versions of PFI will be
-capable of imagery display, but not elevation or error query. 
 
 /imagery
 
@@ -113,10 +107,10 @@ IconStyle/Icon/Href (in other words your icons may specify a color but not an im
 Shapes drawn on the app map may be exported to various formats including KML; this is the
 directory where these files are created.
 
-/tools/datapackage
+/tools/missionpackage
 
-Data packages which are created, imported, or received over the air are stored in this
-directory. Data Packages may be manually placed in this directory to be imported.
+Mission packages which are created, imported, or received over the air are stored in this
+directory. Mission Packages may be manually placed in this directory to be imported.
 
 
 /overlays

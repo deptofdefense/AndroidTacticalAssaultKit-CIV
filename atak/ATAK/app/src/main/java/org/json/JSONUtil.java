@@ -1,8 +1,12 @@
 
 package org.json;
 
+import com.atakmap.annotations.DeprecatedApi;
+
 import java.lang.reflect.Array;
 
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class JSONUtil {
 
     /**

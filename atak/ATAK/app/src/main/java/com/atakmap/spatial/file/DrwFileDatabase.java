@@ -18,6 +18,7 @@ import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.SimpleRectangle;
 import com.atakmap.android.maps.Shape;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.maps.coords.GeoBounds;
@@ -67,7 +68,7 @@ public class DrwFileDatabase extends
     @Override
     public boolean accept(File file) {
         String lc = file.getName().toLowerCase(LocaleUtil.getCurrent());
-        return file.isFile() && lc.endsWith(EXTENSION);
+        return IOProviderFactory.isFile(file) && lc.endsWith(EXTENSION);
     }
 
     @Override
@@ -102,7 +103,7 @@ public class DrwFileDatabase extends
         Database msaccessDb = null;
         try {
             DatabaseBuilder db = new DatabaseBuilder();
-            db.setFile(drwFile);
+            db.setChannel(IOProviderFactory.getChannel(drwFile, "r"));
             db.setReadOnly(true);
             msaccessDb = db.open();
             Table msaccessTable = msaccessDb.getTable("Main");
@@ -117,7 +118,6 @@ public class DrwFileDatabase extends
                     Integer itemNum = (Integer) row.get("ItemNum");
                     if (itemNum == null)
                         continue;
-
 
                     // if new shape number
                     if (!itemNum.equals(currentItemNum)) {
@@ -229,7 +229,7 @@ public class DrwFileDatabase extends
                 shp.setStrokeWeight(Double.parseDouble(data.substring(2, 4)));
                 shp.setFillStyle(Integer.parseInt(data.substring(5, 6)));// .setStyle(shp.getStyle()|Shape.STYLE_FILLED_MASK);
                 shp.setWidthRatio(Double.parseDouble(data.substring(6, 11)));
-                if (data.substring(11, 12).equals("Y")) {
+                if (data.startsWith("Y", 11)) {
                     shp.setCrossed(true);
                 }
 
@@ -277,11 +277,11 @@ public class DrwFileDatabase extends
                 continue;
 
             if (dataType == 1) { // type
-                if (data.substring(11, 12).equals("Y")) { // if it's a polygon
+                if (data.startsWith("Y", 11)) { // if it's a polygon
                     shp.setStyle(shp.getStyle() | Polyline.STYLE_CLOSED_MASK);
                 }
 
-                if ((!data.substring(7, 8).equals("0"))
+                if ((!data.startsWith("0", 7))
                         && ((shp.getStyle()
                                 & Polyline.STYLE_CLOSED_MASK) > 0)) {
                     // if it's filled in some way and is marked as a polygon
@@ -374,8 +374,8 @@ public class DrwFileDatabase extends
                     return null;
                 }
 
-                shp.setHeight(1000.0 * h);
-                shp.setWidth(1000.0 * w);
+                shp.setMinorRadius(1000.0 * h);
+                shp.setMajorRadius(1000.0 * w);
 
                 shp.setStrokeWeight(Double.parseDouble(data.substring(2, 4)));
                 shp.setFillStyle(Integer.parseInt(data.substring(5, 6)));// .setStyle(shp.getStyle()|Shape.STYLE_FILLED_MASK);

@@ -10,7 +10,7 @@ import java.util.Objects;
  */
 public class FixedQueue<E> extends ArrayList<E> {
 
-    private int limit;
+    private final int limit;
 
     public FixedQueue(int limit) {
         this.limit = limit;

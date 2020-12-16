@@ -18,7 +18,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
@@ -43,8 +43,8 @@ public class ExportCrashLogsTask extends AsyncTask<Void, Integer, Boolean>
     private File _logz;
     private String _error;
     private final String _callsign;
-    private ErrorLogsClient _errorLogsClient;
-    private Context _context;
+    private final ErrorLogsClient _errorLogsClient;
+    private final Context _context;
 
     /**
      * Used to filter out debug logs so they are not uploaded, when debug uploads are disabled
@@ -111,9 +111,9 @@ public class ExportCrashLogsTask extends AsyncTask<Void, Integer, Boolean>
 
         File exportDir = FileSystemUtils
                 .getItem(FileSystemUtils.EXPORT_DIRECTORY);
-        if (!FileIOProviderFactory.exists(exportDir)) {
+        if (!IOProviderFactory.exists(exportDir)) {
             Log.d(TAG, "Creating export dir: " + exportDir.getAbsolutePath());
-            if (!FileIOProviderFactory.mkdirs(exportDir)) {
+            if (!IOProviderFactory.mkdirs(exportDir)) {
                 Log.d(TAG,
                         "Failed to create export dir at "
                                 + exportDir.getAbsolutePath());
@@ -123,13 +123,13 @@ public class ExportCrashLogsTask extends AsyncTask<Void, Integer, Boolean>
         File logsDir = FileSystemUtils
                 .getItem(FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar
                         + "logs");
-        if (!FileIOProviderFactory.isDirectory(logsDir)) {
+        if (!IOProviderFactory.isDirectory(logsDir)) {
             Log.d(TAG, "Logs directory does not exist: " + logsDir);
             _error = NO_LOGS;
             return false;
         }
 
-        String[] files = FileIOProviderFactory.list(logsDir);
+        String[] files = IOProviderFactory.list(logsDir);
         if (files == null || files.length < 1) {
             Log.d(TAG, "No logs to export: " + logsDir.getAbsolutePath());
             _error = NO_LOGS;

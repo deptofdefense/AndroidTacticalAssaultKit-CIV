@@ -13,7 +13,7 @@ import com.atakmap.android.importexport.AbstractImporter;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.comms.CommsMapComponent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.feature.AttributeSet;
 import com.atakmap.map.layer.feature.DataStoreException;
@@ -49,7 +49,7 @@ public final class ModelImporter extends AbstractImporter {
     // Special URI for deleting all models
     public static final String URI_ALL_MODELS = "model://*";
 
-    private static Set<String> mimeTypes = new HashSet<>();
+    private static final Set<String> mimeTypes = new HashSet<>();
     static {
         mimeTypes.add("application/octet-stream");
     }
@@ -98,9 +98,10 @@ public final class ModelImporter extends AbstractImporter {
                 .reserveNotifyId();
 
         try {
-            final String path = FileIOProviderFactory.exists(new File(uri.getPath()))
-                    ? uri.getPath()
-                    : uri.toString();
+            final String path = IOProviderFactory
+                    .exists(new File(uri.getPath()))
+                            ? uri.getPath()
+                            : uri.toString();
             FeatureSetQueryParameters params = new FeatureSetQueryParameters();
             params.names = Collections.singleton(path);
             params.limit = 1;

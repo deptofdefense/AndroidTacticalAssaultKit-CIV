@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Implementation of DatabaseWrapper class.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Mar 18, 2015
+////      Mar 18, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -225,7 +225,7 @@ namespace db                            // Open db namespace.
 {
 
 DatabaseWrapper::~DatabaseWrapper()
-    throw ()
+    NOTHROWS
 {
     for (ManagerVector::const_iterator iter(schemaManagers.begin());
         iter != schemaManagers.end();
@@ -304,7 +304,7 @@ DatabaseWrapper::query (const char* table,
 DatabaseWrapper*
 DatabaseWrapper::Factory::getDatabaseWrapper (Database* db)
     const
-    throw ()
+    NOTHROWS
   {
     DatabaseWrapper* result (nullptr);
 

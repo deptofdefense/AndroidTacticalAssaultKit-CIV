@@ -6,10 +6,7 @@ import android.database.sqlite.SQLiteException;
 import android.net.Uri;
 import android.util.SparseArray;
 
-import com.atakmap.android.database.DatabaseFactory;
-import com.atakmap.android.database.DatabaseInformation;
-import com.atakmap.android.database.DatabaseProvider;
-import com.atakmap.android.database.ProviderChangeRequestedListener;
+import com.atakmap.coremap.io.DatabaseInformation;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
@@ -21,7 +18,8 @@ import com.atakmap.android.track.ui.TrackUser;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.maps.coords.GeoPoint.AltitudeReference;
@@ -48,7 +46,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class CrumbDatabase implements ProviderChangeRequestedListener {
+public class CrumbDatabase {
     public static final String TAG = "CrumbDatabase";
     public static final int DATABASE_VERSION = 5;
 
@@ -158,15 +156,18 @@ public class CrumbDatabase implements ProviderChangeRequestedListener {
         final DatabaseIface oldCrumbDb = crumbdb;
 
         DatabaseInformation dbi = new DatabaseInformation(
-                Uri.fromFile(CRUMB_DB_FILE2), this);
+                Uri.fromFile(CRUMB_DB_FILE2),
+                DatabaseInformation.OPTION_RESERVED1
+                        | DatabaseInformation.OPTION_ENSURE_PARENT_DIRS);
 
-        DatabaseIface newCrumbDb = DatabaseFactory.create(dbi);
+        DatabaseIface newCrumbDb = IOProviderFactory.createDatabase(dbi);
 
         if (newCrumbDb == null) {
             try {
                 final File f = CRUMB_DB_FILE2;
-                if (!FileIOProviderFactory.renameTo(f, new File(CRUMB_DB_FILE2 + ".corrupt."
-                        + new CoordinatedTime().getMilliseconds()))) {
+                if (!IOProviderFactory.renameTo(f,
+                        new File(CRUMB_DB_FILE2 + ".corrupt."
+                                + new CoordinatedTime().getMilliseconds()))) {
                     Log.d(TAG, "could not move corrupt db out of the way");
                 } else {
                     Log.d(TAG,
@@ -175,7 +176,11 @@ public class CrumbDatabase implements ProviderChangeRequestedListener {
                 }
             } catch (Exception ignored) {
             }
-            newCrumbDb = DatabaseFactory.create(dbi);
+            if (IOProviderFactory.exists(CRUMB_DB_FILE2)) {
+                IOProviderFactory.delete(CRUMB_DB_FILE2,
+                        IOProvider.SECURE_DELETE);
+                newCrumbDb = IOProviderFactory.createDatabase(dbi);
+            }
         }
         if (newCrumbDb.getVersion() != DATABASE_VERSION) {
             Log.d(TAG, "Upgrading from v" + newCrumbDb.getVersion()
@@ -194,17 +199,10 @@ public class CrumbDatabase implements ProviderChangeRequestedListener {
 
     }
 
-    @Override
-    public void onProviderChangeRequested(DatabaseProvider provider,
-            int change) {
-        Log.d(TAG, "provider change requested" + provider + " " + change);
-        initDatabase();
-    }
-
     private CrumbDatabase() {
-        if (!FileIOProviderFactory.exists(CRUMB_DB_FILE2.getParentFile()))
+        if (!IOProviderFactory.exists(CRUMB_DB_FILE2.getParentFile()))
 
-            if (!FileIOProviderFactory.mkdirs(CRUMB_DB_FILE2.getParentFile())) {
+            if (!IOProviderFactory.mkdirs(CRUMB_DB_FILE2.getParentFile())) {
                 Log.e(TAG, "Failed to make Directory at " +
                         CRUMB_DB_FILE2.getParentFile().getAbsolutePath());
             }

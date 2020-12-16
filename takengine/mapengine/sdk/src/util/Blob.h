@@ -27,7 +27,7 @@ namespace atakmap {
         public:
             BlobImpl(const uint8_t *begin, const uint8_t *end, void (* cleanup)(BlobImpl &));
             BlobImpl(const uint8_t *begin, const uint8_t *end);
-            BlobImpl(BlobImpl &&temp);
+            BlobImpl(BlobImpl &&temp) NOTHROWS;
             BlobImpl(const BlobImpl&) = delete;
             
             // allows for implicit conversions

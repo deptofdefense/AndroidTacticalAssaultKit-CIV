@@ -242,7 +242,7 @@ public class RegionShapeTool extends Tool implements Undoable,
 
     private class AddPointAction extends EditAction {
 
-        private GeoPointMetaData _point;
+        private final GeoPointMetaData _point;
 
         private AddPointAction(GeoPointMetaData gp) {
             _point = gp;

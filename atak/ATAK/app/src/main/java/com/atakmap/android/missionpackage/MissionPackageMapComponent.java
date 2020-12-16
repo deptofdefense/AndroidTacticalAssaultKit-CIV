@@ -5,6 +5,8 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+
+import com.atakmap.android.data.ClearContentRegistry;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -12,7 +14,6 @@ import android.preference.PreferenceManager;
 import android.widget.Toast;
 
 import com.atakmap.android.cot.CotMapComponent;
-import com.atakmap.android.data.DataMgmtReceiver;
 import com.atakmap.android.filesharing.android.service.WebServer;
 import com.atakmap.android.importexport.ExporterManager;
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -259,11 +260,11 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
                                 "The TAK server connect net connect string",
                                 true, String.class),
                 });
-        fileShareFilter
-                .addAction(DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION,
-                        "When the local system is zeroized, all Mission Packages are removed");
+
         AtakBroadcast.getInstance()
                 .registerReceiver(_receiver, fileShareFilter);
+
+        ClearContentRegistry.getInstance().registerListener(_receiver.ccl);
 
         // allow receiver to be activated when selected from Tools list
         DocumentedIntentFilter toolFilter = new DocumentedIntentFilter();
@@ -485,6 +486,8 @@ public class MissionPackageMapComponent extends AbstractWidgetMapComponent
 
         if (_overlay != null)
             _overlay.dispose();
+
+        ClearContentRegistry.getInstance().unregisterListener(_receiver.ccl);
 
         if (_receiver != null) {
             AtakBroadcast.getInstance().unregisterReceiver(_receiver);

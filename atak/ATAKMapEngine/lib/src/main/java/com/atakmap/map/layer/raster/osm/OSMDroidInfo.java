@@ -3,12 +3,16 @@ package com.atakmap.map.layer.raster.osm;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
+import com.atakmap.coremap.io.DatabaseInformation;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.Databases;
 import com.atakmap.database.QueryIface;
 import com.atakmap.map.projection.WebMercatorProjection;
+
+import java.io.File;
 
 public final class OSMDroidInfo {
     public enum BoundsDiscovery {
@@ -53,7 +57,7 @@ public final class OSMDroidInfo {
         // try spatialite first
         database = null;
         try {
-            database = Databases.openDatabase(path, true);
+            database = IOProviderFactory.createDatabase(new File(path), DatabaseInformation.OPTION_READONLY);
             final OSMDroidInfo retval = get(database, bounds);
             if(retval != null) {
                 if(returnRef != null) {

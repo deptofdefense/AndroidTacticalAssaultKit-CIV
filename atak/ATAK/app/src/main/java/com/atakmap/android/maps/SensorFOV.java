@@ -16,6 +16,7 @@ import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
+import com.atakmap.math.MathUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -119,9 +120,8 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
     }
 
     public void setAlpha(float alpha) {
-        if (alpha > 0f && alpha <= 1f)
-            _alpha = alpha;
-        onMetricsChanged();
+        _alpha = MathUtils.clamp(alpha, 0, 1);
+        onFillColorChanged();
     }
 
     /**
@@ -131,13 +131,27 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
      * @param b - the decimal value of the percentage of blue (between 0-1)
      */
     public void setColor(float r, float g, float b) {
-        if (r >= 0f && r <= 1f)
-            _red = r;
-        if (g >= 0f && g <= 1f)
-            _green = g;
-        if (b >= 0f && b <= 1f)
-            _blue = b;
-        onMetricsChanged();
+        _red = MathUtils.clamp(r, 0, 1);
+        _green = MathUtils.clamp(g, 0, 1);
+        _blue = MathUtils.clamp(b, 0, 1);
+        onFillColorChanged();
+    }
+
+    @Override
+    public void setFillColor(int fillColor) {
+        _red = Color.red(fillColor) / 255f;
+        _green = Color.green(fillColor) / 255f;
+        _blue = Color.blue(fillColor) / 255f;
+        _alpha = Color.alpha(fillColor) / 255f;
+        onFillColorChanged();
+    }
+
+    @Override
+    public int getFillColor() {
+        return Color.argb((int) (255 * _alpha),
+                (int) (255 * _red),
+                (int) (255 * _green),
+                (int) (255 * _blue));
     }
 
     public void addOnMetricsChangedListener(OnMetricsChangedListener l) {
@@ -270,14 +284,28 @@ public class SensorFOV extends Shape implements MapItem.OnGroupChangedListener,
         Path path = cap.getPath();
         float dr = cap.getResolution();
         if (oval != null) {
-            // Draw cone
-            paint.setStyle(Paint.Style.FILL);
-            paint.setColor(Color.argb(Math.round(_alpha * 255),
-                    Math.round(_red * 255), Math.round(_green * 255),
-                    Math.round(_blue * 255)));
             RectF ovalFull = new RectF(dr * oval.left, dr * oval.top,
                     dr * oval.right, dr * oval.bottom);
-            can.drawArc(ovalFull, _azimuth - 90 - _fov / 2, _fov, true, paint);
+
+            // Draw cone fill
+            int fill = getFillColor();
+            if (Color.alpha(fill) > 0) {
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(fill);
+                can.drawArc(ovalFull, _azimuth - 90 - _fov / 2, _fov, true,
+                        paint);
+            }
+
+            // Draw cone stroke
+            int stroke = getStrokeColor();
+            if (Color.alpha(stroke) > 0) {
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setColor(stroke);
+                paint.setStrokeWidth((float) (getStrokeWeight()
+                        * cap.getLineWeight()));
+                can.drawArc(ovalFull, _azimuth - 90 - _fov / 2, _fov, true,
+                        paint);
+            }
         }
         PointF[] p = (PointF[]) data.getSerializable("arrow");
         if (p != null) {

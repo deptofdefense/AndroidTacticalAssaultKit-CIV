@@ -22,7 +22,7 @@ class EulaHelper {
         final SharedPreferences _controlPrefs = PreferenceManager
                 .getDefaultSharedPreferences(activity);
 
-        if (!BuildConfig.SHOW_EULA) {
+        if (false) {
             // skip the EULA
             SharedPreferences.Editor editor = _controlPrefs.edit();
             editor.putBoolean("AgreedToEULA", true).apply();

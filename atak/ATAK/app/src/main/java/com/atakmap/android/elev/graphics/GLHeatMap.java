@@ -10,7 +10,7 @@ import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.app.DeveloperOptions;
 import com.atakmap.coremap.conversions.ConversionFactors;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
@@ -43,7 +43,6 @@ import com.atakmap.opengl.GLTexture;
 
 import java.io.EOFException;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -780,24 +779,23 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
         private final int numCellsX;
         private final int numCellsY;
         private final Matrix geo2img;
-        private Matrix img2geo;
-        private StringBuilder p;
+        private final Matrix img2geo;
+        private final StringBuilder p;
         private double cellMinLat;
         private double cellMaxLat;
         private double cellMinLng;
         private double cellMaxLng;
-        private PointD img;
-        private PointD geo;
+        private final PointD img;
+        private final PointD geo;
         private int imgMinX;
         private int imgMinY;
         private int imgMaxX;
         private int imgMaxY;
         private double x0, x1, x2, x3;
         private double y0, y1, y2, y3;
-        private FileInputStream inputStream;
         private FileChannel channel;
         private int imgIdx;
-        private Dted dted;
+        private final Dted dted;
 
         GridCache(HeatMapParams result, double coverageArea)
                 throws NoninvertibleTransformException {
@@ -872,7 +870,7 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                         for (String dtedPath : DTED_PATHS) {
                             file = new File(dtedPath + filePathWithoutExt
                                     + queryExtension);
-                            if (!FileIOProviderFactory.exists(file))
+                            if (!IOProviderFactory.exists(file))
                                 continue;
 
                             // define the MBB for the DTED cell
@@ -893,12 +891,11 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                             cellMaxLng = Math.min(cellMaxLng,
                                     result.getMaxLongitude());
 
-                            inputStream = null;
                             channel = null;
                             boolean missingElev = false;
                             try {
-                                inputStream = FileIOProviderFactory.getInputStream(file);
-                                channel = inputStream.getChannel();
+                                channel = IOProviderFactory.getChannel(file,
+                                        "r");
 
                                 dted.readHeader(
                                         channel,
@@ -1132,11 +1129,6 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                                         channel.close();
                                     } catch (IOException ignored) {
                                     }
-                                if (inputStream != null)
-                                    try {
-                                        inputStream.close();
-                                    } catch (IOException ignored) {
-                                    }
                             }
                             if (!missingElev)
                                 break outer;
@@ -1162,7 +1154,7 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                         for (String dtedPath : DTED_PATHS) {
                             file = new File(dtedPath + filePathWithoutExt
                                     + queryExtension);
-                            if (!FileIOProviderFactory.exists(file))
+                            if (!IOProviderFactory.exists(file))
                                 continue;
 
                             // define the MBB for the DTED cell
@@ -1222,12 +1214,11 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                                             y3)),
                                     0, result.ySampleResolution - 1);
 
-                            inputStream = null;
                             channel = null;
                             boolean missingElev = false;
                             try {
-                                inputStream = FileIOProviderFactory.getInputStream(file);
-                                channel = inputStream.getChannel();
+                                channel = IOProviderFactory.getChannel(file,
+                                        "r");
 
                                 dted.readHeader(channel, cellMaxLat,
                                         cellMinLng);
@@ -1277,11 +1268,6 @@ public class GLHeatMap extends GLAsynchronousMapRenderable<HeatMapParams>
                                 if (channel != null)
                                     try {
                                         channel.close();
-                                    } catch (IOException ignored) {
-                                    }
-                                if (inputStream != null)
-                                    try {
-                                        inputStream.close();
                                     } catch (IOException ignored) {
                                     }
                             }

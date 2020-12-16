@@ -8,8 +8,8 @@ import android.util.Pair;
 import com.atakmap.android.filesystem.ResourceFile;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProvider;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -44,7 +44,7 @@ public class ImportVideoSort extends ImportResolver {
     }
 
     public ImportVideoSort(Context context, boolean validateExt,
-                           boolean copyFile) {
+            boolean copyFile) {
         this(context, null, validateExt, copyFile);
     }
 
@@ -99,7 +99,7 @@ public class ImportVideoSort extends ImportResolver {
         File atakdata = new File(_context.getCacheDir(),
                 FileSystemUtils.ATAKDATA);
         if (file.getAbsolutePath().startsWith(atakdata.getAbsolutePath())
-                && FileIOProviderFactory.delete(file, FileIOProvider.SECURE_DELETE))
+                && IOProviderFactory.delete(file, IOProvider.SECURE_DELETE))
             Log.d(TAG,
                     "deleted imported video: " + file.getAbsolutePath());
 

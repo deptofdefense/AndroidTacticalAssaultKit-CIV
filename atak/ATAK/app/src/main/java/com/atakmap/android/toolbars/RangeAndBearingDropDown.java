@@ -193,22 +193,28 @@ public class RangeAndBearingDropDown extends DropDownReceiver implements
         public void onSharedPreferenceChanged(SharedPreferences prefs,
                 String key) {
 
-            if (key.equals("coord_display_pref")) {
-                _coordinateFormat = CoordinateFormat.find(_prefs.getString(
-                        "coord_display_pref",
-                        getMapView().getContext().getString(
-                                R.string.coord_display_pref_default)));
-            } else if (key.equals("speed_unit_pref")) {
-                _speedUnits = Integer.parseInt(
-                        prefs.getString(key, Integer.toString(_speedUnits)));
-                if (!isClosed()) {
-                    populateWidgets();
-                }
-            } else if (key.equals("rab_preference_show_eta")) {
-                _showEta = prefs.getBoolean("rab_preference_show_eta", false);
-                if (!isClosed()) {
-                    populateWidgets();
-                }
+            switch (key) {
+                case "coord_display_pref":
+                    _coordinateFormat = CoordinateFormat.find(_prefs.getString(
+                            "coord_display_pref",
+                            getMapView().getContext().getString(
+                                    R.string.coord_display_pref_default)));
+                    break;
+                case "speed_unit_pref":
+                    _speedUnits = Integer.parseInt(
+                            prefs.getString(key,
+                                    Integer.toString(_speedUnits)));
+                    if (!isClosed()) {
+                        populateWidgets();
+                    }
+                    break;
+                case "rab_preference_show_eta":
+                    _showEta = prefs.getBoolean("rab_preference_show_eta",
+                            false);
+                    if (!isClosed()) {
+                        populateWidgets();
+                    }
+                    break;
             }
         }
     };
@@ -218,6 +224,13 @@ public class RangeAndBearingDropDown extends DropDownReceiver implements
         _nameEditText = _dropDownView
                 .findViewById(R.id.nameEditText);
         _nameEditText.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        _nameEditText.addTextChangedListener(new AfterTextChangedWatcher() {
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (_rabItem != null)
+                    _rabItem.setTitle(s.toString());
+            }
+        });
 
         _remarksEditText = _dropDownView.findViewById(R.id.remarksLayout);
 
@@ -382,7 +395,7 @@ public class RangeAndBearingDropDown extends DropDownReceiver implements
 
         boolean editable = !_rabItem.hasMetaValue("nevercot");
         boolean hounding = _rabItem.hasMetaValue("hounding");
-        _nameEditText.setText(_rabItem.getMetaString("title", "R&B"));
+        _nameEditText.setText(_rabItem.getTitle());
         _nameEditText.setEnabled(editable);
 
         _remarksEditText.setText(_rabItem.getMetaString("remarks", ""));

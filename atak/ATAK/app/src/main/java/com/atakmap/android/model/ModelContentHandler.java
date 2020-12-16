@@ -22,7 +22,7 @@ import com.atakmap.android.missionpackage.export.MissionPackageExportWrapper;
 import com.atakmap.android.model.viewer.DetailedModelViewerDropdownReceiver;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.feature.DataStoreException;
 import com.atakmap.map.layer.feature.FeatureDataStore2;
@@ -232,7 +232,7 @@ public class ModelContentHandler extends FileOverlayContentHandler implements
         // Add all the dependencies to a temp zip
         File dest = FileSystemUtils.getItemOnSameRoot(_file, "tmp");
         dest = new File(dest, base + ".zip");
-        if (FileIOProviderFactory.exists(dest))
+        if (IOProviderFactory.exists(dest))
             FileSystemUtils.delete(dest);
         try {
             FileSystemUtils.zipDirectory(new ArrayList<>(dependencies),

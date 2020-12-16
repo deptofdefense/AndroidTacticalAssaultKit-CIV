@@ -251,7 +251,7 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
         private final List<GLVehicleModel> _transparent = new ArrayList<>();
 
         public synchronized void setMeshes(List<GLInstancedMesh> opaque,
-                              List<GLVehicleModel> transparent) {
+                List<GLVehicleModel> transparent) {
             synchronized (this) {
                 _opaque.clear();
                 _opaque.addAll(opaque);

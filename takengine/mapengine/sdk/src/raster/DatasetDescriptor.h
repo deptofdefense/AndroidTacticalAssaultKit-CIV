@@ -5,14 +5,14 @@
 ////    DESCRIPTION:    Class definition of an immutable descriptor object for a
 ///                     dataset.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Dec 9, 2014
+////      Dec 9, 2014   scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -188,7 +188,7 @@ class ENGINE_API DatasetDescriptor
 
     virtual
     ~DatasetDescriptor ()
-        throw ();
+        NOTHROWS;
 
     //
     // A protected constructor is declared below.  The compiler-generated copy
@@ -198,19 +198,19 @@ class ENGINE_API DatasetDescriptor
     bool
     operator== (const DatasetDescriptor& rhs)
         const
-        throw ()
+        NOTHROWS
       { return uri_ == rhs.uri_; }
 
     bool
     operator!= (const DatasetDescriptor& rhs)
         const
-        throw ()
+        NOTHROWS
       { return !(*this == rhs); }
 
     bool
     operator< (const DatasetDescriptor& rhs)
         const
-        throw ()
+        NOTHROWS
       { return getURI () < rhs.getURI (); }
 
 
@@ -228,7 +228,7 @@ class ENGINE_API DatasetDescriptor
                 const core::GeoPoint& ur,
                 const core::GeoPoint& lr,
                 const core::GeoPoint& ll)
-        throw ();
+        NOTHROWS;
 
     //
     // Returns a (possibly NULL) set of DatasetDescriptors for the supplied
@@ -261,7 +261,7 @@ class ENGINE_API DatasetDescriptor
                           const core::GeoPoint& ur,
                           const core::GeoPoint& lr,
                           const core::GeoPoint& ll)
-        throw ();
+        NOTHROWS;
 
     //
     // Decodes a dataset descriptor from the supplied byte array.
@@ -318,12 +318,12 @@ class ENGINE_API DatasetDescriptor
     TAK::Engine::Port::String
     formatImageryType (const char* baseType,
                        double resolution)
-        throw ();
+        NOTHROWS;
 
     static
     TAK::Engine::Port::String
     formatResolution(double resolution)
-        throw ();
+        NOTHROWS;
 
     //
     // Returns the dataset coverage for the specified imagery type (or NULL).
@@ -334,7 +334,7 @@ class ENGINE_API DatasetDescriptor
     const feature::Geometry*
     getCoverage (const char* imageryType = nullptr) // Defaults to all types.
         const
-        throw ();
+        NOTHROWS;
 
     //
     // Returns the type of the dataset.  The dataset type will drive which
@@ -345,7 +345,7 @@ class ENGINE_API DatasetDescriptor
     const char*
     getDatasetType ()
         const
-        throw ()
+        NOTHROWS
       { return dataset_type_; }
 
     //
@@ -356,7 +356,7 @@ class ENGINE_API DatasetDescriptor
     const char*
     getExtraData (const char* key)
         const
-        throw ();
+        NOTHROWS;
 
     //
     // Convenience method for obtaining an extra data value.  Returns the extra
@@ -368,7 +368,7 @@ class ENGINE_API DatasetDescriptor
     getExtraData (const DatasetDescriptor&,
                   const char* key,
                   const char* defaultValue)
-        throw ();
+        NOTHROWS;
 
     //
     // Returns the (possibly NULL) registered Factory of the supplied type.
@@ -384,7 +384,7 @@ class ENGINE_API DatasetDescriptor
     const std::vector<TAK::Engine::Port::String>&
     getImageryTypes ()
         const
-        throw ()
+        NOTHROWS
       { return imagery_types_; }
 
     //
@@ -395,7 +395,7 @@ class ENGINE_API DatasetDescriptor
     int64_t
     getLayerID ()
         const
-        throw ()
+        NOTHROWS
       { return layer_id_; }
 
     //
@@ -407,13 +407,13 @@ class ENGINE_API DatasetDescriptor
     const void*
     getLocalData (const char* key)
         const
-        throw ();
+        NOTHROWS;
 
     template <typename T>
     const T*
     getLocalData (const char* key)
         const
-        throw ();
+        NOTHROWS;
 
     //
     // Returns the maximum resolution, in meters-per-pixel, for the supplied
@@ -426,7 +426,7 @@ class ENGINE_API DatasetDescriptor
     double
     getMaxResolution (const char* imageryType = nullptr)
         const
-        throw ();
+        NOTHROWS;
 
     //
     // Returns the minimum bounding box for the dataset.
@@ -434,7 +434,7 @@ class ENGINE_API DatasetDescriptor
     feature::Envelope
     getMinimumBoundingBox ()
         const
-        throw ()
+        NOTHROWS
       { return minimum_bounding_box_; }
 
     //
@@ -448,7 +448,7 @@ class ENGINE_API DatasetDescriptor
     double
     getMinResolution (const char* imageryType = nullptr)
         const
-        throw ();
+        NOTHROWS;
 
     //
     // Returns the name of the dataset.
@@ -456,7 +456,7 @@ class ENGINE_API DatasetDescriptor
     const char*
     getName ()
         const
-        throw ()
+        NOTHROWS
       { return name_; }
 
     //
@@ -466,7 +466,7 @@ class ENGINE_API DatasetDescriptor
     const char*
     getProvider ()
         const
-        throw ()
+        NOTHROWS
       { return provider_; }
 
     //
@@ -476,7 +476,7 @@ class ENGINE_API DatasetDescriptor
     int
     getSpatialReferenceID ()
         const
-        throw ()
+        NOTHROWS
       { return spatial_reference_id_; }
 
     //
@@ -485,7 +485,7 @@ class ENGINE_API DatasetDescriptor
     const char*
     getURI ()
         const
-        throw ()
+        NOTHROWS
       { return uri_; }
 
     //
@@ -496,7 +496,7 @@ class ENGINE_API DatasetDescriptor
     const char*
     getWorkingDirectory ()
         const
-        throw ()
+        NOTHROWS
      { return working_directory_; }
 
     //
@@ -506,7 +506,7 @@ class ENGINE_API DatasetDescriptor
     bool
     isRemote ()
         const
-        throw ()
+        NOTHROWS
       { return !is_local_; }
       
     
@@ -546,7 +546,7 @@ class ENGINE_API DatasetDescriptor
     const void*
     setLocalData (const char* key,
                   const void* value)    // Not adopted.
-        throw ();
+        NOTHROWS;
 
     //
     // Unregisters the supplied Factory.  Ignores NULL Factory or Factory with
@@ -737,7 +737,7 @@ class ENGINE_API DatasetDescriptor::Factory
     unsigned short
     getVersion ()
         const
-        throw ()
+        NOTHROWS
         = 0;
 
 
@@ -761,7 +761,7 @@ class ENGINE_API DatasetDescriptor::Factory
     unsigned int
     getPriority ()
         const
-        throw () override
+        NOTHROWS override
       { return priority_; }
 
 
@@ -779,7 +779,7 @@ class ENGINE_API DatasetDescriptor::Factory
     const char*
     getStrategy ()
         const
-        throw () override
+        NOTHROWS override
       { return strategy_; }
 
 
@@ -863,7 +863,7 @@ inline
 const T*
 DatasetDescriptor::getLocalData (const char* key)
     const
-    throw ()
+    NOTHROWS
   { return static_cast<const T*> (getLocalData (key)); }
 
 

@@ -1,5 +1,7 @@
 package com.atakmap.map.layer.feature.datastore;
 
+import android.net.Uri;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -18,7 +20,8 @@ import java.util.TreeMap;
 
 import com.atakmap.content.BindArgument;
 import com.atakmap.content.WhereClauseBuilder;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.DatabaseInformation;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.CursorWrapper;
@@ -119,18 +122,20 @@ abstract class FDB extends AbstractFeatureDataStore2 {
         super(modificationFlags, visibilityFlags);
 
         this.databaseFile = dbFile.getAbsolutePath();
-        if(!FileIOProviderFactory.exists(dbFile) || FileIOProviderFactory.length(dbFile) == 0L) {
-            this.database = Databases.openOrCreateDatabase(this.databaseFile);
-            
+        if(!IOProviderFactory.exists(dbFile) || IOProviderFactory.length(dbFile) == 0L) {
+            this.database = IOProviderFactory.createDatabase(
+                new DatabaseInformation(Uri.fromFile(dbFile)));
+
             this.buildTables(buildIndices);
             this.spatialIndexEnabled = buildIndices;
         } else {
-            this.database = Databases.openOrCreateDatabase(this.databaseFile);
+            this.database = IOProviderFactory.createDatabase(
+                new DatabaseInformation(Uri.fromFile(dbFile)));
 
             // test for spatial index
             this.spatialIndexEnabled = (Databases.getTableNames(this.database).contains("idx_features_geometry"));
         }
-        
+
         this.idToAttrSchema = new HashMap<Long, AttributeSpec>();
         this.keyToAttrSchema = new HashMap<String, AttributeSpec>();
         
@@ -2340,7 +2345,7 @@ abstract class FDB extends AbstractFeatureDataStore2 {
             if(dis != null)
                 try {
                     dis.close();
-                } catch(IOException e) {}
+                } catch(IOException ignored) {}
         }
     }
 

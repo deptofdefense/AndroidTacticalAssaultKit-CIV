@@ -17,7 +17,7 @@ import com.atakmap.content.BindArgument;
 import com.atakmap.content.CatalogCurrency;
 import com.atakmap.content.CatalogCurrencyRegistry;
 import com.atakmap.content.WhereClauseBuilder;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.CursorWrapper;
 import com.atakmap.database.DatabaseIface;
@@ -1206,7 +1206,7 @@ public class PersistentDataSourceFeatureDataStore extends AbstractDataSourceFeat
                 f = ((com.atakmap.io.ZipVirtualFile)f).getZipFile();
 
             final boolean isDirectory = ((parse.get()&0x01) == 0x01);
-            if(FileIOProviderFactory.isDirectory(f) != isDirectory) {
+            if(IOProviderFactory.isDirectory(f) != isDirectory) {
                 return false;
             }
             final long length = parse.getLong();
@@ -1262,7 +1262,7 @@ public class PersistentDataSourceFeatureDataStore extends AbstractDataSourceFeat
                 retval.putShort((short)spi.parseVersion());
                 putString(retval, spi.getName());
             }
-            retval.put(FileIOProviderFactory.isDirectory(file) ? (byte)0x01 : (byte)0x00);
+            retval.put(IOProviderFactory.isDirectory(file) ? (byte)0x01 : (byte)0x00);
             retval.putLong(FileSystemUtils.getFileSize(file));
             retval.putLong(FileSystemUtils.getLastModified(file));
             

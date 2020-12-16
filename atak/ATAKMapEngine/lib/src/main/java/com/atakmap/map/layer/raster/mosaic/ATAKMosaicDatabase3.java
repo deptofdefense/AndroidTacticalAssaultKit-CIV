@@ -1,4 +1,3 @@
-
 package com.atakmap.map.layer.raster.mosaic;
 
 import java.io.File;
@@ -10,15 +9,16 @@ import java.util.Map;
 
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteQueryBuilder;
+import android.net.Uri;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.DatabaseInformation;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.CursorWrapper;
 import com.atakmap.database.DatabaseIface;
-import com.atakmap.database.Databases;
 import com.atakmap.database.StatementIface;
 import com.atakmap.map.layer.feature.datastore.FeatureSpatialDatabase;
 import com.atakmap.map.layer.feature.geometry.Envelope;
@@ -93,9 +93,8 @@ public class ATAKMosaicDatabase3 implements MosaicDatabase2 {
 
     @Override
     public void open(File f){
-        DatabaseIface database = Databases.openDatabase(new File(f, INDEX_DB_FILENAME).getAbsolutePath(),
-                true);
-
+        DatabaseIface database = IOProviderFactory.createDatabase(new File(f, INDEX_DB_FILENAME),
+                DatabaseInformation.OPTION_READONLY);
         open(database);
     }
     
@@ -170,7 +169,11 @@ public class ATAKMosaicDatabase3 implements MosaicDatabase2 {
                 final String typedbPath = cursor.getString(cursor.getColumnIndex(COLUMN_PATH));
                 if(typedbPath != null) {
                     try {
-                        this.typeDbs.put(type, Databases.openDatabase(typedbPath, true));
+                        File databaseFile = new File(typedbPath);
+                        DatabaseIface database = IOProviderFactory.createDatabase(
+                                new DatabaseInformation(Uri.fromFile(databaseFile),
+                                        DatabaseInformation.OPTION_READONLY));
+                        this.typeDbs.put(type, database);
                     } catch(SQLiteException e) {
                         Log.e(TAG, "error: ", e);
                     }
@@ -559,13 +562,13 @@ public class ATAKMosaicDatabase3 implements MosaicDatabase2 {
         private Map<String, TypeDbSpec> typeDbs;
 
         public Builder(File f) {
-            if (FileIOProviderFactory.exists(f)|| FileIOProviderFactory.length(f) > 0)
+            if (IOProviderFactory.exists(f)|| IOProviderFactory.length(f) > 0)
                 throw new IllegalArgumentException("A mosaic database may only be created, not edited.");
             
             this.dir = f;
 
             FileSystemUtils.delete(this.dir);
-            if (!FileIOProviderFactory.mkdir(this.dir)) {
+            if (!IOProviderFactory.mkdir(this.dir)) {
                Log.e(TAG, "could not make directory: " + this.dir);
             }
 
@@ -828,9 +831,9 @@ public class ATAKMosaicDatabase3 implements MosaicDatabase2 {
                 this.typeDbs = null;
             }
         }
-        
+
         private static DatabaseIface createSpatialDb(File file) {
-            final DatabaseIface retval = Databases.openOrCreateDatabase(file.getAbsolutePath());
+            DatabaseIface retval = IOProviderFactory.createDatabase(file);
 
             final int major = FeatureSpatialDatabase.getSpatialiteMajorVersion(retval);
             final int minor = FeatureSpatialDatabase.getSpatialiteMinorVersion(retval);

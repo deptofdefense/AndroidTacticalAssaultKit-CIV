@@ -1,19 +1,6 @@
 
 package com.atakmap.android.wfs;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
-
 import android.content.Context;
 import android.content.Intent;
 import android.view.View;
@@ -44,6 +31,19 @@ import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.layer.feature.FeatureLayer;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
 public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
 
     private final static String TAG = "WFSManager";
@@ -51,10 +51,11 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
     private final MapView mapView;
     private final Context context;
 
-    private Map<String, FeatureLayer> uriToLayer;
-    private Map<FeatureLayer, String> layerToUri;
-    private Map<FeatureLayer, DeepMapItemQuery> childQueries;
-    private Map<FeatureLayer, MapOverlay> childOverlays;
+    private final Map<String, String> uriToMime;
+    private final Map<String, FeatureLayer> uriToLayer;
+    private final Map<FeatureLayer, String> layerToUri;
+    private final Map<FeatureLayer, DeepMapItemQuery> childQueries;
+    private final Map<FeatureLayer, MapOverlay> childOverlays;
 
     private ListImpl listModel;
 
@@ -62,6 +63,7 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
         this.mapView = mapView;
         this.context = mapView.getContext();
 
+        this.uriToMime = new IdentityHashMap<>();
         this.uriToLayer = new TreeMap<>();
         this.layerToUri = new IdentityHashMap<>();
         this.childQueries = new IdentityHashMap<>();
@@ -76,7 +78,8 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
         return this.uriToLayer.containsKey(uri);
     }
 
-    public synchronized boolean add(String uri, FeatureLayer layer) {
+    public synchronized boolean add(String uri, String mime,
+            FeatureLayer layer) {
         if (this.uriToLayer.containsKey(uri)) {
             Log.w(TAG, "Layer for " + uri + " has already been added.");
             return false;
@@ -87,6 +90,7 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
             return false;
         }
 
+        this.uriToMime.put(uri, mime);
         this.uriToLayer.put(uri, layer);
         this.layerToUri.put(layer, uri);
 
@@ -126,6 +130,7 @@ public final class WFSManager implements MapOverlay2, DeepMapItemQuery {
 
         final String uri = this.layerToUri.remove(layer);
         this.uriToLayer.remove(uri);
+        this.uriToMime.remove(uri);
     }
 
     private synchronized Map<String, FeatureLayer> getUriMap() {

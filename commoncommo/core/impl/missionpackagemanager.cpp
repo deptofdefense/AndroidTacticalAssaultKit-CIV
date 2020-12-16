@@ -1,14 +1,17 @@
 #include "missionpackagemanager.h"
+#include "fileioprovider.h"
 #include <Lock.h>
 #include <utility>
 #include <sstream>
 #include <string.h>
+#include <memory>
 
 using namespace atakmap::commoncommo;
 using namespace atakmap::commoncommo::impl;
 
 
 namespace {
+    const int DEFAULT_HTTP_PORT = 8080;
     const int DEFAULT_HTTPS_PORT = 8443;
     const int MIN_TRY_COUNT = 1;
     const int DEFAULT_TRY_COUNT = 10;
@@ -23,22 +26,32 @@ namespace {
         "cmompmgr.txup",
         "cmompmgr.evnt",
     };
-
+    
     // Seconds before a fail transfer is retried
     const float RETRY_SECONDS = 10.0f;
 
+    struct WebserverFileContext{
+        FileHandle* handle;
+        std::shared_ptr<FileIOProvider> provider;
+    };
+
     void webserverReaderFree(void *opaque) {
-        FILE *f = (FILE *)opaque;
-        fclose(f);
+        auto context ((WebserverFileContext *)opaque);
+        FileHandle *f = context->handle;
+        std::shared_ptr<FileIOProvider> provider = context->provider;
+        provider->close(f);
+        delete context;
     }
     ssize_t webserverReaderCallback(void *opaque, uint64_t pos, char *buf, size_t max)
     {
-        FILE *f = (FILE *)opaque;
+        auto context ((WebserverFileContext *)opaque);
+        FileHandle *f = context->handle;
+        std::shared_ptr<FileIOProvider> provider = context->provider;
         // We do not re-use responses, so MHD assures pos is equal to our
         // cumulative file position; we can ignore it
-        size_t n = fread(buf, 1, max, f);
+        size_t n = provider->read(buf, 1, max, f);
         if (n == 0) {
-            if (feof(f))
+            if (provider->eof(f))
                 return MHD_CONTENT_READER_END_OF_STREAM;
             else
                 return MHD_CONTENT_READER_END_WITH_ERROR;
@@ -95,7 +108,9 @@ MissionPackageManager::MissionPackageManager(CommoLogger *logger,
         ContactManager *contactMgr,
         StreamingSocketManagement *streamMgr, HWIFScanner *hwIfScanner,
         MissionPackageIO *io, const ContactUID *ourUID,
-        std::string ourCallsign) COMMO_THROW (std::invalid_argument) :
+        std::string ourCallsign,
+        FileIOProviderTracker* factory)
+        COMMO_THROW (std::invalid_argument) :
                 ThreadedHandler(4, THREAD_NAMES), DatagramListener(),
                 TcpMessageListener(),
                 StreamingMessageListener(), logger(logger),
@@ -118,7 +133,8 @@ MissionPackageManager::MissionPackageManager(CommoLogger *logger,
                 httpsProxyPort(MP_LOCAL_PORT_DISABLE),
                 eventQueue(),
                 eventQueueMutex(),
-                eventQueueMonitor()
+                eventQueueMonitor(),
+                providerTracker(factory)
 {
     curlMultiCtx = curl_multi_init();
     uploadCurlMultiCtx = curl_multi_init();
@@ -378,12 +394,13 @@ atakmap::commoncommo::CommoResult MissionPackageManager::sendFileInit(
                      const char *name)
 {
     std::string hash;
-    if (!InternalUtils::computeSha256Hash(&hash, filePath))
+    auto provider(providerTracker->getCurrentProvider());
+    if (!InternalUtils::computeSha256Hash(&hash, filePath, provider))
         return COMMO_ILLEGAL_ARGUMENT;
 
     uint64_t fileSize;
     try {
-        fileSize = InternalUtils::computeFileSize(filePath);
+        fileSize = provider->getSize(filePath);
     } catch (std::invalid_argument &) {
         return COMMO_ILLEGAL_ARGUMENT;
     }
@@ -448,7 +465,7 @@ atakmap::commoncommo::CommoResult MissionPackageManager::sendFileInit(
             *xferId = txCtx->id;
 
             for (siter = streamToContacts.begin(); siter != streamToContacts.end(); ++siter) {
-                TxUploadContext *uploadCtx = new TxUploadContext(txCtx, siter->first, siter->second);
+                TxUploadContext *uploadCtx = new TxUploadContext(txCtx, provider, siter->first, siter->second);
                 txCtx->uploadCtxs.insert(uploadCtx);
             }
             txCtx->localContactToAck.insert(local.begin(), local.end());
@@ -489,12 +506,13 @@ atakmap::commoncommo::CommoResult MissionPackageManager::uploadFileInit(
     }
 
     std::string hash;
-    if (!InternalUtils::computeSha256Hash(&hash, filePath))
+    auto provider(providerTracker->getCurrentProvider());
+    if (!InternalUtils::computeSha256Hash(&hash, filePath, provider))
         return COMMO_ILLEGAL_ARGUMENT;
 
     uint64_t fileSize;
     try {
-        fileSize = InternalUtils::computeFileSize(filePath);
+        fileSize = provider->getSize(filePath);
     } catch (std::invalid_argument &) {
         return COMMO_ILLEGAL_ARGUMENT;
     }
@@ -514,7 +532,7 @@ atakmap::commoncommo::CommoResult MissionPackageManager::uploadFileInit(
                 hash);
         *xferId = txCtx->id;
 
-        TxUploadContext *uploadCtx = new TxUploadContext(txCtx, streamingRemoteId);
+        TxUploadContext *uploadCtx = new TxUploadContext(txCtx, provider, streamingRemoteId);
         txCtx->uploadCtxs.insert(uploadCtx);
 
         pendingTxTransfers[txCtx->id] = txCtx;
@@ -906,6 +924,11 @@ void MissionPackageManager::uploadThreadProcess()
                     if (upCtx->state == TxUploadContext::UPLOAD) {
                         curl_formfree(upCtx->uploadData);
                         upCtx->uploadData = NULL;
+                        if (upCtx->localFile) {
+                            upCtx->ioProvider->close(upCtx->localFile);
+                            upCtx->ioProvider = NULL;
+                            upCtx->localFile = NULL;
+                        }
                     }
                     
                     if (httpRc == 200) {
@@ -984,6 +1007,18 @@ size_t MissionPackageManager::curlUploadWriteCallback(char *buf, size_t size, si
     return n;
 }
 
+size_t MissionPackageManager::curlReadCallback(char *buf, size_t size, size_t nmemb, void *userCtx)
+{
+    TxUploadContext *upCtx = (TxUploadContext *)userCtx;
+
+    if (!upCtx->localFile)
+        return 0;
+
+    size_t n = upCtx->ioProvider->read(buf, size, nmemb, upCtx->localFile);
+
+    return n * size;
+}
+
 CURLcode MissionPackageManager::curlSslCtxSetupRedirUpload(CURL *curl, void *sslctx, void *privData)
 {
     MissionPackageManager::TxUploadContext *upCtx = (MissionPackageManager::TxUploadContext *)privData;
@@ -999,6 +1034,12 @@ void MissionPackageManager::uploadThreadInitCtx(TxUploadContext *upCtx) COMMO_TH
                 (upCtx->state == TxUploadContext::UPLOAD ? "upload" : "tool set"),
             upCtx->owner->fileToSend.c_str(),
             upCtx->streamEndpoint.c_str());
+
+    if (upCtx->localFile) {
+        upCtx->ioProvider->close(upCtx->localFile);
+        upCtx->ioProvider = NULL;
+        upCtx->localFile = NULL;
+    }
 
 #define CURL_CHECK(a) if ((a) != 0) throw std::invalid_argument("Failed to set curl option")
     std::string url;
@@ -1029,7 +1070,8 @@ void MissionPackageManager::uploadThreadInitCtx(TxUploadContext *upCtx) COMMO_TH
             CURL_CHECK(curl_easy_setopt(upCtx->curlCtx, CURLOPT_SSL_VERIFYHOST, 0L));
         } else {
             url.insert(0, "http://");
-            url += ":8080";
+            url += ":";
+            url += InternalUtils::intToString(upCtx->owner->settings.getHttpPort());
         }
         url += "/Marti";
 
@@ -1057,11 +1099,15 @@ void MissionPackageManager::uploadThreadInitCtx(TxUploadContext *upCtx) COMMO_TH
             struct curl_httppost *uploadDataTail = NULL;
             CURL_CHECK(curl_formadd(&uploadData, &uploadDataTail,
                     CURLFORM_COPYNAME, "assetfile",
-                    CURLFORM_FILE, upCtx->owner->fileToSend.c_str(),
+                    CURLFORM_STREAM, upCtx,
+                    CURLFORM_FILENAME, upCtx->owner->filename.c_str(),
+                    CURLFORM_CONTENTSLENGTH, upCtx->owner->fileSize,
                     CURLFORM_CONTENTTYPE, "application/x-zip-compressed",
                     CURLFORM_END));
             upCtx->uploadData = uploadData;
+            upCtx->localFile = upCtx->ioProvider->open(upCtx->owner->fileToSend.c_str(), "rb");
 
+            CURL_CHECK(curl_easy_setopt(upCtx->curlCtx, CURLOPT_READFUNCTION, curlReadCallback));
 
             url += "/sync/missionupload";
             InternalUtils::urlAppendParam(upCtx->curlCtx, &url, "hash",
@@ -1124,6 +1170,13 @@ void MissionPackageManager::uploadThreadInitCtx(TxUploadContext *upCtx) COMMO_TH
     } catch (std::invalid_argument &e) {
         curl_easy_cleanup(upCtx->curlCtx);
         upCtx->curlCtx = NULL;
+
+        if (upCtx->localFile) {
+            upCtx->ioProvider->close(upCtx->localFile);
+            upCtx->ioProvider = NULL;
+            upCtx->localFile = NULL;
+        }
+
         throw e;
     }
 
@@ -1369,12 +1422,12 @@ size_t MissionPackageManager::curlWriteCallback(char *buf, size_t size, size_t n
 {
     FileTransferContext *ftc = (FileTransferContext *)userCtx;
     if (!ftc->outputFile) {
-        ftc->outputFile = fopen(ftc->localFilename.c_str(), "wb");
+        ftc->outputFile = ftc->provider->open(ftc->localFilename.c_str(), "wb");
         if (!ftc->outputFile)
             return 0;
     }
 
-    size_t n = fwrite(buf, size, nmemb, ftc->outputFile);
+    size_t n = ftc->provider->write(buf, size, nmemb, ftc->outputFile);
     if (n != nmemb)
         return 0;
     return nmemb * size;
@@ -1506,7 +1559,8 @@ void MissionPackageManager::receiveThreadProcess()
                     continue;
                 }
 
-                FileTransferContext *ftc = new FileTransferContext(this, xferSettings, dstFile, v.first, r);
+                auto provider (providerTracker->getCurrentProvider());
+                FileTransferContext *ftc = new FileTransferContext(this, xferSettings, dstFile, v.first, r, provider);
                 rxTransfers.insert(RxTransferMap::value_type(dstFile, ftc));
             }
             newRequests.clear();
@@ -1680,7 +1734,7 @@ void MissionPackageManager::receiveThreadProcess()
                 curl_easy_getinfo(easyHandle, CURLINFO_PRIVATE, &ftc);
                 ftc->curlCtx = NULL;
                 if (ftc->outputFile) {
-                    fclose(ftc->outputFile);
+                    ftc->provider->close(ftc->outputFile);
                     ftc->outputFile = NULL;
                 }
 
@@ -1793,7 +1847,7 @@ void MissionPackageManager::receiveThreadProcess()
             curl_multi_remove_handle(curlMultiCtx, ftc->curlCtx);
             curl_easy_cleanup(ftc->curlCtx);
             if (ftc->outputFile) {
-                fclose(ftc->outputFile);
+                ftc->provider->close(ftc->outputFile);
                 ftc->outputFile = NULL;
             }
         }
@@ -1869,6 +1923,7 @@ int MissionPackageManager::webThreadAccessHandlerCallback(
                                           void **connectionContext)
 {
     static int dummy = 1;
+    WebserverFileContext* context (NULL);
 
     if (strcmp(method, "GET") != 0)
         return MHD_NO;
@@ -1886,12 +1941,12 @@ int MissionPackageManager::webThreadAccessHandlerCallback(
         static const std::string fileSpecifier("/getfile");
         static const std::string infoSpecifier("/getinfo");
         std::string urlStr(url);
-        FILE *f = NULL;
+        FileHandle *f = NULL;
         if (urlStr == infoSpecifier) {
             static char infoResponse[] = "Commo file server";
             response = MHD_create_response_from_buffer(
                 sizeof(infoResponse) - 1, infoResponse, MHD_RESPMEM_PERSISTENT);
-        
+
         } else {
             if (urlStr != fileSpecifier)
                 throw std::invalid_argument("Invalid URL requested");
@@ -1912,8 +1967,9 @@ int MissionPackageManager::webThreadAccessHandlerCallback(
                 fileString = iter->second->fileToSend;
             }
 
-            uint64_t size = InternalUtils::computeFileSize(fileString.c_str());
-            f = fopen(fileString.c_str(), "rb");
+            auto provider(providerTracker->getCurrentProvider());
+            uint64_t size = provider->getSize(fileString.c_str());
+            f = providerTracker->getCurrentProvider()->open(fileString.c_str(), "rb");
             if (!f) {
                 InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG,
                         "MP webserver: File ID %d mapped to file %s "
@@ -1921,14 +1977,18 @@ int MissionPackageManager::webThreadAccessHandlerCallback(
                 throw std::invalid_argument(
                         "Could not open file to serve on web");
             }
-
+            context = new WebserverFileContext;
+            context->handle = f;
+            context->provider = providerTracker->getCurrentProvider();
             response = MHD_create_response_from_callback(size, 4096,
-                    webserverReaderCallback, f, webserverReaderFree);
+                    webserverReaderCallback, context, webserverReaderFree);
         }
-        
+
         if (!response) {
+            if (context)
+                delete context;
             if (f)
-                fclose(f);
+                providerTracker->getCurrentProvider()->close(f);
             throw std::invalid_argument("Could not create web response");
         }
         code = MHD_HTTP_OK;
@@ -1967,7 +2027,7 @@ void MissionPackageManager::eventThreadProcess()
             event = eventQueue.back();
             eventQueue.pop_back();
         }
-        
+
         if (event->tx) {
             clientio->missionPackageSendStatusUpdate(event->tx);
         } else {
@@ -1999,7 +2059,8 @@ MissionPackageManager::FileTransferContext::FileTransferContext(
         const MPTransferSettings &settings,
         const std::string &localFilename, 
         const std::string &sourceStreamEndpoint,
-        CoTFileTransferRequest *request) :
+        CoTFileTransferRequest *request,
+        std::shared_ptr<FileIOProvider>& provider) :
                 owner(mgr),
                 settings(settings),
                 localFilename(localFilename),
@@ -2009,7 +2070,8 @@ MissionPackageManager::FileTransferContext::FileTransferContext(
                 adjustedSenderUrl(request->senderUrl),
                 usingSenderURL(true), senderURLIsTAKServer(false),
                 nextRetryTime(CommoTime::ZERO_TIME),
-                currentRetryCount(1), bytesTransferred(0), outputFile(NULL)
+                currentRetryCount(1), bytesTransferred(0), outputFile(NULL),
+                provider(provider)
 {
     if (request->peerHosted && request->httpsPort != MP_LOCAL_PORT_DISABLE) {
         if (request->senderUrl.find("http://") == 0) {
@@ -2087,7 +2149,9 @@ MissionPackageManager::TxAckInfo::~TxAckInfo()
 }
 
 MissionPackageManager::TxUploadContext::TxUploadContext(
-        TxTransferContext *owner, const std::string &streamEndpoint,
+        TxTransferContext *owner,
+        std::shared_ptr<FileIOProvider>& provider,
+        const std::string &streamEndpoint,
         std::vector<const InternalContactUID *> *contacts) :
                 state(CHECK),
                 streamEndpoint(streamEndpoint),
@@ -2097,7 +2161,9 @@ MissionPackageManager::TxUploadContext::TxUploadContext(
                 uploadData(NULL),
                 headerList(NULL),
                 urlFromServer(),
-                bytesTransferred(0)
+                bytesTransferred(0),
+                ioProvider(provider),
+                localFile(0)
 {
 }
 
@@ -2111,6 +2177,11 @@ MissionPackageManager::TxUploadContext::~TxUploadContext()
             delete *iter;
         }
         delete contacts;
+    }
+    if (localFile) {
+        ioProvider->close(localFile);
+        ioProvider = NULL;
+        localFile = NULL;
     }
 }
 
@@ -2244,12 +2315,19 @@ MissionPackageManager::MPStatusEvent::createRx(const char *file,
 
 
 
-MPTransferSettings::MPTransferSettings() : httpsPort(DEFAULT_HTTPS_PORT),
+MPTransferSettings::MPTransferSettings() : 
+    httpPort(DEFAULT_HTTP_PORT),
+    httpsPort(DEFAULT_HTTPS_PORT),
     nTries(DEFAULT_TRY_COUNT),
     connTimeoutSec(DEFAULT_CONN_TIMEOUT_SEC),
     xferTimeoutSec(DEFAULT_XFER_TIMEOUT_SEC),
     serverTransferEnabled(true)
 {
+}
+
+int MPTransferSettings::getHttpPort()
+{
+    return httpPort;
 }
 
 int MPTransferSettings::getHttpsPort()
@@ -2275,6 +2353,13 @@ int MPTransferSettings::getXferTimeoutSec()
 bool MPTransferSettings::isServerTransferEnabled()
 {
     return serverTransferEnabled;
+}
+
+void MPTransferSettings::setHttpPort(int port) COMMO_THROW (std::invalid_argument)
+{
+    if (port <= 0 || port > 65535)
+        throw std::invalid_argument("");
+    this->httpPort = port;
 }
 
 void MPTransferSettings::setHttpsPort(int port) COMMO_THROW (std::invalid_argument)

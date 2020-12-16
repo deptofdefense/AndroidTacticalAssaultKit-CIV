@@ -337,6 +337,126 @@ namespace commoncommo {
     };
 
 
+    typedef std::map<FileHandle *, jglobalobjectref> FileHandleMap;
+
+    /**
+     * Class to implement all file I/O operations.
+     */
+    class JNIFileIOProvider : public atakmap::commoncommo::FileIOProvider {
+	public:
+        /**
+         * Constructor
+         *
+         * @param env       Current JNI Environment to execute Java method calls
+         * @param instance  The instance of the Java JniFileIOProvider object
+         */
+        JNIFileIOProvider(JNIEnv &env, jobject instance);
+
+        /**
+         * destructor
+         */
+        ~JNIFileIOProvider();
+
+        /**
+         * Open a file
+         *
+         * @param path  The file path to open
+         * @param mode  File access mode
+         */
+        atakmap::commoncommo::FileHandle* open(const char* path, const char * mode) override;
+
+        /**
+         * Close a file
+         *
+         * @param filePtr   The file handler
+         * @return If the stream is successfully closed, a zero value is returned. On failure, EOF is
+         *         returned
+         */
+        int close(atakmap::commoncommo::FileHandle* filePtr) override;
+
+        /**
+         * Write block of data to stream
+         *
+         * @param buf       Pointer to the array of elements to be written
+         * @param size      Size in bytes of each element to be written. size_t is an unsigned integral type
+         * @param nmemb     Number of elements, each one with a size of size bytes. size_t is an unsigned
+         *                  integral type
+         * @param filePtr   Pointer to a FILE object that specifies an output stream
+         * @return The total number of elements successfully written
+         */
+        size_t write(void* buf, size_t size, size_t nmemb, atakmap::commoncommo::FileHandle* filePtr) override;
+
+        /**
+         * Read block of data from stream
+         *
+         * @param buf       Pointer to the array of elements to be read
+         * @param size      Size in bytes of each element to be read. size_t is an unsigned integral type
+         * @param nmemb     Number of elements, each one with a size of size bytes. size_t is an unsigned
+         *                  integral type
+         * @param filePtr   Pointer to a FILE object that specifies an input stream
+         * @return The total number of elements successfully read
+         */
+        size_t read(void* buf, size_t size, size_t nmemb, atakmap::commoncommo::FileHandle* filePtr) override;
+
+        /**
+         * Check end-of-file indicator
+         *
+         * @param filePtr   Pointer to a FILE object that identifies the stream.
+         * @return A non-zero value is returned in the case that the end-of-file indicator associated
+         *         with the stream is set. Otherwise, zero is returned.
+         */
+        int eof(atakmap::commoncommo::FileHandle* filePtr) override;
+
+        /**
+         * Get current position in stream
+         *
+         * @param filePtr   Pointer to a FILE object that identifies the stream
+         * @return On success, the current value of the position indicator is returned. On failure, -1L
+         *         is returned, and errno is set to a system-specific positive value.
+         */
+        long tell(atakmap::commoncommo::FileHandle* filePtr) override;
+
+        /**
+         * Reposition stream position indicator
+         *
+         * @param offset    Binary files: Number of bytes to offset from origin. Text files: Either zero,
+         *                  or a value returned by tell.
+         * @param whence    Position used as reference for the offset. It is specified by one of the
+         *                  following constants defined in <cstdio> exclusively to be used as arguments for
+         *                  this function:
+         * @param filePtr   Pointer to a FILE object that identifies the stream.
+         * @return If successful, the function returns zero. Otherwise, it returns non-zero value.
+         */
+        int seek(long offset, int whence, atakmap::commoncommo::FileHandle* filePtr) override;
+
+        /**
+         * Check error indicator
+         *
+         * @param filePtr   Pointer to a FILE object that identifies the stream.
+         * @return A non-zero value is returned in the case that the error indicator associated with the
+         *         stream is set. Otherwise, zero is returned
+         */
+        int error(atakmap::commoncommo::FileHandle* filePtr) override;
+
+        /**
+         * Returns the size of the file.
+         *
+         * @param path The path to the file to be checked.
+         */
+        size_t getSize(const char* path) override COMMO_THROW (std::invalid_argument);
+
+        static bool reflectionInit(JNIEnv *env);
+        static void reflectionRelease(JNIEnv *env);
+     private:
+
+        /**
+         * The instance of the Java JniFileIOProvider JNI object.
+         */
+        jobject m_instance;
+        
+        FileHandleMap handleMap;
+    };
+
     class CommoJNI
     {
     public:
@@ -346,7 +466,10 @@ namespace commoncommo {
 
         void setupMPIO(JNIEnv *env, jobject jmpio) COMMO_THROW (int);
         void enableFileIO(JNIEnv *env, jobject jfileio) COMMO_THROW (int);
-        
+
+        jlong registerFileIOProvider(JNIEnv *env, jobject jfileioprovider);
+        void deregisterFileIOProvider(JNIEnv *env, jlong jfileioprovider);
+
         bool addIfaceStatusListener(JNIEnv *env, jobject jifaceListener);
         bool removeIfaceStatusListener(JNIEnv *env, jobject jifaceListener);
 

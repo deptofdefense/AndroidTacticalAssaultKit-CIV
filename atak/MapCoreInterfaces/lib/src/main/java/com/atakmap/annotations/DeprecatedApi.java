@@ -18,7 +18,8 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({
-        ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.METHOD, ElementType.TYPE,
+        ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.METHOD,
+        ElementType.TYPE,
 })
 @Documented
 public @interface DeprecatedApi {

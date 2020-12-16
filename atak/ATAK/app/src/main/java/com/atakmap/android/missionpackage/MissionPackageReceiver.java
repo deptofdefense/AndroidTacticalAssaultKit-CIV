@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
@@ -21,7 +22,7 @@ import com.atakmap.android.contact.Contacts;
 import com.atakmap.android.coordoverlay.CoordOverlayMapReceiver;
 import com.atakmap.android.cot.CotMapComponent;
 import com.atakmap.android.cot.CotUtils;
-import com.atakmap.android.data.DataMgmtReceiver;
+import com.atakmap.android.data.ClearContentRegistry;
 import com.atakmap.android.dropdown.DropDown.OnStateListener;
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.filesharing.android.service.AndroidFileInfo;
@@ -80,7 +81,7 @@ import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.comms.NetworkUtils;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.missionpackage.MPReceiveInitiator;
@@ -575,7 +576,7 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
                     if (pathPair == null)
                         continue;
                     File f = new File(pathPair.getValue());
-                    if (!FileIOProviderFactory.exists(f))
+                    if (!IOProviderFactory.exists(f))
                         continue;
                     li = MissionPackageManifestAdapter.FileContentToUI(mc, f);
                 }
@@ -703,7 +704,14 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
             }
 
             handleCoTFileTransfer(fileTransfer);
-        } else if (DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION.equals(action)) {
+        } else {
+            Log.w(TAG, "Ignoring action of type: " + action);
+        }
+    }
+
+    ClearContentRegistry.ClearContentListener ccl = new ClearContentRegistry.ClearContentListener() {
+        @Override
+        public void onClearContent(boolean clearmaps) {
             Log.d(TAG, "Deleting mission packages");
 
             //stop pref listener to avoid toast for invalid prefs/settings
@@ -719,10 +727,8 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
 
             //delete files
             _component.getFileIO().clear();
-        } else {
-            Log.w(TAG, "Ignoring action of type: " + action);
         }
-    }
+    };
 
     private String findMapItem(String mapItemUID) {
         MapItem item = _mapView.getRootGroup()
@@ -931,16 +937,6 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
         }
 
         return builder.build().toString();
-    }
-
-    private String getMyEndpoint() {
-        String endpoint = CotMapComponent.getEndpoint();
-        if (endpoint == null) {
-            Log.w(TAG, "Unable to determine my own IP...");
-            endpoint = "";
-        }
-
-        return endpoint;
     }
 
     /**
@@ -1183,7 +1179,8 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
                         public void run() {
                             MissionPackageMapOverlay overlay = MissionPackageMapOverlay
                                     .getOverlay();
-                            if (overlay != null && !FileIOProviderFactory.exists(file))
+                            if (overlay != null
+                                    && !IOProviderFactory.exists(file))
                                 overlay.remove(file, false);
                         }
                     });
@@ -1322,19 +1319,19 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
     }
 
     private class CommsMPReceiver implements MPReceiver {
-        private String transferName;
-        private String senderCallsign;
-        private String expectedSha256;
-        private long expectedByteLen;
+        private final String transferName;
+        private final String senderCallsign;
+        private final String expectedSha256;
+        private final long expectedByteLen;
 
         // For notifications/progress updates
-        private int notifierId;
-        private String tickerFilename;
-        private DownloadProgressTracker progressTracker;
-        private Notification.Builder builder;
-        private NotificationManager notifyManager;
+        private final int notifierId;
+        private final String tickerFilename;
+        private final DownloadProgressTracker progressTracker;
+        private final Notification.Builder builder;
+        private final NotificationManager notifyManager;
 
-        private File tempFile;
+        private final File tempFile;
 
         public CommsMPReceiver(String transferName,
                 String senderCallsign,
@@ -1352,7 +1349,7 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
             notifyManager = (NotificationManager) _context.getSystemService(
                     Context.NOTIFICATION_SERVICE);
 
-            if (android.os.Build.VERSION.SDK_INT < 26) {
+            if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                 builder = new Notification.Builder(_context);
             } else {
                 builder = new Notification.Builder(_context,
@@ -1530,9 +1527,11 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
                     fileInfo.setUserName(senderCallsign);
                     fileInfo.setUserLabel(transferName);
                     // TODO is this checked dynamically or cached when File is created?
-                    fileInfo.setSizeInBytes((int) FileIOProviderFactory.length(savedMissionPackage));
+                    fileInfo.setSizeInBytes((int) IOProviderFactory
+                            .length(savedMissionPackage));
 
-                    fileInfo.setUpdateTime(FileIOProviderFactory.lastModified(savedMissionPackage));
+                    fileInfo.setUpdateTime(IOProviderFactory
+                            .lastModified(savedMissionPackage));
 
                     // file size and hash was verified above, so lets use that rather than re-compute
                     if (FileSystemUtils.isEmpty(expectedSha256)) {
@@ -1691,7 +1690,7 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
                             File img = new File(c.getParameter("localpath")
                                     .getValue());
                             if (FileSystemUtils.isFile(img)
-                                    && img.isFile()
+                                    && IOProviderFactory.isFile(img)
                                     && ImageDropDownReceiver.ImageFileFilter
                                             .accept(img.getParentFile(),
                                                     img.getName())) {

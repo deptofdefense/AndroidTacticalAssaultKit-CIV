@@ -201,7 +201,7 @@ public class WaveRelayControlLite
                         }
                     }
                 } catch (Exception e) {
-                    Log.e(TAG, "error occured with redirect (error sending): "
+                    Log.e(TAG, "error occurred with redirect (error sending): "
                             + e);
                 }
 
@@ -285,13 +285,13 @@ public class WaveRelayControlLite
                         }
                     } catch (SocketTimeoutException ste) {
                         Log.e(TAG,
-                                "error occured with redirect (no information received): "
+                                "error occurred with redirect (no information received): "
                                         + ste);
                     }
                 }
             } catch (IOException e) {
                 if (!cancelled)
-                    Log.e(TAG, "error occured with redirect (healing): " + e);
+                    Log.e(TAG, "error occurred with redirect (healing): " + e);
             }
         }
 

@@ -21,7 +21,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
 
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ViewSwitcher;
@@ -45,7 +44,7 @@ import com.atakmap.comms.NetworkDeviceManager;
 import com.atakmap.coremap.conversions.CoordinateFormat;
 import com.atakmap.coremap.conversions.CoordinateFormatUtilities;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -85,12 +84,13 @@ import org.apache.sanselan.formats.tiff.write.TiffOutputSet;
  */
 public class VideoDropDownReceiver extends DropDownReceiver implements
         OnStateListener, MediaConsumer, StatusUpdateConsumer,
-        SeekBar.OnSeekBarChangeListener, View.OnClickListener, KLVConsumer,
+        BufferSeekBar.BufferSeekBarChangeListener, View.OnClickListener,
+        KLVConsumer,
         View.OnLongClickListener, OnSharedPreferenceChangeListener {
 
     public static final String TAG = "VideoDropDownReceiver";
 
-    private SharedPreferences _prefs;
+    private final SharedPreferences _prefs;
 
     private final Object surfaceLock = new Object();
     private final Object processorLock = new Object();
@@ -118,8 +118,8 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
     private static final SimpleDateFormatThread snapDateFormatter = new SimpleDateFormatThread(
             "yyyyMMMdd_HHmmss_SSS", LocaleUtil.getCurrent());
 
-    private Context context;
-    private View videoView;
+    private final Context context;
+    private final View videoView;
 
     private double currWidth = HALF_WIDTH;
     private double currHeight = HALF_HEIGHT;
@@ -130,25 +130,30 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
     private final ImageButton extrudeBtn;
     private boolean extrudeButtonVis = false;
 
-    private final SeekBar seekbar;
-    private SeekBar curVideoSeekBar;
+    private BufferSeekBar curVideoSeekBar;
+    private final BufferSeekBar bufferSeekBar;
     private final TextView time, frameCenter, altitude;
 
-    private View video_player, status_screen, status_connecting, status_failed;
+    private final View video_player;
+    private final View status_screen;
+    private final View status_connecting;
+    private final View status_failed;
 
-    private View metadataControls;
+    private final View metadataControls;
 
-    private ViewSwitcher video_switcher, status_switcher;
+    private final ViewSwitcher video_switcher;
+    private final ViewSwitcher status_switcher;
 
     private SharedGLSurfaceView glView;
 
-    private Button cancelBtn, cancelDuringConnectBtn;
-    private TextView connectionText;
+    private final Button cancelBtn;
+    private final Button cancelDuringConnectBtn;
+    private final TextView connectionText;
 
     // if null, do not record, otherwise record
     private OutputStream recordingStream = null;
 
-    private RelativeLayout overlays;
+    private final RelativeLayout overlays;
 
     private final static Map<String, VideoViewLayer> videoviewlayers = new HashMap<>();
     private final Set<VideoViewLayer> activeLayers = new HashSet<>();
@@ -158,10 +163,11 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
 
     final VideoMapItemController vmic;
     private MediaProcessor processor;
-    private SurfaceVideoConsumer surfaceVideoConsumer;
+    private final SurfaceVideoConsumer surfaceVideoConsumer;
     private Surface sourceSurface;
 
     private boolean priorTrackingState = true;
+    private long lastVideoTime;
 
     /**
      * Temporary file directory to use. Temp directory in use - not used for file opens
@@ -208,8 +214,8 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
         galleryBtn = videoView.findViewById(R.id.galleryButton);
         galleryBtn.setOnClickListener(this);
 
-        seekbar = videoView.findViewById(R.id.fmvSeekBar);
-        seekbar.setOnSeekBarChangeListener(this);
+        bufferSeekBar = videoView.findViewById(R.id.fmvSeekBar);
+        bufferSeekBar.setSeekBarChangeListener(this);
 
         time = videoView.findViewById(R.id.TimeView);
         time.setOnLongClickListener(this);
@@ -237,10 +243,11 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                             lastTimeMs = curTimeMs;
                             mapView.post(new Runnable() {
                                 public void run() {
+                                    lastVideoTime = curTimeMs;
                                     time.setText(formatTime(curTimeMs));
                                     if (curVideoSeekBar != null)
                                         curVideoSeekBar
-                                                .setProgress((int) (curTimeMs));
+                                                .setCurrent((int) curTimeMs);
 
                                 }
                             });
@@ -385,7 +392,9 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                 sendNotification(false);
             } else if (processor != null) {
                 // if the file at the end, pressing play will restart it from the begining.
-                if (seekbar.getMax() - seekbar.getProgress() < 500)
+                if (vmd.connectionEntry
+                        .getProtocol() == ConnectionEntry.Protocol.FILE &&
+                        processor.getDuration() - processor.getTime() < 500)
                     processor.setTime(0);
 
                 processor.start();
@@ -434,21 +443,18 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
     }
 
     @Override
-    public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-        if (b) {
-            long posAct = processor.setTime((long) seekBar
-                    .getProgress());
-        }
+    public void onProgressChanged(BufferSeekBar seekBar, int progress) {
+        long posAct = processor.setTime((long) progress);
     }
 
     @Override
-    public void onStartTrackingTouch(SeekBar seekBar) {
+    public void onStartTrackingTouch(BufferSeekBar seekBar) {
         priorTrackingState = processor.isProcessing();
         processor.stop();
     }
 
     @Override
-    public void onStopTrackingTouch(SeekBar seekBar) {
+    public void onStopTrackingTouch(BufferSeekBar seekBar) {
         if (priorTrackingState) {
             processor.start();
         }
@@ -465,7 +471,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                     + ie);
             recordBtn.setSelected(false);
             recordingStream = null;
-            toast("Error Occured Recording", Toast.LENGTH_SHORT);
+            toast("Error occurred Recording", Toast.LENGTH_SHORT);
         }
 
     }
@@ -479,7 +485,25 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
     }
 
     @Override
-    public void mediaStreamExtentsUpdate(long l, long l1) {
+    public void mediaStreamExtentsUpdate(final long startMillis,
+            final long endMillis) {
+
+        bufferSeekBar.post(new Runnable() {
+            public void run() {
+                bufferSeekBar.setRange((int) startMillis, (int) endMillis);
+
+                if (lastVideoTime < (endMillis
+                        - vmd.connectionEntry.getBufferTime())
+                        && processor != null && !processor.isProcessing()) {
+                    // We're paused at the head of the buffer and our buffer is full
+                    // Force play to keep the buffering at/near the desired amount
+                    processor.start();
+                    playPauseBtn.setImageResource(
+                            R.drawable.pauseforeground);
+                }
+
+            }
+        });
 
     }
 
@@ -632,6 +656,8 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
 
     @Override
     public void onReceive(final Context c, final Intent intent) {
+
+        Log.e(TAG, "SHOW VIDEO LIST");
         final String action = intent.getAction();
         if (action == null)
             return;
@@ -692,7 +718,14 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
             public void run() {
                 startProcessor();
 
-                final String[] layers = intent.getStringArrayExtra("layers");
+                // if the user has passed in an intent with specific layers specified use that
+                final String[] intentLayers = intent
+                        .getStringArrayExtra("layers");
+
+                // otherwise go ahead and just display all of the layers registered
+                final String[] layers = (intentLayers != null) ? intentLayers
+                        : videoviewlayers.keySet().toArray(new String[0]);
+
                 getMapView().post(new Runnable() {
                     public void run() {
                         overlays.removeAllViews();
@@ -751,6 +784,15 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
         }
     }
 
+    private boolean shouldUseProgressBar() {
+        final ConnectionEntry ce = vmd.connectionEntry;
+        return ce.getProtocol() == ConnectionEntry.Protocol.FILE ||
+                ((ce.getProtocol() == ConnectionEntry.Protocol.UDP
+                        || ce.getProtocol() == ConnectionEntry.Protocol.SRT ||
+                        ce.getProtocol() == ConnectionEntry.Protocol.RTSP)
+                        && ce.getBufferTime() > 10000);
+    }
+
     private boolean startConnection() {
         try {
             final ConnectionEntry ce = vmd.connectionEntry;
@@ -766,11 +808,11 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                     extrudeBtn.setVisibility(View.GONE);
                     extrudeBtn.setSelected(false);
 
-                    if (ce.getProtocol() == ConnectionEntry.Protocol.FILE) {
+                    if (shouldUseProgressBar()) {
                         playPauseBtn.setVisibility(View.VISIBLE);
-                        seekbar.setVisibility(View.VISIBLE);
+                        bufferSeekBar.setVisibility(View.VISIBLE);
                     } else {
-                        seekbar.setVisibility(View.INVISIBLE);
+                        bufferSeekBar.setVisibility(View.INVISIBLE);
                         playPauseBtn.setVisibility(View.INVISIBLE);
                     }
                     recordBtn.setEnabled(false);
@@ -782,7 +824,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                     try {
                         File f = new File(
                                 FileSystemUtils.validityScan(ce.getPath()));
-                        if (FileIOProviderFactory.exists(f)) {
+                        if (IOProviderFactory.exists(f)) {
                             processor = new MediaProcessor(f);
                         } else {
                             return false;
@@ -841,12 +883,30 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                 case RTMPS:
                 case HTTPS:
                 case HTTP:
-                case SRT:
                     setupTmpDir();
                     String addr = ConnectionEntry.getURL(ce, false);
                     Log.d(TAG, "connect to " + addr);
                     processor = new MediaProcessor(addr);
                     break;
+                case SRT: {
+
+                    setupTmpDir();
+                    final String srtAddr = ce.getAddress();
+                    int srtPort = ce.getPort();
+                    String srtPass = ce.getPassphrase();
+                    if (srtPass != null && srtPass.length() == 0)
+                        srtPass = null;
+                    Log.d(TAG,
+                            "SRT connect to " + srtAddr + ":" + srtPort
+                                    + " pass is {" + srtPass + "} "
+                                    + ce.getNetworkTimeout() + " "
+                                    + ce.getBufferTime());
+                    processor = new MediaProcessor(srtAddr, srtPort, srtPass,
+                            ce.getNetworkTimeout(),
+                            ce.getBufferTime(), 0, tmpDir);
+                    break;
+                }
+
                 case RTSP: {
 
                     setupTmpDir();
@@ -904,6 +964,13 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                     break;
             }
 
+            if (!haveVid) {
+                // Not supporting videos without video
+                processor.destroy();
+                processor = null;
+                throw new Exception("No video track");
+            }
+
             final int max = (int) (processor.getDuration());
 
             getMapView().post(new Runnable() {
@@ -917,10 +984,9 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
 
                     metadataControls.setVisibility(vis);
 
-                    if (vmd.connectionEntry
-                            .getProtocol() == ConnectionEntry.Protocol.FILE) {
-                        seekbar.setMax(max);
-                        seekbar.setKeyProgressIncrement(1000000);
+                    if (shouldUseProgressBar()) {
+                        bufferSeekBar.resetBufTime(0, max,
+                                vmd.connectionEntry.getBufferTime());
                     }
                     playPauseBtn.setImageResource(
                             R.drawable.pauseforeground);
@@ -1056,14 +1122,14 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
     private void setupTmpDir() throws IOException {
         File base = context.getFilesDir();
         base = new File(base, TEMP_DIR);
-        if (!FileIOProviderFactory.exists(base)) {
-            if (!FileIOProviderFactory.mkdirs(base)) {
+        if (!IOProviderFactory.exists(base)) {
+            if (!IOProviderFactory.mkdirs(base)) {
                 Log.d(TAG, "could not wrap: " + base);
             }
         }
-        tmpDir = File.createTempFile("stream", null, base);
+        tmpDir = IOProviderFactory.createTempFile("stream", null, base);
         FileSystemUtils.delete(tmpDir);
-        if (!FileIOProviderFactory.mkdirs(tmpDir)) {
+        if (!IOProviderFactory.mkdirs(tmpDir)) {
             Log.d(TAG, "could not wrap: " + tmpDir);
         }
     }
@@ -1074,7 +1140,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
     private void cleanTmpDirs() {
         File base = context.getFilesDir();
         base = new File(base, TEMP_DIR);
-        if (!FileIOProviderFactory.exists(base))
+        if (!IOProviderFactory.exists(base))
             return;
         FileSystemUtils.deleteDirectory(base, true);
     }
@@ -1084,8 +1150,8 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
      */
     private void setupVideo(final VideoMediaFormat fmt) {
         // Connect processor to output consumer
-        if (vmd.connectionEntry.getProtocol() == ConnectionEntry.Protocol.FILE)
-            curVideoSeekBar = seekbar;
+        if (shouldUseProgressBar())
+            curVideoSeekBar = bufferSeekBar;
         else
             curVideoSeekBar = null;
 
@@ -1160,7 +1226,8 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                 LocaleUtil.getCurrent()).format(new Date(time));
         Log.i(TAG, "Taking Snapshot");
         File snapDir = FileSystemUtils.getItem(SNAPSHOT_DIRNAME);
-        if (!FileIOProviderFactory.exists(snapDir) && !FileIOProviderFactory.mkdirs(snapDir))
+        if (!IOProviderFactory.exists(snapDir)
+                && !IOProviderFactory.mkdirs(snapDir))
             Log.e(TAG, "Failed to make dir at " + snapDir);
         final String pathToRecordLocation = SNAPSHOT_DIRNAME
                 + File.separator
@@ -1174,10 +1241,11 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                 .sanitizeWithSpacesAndSlashes(pathToRecordLocation));
         try {
             //If file already exists, don't try to make a new snapshot
-            if (!file.createNewFile()) {
+            if (!IOProviderFactory.createNewFile(file)) {
                 toast("Snapshot already exists", Toast.LENGTH_SHORT);
             } else {
-                FileOutputStream ostream = FileIOProviderFactory.getOutputStream(file);
+                FileOutputStream ostream = IOProviderFactory
+                        .getOutputStream(file);
                 bitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream);
                 ostream.close();
             }
@@ -1225,8 +1293,8 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
             final File vidDir = FileSystemUtils
                     .getItem(VIDEO_DIRNAME + File.separator
                             + recdirDateFormatter.get().format(time));
-            if (!FileIOProviderFactory.exists(vidDir)) {
-                if (!FileIOProviderFactory.mkdirs(vidDir)) {
+            if (!IOProviderFactory.exists(vidDir)) {
+                if (!IOProviderFactory.mkdirs(vidDir)) {
                     Log.e(TAG,
                             "Failed to make directory at "
                                     + vidDir.getAbsolutePath());
@@ -1242,7 +1310,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
             final File recordLocation = new File(pathToRecordLocation);
 
             try {
-                if (!recordLocation.createNewFile()) {
+                if (!IOProviderFactory.createNewFile(recordLocation)) {
                     Log.e(TAG, "Recording file could not be created");
                     return;
                 } else {
@@ -1250,8 +1318,9 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                             + recordLocation.getAbsolutePath());
 
                 }
-                recordingStream = new BufferedOutputStream(FileIOProviderFactory.getOutputStream(
-                        recordLocation));
+                recordingStream = new BufferedOutputStream(
+                        IOProviderFactory.getOutputStream(
+                                recordLocation));
             } catch (Exception e) {
                 Log.e(TAG, "error starting recording stream", e);
                 recordingStream = null;
@@ -1290,7 +1359,8 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                     connectionText.setText(context
                             .getString(R.string.connecting_to)
                             + vmd.connectionEntry.getAlias() + " at "
-                            + ConnectionEntry.getURL(vmd.connectionEntry, true));
+                            + ConnectionEntry.getURL(vmd.connectionEntry,
+                                    true));
 
                     if (status_switcher.getNextView() == status_connecting) {
                         status_switcher.showNext();
@@ -1324,8 +1394,8 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
     private float currentScale;
     private float currentPanX;
     private float currentPanY;
-    private GestureDetector gestureDetector;
-    private ScaleGestureDetector scaleDetector;
+    private final GestureDetector gestureDetector;
+    private final ScaleGestureDetector scaleDetector;
 
     private void resetPanAndScale() {
         glView.setScale(1.0f);

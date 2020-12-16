@@ -14,7 +14,7 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
  */
 public class SideloadedPluginInformation extends ProductInformation {
 
-    private Context _context;
+    private final Context _context;
 
     public SideloadedPluginInformation(ProductRepository parent,
             Context context,

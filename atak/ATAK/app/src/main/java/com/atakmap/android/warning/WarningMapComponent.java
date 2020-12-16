@@ -21,7 +21,7 @@ public class WarningMapComponent extends AbstractMapComponent {
 
     @Override
     public void onCreate(Context context, Intent intent, MapView view) {
-        dcc = new DangerCloseCalculator();
+        dcc = new DangerCloseCalculator(context);
         //setup Danger Close overlay
         _overlay = new DangerCloseMapOverlay(view, dcc);
         final MapOverlayManager overlayManager = view.getMapOverlayManager();

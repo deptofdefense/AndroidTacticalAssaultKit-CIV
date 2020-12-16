@@ -15,18 +15,21 @@ import android.widget.CheckBox;
 import android.widget.TextView;
 
 import com.atakmap.android.preference.PreferenceSearchIndex;
+import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.app.ATAKActivity;
 import com.atakmap.android.gui.WebViewer;
 import com.atakmap.android.gui.HintDialogHelper;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.app.R;
+import com.atakmap.app.system.FlavorProvider;
+import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 
 public class SupportPreferenceFragment extends AtakPreferenceFragment {
@@ -52,6 +55,7 @@ public class SupportPreferenceFragment extends AtakPreferenceFragment {
         addPreferencesFromResource(getResourceID());
 
         context = getActivity();
+
         Preference atakSupport = findPreference("atakSupport");
         atakSupport
                 .setOnPreferenceClickListener(
@@ -98,57 +102,21 @@ public class SupportPreferenceFragment extends AtakPreferenceFragment {
                             }
                         });
 
-        Preference atakDocumentation = findPreference("atakDocumentation");
+        configureDocumentPreference("atakDocumentation",
+                FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar +
+                        "docs" + File.separatorChar + "ATAK_User_Guide.pdf",
+                false);
 
-        final File umFile = FileSystemUtils
-                .getItem(FileSystemUtils.SUPPORT_DIRECTORY
-                        + File.separatorChar
-                        + "docs"
-                        + File.separatorChar
-                        + "ATAK_User_Guide.pdf");
+        configureDocumentPreference("atakChangeLog",
+                FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar +
+                        "docs" + File.separatorChar + "ATAK_Change_Log.pdf",
+                true);
 
-        if (FileIOProviderFactory.length(umFile) == 0)
-            removePreference(atakDocumentation);
-        if (atakDocumentation != null) {
-            atakDocumentation
-                    .setOnPreferenceClickListener(
-                            new Preference.OnPreferenceClickListener() {
-                                @Override
-                                public boolean onPreferenceClick(
-                                        Preference preference) {
-                                    com.atakmap.android.util.PdfHelper
-                                            .checkAndWarn(context,
-                                                    umFile.toString());
-                                    return true;
-                                }
-                            });
-        }
-
-        Preference atakChangeLog = findPreference("atakChangeLog");
-
-        final File clFile = FileSystemUtils
-                .getItem(FileSystemUtils.SUPPORT_DIRECTORY
-                        + File.separatorChar
-                        + "docs"
-                        + File.separatorChar
-                        + "ATAK_Change_Log.pdf");
-        if (FileIOProviderFactory.length(clFile) == 0)
-            removePreference(atakChangeLog);
-
-        if (atakChangeLog != null) {
-            atakChangeLog
-                    .setOnPreferenceClickListener(
-                            new Preference.OnPreferenceClickListener() {
-                                @Override
-                                public boolean onPreferenceClick(
-                                        Preference preference) {
-                                    com.atakmap.android.util.PdfHelper
-                                            .checkAndWarn(context,
-                                                    clFile.toString());
-                                    return true;
-                                }
-                            });
-        }
+        configureDocumentPreference("atakFlavorAddendum",
+                FileSystemUtils.SUPPORT_DIRECTORY + File.separatorChar +
+                        "docs" + File.separatorChar
+                        + "ATAK_Flavor_Addendum.pdf",
+                true);
 
         Preference atakDatasets = findPreference("atakDatasets");
 
@@ -215,12 +183,13 @@ public class SupportPreferenceFragment extends AtakPreferenceFragment {
                                 return true;
                             }
                         });
+        resetDeviceConfig.setIcon(ATAKConstants.getIcon());
     }
 
     static public String read(File f) {
         BufferedReader reader = null;
         try {
-            reader = new BufferedReader(FileIOProviderFactory.getFileReader(f));
+            reader = new BufferedReader(new FileReader(f));
             String line;
             StringBuilder stringBuilder = new StringBuilder();
             String ls = System.getProperty("line.separator");
@@ -242,5 +211,37 @@ public class SupportPreferenceFragment extends AtakPreferenceFragment {
             }
         }
         return "";
+    }
+
+    private void configureDocumentPreference(String preferenceKey,
+            String fileName,
+            boolean requireFlavor) {
+        try {
+            final FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+
+            final Preference preference = findPreference(preferenceKey);
+            final File file = FileSystemUtils
+                    .getItem(fileName);
+            if (!file.exists() || file.length() == 0
+                    || (fp == null && requireFlavor))
+                removePreference(preference);
+
+            if (preference != null) {
+                preference.setOnPreferenceClickListener(
+                        new Preference.OnPreferenceClickListener() {
+                            @Override
+                            public boolean onPreferenceClick(
+                                    Preference preference) {
+                                com.atakmap.android.util.PdfHelper
+                                        .checkAndWarn(context,
+                                                file.toString());
+                                return true;
+                            }
+                        });
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "error configuring preference", e);
+        }
+
     }
 }

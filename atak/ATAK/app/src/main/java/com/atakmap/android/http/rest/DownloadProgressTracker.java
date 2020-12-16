@@ -115,7 +115,7 @@ public class DownloadProgressTracker {
 
             // get speed in bytes per millis for last block
             lastSpeedBPM = currentBlockLength
-                    / (float)Math.max(1L, (currentTime - lastUpdateMillis));
+                    / (float) Math.max(1L, (currentTime - lastUpdateMillis));
 
             // calculate average speed
             if (averageSpeedBPM < 0)

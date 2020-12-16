@@ -6,16 +6,16 @@ import android.util.Pair;
 
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.ShapefileSpatialDb;
+import com.atakmap.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipFile;
 
 import java.io.File;
 import java.io.InputStream;
 import java.util.Enumeration;
-import com.atakmap.coremap.locale.LocaleUtil;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * Imports archived Shapefiles
@@ -58,7 +58,7 @@ public class ImportSHPZSort extends ImportInPlaceResolver {
             return false;
         }
 
-        if (!FileIOProviderFactory.exists(file)) {
+        if (!IOProviderFactory.exists(file)) {
             Log.d(TAG, "ZIP does not exist: " + file.getAbsolutePath());
             return false;
         }

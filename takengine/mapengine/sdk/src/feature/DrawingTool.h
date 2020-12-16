@@ -5,14 +5,14 @@
 ////    DESCRIPTION:    Declaration of abstract DrawingTool class and concrete
 ////                    derived classes.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Feb 6, 2015
+////      Feb 6, 2015   scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -31,6 +31,7 @@
 ////                                                                        ////
 ////========================================================================////
 
+#include <vector>
 
 #include "port/String.h"
 
@@ -79,7 +80,7 @@ class DrawingTool
   public :
     virtual
     ~DrawingTool ()
-        throw ()
+        NOTHROWS
       { }
 
     Type getType() const
@@ -193,7 +194,7 @@ class Brush
     Brush ();
 
     ~Brush ()
-        throw ()
+        NOTHROWS
       { }
 
     void
@@ -293,6 +294,8 @@ class Label
     static const char* const LABEL_VERTICAL_OFFSET;
     static const char* const LABEL_PERPENDICULAR_OFFSET;
     static const char* const LABEL_PRIORITY_LEVEL;
+    // libtakengine additions
+    static const char* const LABEL_RELATIVE_ANGLE;
 
 
     //==================================
@@ -303,7 +306,7 @@ class Label
     Label ();
 
     ~Label ()
-        throw ()
+        NOTHROWS
       { }
 
     void
@@ -324,6 +327,7 @@ class Label
     unsigned int shadowColor;
     float fontSize;                     // In pixels.
     float angle;
+    float relativeAngle;
     float stretch;                      // Defaults to 100.
     Placement placement;                // Defaults to FIRST_VERTEX.
     Position position;                  // Defaults to CENTER_LEFT.
@@ -399,7 +403,7 @@ class Pen
     Pen ();
 
     ~Pen ()
-        throw ()
+        NOTHROWS
       { }
 
     void
@@ -413,7 +417,7 @@ class Pen
 
 
     TAK::Engine::Port::String names;
-    TAK::Engine::Port::String pattern;
+    std::vector<unsigned> pattern;
     unsigned int color;                 // Defaults to 0xFF000000.
     float width;
     float dp;
@@ -440,6 +444,22 @@ class Symbol
                                         //====================================//
 
 
+    enum Position
+      {
+        BASELINE_LEFT = 1,
+        BASELINE_CENTER,
+        BASELINE_RIGHT,
+        CENTER_LEFT,
+        CENTER_CENTER,
+        CENTER_RIGHT,
+        TOP_LEFT,
+        TOP_CENTER,
+        TOP_RIGHT,
+        BOTTOM_LEFT,
+        BOTTOM_CENTER,
+        BOTTOM_RIGHT
+      };
+
     //==================================
     //  PUBLIC CONSTANTS
     //==================================
@@ -456,6 +476,11 @@ class Symbol
     static const char* const SYMBOL_SPACING_STEP;
     static const char* const SYMBOL_SPACING_INITIAL;
     static const char* const SYMBOL_PRIORITY_LEVEL;
+    // libtakengine additions
+    static const char* const SYMBOL_POSITION;
+    static const char* const SYMBOL_RELATIVE_ANGLE;
+    static const char* const SYMBOL_SYMBOL_WIDTH;
+    static const char* const SYMBOL_SYMBOL_HEIGHT;
 
 
     //==================================
@@ -466,7 +491,7 @@ class Symbol
     Symbol ();
 
     ~Symbol ()
-        throw ()
+        NOTHROWS
       { }
 
     void
@@ -482,7 +507,8 @@ class Symbol
     TAK::Engine::Port::String names;
     unsigned int color;                 // Defaults to 0xFF000000.
     unsigned int outlineColor;
-    float angle;                        // Degrees CCW, per OGR.
+    float angle;                        // Absolute degrees CCW, per OGR; ignored if `relativeAngle` defined
+    float relativeAngle;                // Relative degrees CCW
     float scaling;                      // Defaults to 1.0.  If 0.0, use size.
     float size;                         // Defaults to 0.0.  Defers to scaling.
     float dx;
@@ -491,6 +517,9 @@ class Symbol
     float ds;
     float di;
     unsigned int priority;
+    Position position;
+    float symbolWidth;
+    float symbolHeight;
   };
 
 

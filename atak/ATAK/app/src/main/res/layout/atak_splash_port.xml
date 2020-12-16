@@ -69,6 +69,15 @@
                  android:layout_height="wrap_content"
                  android:text=""
                  android:textColor="@color/heading_yellow" />
+         <TextView
+                 android:id="@+id/encryption"
+                 android:layout_width="wrap_content"
+                 android:layout_height="wrap_content"
+                 android:text=""
+                 android:visibility="gone"
+                 android:textSize="9sp"
+                 android:textColor="@color/white" />
+
         <TextView
                 android:id="@+id/pluginapi"
                 android:layout_width="wrap_content"

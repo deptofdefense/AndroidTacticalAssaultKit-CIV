@@ -30,7 +30,7 @@ public class ServerVersion {
     private static final int INVALID = -1;
     public static final int MPT_TOOL_PARAM_MIN_VERSION = 2;
 
-    private String netConnect;
+    private final String netConnect;
     private int apiVersion;
     private String version;
 

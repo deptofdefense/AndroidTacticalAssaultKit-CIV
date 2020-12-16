@@ -29,14 +29,14 @@ import java.util.Set;
 class VideoFolderHierarchyListItem extends VideoBrowserHierarchyListItem
         implements Visibility2, Search, HierarchyListStateListener {
 
-    private final static int AUTO_HIDE_TIME_MS = 5000;
+    protected final static int AUTO_HIDE_TIME_MS = 5000;
 
-    private boolean _vizSupported;
+    protected boolean _vizSupported;
 
     // The UID of the entry that has its menu showing (null if none)
-    private String _showMenuUID;
-    private int _showMenuIndex;
-    private int _descendantCount;
+    protected String _showMenuUID;
+    protected int _showMenuIndex;
+    protected int _descendantCount;
 
     VideoFolderHierarchyListItem(MapView mapView, ConnectionEntry entry,
             VideoFolderHierarchyListItem parent) {

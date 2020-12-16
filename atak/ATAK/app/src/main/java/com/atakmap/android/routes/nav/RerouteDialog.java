@@ -37,21 +37,21 @@ public class RerouteDialog implements Dialog.OnClickListener {
     public static final String PREF_IS_REROUTE_ACTIVE_KEY = "com.atakmap.android.routes.nav.RerouteDialog.is_reroute_active";
     public static final String PREF_ACTIVE_REROUTE_ENGINE = "com.atakmap.android.routes.nav.RerouteDialog.active_reroute_engine";
 
-    private Activity activity;
-    private MapView mapView;
-    private Context context;
+    private final Activity activity;
+    private final MapView mapView;
+    private final Context context;
 
     private Spinner plannerSpinner;
-    private List<String> plannerNames;
-    private List<Map.Entry<String, RoutePlannerInterface>> routePlanners;
+    private final List<String> plannerNames;
+    private final List<Map.Entry<String, RoutePlannerInterface>> routePlanners;
     private LinearLayout optionsView;
-    private SharedPreferences prefs;
+    private final SharedPreferences prefs;
 
     private AlertDialog dlg;
 
     private Dialog.OnClickListener listener;
 
-    private static Comparator<Map.Entry<String, RoutePlannerInterface>> ALPHA_SORT = new Comparator<Map.Entry<String, RoutePlannerInterface>>() {
+    private static final Comparator<Map.Entry<String, RoutePlannerInterface>> ALPHA_SORT = new Comparator<Map.Entry<String, RoutePlannerInterface>>() {
         @Override
         public int compare(Map.Entry<String, RoutePlannerInterface> lhs,
                 Map.Entry<String, RoutePlannerInterface> rhs) {
@@ -138,7 +138,7 @@ public class RerouteDialog implements Dialog.OnClickListener {
         }
     }
 
-    private AdapterView.OnItemSelectedListener plannerSpinnerListener = new AdapterView.OnItemSelectedListener() {
+    private final AdapterView.OnItemSelectedListener plannerSpinnerListener = new AdapterView.OnItemSelectedListener() {
         @Override
         public void onItemSelected(AdapterView<?> parent, View view,
                 int position, long id) {

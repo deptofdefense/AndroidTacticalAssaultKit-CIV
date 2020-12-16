@@ -3,11 +3,31 @@ Overview
 
 ATAK is a Moving Map capability for the Android OS.   Respository development should make use of the model as outlined by https://nvie.com/posts/a-successful-git-branching-model/ which closely matches the WinTAK development model.
 
-Notes
+The moving map capability is based on a core civilian capability that is built first and then flavored with either the military or fms capabilities.
+
+Developer Notes
 ====
 
+*Please make sure to read these for solutions to commonly encountered issues*
 
-With gradle 6.0.1, if you are building from the command line and fail to set ANDROID_HOME, the build process will fail with a message similiar to this:
+
+14 October 2020 - ATAK will *require* core developers using Android Studio to set the Launch Option for ATAK Activity to be manually set.  This is because Android Studio has a difficult time determining if you are running a flavor or unflavored version of ATAK.   Under the Run/Debug configuration for ATAK, please set the Launch Activity to com.atakmap.app.ATAKActivity
+
+If you do not do this you will get the following message from Android Studio with a failure to launch ATAK
+
+    $ adb shell am start -n "com.atakmap.app.civ/com.atakmap.app.ATAKActivityCiv" -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
+    Error while executing: am start -n "com.atakmap.app.civ/com.atakmap.app.ATAKActivityCiv" -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
+    Starting: Intent { act=android.intent.action.MAIN cat=[android.intent.category.LAUNCHER] cmp=com.atakmap.app.civ/com.atakmap.app.ATAKActivityCiv }
+    Error type 3
+    Error: Activity class {com.atakmap.app.civ/com.atakmap.app.ATAKActivityCiv} does not exist.
+
+
+05 October 2020 - NDK installation is now required.
+
+04 May 2020 - ATAK is compiled to use targetSdkVersion 29 but still provide support for the minSdkVersion 21.    Be careful when developing new code within core to make sure that appropriate safeguards are in place that retain system compatibility for minSdkVersion 21.
+
+
+20 March 2020 - With gradle 6.0.1, if you are building from the command line and fail to set ANDROID_HOME, the build process will fail with a message similiar to this:
       
       * What went wrong:
           Task 'assembleDebug' not found in root project 'ATAK'.
@@ -16,18 +36,15 @@ Please make sure to set the ANDROID_HOME environment variable or create a local.
 The local.properties file should have the following line:
 sdk.dir=/path/to/android/sdk
 
-As of 04 May 2020 - ATAK is compiled to use targetSdkVersion 29 but still provide support for the minSdkVersion 21.    Be careful when developing new code within core to make sure that appropriate safeguards are in place that retain system compatibility for minSdkVersion 21.
-
-
-
 
 Requirements for Development
 ====
 
 The following tools are required (at a minimum) to compile and deploy ATAK:
 
-- Java Development Kit 1.8 or greater (OpenJDK)
-- Git client 2.19 or greater
+- Java Development Kit 1.8 (OpenJDK https://adoptopenjdk.net/)
+- git client 2.19 
+- git-lfs
 
 If you are using the command line to build and deploy ATAK:
 
@@ -37,7 +54,7 @@ If using an IDE:
 
 - Android Studio 
 
-The following is optional and only useful if you are creating native libraries. 
+The following is *required* and only useful if you are creating native libraries. 
 The version that must be used is NDK 12b.    
 
 Windows:

@@ -11,7 +11,6 @@ import android.preference.PreferenceManager;
 import android.telephony.SmsManager;
 import android.telephony.TelephonyManager;
 
-import com.atakmap.app.Permissions;
 import com.atakmap.coremap.log.Log;
 import android.annotation.SuppressLint;
 import com.atakmap.android.emergency.sms.SMSGenerator;
@@ -295,14 +294,17 @@ public class EmergencyManager {
                 for (String s : parsedNumbers) {
                     try {
                         if (sendSmsInterface != null) {
-                            sendSmsInterface.sendTextMessage(s, null, alertMessage, null, null);
+                            sendSmsInterface.sendTextMessage(s, null,
+                                    alertMessage, null, null);
                         } else {
-                            int res = getContext().checkCallingOrSelfPermission(Manifest.permission.SEND_SMS);
+                            int res = getContext().checkCallingOrSelfPermission(
+                                    Manifest.permission.SEND_SMS);
                             if (res == PackageManager.PERMISSION_GRANTED) {
                                 // default behavior
                                 SmsManager sms = SmsManager.getDefault();
                                 if (sms != null)
-                                    sms.sendTextMessage(s, null, alertMessage, null, null);
+                                    sms.sendTextMessage(s, null, alertMessage,
+                                            null, null);
                             }
                         }
                     } catch (Exception e) {
@@ -387,9 +389,6 @@ public class EmergencyManager {
         AtakBroadcast.getInstance().sendBroadcast(intent);
     }
 
-
-
-
     public interface SendSmsInterface {
         /**
          * Send a text based SMS.
@@ -417,13 +416,12 @@ public class EmergencyManager {
          *
          * @throws IllegalArgumentException if destinationAddress or text are empty
          */
-        public void sendTextMessage(
+        void sendTextMessage(
                 String destinationAddress, String scAddress, String text,
                 PendingIntent sentIntent, PendingIntent deliveryIntent);
     }
 
     private static SendSmsInterface sendSmsInterface;
-
 
     /**
      * Sets the Send SMS Interface to use instead of the default SMS Interface.

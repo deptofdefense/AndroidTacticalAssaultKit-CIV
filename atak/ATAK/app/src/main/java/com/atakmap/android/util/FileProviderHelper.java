@@ -42,7 +42,7 @@ public class FileProviderHelper {
      * @returns a Uri valid for the version of android being run on the device
      */
     public static Uri fromFile(final Context context, final File file) {
-        if (Build.VERSION.SDK_INT < 24) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
             return Uri.fromFile(file);
         } else {
             return FileProvider.getUriForFile(context,
@@ -56,7 +56,7 @@ public class FileProviderHelper {
      * on an intent that offers a file.
      */
     public static void setReadAccess(final Intent intent) {
-        if (Build.VERSION.SDK_INT >= 24) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             intent.setFlags(
                     intent.getFlags() | Intent.FLAG_GRANT_READ_URI_PERMISSION);
         }

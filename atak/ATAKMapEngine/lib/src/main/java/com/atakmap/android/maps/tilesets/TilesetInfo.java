@@ -5,15 +5,16 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.DatabaseInformation;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipFile;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -88,7 +89,7 @@ public class TilesetInfo {
         final String path = file.getAbsolutePath();
         if (isZipArchive(path)) {
             return parseZip(file);
-        } else if (Databases.isSQLiteDatabase(path)) {
+        } else if (IOProviderFactory.isDatabase(new File(path))) {
             return parseSQLiteDb(file);
         } else {
             return null;
@@ -121,7 +122,7 @@ public class TilesetInfo {
                 long e = android.os.SystemClock.elapsedRealtime();
     
                 Log.d(TAG, "zipvirtualfile in " + (e - s));
-                File[] children = FileIOProviderFactory.listFiles(zf);
+                File[] children = IOProviderFactory.listFiles(zf);
     
                 final Set<String> supportedFormats = new HashSet<String>();
                 supportedFormats.add("MAPNIK");
@@ -161,7 +162,7 @@ public class TilesetInfo {
 
         DatabaseIface database = null;
         try {
-            database = Databases.openDatabase(file.getAbsolutePath(), true);
+            database = IOProviderFactory.createDatabase(file, DatabaseInformation.OPTION_READONLY);
             if (OSMUtils.isOSMDroidSQLite(database)) {
                 // OSM Droid SQLite
                 CursorIface result;

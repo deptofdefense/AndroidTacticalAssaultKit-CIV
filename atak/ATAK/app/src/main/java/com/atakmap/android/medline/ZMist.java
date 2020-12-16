@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
  */
 public class ZMist extends LinearLayout {
 
-    private Context _context;
+    private final Context _context;
     private MapView _mapView;
     PointMapItem _marker;
 
@@ -42,7 +42,7 @@ public class ZMist extends LinearLayout {
     private ActionButton i_line;
     private ActionButton s_line;
     private ActionButton t_line;
-    private LayoutInflater inflater;
+    private final LayoutInflater inflater;
 
     private Map<String, String> mechanismMap = new HashMap<>();
     private Map<String, String> injuryMap = new HashMap<>();

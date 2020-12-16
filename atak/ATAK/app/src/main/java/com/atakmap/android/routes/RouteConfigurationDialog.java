@@ -1,3 +1,4 @@
+
 package com.atakmap.android.routes;
 
 import android.app.AlertDialog;
@@ -35,11 +36,10 @@ import static com.atakmap.android.routes.RouteCreationDialog.setupPlanSpinner;
 /** Similar to {@link RouteCreationDialog}, except only allows the user to configure
  *  route planning options -- not including the start and end point of the route to be planned.
  */
- // TODO: This should be refactored to better share code with RouteCreationDialog.java
+// TODO: This should be refactored to better share code with RouteCreationDialog.java
 public class RouteConfigurationDialog {
 
-    private static final Comparator<String> SORT_PLANNERS
-            = new Comparator<String>() {
+    private static final Comparator<String> SORT_PLANNERS = new Comparator<String>() {
         @Override
         public int compare(String o1, String o2) {
             return o1.compareTo(o2);
@@ -50,13 +50,14 @@ public class RouteConfigurationDialog {
     private final RouteAroundRegionViewModel _routeAroundVM;
     private final LinearLayout _routeAroundOptions;
     private final SharedPreferences _prefs;
-    private Context _context;
-    private MapView _mapView;
-    private Callback<RoutePlannerInterface> callback;
-    private RouteAroundRegionManagerView regionManagerView;
-    private AlertDialog _configDialog;
+    private final Context _context;
+    private final MapView _mapView;
+    private final Callback<RoutePlannerInterface> callback;
+    private final RouteAroundRegionManagerView regionManagerView;
+    private final AlertDialog _configDialog;
 
-    public RouteConfigurationDialog(Context context, MapView mapView, Callback<RoutePlannerInterface> callback) {
+    public RouteConfigurationDialog(Context context, MapView mapView,
+            Callback<RoutePlannerInterface> callback) {
         this._context = context;
         this._mapView = mapView;
         this.callback = callback;
@@ -87,7 +88,7 @@ public class RouteConfigurationDialog {
                 new CompoundButton.OnCheckedChangeListener() {
                     @Override
                     public void onCheckedChanged(CompoundButton x,
-                                                 boolean checked) {
+                            boolean checked) {
                         _prefs.edit().putBoolean(
                                 RouteAroundRegionManagerView.OPT_AVOID_ROUTE_AROUND_REGIONS,
                                 checked).apply();
@@ -98,7 +99,7 @@ public class RouteConfigurationDialog {
                 new CompoundButton.OnCheckedChangeListener() {
                     @Override
                     public void onCheckedChanged(CompoundButton x,
-                                                 boolean checked) {
+                            boolean checked) {
                         _prefs.edit().putBoolean(
                                 RouteAroundRegionManagerView.OPT_AVOID_GEOFENCES,
                                 checked).apply();
@@ -119,14 +120,14 @@ public class RouteConfigurationDialog {
                                             DialogInterface dialog) {
                                         new RouteAroundRegionViewModel(
                                                 _routeAroundManager)
-                                                .saveState();
+                                                        .saveState();
                                     }
                                 })
                         .setPositiveButton(R.string.done,
                                 new AlertDialog.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog,
-                                                        int which) {
+                                            int which) {
                                         dialog.dismiss();
                                     }
                                 })
@@ -144,10 +145,12 @@ public class RouteConfigurationDialog {
     }
 
     private AlertDialog getDialog() {
-        ScrollView routePlanView = (ScrollView) LayoutInflater.from(_context).inflate(
-                R.layout.route_planner_options_layout, _mapView, false);
+        ScrollView routePlanView = (ScrollView) LayoutInflater.from(_context)
+                .inflate(
+                        R.layout.route_planner_options_layout, _mapView, false);
 
-        LinearLayout _routePlanOptions = routePlanView.findViewById(R.id.route_plan_options);
+        LinearLayout _routePlanOptions = routePlanView
+                .findViewById(R.id.route_plan_options);
 
         final Spinner planSpinner = routePlanView.findViewById(
                 R.id.route_plan_method);
@@ -209,22 +212,23 @@ public class RouteConfigurationDialog {
         AlertDialog.Builder b = new AlertDialog.Builder(_context);
         b.setTitle(R.string.configure_route_planner);
         b.setView(routePlanView);
-        b.setPositiveButton(R.string.done, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                String plannerName = (String) planSpinner
-                        .getSelectedItem();
-                RoutePlannerInterface planner = null;
-                for (Map.Entry<String, RoutePlannerInterface> k : _planners) {
-                    if (plannerName.equals(k.getValue()
-                            .getDescriptiveName())) {
-                        planner = k.getValue();
-                        break;
+        b.setPositiveButton(R.string.done,
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String plannerName = (String) planSpinner
+                                .getSelectedItem();
+                        RoutePlannerInterface planner = null;
+                        for (Map.Entry<String, RoutePlannerInterface> k : _planners) {
+                            if (plannerName.equals(k.getValue()
+                                    .getDescriptiveName())) {
+                                planner = k.getValue();
+                                break;
+                            }
+                        }
+                        callback.accept(planner);
                     }
-                }
-                callback.accept(planner);
-            }
-        });
+                });
         b.setNegativeButton(R.string.cancel, null);
         AlertDialog d = b.create();
 

@@ -1,6 +1,7 @@
 #include "raster/mosaic/MosaicDatabaseFactory2.h"
 #include "util/CopyOnWrite.h"
 #include <map>
+#include <string>
 
 using namespace TAK::Engine::Util;
 using namespace TAK::Engine::Raster::Mosaic;

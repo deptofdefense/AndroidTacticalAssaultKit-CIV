@@ -6,11 +6,10 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference;
-import android.preference.PreferenceManager;
+
 import androidx.core.app.NavUtils;
 
 import com.atakmap.android.importexport.ImportExportMapComponent;
@@ -23,8 +22,6 @@ import com.atakmap.app.R;
 public class LoggingPreferenceFragment extends AtakPreferenceFragment {
 
     private static final String TAG = "LoggingPreferenceFragment";
-    private SharedPreferences _prefs;
-    private Context context;
 
     public static java.util.List<PreferenceSearchIndex> index(Context context) {
         return index(context,
@@ -49,8 +46,7 @@ public class LoggingPreferenceFragment extends AtakPreferenceFragment {
 
         addPreferencesFromResource(getResourceID());
 
-        context = getActivity();
-        _prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        final Context context = getActivity();
 
         Preference atakExportCrashLogs = findPreference("atakExportCrashLogs");
         atakExportCrashLogs
@@ -59,7 +55,7 @@ public class LoggingPreferenceFragment extends AtakPreferenceFragment {
                             @Override
                             public boolean onPreferenceClick(
                                     Preference preference) {
-                                new AlertDialog.Builder(getActivity())
+                                new AlertDialog.Builder(context)
                                         .setIcon(
                                                 com.atakmap.android.util.ATAKConstants
                                                         .getIconId())

@@ -237,5 +237,11 @@ public abstract class ElevationSource {
                   Collections2.equals(order, other.order) &&
                   Objects.equals(flags, other.flags);
         }
+
+        @Override
+        public int hashCode() {
+            return java.util.Objects.hash(spatialFilter, maxResolution, minResolution, targetResolution,
+                    types, authoritative, minCE, minLE, order, flags);
+        }
     }
 }

@@ -20,10 +20,9 @@ public class MetaDetailHandler extends CotDetailHandler {
     @Override
     public boolean toCotDetail(MapItem item, CotEvent event, CotDetail detail) {
         CotDetail meta = new CotDetail("meta");
-        Map m = item.getMetaMap("meta");
+        Map<String, Object> m = item.getMetaMap("meta");
         if (m != null && !m.isEmpty()) {
-            for (Object o : m.entrySet()) {
-                Map.Entry pair = (Map.Entry) o;
+            for (Map.Entry<String, Object> pair : m.entrySet()) {
                 String k = (String) pair.getKey();
                 String v = (String) pair.getValue();
                 CotDetail entry = new CotDetail();
@@ -43,7 +42,7 @@ public class MetaDetailHandler extends CotDetailHandler {
         if (item == null)
             return ImportResult.FAILURE;
 
-        Map m = new HashMap();
+        Map<String, Object> m = new HashMap<>();
 
         int len = detail.childCount();
         for (int i = 0; i < len; ++i) {

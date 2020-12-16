@@ -131,7 +131,7 @@ public class NITFReader {
 
     /**************************************************************************/
 
-    private abstract class AbstractReaderImpl implements
+    private static abstract class AbstractReaderImpl implements
             GdalTileReader.ReaderImpl {
         protected final int nbpp;
         protected final int abpp;
@@ -172,7 +172,7 @@ public class NITFReader {
         }
     }
 
-    public final class ByteReaderImpl extends AbstractReaderImpl {
+    public static final class ByteReaderImpl extends AbstractReaderImpl {
 
         public ByteReaderImpl(NITFImage image) {
             super(image);
@@ -205,7 +205,7 @@ public class NITFReader {
         }
     }
 
-    public final class ShortReaderImpl extends AbstractReaderImpl {
+    public static final class ShortReaderImpl extends AbstractReaderImpl {
 
         public ShortReaderImpl(NITFImage image) {
             super(image);
@@ -244,7 +244,7 @@ public class NITFReader {
         }
     }
 
-    private final class IntReaderImpl extends AbstractReaderImpl {
+    private static final class IntReaderImpl extends AbstractReaderImpl {
 
         public IntReaderImpl(NITFImage image) {
             super(image);
@@ -283,7 +283,7 @@ public class NITFReader {
         }
     }
 
-    private final class FloatReaderImpl extends AbstractReaderImpl {
+    private static final class FloatReaderImpl extends AbstractReaderImpl {
 
         public FloatReaderImpl(NITFImage image) {
             super(image);
@@ -318,7 +318,7 @@ public class NITFReader {
         }
     }
 
-    private final class DoubleReaderImpl extends AbstractReaderImpl {
+    private static final class DoubleReaderImpl extends AbstractReaderImpl {
 
         public DoubleReaderImpl(NITFImage image) {
             super(image);

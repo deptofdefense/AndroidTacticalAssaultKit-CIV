@@ -111,11 +111,13 @@ public class GLOffscreenIndicators extends
         super.initImpl(view);
 
         this.controller.addOnOffscreenIndicatorsThresholdListener(this);
+        this.controller.addOnItemsChangedListener(this);
     }
 
     @Override
     public void release() {
         this.controller.removeOnOffscreenIndicatorsThresholdListener(this);
+        this.controller.removeOnItemsChangedListener(this);
 
         super.release();
     }
@@ -282,7 +284,7 @@ public class GLOffscreenIndicators extends
 
     @Override
     public void onItemsChanged(OffscreenIndicatorController controller) {
-        this.invalidate();
+        this.invalidateNoSync();
     }
 
     /**************************************************************************/

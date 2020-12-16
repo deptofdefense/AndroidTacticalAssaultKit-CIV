@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Definition of Feature class.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Jan 14, 2015
+////      Jan 14, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -100,7 +100,7 @@ class Feature : public atakmap::util::AtomicRefCountable
              const util::AttributeSet&);
 
     ~Feature()
-        throw ();
+        NOTHROWS;
 
     //
     // The compiler-generated copy constructor and assignment operator are
@@ -110,37 +110,37 @@ class Feature : public atakmap::util::AtomicRefCountable
     const util::AttributeSet&
     getAttributes ()
         const
-        throw ();
+        NOTHROWS;
 
     int64_t
     getFeatureSetID ()
         const
-        throw ();
+        NOTHROWS;
 
     const Geometry&
     getGeometry ()
         const
-        throw ();
+        NOTHROWS;
 
     int64_t
     getID ()
         const
-        throw ();
+        NOTHROWS;
 
     const char*
     getName ()
         const
-        throw ();
+        NOTHROWS;
 
     const Style*
     getStyle ()
         const
-        throw ();
+        NOTHROWS;
 
     unsigned long
     getVersion ()
         const
-        throw ();
+        NOTHROWS;
       
       static bool isSame(const Feature &a, const Feature &b);
 

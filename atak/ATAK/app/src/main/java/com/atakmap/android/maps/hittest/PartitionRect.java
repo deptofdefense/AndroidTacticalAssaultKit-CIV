@@ -3,6 +3,8 @@ package com.atakmap.android.maps.hittest;
 
 import android.graphics.RectF;
 
+import java.util.Objects;
+
 /**
  * Screen-based rectangle representing the bounds for a set of points on a line
  */
@@ -24,6 +26,11 @@ public class PartitionRect extends RectF {
         super.set(other);
         this.startIndex = other.startIndex;
         this.endIndex = other.endIndex;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), startIndex, endIndex);
     }
 
     @Override

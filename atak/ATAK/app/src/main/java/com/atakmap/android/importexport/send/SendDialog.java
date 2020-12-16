@@ -19,7 +19,7 @@ import com.atakmap.android.missionpackage.file.MissionPackageManifest;
 import com.atakmap.android.missionpackage.file.task.MissionPackageBaseTask;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.ShapefileSpatialDb;
@@ -276,7 +276,7 @@ public class SendDialog {
                 return;
 
             File f = new File(path);
-            if (!FileIOProviderFactory.exists(f) || !f.isFile())
+            if (!IOProviderFactory.exists(f) || !IOProviderFactory.isFile(f))
                 return;
 
             // Special case for SHP file

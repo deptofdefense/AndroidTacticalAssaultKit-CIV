@@ -5,13 +5,15 @@
 ////    DESCRIPTION:    A class that provides a mapping of names to one of a set
 ////                    of value types.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
+////      Jan 15, 2015  scott           Created.
+////      Feb 9, 2018   joe b.          See improvements.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -115,7 +117,7 @@ class ENGINE_API AttributeSet
 
 
     ~AttributeSet()
-        throw ();
+        NOTHROWS;
 
     //
     // Clears all attributes.
@@ -126,13 +128,13 @@ class ENGINE_API AttributeSet
     bool
     containsAttribute (const char* key)
         const
-        throw ()
+        NOTHROWS
       { return attrItems.find(key) != attrItems.end(); }
 
     std::vector<const char*>
     getAttributeNames ()
         const
-        throw ();
+        NOTHROWS;
 
     //
     // Returns the AttributeSet attribute with the supplied attributeName.

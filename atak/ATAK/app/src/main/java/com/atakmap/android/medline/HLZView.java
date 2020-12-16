@@ -43,7 +43,7 @@ public class HLZView extends LinearLayout
         implements PointMapItem.OnPointChangedListener {
     public static final String TAG = "HLZView";
 
-    private Context _context;
+    private final Context _context;
     private MapView _mapView;
     private MedLineView _mlView;
 

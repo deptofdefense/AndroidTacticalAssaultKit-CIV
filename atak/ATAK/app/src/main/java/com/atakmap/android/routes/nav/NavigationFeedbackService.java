@@ -44,7 +44,7 @@ public class NavigationFeedbackService
     private RouteNavigationViewModel routeNavigationViewModel;
 
     // uid for a distance from a specific waypoint to the end of the route.
-    private Map<String, Double> distanceToEnd = new HashMap<>();
+    private final Map<String, Double> distanceToEnd = new HashMap<>();
 
     // last known state of the engine
     private boolean lastKnownState = false;
@@ -127,7 +127,7 @@ public class NavigationFeedbackService
             last = selfPt;
             lastWayPoint = wayPoint;
         } catch (Exception e) {
-            Log.d(TAG, "exception occured computing distance", e);
+            Log.d(TAG, "exception occurred computing distance", e);
         }
 
     }

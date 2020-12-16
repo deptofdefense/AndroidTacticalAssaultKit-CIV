@@ -2,6 +2,8 @@
 package com.atakmap.android.image;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,7 +44,7 @@ import com.atakmap.android.video.ConnectionEntry;
 import com.atakmap.android.video.VideoDropDownReceiver;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.AtakMapView;
 
@@ -272,8 +274,8 @@ public class ImageGalleryFileAdapter extends ImageGalleryBaseAdapter
     }
 
     public void addFile(File file, String uid) {
-        if (FileIOProviderFactory.isDirectory(file)) {
-            File[] files = FileIOProviderFactory.listFiles(file);
+        if (IOProviderFactory.isDirectory(file)) {
+            File[] files = IOProviderFactory.listFiles(file);
             if (FileSystemUtils.isEmpty(files))
                 return;
             for (File f : files)
@@ -744,7 +746,11 @@ public class ImageGalleryFileAdapter extends ImageGalleryBaseAdapter
 
                 opts.inPreferredConfig = Bitmap.Config.RGB_565;
                 opts.inJustDecodeBounds = true;
-                BitmapFactory.decodeFile(path, opts);
+                try (FileInputStream fis = IOProviderFactory
+                        .getInputStream(new File(path))) {
+                    BitmapFactory.decodeStream(fis, null, opts);
+                } catch (IOException ignored) {
+                }
                 opts.inJustDecodeBounds = false;
                 if (opts.outWidth > THUMB_SIZE && opts.outHeight > THUMB_SIZE) {
                     opts.inSampleSize = 1 << (int) (MathUtils.log2(Math.min(
@@ -752,7 +758,12 @@ public class ImageGalleryFileAdapter extends ImageGalleryBaseAdapter
                             opts.outHeight))
                             - MathUtils.log2(THUMB_SIZE));
                 }
-                bitmap = BitmapFactory.decodeFile(path, opts);
+                try (FileInputStream fis = IOProviderFactory
+                        .getInputStream(new File(path))) {
+                    bitmap = BitmapFactory.decodeStream(fis, null, opts);
+                } catch (IOException e) {
+                    bitmap = null;
+                }
             }
 
             TiffImageMetadata exif = ExifHelper
@@ -861,7 +872,7 @@ public class ImageGalleryFileAdapter extends ImageGalleryBaseAdapter
         int fileCount = 0;
         for (String p : files) {
             File f = new File(p);
-            if (FileIOProviderFactory.exists(f) && f.isFile()) {
+            if (IOProviderFactory.exists(f) && IOProviderFactory.isFile(f)) {
                 File metadata = getMetadataFile(f);
                 if (metadata != null)
                     exports.add(new FileExportable(metadata));
@@ -1031,7 +1042,7 @@ public class ImageGalleryFileAdapter extends ImageGalleryBaseAdapter
                 f.getName())) {
             // Clean-up metadata files
             File xml = new File(f.getAbsolutePath() + METADATA_EXT);
-            if (FileIOProviderFactory.exists(xml))
+            if (IOProviderFactory.exists(xml))
                 return xml;
         }
         return null;

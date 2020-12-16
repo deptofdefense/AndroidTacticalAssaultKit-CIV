@@ -116,7 +116,7 @@ public class BullseyeDropDownReceiver extends DropDownReceiver implements
     private RemarksLayout remarksLayout;
     private ExtraDetailsLayout extrasLayout;
 
-    private AutoSizeAngleOverlayShape.OnPropertyChangedListener propertyChangedListener = new AutoSizeAngleOverlayShape.OnPropertyChangedListener() {
+    private final AutoSizeAngleOverlayShape.OnPropertyChangedListener propertyChangedListener = new AutoSizeAngleOverlayShape.OnPropertyChangedListener() {
         @Override
         public void onPropertyChanged() {
             _mapView.post(new Runnable() {

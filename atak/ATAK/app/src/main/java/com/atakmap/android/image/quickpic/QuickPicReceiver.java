@@ -25,7 +25,7 @@ import com.atakmap.android.util.AttachmentManager;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
@@ -103,7 +103,8 @@ public class QuickPicReceiver extends BroadcastReceiver {
             if (img != null) {
                 File dir = img.getParentFile();
                 ImageActivity ia = new ImageActivity(_mapView, img, uid,
-                        _callbackIntent, FileIOProviderFactory.exists(dir) || FileIOProviderFactory.mkdirs(dir));
+                        _callbackIntent, IOProviderFactory.exists(dir)
+                                || IOProviderFactory.mkdirs(dir));
                 ia.start();
             }
         }

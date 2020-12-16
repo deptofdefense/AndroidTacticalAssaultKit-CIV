@@ -44,6 +44,10 @@ public final class BitmapFactory {
         return decodeByteArray(data, off, len, null);
     }
 
+    public static Bitmap decodeStream(InputStream stream) throws IOException {
+        return decodeStream(stream, null, null);
+    }
+
     public static Bitmap decodeStream(InputStream stream, Object ignored, BitmapFactory.Options opts) throws IOException {
         if(opts == null)
             opts = new BitmapFactory.Options();

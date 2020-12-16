@@ -3,6 +3,7 @@
 #include <cstring>
 #include <list>
 #include <map>
+#include <string>
 
 #include <sqlite3.h>
 #ifdef __ANDROID__
@@ -11,6 +12,31 @@
 
 #ifdef __ANDROID__
 #include <android/log.h>
+#endif
+#ifdef _MSC_VER
+// GDI+
+#include <Windows.h>
+#include <ObjIdl.h>
+
+#pragma warning(push)
+#pragma warning(disable : 4458)
+#ifdef NOMINMAX
+#define min(a, b) ((a)<(b) ? (a) : (b))
+#define max(a, b) ((a)<(b) ? (a) : (b))
+#include <gdiplus.h>
+#pragma comment (lib, "Gdiplus.lib")
+#include <gdiplusheaders.h>
+#include <gdiplusfont.h>
+#include <gdipluspixelformats.h>
+#undef min
+#undef max
+#else
+#include <gdiplus.h>
+#pragma comment (lib, "Gdiplus.lib")
+#include <gdiplusheaders.h>
+#include <gdipluspixelformats.h>
+#endif
+#pragma warning(pop)
 #endif
 #include <interop/JNIStringUTF.h>
 #include <interop/java/JNILocalRef.h>
@@ -76,6 +102,10 @@ namespace {
     void sqliteLogCallback(void *pArg, int iErrCode, const char *zMsg);
 
     JavaVM *vm;
+
+#ifdef _MSC_VER
+    ULONG_PTR gdiplusToken;
+#endif
 
 } // unnamed namespace
 
@@ -241,11 +271,22 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm_, void *reserved)
 #ifdef __ANDROID__
     spatialite_init(1);
 #endif
+
+#ifdef _MSC_VER
+    // GDI+ init for windows builds
+    Gdiplus::GdiplusStartupInput input;
+    Gdiplus::Status s = Gdiplus::GdiplusStartup(&gdiplusToken, &input, nullptr);
+#endif
     return JNI_VERSION_1_6;
 }
 
 JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved)
 {
+#ifdef _MSC_VER
+    // GDI+ teardown for windows builds
+    Gdiplus::GdiplusShutdown(gdiplusToken);
+#endif
+
     void *env_vp;
     JNIEnv *env;
     if (vm->GetEnv(&env_vp, JNI_VERSION_1_6))

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <memory>
 #include <vector>
+#include <stdexcept>
 
 #include "port/STLIteratorAdapter.h"
 #include "port/Vector.h"

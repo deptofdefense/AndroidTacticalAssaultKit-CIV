@@ -12,6 +12,7 @@
 #include "util/IO.h"
 #include "util/IO2.h"
 #include "util/Logging.h"
+#include "db/DatabaseFactory.h"
 
 using namespace TAK::Engine::Currency;
 
@@ -118,7 +119,8 @@ TAKErr CatalogDatabase2::open(const char *databasePath) NOTHROWS
     TE_CHECKRETURN_CODE(code);
 
     DatabasePtr db(nullptr, nullptr);
-    code = Databases_openDatabase(db, databasePath, false);
+    DatabaseInformation info(databasePath, nullptr, DATABASE_OPTIONS_READONLY);
+    code = DatabaseFactory_create(db, info);
     TE_CHECKRETURN_CODE(code);
 
     return this->openImpl(std::move(db));

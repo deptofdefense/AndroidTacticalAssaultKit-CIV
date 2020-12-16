@@ -1,12 +1,15 @@
 package com.atakmap.io;
 
+import android.net.Uri;
+
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProvider;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.DatabaseInformation;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
-import com.atakmap.database.Databases;
 import com.atakmap.database.QueryIface;
 import com.atakmap.database.StatementIface;
 import com.atakmap.math.MathUtils;
@@ -36,17 +39,21 @@ public class CachingProtocolHandler implements ProtocolHandler {
 
         this.source = source;
         this.cacheDir = cacheDir;
-        if(!FileIOProviderFactory.exists(this.cacheDir))
-            FileIOProviderFactory.mkdirs(this.cacheDir);
+        if(!IOProviderFactory.exists(this.cacheDir))
+            IOProviderFactory.mkdirs(this.cacheDir);
         this.maxCache = maxCache;
 
         final File dbfile = new File(cacheDir.getAbsolutePath(), "index.sqlite");
-        if(!FileIOProviderFactory.exists(dbfile)) {
-            this.index = Databases.openOrCreateDatabase(dbfile.getAbsolutePath());
-            this.index.execute("CREATE TABLE cacheindex (uri TEXT, path TEXT, length INTEGER, cache_datetime INTEGER)", null);
+        if(!IOProviderFactory.exists(dbfile)) {
+            this.index = IOProviderFactory.createDatabase(
+                    new DatabaseInformation(Uri.fromFile(dbfile)));
+            this.index.execute("CREATE TABLE IF NOT EXISTS " +
+                            "cacheindex (uri TEXT, path TEXT, length INTEGER, cache_datetime INTEGER)",
+                null);
             this.index.setVersion(1);
         } else {
-            this.index = Databases.openDatabase(dbfile.getAbsolutePath(), false);
+            this.index = IOProviderFactory.createDatabase(
+                    new DatabaseInformation(Uri.fromFile(dbfile)));
         }
 
         CursorIface result = null;
@@ -69,7 +76,7 @@ public class CachingProtocolHandler implements ProtocolHandler {
             if(waiting)
                 try {
                     this.wait();
-                } catch(InterruptedException e) {}
+                } catch(InterruptedException ignored) {}
 
             //  if present in cache, return value else return value from source
             QueryIface query = null;
@@ -79,7 +86,7 @@ public class CachingProtocolHandler implements ProtocolHandler {
                 if (query.moveToNext()) {
                     try {
                         UriFactory.OpenResult result = new UriFactory.OpenResult();
-                        result.inputStream = FileIOProviderFactory.getInputStream(new File(query.getString(0)));
+                        result.inputStream = IOProviderFactory.getInputStream(new File(query.getString(0)));
                         result.contentLength = query.getLong(1);
                         return result;
                     } catch(IOException e) {
@@ -101,8 +108,8 @@ public class CachingProtocolHandler implements ProtocolHandler {
         if(result != null) {
             try {
                 byte[] transfer = new byte[MathUtils.clamp((int)result.contentLength, 64*1024, 1024*1024)];
-                cached = File.createTempFile("cache", "", this.cacheDir);
-                try(FileOutputStream fos = FileIOProviderFactory.getOutputStream(cached)) {
+                cached = IOProviderFactory.createTempFile("cache", "", this.cacheDir);
+                try(FileOutputStream fos = IOProviderFactory.getOutputStream(cached)) {
                     FileSystemUtils.copyStream(result.inputStream, true, fos, false, transfer);
                 }
             } catch(IOException e) {
@@ -116,7 +123,7 @@ public class CachingProtocolHandler implements ProtocolHandler {
                     stmt = this.index.compileStatement("INSERT INTO cacheindex (uri, path, length, cache_datetime) VALUES(?, ?, ?, ?)");
                     stmt.bind(1, uri);
                     stmt.bind(2, cached.getAbsolutePath());
-                    stmt.bind(3, FileIOProviderFactory.length(cached));
+                    stmt.bind(3, IOProviderFactory.length(cached));
                     stmt.bind(4, System.currentTimeMillis());
 
                     stmt.execute();
@@ -126,11 +133,11 @@ public class CachingProtocolHandler implements ProtocolHandler {
                 }
 
                 try {
-                    result.inputStream = FileIOProviderFactory.getInputStream(cached);
-                    result.contentLength = FileIOProviderFactory.length(cached);
-                } catch(IOException e) {}
+                    result.inputStream = IOProviderFactory.getInputStream(cached);
+                    result.contentLength = IOProviderFactory.length(cached);
+                } catch(IOException ignored) {}
 
-                this.cacheSize += FileIOProviderFactory.length(cached);
+                this.cacheSize += IOProviderFactory.length(cached);
                 if(this.maxCache > 0L && this.cacheSize > this.maxCache+(this.maxCache/20)) {
                     long deleteToRowID = 0;
                     // evict to 10% under limit
@@ -141,7 +148,7 @@ public class CachingProtocolHandler implements ProtocolHandler {
                         cursor = this.index.query("SELECT ROWID, path, length FROM cacheindex ORDER BY ROWID ASC", null);
                         while(cursor.moveToNext()) {
                             // delete the file
-                            FileIOProviderFactory.delete(new File(cursor.getString(1)), FileIOProvider.SECURE_DELETE);
+                            IOProviderFactory.delete(new File(cursor.getString(1)), IOProvider.SECURE_DELETE);
                             // update the cache size
                             this.cacheSize -= cursor.getLong(2);
                             // mark the row for delete

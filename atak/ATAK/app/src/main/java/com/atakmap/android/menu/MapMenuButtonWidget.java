@@ -34,7 +34,7 @@ public class MapMenuButtonWidget extends RadialButtonWidget {
 
     // allow for up to 5 selection criteria so that is can do a better job at showing the user 
     // that there might be a submenu active (icon swapping is nice)
-    private static String[] possibleSelected = {
+    private static final String[] possibleSelected = {
             "selected", "selected1", "selected2", "selected3", "selected4"
     };
 

@@ -11,14 +11,12 @@ import android.os.Bundle;
 import android.widget.Toast;
 import android.util.Base64;
 
-import com.atakmap.app.BuildConfig;
-
 import com.atakmap.android.cot.CotMapComponent;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.app.R;
 import com.atakmap.comms.TAKServer;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CotServiceRemote;
 import com.atakmap.comms.CotServiceRemote.ConnectionListener;
@@ -33,6 +31,7 @@ import org.xml.sax.SAXException;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -82,8 +81,7 @@ public class PreferenceControl implements ConnectionListener {
     private PreferenceControl(Context context) {
         _context = context;
         connected = false;
-        DEFAULT_PREFERENCES_NAME = _context.getPackageName()
-                + "_preferences";
+        DEFAULT_PREFERENCES_NAME = _context.getPackageName() + "_preferences";
         PreferenceGroups = new String[] {
                 "cot_inputs", "cot_outputs", "cot_streams",
                 DEFAULT_PREFERENCES_NAME
@@ -142,13 +140,10 @@ public class PreferenceControl implements ConnectionListener {
 
     public void saveSettings(String path) {
         File configFile = new File(DIRPATH, path);
-        boolean created = false;
-        try {
-            FileSystemUtils.deleteFile(configFile);
-            created = configFile.createNewFile();
-        } catch (IOException e1) {
-            Log.e(TAG, "error: ", e1);
+        if (!FileSystemUtils.deleteFile(configFile)) {
+            Log.d(TAG, "error deleting: " + configFile);
         }
+        boolean created = IOProviderFactory.createNewFile(configFile);
         if (!created) {
             Toast.makeText(_context,
                     R.string.preferences_text409,
@@ -168,15 +163,11 @@ public class PreferenceControl implements ConnectionListener {
                     .append(PreferenceGroup).append("\">\r\n");
             Map<String, ?> keyValuePairs = pref.getAll();
 
-            // filter two additional keys
-            String k1 = "-1";
-            String k2 = "-1";
-
-            k1 = Base64.encodeToString(
+            final String k1 = Base64.encodeToString(
                     AtakAuthenticationDatabase.TAG
                             .getBytes(FileSystemUtils.UTF8_CHARSET),
                     Base64.NO_WRAP);
-            k2 = Base64.encodeToString(
+            final String k2 = Base64.encodeToString(
                     AtakAuthenticationDatabase.TAG
                             .getBytes(FileSystemUtils.UTF8_CHARSET),
                     Base64.NO_WRAP);
@@ -213,7 +204,8 @@ public class PreferenceControl implements ConnectionListener {
         sb.append("</preferences>\r\n");
 
         try {
-            BufferedWriter bw = new BufferedWriter(FileIOProviderFactory.getFileWriter(configFile));
+            BufferedWriter bw = new BufferedWriter(
+                    IOProviderFactory.getFileWriter(configFile));
             try {
                 bw.write(sb.toString());
             } finally {
@@ -242,7 +234,7 @@ public class PreferenceControl implements ConnectionListener {
             File configFile = new File(mount + File.separator + DIRNAME
                     + File.separator
                     + filename);
-            if (FileIOProviderFactory.exists(configFile)) {
+            if (IOProviderFactory.exists(configFile)) {
                 Log.d(TAG,
                         "default configuration file found, loading entries: "
                                 + configFile);
@@ -268,7 +260,7 @@ public class PreferenceControl implements ConnectionListener {
             return;
 
         File configFile = new File(DIRPATH, path);
-        if (!FileIOProviderFactory.exists(configFile)) {
+        if (!IOProviderFactory.exists(configFile)) {
             Log.w(TAG, "File not found: " + configFile.getAbsolutePath());
             Toast.makeText(_context, "File not found", Toast.LENGTH_SHORT)
                     .show();
@@ -299,7 +291,7 @@ public class PreferenceControl implements ConnectionListener {
             return;
 
         File configFile = new File(DIRPATH, path);
-        if (!FileIOProviderFactory.exists(configFile)) {
+        if (!IOProviderFactory.exists(configFile)) {
             Log.w(TAG, "File not found: " + configFile.getAbsolutePath());
             Toast.makeText(_context, "File not found", Toast.LENGTH_SHORT)
                     .show();
@@ -337,9 +329,9 @@ public class PreferenceControl implements ConnectionListener {
         DocumentBuilderFactory dbf = XMLUtils.getDocumenBuilderFactory();
 
         Document doc;
-        try {
+        try (InputStream is = IOProviderFactory.getInputStream(configFile)) {
             DocumentBuilder db = dbf.newDocumentBuilder();
-            doc = db.parse(configFile);
+            doc = db.parse(is);
         } catch (SAXException e) {
             Log.e(TAG,
                     "SAXException while parsing: "
@@ -389,18 +381,16 @@ public class PreferenceControl implements ConnectionListener {
                             loadConnectionHolder(connections[2], preference);
                             break;
                         default:
-                            if (BuildConfig.TAK_PREFERENCES_NAME.equals(name)) {
-                                //import legacy prefs using current package
-                                Log.d(TAG, "Fixing up baseline prefs: "
-                                        + DEFAULT_PREFERENCES_NAME);
+                            if (name.equals("com.atakmap.app_preferences") ||
+                                    name.equals("com.atakmap.civ_preferences")
+                                    ||
+                                    name.equals(
+                                            ("com.atakmap.fvey_preferences"))) {
+
                                 name = DEFAULT_PREFERENCES_NAME;
-                            }
-                            if (BuildConfig.LEGACY_PREFERENCES_NAME
-                                    .equals(name)) {
+
                                 //import legacy prefs using current package
-                                Log.d(TAG, "Fixing up baseline prefs: "
-                                        + DEFAULT_PREFERENCES_NAME);
-                                name = DEFAULT_PREFERENCES_NAME;
+                                Log.d(TAG, "Fixing up baseline prefs: " + name);
                             }
 
                             SharedPreferences pref = _context
@@ -490,13 +480,11 @@ public class PreferenceControl implements ConnectionListener {
                         .parseBoolean(mapping.get("enabled" + j));
 
                 String strUseAuth = mapping.get("useAuth" + j);
-                boolean useAuth = strUseAuth == null ? false
-                        : Boolean
-                                .parseBoolean(strUseAuth);
+                boolean useAuth = strUseAuth != null && Boolean
+                        .parseBoolean(strUseAuth);
                 String strCompress = mapping.get("compress" + j);
-                boolean compress = strCompress == null ? false
-                        : Boolean
-                                .parseBoolean(strCompress);
+                boolean compress = strCompress != null && Boolean
+                        .parseBoolean(strCompress);
                 String cacheCreds = mapping.get("cacheCreds" + j);
 
                 String caPassword = mapping.get("caPassword" + j);
@@ -557,10 +545,10 @@ public class PreferenceControl implements ConnectionListener {
 
         DocumentBuilderFactory dbf = XMLUtils.getDocumenBuilderFactory();
 
-        Document doc = null;
-        try {
+        Document doc;
+        try (InputStream is = IOProviderFactory.getInputStream(configFile)) {
             DocumentBuilder db = dbf.newDocumentBuilder();
-            doc = db.parse(configFile);
+            doc = db.parse(is);
         } catch (SAXException e) {
             Log.e(TAG,
                     "SAXException while parsing: "
@@ -578,6 +566,9 @@ public class PreferenceControl implements ConnectionListener {
                     + configFile.getAbsolutePath(), e);
             return false;
         }
+
+        if (doc == null)
+            return false;
 
         try {
             Node root = doc.getDocumentElement();
@@ -694,227 +685,223 @@ public class PreferenceControl implements ConnectionListener {
                                                 // now check the key against the partial selection
                                                 for (int i = 0; i < prefsSelectedList
                                                         .size(); i++) {
-                                                    if (prefsList[prefsSelectedList
-                                                            .get(i)]
-                                                                    .equals("My Preferences -> Device")) {
-                                                        // Check against device preferences
-                                                        String[] devicePreferencesList = _context
-                                                                .getResources()
-                                                                .getStringArray(
-                                                                        R.array.device_preferences);
-                                                        for (String prefs : devicePreferencesList) {
-                                                            if (key.equals(
-                                                                    prefs)) {
-                                                                // Found a match, add to matched list
-                                                                matchedItems
-                                                                        .add(items
-                                                                                .item(j));
+                                                    final CharSequence pref = prefsList[prefsSelectedList
+                                                            .get(i)];
+                                                    if (pref == null)
+                                                        continue;
+
+                                                    // TODO: This code is completely broken when it comes to
+                                                    // translation.   For right now just protect againt possible
+                                                    // null pointer issues
+                                                    switch (pref.toString()) {
+                                                        case "My Preferences -> Device":
+                                                            // Check against device preferences
+                                                            String[] devicePreferencesList = _context
+                                                                    .getResources()
+                                                                    .getStringArray(
+                                                                            R.array.device_preferences);
+                                                            for (String prefs : devicePreferencesList) {
+                                                                if (key.equals(
+                                                                        prefs)) {
+                                                                    // Found a match, add to matched list
+                                                                    matchedItems
+                                                                            .add(items
+                                                                                    .item(j));
+                                                                }
                                                             }
-                                                        }
-                                                    } else if (prefsList[prefsSelectedList
-                                                            .get(i)]
-                                                                    .equals("My Preferences -> Alternate Contact")) {
-                                                        // Check against alternate contact preferences
-                                                        String[] alternateContactPreferencesList = _context
-                                                                .getResources()
-                                                                .getStringArray(
-                                                                        R.array.alternate_contact_preferences);
-                                                        for (String prefs : alternateContactPreferencesList) {
-                                                            if (key.equals(
-                                                                    prefs)) {
-                                                                // Found a match, add to matched list
-                                                                matchedItems
-                                                                        .add(items
-                                                                                .item(j));
+                                                            break;
+                                                        case "My Preferences -> Alternate Contact":
+                                                            // Check against alternate contact preferences
+                                                            String[] alternateContactPreferencesList = _context
+                                                                    .getResources()
+                                                                    .getStringArray(
+                                                                            R.array.alternate_contact_preferences);
+                                                            for (String prefs : alternateContactPreferencesList) {
+                                                                if (key.equals(
+                                                                        prefs)) {
+                                                                    // Found a match, add to matched list
+                                                                    matchedItems
+                                                                            .add(items
+                                                                                    .item(j));
+                                                                }
                                                             }
-                                                        }
-                                                    } else if (prefsList[prefsSelectedList
-                                                            .get(i)]
-                                                                    .equals("My Preferences -> Reporting")) {
-                                                        // Check against reporting preferences
-                                                        String[] reportingPreferencesList = _context
-                                                                .getResources()
-                                                                .getStringArray(
-                                                                        R.array.reporting_preferences);
-                                                        for (String prefs : reportingPreferencesList) {
-                                                            if (key.equals(
-                                                                    prefs)) {
-                                                                // Found a match, add to matched list
-                                                                matchedItems
-                                                                        .add(items
-                                                                                .item(j));
+                                                            break;
+                                                        case "My Preferences -> Reporting":
+                                                            // Check against reporting preferences
+                                                            String[] reportingPreferencesList = _context
+                                                                    .getResources()
+                                                                    .getStringArray(
+                                                                            R.array.reporting_preferences);
+                                                            for (String prefs : reportingPreferencesList) {
+                                                                if (key.equals(
+                                                                        prefs)) {
+                                                                    // Found a match, add to matched list
+                                                                    matchedItems
+                                                                            .add(items
+                                                                                    .item(j));
+                                                                }
                                                             }
-                                                        }
-                                                    } else if (prefsList[prefsSelectedList
-                                                            .get(i)]
-                                                                    .equals("Display Preferences -> Display")) {
-                                                        // Check against display preferences
-                                                        String[] displayPreferencesList = _context
-                                                                .getResources()
-                                                                .getStringArray(
-                                                                        R.array.display_preferences);
-                                                        for (String prefs : displayPreferencesList) {
-                                                            if (key.equals(
-                                                                    prefs)) {
-                                                                // Found a match, add to matched list
-                                                                matchedItems
-                                                                        .add(items
-                                                                                .item(j));
+                                                            break;
+                                                        case "Display Preferences -> Display":
+                                                            // Check against display preferences
+                                                            String[] displayPreferencesList = _context
+                                                                    .getResources()
+                                                                    .getStringArray(
+                                                                            R.array.display_preferences);
+                                                            for (String prefs : displayPreferencesList) {
+                                                                if (key.equals(
+                                                                        prefs)) {
+                                                                    // Found a match, add to matched list
+                                                                    matchedItems
+                                                                            .add(items
+                                                                                    .item(j));
+                                                                }
                                                             }
-                                                        }
-                                                    } else if (prefsList[prefsSelectedList
-                                                            .get(i)]
-                                                                    .equals("Network Preferences -> Network")) {
-                                                        // Check against network preferences
-                                                        String[] networkPreferencesList = _context
-                                                                .getResources()
-                                                                .getStringArray(
-                                                                        R.array.network_preferences);
-                                                        for (String prefs : networkPreferencesList) {
-                                                            if (key.equals(
-                                                                    prefs)) {
-                                                                // Found a match, add to matched list
-                                                                matchedItems
-                                                                        .add(items
-                                                                                .item(j));
+                                                            break;
+                                                        case "Network Preferences -> Network":
+                                                            // Check against network preferences
+                                                            String[] networkPreferencesList = _context
+                                                                    .getResources()
+                                                                    .getStringArray(
+                                                                            R.array.network_preferences);
+                                                            for (String prefs : networkPreferencesList) {
+                                                                if (key.equals(
+                                                                        prefs)) {
+                                                                    // Found a match, add to matched list
+                                                                    matchedItems
+                                                                            .add(items
+                                                                                    .item(j));
+                                                                }
                                                             }
-                                                        }
-                                                    } else if (prefsList[prefsSelectedList
-                                                            .get(i)]
-                                                                    .equals("Network Preferences -> Bluetooth")) {
-                                                        // Check against bluetooth preferences
-                                                        String[] bluetoothPreferencesList = _context
-                                                                .getResources()
-                                                                .getStringArray(
-                                                                        R.array.bluetooth_preferences);
-                                                        for (String prefs : bluetoothPreferencesList) {
-                                                            if (key.equals(
-                                                                    prefs)) {
-                                                                // Found a match, add to matched list
-                                                                matchedItems
-                                                                        .add(items
-                                                                                .item(j));
+                                                            break;
+                                                        case "Network Preferences -> Bluetooth":
+                                                            // Check against bluetooth preferences
+                                                            String[] bluetoothPreferencesList = _context
+                                                                    .getResources()
+                                                                    .getStringArray(
+                                                                            R.array.bluetooth_preferences);
+                                                            for (String prefs : bluetoothPreferencesList) {
+                                                                if (key.equals(
+                                                                        prefs)) {
+                                                                    // Found a match, add to matched list
+                                                                    matchedItems
+                                                                            .add(items
+                                                                                    .item(j));
+                                                                }
                                                             }
-                                                        }
-                                                    } else if (prefsList[prefsSelectedList
-                                                            .get(i)]
-                                                                    .equals("Tools Preferences -> Tools")) {
-                                                        // Check against tools preferences
-                                                        String[] toolsPreferencesList = _context
-                                                                .getResources()
-                                                                .getStringArray(
-                                                                        R.array.tools_preferences);
-                                                        for (String prefs : toolsPreferencesList) {
-                                                            if (key.equals(
-                                                                    prefs)) {
-                                                                // Found a match, add to matched list
-                                                                matchedItems
-                                                                        .add(items
-                                                                                .item(j));
+                                                            break;
+                                                        case "Tools Preferences -> Tools":
+                                                            // Check against tools preferences
+                                                            String[] toolsPreferencesList = _context
+                                                                    .getResources()
+                                                                    .getStringArray(
+                                                                            R.array.tools_preferences);
+                                                            for (String prefs : toolsPreferencesList) {
+                                                                if (key.equals(
+                                                                        prefs)) {
+                                                                    // Found a match, add to matched list
+                                                                    matchedItems
+                                                                            .add(items
+                                                                                    .item(j));
+                                                                }
                                                             }
-                                                        }
-                                                    } else if (prefsList[prefsSelectedList
-                                                            .get(i)]
-                                                                    .equals("Control Preferences -> Media")) {
-                                                        // Check against control preferences
-                                                        String[] mediaPreferencesList = _context
-                                                                .getResources()
-                                                                .getStringArray(
-                                                                        R.array.media_preferences);
-                                                        for (String prefs : mediaPreferencesList) {
-                                                            if (key.equals(
-                                                                    prefs)) {
-                                                                // Found a match, add to matched list
-                                                                matchedItems
-                                                                        .add(items
-                                                                                .item(j));
+                                                            break;
+                                                        case "Control Preferences -> Media":
+                                                            // Check against control preferences
+                                                            String[] mediaPreferencesList = _context
+                                                                    .getResources()
+                                                                    .getStringArray(
+                                                                            R.array.media_preferences);
+                                                            for (String prefs : mediaPreferencesList) {
+                                                                if (key.equals(
+                                                                        prefs)) {
+                                                                    // Found a match, add to matched list
+                                                                    matchedItems
+                                                                            .add(items
+                                                                                    .item(j));
+                                                                }
                                                             }
-                                                        }
-                                                    } else if (prefsList[prefsSelectedList
-                                                            .get(i)]
-                                                                    .equals("Control Preferences -> Stale Data")) {
-                                                        // Check against control preferences
-                                                        String[] stalePreferencesList = _context
-                                                                .getResources()
-                                                                .getStringArray(
-                                                                        R.array.stale_preferences);
-                                                        for (String prefs : stalePreferencesList) {
-                                                            if (key.equals(
-                                                                    prefs)) {
-                                                                // Found a match, add to matched list
-                                                                matchedItems
-                                                                        .add(items
-                                                                                .item(j));
+                                                            break;
+                                                        case "Control Preferences -> Stale Data":
+                                                            // Check against control preferences
+                                                            String[] stalePreferencesList = _context
+                                                                    .getResources()
+                                                                    .getStringArray(
+                                                                            R.array.stale_preferences);
+                                                            for (String prefs : stalePreferencesList) {
+                                                                if (key.equals(
+                                                                        prefs)) {
+                                                                    // Found a match, add to matched list
+                                                                    matchedItems
+                                                                            .add(items
+                                                                                    .item(j));
+                                                                }
                                                             }
-                                                        }
-                                                    } else if (prefsList[prefsSelectedList
-                                                            .get(i)]
-                                                                    .equals("Control Preferences -> User Touch")) {
-                                                        // Check against control preferences
-                                                        String[] userPreferencesList = _context
-                                                                .getResources()
-                                                                .getStringArray(
-                                                                        R.array.user_preferences);
-                                                        for (String prefs : userPreferencesList) {
-                                                            if (key.equals(
-                                                                    prefs)) {
-                                                                // Found a match, add to matched list
-                                                                matchedItems
-                                                                        .add(items
-                                                                                .item(j));
+                                                            break;
+                                                        case "Control Preferences -> User Touch":
+                                                            // Check against control preferences
+                                                            String[] userPreferencesList = _context
+                                                                    .getResources()
+                                                                    .getStringArray(
+                                                                            R.array.user_preferences);
+                                                            for (String prefs : userPreferencesList) {
+                                                                if (key.equals(
+                                                                        prefs)) {
+                                                                    // Found a match, add to matched list
+                                                                    matchedItems
+                                                                            .add(items
+                                                                                    .item(j));
+                                                                }
                                                             }
-                                                        }
-                                                    } else if (prefsList[prefsSelectedList
-                                                            .get(i)]
-                                                                    .equals("Control Preferences -> Self Coordinate")) {
-                                                        // Check against control preferences
-                                                        String[] selfPreferencesList = _context
-                                                                .getResources()
-                                                                .getStringArray(
-                                                                        R.array.self_preferences);
-                                                        for (String prefs : selfPreferencesList) {
-                                                            if (key.equals(
-                                                                    prefs)) {
-                                                                // Found a match, add to matched list
-                                                                matchedItems
-                                                                        .add(items
-                                                                                .item(j));
+                                                            break;
+                                                        case "Control Preferences -> Self Coordinate":
+                                                            // Check against control preferences
+                                                            String[] selfPreferencesList = _context
+                                                                    .getResources()
+                                                                    .getStringArray(
+                                                                            R.array.self_preferences);
+                                                            for (String prefs : selfPreferencesList) {
+                                                                if (key.equals(
+                                                                        prefs)) {
+                                                                    // Found a match, add to matched list
+                                                                    matchedItems
+                                                                            .add(items
+                                                                                    .item(j));
+                                                                }
                                                             }
-                                                        }
-                                                    } else if (prefsList[prefsSelectedList
-                                                            .get(i)]
-                                                                    .equals("Control Preferences -> Other")) {
-                                                        // Check against control preferences
-                                                        String[] otherPreferencesList = _context
-                                                                .getResources()
-                                                                .getStringArray(
-                                                                        R.array.other_preferences);
-                                                        for (String prefs : otherPreferencesList) {
-                                                            if (key.equals(
-                                                                    prefs)) {
-                                                                // Found a match, add to matched list
-                                                                matchedItems
-                                                                        .add(items
-                                                                                .item(j));
+                                                            break;
+                                                        case "Control Preferences -> Other":
+                                                            // Check against control preferences
+                                                            String[] otherPreferencesList = _context
+                                                                    .getResources()
+                                                                    .getStringArray(
+                                                                            R.array.other_preferences);
+                                                            for (String prefs : otherPreferencesList) {
+                                                                if (key.equals(
+                                                                        prefs)) {
+                                                                    // Found a match, add to matched list
+                                                                    matchedItems
+                                                                            .add(items
+                                                                                    .item(j));
+                                                                }
                                                             }
-                                                        }
-                                                    } else if (prefsList[prefsSelectedList
-                                                            .get(i)]
-                                                                    .equals("Control Preferences -> Debug")) {
-                                                        // Check against control preferences
-                                                        String[] debugPreferencesList = _context
-                                                                .getResources()
-                                                                .getStringArray(
-                                                                        R.array.debug_preferences);
-                                                        for (String prefs : debugPreferencesList) {
-                                                            if (key.equals(
-                                                                    prefs)) {
-                                                                // Found a match, add to matched list
-                                                                matchedItems
-                                                                        .add(items
-                                                                                .item(j));
+                                                            break;
+                                                        case "Control Preferences -> Debug":
+                                                            // Check against control preferences
+                                                            String[] debugPreferencesList = _context
+                                                                    .getResources()
+                                                                    .getStringArray(
+                                                                            R.array.debug_preferences);
+                                                            for (String prefs : debugPreferencesList) {
+                                                                if (key.equals(
+                                                                        prefs)) {
+                                                                    // Found a match, add to matched list
+                                                                    matchedItems
+                                                                            .add(items
+                                                                                    .item(j));
+                                                                }
                                                             }
-                                                        }
+                                                            break;
                                                     }
                                                 }
                                             }

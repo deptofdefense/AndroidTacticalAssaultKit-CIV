@@ -58,7 +58,8 @@ public class AtakAuthenticationCredentials {
     public String username = "";
 
     /**
-     * This is a empty assignment just for the purposes of making the code simpler instead of 
+     * Fortify has flagged this as Password Management: Hardcoded Password
+     * This is a empty assignment just for the purposes of making the code simpler instead of
      * extra null pointer checks.    This is not hardcoded.
      */
     public String password = "";

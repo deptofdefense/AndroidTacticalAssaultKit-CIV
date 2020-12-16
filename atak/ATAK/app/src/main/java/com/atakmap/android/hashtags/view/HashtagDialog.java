@@ -126,7 +126,7 @@ public class HashtagDialog implements View.OnClickListener {
 
     private class HashtagAdapter extends BaseAdapter {
 
-        private List<String> _sorted = new ArrayList<>();
+        private final List<String> _sorted = new ArrayList<>();
 
         public void refresh() {
             _sorted.clear();

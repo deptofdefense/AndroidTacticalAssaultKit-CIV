@@ -9,6 +9,8 @@ namespace TAK {
         namespace Feature {
             /**
              * Support loading GPX files as ATAK map items
+             *
+             * @author byoung
              */
             class ENGINE_API ShapefileDriverDefinition2 : public DefaultDriverDefinition2
             {

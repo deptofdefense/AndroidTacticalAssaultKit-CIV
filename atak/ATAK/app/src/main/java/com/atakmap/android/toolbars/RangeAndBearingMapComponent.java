@@ -174,7 +174,7 @@ public class RangeAndBearingMapComponent extends AbstractMapComponent {
                                             .getMapEventDispatcher(), null,
                                             line.getClass());
                                 } catch (Exception e) {
-                                    Log.e(TAG, "error occured", e);
+                                    Log.e(TAG, "error occurred", e);
                                     //Silently handle error
                                 }
                             }

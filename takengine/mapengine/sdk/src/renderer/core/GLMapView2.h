@@ -2,6 +2,8 @@
 #define TAK_ENGINE_RENDERER_CORE_GLMAPVIEW2_H_INCLUDED
 
 #include <memory>
+#include <vector>
+#include <string>
 
 #include "core/MapSceneModel2.h"
 #include "core/AtakMapView.h"
@@ -73,60 +75,61 @@ namespace TAK
                     {
                         State() NOTHROWS;
 
-                        double drawMapScale;
-                        double drawMapResolution;
-                        double drawLat;
-                        double drawLng;
-                        double drawRotation;
-                        double drawTilt;
-                        double animationFactor;
-                        int drawVersion;
-                        bool targeting;
-                        double westBound;
-                        double southBound;
-                        double northBound;
-                        double eastBound;
-                        int left;
-                        int right;
-                        int top;
-                        int bottom;
-                        float near;
-                        float far;
-                        int drawSrid;
-                        float focusx, focusy;
+                        double drawMapScale {2.5352504279048383E-9};
+                        double drawMapResolution {0.0};
+                        double drawLat {0.0};
+                        double drawLng {0.0};
+                        double drawRotation {0.0};
+                        double drawTilt {0.0};
+                        double animationFactor {0.3};
+                        int drawVersion {0};
+                        bool targeting {false};
+                        double westBound {-180.0};
+                        double southBound {-90.0};
+                        double northBound {90.0};
+                        double eastBound {180.0};
+                        int left {0};
+                        int right {0};
+                        int top {0};
+                        int bottom {0};
+                        float near {1.f};
+                        float far {-1.f};
+                        int drawSrid {-1};
+                        float focusx {0};
+                        float focusy {0};
                         TAK::Engine::Core::GeoPoint2 upperLeft;
                         TAK::Engine::Core::GeoPoint2 upperRight;
                         TAK::Engine::Core::GeoPoint2 lowerRight;
                         TAK::Engine::Core::GeoPoint2 lowerLeft;
-                        bool settled;
-                        int renderPump;
+                        bool settled {false};
+                        int renderPump {-1};
                         TAK::Engine::Math::Matrix2 verticalFlipTranslate;
-                        int verticalFlipTranslateHeight;
-                        int64_t animationLastTick;
-                        int64_t animationDelta;
-                        int sceneModelVersion;
+                        int verticalFlipTranslateHeight {0};
+                        int64_t animationLastTick {-1};
+                        int64_t animationDelta {-1};
+                        int sceneModelVersion {-1};
                         TAK::Engine::Core::MapSceneModel2 scene;
-                        float sceneModelForwardMatrix[16];
-                        bool drawHorizon;
-                        bool crossesIDL;
-                        bool poleInView;
-                        double displayDpi;
+                        float sceneModelForwardMatrix[16] {};
+                        bool drawHorizon {false};
+                        bool crossesIDL {false};
+                        bool poleInView {false};
+                        double displayDpi {0};
 
                         /** if non-zero, the ID of the texture that will be the target for the state's render pass */
-                        int texture;
+                        int texture {0};
                         /** bitwise-OR of render pass flags that this state includes */
-                        int renderPass;
+                        int renderPass {0};
 
                         struct
                         {
-                            float x;
-                            float y;
-                            float width;
-                            float height;
+                            float x {0};
+                            float y {0};
+                            float width {0};
+                            float height {0};
                         } viewport;
 
-                        bool basemap;
-                        bool debugDrawBounds;
+                        bool basemap {false};
+                        bool debugDrawBounds {false};
                     };
                 private:
                     class Offscreen;
@@ -167,6 +170,12 @@ namespace TAK
                     void setLabelManager(GLLabelManager* labelManager) NOTHROWS;
                     GLLabelManager* getLabelManager() const NOTHROWS;
                     void render() NOTHROWS;
+                    /**
+                     * Invokes `relesae()` on all renderables; subsequent call
+                     * to `render()` will force per-renderable
+                     * reinitialization per the contract of `GLMapRenderable`.
+                     */
+                    void release() NOTHROWS;
                     Util::TAKErr getTerrainMeshElevation(double *value, const double latitude, const double longitude) const NOTHROWS;
                     Elevation::TerrainRenderService &getTerrainRenderService() NOTHROWS;
                 public: // coordinate transformation functions
@@ -176,6 +185,9 @@ namespace TAK
                     Util::TAKErr inverse(TAK::Engine::Core::GeoPoint2 *value, const Math::Point2<float> &point) const NOTHROWS;
                     Util::TAKErr inverse(float *value, const size_t dstSize, const float *src, const size_t srcSize, const size_t count) const NOTHROWS;
                     Util::TAKErr inverse(double *value, const size_t dstSize, const float *src, const size_t srcSize, const size_t count) const NOTHROWS;
+                public : // render debugging
+                    void setRenderDiagnosticsEnabled(const bool enabled) NOTHROWS;
+                    void addRenderDiagnosticMessage(const char *msg) NOTHROWS;
                 public : // MapRenderer
                     Util::TAKErr registerControl(const TAK::Engine::Core::Layer2 &layer, const char *type, void *ctrl) NOTHROWS override;
                     Util::TAKErr unregisterControl(const TAK::Engine::Core::Layer2 &layer, const char *type, void *ctrl) NOTHROWS override;
@@ -206,6 +218,8 @@ namespace TAK
                     static double getRecommendedGridSampleDistance() NOTHROWS;
                 private :
                     TAK::Engine::Util::TAKErr intersectWithTerrainImpl(TAK::Engine::Core::GeoPoint2 *retGP, std::shared_ptr<const Elevation::TerrainTile> &focusTile, const TAK::Engine::Core::MapSceneModel2 &map_scene, const float x, const float y) const NOTHROWS;
+                    static TAK::Engine::Util::TAKErr glPickTerrainTile(std::shared_ptr<const Elevation::TerrainTile> &retGP, GLMapView2 *view, const TAK::Engine::Core::MapSceneModel2 &map_scene, const float x, const float y) NOTHROWS;
+                    static void glPickTerrainTile2(void *opaque) NOTHROWS;
                 private: // protected interface
                     /** prepares the scene for rendering */
                     void prepareScene() NOTHROWS;
@@ -216,7 +230,6 @@ namespace TAK
                     void startAnimating(double lat, double lng, double scale, double rotation, double tilt, double animateFactor) NOTHROWS;
                     void startAnimatingFocus(float x, float y, double animateFactor) NOTHROWS;
                     bool animate() NOTHROWS;
-                    Util::TAKErr validateSceneModel(const std::size_t width, const std::size_t height) NOTHROWS;
                     void refreshLayersImpl(const std::list<std::shared_ptr<GLLayer2>> &toRender, const std::list<std::shared_ptr<GLLayer2>> &toRelease) NOTHROWS;
                     void refreshLayers(const std::list<atakmap::core::Layer *> &layers) NOTHROWS;
                     void initOffscreenShaders() NOTHROWS;
@@ -339,10 +352,15 @@ namespace TAK
                     bool debugDrawOffscreen;
                     int dbgdrawflags;
                     bool debugDrawMesh;
+                    bool debugDrawDepth;
                     bool suspendMeshFetch;
                     double tiltSkewOffset;
                     double tiltSkewMult;
+                    bool inRenderPump;
 
+                    bool gpuTerrainIntersect;
+                    bool diagnosticMessagesEnabled;
+                    std::vector<std::string> diagnosticMessages;
                 public :
                     bool continuousScrollEnabled;
                     TAK::Engine::Core::RenderContext &context; //COVERED
@@ -365,9 +383,9 @@ namespace TAK
 
                     struct
                     {
-                        int terrainVersion;
+                        int terrainVersion {-1};
                         TAK::Engine::Core::GeoPoint2 point;
-                        int sceneModelVersion;
+                        int sceneModelVersion {-1};
                         std::shared_ptr<const Elevation::TerrainTile> tile;
                     } focusEstimation;
 

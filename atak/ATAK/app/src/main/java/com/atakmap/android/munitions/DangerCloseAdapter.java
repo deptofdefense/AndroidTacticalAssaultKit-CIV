@@ -1,7 +1,9 @@
 
 package com.atakmap.android.munitions;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.app.system.FlavorProvider;
+import com.atakmap.app.system.SystemComponentLoader;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
 import android.app.AlertDialog;
@@ -63,6 +65,8 @@ public class DangerCloseAdapter extends BaseAdapter
     public static final String DIRNAME = FileSystemUtils.TOOL_DATA_DIRECTORY
             + File.separatorChar + "fires";
 
+    public static final String ORDNANCE_XML = "ordnance/ordnance_table.xml";
+
     private static final int ORDNANCE_LAST_ID = 219; //the is the ID of the last weapon in ordnance_table.xml
 
     private final Context _context;
@@ -81,7 +85,7 @@ public class DangerCloseAdapter extends BaseAdapter
     private static Node favoritesNode;
     private static Node customNode;
     private static Node ordnanceNode;
-    private String fromLine;
+    private final String fromLine;
 
     public static HashSet<Integer> favorites;
     public static HashSet<Integer> removing;
@@ -608,13 +612,17 @@ public class DangerCloseAdapter extends BaseAdapter
         try {
             Log.d(TAG, "load customs: " + location + item);
             File f = new File(location + item);
-            if (FileIOProviderFactory.exists(f)) {
+            if (IOProviderFactory.exists(f)) {
                 try {
                     DocumentBuilderFactory docFactory = XMLUtils
                             .getDocumenBuilderFactory();
                     DocumentBuilder docBuilder = docFactory
                             .newDocumentBuilder();
-                    Document dom = docBuilder.parse(f);
+
+                    Document dom;
+                    try (InputStream is = IOProviderFactory.getInputStream(f)) {
+                        dom = docBuilder.parse(is);
+                    }
 
                     if (dom != null) {
                         NodeList nodes = dom
@@ -812,7 +820,8 @@ public class DangerCloseAdapter extends BaseAdapter
         try {
             File f = new File(location + item);
             boolean first = true;
-            BufferedWriter writer = new BufferedWriter(FileIOProviderFactory.getFileWriter(f));
+            BufferedWriter writer = new BufferedWriter(
+                    IOProviderFactory.getFileWriter(f));
             try {
                 for (Integer i : favorites) {
                     StringBuilder sBuilder = new StringBuilder();
@@ -846,8 +855,9 @@ public class DangerCloseAdapter extends BaseAdapter
 
             Log.d(TAG, "load favorites: " + location + item);
             File f = new File(location + item);
-            if (FileIOProviderFactory.exists(f)) {
-                BufferedReader reader = new BufferedReader(FileIOProviderFactory.getFileReader(f));
+            if (IOProviderFactory.exists(f)) {
+                BufferedReader reader = new BufferedReader(
+                        IOProviderFactory.getFileReader(f));
 
                 try {
                     String line;
@@ -862,7 +872,7 @@ public class DangerCloseAdapter extends BaseAdapter
 
             } else {
                 File fd = new File(location);
-                if (!FileIOProviderFactory.mkdir(fd))
+                if (!IOProviderFactory.mkdir(fd))
                     Log.w(TAG,
                             "Failed to create directory"
                                     + fd.getAbsolutePath());
@@ -885,13 +895,16 @@ public class DangerCloseAdapter extends BaseAdapter
         try {
             Log.d(TAG, "load customs: " + location + item);
             File f = new File(location + item);
-            if (FileIOProviderFactory.exists(f)) {
+            if (IOProviderFactory.exists(f)) {
                 try {
                     DocumentBuilderFactory docFactory = XMLUtils
                             .getDocumenBuilderFactory();
                     DocumentBuilder docBuilder = docFactory
                             .newDocumentBuilder();
-                    Document dom = docBuilder.parse(f);
+                    Document dom;
+                    try (InputStream is = IOProviderFactory.getInputStream(f)) {
+                        dom = docBuilder.parse(is);
+                    }
 
                     if (dom != null) {
                         NodeList nodes = dom
@@ -912,7 +925,7 @@ public class DangerCloseAdapter extends BaseAdapter
             } else {
                 //wrap xml file
                 File fd = new File(location);
-                if (!FileIOProviderFactory.mkdir(fd))
+                if (!IOProviderFactory.mkdir(fd))
                     Log.w(TAG,
                             "Failed to create directory"
                                     + fd.getAbsolutePath());
@@ -966,14 +979,17 @@ public class DangerCloseAdapter extends BaseAdapter
         try {
             Log.d(TAG, "removing customs: " + location + item);
             File f = new File(location + item);
-            if (FileIOProviderFactory.exists(f)) {
+            if (IOProviderFactory.exists(f)) {
                 try {
                     //build the DOM
                     DocumentBuilderFactory docFactory = XMLUtils
                             .getDocumenBuilderFactory();
                     DocumentBuilder docBuilder = docFactory
                             .newDocumentBuilder();
-                    Document dom = docBuilder.parse(f);
+                    Document dom;
+                    try (InputStream is = IOProviderFactory.getInputStream(f)) {
+                        dom = docBuilder.parse(is);
+                    }
 
                     //get all the nodes under 'Custom' tag
                     NodeList nodes = dom
@@ -1061,8 +1077,12 @@ public class DangerCloseAdapter extends BaseAdapter
             DocumentBuilderFactory docFactory = XMLUtils
                     .getDocumenBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
-            Document dom = docBuilder.parse(new File(location + item));
 
+            Document dom;
+            try (InputStream is = IOProviderFactory
+                    .getInputStream(new File(location + item))) {
+                dom = docBuilder.parse(is);
+            }
             //custom list
             NodeList nodes = dom.getElementsByTagName("Custom_Threat_Rings");
             Element custom;
@@ -1206,8 +1226,18 @@ public class DangerCloseAdapter extends BaseAdapter
             DocumentBuilderFactory docFactory = XMLUtils
                     .getDocumenBuilderFactory();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
-            InputStream is = context.getAssets()
-                    .open("ordnance/ordnance_table.xml");
+            InputStream is = null;
+
+            // see if the flavor supplies the ordnance tables.
+            FlavorProvider provider = SystemComponentLoader.getFlavorProvider();
+            if (provider != null) {
+                is = provider.getAssetInputStream(ORDNANCE_XML);
+            }
+
+            // if the flavor does not, then just grab the localized.
+            if (is == null) {
+                is = context.getAssets().open(ORDNANCE_XML);
+            }
 
             Document dom = docBuilder.parse(is);
             checkEachItemForActiveStatus(dom.getChildNodes());

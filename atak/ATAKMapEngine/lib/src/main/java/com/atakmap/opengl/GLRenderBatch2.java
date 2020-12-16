@@ -10,7 +10,7 @@ public final class GLRenderBatch2 {
     public final static int HINT_LINES                  = 0x00000004;
     public final static int HINT_TWO_DIMENSION          = 0x00000008;
             
-    private long pointer;
+    long pointer;
     
     public GLRenderBatch2() {
         this(0xFFFF);

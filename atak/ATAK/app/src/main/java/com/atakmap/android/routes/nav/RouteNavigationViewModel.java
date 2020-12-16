@@ -37,13 +37,13 @@ public class RouteNavigationViewModel
     private static final double MANEUVER_CAPTURE_BACKWARD_DISTANCE = 10;
     private static final double MANEUVER_CAPTURE_FORWARD_DISTANCE = 50;
 
-    private SharedPreferences _sp;
-    private List<String> speechBacklog = new ArrayList<>();
-    private boolean speechReady = true;
-    private RoutePanelViewModel routePanelViewModel;
+    private final SharedPreferences _sp;
+    private final List<String> speechBacklog = new ArrayList<>();
+    private final boolean speechReady = true;
+    private final RoutePanelViewModel routePanelViewModel;
     private boolean wasOffRoute = false;
 
-    private MapView mapView;
+    private final MapView mapView;
 
     public RouteNavigationViewModel(MapView view,
             RoutePanelViewModel routePanelViewModel) {

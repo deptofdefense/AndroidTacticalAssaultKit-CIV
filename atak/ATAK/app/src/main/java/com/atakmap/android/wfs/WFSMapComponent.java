@@ -4,8 +4,8 @@ package com.atakmap.android.wfs;
 import android.content.Context;
 import android.content.Intent;
 
-import com.atakmap.android.data.DataMgmtReceiver;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.android.data.ClearContentRegistry;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import android.util.Pair;
@@ -17,7 +17,6 @@ import com.atakmap.android.importexport.ImportReceiver;
 import com.atakmap.android.importexport.ImporterManager;
 import com.atakmap.android.importexport.MarshalManager;
 import com.atakmap.android.ipc.AtakBroadcast;
-import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -64,6 +63,7 @@ public class WFSMapComponent extends AbstractMapComponent {
         }
     };
 
+    private MapView view;
     private WFSManager wfs;
     private WFSImporter importer;
     private WFSBroadcastReceiver receiver;
@@ -71,12 +71,8 @@ public class WFSMapComponent extends AbstractMapComponent {
     @Override
     public void onCreate(final Context context, Intent compIntent,
             final MapView view) {
-        File wfsDir = FileSystemUtils.getItem("wfs");
-        if (!FileIOProviderFactory.exists(wfsDir)) {
-            if (!FileIOProviderFactory.mkdir(wfsDir)) {
-                Log.e(TAG, "Error creating directories");
-            }
-        }
+
+        this.view = view;
 
         ServiceFactory.registerServiceQuery(WFSQuery.INSTANCE);
 
@@ -84,24 +80,44 @@ public class WFSMapComponent extends AbstractMapComponent {
 
         this.wfs = new WFSManager(view);
         this.importer = new WFSImporter(this.wfs);
-        this.receiver = new WFSBroadcastReceiver(view, wfsDir);
 
         MarshalManager.registerMarshal(WFSMarshal.INSTANCE);
         ImporterManager.registerImporter(this.importer);
 
         view.getMapOverlayManager().addOverlay(this.wfs);
 
-        registerReceiver(context, this.receiver, new DocumentedIntentFilter(
-                DataMgmtReceiver.ZEROIZE_CONFIRMED_ACTION,
-                "Delete WFS configs when clear content is invoked"));
+        register();
+
+    }
+
+    @Override
+    protected void onDestroyImpl(Context context, MapView view) {
+        unregister();
+
+        if (this.wfs != null) {
+            view.getMapOverlayManager().removeOverlay(this.wfs);
+            this.wfs = null;
+        }
+    }
+
+    private void register() {
+        File wfsDir = FileSystemUtils.getItem("wfs");
+        if (!IOProviderFactory.exists(wfsDir)) {
+            if (!IOProviderFactory.mkdir(wfsDir)) {
+                Log.e(TAG, "Error creating directories");
+            }
+        }
+        this.receiver = new WFSBroadcastReceiver(view, wfsDir);
+        ClearContentRegistry.getInstance().registerListener(this.receiver);
 
         // import the installed configs and their corresponding WFS content
-        File[] configs = FileIOProviderFactory.listFiles(wfsDir, new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String filename) {
-                return filename.endsWith(".xml");
-            }
-        });
+        File[] configs = IOProviderFactory.listFiles(wfsDir,
+                new FilenameFilter() {
+                    @Override
+                    public boolean accept(File dir, String filename) {
+                        return filename.endsWith(".xml");
+                    }
+                });
         if (configs != null) {
             for (File config : configs) {
                 Intent intent = new Intent(
@@ -115,14 +131,11 @@ public class WFSMapComponent extends AbstractMapComponent {
                 AtakBroadcast.getInstance().sendBroadcast(intent);
             }
         }
+
     }
 
-    @Override
-    protected void onDestroyImpl(Context context, MapView view) {
-        if (this.wfs != null) {
-            view.getMapOverlayManager().removeOverlay(this.wfs);
-            this.wfs = null;
-        }
+    private void unregister() {
+        ClearContentRegistry.getInstance().unregisterListener(this.receiver);
     }
 
 }

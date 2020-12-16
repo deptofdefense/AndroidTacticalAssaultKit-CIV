@@ -29,6 +29,7 @@ OBJS := cloudiomanager.o commo.o commotime.o contactmanager.o cotmessage.o   \
         streamingsocketmanagement.o takmessage.o                             \
         tcpsocketmanagement.o                                                \
         threadedhandler.o urlrequestmanager.o                                \
+        plaintextfileioprovider.o fileioprovidertracker.o                    \
         $(PROTOOBJS)                                                         \
 
 CXXFLAGS += $(COMMO_CXXFLAGS) -I$(PUBINCDIR)                                 \
@@ -48,7 +49,7 @@ clean:
 	rm -f $(OBJS) libcommoncommo.so libcommoncommo.a                     \
 	      $(PROTOBUFDIR)/*.h $(PROTOBUFDIR)/*.cc
 
-libcommoncommo.so: CXXFLAGS += -fPIC 
+libcommoncommo.so: CXXFLAGS += -fPIC
 libcommoncommo.so: $(OBJS)
 	$(CXX) $(CXXFLAGS) -shared -o $@ $^ -L$(TAKTHIRDPARTYDIR)/lib        \
 	        -lxml2 -lssl -lcrypto                                        \
@@ -69,6 +70,7 @@ deps-commo_h                       = $(deps-commoresult_h)                   \
                                      $(deps-cotmessageio_h)                  \
                                      $(deps-simplefileio_h)                  \
                                      $(deps-cloudio_h)                       \
+                                     $(deps-fileioprovider_h)                \
                                      $(PUBINCDIR)/commo.h
 
 deps-cloudio_h                     = $(deps-commoutils_h)                    \
@@ -175,7 +177,7 @@ deps-datagramsocketmanagement_cpp  = $(deps-datagramsocketmanagement_h)      \
                                      $(deps-internalutils_h)                 \
                                      $(deps-commologger_h)                   \
                                      datagramsocketmanagement.cpp
-                              
+
 deps-httpsproxy_h                  = $(deps-internalutils_h)                 \
                                      $(deps-commoutils_h)                    \
                                      $(deps-commologger_h)                   \
@@ -203,9 +205,13 @@ deps-internalutils_h               = $(deps-commologger_h)                   \
                                      $(deps-netinterface_h)                  \
                                      $(deps-contactuid_h)                    \
                                      $(deps-commoresult_h)                   \
+                                     $(deps-fileioprovider_h)                \
+                                     $(deps-fileioprovidertracker_h)         \
                                      internalutils.h
 deps-internalutils_cpp             = $(deps-internalutils_h)                 \
                                      $(deps-platform_h)                      \
+                                     $(deps-fileioprovider_h)                \
+                                     $(deps-fileioprovidertracker_h)         \
                                      internalutils.cpp
 
 deps-missionpackagemanager_h       = $(deps-missionpackage_h)                \
@@ -217,8 +223,11 @@ deps-missionpackagemanager_h       = $(deps-missionpackage_h)                \
                                      $(deps-streamingsocketmanagement_h)     \
                                      $(deps-hwifscanner_h)                   \
                                      $(deps-commotime_h)                     \
+                                     $(deps-fileioprovider_h)                \
+                                     $(deps-fileioprovidertracker_h)         \
                                      missionpackagemanager.h
 deps-missionpackagemanager_cpp     = $(deps-missionpackagemanager_h)         \
+                                     $(deps-fileioprovider_h)                \
                                      missionpackagemanager.cpp
 
 deps-netsocket_h                   = $(deps-commoutils_h)                    \
@@ -258,10 +267,14 @@ deps-simplefileiomanager_h         = $(deps-simplefileio_h)                  \
                                      $(deps-internalutils_h)                 \
                                      $(deps-threadedhandler_h)               \
                                      $(deps-commologger_h)                   \
+                                     $(deps-fileioprovider_h)                \
+                                     $(deps-fileioprovidertracker_h)         \
                                      simplefileiomanager.h
 deps-simplefileiomanager_cpp       = $(deps-simplefileiomanager_h)           \
                                      $(deps-internalutils_h)                 \
                                      $(deps-platform_h)                      \
+                                     $(deps-fileioprovider_h)                \
+                                     $(deps-fileioprovidertracker_h)         \
                                      simplefileiomanager.cpp
 
 deps-streamingsocketmanagement_h   = $(deps-commoutils_h)                    \
@@ -312,13 +325,31 @@ deps-urlrequestmanager_h           = $(deps-simplefileio_h)                  \
                                      $(deps-internalutils_h)                 \
                                      $(deps-threadedhandler_h)               \
                                      $(deps-commologger_h)                   \
+                                     $(deps-fileioprovider_h)                \
+                                     $(deps-fileioprovidertracker_h)         \
                                      urlrequestmanager.h
 deps-urlrequestmanager_cpp         = $(deps-urlrequestmanager_h)             \
                                      $(deps-internalutils_h)                 \
                                      $(deps-platform_h)                      \
+                                     $(deps-fileioprovider_h)                \
+                                     $(deps-fileioprovidertracker_h)         \
                                      urlrequestmanager.cpp
 
+deps-fileioprovider_h              = $(PUBINCDIR)/fileioprovider.h
 
+deps-plaintextfileioprovider_h     = $(deps-fileioprovider_h)                \
+                                     plaintextfileioprovider.h
+
+deps-plaintextfileioprovider_cpp   = $(deps-plaintextfileioprovider_h)       \
+                                     plaintextfileioprovider.cpp
+
+deps-fileioprovidertracker_h       = $(deps-commoutils_h)                    \
+                                     $(deps-fileioprovider_h)                \
+                                     $(deps-plaintextfileioprovider_h)       \
+                                     fileioprovidertracker.h
+
+deps-fileioprovidertracker_cpp     = $(deps-fileioprovidertracker_h)         \
+                                     fileioprovidertracker.cpp
 
 cloudiomanager.o:                    $(deps-cloudiomanager_cpp)
 commo.o:                             $(deps-commo_cpp)
@@ -334,7 +365,11 @@ missionpackagemanager.o:             $(deps-missionpackagemanager_cpp)
 netsocket.o:                         $(deps-netsocket_cpp)
 platform.o:                          $(deps-platform_cpp)
 resolverqueue.o:                     $(deps-resolverqueue_cpp)
+simplefileiomanager.o:               $(deps-simplefileiomanager_cpp)
 streamingsocketmanagement.o:         $(deps-streamingsocketmanagement_cpp)
+takmessage.o:                        $(deps-takmessage_cpp)
 tcpsocketmanagement.o:               $(deps-tcpsocketmanagement_cpp)
 threadedhandler.o:                   $(deps-threadedhandler_cpp)
 urlrequestmanager.o:                 $(deps-urlrequestmanager_cpp)
+plaintextfileioprovider.o:           $(deps-plaintextfileioprovider_cpp)
+fileioprovidertracker.o:             $(deps-fileioprovidertracker_cpp)

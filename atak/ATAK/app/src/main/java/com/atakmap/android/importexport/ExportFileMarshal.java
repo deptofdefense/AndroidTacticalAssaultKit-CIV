@@ -27,7 +27,7 @@ import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
 import com.atakmap.spatial.file.ShapefileSpatialDb;
@@ -213,7 +213,7 @@ public abstract class ExportFileMarshal extends ExportMarshal {
         try {
             file = getFile();
         } catch (IOException e) {
-            Log.e(TAG, "error occured", e);
+            Log.e(TAG, "error occurred", e);
         }
 
         if (file == null) {
@@ -290,7 +290,7 @@ public abstract class ExportFileMarshal extends ExportMarshal {
             return;
         }
 
-        if (!FileIOProviderFactory.exists(file)) {
+        if (!IOProviderFactory.exists(file)) {
             Log.d(TAG, "Export failed: " + file.getAbsolutePath());
             NotificationUtil.getInstance().postNotification(
                     R.drawable.ic_network_error_notification_icon,
@@ -541,7 +541,7 @@ public abstract class ExportFileMarshal extends ExportMarshal {
         final File file;
         try {
             file = getFile();
-            if (FileIOProviderFactory.exists(file)) {
+            if (IOProviderFactory.exists(file)) {
                 FileSystemUtils.deleteFile(file);
 
             }

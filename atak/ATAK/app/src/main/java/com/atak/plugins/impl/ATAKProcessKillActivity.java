@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.os.Process;
 
 import com.atakmap.android.metrics.activity.MetricActivity;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 
 /**
@@ -17,6 +18,8 @@ import com.atakmap.app.R;
  *
  * 
  */
+@Deprecated
+@DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
 public class ATAKProcessKillActivity extends MetricActivity
         implements DialogInterface.OnClickListener,
         DialogInterface.OnDismissListener {

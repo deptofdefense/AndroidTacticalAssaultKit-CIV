@@ -420,7 +420,7 @@ public class Contacts implements MapEventDispatcher.MapEventDispatchListener {
         }
     }
 
-    private BroadcastReceiver timeDriftDetected = new BroadcastReceiver() {
+    private final BroadcastReceiver timeDriftDetected = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             synchronized (contacts) {

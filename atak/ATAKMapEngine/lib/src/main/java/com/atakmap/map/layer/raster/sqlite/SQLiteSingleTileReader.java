@@ -17,6 +17,8 @@ import android.graphics.Rect;
 import android.net.Uri;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.DatabaseInformation;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
@@ -399,7 +401,7 @@ public class SQLiteSingleTileReader extends TileReader {
                     // immediately.
                     db = sharedDbs.get(dbPath);
                     if(db == null) {
-                        sharedDbs.put(dbPath, db=new SharedDb(dbPath, Databases.openDatabase(dbPath, true), true));
+                        sharedDbs.put(dbPath, db= new SharedDb(dbPath, IOProviderFactory.createDatabase(new File(dbPath), DatabaseInformation.OPTION_READONLY), true));
                         Log.d("SQLiteTileReader", "Creating shared DB ref " + dbPath);
                     } else {
                         db.reference();

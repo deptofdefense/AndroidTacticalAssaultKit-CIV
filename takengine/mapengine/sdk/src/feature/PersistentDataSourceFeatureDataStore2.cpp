@@ -10,6 +10,7 @@
 #include "db/BindArgument.h"
 #include "db/Query.h"
 #include "db/Statement2.h"
+#include "db/DatabaseFactory.h"
 #include "db/WhereClauseBuilder2.h"
 #include "feature/BruteForceLimitOffsetFeatureCursor.h"
 #include "feature/FeatureCursor2.h"
@@ -182,7 +183,8 @@ TAKErr PersistentDataSourceFeatureDataStore2::open(const char *database) NOTHROW
         strm << this->database_dir_;
         strm << "/";
         strm << "index.sqlite";
-        code = Databases_openDatabase(this->index_db_, strm.str().c_str());
+        DatabaseInformation info(strm.str().c_str());
+        code = DatabaseFactory_create(this->index_db_, info);
         TE_CHECKRETURN_CODE(code);
     }
 

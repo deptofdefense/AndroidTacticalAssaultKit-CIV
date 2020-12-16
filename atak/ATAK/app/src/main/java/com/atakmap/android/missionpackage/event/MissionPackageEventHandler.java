@@ -16,14 +16,14 @@ import com.atakmap.android.missionpackage.ui.MissionPackageListFileItem;
 import com.atakmap.android.missionpackage.ui.MissionPackageListGroup;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipFile;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * Base handler for Mission Packages being processed
@@ -128,7 +128,7 @@ public class MissionPackageEventHandler implements IMissionPackageEventHandler {
      */
     private String importFile(final File file,
             final String contentType, final List<ImportResolver> sorters) {
-        if (!FileIOProviderFactory.exists(file)) {
+        if (!IOProviderFactory.exists(file)) {
             Log.w(TAG, "Import file not found: " + file.getAbsolutePath());
             return null;
         }

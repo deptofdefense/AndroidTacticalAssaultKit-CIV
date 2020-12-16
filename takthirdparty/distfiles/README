@@ -20,7 +20,9 @@ javasqlite-pgsc - Modified version of the native portions only of
                   used by ATAK, maybe other changes as well
 libspatialite - 4.3.0a
 protobuf - cpp-3.5.1
-
+pdfium - pre-built (see below instructions) from 
+         https://github.com/rouault/pdfium
+         (rev b5009c4df5aa4ff923ede1c5deba1aa4be43199b)
 
 
 *** pthreads binary bundle:
@@ -71,3 +73,63 @@ geos-pgsc.patch - Add support for newer nmake version in VS2015 Update 3 and
 libkml-pgsc.patch - Fix various issues with libkml
 libkml-pgsc-postac.patch - Fixes applied after autoconf is run
 libkml-pgsc-win*.patch - Fixes for Windows project files (mostly adding 64-bit)
+
+
+
+*** Building pdfium binary bundles:
+The "pdfium" library uses Google's chromium tools for building.  It is fairly
+fickle and requires very specific setups.  Moreover, the vanilla pdfium
+distribution is not suited for use inside gdal (which is how TAK and TTP
+uses it), gdal expects an older fork of pdfium (several years older than
+current google repository), and current google pdfium uses C++ constructs
+unsupported by the TTP-required version of the Android NDK.
+Due to these restrictions, pdfium is held in takthirdparty as a set of
+pre-built binaries and associated headers.  This section provides the steps
+and info used to build those binaries outside of TTP.
+
+
+* Linux & Android builds
+Building for Android and Linux is only supported on Linux systems.
+The build script will build native Linux and all three supported Android
+variants in one run.
+The following prerequisites are known to be required:
+    gcc (9.3.0 was last used)
+    python 2.7 (3.x does not work due to upstream scripts needing 2.x)
+    python "setuptools" installed to be used by the python interpreter
+    Android NDK (version as dictated by existing takthirdparty prerequisites)
+    
+* Windows builds
+Building for Windows is only supported on Windows.
+Windows builds will only build for *either* win32 or win64 in a single
+run.  To build both, repeat the build steps twice using a separate working
+build directory for each and setting the script variable
+(see step by step below) appropriately.
+The following prerequisites are known to be required:
+    takthirdparty itself must be available (used for Visual Studio scripts)
+    python 2.7 (3.x does not work due to upstream scripts needing 2.x)
+       (the cygwin package is known to work)
+    python "setuptools" installed to be used by the python interpreter
+       (the cygwin package is known to work)
+    Visual Studio 2015
+
+* Step by step instructions (same for both system types except where noted)
+1. Create a directory somewhere to do the build.  It is recommended this
+   be done *outside* the TTP tree.  These instructions shall call this
+   "pdf_build" (but to be clear, any name can be used).
+2. Copy the build script, pdfium-build.sh, to the "pdf_build" directory
+3. Edit the top of the build script to set any options needed.
+4. [Android builds only] Be sure ANDROID_NDK environment variable is
+   set to your Android NDK location (see TTP instructions)
+5. cd into "pdf_build" and run the script:
+   cd pdf_build && ./pdfium-build.sh
+6. Let the script run. 
+7. [Android builds only] At completion you will have 4 .tar.gz files, one each
+   for your native Linux, Android armeabi-v7a, arm64-v8a, and x86.
+7. [Windows builds only] At completion you will have a .tar.gz file with
+   named for the windows variant you built for. NOTE: if you need to build
+   the other windows variant, repeat from the beginning with a new "pdf_build"
+   directory.
+8. Copy the new .tar.gz file(s) into the takthirdparty/distfiles/pdfium/
+   directory
+9. UPDATE THIS README WITH THE NEW VERSION STRING FOR PDFIUM!
+

@@ -1,7 +1,7 @@
 include mk/geos-common.mk
 
 
-geos_nmake_opts=BUILD_DEBUG=$(win32_debug_yesno)                            \
+geos_nmake_opts=BUILD_DEBUG=$(win_debug_yesno)                            \
 
 
 # This is phony because we always want to be invoking geos make to be sure

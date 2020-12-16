@@ -21,7 +21,7 @@ public class BattlePositionLayoutHandler implements View.OnClickListener {
 
     public static final String TAG = "BattlePositionSelectorFragment";
     private LinearLayout _RootView = null;
-    private ViewGroup _AnchorGroup;
+    private final ViewGroup _AnchorGroup;
     private EditText _RowsET = null;
     private EditText _ColumnsET = null;
     private View _FixedGridSelector = null;

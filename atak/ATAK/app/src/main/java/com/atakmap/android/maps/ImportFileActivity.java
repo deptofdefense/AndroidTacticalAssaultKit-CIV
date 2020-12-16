@@ -1,28 +1,21 @@
 
 package com.atakmap.android.maps;
 
-import android.content.ActivityNotFoundException;
+import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.atakmap.android.importexport.ImportExportMapComponent;
-import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.metrics.activity.MetricActivity;
-import com.atakmap.android.update.AppMgmtUtils;
-import com.atakmap.app.ATAKActivity;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -42,190 +35,84 @@ public class ImportFileActivity extends MetricActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        super.onCreate(null);
 
-        //display splash/loading screen
-        setContentView(R.layout.atak_import_activity);
-        try {
-            ((TextView) findViewById(R.id.revision))
-                    .setText("Version "
-                            + getPackageManager().getPackageInfo(
-                                    getPackageName(), 0).versionName);
-
-            File splash = FileSystemUtils
-                    .getItem(FileSystemUtils.SUPPORT_DIRECTORY
-                            + File.separatorChar + "atak_splash.png");
-            if (FileSystemUtils.isFile(splash)) {
-                Bitmap bmp = BitmapFactory.decodeFile(splash.getAbsolutePath());
-                if (bmp != null) {
-                    Log.d(TAG, "Loading custom splash screen");
-                    ImageView atak_splash_imgView = findViewById(
-                            R.id.atak_splash_imgView);
-                    atak_splash_imgView.setImageBitmap(bmp);
-                }
-            }
-
-        } catch (PackageManager.NameNotFoundException e) {
-            Log.e(TAG, "Error: " + e);
-        }
-
-        //get dest directory
-        Log.d(TAG, "onCreate");
         final Intent intent = getIntent();
-        String action = intent.getAction();
-        File destDir = new File(this.getCacheDir(), FileSystemUtils.ATAKDATA);
-        if (!FileIOProviderFactory.mkdirs(destDir)) {
-            Log.e(TAG, "Error creating directories");
-        }
-        File destFile = null;
+        final String action = intent.getAction();
+        final Uri uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
 
-        //copy source file to dest dir
-        if (FileSystemUtils.isEquals(action, Intent.ACTION_VIEW)) {
-            String scheme = intent.getScheme();
-            ContentResolver resolver = getContentResolver();
-
-            if (FileSystemUtils
-                    .isEquals(scheme, ContentResolver.SCHEME_CONTENT)) {
-                Uri uri = intent.getData();
-                String name = getContentName(resolver, uri);
-                ((TextView) findViewById(R.id.revision)).setText("Importing "
-                        + name + "...");
-                Log.v(TAG, "Content intent detected: " + action + " : "
-                        + intent.getDataString() + " : " + intent.getType()
-                        + " : " + name + "   from: " + uri);
-                InputStream input = null;
-                FileOutputStream fos = null;
-                try {
-                    if (uri != null) {
-                        input = resolver.openInputStream(uri);
-
-                        if (input != null) {
-                            destFile = new File(destDir,
-                                    FileSystemUtils.validityScan(name));
-                            FileSystemUtils.copy(input,
-                                    fos = FileIOProviderFactory.getOutputStream(
-                                            destFile));
-                        }
-                    }
-                } catch (SecurityException | IOException e) {
-                    Log.w(TAG,
-                            "Failed to open content file: " + uri.toString(),
-                            e);
-                    FileSystemUtils.deleteFile(destFile);
-                } finally {
-                    if (fos != null) {
-                        try {
-                            fos.close();
-                        } catch (IOException e) {
-                            Log.e(TAG, "failed to close the output stream");
-                        }
-                    }
-                    if (input != null) {
-                        try {
-                            input.close();
-                        } catch (IOException e) {
-                            Log.e(TAG, "failed to close the input stream");
-                        }
-                    }
-                }
-            } else if (FileSystemUtils.isEquals(scheme,
-                    ContentResolver.SCHEME_FILE)) {
-                Uri uri = intent.getData();
-
-                if (uri != null) {
-                    final String name = FileSystemUtils.sanitizeFilename(uri
-                            .getLastPathSegment());
-                    ((TextView) findViewById(R.id.revision))
-                            .setText("Importing "
-                                    + name + "...");
-
-                    Log.v(TAG,
-                            "File intent detected: " + action + " : "
-                                    + intent.getDataString() + " : "
-                                    + intent.getType() + " : " + name);
-
-                    InputStream input = null;
-                    FileOutputStream fos = null;
-                    try {
-                        input = resolver.openInputStream(uri);
-                        if (input != null && name != null) {
-                            destFile = new File(destDir, name);
-                            FileSystemUtils.copy(input,
-                                    fos = FileIOProviderFactory.getOutputStream(
-                                            destFile));
-                        }
-                    } catch (IOException e) {
-                        Log.w(TAG,
-                                "Failed to open scheme file: " + uri.toString(),
-                                e);
-                        FileSystemUtils.deleteFile(destFile);
-                    } finally {
-                        if (fos != null) {
-                            try {
-                                fos.close();
-                            } catch (Exception ignore) {
-                            }
-                        }
-
-                        if (input != null) {
-                            try {
-                                input.close();
-                            } catch (Exception ignore) {
-                            }
-                        }
-                    }
-                }
-            } else {
-                Log.w(TAG, "Ignoring file scheme: " + scheme);
-            }
-        }
-
-        if (!FileSystemUtils.isFile(destFile)) {
-            Toast.makeText(this, "Ignoring unsupported file scheme",
-                    Toast.LENGTH_LONG).show();
+        if (action == null || uri == null) {
+            Log.d(TAG, "unable to open: " + action + " " + uri);
             finish();
             return;
         }
 
-        //see if ATAK is currently running
-        boolean bIsATAKrunning = AppMgmtUtils.isActivityRunning(
-                ATAKActivity.class, getBaseContext());
-        Log.d(TAG, "Processing: " +
-                ((destFile == null) ? "" : destFile.getAbsolutePath())
-                + ", ATAK running: " + bIsATAKrunning);
-        if (bIsATAKrunning) {
-            if (destFile != null) {
-                //send intent to import file now
-                Log.d(TAG, "Sending intent to import file: " + destFile);
-                try {
-                    AtakBroadcast
-                            .getInstance()
-                            .sendBroadcast(
-                                    new Intent(
-                                            ImportExportMapComponent.USER_HANDLE_IMPORT_FILE_ACTION)
-                                                    .putExtra("filepath",
-                                                            destFile.getAbsolutePath()));
-                    Toast.makeText(this,
-                            "Importing " + destFile.getName() + "...",
-                            Toast.LENGTH_LONG).show();
-                } catch (Exception e) {
-                    Log.w(TAG, "Failed to send ATAK broadcast", e);
-                    Toast.makeText(this, "Launch ATAK to view file...",
-                            Toast.LENGTH_LONG).show();
-                }
+        if (action.equals(Intent.ACTION_VIEW) ||
+                action.equals(Intent.ACTION_SEND)) {
+
+            final File sendtoLocation = FileSystemUtils.getItem("tools/sendto");
+            FileSystemUtils.deleteDirectory(sendtoLocation, false);
+
+            IOProviderFactory.mkdirs(sendtoLocation);
+            ContentResolver resolver = getContentResolver();
+            final String fileName = getContentName(resolver, uri);
+
+            if (fileName == null) {
+                Log.e(TAG, "could not import: " + uri);
+                finish();
+                return;
             }
-        } else {
-            //launch ATAK activity to process files in "atakdata" folder
-            Log.d(TAG, "Launching ATAK");
+
+            final File fileToImport = new File(sendtoLocation, fileName);
+
+            InputStream is = null;
+            FileOutputStream fos = null;
             try {
-                startActivity(new Intent(this, ATAKActivity.class));
-            } catch (ActivityNotFoundException e) {
-                Log.w(TAG, "Failed to launch ATAK", e);
-                Toast.makeText(this, "Launch ATAK to view file...",
-                        Toast.LENGTH_LONG).show();
+                is = resolver.openInputStream(uri);
+                FileSystemUtils.copy(is,
+                        fos = new FileOutputStream(fileToImport));
+
+            } catch (IOException ioe) {
+                if (is != null)
+                    try {
+                        is.close();
+                    } catch (Exception ignored) {
+                    }
+                if (fos != null)
+                    try {
+                        fos.close();
+                    } catch (Exception ignored) {
+                    }
+            }
+
+            Intent atakFrontIntent = new Intent();
+            atakFrontIntent.setComponent(new ComponentName(
+                    getPackageName(),
+                    getString(R.string.atak_activity)));
+
+            // because we need to copy the file to a new location, we do not want it imported in
+            // place.
+            final Intent i = new Intent(
+                    ImportExportMapComponent.USER_HANDLE_IMPORT_FILE_ACTION);
+            i.putExtra("filepath", fileToImport.getAbsolutePath())
+                    .putExtra("promptOnMultipleMatch", true)
+                    .putExtra("importInPlace", false);
+
+            atakFrontIntent.putExtra("internalIntent", i);
+
+            atakFrontIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+            // requires the use of currentTimeMillis
+            PendingIntent contentIntent = PendingIntent.getActivity(this,
+                    (int) System.currentTimeMillis(),
+                    atakFrontIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+            try {
+                contentIntent.send();
+            } catch (Exception e) {
+                Log.e(TAG, "pending intent error");
             }
         }
-
         finish();
     }
 
@@ -240,11 +127,11 @@ public class ImportFileActivity extends MetricActivity {
                     return cursor.getString(nameIndex);
                 }
             }
-        } catch (SecurityException se) { 
+        } catch (SecurityException se) {
             Log.e(TAG, "unable to load: " + uri, se);
             Toast.makeText(this, String.format("Unable to load %s", uri),
                     Toast.LENGTH_LONG).show();
-            
+
         } finally {
             if (cursor != null)
                 cursor.close();
@@ -252,4 +139,5 @@ public class ImportFileActivity extends MetricActivity {
 
         return null;
     }
+
 }

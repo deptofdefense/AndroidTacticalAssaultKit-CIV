@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Implementation of DefaultSchemaDefinition class.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Apr 22, 2015
+////      Apr 22, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -31,6 +31,7 @@
 #include <cstring>
 #include <algorithm>
 #include <memory>
+#include <stdexcept>
 
 #include "ogr_feature.h"
 

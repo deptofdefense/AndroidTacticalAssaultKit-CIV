@@ -42,7 +42,7 @@ import com.atakmap.android.missionpackage.file.MissionPackageContent;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
@@ -122,8 +122,9 @@ class MissionPackageFileHierarchyListItem extends AbstractChildlessListItem
 
     @Override
     public String getDescription() {
-        if (_file != null && FileIOProviderFactory.exists(_file) && _file.isFile())
-            return MathUtils.GetLengthString(FileIOProviderFactory.length(_file));
+        if (_file != null && IOProviderFactory.exists(_file)
+                && IOProviderFactory.isFile(_file))
+            return MathUtils.GetLengthString(IOProviderFactory.length(_file));
         return null;
     }
 
@@ -320,7 +321,8 @@ class MissionPackageFileHierarchyListItem extends AbstractChildlessListItem
 
         TextView sizeText = v
                 .findViewById(R.id.missionpackage_file_detail_txtSize);
-        sizeText.setText(MathUtils.GetLengthString(FileIOProviderFactory.length(_file)));
+        sizeText.setText(
+                MathUtils.GetLengthString(IOProviderFactory.length(_file)));
 
         TextView dateText = v
                 .findViewById(R.id.missionpackage_file_detail_txtModifiedDate);

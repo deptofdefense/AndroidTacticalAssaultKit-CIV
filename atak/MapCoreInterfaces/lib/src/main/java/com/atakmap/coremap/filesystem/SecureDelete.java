@@ -57,7 +57,8 @@ public class SecureDelete {
         String filePath = file.getAbsolutePath();
         try {
             // Open file output stream
-            FileOutputStream fos = new FileOutputStream(FileSystemUtils.sanitizeWithSpacesAndSlashes(filePath));
+            FileOutputStream fos = new FileOutputStream(
+                    FileSystemUtils.sanitizeWithSpacesAndSlashes(filePath));
 
             // Delete the file normally
             if (file.delete()) {

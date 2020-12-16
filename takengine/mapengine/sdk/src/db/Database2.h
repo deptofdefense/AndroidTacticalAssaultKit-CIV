@@ -91,6 +91,15 @@ namespace TAK {
 			ENGINE_API TAK::Engine::Util::TAKErr Databases_lastChangeCount(unsigned long *value, Database2 &db) NOTHROWS;
 			ENGINE_API TAK::Engine::Util::TAKErr Databases_lastInsertRowID(int64_t *value, Database2 &db) NOTHROWS;
 			ENGINE_API TAK::Engine::Util::TAKErr Databases_openDatabase(DatabasePtr &db, const char* databaseFilePath, const bool readOnly = false) NOTHROWS;
+			/**
+			 * @param passphrase    The passphrase as a C-string, `nullptr` if no passphrase
+			 */
+			ENGINE_API TAK::Engine::Util::TAKErr Databases_openDatabase(DatabasePtr &db, const char* databaseFilePath, const char *passphrase, const bool readOnly = false) NOTHROWS;
+			/**
+			 * @param key       The binary passphrase key; `nullptr` if no passphrase
+			 * @param keylen    The length of the passphrase key, in bytes
+			 */
+			ENGINE_API TAK::Engine::Util::TAKErr Databases_openDatabase(DatabasePtr &db, const char* databaseFilePath, const uint8_t *key, const std::size_t keylen, const bool readOnly = false) NOTHROWS;
 
 			ENGINE_API void Databases_enableDebug(bool v) NOTHROWS;
 

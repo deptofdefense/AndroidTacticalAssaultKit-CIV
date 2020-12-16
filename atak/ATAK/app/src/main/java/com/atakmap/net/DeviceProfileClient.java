@@ -40,12 +40,12 @@ public class DeviceProfileClient {
     /**
      * List of tool profiles received sent since ATAK startup
      */
-    private Set<String> toolProfileReceived;
+    private final Set<String> toolProfileReceived;
 
     /**
      * Maintain ref to callbacks so they dont get garbage collected prior to processing
      */
-    private Map<String, DeviceProfileCallback> _pendingCallbacks;
+    private final Map<String, DeviceProfileCallback> _pendingCallbacks;
 
     private SharedPreferences _prefs;
 

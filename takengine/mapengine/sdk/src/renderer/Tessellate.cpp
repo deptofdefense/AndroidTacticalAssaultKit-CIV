@@ -70,21 +70,21 @@ namespace
         Point2<double> b;
         Point2<double> c;
 
-        bool subdivide;
+        bool subdivide {false};
 
         struct
         {
-            double distance;
+            double distance {0.0};
             Point2<double> direction;
         } ab;
         struct
         {
-            double distance;
+            double distance {0.0};
             Point2<double> direction;
         } bc;
         struct
         {
-            double distance;
+            double distance {0.0};
             Point2<double> direction;
         } ca;
     };

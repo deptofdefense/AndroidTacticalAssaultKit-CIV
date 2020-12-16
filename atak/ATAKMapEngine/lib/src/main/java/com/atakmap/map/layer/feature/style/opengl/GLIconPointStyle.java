@@ -243,8 +243,8 @@ public abstract class GLIconPointStyle extends GLStyle {
                     if (!point.iconLoader.isCancelled()) {
                         try {
                             bitmap = point.iconLoader.get();
-                        } catch (ExecutionException e) {
-                        } catch (InterruptedException e) {
+                        } catch (ExecutionException ignored) {
+                        } catch (InterruptedException ignored) {
                         }
                     }
                     if (bitmap == null) {
@@ -545,5 +545,9 @@ public abstract class GLIconPointStyle extends GLStyle {
                 }
             }
         }
+    }
+
+    public static void invalidateIconAtlas() {
+        ICON_ATLAS.release();;
     }
 }

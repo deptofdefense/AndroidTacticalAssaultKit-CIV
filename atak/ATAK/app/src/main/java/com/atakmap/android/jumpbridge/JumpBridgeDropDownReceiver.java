@@ -26,8 +26,8 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 
 public class JumpBridgeDropDownReceiver extends DropDownReceiver implements
         OnStateListener {
-    private View infoView;
-    private SharedPreferences _prefs;
+    private final View infoView;
+    private final SharedPreferences _prefs;
 
     protected JumpBridgeDropDownReceiver(MapView mapView) {
         super(mapView);

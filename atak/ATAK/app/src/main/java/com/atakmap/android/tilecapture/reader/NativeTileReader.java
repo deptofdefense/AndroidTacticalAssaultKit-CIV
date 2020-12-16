@@ -1,20 +1,22 @@
 
 package com.atakmap.android.tilecapture.reader;
 
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 
 import com.atakmap.android.data.URIScheme;
+import com.atakmap.coremap.io.DatabaseInformation;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.QueryIface;
-import com.atakmap.database.android.AndroidDatabaseAdapter;
 import com.atakmap.map.layer.raster.ImageDatasetDescriptor;
 import com.atakmap.map.layer.raster.osm.OSMUtils;
 import com.atakmap.map.layer.raster.tilematrix.TileMatrix;
 import com.atakmap.math.PointD;
+
+import java.io.File;
 
 /**
  * Read bitmap tiles from a native dataset
@@ -36,8 +38,8 @@ public class NativeTileReader extends DatasetTileReader {
         String path = info.getUri();
         if (path.startsWith(URIScheme.FILE))
             path = path.substring(URIScheme.FILE.length());
-        _db = AndroidDatabaseAdapter.openDatabase(path,
-                SQLiteDatabase.OPEN_READONLY);
+        _db = IOProviderFactory.createDatabase(new File(path),
+                DatabaseInformation.OPTION_READONLY);
 
         double pixelSize = OSMUtils.mapnikTileResolution(_levelOffset);
 

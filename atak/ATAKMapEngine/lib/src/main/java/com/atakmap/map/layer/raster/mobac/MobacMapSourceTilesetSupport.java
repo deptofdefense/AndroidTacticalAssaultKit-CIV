@@ -10,6 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import com.atakmap.android.maps.graphics.GLBitmapLoader;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.Databases;
 import com.atakmap.android.maps.tilesets.OnlineTilesetSupport;
@@ -71,7 +72,7 @@ public final class MobacMapSourceTilesetSupport implements OnlineTilesetSupport 
         if (offlineCache != null) {
             DatabaseIface database = null;
             try {
-                database = Databases.openOrCreateDatabase(offlineCache);
+                database = IOProviderFactory.createDatabase(new File(offlineCache));
                 Set<String> tables = Databases.getTableNames(database);
                 if (!tables.contains("tiles")) {
                     database.execute("CREATE TABLE tiles (key INTEGER PRIMARY KEY, provider TEXT, tile BLOB)", null);
@@ -151,8 +152,8 @@ public final class MobacMapSourceTilesetSupport implements OnlineTilesetSupport 
             MobacMapSource mapSource = null;
             try {
                 mapSource = MobacMapSourceFactory.create(new File(info.getInfo().getUri()));
-            } catch (Exception ignored) {
-                Log.d(TAG, "exception occurred: ", ignored);
+            } catch (Exception e) {
+                Log.d(TAG, "exception occurred: ", e);
             }
 
             if (mapSource == null)

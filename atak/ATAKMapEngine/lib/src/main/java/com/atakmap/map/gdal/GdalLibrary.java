@@ -17,7 +17,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
+import org.gdal.gdal.Dataset;
 import org.gdal.gdal.gdal;
+import org.gdal.ogr.DataSource;
 import org.gdal.ogr.ogr;
 import org.gdal.osr.SpatialReference;
 
@@ -25,11 +27,16 @@ import android.database.DatabaseErrorHandler;
 import android.database.sqlite.SQLiteDatabase;
 
 import com.atakmap.annotations.DeprecatedApi;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.EngineLibrary;
 import com.atakmap.map.layer.raster.tilereader.TileReader;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.util.ConfigOptions;
+
+import static com.atakmap.map.gdal.VSIJFileFilesystemHandler.installFilesystemHandler;
 
 
 public class GdalLibrary {
@@ -84,18 +91,18 @@ public class GdalLibrary {
 
         gdal.SetConfigOption("GDAL_DISABLE_READDIR_ON_OPEN", "TRUE");
 
-        if (!FileIOProviderFactory.exists(gdalDir)) {
-            if (!FileIOProviderFactory.mkdirs(gdalDir)) {
+        if (!IOProviderFactory.exists(gdalDir)) {
+            if (!IOProviderFactory.mkdirs(gdalDir)) {
                 Log.d("GdalLibrary", "XXX: bad could not make the gdalDir: " + gdalDir);
             }
         }
         File gdalDataVer = new File(gdalDir, "gdal.version");
         boolean unpackData = true;
-        if (FileIOProviderFactory.exists(gdalDataVer)) {
-            byte[] versionBytes = new byte[(int) FileIOProviderFactory.length(gdalDataVer)];
+        if (IOProviderFactory.exists(gdalDataVer)) {
+            byte[] versionBytes = new byte[(int) IOProviderFactory.length(gdalDataVer)];
             InputStream inputStream = null;
             try {
-                inputStream = FileIOProviderFactory.getInputStream(gdalDataVer);
+                inputStream = IOProviderFactory.getInputStream(gdalDataVer);
                 int r = inputStream.read(versionBytes);
                 if (r != versionBytes.length) 
                     Log.d("GdalLibrary", "versionBytes, read: " + r + " expected: " + versionBytes.length);
@@ -112,11 +119,11 @@ public class GdalLibrary {
         
         // make sure all files from the last unpack are present
         File gdalDataList = new File(gdalDir, "gdaldata.list2");
-        if(!unpackData && FileIOProviderFactory.exists(gdalDataList)) {
+        if(!unpackData && IOProviderFactory.exists(gdalDataList)) {
             FileInputStream inputStream = null;
             DataInputStream dataInput = null;
             try {
-                inputStream = FileIOProviderFactory.getInputStream(gdalDataList);
+                inputStream = IOProviderFactory.getInputStream(gdalDataList);
                 dataInput = new DataInputStream(inputStream);
                 
                 final int numFiles = dataInput.readInt();
@@ -128,7 +135,7 @@ public class GdalLibrary {
                     fileName = dataInput.readUTF();
                     
                     dataFile = new File(gdalDir, FileSystemUtils.sanitizeWithSpacesAndSlashes(fileName));
-                    if(!FileIOProviderFactory.exists(dataFile)|| FileIOProviderFactory.length(dataFile) != fileSize) {
+                    if(!IOProviderFactory.exists(dataFile)|| IOProviderFactory.length(dataFile) != fileSize) {
                         unpackData = true;
                         break;
                     }
@@ -168,6 +175,13 @@ public class GdalLibrary {
         } while(true);
 
         registerProjectionSpi();
+        VSIFileFileSystemHandler vsiJfileHandler = new VSIFileFileSystemHandler();
+        installFilesystemHandler(vsiJfileHandler);
+
+        if(IOProviderFactory.isDefault())
+            ConfigOptions.setOption("gdal-vsi-prefix", null);
+        else
+            ConfigOptions.setOption("gdal-vsi-prefix", VSIFileFileSystemHandler.PREFIX);
 
         initSuccess = true;
     }
@@ -217,7 +231,7 @@ public class GdalLibrary {
         FileOutputStream dataListFileStream = null;
         DataOutputStream dataListStream = null;
         try {
-            dataListFileStream = FileIOProviderFactory.getOutputStream(gdalDataList);
+            dataListFileStream = IOProviderFactory.getOutputStream(gdalDataList);
             dataListStream = new DataOutputStream(dataListFileStream);
             
             dataListStream.writeInt(dataFiles.size());
@@ -231,7 +245,7 @@ public class GdalLibrary {
                     url = GdalLibrary.class.getClassLoader().getResource("gdal/data/" + dataFileName);
                     inputStream = url.openStream();
                     dataFile = new File(gdalDir, dataFileName);
-                    fileOutputStream = FileIOProviderFactory.getOutputStream(dataFile);
+                    fileOutputStream = IOProviderFactory.getOutputStream(dataFile);
     
                     do {
                         transferSize = inputStream.read(transfer);
@@ -245,7 +259,7 @@ public class GdalLibrary {
                         inputStream.close();
                 }
                 
-                dataListStream.writeInt((int)FileIOProviderFactory.length(dataFile));
+                dataListStream.writeInt((int)IOProviderFactory.length(dataFile));
                 dataListStream.writeUTF(dataFileName);
             }
         } finally {
@@ -257,7 +271,7 @@ public class GdalLibrary {
 
         // write out the gdal version that the data files correspond to
         try {
-            fileOutputStream = FileIOProviderFactory.getOutputStream(gdalDataVer);
+            fileOutputStream = IOProviderFactory.getOutputStream(gdalDataVer);
             fileOutputStream.write(gdal.VersionInfo("VERSION_NUM").getBytes());
         } catch (IOException ignored) {
             // not really a major issue
@@ -386,6 +400,71 @@ public class GdalLibrary {
         } catch(RuntimeException ignored) {}
         
         return (err == ogr.OGRERR_NONE) ? spatialRef.ExportToWkt() : null;
+    }
+
+    public static Dataset openDatasetFromFile(File file) {
+        // implement chaining per https://gdal.org/user/virtual_file_systems.html#chaining
+        String path = file.getAbsolutePath();
+        // custom TAK IO VSI
+        if(!IOProviderFactory.isDefault())
+            path = VSIFileFileSystemHandler.PREFIX + path;
+        // zip VSI
+        if(file instanceof ZipVirtualFile)
+            path = "/vsizip/" + path;
+        return org.gdal.gdal.gdal.Open(path);
+    }
+
+    public static Dataset openDatasetFromFile(File file, int accessOpts) {
+        // implement chaining per https://gdal.org/user/virtual_file_systems.html#chaining
+        String path = file.getAbsolutePath();
+        // custom TAK IO VSI
+        if(!IOProviderFactory.isDefault())
+            path = VSIFileFileSystemHandler.PREFIX + path;
+        // zip VSI
+        if(file instanceof ZipVirtualFile)
+            path = "/vsizip/" + path;
+        return org.gdal.gdal.gdal.Open(path, accessOpts);
+    }
+
+    public static Dataset openDatasetFromPath(String path) {
+        File file;
+        if(path.startsWith("zip://")) {
+            path = path.replace("zip://", "");
+            path = path.replace("%20", " ").
+                        replace("%23", "#").
+                        replace("%5B", "[").
+                        replace("%5D", "]");
+            file = new ZipVirtualFile(path);
+        } else if (path.contains(".zip")) {
+            file = new ZipVirtualFile(path);
+        } else {
+            if(path.startsWith("file:///"))
+                path = path.substring(7);
+            else if(path.startsWith("file://"))
+                path = path.substring(6);
+            path = path.replace("%20", " ").
+                        replace("%23", "#").
+                        replace("%5B", "[").
+                        replace("%5D", "]");
+            file = new File(path);
+        }
+
+        // if the file doesn't exist, it may be a pre-baked path, try opening
+        // directly before going through to the File based method
+        if(!IOProviderFactory.exists(file)) {
+            Dataset dataset = org.gdal.gdal.gdal.Open(path);
+            if(dataset != null)
+                return dataset;
+        }
+
+        return openDatasetFromFile(file);
+    }
+
+    public static DataSource openDataSourceFromFile(String path) {
+        if(IOProviderFactory.isDefault())
+            return org.gdal.ogr.ogr.Open(path);
+        else
+            return org.gdal.ogr.ogr.Open(VSIFileFileSystemHandler.PREFIX + path);
     }
 
     /**************************************************************************/

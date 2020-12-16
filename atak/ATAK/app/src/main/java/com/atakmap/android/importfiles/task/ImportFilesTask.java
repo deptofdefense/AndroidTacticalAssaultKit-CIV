@@ -33,7 +33,7 @@ import com.atakmap.android.importfiles.sort.ImportTilesetSort;
 import com.atakmap.android.importfiles.sort.ImportUserIconSetSort;
 import com.atakmap.android.importfiles.sort.ImportVideoSort;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.raster.ImageryFileType;
 
@@ -254,7 +254,6 @@ public class ImportFilesTask extends AsyncTask<Void, Void, Integer> {
         sorters.add(new ImportINFZSort(context, validateExt));
         sorters.add(new ImportAPKSort(context, validateExt));
 
-
         // TODO: Since the video sorters currently do not have a way of
         //  validating a file w/out the extension, always check the extension
         //  for now - otherwise any file that makes it this far will be
@@ -308,24 +307,24 @@ public class ImportFilesTask extends AsyncTask<Void, Void, Integer> {
         if (dir == null) {
             Log.d(TAG, "Import directory null.");
             return 0;
-        } else if (!FileIOProviderFactory.exists(dir)) {
+        } else if (!IOProviderFactory.exists(dir)) {
             Log.d(TAG, "Import dir not found: " + dir.getAbsolutePath());
             return 0;
-        } else if (!FileIOProviderFactory.isDirectory(dir)) {
+        } else if (!IOProviderFactory.isDirectory(dir)) {
             Log.d(TAG, "Import path not a directory: " + dir.getAbsolutePath());
             return 0;
         }
 
         Log.d(TAG, "Importing from directory: " + dir.getAbsolutePath());
         int numberSorted = 0;
-        File[] files = FileIOProviderFactory.listFiles(dir);
+        File[] files = IOProviderFactory.listFiles(dir);
         if (files != null && files.length > 0) {
             for (File file : files) {
-                if (file == null || !FileIOProviderFactory.exists(file))
+                if (file == null || !IOProviderFactory.exists(file))
                     continue;
 
                 // if subdir, recurse
-                if (FileIOProviderFactory.isDirectory(file)) {
+                if (IOProviderFactory.isDirectory(file)) {
                     numberSorted += sort(file, sorters);
                     continue;
                 }
@@ -382,9 +381,9 @@ public class ImportFilesTask extends AsyncTask<Void, Void, Integer> {
         }
 
         // if no files left in this directory, remove it
-        files = FileIOProviderFactory.listFiles(dir);
+        files = IOProviderFactory.listFiles(dir);
 
-        if (FileIOProviderFactory.exists(dir) && FileIOProviderFactory.isDirectory(dir)
+        if (IOProviderFactory.exists(dir) && IOProviderFactory.isDirectory(dir)
                 && (files == null || files.length < 1)) {
             Log.i(TAG, "Cleaning up empty directory: " + dir.getAbsolutePath());
             FileSystemUtils.delete(dir);

@@ -60,9 +60,10 @@ gdal_NO_JAVA=true
 curl_LIBS=
 proj_LIBS=
 libkml_LIBS=
-gdal_LIBS=
+# tbb needed for mrsid dsdk
+gdal_LIBS=-L$(OUTDIR)/lib -Wl,-rpath=$(OUTDIR)/lib -lssl -lcrypto -ldl -ltbb
 
-gdal_LDFLAGS=
+gdal_LDFLAGS=-rpath=$(OUTDIR)/lib
 
 libxml2_installtargets=install
 

@@ -9,6 +9,7 @@ import java.util.Set;
 import android.content.Context;
 import android.content.Intent;
 
+import com.atakmap.android.elev.dt2.Dt2OutlineMapOverlay;
 import com.atakmap.android.elev.dt2.Dt2ElevationData;
 import com.atakmap.android.elev.dt2.Dt2ElevationModel;
 import com.atakmap.android.elev.dt2.Dt2MosaicDatabase;
@@ -32,8 +33,9 @@ public class ElevationMapComponent extends AbstractMapComponent {
     final public static String TAG = "ElevationMapComponent";
 
     private MapView _mapView;
-    private Set<Dt2MosaicDatabase> dt2dbs = Collections
+    private final Set<Dt2MosaicDatabase> dt2dbs = Collections
             .newSetFromMap(new IdentityHashMap<Dt2MosaicDatabase, Boolean>());
+    private Dt2OutlineMapOverlay _outlineOverlay;
 
     @Override
     public void onCreate(Context context, Intent intent, MapView view) {
@@ -67,6 +69,8 @@ public class ElevationMapComponent extends AbstractMapComponent {
         String[] srtmPaths = findDataPaths("SRTM");
         for (String srtmPath : srtmPaths)
             SrtmElevationSource.mountDirectory(new File(srtmPath));
+
+        _outlineOverlay = new Dt2OutlineMapOverlay(view);
     }
 
     public static String[] findDtedPaths() {
@@ -95,6 +99,7 @@ public class ElevationMapComponent extends AbstractMapComponent {
         dt2dbs.clear();
 
         ElevationManager.unregisterDataSpi(Dt2ElevationData.SPI);
+        _outlineOverlay.dispose();
     }
 
     private final OnPointChangedListener _onPointChangedListener = new OnPointChangedListener() {

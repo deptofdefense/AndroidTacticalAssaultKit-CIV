@@ -3,18 +3,22 @@ package com.atakmap.android.contact;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.widget.Toast;
 
 import com.atakmap.android.maps.MapView;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.filesystem.SecureDelete;
+import com.atakmap.coremap.io.IOProvider;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.NetConnectString;
+import com.atakmap.database.CursorIface;
+import com.atakmap.database.DatabaseIface;
+import com.atakmap.database.android.AndroidDatabaseAdapter;
+import com.atakmap.database.android.SQLiteOpenHelper;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,25 +71,38 @@ public class TadilJContactDatabase extends SQLiteOpenHelper {
 
     private static TadilJContactDatabase _instance = null;
 
-    synchronized public static TadilJContactDatabase getInstance(
+    private final File databaseFile;
+
+    /** @deprecated use {@link #getInstance()} */
+    @Deprecated
+    @DeprecatedApi(since = "4.1.1", forRemoval = true, removeAt = "4.4")
+    public static TadilJContactDatabase getInstance(
             Context context) {
+        return getInstance();
+    }
+
+    synchronized public static TadilJContactDatabase getInstance() {
         if (_instance == null) {
-            _instance = new TadilJContactDatabase(context);
+            _instance = new TadilJContactDatabase(
+                    FileSystemUtils.getItem("Databases/" + DATABASE_NAME));
         }
         return _instance;
     }
 
-    private TadilJContactDatabase(Context ctx) {
-        super(ctx, FileSystemUtils.getItem("Databases/" + DATABASE_NAME)
-                .toString(), null, DATABASE_VERSION);
+    // this object does not cache any state, so reloading the connection on
+    // provider change is sufficient
+
+    private TadilJContactDatabase(File dbfile) {
+        super(dbfile.getAbsolutePath(), DATABASE_VERSION, true);
+        this.databaseFile = dbfile;
     }
 
     @Override
-    public void onCreate(SQLiteDatabase db) {
+    public void onCreate(DatabaseIface db) {
         createTable(db, TABLE_CONTACTS, CONTACT_COLS);
     }
 
-    private void createTable(SQLiteDatabase db, String tableName,
+    private void createTable(DatabaseIface db, String tableName,
             DBColumn[] columns) {
         StringBuilder createGroupTable = new StringBuilder("CREATE TABLE "
                 + tableName + " (");
@@ -96,39 +113,39 @@ public class TadilJContactDatabase extends SQLiteOpenHelper {
             delim = ", ";
         }
         createGroupTable.append(")");
-        db.execSQL(createGroupTable.toString());
+        db.execute(createGroupTable.toString(), null);
     }
 
     @Override
-    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+    public void onUpgrade(DatabaseIface db, int oldVersion, int newVersion) {
         // Drop older table if existed
         switch (oldVersion) {
             //wasn't implemented before so just drop the tables and recreate
             default:
-                db.execSQL("DROP TABLE IF EXISTS " + TABLE_CONTACTS);
+                db.execute("DROP TABLE IF EXISTS " + TABLE_CONTACTS, null);
                 onCreate(db);
         }
     }
 
     @Override
-    public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CONTACTS);
+    public void onDowngrade(DatabaseIface db, int oldVersion, int newVersion) {
+        db.execute("DROP TABLE IF EXISTS " + TABLE_CONTACTS, null);
         // Create tables again
         onCreate(db);
     }
 
     public void clearTable() {
-        SQLiteDatabase db = null;
+        DatabaseIface db = null;
         try {
             db = getWritableDatabase();
-            db.execSQL("DELETE FROM " + TABLE_CONTACTS);
+            db.execute("DELETE FROM " + TABLE_CONTACTS, null);
         } catch (SQLiteException e) {
             Toast.makeText(MapView.getMapView().getContext(),
                     "TADIL-J DB broke",
                     Toast.LENGTH_LONG).show();
             Log.e(TAG, "Experienced an issue with the SQL Query.  " +
                     "Clear your DB file if this continues");
-            Log.e(TAG, "error occured", e);
+            Log.e(TAG, "error occurred", e);
         } finally {
             if (db != null)
                 db.close();
@@ -165,13 +182,14 @@ public class TadilJContactDatabase extends SQLiteOpenHelper {
 
         // Add to DB
         long id = getId(contact.getUID());
-        SQLiteDatabase db = null;
+        DatabaseIface db = null;
         try {
             db = getWritableDatabase();
             if (id == -1)
-                id = db.insert(TABLE_CONTACTS, null, contactValues);
+                id = AndroidDatabaseAdapter.insert(db, TABLE_CONTACTS, null,
+                        contactValues);
             else
-                db.update(TABLE_CONTACTS, contactValues,
+                AndroidDatabaseAdapter.update(db, TABLE_CONTACTS, contactValues,
                         "id=" + id, null);
             if (id != -1)
                 result = true;
@@ -181,7 +199,7 @@ public class TadilJContactDatabase extends SQLiteOpenHelper {
                     Toast.LENGTH_LONG).show();
             Log.e(TAG, "Experienced an issue with the SQL Query.  " +
                     "Clear your DB file if this continues");
-            Log.e(TAG, "error occured", e);
+            Log.e(TAG, "error occurred", e);
         } finally {
             if (db != null)
                 db.close();
@@ -191,22 +209,22 @@ public class TadilJContactDatabase extends SQLiteOpenHelper {
 
     private long getId(String uid) {
         long ret = -1;
-        SQLiteDatabase db = null;
-        Cursor cursor = null;
+        DatabaseIface db = null;
+        CursorIface cursor = null;
         try {
             db = this.getReadableDatabase();
-            cursor = db.rawQuery(
+            cursor = db.query(
                     "SELECT " + ID_COL_NAME + " FROM " + TABLE_CONTACTS
                             + " WHERE "
                             + CONTACT_UID_COL_NAME + "=\""
                             + uid + "\"",
                     null);
-            if (cursor.moveToFirst())
+            if (cursor.moveToNext())
                 ret = cursor.getLong(0);
         } catch (SQLiteException e) {
             Log.e(TAG, "Experienced an issue with the SQL Query.  " +
                     "Clear your DB file if this continues");
-            Log.e(TAG, "error occured", e);
+            Log.e(TAG, "error occurred", e);
         } finally {
             if (cursor != null)
                 cursor.close();
@@ -224,15 +242,15 @@ public class TadilJContactDatabase extends SQLiteOpenHelper {
 
     public boolean removeContact(String uid) {
         boolean result = false;
-        SQLiteDatabase db = null;
+        DatabaseIface db = null;
         try {
             db = this.getWritableDatabase();
-            db.execSQL("DELETE FROM " + TABLE_CONTACTS + " WHERE " +
-                    CONTACT_UID_COL_NAME + "=\"" + uid + "\"");
+            db.execute("DELETE FROM " + TABLE_CONTACTS + " WHERE " +
+                    CONTACT_UID_COL_NAME + "=\"" + uid + "\"", null);
             result = true;
         } catch (SQLiteException e) {
             Log.e(TAG, "Failed to delete invalid Contact.");
-            Log.e(TAG, "error occured", e);
+            Log.e(TAG, "error occurred", e);
         } finally {
             if (db != null) {
                 db.close();
@@ -248,12 +266,12 @@ public class TadilJContactDatabase extends SQLiteOpenHelper {
 
     public List<Contact> getContacts() {
         List<Contact> ret = new ArrayList<>();
-        SQLiteDatabase db = null;
-        Cursor cursor = null;
+        DatabaseIface db = null;
+        CursorIface cursor = null;
         try {
             db = this.getReadableDatabase();
-            cursor = db.rawQuery("SELECT * FROM " + TABLE_CONTACTS, null);
-            if (cursor.moveToFirst()) {
+            cursor = db.query("SELECT * FROM " + TABLE_CONTACTS, null);
+            if (cursor.moveToNext()) {
                 do {
                     TadilJContact temp = new TadilJContact(cursor.getString(2),
                             cursor.getString(1),
@@ -268,7 +286,7 @@ public class TadilJContactDatabase extends SQLiteOpenHelper {
         } catch (SQLiteException e) {
             Log.e(TAG, "Experienced an issue with the SQL Query.  " +
                     "Clear your DB file if this continues");
-            Log.e(TAG, "error occured", e);
+            Log.e(TAG, "error occurred", e);
         } finally {
             if (cursor != null) {
                 cursor.close();
@@ -288,14 +306,14 @@ public class TadilJContactDatabase extends SQLiteOpenHelper {
 
     public TadilJContact getContact(String uid) {
         TadilJContact result = null;
-        SQLiteDatabase db = null;
-        Cursor cursor = null;
+        DatabaseIface db = null;
+        CursorIface cursor = null;
         try {
             db = this.getReadableDatabase();
-            cursor = db.rawQuery("SELECT * FROM " + TABLE_CONTACTS
+            cursor = db.query("SELECT * FROM " + TABLE_CONTACTS
                     + " WHERE " +
                     CONTACT_UID_COL_NAME + "=\"" + uid + "\"", null);
-            if (cursor.moveToFirst()) {
+            if (cursor.moveToNext()) {
                 result = new TadilJContact(cursor.getString(2),
                         cursor.getString(1),
                         Boolean.parseBoolean(cursor.getString(3)),
@@ -304,7 +322,7 @@ public class TadilJContactDatabase extends SQLiteOpenHelper {
             }
         } catch (SQLiteException e) {
             Log.e(TAG, "Failed to delete invalid Contact.");
-            Log.e(TAG, "error occured", e);
+            Log.e(TAG, "error occurred", e);
         } finally {
             if (cursor != null) {
                 cursor.close();
@@ -317,6 +335,10 @@ public class TadilJContactDatabase extends SQLiteOpenHelper {
     }
 
     public void clearAll() {
-        SecureDelete.deleteDatabase(this);
+        // logic adopted from `SecureDelete.deleteDatabase(SQLiteOpenHelper)`
+        DatabaseIface db = getReadableDatabase();
+        if (db != null)
+            db.close();
+        IOProviderFactory.delete(this.databaseFile, IOProvider.SECURE_DELETE);
     }
 }

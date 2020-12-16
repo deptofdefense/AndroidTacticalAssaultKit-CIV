@@ -32,11 +32,12 @@ public class GLVehicleModel extends GLRubberModel {
     public static final Comparator<GLVehicleModel> SORT_Z = new Comparator<GLVehicleModel>() {
         @Override
         public int compare(GLVehicleModel o1, GLVehicleModel o2) {
-            return Double.compare(o2._modelAnchorPoint.z, o1._modelAnchorPoint.z);
+            return Double.compare(o2._modelAnchorPoint.z,
+                    o1._modelAnchorPoint.z);
         }
     };
 
-    private GLInstanceData _instanceData = new GLInstanceData();
+    private final GLInstanceData _instanceData = new GLInstanceData();
 
     private final Matrix _localECEF = Matrix.getIdentity();
 

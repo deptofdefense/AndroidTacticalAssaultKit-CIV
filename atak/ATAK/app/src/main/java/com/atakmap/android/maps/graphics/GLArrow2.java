@@ -60,8 +60,8 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
      * earth's curvature when compared to imagery without terrain loaded.
      * Distances of 40km or more are observed to have some noticeable shift.
      */
-    private static double minClampDistance = 30000d;
-    private static double slantMinElAngle = 10d;
+    private static final double minClampDistance = 30000d;
+    private static final double slantMinElAngle = 10d;
 
     private GeoPoint[] _pts;
     private boolean drawText = true;
@@ -69,8 +69,8 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
 
     private boolean _clampToGround = false;
 
-    private GLBatchLineString impl;
-    private GLBatchLineString ximpl;
+    private final GLBatchLineString impl;
+    private final GLBatchLineString ximpl;
 
     public GLArrow2(MapRenderer surface, Arrow arrow) {
         super(surface,
@@ -461,7 +461,8 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         if ((renderPass & this.renderPass) == 0)
             return;
 
-        if (renderPass == GLMapView.RENDER_PASS_SPRITES && _clampToGround)
+        if (!MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SURFACE)
+                && _clampToGround)
             return;
         else if (renderPass == GLMapView.RENDER_PASS_SURFACE && !_clampToGround)
             return;

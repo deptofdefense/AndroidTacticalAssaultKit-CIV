@@ -4,6 +4,7 @@ package com.atakmap.app.preferences;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.Preference;
@@ -237,8 +238,8 @@ public class CustomActionBarFragment extends AtakPreferenceFragment {
 
     /**binds the new string color value to the @param key in
      * preferences
-     * @param key
-     * @param color
+     * @param key the key to record the color value to
+     * @param color the color value.
      */
     private void attachNewColorValue(String key, String color) {
 
@@ -251,9 +252,8 @@ public class CustomActionBarFragment extends AtakPreferenceFragment {
 
         Log.d(TAG, "New Color " +
                 "attached to " + key + " " + color);
-        PreferenceManager
-                .getDefaultSharedPreferences(MapView.getMapView().getContext())
-                .edit()
-                .putString(key, color).apply();
+        SharedPreferences sp = PreferenceManager
+                .getDefaultSharedPreferences(getActivity());
+        sp.edit().putString(key, color).apply();
     }
 }

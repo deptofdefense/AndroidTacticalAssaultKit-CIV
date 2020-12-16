@@ -16,7 +16,7 @@ public class BluetoothBinaryClientConnection extends BluetoothClientConnection {
 
     // for the blocking mechanism (only one can be active)
     private BufferedInputStream bis = null;
-    private byte[] buffer = new byte[8092];
+    private final byte[] buffer = new byte[8092];
 
     public BluetoothBinaryClientConnection(
             final BluetoothDevice device, final UUID uuid) {

@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Concrete class representing a 2D or 3D point.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Dec 12, 2014
+////      Dec 12, 2014  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -96,7 +96,7 @@ class ENGINE_API Point
       { }
 
     ~Point ()
-        throw ()
+        NOTHROWS
       { }
 
     //
@@ -111,7 +111,7 @@ class ENGINE_API Point
     void
     set (double x_val,
          double y_val)
-        throw ();
+        NOTHROWS;
 
     //
     // Sets the supplied coordinates of the Point.

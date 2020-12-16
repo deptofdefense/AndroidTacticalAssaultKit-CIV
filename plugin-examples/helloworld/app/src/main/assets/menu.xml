@@ -1,0 +1,6 @@
+<menu buttonRadius='70' buttonSpan='36' buttonWidth='90' buttonBg='bgs/button.xml'>
+      <button angle='-90' icon='icons/close.png' onClick='actions/cancel.xml' />
+      <button icon='remove.png' onClick='remove.xml' disabled='!{${removable}}' />
+      <button onClick='actions/9line.xml' icon='icons/cas.png' prefKey='nineline_default_menu' submenu='menu_submenu.xml' disableSwap='false'/>
+      <button icon='details.png' onClick='specialdetail.xml' />
+</menu>

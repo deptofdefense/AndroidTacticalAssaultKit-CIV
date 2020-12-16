@@ -45,9 +45,9 @@ public class EnterLocationTool extends Tool implements
     private boolean _clickBlocked = true;
     private MapView _mapView;
     private EnterLocationDropDownReceiver enterLocation;
-    private SharedPreferences _prefs;
+    private final SharedPreferences _prefs;
 
-    private Context con;
+    private final Context con;
 
     public EnterLocationTool(MapView mapView) {
         super(mapView, TOOL_NAME);

@@ -42,7 +42,7 @@ namespace
         return worker;
     }
 
-    SharedWorkerPtr sceneLoadWorker() NOTHROWS {
+    SharedWorkerPtr& sceneLoadWorker() NOTHROWS {
 #if 0
         return GeneralWorkers_flex();
 #else
@@ -51,7 +51,7 @@ namespace
 #endif
     }
 
-    SharedWorkerPtr sceneTextureLoadWorker() NOTHROWS {
+    SharedWorkerPtr& sceneTextureLoadWorker() NOTHROWS {
 #if 0
         return GeneralWorkers_flex();
 #else
@@ -381,7 +381,8 @@ TAKErr GLProgressiveScene::buildDrawStateChild(std::shared_ptr<DrawState2>& resu
             TE_CHECKRETURN_CODE(code);
             GLMapRenderable2Ptr glScenePtr(nullptr, nullptr);
             GLSceneSpi::Options opts = sceneState->opts;
-            opts.showIndicator = false;
+ //           opts.showIndicator = false;
+            opts.showIndicator = true;
             code = GLSceneFactory_create(glScenePtr, sceneState->ctx, *info, opts);
             TE_CHECKRETURN_CODE(code);
             std::shared_ptr<GLMapRenderable2> item(glScenePtr.release(), glScenePtr.get_deleter());

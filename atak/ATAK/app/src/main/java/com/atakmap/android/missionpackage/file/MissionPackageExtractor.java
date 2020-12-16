@@ -14,8 +14,10 @@ import com.atakmap.android.update.AppVersionUpgrade;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.util.zip.ZipEntry;
+import com.atakmap.util.zip.ZipFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -23,8 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * Support for extracting a Mission Package
@@ -155,8 +155,9 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
                     MissionPackageFileIO.getMissionPackageFilesPath(atakRoot
                             .getAbsolutePath()),
                     manifest.getUID());
-            if (FileIOProviderFactory.exists(unzipDir) && FileIOProviderFactory.isDirectory(unzipDir)) {
-                File[] files = FileIOProviderFactory.listFiles(unzipDir);
+            if (IOProviderFactory.exists(unzipDir)
+                    && IOProviderFactory.isDirectory(unzipDir)) {
+                File[] files = IOProviderFactory.listFiles(unzipDir);
                 if (files == null || files.length < 1)
                     FileSystemUtils.deleteDirectory(unzipDir, false);
             }
@@ -222,8 +223,8 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
             boolean renameIfExists, byte[] buffer)
             throws IOException {
         // be sure parent dirs exist
-        if (!FileIOProviderFactory.exists(file.getParentFile())) {
-            if (!FileIOProviderFactory.mkdirs(file.getParentFile()))
+        if (!IOProviderFactory.exists(file.getParentFile())) {
+            if (!IOProviderFactory.mkdirs(file.getParentFile()))
                 throw new IOException("Unable to create directory: "
                         + file.getParent());
         }
@@ -232,7 +233,7 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
         // Also make sure if a legacy location is used, translate it to the new location
         // com.atakmap.map -> atak
         String filepath = AppVersionUpgrade.translate(file.getAbsolutePath());
-        if (FileIOProviderFactory.exists(file)) {
+        if (IOProviderFactory.exists(file)) {
             if (renameIfExists) {
                 filepath = FileSystemUtils.getRandomFilepath(filepath);
                 Log.d(TAG, "File already exists, renaming to: " + filepath);
@@ -242,7 +243,8 @@ public class MissionPackageExtractor implements IMissionPackageExtractor {
         }
 
         Log.d(TAG, "Unzipping file to: " + filepath);
-        FileOutputStream dest = FileIOProviderFactory.getOutputStream(new File(filepath));
+        FileOutputStream dest = IOProviderFactory
+                .getOutputStream(new File(filepath));
         FileSystemUtils.copyStream(zis, false, dest, true, buffer);
     }
 

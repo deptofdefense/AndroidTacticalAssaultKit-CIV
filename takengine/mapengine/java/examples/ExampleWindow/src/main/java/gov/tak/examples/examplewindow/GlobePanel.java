@@ -8,6 +8,7 @@ import com.atakmap.map.formats.mapbox.MapBoxElevationSource;
 import com.atakmap.map.layer.raster.Imagery;
 import com.atakmap.map.opengl.GLBaseMap;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.util.ConfigOptions;
 import com.jogamp.opengl.*;
 import com.jogamp.opengl.awt.GLJPanel;
 import gov.tak.examples.examplewindow.overlays.PointerInformationOverlay;
@@ -19,6 +20,8 @@ public class GlobePanel extends GLJPanel implements GLEventListener, GlobeCompon
     private Globe globe;
     private GLMapView glglobe;
     private OnRendererInitializedListener listener;
+
+    private MouseMapInputHandler defaultInputHandler;
 
     public GlobePanel() {
         this(new Globe());
@@ -32,8 +35,9 @@ public class GlobePanel extends GLJPanel implements GLEventListener, GlobeCompon
         this.addGLEventListener(this);
     }
 
+
     @Override
-    public void setOnRendererInitializedListener(OnRendererInitializedListener l) {
+    public void setOnRendererInitializedListener(GlobeComponent.OnRendererInitializedListener l) {
         this.listener = l;
     }
 
@@ -50,13 +54,21 @@ public class GlobePanel extends GLJPanel implements GLEventListener, GlobeCompon
     @Override
     public void init(GLAutoDrawable drawable) {
         JOGLGLES.init(drawable);
+        if(ConfigOptions.getOption("disable-vsync", 0) == 1) {
+            GL gl = drawable.getGL();
+            gl.setSwapInterval(0);
+        }
 
         // create the Globe renderer and start it
         glglobe = new GLMapView(new JOGLRenderContext(drawable), globe, 0, 0, this.getWidth(), this.getHeight());
         glglobe.setContinuousRenderEnabled(true);
         glglobe.setDisplayMode(MapRenderer2.DisplayMode.Globe);
 
-        this.addMouseListener(new MouseMapInputHandler(glglobe));
+
+        this.defaultInputHandler = new MouseMapInputHandler(glglobe);
+        this.addMouseListener(this.defaultInputHandler);
+        this.addMouseMotionListener(this.defaultInputHandler);
+        this.addMouseWheelListener(this.defaultInputHandler);
 
         glglobe.start();
 
@@ -92,6 +104,12 @@ public class GlobePanel extends GLJPanel implements GLEventListener, GlobeCompon
 
         if(glglobe != null)
             glglobe.stop();
+        if(this.defaultInputHandler != null) {
+            this.removeMouseListener(this.defaultInputHandler);
+            this.removeMouseMotionListener(this.defaultInputHandler);
+            this.removeMouseWheelListener(this.defaultInputHandler);
+            this.defaultInputHandler = null;
+        }
     }
 
     static GLCapabilities createDefaultCapabilities() {

@@ -41,7 +41,7 @@ public class ProcessRouteThread implements Runnable,
     private SelfPresenter selfPresenter;
     private Boolean bInterpolateElevations;
 
-    private SharedPreferences _prefs;
+    private final SharedPreferences _prefs;
 
     private GeoPoint[] _controlPoints;
     private String[] _controlNames;

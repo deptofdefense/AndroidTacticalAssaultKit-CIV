@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Concrete singleton default OGR schema definition class.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Apr 22, 2015
+////      Apr 22, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -71,7 +71,7 @@ class DefaultSchemaDefinition
 
 
     ~DefaultSchemaDefinition ()
-        throw ()
+        NOTHROWS
       { }
 
     //

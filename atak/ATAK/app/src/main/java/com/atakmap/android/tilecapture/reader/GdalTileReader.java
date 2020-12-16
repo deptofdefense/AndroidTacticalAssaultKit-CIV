@@ -259,7 +259,7 @@ public class GdalTileReader extends DatasetTileReader {
     }
 
     private static Bitmap bytesToBitmap(byte[] bytes, int width, int height,
-                                        Format fmt) {
+            Format fmt) {
         int[] pixels = new int[width * height];
 
         switch (fmt) {
@@ -280,7 +280,8 @@ public class GdalTileReader extends DatasetTileReader {
                 break;
         }
 
-        Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Bitmap bmp = Bitmap.createBitmap(width, height,
+                Bitmap.Config.ARGB_8888);
         bmp.setPixels(pixels, 0, width, 0, 0, width, height);
         return bmp;
     }

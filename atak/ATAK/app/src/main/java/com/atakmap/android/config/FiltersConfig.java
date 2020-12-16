@@ -117,7 +117,7 @@ public class FiltersConfig {
      * 
      * @param stream the input stream
      * @return a new FiltersConfig
-     * @throws SAXException if an xml parsing error has occured
+     * @throws SAXException if an xml parsing error has occurred
      * @throws IOException if the file cannot be read.
      */
     public static FiltersConfig parseFromStream(InputStream stream)

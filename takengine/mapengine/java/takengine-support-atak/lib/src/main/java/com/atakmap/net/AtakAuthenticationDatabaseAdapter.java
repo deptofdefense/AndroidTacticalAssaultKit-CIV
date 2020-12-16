@@ -110,11 +110,13 @@ public class AtakAuthenticationDatabaseAdapter implements AtakAuthenticationData
         return 0;
     }
 
-    static void deleteExpiredCredentials(long epochMillis) {
-
+    @Override
+    public boolean deleteExpiredCredentials(long epochMillis) {
+        return true;
     }
 
-    static AtakAuthenticationCredentials[] getDistinctSitesAndTypes() {
+    @Override
+    public AtakAuthenticationCredentials[] getDistinctSitesAndTypes() {
         synchronized(lock) {
             LinkedList<AtakAuthenticationCredentials> result = new LinkedList<>();
             for (Map.Entry<String, Map<String, AtakAuthenticationCredentials>> entry : credentials.entrySet()) {

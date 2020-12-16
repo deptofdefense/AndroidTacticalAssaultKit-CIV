@@ -393,12 +393,16 @@ public class DrawingCircle extends Shape implements
 
         // Update center marker position
         Marker center = getCenterMarker();
+
         if (center != null && !center.getPoint().equals(point.get()))
             center.setPoint(point);
 
         // Update radius marker position (relative to old center)
         Marker radius = getRadiusMarker();
-        if (radius != null && oldCenter != null) {
+        if (radius != null &&
+                oldCenter != null &&
+                !oldCenter.equals(point.get())) {
+
             double bearing = DistanceCalculations.computeDirection(
                     oldCenter, radius.getPoint())[1];
             GeoPoint rPoint = DistanceCalculations.computeDestinationPoint(
@@ -915,7 +919,8 @@ public class DrawingCircle extends Shape implements
             boolean continuousScroll = _mapView != null
                     && _mapView.isContinuousScrollEnabled();
 
-            boolean clampToGroundKMLElevation = Double.isNaN(getHeight()) || Double.compare(getHeight(), 0.0)  == 0;
+            boolean clampToGroundKMLElevation = Double.isNaN(getHeight())
+                    || Double.compare(getHeight(), 0.0) == 0;
 
             List<Circle> rings = getRings();
             if (rings.size() > 1) {
@@ -940,13 +945,13 @@ public class DrawingCircle extends Shape implements
                                 pts, getUID() + ".Ring" + (r + 1),
                                 clampToGroundKMLElevation,
                                 continuousScroll && GeoCalculations
-                                        .crossesIDL(pts, 0, pts.length),getHeight());
+                                        .crossesIDL(pts, 0, pts.length),
+                                getHeight());
                         if (polygon == null) {
                             Log.w(TAG,
                                     "Unable to create inner ring KML Polygon");
                             continue;
                         }
-
 
                         innerRings.add(polygon);
                     }
@@ -962,11 +967,11 @@ public class DrawingCircle extends Shape implements
                     // just one inner ring, no need for Multi Geometry
                     GeoPointMetaData[] pts = rings.get(0).getMetaDataPoints();
 
-
                     Polygon polygon = KMLUtil.createPolygonWithLinearRing(pts,
                             getUID() + ".Ring1", clampToGroundKMLElevation,
                             continuousScroll && GeoCalculations.crossesIDL(pts,
-                                    0, pts.length), getHeight());
+                                    0, pts.length),
+                            getHeight());
                     if (polygon == null) {
                         Log.w(TAG,
                                 "Unable to create inner ring KML Polygon");
@@ -992,8 +997,10 @@ public class DrawingCircle extends Shape implements
             GeoPointMetaData[] pts = rings.get(rings.size() - 1)
                     .getMetaDataPoints();
             Polygon polygon = KMLUtil.createPolygonWithLinearRing(pts,
-                    title + " text", clampToGroundKMLElevation, continuousScroll &&
-                            GeoCalculations.crossesIDL(pts, 0, pts.length), getHeight());
+                    title + " text", clampToGroundKMLElevation,
+                    continuousScroll &&
+                            GeoCalculations.crossesIDL(pts, 0, pts.length),
+                    getHeight());
             if (polygon == null) {
                 Log.w(TAG, "Unable to create outer ring KML Polygon");
                 return null;

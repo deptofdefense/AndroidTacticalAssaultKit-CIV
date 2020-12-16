@@ -13,13 +13,13 @@ namespace
     struct Spi2Entry
     {
         std::shared_ptr<GLLayerSpi2> spi;
-        std::size_t insert;
-        int priority;
+        std::size_t insert {0};
+        int priority {0};
     };
 
     struct Spi2EntryComp
     {
-        bool operator()(const Spi2Entry &a, const Spi2Entry &b)
+        bool operator()(const Spi2Entry &a, const Spi2Entry &b) const
         {
             if (a.priority > b.priority)
                 return true;

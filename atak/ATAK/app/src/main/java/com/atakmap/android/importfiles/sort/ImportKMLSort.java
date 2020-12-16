@@ -6,7 +6,7 @@ import android.util.Pair;
 
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
 
@@ -47,7 +47,7 @@ public class ImportKMLSort extends ImportInPlaceResolver {
         // it is a .kml, now lets see if it contains reasonable xml
         FileInputStream fis = null;
         try {
-            return isKml(fis = FileIOProviderFactory.getInputStream(file));
+            return isKml(fis = IOProviderFactory.getInputStream(file));
         } catch (IOException e) {
             Log.e(TAG, "Error checking if KML: " + file.getAbsolutePath(), e);
         } finally {

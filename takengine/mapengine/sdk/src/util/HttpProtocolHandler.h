@@ -87,8 +87,20 @@ namespace TAK
                  * @param username [out] the application provided username
                  * @param password [out] the application provided password
                  * @param domain the domain in question
+                 * @returns anything but TE_Ok to indicate error
                  */
                 virtual TAKErr getBasicAuth(Port::String *username, Port::String *password, const char *domain) NOTHROWS = 0;
+
+                /**
+                 * Called to provide a chance for the client application to trust a server certificate when standard
+                 * verification fails.
+                 *
+                 * @param x509Data the certificate data
+                 * @param size the size of the certificate data
+                 * @param host the host
+                 * @returns TE_Ok to accept; TE_Unsupported to deny; anything else as general failure
+                 */
+                virtual TAKErr shouldTrustCertificate(const uint8_t *x509Data, size_t size, const char *host) NOTHROWS = 0;
             };
 
             /**

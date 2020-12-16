@@ -178,7 +178,7 @@ public class SelfMarkerCustomFragment extends AtakPreferenceFragment {
     /**
      * handles the click events when a user clicks a checkbox preference
      */
-    private Preference.OnPreferenceClickListener clickListener = new Preference.OnPreferenceClickListener() {
+    private final Preference.OnPreferenceClickListener clickListener = new Preference.OnPreferenceClickListener() {
         @Override
         public boolean onPreferenceClick(Preference preference) {
 
@@ -283,9 +283,9 @@ public class SelfMarkerCustomFragment extends AtakPreferenceFragment {
     static class CreateBitmapIntoDrawable
             extends AsyncTask<Void, Void, Drawable> {
 
-        private CheckBoxPreference cbp;
-        private Activity activity;
-        private Drawable self_icon;
+        private final CheckBoxPreference cbp;
+        private final Activity activity;
+        private final Drawable self_icon;
 
         CreateBitmapIntoDrawable(Activity activity,
                 CheckBoxPreference checkBoxPreference, Drawable self_icon) {

@@ -17,7 +17,6 @@ import com.atakmap.android.maps.graphics.GLMapComponent;
 import com.atakmap.android.metrics.activity.MetricFragmentActivity;
 import com.atakmap.android.network.ContentResolverURIStreamHandler;
 import com.atakmap.android.network.URIStreamHandlerFactory;
-import com.atakmap.android.vehicle.VehicleMapComponent;
 import com.atakmap.app.BuildConfig;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.layer.Layer;

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <cassert>
 
 #include "core/GeoPoint2.h"
 #include "elevation/ElevationManager.h"
@@ -23,6 +24,7 @@
 #include "thread/Lock.h"
 #include "thread/Mutex.h"
 #include "util/ConfigOptions.h"
+#include "util/BlockPoolAllocator.h"
 
 using namespace TAK::Engine::Renderer::Elevation;
 
@@ -116,7 +118,108 @@ namespace
         numPostsLng = defaultPostCount;
 #endif
     }
+    std::size_t getNumEdgeVertices(const std::size_t numPostsLat, const std::size_t numPostsLng) NOTHROWS
+    {
+        // number of edge vertices is equal to perimeter length, plus one, to
+        // close the linestring
+        return ((numPostsLat-1u)*2u)+((numPostsLng-1u)*2u) + 1u;
+    }
+    TAKErr createEdgeIndices(MemBuffer2 &edgeIndices, const std::size_t numPostsLat, const std::size_t numPostsLng) NOTHROWS
+    {
+        TAKErr code(TE_Ok);
+        // top edge (right-to-left), exclude last
+        for(int i = static_cast<int>(numPostsLng)-1; i > 0; i--) {
+            code = edgeIndices.put<uint16_t>((uint16_t) i);
+            TE_CHECKBREAK_CODE(code);
+        }
+        TE_CHECKRETURN_CODE(code);
+        // left edge (bottom-to-top), exclude last
+        for(int i = 0; i < static_cast<int>(numPostsLat-1u); i++) {
+            const std::size_t idx = (static_cast<std::size_t>(i)*numPostsLng);
+            code = edgeIndices.put<uint16_t>((uint16_t)idx);
+            TE_CHECKBREAK_CODE(code);
+        }
+        TE_CHECKRETURN_CODE(code);
+        // bottom edge (left-to-right), exclude last
+        for(int i = 0; i < static_cast<int>(numPostsLng-1u); i++) {
+            const std::size_t idx = ((numPostsLat-1u)*numPostsLng)+static_cast<std::size_t>(i);
+            code = edgeIndices.put<uint16_t>((uint16_t)idx);
+            TE_CHECKBREAK_CODE(code);
+        }
+        TE_CHECKRETURN_CODE(code);
+        // right edge (top-to-bottom), exclude last
+        for(int i = static_cast<int>(numPostsLat-1); i > 0; i--) {
+            code = edgeIndices.put<uint16_t>((uint16_t) ((i * numPostsLng) + (numPostsLng - 1)));
+            TE_CHECKBREAK_CODE(code);
+        }
+        TE_CHECKRETURN_CODE(code);
+
+        // close the loop by adding first-point-as-last
+        code = edgeIndices.put<uint16_t>((uint16_t)(numPostsLng-1u));
+        TE_CHECKRETURN_CODE(code);
+
+        edgeIndices.flip();
+        return code;
+    }
+    TAKErr createHeightmapMeshIndices(MemBuffer2 &indices, const std::size_t numPostsLat, const std::size_t numPostsLng) NOTHROWS
+    {
+        TAKErr code(TE_Ok);
+
+        const std::size_t numEdgeVertices = getNumEdgeVertices(numPostsLat, numPostsLng);
+
+        std::size_t numSkirtIndices;
+        code = Skirt_getNumOutputIndices(&numSkirtIndices, GL_TRIANGLE_STRIP, numEdgeVertices);
+        const std::size_t numIndices = GLTexture2_getNumQuadMeshIndices(numPostsLat - 1u, numPostsLng - 1u)
+                               + 2u // degenerate link to skirt
+                               + numSkirtIndices;
+
+        code = GLTexture2_createQuadMeshIndexBuffer(indices, GL_UNSIGNED_SHORT, numPostsLat - 1u, numPostsLng - 1u);
+        TE_CHECKRETURN_CODE(code);
+
+        const std::size_t skirtOffset = GLTexture2_getNumQuadMeshIndices(numPostsLat - 1u, numPostsLng - 1u);
+
+        // to achieve CW winding order, edge indices need to be specified
+        // in CCW order
+        MemBuffer2 edgeIndices(numEdgeVertices*sizeof(uint16_t));
+        code = createEdgeIndices(edgeIndices, numPostsLat, numPostsLng);
+        TE_CHECKRETURN_CODE(code);
+
+        // insert the degenerate, last index of the mesh and first index
+        // for the skirt
+        code = indices.put<uint16_t>(*reinterpret_cast<const uint16_t *>(indices.get()+indices.position()-sizeof(uint16_t)));
+        TE_CHECKRETURN_CODE(code);
+        code = indices.put<uint16_t>(reinterpret_cast<const uint16_t *>(edgeIndices.get())[0u]);
+        TE_CHECKRETURN_CODE(code);
+
+        code = Skirt_createIndices<uint16_t>(
+                indices,
+                GL_TRIANGLE_STRIP,
+                &edgeIndices,
+                numEdgeVertices,
+                static_cast<uint16_t>(numPostsLat*numPostsLng));
+        TE_CHECKRETURN_CODE(code);
+
+        return code;
+    }
+
     TAKErr estimateFocusPoint(GeoPoint2 *value, const MapSceneModel2 &scene, const std::vector<std::shared_ptr<const TerrainTile>> &tiles) NOTHROWS;
+
+    std::size_t getTerrainMeshSize(const std::size_t numPosts) NOTHROWS
+    {
+        const std::size_t numEdgeVertices = getNumEdgeVertices(numPosts, numPosts);
+        std::size_t numSkirtIndices;
+        Skirt_getNumOutputIndices(&numSkirtIndices, GL_TRIANGLE_STRIP, numEdgeVertices);
+        const std::size_t numIndices = GLTexture2_getNumQuadMeshIndices(numPosts - 1u, numPosts - 1u)
+                               + 2u // degenerate link to skirt
+                               + numSkirtIndices;
+
+        const std::size_t skirtOffset = GLTexture2_getNumQuadMeshIndices(numPosts - 1u, numPosts - 1u);
+
+        const std::size_t ib_size = numIndices * sizeof(uint16_t);
+        const std::size_t vb_size = (numPosts*numPosts*3u + Skirt_getNumOutputVertices(numEdgeVertices) * 3u) * sizeof(float);
+        const std::size_t buf_size = ib_size + vb_size;
+        return buf_size;
+    }
 }
 
 class ElMgrTerrainRenderService::SourceRefresh : public ElevationSource::OnContentChangedListener,
@@ -163,8 +266,8 @@ public :
     std::shared_ptr<TerrainTile> tile;
     bool queued;
 
-    int sourceVersion;
-    int srid;
+    int sourceVersion {-1};
+    int srid {-1};
 
     QuadNode *parent;
 };
@@ -206,7 +309,7 @@ namespace
         return defaultValue;
     }
 
-    TAKErr fetch(std::shared_ptr<TerrainTile> &value, double *els, const double resolution, const Envelope2 &mbb, const int srid, const std::size_t numPostsLat, const std::size_t numPostsLng, const bool fetchEl, const bool legacyEl, const bool constrainQueryRes, const bool fillWithHiRes) NOTHROWS;
+    TAKErr fetch(std::shared_ptr<TerrainTile> &value, double *els, const double resolution, const Envelope2 &mbb, const int srid, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2 &edgeIndices, const bool fetchEl, const bool legacyEl, const bool constrainQueryRes, const bool fillWithHiRes, BlockPoolAllocator &allocator, PoolAllocator<TerrainTile> &tileAllocator) NOTHROWS;
     double estimateResolution(const GeoPoint2 &focus, const MapSceneModel2 &scene, const double ullat, const double ullng, const double lrlat, const double lrlng, GeoPoint2 *closest) NOTHROWS;
     TAKErr subscribeOnContentChangedListener(void *opaque, ElevationSource &src) NOTHROWS;
 }
@@ -223,7 +326,9 @@ ElMgrTerrainRenderService::ElMgrTerrainRenderService(RenderContext &renderer_) N
     monitor(TEMT_Recursive),
     sticky(true),
     sourceVersion(0),
-    terminate(false)
+    terminate(false),
+    meshAllocator(getTerrainMeshSize(numPosts), 512),
+    tileAllocator(256)
 {
     east.reset(new QuadNode(*this, nullptr, -1, 0.0, -90.0, 180.0, 90.0));
     west.reset(new QuadNode(*this, nullptr, -1, -180.0, -90.0, 0.0, 90.0));
@@ -297,11 +402,22 @@ TAKErr ElMgrTerrainRenderService::lock(TAK::Engine::Port::Collection<std::shared
             std::size_t numPostsLat;
             std::size_t numPostsLng;
             computePostCount(numPostsLat, numPostsLng, roots[i]->bounds, numPosts);
-            fetch(tile, nullptr, atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(roots[i]->level))*resadj, roots[i]->bounds, srid, numPostsLat, numPostsLng, false, fetchOptions.legacyElevationApi, fetchOptions.constrainQueryRes, fetchOptions.fillWithHiRes);
+
+            const std::size_t numEdgeVertices = getNumEdgeVertices(numPostsLat, numPostsLng);
+            MemBuffer2 edgeIndices(numEdgeVertices*sizeof(uint16_t));
+            code = createEdgeIndices(edgeIndices, numPostsLat, numPostsLng);
+            TE_CHECKRETURN_CODE(code);
+
+            code = fetch(tile, nullptr, atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(roots[i]->level))*resadj, roots[i]->bounds, srid, numPostsLat, numPostsLng, edgeIndices, false, fetchOptions.legacyElevationApi, fetchOptions.constrainQueryRes, fetchOptions.fillWithHiRes, meshAllocator, tileAllocator);
+            if(code != TE_Ok) {
+                worldTerrain->tiles.clear();
+                TE_CHECKBREAK_CODE(code);
+            }
             worldTerrain->tiles.push_back(tile);
         }
         worldTerrain->srid = srid;
     }
+    TE_CHECKRETURN_CODE(code);
 
     // signal the request handler
     if(invalid || request.sceneVersion != worldTerrain->sceneVersion || terrainVersion != worldTerrain->terrainVersion) {
@@ -323,6 +439,30 @@ TAKErr ElMgrTerrainRenderService::lock(TAK::Engine::Port::Collection<std::shared
         // acquire a new reference on the tile since it's being passed
         code = value.add(tile);
         TE_CHECKBREAK_CODE(code);
+
+        assert(!!tile);
+        assert(!!tile->data.value);
+    }
+    TE_CHECKRETURN_CODE(code);
+
+    return code;
+}
+TAKErr ElMgrTerrainRenderService::lock(TAK::Engine::Port::Collection<std::shared_ptr<const TerrainTile>> &value) NOTHROWS
+{
+    TAKErr code(TE_Ok);
+    Monitor::Lock lock(monitor);
+    TE_CHECKRETURN_CODE(lock.status);
+
+    // copy the tiles into the client collection. acquire new locks on each
+    // tile. these locks will be relinquished by the client when it calls
+    // `unlock`
+    for(std::shared_ptr<const TerrainTile> tile : worldTerrain->tiles) {
+        // acquire a new reference on the tile since it's being passed
+        code = value.add(tile);
+        TE_CHECKBREAK_CODE(code);
+
+        assert(!!tile);
+        assert(!!tile->data.value);
     }
     TE_CHECKRETURN_CODE(code);
 
@@ -511,7 +651,10 @@ void *ElMgrTerrainRenderService::requestWorkerThread(void *opaque)
                     std::size_t numPostsLat;
                     std::size_t numPostsLng;
                     computePostCount(numPostsLat, numPostsLng, owner.roots[i]->bounds, owner.numPosts);
-                    ::fetch(owner.roots[i]->tile, nullptr, atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(owner.roots[i]->level))*owner.resadj, owner.roots[i]->bounds, fetchBuffer->srid, numPostsLat, numPostsLng, false, owner.fetchOptions.legacyElevationApi, owner.fetchOptions.constrainQueryRes, owner.fetchOptions.fillWithHiRes);
+                    const std::size_t numEdgeVertices = getNumEdgeVertices(numPostsLat, numPostsLng);
+                    MemBuffer2 edgeIndices(numEdgeVertices*sizeof(uint16_t));
+                    createEdgeIndices(edgeIndices, numPostsLat, numPostsLng);
+                    ::fetch(owner.roots[i]->tile, nullptr, atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(owner.roots[i]->level))*owner.resadj, owner.roots[i]->bounds, fetchBuffer->srid, numPostsLat, numPostsLng, edgeIndices, false, owner.fetchOptions.legacyElevationApi, owner.fetchOptions.constrainQueryRes, owner.fetchOptions.fillWithHiRes, owner.meshAllocator, owner.tileAllocator);
                     owner.roots[i]->sourceVersion = fetchBuffer->sourceVersion;
                 }
 
@@ -529,6 +672,17 @@ void *ElMgrTerrainRenderService::requestWorkerThread(void *opaque)
 void *ElMgrTerrainRenderService::fetchWorkerThread(void *opaque)
 {
     ElMgrTerrainRenderService &service = *static_cast<ElMgrTerrainRenderService *>(opaque);
+
+    struct
+    {
+        std::size_t numPostsLat;
+        std::size_t numPostsLng;
+        std::unique_ptr<MemBuffer2> data;
+    } edgeIndices;
+    edgeIndices.numPostsLat = service.numPosts;
+    edgeIndices.numPostsLng = service.numPosts;
+    edgeIndices.data.reset(new MemBuffer2(getNumEdgeVertices(edgeIndices.numPostsLat, edgeIndices.numPostsLng)*sizeof(uint16_t)));
+    createEdgeIndices(*edgeIndices.data, edgeIndices.numPostsLat, edgeIndices.numPostsLng);
 
     std::shared_ptr<QuadNode> node;
     std::shared_ptr<TerrainTile> tile;
@@ -619,7 +773,17 @@ void *ElMgrTerrainRenderService::fetchWorkerThread(void *opaque)
             els.reset(new double[numPostsLat * numPostsLng * 3u]);
             elscap = (numPostsLat*numPostsLng * 3u);
         }
-        TAKErr code = fetch(tile, els.get(), res, node->bounds, node->srid, numPostsLat, numPostsLng, node->level >= TERRAIN_LEVEL, service.fetchOptions.legacyElevationApi, service.fetchOptions.constrainQueryRes, service.fetchOptions.fillWithHiRes);
+        if (numPostsLat != edgeIndices.numPostsLat || numPostsLng != edgeIndices.numPostsLng) {
+            edgeIndices.numPostsLat = numPostsLat;
+            edgeIndices.numPostsLng = numPostsLng;
+            const std::size_t size = getNumEdgeVertices(edgeIndices.numPostsLat, edgeIndices.numPostsLng) * sizeof(uint16_t);
+            if(edgeIndices.data->size() < size)
+                edgeIndices.data.reset(new MemBuffer2(size));
+            edgeIndices.data->reset();
+            edgeIndices.data->limit(size);
+            createEdgeIndices(*edgeIndices.data, edgeIndices.numPostsLat, edgeIndices.numPostsLng);
+        }
+        TAKErr code = fetch(tile, els.get(), res, node->bounds, node->srid, numPostsLat, numPostsLng, *edgeIndices.data, node->level >= TERRAIN_LEVEL, service.fetchOptions.legacyElevationApi, service.fetchOptions.constrainQueryRes, service.fetchOptions.fillWithHiRes, service.meshAllocator, service.tileAllocator);
         TE_CHECKBREAK_CODE(code);
 
         fetchedNodes++;
@@ -716,7 +880,7 @@ bool ElMgrTerrainRenderService::QuadNode::needsFetch(const QuadNode *node, const
     return
         (node->sourceVersion != sourceVersion) ||
         (!node->queued &&
-        (!node->tile.get() || node->tile->data->srid != srid));
+        (!node->tile.get() || node->tile->data.srid != srid));
 }
 
 bool ElMgrTerrainRenderService::QuadNode::collect(ElMgrTerrainRenderService::WorldTerrain &value, const GeoPoint2 &focus, const MapSceneModel2 &scene) NOTHROWS
@@ -854,7 +1018,10 @@ bool ElMgrTerrainRenderService::QuadNode::collect(ElMgrTerrainRenderService::Wor
             std::size_t numPostsLat;
             std::size_t numPostsLng;
             computePostCount(numPostsLat, numPostsLng, this->bounds, service.numPosts);
-            fetch(this->tile, nullptr, atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(this->level))*service.resadj, this->bounds, value.srid, numPostsLat, numPostsLng, false, service.fetchOptions.legacyElevationApi, service.fetchOptions.constrainQueryRes, service.fetchOptions.fillWithHiRes);
+            const std::size_t numEdgeVertices = getNumEdgeVertices(numPostsLat, numPostsLng);
+            MemBuffer2 edgeIndices(numEdgeVertices*sizeof(uint16_t));
+            createEdgeIndices(edgeIndices, numPostsLat, numPostsLng);
+            fetch(this->tile, nullptr, atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(this->level))*service.resadj, this->bounds, value.srid, numPostsLat, numPostsLng, edgeIndices, false, service.fetchOptions.legacyElevationApi, service.fetchOptions.constrainQueryRes, service.fetchOptions.fillWithHiRes, service.meshAllocator, service.tileAllocator);
             //this->tile.opaque = this;
         } else {
             // XXX - this is a little goofy
@@ -906,7 +1073,7 @@ void ElMgrTerrainRenderService::QuadNode::reset(const bool data) NOTHROWS
         ll.reset();
     }
 
-    if (data && this->tile.get() && this->tile->data.get()) {
+    if (data && this->tile.get() && this->tile->data.value) {
         this->tile.reset();
     }
 }
@@ -928,7 +1095,7 @@ void ElMgrTerrainRenderService::QuadNode::updateParentZBounds(QuadNode &node) NO
 namespace
 {
     //static GLMapView.TerrainTile fetch(double resolution, Envelope mbb, int srid, int numPostsLat, int numPostsLng, bool fetchEl)
-    TAKErr fetch(std::shared_ptr<TerrainTile> &value, double *els, const double resolution, const Envelope2 &mbb, const int srid, const std::size_t numPostsLat, const std::size_t numPostsLng, const bool fetchEl, const bool legacyEl, const bool constrainQueryRes, const bool fillWithHiRes) NOTHROWS
+    TAKErr fetch(std::shared_ptr<TerrainTile> &value, double *els, const double resolution, const Envelope2 &mbb, const int srid, const std::size_t numPostsLat, const std::size_t numPostsLng, const MemBuffer2 &edgeIndices_, const bool fetchEl, const bool legacyEl, const bool constrainQueryRes, const bool fillWithHiRes, BlockPoolAllocator &allocator, PoolAllocator<TerrainTile> &tileAllocator) NOTHROWS
     {
         TAKErr code(TE_Ok);
 
@@ -1031,10 +1198,15 @@ namespace
         double localOriginY = (mbb.minY+mbb.maxY)/2.0;
         double localOriginZ = (minEl+maxEl)/2.0;
 
-        value.reset(new TerrainTile());
-        value->data.reset(new ElevationChunk::Data());
-        value->data->srid = 4326;
-        value->data->localFrame.setToTranslate(localOriginX, localOriginY, localOriginZ);
+        {
+            std::unique_ptr<TerrainTile, void(*)(const TerrainTile *)> tileptr(nullptr, nullptr);
+            code = tileAllocator.allocate(tileptr);
+            TE_CHECKRETURN_CODE(code);
+
+            value = std::move(tileptr);
+        }
+        value->data.srid = 4326;
+        value->data.localFrame.setToTranslate(localOriginX, localOriginY, localOriginZ);
 
         const float skirtHeight = 500.0;
 
@@ -1044,56 +1216,25 @@ namespace
                                + 2u // degenerate link to skirt
                                + numSkirtIndices;
 
-        MemBuffer2 indices(numIndices*sizeof(uint16_t));
-        code = GLTexture2_createQuadMeshIndexBuffer(indices, GL_UNSIGNED_SHORT, numPostsLat - 1u, numPostsLng - 1u);
-        TE_CHECKRETURN_CODE(code);
-
         const std::size_t skirtOffset = GLTexture2_getNumQuadMeshIndices(numPostsLat - 1u, numPostsLng - 1u);
 
-        // to achieve CW winding order, edge indices need to be specified
-        // in CCW order
-        MemBuffer2 edgeIndices(numEdgeVertices*sizeof(uint16_t));
-        // top edge (right-to-left), exclude last
-        for(int i = static_cast<int>(numPostsLng)-1; i > 0; i--) {
-            code = edgeIndices.put<uint16_t>((uint16_t) i);
-            TE_CHECKBREAK_CODE(code);
-        }
-        TE_CHECKRETURN_CODE(code);
-        // left edge (bottom-to-top), exclude last
-        for(int i = 0; i < static_cast<int>(numPostsLat-1u); i++) {
-            const std::size_t idx = (static_cast<std::size_t>(i)*numPostsLng);
-            code = edgeIndices.put<uint16_t>((uint16_t)idx);
-            TE_CHECKBREAK_CODE(code);
-        }
-        TE_CHECKRETURN_CODE(code);
-        // bottom edge (left-to-right), exclude last
-        for(int i = 0; i < static_cast<int>(numPostsLng-1u); i++) {
-            const std::size_t idx = ((numPostsLat-1u)*numPostsLng)+static_cast<std::size_t>(i);
-            code = edgeIndices.put<uint16_t>((uint16_t)idx);
-            TE_CHECKBREAK_CODE(code);
-        }
-        TE_CHECKRETURN_CODE(code);
-        // right edge (top-to-bottom), exclude last
-        for(int i = static_cast<int>(numPostsLat-1); i > 0; i--) {
-            code = edgeIndices.put<uint16_t>((uint16_t) ((i * numPostsLng) + (numPostsLng - 1)));
-            TE_CHECKBREAK_CODE(code);
-        }
+        const std::size_t ib_size = numIndices * sizeof(uint16_t);
+        const std::size_t vb_size = (numPostsLat*numPostsLng * 3u + Skirt_getNumOutputVertices(numEdgeVertices) * 3u) * sizeof(float);
+
+        std::unique_ptr<void, void(*)(const void *)> buf(nullptr, nullptr);
+        // allocate the mesh data from the pool
+        code = allocator.allocate(buf);
+
+        MemBuffer2 indices(static_cast<uint16_t *>(buf.get()), numIndices);
+        code = createHeightmapMeshIndices(indices, numPostsLat, numPostsLng);
         TE_CHECKRETURN_CODE(code);
 
-        // close the loop by adding first-point-as-last
-        code = edgeIndices.put<uint16_t>((uint16_t)(numPostsLng-1u));
-        TE_CHECKRETURN_CODE(code);
+        // duplicate the `edgeIndices` buffer for independent position/limit
+        MemBuffer2 edgeIndices(edgeIndices_.get(), edgeIndices_.size());
+        edgeIndices.limit(edgeIndices_.limit());
+        edgeIndices.position(edgeIndices_.position());
 
-        edgeIndices.flip();
-
-        // insert the degenerate, last index of the mesh and first index
-        // for the skirt
-        code = indices.put<uint16_t>(*reinterpret_cast<const uint16_t *>(indices.get()+indices.position()-sizeof(uint16_t)));
-        TE_CHECKRETURN_CODE(code);
-        code = indices.put<uint16_t>(reinterpret_cast<const uint16_t *>(edgeIndices.get())[0u]);
-        TE_CHECKRETURN_CODE(code);
-
-        MemBuffer2 fb((numPostsLat*numPostsLng * 3u + Skirt_getNumOutputVertices(numEdgeVertices) * 3u) * sizeof(float));
+        MemBuffer2 positions(static_cast<uint8_t *>(buf.get())+ib_size, vb_size);
         for (std::size_t postLat = 0u; postLat < numPostsLat; postLat++) {
             // tile row
             for(std::size_t postLng = 0u; postLng < numPostsLng; postLng++) {
@@ -1105,20 +1246,19 @@ namespace
                 const double y = lat-localOriginY;
                 const double z = hae-localOriginZ;
 
-                code = fb.put<float>((float)x);
+                code = positions.put<float>((float)x);
                 TE_CHECKBREAK_CODE(code);
-                code = fb.put<float>((float)y);
+                code = positions.put<float>((float)y);
                 TE_CHECKBREAK_CODE(code);
-                code = fb.put<float>((float)z);
+                code = positions.put<float>((float)z);
                 TE_CHECKBREAK_CODE(code);
             }
             TE_CHECKBREAK_CODE(code);
         }
         TE_CHECKRETURN_CODE(code);
-        fb.flip();
+        positions.flip();
 
-        code = Skirt_create<float, uint16_t>(fb,
-                indices,
+        code = Skirt_createVertices<float, uint16_t>(positions,
                 GL_TRIANGLE_STRIP,
                 3u*sizeof(float),
                 &edgeIndices,
@@ -1141,17 +1281,31 @@ namespace
         aabb.maxX = mbb.maxX - localOriginX;
         aabb.maxY = mbb.maxY - localOriginY;
         aabb.maxZ = maxEl - localOriginZ;
-        code = MeshBuilder_buildInterleavedMesh(terrainMesh, TEDM_TriangleStrip, TEWO_Clockwise, layout, 0u, nullptr, aabb, fb.limit() / (3u * sizeof(float)), fb.get(), TEDT_UInt16, indices.limit() / sizeof(uint16_t), indices.get());
+
+        // create the mesh
+        code = MeshBuilder_buildInterleavedMesh(
+            terrainMesh,
+            TEDM_TriangleStrip,
+            TEWO_Clockwise,
+            layout,
+            0u,
+            nullptr,
+            aabb,
+            positions.limit() / (3u * sizeof(float)),
+            positions.get(),
+            TEDT_UInt16,
+            indices.limit() / sizeof(uint16_t),
+            indices.get(),
+            std::move(buf));
 
         TE_CHECKRETURN_CODE(code);
 
-        value->data = ElevationChunkDataPtr(new ElevationChunk::Data(), Memory_deleter_const<ElevationChunk::Data>);
-        value->data->srid = 4326;
-        value->data->value = std::move(terrainMesh);
-        value->data->localFrame.setToTranslate(localOriginX, localOriginY, localOriginZ);
-        value->data->interpolated = true;
+        value->data.srid = 4326;
+        value->data.value = std::move(terrainMesh);
+        value->data.localFrame.setToTranslate(localOriginX, localOriginY, localOriginZ);
+        value->data.interpolated = true;
         value->skirtIndexOffset = skirtOffset;
-        value->aabb_wgs84 = value->data->value->getAABB();
+        value->aabb_wgs84 = value->data.value->getAABB();
         value->aabb_wgs84.minX += localOriginX;
         value->aabb_wgs84.minY += localOriginY;
         value->aabb_wgs84.minZ += localOriginZ;
@@ -1165,31 +1319,31 @@ namespace
         value->posts_y = numPostsLat;
         value->invert_y_axis = true;
 
-        if(srid != value->data->srid) {
-            VertexDataLayout layout_update = value->data->value->getVertexDataLayout();
+        if(srid != value->data.srid) {
+            VertexDataLayout layout_update = value->data.value->getVertexDataLayout();
             MeshTransformOptions srcOpts;
-            srcOpts.srid = value->data->srid;
-            srcOpts.localFrame = Matrix2Ptr(&value->data->localFrame, Memory_leaker_const<Matrix2>);
+            srcOpts.srid = value->data.srid;
+            srcOpts.localFrame = Matrix2Ptr(&value->data.localFrame, Memory_leaker_const<Matrix2>);
             srcOpts.layout = VertexDataLayoutPtr(&layout_update, Memory_leaker_const<VertexDataLayout>);
             MeshTransformOptions dstOpts;
             dstOpts.srid = srid;
 
             MeshPtr transformed(nullptr, nullptr);
             MeshTransformOptions transformedOpts;
-            code = Mesh_transform(transformed, &transformedOpts, *value->data->value, srcOpts, dstOpts, nullptr);
+            code = Mesh_transform(transformed, &transformedOpts, *value->data.value, srcOpts, dstOpts, nullptr);
             TE_CHECKRETURN_CODE(code);
 
-            value->data->value = std::move(transformed);
-            value->data->srid = transformedOpts.srid;
+            value->data.value = std::move(transformed);
+            value->data.srid = transformedOpts.srid;
             if(transformedOpts.localFrame.get())
-                value->data->localFrame.set(*transformedOpts.localFrame);
+                value->data.localFrame.set(*transformedOpts.localFrame);
             else
-                value->data->localFrame.setToIdentity();
+                value->data.localFrame.setToIdentity();
         }
 
         // XXX - small downstream "optimization" pending implementation of depth hittest
         if(srid == 4326) {
-            ElevationChunk::Data &node = *value->data;
+            ElevationChunk::Data &node = value->data;
             MeshPtr transformed(nullptr, nullptr);
             VertexDataLayout srcLayout(node.value->getVertexDataLayout());
             MeshTransformOptions transformedOpts;
@@ -1202,11 +1356,15 @@ namespace
             code = Mesh_transform(transformed, &transformedOpts, *node.value, srcOpts, dstOpts, nullptr);
             TE_CHECKRETURN_CODE(code);
 
-            value->data_proj.reset(new ElevationChunk::Data());
-            value->data_proj->srid = transformedOpts.srid;
+            assert(!!transformed);
+
+            value->data_proj.srid = transformedOpts.srid;
             if (transformedOpts.localFrame.get())
-                value->data_proj->localFrame = *transformedOpts.localFrame;
-            value->data_proj->value = std::move(transformed);
+                value->data_proj.localFrame = *transformedOpts.localFrame;
+            value->data_proj.value = std::move(transformed);
+        } else {
+            value->data_proj.value.reset();
+            value->data_proj.srid = -1;
         }
         return code;
     }
@@ -1245,6 +1403,12 @@ namespace
         return TE_Ok;
     }
 
+    TAKErr intersectWithTerrainTileImpl(GeoPoint2 *value, const ElevationChunk::Data &node, const MapSceneModel2 &scene, const float x, const float y) NOTHROWS
+    {
+        TAK::Engine::Math::Mesh mesh(node.value, &node.localFrame);
+        return scene.inverse(value, TAK::Engine::Math::Point2<float>(x, y), mesh);
+    }
+
     TAKErr intersectWithTerrainTileImpl(GeoPoint2 *value, const TerrainTile &tile, const MapSceneModel2 &scene, const float x, const float y) NOTHROWS
     {
         TAKErr code(TE_Ok);
@@ -1252,29 +1416,28 @@ namespace
             return TE_Done;
 
         const int sceneSrid = scene.projection->getSpatialReferenceID();
-        std::shared_ptr<ElevationChunk::Data> node(tile.data);
-        if (node->srid != sceneSrid) {
-            if (tile.data_proj.get() && tile.data_proj->srid == sceneSrid) {
+        ElevationChunk::Data node(tile.data);
+        if (node.srid != sceneSrid) {
+            if (tile.data_proj.value && tile.data_proj.srid == sceneSrid) {
                 node = tile.data_proj;
             } else {
-                ElevationChunkDataPtr data_proj(new ElevationChunk::Data(), Memory_deleter_const<ElevationChunk::Data>);
-
                 MeshPtr transformed(nullptr, nullptr);
-                VertexDataLayout srcLayout(node->value->getVertexDataLayout());
+                VertexDataLayout srcLayout(node.value->getVertexDataLayout());
                 MeshTransformOptions transformedOpts;
                 MeshTransformOptions srcOpts;
                 srcOpts.layout = VertexDataLayoutPtr(&srcLayout, Memory_leaker_const<VertexDataLayout>);
-                srcOpts.srid = node->srid;
-                srcOpts.localFrame = Matrix2Ptr(&node->localFrame, Memory_leaker_const<Matrix2>);
+                srcOpts.srid = node.srid;
+                srcOpts.localFrame = Matrix2Ptr(&node.localFrame, Memory_leaker_const<Matrix2>);
                 MeshTransformOptions dstOpts;
                 dstOpts.srid = sceneSrid;
-                code = Mesh_transform(transformed, &transformedOpts, *node->value, srcOpts, dstOpts, nullptr);
+                code = Mesh_transform(transformed, &transformedOpts, *node.value, srcOpts, dstOpts, nullptr);
                 TE_CHECKRETURN_CODE(code);
 
-                data_proj->srid = transformedOpts.srid;
+                ElevationChunk::Data data_proj;
+                data_proj.srid = transformedOpts.srid;
                 if(transformedOpts.localFrame.get())
-                    data_proj->localFrame = *transformedOpts.localFrame;
-                data_proj->value = std::move(transformed);
+                    data_proj.localFrame = *transformedOpts.localFrame;
+                data_proj.value = std::move(transformed);
                 node = std::move(data_proj);
 
                 // XXX - 
@@ -1282,7 +1445,7 @@ namespace
             }
         }
 
-        TAK::Engine::Math::Mesh mesh(node->value, &node->localFrame);
+        TAK::Engine::Math::Mesh mesh(node.value, &node.localFrame);
         return scene.inverse(value, TAK::Engine::Math::Point2<float>(x, y), mesh);
     }
     bool intersectsAABB(GeoPoint2 *value, const MapSceneModel2 &scene, const TAK::Engine::Feature::Envelope2 &aabb_wgs84, float x, float y) NOTHROWS

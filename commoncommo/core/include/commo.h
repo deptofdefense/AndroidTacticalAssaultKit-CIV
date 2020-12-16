@@ -11,7 +11,9 @@
 #include "cotmessageio.h"
 #include "simplefileio.h"
 #include "cloudio.h"
+#include "fileioprovider.h"
 
+#include <memory>
 #include <stdint.h>
 #include <stddef.h>
 
@@ -56,7 +58,13 @@ public:
 
     // Change our callsign. Callsign is copied internally.
     void setCallsign(const char *callsign);
-    
+
+    // Register the FileIOProvider to be used.
+    void registerFileIOProvider(std::shared_ptr<FileIOProvider>& provider);
+
+    // Deregister the FileIOProvider to be used.
+    void deregisterFileIOProvider(const FileIOProvider& provider);
+
     // Set what type of endpoint (mesh/local or streaming/server) to use
     // when both types are available and current/up to date.
     // Defaults to false (prefer mesh/local).
@@ -131,6 +139,11 @@ public:
     // are enabled (once setupMissionPackageIO() is successfully invoked).
     // Disabling may cause existing outbound transfers to be aborted.
     void setMissionPackageViaServerEnabled(bool enabled);
+
+    // Set port for http interactions with TAK server, primarily
+    // during MP uploads. Default 8080
+    // OK or ILLEGAL_ARGUMENT if value is out of range
+    CommoResult setMissionPackageHttpPort(int port);
 
     // Set port for https interactions with TAK server, primarily
     // during MP uploads. Default 8443

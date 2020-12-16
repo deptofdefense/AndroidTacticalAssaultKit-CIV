@@ -77,8 +77,6 @@ public interface RoverInterface {
 
     }
 
-      
-
     /**
      * Receiver class, provides status information (hearbeat) for the rover.
      */

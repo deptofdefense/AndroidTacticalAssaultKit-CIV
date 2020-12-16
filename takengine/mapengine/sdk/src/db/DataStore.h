@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Abstract base class for data stores.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Jan 23, 2015
+////      Jan 23, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -98,7 +98,7 @@ class DataStore
 
     virtual
     ~DataStore ()
-        throw ()
+        NOTHROWS
       { }
 
     //
@@ -148,14 +148,14 @@ class DataStore::QueryParameters
       {
         virtual
         ~Order ()
-            throw ()
+            NOTHROWS
           { }
 
         virtual
         bool
         isValid ()
             const
-            throw ()
+            NOTHROWS
           { return true; }
       };
 
@@ -164,7 +164,7 @@ class DataStore::QueryParameters
       : Order
       {
         ~ID ()
-            throw ()
+            NOTHROWS
           { }
       };
 
@@ -173,7 +173,7 @@ class DataStore::QueryParameters
       : Order
       {
         ~Name ()
-            throw ()
+            NOTHROWS
           { }
       };
 
@@ -182,7 +182,7 @@ class DataStore::QueryParameters
       : Order
       {
         ~Provider ()
-            throw ()
+            NOTHROWS
           { }
       };
 
@@ -191,7 +191,7 @@ class DataStore::QueryParameters
       : Order
       {
         ~Resolution ()
-            throw ()
+            NOTHROWS
           { }
       };
 
@@ -200,7 +200,7 @@ class DataStore::QueryParameters
       : Order
       {
         ~Type ()
-            throw ()
+            NOTHROWS
           { }
       };
 
@@ -209,14 +209,14 @@ class DataStore::QueryParameters
       {
         virtual
         ~SpatialFilter ()
-            throw ()
+            NOTHROWS
           { }
 
         virtual
         bool
         isValid ()
             const
-            throw ()
+            NOTHROWS
           { return true; }
       };
 
@@ -235,13 +235,13 @@ class DataStore::QueryParameters
           { }
 
         ~RadiusFilter ()
-            throw ()
+            NOTHROWS
           { }
 
         bool
         isValid ()
             const
-            throw ()
+            NOTHROWS
           { return !isnan (radius) && radius >= 0 && point.isValid (); }
 
         core::GeoPoint point;
@@ -257,7 +257,7 @@ class DataStore::QueryParameters
           { }
 
         ~PointFilter ()
-            throw ()
+            NOTHROWS
           { }
       };
 
@@ -274,13 +274,13 @@ class DataStore::QueryParameters
           { }
 
         ~RegionFilter ()
-            throw ()
+            NOTHROWS
           { }
 
         bool
         isValid ()
             const
-            throw ()
+            NOTHROWS
           { return upperLeft.isValid () && lowerRight.isValid (); }
 
         core::GeoPoint upperLeft;
@@ -302,7 +302,7 @@ class DataStore::QueryParameters
 
     virtual
     ~QueryParameters ()
-        throw ()
+        NOTHROWS
       { }
 
     //
@@ -313,7 +313,7 @@ class DataStore::QueryParameters
     bool
     isEmpty ()
         const
-        throw ()
+        NOTHROWS
       {
         return IDs.empty ()
             && names.empty ()
@@ -413,7 +413,7 @@ class DataStoreImpl
 
 
     ~DataStoreImpl ()
-        throw ()
+        NOTHROWS
       { }
 
     //
@@ -465,7 +465,7 @@ class DataStoreImpl
     TAK::Engine::Thread::Mutex&
     getMutex ()
         const
-        throw ()
+        NOTHROWS
       { return mutex; }
 
     virtual
@@ -544,7 +544,7 @@ class DataStoreImpl<DerivedDataStore>::ContentListener
 
     virtual
     ~ContentListener ()
-        throw ()
+        NOTHROWS
       { }
 
     //
@@ -586,7 +586,7 @@ class DS
 
     virtual
     ~DS ()
-        throw ()
+        NOTHROWS
       { }
 
     virtual
@@ -621,7 +621,7 @@ class DS<Type>::Cursor
 
 
     ~Cursor ()
-        throw ()
+        NOTHROWS
       { }
 
     //

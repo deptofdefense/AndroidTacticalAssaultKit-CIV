@@ -14,7 +14,7 @@ import com.atakmap.lang.Unsafe;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
-import com.atakmap.opengl.GLAntiAliasedLine;
+import com.atakmap.map.opengl.GLAntiAliasedLine;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
@@ -32,7 +32,7 @@ class GLGridTile {
     private GeoPoint[] _actualPolygon;
     private FloatBuffer _polyBuf;
     private FloatBuffer _polyBufProjected;
-    private MutableGeoBounds _bounds = new MutableGeoBounds(0, 0, 0, 0);
+    private final MutableGeoBounds _bounds = new MutableGeoBounds(0, 0, 0, 0);
 
     public static final String TAG = "GLGridTile";
 
@@ -95,7 +95,8 @@ class GLGridTile {
     GeoPoint[] setActualPolygon(GeoPoint[] value) {
         _actualPolygon = value;
         updatePolyBuf();
-        _antiAliasedLineRenderer.setLineData(_polyBuf);
+        _antiAliasedLineRenderer.setLineData(_actualPolygon, 2,
+                GLAntiAliasedLine.ConnectionType.FORCE_CLOSE);
         return _actualPolygon;
     }
 
@@ -214,12 +215,9 @@ class GLGridTile {
                         bottomLeft, swv, sev);
             }
 
-            try {
-                _antiAliasedLineRenderer.draw(ortho, 0f, 0f, 0f, 3f);
-                _antiAliasedLineRenderer.draw(ortho, red, green, blue, 1f);
-            } catch (RuntimeException re) {
-                Log.e(TAG, "BAD: ATAK-13344 - already filed the bug" + re);
-            }
+            _antiAliasedLineRenderer.draw(ortho, 0f, 0f, 0f, 1f, 4f);
+            _antiAliasedLineRenderer.draw(ortho, red, green, blue, 1f, 2f);
+
             String text;
 
             if (tiEasting != null || liEasting != null) {
@@ -373,8 +371,9 @@ class GLGridTile {
                 .allocateDirect(_actualPolygon.length * 2
                         * (Float.SIZE / 8));
         bb.order(ByteOrder.nativeOrder());
-//        _polyBufProjected = bb.asFloatBuffer();
-        _polyBufProjected = Unsafe.allocateDirect(_polyBuf.limit(), FloatBuffer.class);//bb.asFloatBuffer();
+        //        _polyBufProjected = bb.asFloatBuffer();
+        _polyBufProjected = Unsafe.allocateDirect(_polyBuf.limit(),
+                FloatBuffer.class);//bb.asFloatBuffer();
         _polyBuf.rewind();
         AbstractGLMapItem2.forward(map, _polyBuf, _polyBufProjected,
                 getBounds());
@@ -473,5 +472,5 @@ class GLGridTile {
 
     private GLGridTile[][] _subs; // 10x10, except near zone boundaries
     private Future<GLGridTile[][]> _loadingSubs;
-    private GLAntiAliasedLine _antiAliasedLineRenderer = new GLAntiAliasedLine();
+    private final GLAntiAliasedLine _antiAliasedLineRenderer = new GLAntiAliasedLine();
 }

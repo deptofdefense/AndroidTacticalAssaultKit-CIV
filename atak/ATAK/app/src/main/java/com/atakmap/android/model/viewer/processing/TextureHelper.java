@@ -8,7 +8,7 @@ import android.opengl.GLES30;
 import android.opengl.GLUtils;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 
@@ -26,7 +26,7 @@ public class TextureHelper {
         };
         for (String ext : exts) {
             File image = new File(resourcePath.replace(".obj", ext));
-            if (FileIOProviderFactory.exists(image))
+            if (IOProviderFactory.exists(image))
                 return image;
         }
 
@@ -37,7 +37,7 @@ public class TextureHelper {
         for (String ext : exts) {
             File image = new File(
                     resourcePath.replace("_simplified_3d_mesh.obj", ext));
-            if (FileIOProviderFactory.exists(image))
+            if (IOProviderFactory.exists(image))
                 return image;
         }
 
@@ -114,11 +114,11 @@ public class TextureHelper {
     private static InputStream getInputStream(String filePath)
             throws IOException {
         File f = new File(filePath);
-        if (!FileIOProviderFactory.exists(f) && filePath.contains(".zip/")) {
+        if (!IOProviderFactory.exists(f) && filePath.contains(".zip/")) {
             ZipVirtualFile zvf = new ZipVirtualFile(filePath);
             return zvf.openStream();
         } else
-            return FileIOProviderFactory.getInputStream(f);
+            return IOProviderFactory.getInputStream(f);
     }
 
     private static int getSubsampleFactor(byte[] bytes, int maxTexSize) {

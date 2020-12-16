@@ -15,8 +15,6 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 
-import com.atakmap.app.BuildConfig;
-
 import com.atakmap.android.icons.UserIcon;
 import com.atakmap.android.icons.UserIconSet;
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -29,6 +27,8 @@ import com.atakmap.android.user.EnterLocationTool;
 import com.atakmap.android.user.PlacePointTool;
 import com.atakmap.android.user.icon.IconPallet.CreatePointException;
 import com.atakmap.app.R;
+import com.atakmap.app.system.FlavorProvider;
+import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
@@ -103,7 +103,9 @@ public class Icon2525bPalletFragment extends Fragment {
         hostileRb.setOnClickListener(_typeCheckedChangedListener);
         friendlyRb.setOnClickListener(_typeCheckedChangedListener);
 
-        if (!BuildConfig.MIL_CAPABILITIES) {
+        // check to see what type is being built - capabilities wise
+        FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+        if (fp == null || !fp.hasMilCapabilities()) {
             v.findViewById(R.id.enterLocationSubtypeLayout)
                     .setVisibility(View.GONE);
         }

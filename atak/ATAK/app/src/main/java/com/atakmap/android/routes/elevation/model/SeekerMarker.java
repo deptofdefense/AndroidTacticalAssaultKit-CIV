@@ -32,7 +32,7 @@ public class SeekerMarker implements OnSharedPreferenceChangeListener {
     private boolean bCenterMap;
     private boolean showViewshed = false;
     private boolean quickDraw = false;
-    private ViewShedReceiver vsdRec;
+    private final ViewShedReceiver vsdRec;
     private VsdLayer layer;
     // Auto centering suppression is needed to fix bug 5976.
     // Auto centering was triggering while dragging vertices around in the map view

@@ -219,7 +219,7 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
             _onColorSelected();
 
         // Send vehicle
-        else if (id == R.id.vehicleSendButton)
+        else if (id == R.id.sendButton)
             sendSelected(_vehicle.getUID());
 
         // Edit mode
@@ -464,9 +464,11 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
                 _modelButton, _colorButton, _transSeek, _outlineCB,
                 _remarksLayout);
         _optionsLayout.setVisibility(editable && !inEditMode
-                ? View.VISIBLE : View.GONE);
+                ? View.VISIBLE
+                : View.GONE);
         _editLayout.setVisibility(editable && inEditMode
-                ? View.VISIBLE : View.GONE);
+                ? View.VISIBLE
+                : View.GONE);
         _attManager.refresh();
     }
 
@@ -485,7 +487,7 @@ public class VehicleModelDetailsView extends GenericDetailsView implements
 
     @Override
     public void onAltitudeChanged(RubberModel model, double altitude,
-                                  GeoPoint.AltitudeReference reference) {
+            GeoPoint.AltitudeReference reference) {
         refresh();
     }
 

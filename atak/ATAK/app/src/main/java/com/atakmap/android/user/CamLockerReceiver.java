@@ -56,12 +56,12 @@ public class CamLockerReceiver extends BroadcastReceiver implements
     private PointMapItem _lockedItem;
     private final AtakMapController ctrl;
     private final MapTouchController touch;
-    private Thread lock_monitor;
+    private final Thread lock_monitor;
     private final RelockWidget _relockWidget;
     private String _lastUid;
     private float lastHeading = 0f;
     private boolean disposed = false;
-    private SharedPreferences prefs;
+    private final SharedPreferences prefs;
     private boolean disableFloatToBottom;
 
     public CamLockerReceiver(final MapView mapView) {
@@ -324,7 +324,6 @@ public class CamLockerReceiver extends BroadcastReceiver implements
                 restingPoint = item.getPoint();
             }
 
-
             final GeoPoint center = _mapView.getPoint().get();
             if (forceCenter) {
                 ctrl.panTo(center, false, false);
@@ -341,8 +340,8 @@ public class CamLockerReceiver extends BroadcastReceiver implements
      * @return True to suppress
      */
     private boolean suppressSnapback() {
-        return _suppressSnapback || SystemClock.elapsedRealtime()
-                <= _snapbackCooldown;
+        return _suppressSnapback
+                || SystemClock.elapsedRealtime() <= _snapbackCooldown;
     }
 
     @Override

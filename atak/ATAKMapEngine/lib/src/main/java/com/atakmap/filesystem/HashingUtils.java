@@ -2,7 +2,7 @@
 package com.atakmap.filesystem;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
@@ -34,7 +34,7 @@ public class HashingUtils {
      * This constructs an md5sum from the contents of the file provided.
      */
     public static String md5sum(File file) {
-        if (file == null || !FileIOProviderFactory.exists(file))
+        if (file == null || !IOProviderFactory.exists(file))
             return null;
 
         if (file instanceof ZipVirtualFile) {
@@ -48,7 +48,7 @@ public class HashingUtils {
         } else {
             Log.v(TAG, "Computing MD5 for: " + file.getAbsolutePath());
             try {
-                return md5sum(FileIOProviderFactory.getInputStream(file));
+                return md5sum(IOProviderFactory.getInputStream(file));
             } catch (IOException e) {
                 Log.e(TAG, "Error computing md5sum", e);
             }
@@ -111,12 +111,12 @@ public class HashingUtils {
     }
 
     public static String sha256sum(File file) {
-        if (file == null || !FileIOProviderFactory.exists(file))
+        if (file == null || !IOProviderFactory.exists(file))
             return null;
 
         Log.v(TAG, "Computing SHA256 for: " + file.getAbsolutePath());
         try {
-            return sha256sum(FileIOProviderFactory.getInputStream(file));
+            return sha256sum(IOProviderFactory.getInputStream(file));
         } catch (IOException e) {
             Log.e(TAG, "Error computing sha256sum", e);
         }
@@ -186,12 +186,12 @@ public class HashingUtils {
     }
 
     public static String sha1sum(File file) {
-        if (file == null || !FileIOProviderFactory.exists(file))
+        if (file == null || !IOProviderFactory.exists(file))
             return null;
 
         Log.v(TAG, "Computing SHA1 for: " + file.getAbsolutePath());
         try {
-            return sha1sum(FileIOProviderFactory.getInputStream(file));
+            return sha1sum(IOProviderFactory.getInputStream(file));
         } catch (IOException e) {
             Log.e(TAG, "Error computing sha1sum", e);
         }
@@ -331,7 +331,7 @@ public class HashingUtils {
             Set<String> algorithms, File file) {
         InputStream input = null;
         try {
-            input = new BufferedInputStream(FileIOProviderFactory.getInputStream(file));
+            input = new BufferedInputStream(IOProviderFactory.getInputStream(file));
         } catch (IOException ignored) {
         }
 
@@ -387,9 +387,9 @@ public class HashingUtils {
         }
 
         // check file size
-        if (FileIOProviderFactory.length(file) != sizeToMatch)
+        if (IOProviderFactory.length(file) != sizeToMatch)
         {
-            Log.w(TAG, String.format(LocaleUtil.getCurrent(), "Size mismatch: %d vs %d", FileIOProviderFactory.length(file),
+            Log.w(TAG, String.format(LocaleUtil.getCurrent(), "Size mismatch: %d vs %d", IOProviderFactory.length(file),
                     sizeToMatch));
             return false;
         }

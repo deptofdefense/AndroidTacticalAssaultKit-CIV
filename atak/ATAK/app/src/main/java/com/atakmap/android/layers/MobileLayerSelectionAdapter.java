@@ -23,7 +23,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.android.util.LimitingThread;
 import com.atakmap.app.R;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -297,7 +297,7 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
                                         FileSystemUtils
                                                 .sanitizeWithSpacesAndSlashes(
                                                         cachePath));
-                                if (FileIOProviderFactory.exists(file))
+                                if (IOProviderFactory.exists(file))
                                     spec.cache = file;
                             }
                         } else {
@@ -305,8 +305,9 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
                                     FileSystemUtils
                                             .sanitizeWithSpacesAndSlashes(desc
                                                     .getUri()));
-                            if (FileIOProviderFactory.exists(file))
-                                spec.offlineSize += FileIOProviderFactory.length(file);
+                            if (IOProviderFactory.exists(file))
+                                spec.offlineSize += IOProviderFactory
+                                        .length(file);
 
                             if (offline) {
                                 spec.parent = sel;
@@ -450,7 +451,9 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
                 sb.append(MathUtils.GetLengthString(spec.offlineSize))
                         .append(" local ");
             if (!offline) {
-                final long cacheSize = (spec.cache != null) ? FileIOProviderFactory.length(spec.cache) : 0L;
+                final long cacheSize = (spec.cache != null)
+                        ? IOProviderFactory.length(spec.cache)
+                        : 0L;
                 if (cacheSize > 0L)
                     sb.append(MathUtils.GetLengthString(cacheSize))
                             .append(" cached ");

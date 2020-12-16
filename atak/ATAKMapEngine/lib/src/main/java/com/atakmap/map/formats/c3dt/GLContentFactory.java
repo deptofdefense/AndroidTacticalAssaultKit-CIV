@@ -3,7 +3,7 @@ package com.atakmap.map.formats.c3dt;
 import android.opengl.GLES30;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -115,7 +115,7 @@ final class GLContentFactory {
                 // load the B3DM
                 final B3DM _b3dm;
                 File f = new File(content.uri);
-                if (FileIOProviderFactory.exists(f)) {
+                if (IOProviderFactory.exists(f)) {
                     _b3dm = B3DM.parse(new File(content.uri));
                 } else {
                     final byte[] slurp = handler.getData(content.uri, null);
@@ -213,7 +213,7 @@ final class GLContentFactory {
             try {
                 String json;
                 File f = new File(content.uri);
-                if (FileIOProviderFactory.exists(f)) {
+                if (IOProviderFactory.exists(f)) {
                     json = FileSystemUtils.copyStreamToString(f);
                 } else {
                     final byte[] result = handler.getData(content.uri, null);
@@ -398,7 +398,7 @@ final class GLContentFactory {
                 // load the B3DM
                 final PNTS _pnts;
                 File f = new File(content.uri);
-                if (FileIOProviderFactory.exists(f)) {
+                if (IOProviderFactory.exists(f)) {
                     _pnts = PNTS.parse(new File(content.uri));
                 } else {
                     final byte[] slurp = handler.getData(content.uri, null);

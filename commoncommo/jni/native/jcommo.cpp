@@ -1320,7 +1320,29 @@ void CommoJNI::enableFileIO(JNIEnv *env, jobject jfileio) COMMO_THROW (int)
     }
     fileio = newfileio;
 }
-        
+
+jlong CommoJNI::registerFileIOProvider(JNIEnv* env, jobject jfileioprovider)
+{
+    using namespace atakmap::commoncommo;
+    try{
+        auto provider(std::static_pointer_cast<FileIOProvider>(
+            std::make_shared<JNIFileIOProvider>(*env, jfileioprovider)));
+        commo->registerFileIOProvider(provider);
+        return (jlong)(intptr_t)provider.get();
+    }catch (int &) {
+        return jlong(0);
+    }
+}
+
+void CommoJNI::deregisterFileIOProvider(JNIEnv* env, jlong jfileioprovider)
+{
+    using namespace atakmap::commoncommo;
+    FileIOProvider *provider = (FileIOProvider *)(intptr_t)jfileioprovider;
+    if(!provider)
+        return;
+    commo->deregisterFileIOProvider(*provider);
+}
+
 bool CommoJNI::addIfaceStatusListener(JNIEnv *env, jobject jifaceListener)
 {
     InterfaceStatusListenerJNI *newListener = NULL;
@@ -1812,6 +1834,7 @@ bool CommoJNI::reflectionInit(JNIEnv *env)
     ret = ret && CoTListenerJNI::reflectionInit(env);
     ret = ret && GenericDataListenerJNI::reflectionInit(env);
     ret = ret && CoTFailListenerJNI::reflectionInit(env);
+    ret = ret && JNIFileIOProvider::reflectionInit(env);
 
 cleanup:
     return ret;
@@ -1828,6 +1851,7 @@ void CommoJNI::reflectionRelease(JNIEnv *env)
     CloudIOJNI::reflectionRelease(env);
     MissionPackageIOJNI::reflectionRelease(env);
     CommoLoggerJNI::reflectionRelease(env);
+    JNIFileIOProvider::reflectionRelease(env);
     env->DeleteGlobalRef(jclass_physnetiface);
     env->DeleteGlobalRef(jclass_tcpnetiface);
     env->DeleteGlobalRef(jclass_streamnetiface);
@@ -2101,6 +2125,15 @@ Java_com_atakmap_commoncommo_Commo_setMPViaServerEnabledNative
 {
     CommoJNI *c = JLONG_TO_PTR(CommoJNI, nativePtr);
     c->commo->setMissionPackageViaServerEnabled(en == JNI_TRUE);
+}
+
+
+JNIEXPORT jboolean JNICALL
+Java_com_atakmap_commoncommo_Commo_setMissionPackageHttpPortNative
+    (JNIEnv *env, jclass selfCls, jlong nativePtr, jint port)
+{
+    CommoJNI *c = JLONG_TO_PTR(CommoJNI, nativePtr);
+    return (c->commo->setMissionPackageHttpPort(port) == COMMO_SUCCESS);
 }
 
 
@@ -2503,6 +2536,25 @@ Java_com_atakmap_commoncommo_Commo_getStreamingInterfaceIdNative
                                                 ifaceNativePtr);
     return env->NewStringUTF(iface->remoteEndpointId);
 }
+
+
+
+JNIEXPORT jlong JNICALL
+Java_com_atakmap_commoncommo_Commo_registerFileIOProviderNative
+(JNIEnv *env, jclass selfCls, jlong nativePtr, jobject jfileioprovider)
+{
+    CommoJNI *c = JLONG_TO_PTR(CommoJNI, nativePtr);
+    return c->registerFileIOProvider(env, jfileioprovider);
+}
+
+JNIEXPORT void JNICALL
+Java_com_atakmap_commoncommo_Commo_deregisterFileIOProviderNative
+(JNIEnv *env, jclass selfCls, jlong nativePtr, jlong jfileioprovider)
+{
+    CommoJNI *c = JLONG_TO_PTR(CommoJNI, nativePtr);
+    c->deregisterFileIOProvider(env, jfileioprovider);
+}
+
 
 
 JNIEXPORT jboolean JNICALL

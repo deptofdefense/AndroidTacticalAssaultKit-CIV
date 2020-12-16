@@ -61,7 +61,7 @@ namespace atakmap {
             /**
              * Destroy
              */
-            virtual ~SharedState() throw();
+            virtual ~SharedState() NOTHROWS;
 
             /**
              * Atomically get the state value
@@ -167,7 +167,7 @@ namespace atakmap {
         public:
             FutureImpl() { }
 
-            virtual ~FutureImpl() throw() { }
+            virtual ~FutureImpl() NOTHROWS { }
 
             const T &get() {
                 const int doneStates[] = { Complete, Error, Canceled };

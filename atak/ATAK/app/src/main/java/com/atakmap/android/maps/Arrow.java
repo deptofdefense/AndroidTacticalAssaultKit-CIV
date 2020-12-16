@@ -62,9 +62,11 @@ public class Arrow extends Shape {
         // Let the endpoints bleed through so they can be repositioned or otherwise interacted with
 
         float hitRadius = !Float.isNaN(_hitRadius)
-                ? _hitRadius : getHitRadius(view);
+                ? _hitRadius
+                : getHitRadius(view);
         float hitRadiusSq = !Float.isNaN(_hitRadiusSq)
-                ? _hitRadiusSq : (hitRadius * hitRadius);
+                ? _hitRadiusSq
+                : (hitRadius * hitRadius);
         final GeoBounds hitBox = view.createHitbox(
                 view.getRenderElevationAdjustedPoint(point), hitRadius);
 

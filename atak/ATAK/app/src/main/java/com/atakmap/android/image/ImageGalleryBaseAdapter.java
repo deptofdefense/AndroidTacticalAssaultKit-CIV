@@ -5,6 +5,7 @@ import static com.atakmap.android.image.ImageDropDownReceiver.ImageFileFilter;
 import static com.atakmap.android.image.ImageDropDownReceiver.VideoFileFilter;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -30,7 +31,7 @@ import com.atakmap.android.util.LimitingThread;
 import com.atakmap.app.R;
 import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
 import com.atakmap.map.AtakMapController;
@@ -460,7 +461,7 @@ public abstract class ImageGalleryBaseAdapter
     protected static void updateLastModified(final File f)
             throws IOException {
         if (f != null
-                && FileIOProviderFactory.exists(f)
+                && IOProviderFactory.exists(f)
                 && !f.setLastModified(System.currentTimeMillis())) {
             //
             // Hack to update the lastModified time.
@@ -468,7 +469,7 @@ public abstract class ImageGalleryBaseAdapter
             RandomAccessFile raf = null;
 
             try {
-                raf = FileIOProviderFactory.getRandomAccessFile(f, "rw");
+                raf = IOProviderFactory.getRandomAccessFile(f, "rw");
 
                 long length = raf.length();
 
@@ -524,7 +525,7 @@ public abstract class ImageGalleryBaseAdapter
 
         if (reservation != null) {
             try {
-                if (FileIOProviderFactory.exists(cacheFile)) {
+                if (IOProviderFactory.exists(cacheFile)) {
                     // Check if the source image has been modified
                     // and if so generate a new thumbnail
                     long modTime = -1;
@@ -534,15 +535,21 @@ public abstract class ImageGalleryBaseAdapter
                         if (uri != null && FileSystemUtils.isEquals(
                                 uri.getScheme(), "file")) {
                             File f = new File(uri.getPath());
-                            if (FileIOProviderFactory.exists(f) && f.isFile())
-                                modTime = FileIOProviderFactory.lastModified(f);
+                            if (IOProviderFactory.exists(f)
+                                    && IOProviderFactory.isFile(f))
+                                modTime = IOProviderFactory.lastModified(f);
                         }
                     }
-                    if (modTime <= FileIOProviderFactory.lastModified(cacheFile)) {
+                    if (modTime <= IOProviderFactory.lastModified(cacheFile)) {
                         BitmapFactory.Options opts = new BitmapFactory.Options();
                         opts.inPreferredConfig = Bitmap.Config.RGB_565;
-                        thumb = BitmapFactory
-                                .decodeFile(cacheFile.getAbsolutePath(), opts);
+                        try (FileInputStream fis = IOProviderFactory
+                                .getInputStream(cacheFile)) {
+                            thumb = BitmapFactory
+                                    .decodeStream(fis, null, opts);
+                        } catch (IOException ignored) {
+                            // `thumb` remains `null`
+                        }
                     }
                     if (thumb == null)
                         FileSystemUtils.delete(cacheFile);
@@ -575,7 +582,7 @@ public abstract class ImageGalleryBaseAdapter
                     }
                 }
             } catch (Exception e) {
-                if (FileIOProviderFactory.exists(cacheFile))
+                if (IOProviderFactory.exists(cacheFile))
                     FileSystemUtils.delete(cacheFile);
             } finally {
                 if (reservation != null)
@@ -592,7 +599,7 @@ public abstract class ImageGalleryBaseAdapter
             return;
         FileOutputStream fos = null;
         try {
-            fos = FileIOProviderFactory.getOutputStream(cacheFile);
+            fos = IOProviderFactory.getOutputStream(cacheFile);
             thumb.compress(Bitmap.CompressFormat.PNG, 100, fos);
             fos.close();
             fos = null;
@@ -610,7 +617,8 @@ public abstract class ImageGalleryBaseAdapter
                         String exifCache = cacheFile.getAbsolutePath().replace(
                                 ".png",
                                 ".exif");
-                        printWriter = new PrintWriter(FileIOProviderFactory.getFileWriter(new File(exifCache)));
+                        printWriter = new PrintWriter(IOProviderFactory
+                                .getFileWriter(new File(exifCache)));
                         printWriter.println(imageCaption);
                     }
                 } catch (IOException e) {

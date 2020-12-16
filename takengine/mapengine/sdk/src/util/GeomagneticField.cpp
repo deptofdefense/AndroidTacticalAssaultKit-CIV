@@ -18,7 +18,9 @@ namespace
         GeomagneticFieldState() NOTHROWS :
             mutex(TEMT_Recursive),
             loaded(false),
-            timeVersion(0u)
+            timeVersion(0u),
+            ellipsoid(),
+            geoid()
         {}
 
         Mutex mutex;

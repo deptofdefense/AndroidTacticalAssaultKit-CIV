@@ -23,7 +23,7 @@ import com.atakmap.android.video.ConnectionEntry;
 import com.atakmap.app.R;
 import com.atakmap.comms.NetworkDeviceManager;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.partech.pgscmedia.MediaException;
 import com.partech.pgscmedia.MediaFormat;
@@ -171,7 +171,7 @@ public class Gv2FMobilePlayer extends MetricActivity
                                     File f = new File(
                                             FileSystemUtils.validityScan(
                                                     ce.getPath()));
-                                    if (FileIOProviderFactory.exists(f)) {
+                                    if (IOProviderFactory.exists(f)) {
                                         processor = new MediaProcessor(f);
                                     } else {
                                         throw new MediaException("");
@@ -232,7 +232,8 @@ public class Gv2FMobilePlayer extends MetricActivity
                             case RTSP: {
 
                                 setupTmpDir();
-                                String rtspaddr = ConnectionEntry.getURL(ce, false);
+                                String rtspaddr = ConnectionEntry.getURL(ce,
+                                        false);
                                 processor = new MediaProcessor(rtspaddr,
                                         ce.getNetworkTimeout(),
                                         ce.getBufferTime(), 0, tmpDir);
@@ -705,12 +706,12 @@ public class Gv2FMobilePlayer extends MetricActivity
     private void setupTmpDir() throws IOException {
         File base = getFilesDir();
         base = new File(base, TEMP_DIR);
-        if (!FileIOProviderFactory.mkdirs(base)) {
+        if (!IOProviderFactory.mkdirs(base)) {
             Log.d(TAG, "could not make the directory: " + base);
         }
-        tmpDir = File.createTempFile("stream", null, base);
+        tmpDir = IOProviderFactory.createTempFile("stream", null, base);
         FileSystemUtils.delete(tmpDir);
-        if (FileIOProviderFactory.mkdirs(tmpDir)) {
+        if (IOProviderFactory.mkdirs(tmpDir)) {
             Log.d(TAG, "could not make the directory: " + tmpDir);
         }
     }
@@ -719,7 +720,7 @@ public class Gv2FMobilePlayer extends MetricActivity
     private void cleanTmpDirs() {
         File base = getFilesDir();
         base = new File(base, TEMP_DIR);
-        if (!FileIOProviderFactory.exists(base))
+        if (!IOProviderFactory.exists(base))
             return;
         FileSystemUtils.deleteDirectory(base, true);
     }

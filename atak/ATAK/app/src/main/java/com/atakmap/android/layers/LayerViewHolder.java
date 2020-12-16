@@ -20,9 +20,9 @@ public class LayerViewHolder {
 
     public View root, background;
     public View outlineBorder, titleLayout, resLayout, dlLayout;
-    public LinearLayout rangeLayout;
+    public LinearLayout rangeLayout, filesLayout;
     public TextView title, desc, dlSize, resTxt;
-    public ImageView lockBtn, vizBtn;
+    public ImageView lockBtn, vizBtn, expandBtn;
     public ImageButton sendBtn;
     public CheckBox outlineBtn;
     public LayerSelection selection;
@@ -46,14 +46,21 @@ public class LayerViewHolder {
             h.lockBtn = row.findViewById(R.id.layers_manager_item_layer_lock);
             h.vizBtn = row.findViewById(R.id.layers_manager_item_toggle_image);
             h.sendBtn = row.findViewById(R.id.layers_manager_item_layer_send);
+            h.expandBtn = row.findViewById(R.id.layers_manager_item_expand);
             h.resLayout = row.findViewById(R.id.resolutionLayout);
             h.dlLayout = row.findViewById(R.id.downloadLayout);
             h.rangeLayout = row.findViewById(R.id.rangeSeekLayout);
+            h.filesLayout = row.findViewById(R.id.filesLayout);
             h.dlSize = row.findViewById(R.id.downloadSizeTV);
             h.resTxt = row.findViewById(R.id.rezTV);
+            h.titleLayout.setTag(h);
+            h.vizBtn.setTag(h);
+            h.outlineBtn.setTag(h);
+            h.lockBtn.setTag(h);
+            h.sendBtn.setTag(h);
+            h.expandBtn.setTag(h);
+            row.setTag(h);
         }
-        h.titleLayout.setTag(h);
-        h.sendBtn.setTag(h);
         return h;
     }
 }

@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Implementation of database functions.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Dec 22, 2014
+////      Dec 22, 2014  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -136,7 +136,7 @@ namespace db                            // Open db namespace.
 
 
 Database::~Database()
-    throw ()
+    NOTHROWS
 { }
 
 Cursor*

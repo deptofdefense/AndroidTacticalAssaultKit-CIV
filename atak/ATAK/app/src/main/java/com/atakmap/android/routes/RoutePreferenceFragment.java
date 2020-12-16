@@ -59,7 +59,7 @@ public class RoutePreferenceFragment extends AtakPreferenceFragment {
                                             Integer.toString(Color.WHITE)));
                                 } catch (Exception e) {
                                     Log.d(TAG,
-                                            "error occured getting preference");
+                                            "error occurred getting preference");
                                 }
                                 ColorPalette palette = new ColorPalette(
                                         getActivity(), color);

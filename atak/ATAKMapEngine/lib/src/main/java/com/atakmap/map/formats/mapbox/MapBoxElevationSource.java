@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.io.UriFactory;
 import com.atakmap.io.WebProtocolHandler;
@@ -23,7 +24,12 @@ import com.atakmap.spatial.GeometryTransformer;
 import com.atakmap.util.Collections2;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -89,6 +95,7 @@ public final class MapBoxElevationSource extends TiledElevationSource {
     }
 
     final class Client implements TiledElevationSource.Factory.TileFetcher {
+        final Set<Long> requested = new HashSet<>();
         final File cache;
         final String token;
 
@@ -102,6 +109,12 @@ public final class MapBoxElevationSource extends TiledElevationSource {
             File f = getFile(cache, zoom, x, y);
             if(f.exists())
                 return null;
+            final long key = OSMUtils.getOSMDroidSQLiteIndex(zoom, x, y);
+            synchronized(MapBoxElevationSource.this) {
+                if (requested.contains(key))
+                    return null;
+                requested.add(key);
+            }
             executor.execute(new Downloader(zoom, x, y));
             return null;
         }
@@ -132,6 +145,7 @@ public final class MapBoxElevationSource extends TiledElevationSource {
                         FileSystemUtils.copyStream(result.inputStream, false, new FileOutputStream(f), true);
 
                         synchronized(MapBoxElevationSource.this) {
+                            requested.remove(OSMUtils.getOSMDroidSQLiteIndex(zoom, x, y));
                             for(OnContentChangedListener l : MapBoxElevationSource.this.listeners)
                                 l.onContentChanged(MapBoxElevationSource.this);
                         }
@@ -164,7 +178,12 @@ public final class MapBoxElevationSource extends TiledElevationSource {
                     return ElevationChunk.Factory.makeShared(chunk);
 
                 // decode the bitmap
-                final Bitmap data = BitmapFactory.decodeFile(f.getAbsolutePath());
+                Bitmap data;
+                try(FileInputStream fis = IOProviderFactory.getInputStream(f)) {
+                    data = BitmapFactory.decodeStream(fis);
+                } catch(IOException e) {
+                    data = null;
+                }
                 if (data == null)
                     return null;
 

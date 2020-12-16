@@ -7,9 +7,12 @@ import android.graphics.BitmapFactory;
 import com.atakmap.android.math.MathUtils;
 import com.atakmap.coremap.concurrent.NamedThreadFactory;
 import com.atakmap.coremap.conversions.ConversionFactors;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.map.opengl.GLMapView;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -41,7 +44,11 @@ public class BitmapPyramid {
         _path = f.getAbsolutePath();
         BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(_path, opts);
+        try (FileInputStream fis = IOProviderFactory
+                .getInputStream(new File(_path))) {
+            BitmapFactory.decodeStream(fis, null, opts);
+        } catch (IOException ignored) {
+        }
         _srcWidth = opts.outWidth;
         _srcHeight = opts.outHeight;
         _numPixels = _srcWidth * _srcHeight;
@@ -91,7 +98,14 @@ public class BitmapPyramid {
                     BitmapFactory.Options o = new BitmapFactory.Options();
                     o.inPreferredConfig = Bitmap.Config.RGB_565;
                     o.inSampleSize = sampleSize;
-                    Bitmap bmp = BitmapFactory.decodeFile(_path, o);
+                    Bitmap bmp;
+                    try (FileInputStream fis = IOProviderFactory
+                            .getInputStream(new File(_path))) {
+                        bmp = BitmapFactory.decodeStream(fis, null, o);
+                    } catch (IOException e) {
+                        _loading = false;
+                        return;
+                    }
                     if (bmp.getConfig() == null) {
                         // No defined config - attempt to correct
                         int[] p = new int[bmp.getWidth() * bmp.getHeight()];

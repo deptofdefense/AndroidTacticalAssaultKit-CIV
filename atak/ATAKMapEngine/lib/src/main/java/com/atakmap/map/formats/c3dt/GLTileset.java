@@ -364,7 +364,7 @@ final class GLTileset implements GLMapRenderable2, Controls {
                 while(!retval[0])
                     try {
                         retval.wait();
-                    } catch(InterruptedException e) {}
+                    } catch(InterruptedException ignored) {}
             }
             return retval[1];
         }

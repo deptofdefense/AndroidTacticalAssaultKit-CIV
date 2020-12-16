@@ -65,7 +65,8 @@ public class IsrvNetworkPreferenceFragment extends AtakPreferenceFragment
     }
 
     @Override
-    public void onSharedPreferenceChanged(final SharedPreferences sharedPreferences,
+    public void onSharedPreferenceChanged(
+            final SharedPreferences sharedPreferences,
             final String key) {
 
         switch (key) {
@@ -93,10 +94,12 @@ public class IsrvNetworkPreferenceFragment extends AtakPreferenceFragment
                 // validate
                 if (prefValue.equals("")
                         || Patterns.IP_ADDRESS.matcher(prefValue).matches()) {
-                    getPreferenceScreen().findPreference(key).setSummary(prefValue);
+                    getPreferenceScreen().findPreference(key)
+                            .setSummary(prefValue);
                 } else {
                     // set default value
-                    SharedPreferences.Editor prefEditor = sharedPreferences.edit();
+                    SharedPreferences.Editor prefEditor = sharedPreferences
+                            .edit();
                     prefEditor.putString(key, "").apply();
 
                     // notify invalid

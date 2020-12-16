@@ -25,7 +25,7 @@ namespace TAK {
 
             struct VertexDataLayout
             {
-                unsigned int attributes;
+                unsigned int attributes{ 0u };
 
                 VertexArray position;
                 VertexArray normal;
@@ -48,7 +48,6 @@ namespace TAK {
             ENGINE_API Util::TAKErr VertexDataLayout_createDefaultInterleaved(VertexDataLayout *value, const unsigned int attrs) NOTHROWS;
             ENGINE_API Util::TAKErr VertexDataLayout_requiredDataSize(std::size_t *value, const VertexDataLayout &layout, const VertexAttribute attr, const std::size_t numVertices) NOTHROWS;
             ENGINE_API Util::TAKErr VertexDataLayout_requiredInterleavedDataSize(std::size_t *value, const VertexDataLayout &layout, const std::size_t numVertices) NOTHROWS;
-
 
             /**
              * @param texCoordIndex The texture coordinate index. Valid values are 0 through 7 (inclusive)

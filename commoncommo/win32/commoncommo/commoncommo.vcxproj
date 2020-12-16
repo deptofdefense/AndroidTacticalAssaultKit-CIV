@@ -31,11 +31,13 @@
     <ClInclude Include="..\..\core\impl\cotmessage.h" />
     <ClInclude Include="..\..\core\impl\cryptoutil.h" />
     <ClInclude Include="..\..\core\impl\datagramsocketmanagement.h" />
+    <ClInclude Include="..\..\core\impl\fileioprovidertracker.h" />
     <ClInclude Include="..\..\core\impl\httpsproxy.h" />
     <ClInclude Include="..\..\core\impl\hwifscanner.h" />
     <ClInclude Include="..\..\core\impl\internalutils.h" />
     <ClInclude Include="..\..\core\impl\missionpackagemanager.h" />
     <ClInclude Include="..\..\core\impl\netsocket.h" />
+    <ClInclude Include="..\..\core\impl\plaintextfileIOProvider.h" />
     <ClInclude Include="..\..\core\impl\platform.h" />
     <ClInclude Include="..\..\core\impl\protobuf.h" />
     <ClInclude Include="..\..\core\impl\protobuf\cotevent.pb.h" />
@@ -52,6 +54,7 @@
     <ClInclude Include="..\..\core\include\commoutils.h" />
     <ClInclude Include="..\..\core\include\contactuid.h" />
     <ClInclude Include="..\..\core\include\cotmessageio.h" />
+    <ClInclude Include="..\..\core\include\fileioprovider.h" />
     <ClInclude Include="..\..\core\include\missionpackage.h" />
     <ClInclude Include="..\..\core\include\netinterface.h" />
     <ClInclude Include="..\..\core\include\simplefileio.h" />
@@ -64,11 +67,13 @@
     <ClCompile Include="..\..\core\impl\cotmessage.cpp" />
     <ClCompile Include="..\..\core\impl\cryptoutil.cpp" />
     <ClCompile Include="..\..\core\impl\datagramsocketmanagement.cpp" />
+    <ClCompile Include="..\..\core\impl\fileioprovidertracker.cpp" />
     <ClCompile Include="..\..\core\impl\httpsproxy.cpp" />
     <ClCompile Include="..\..\core\impl\hwifscanner.cpp" />
     <ClCompile Include="..\..\core\impl\internalutils.cpp" />
     <ClCompile Include="..\..\core\impl\missionpackagemanager.cpp" />
     <ClCompile Include="..\..\core\impl\netsocket.cpp" />
+    <ClCompile Include="..\..\core\impl\plaintextfileIOProvider.cpp" />
     <ClCompile Include="..\..\core\impl\platform.cpp" />
     <ClCompile Include="..\..\core\impl\protobuf\contact.pb.cc">
       <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4800;4146;4290;4251;4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>

@@ -4,6 +4,8 @@ package com.atakmap.android.user;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+
+import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 
 import android.preference.PreferenceManager;
@@ -25,7 +27,6 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.MultiPolyline;
 import com.atakmap.android.maps.PointMapItem;
-import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.overlay.DefaultMapGroupOverlay;
 import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.android.overlay.MapOverlayParent;
@@ -162,10 +163,9 @@ public class UserMapComponent extends AbstractMapComponent {
         _spotMapGroup = new DefaultMapGroup("Spot Map", "spotmap", true);
         _mapView.getRootGroup().addGroup(_spotMapGroup);
 
-        IconsMapAdapter.initializeUserIconDB(_mapView
-                .getContext(),
-                PreferenceManager.getDefaultSharedPreferences(_mapView
-                        .getContext()));
+        IconsMapAdapter.initializeUserIconDB(_mapView.getContext(),
+                PreferenceManager
+                        .getDefaultSharedPreferences(_mapView.getContext()));
 
         _usericonGroup = new DefaultMapGroup("Icons", "usericons", true);
         _usericonGroup.setMetaInteger("groupOverlayOrder", 2);

@@ -35,31 +35,32 @@ namespace TAK {
 
                        public:
                         // GLMapLayer2 methods
-                        virtual const char *getLayerUri() const NOTHROWS;
-                        virtual const atakmap::raster::DatasetDescriptor *getInfo() const NOTHROWS;
-                        virtual Util::TAKErr getControl(void **ctrl, const char *type) const NOTHROWS;
-                        virtual void draw(const Core::GLMapView2 &view, const int renderPass) NOTHROWS;
-                        virtual int getRenderPass() NOTHROWS;
-                        virtual void start() NOTHROWS;
-                        virtual void stop() NOTHROWS;
+                        const char *getLayerUri() const NOTHROWS override;
+                        const atakmap::raster::DatasetDescriptor *getInfo() const NOTHROWS override;
+                        Util::TAKErr getControl(void **ctrl, const char *type) const NOTHROWS override;
+                        void draw(const Core::GLMapView2 &view, const int renderPass) NOTHROWS override;
+                        int getRenderPass() NOTHROWS override;
+                        void start() NOTHROWS override;
+                        void stop() NOTHROWS override;
 
                        protected:
                         // GLAsynchronousMapRenderable3 methods
                         // Java - xxxPendingData()
-                        virtual Util::TAKErr createQueryContext(QueryContextPtr &value) NOTHROWS;
-                        virtual Util::TAKErr resetQueryContext(QueryContext &pendingData) NOTHROWS;
+                        Util::TAKErr createQueryContext(QueryContextPtr &value) NOTHROWS override;
+                        Util::TAKErr resetQueryContext(QueryContext &pendingData) NOTHROWS override;
                         // Java - updateRenderableReleaseLists()
-                        virtual Util::TAKErr updateRenderableLists(QueryContext &pendingData) NOTHROWS;
-                        virtual Util::TAKErr releaseImpl() NOTHROWS;
-                        virtual Util::TAKErr query(QueryContext &result, const ViewState &state) NOTHROWS;
-                        virtual Util::TAKErr newViewStateInstance(ViewStatePtr &value) NOTHROWS;
-                        virtual Util::TAKErr getBackgroundThreadName(TAK::Engine::Port::String &value) NOTHROWS;
-                        virtual void initImpl(const Core::GLMapView2 &view) NOTHROWS;
+                        Util::TAKErr updateRenderableLists(QueryContext &pendingData) NOTHROWS override;
+                        Util::TAKErr releaseImpl() NOTHROWS override;
+                        Util::TAKErr query(QueryContext &result, const ViewState &state) NOTHROWS override;
+                        Util::TAKErr newViewStateInstance(ViewStatePtr &value) NOTHROWS override;
+                        Util::TAKErr getBackgroundThreadName(TAK::Engine::Port::String &value) NOTHROWS override;
+                        void initImpl(const Core::GLMapView2 &view) NOTHROWS override;
                         // Java - checkState()
-                        virtual bool shouldQuery() NOTHROWS;
+                        bool shouldQuery() NOTHROWS override;
+                        bool shouldCancel() NOTHROWS override;
                        private:
                         // Java - getRenderList()
-                        virtual Util::TAKErr getRenderables(Port::Collection<GLMapRenderable2 *>::IteratorPtr &iter) NOTHROWS;
+                        Util::TAKErr getRenderables(Port::Collection<GLMapRenderable2 *>::IteratorPtr &iter) NOTHROWS override;
 
                        private:
                         class GLQuadTileNodeInitializer;
@@ -81,7 +82,7 @@ namespace TAK {
                                          decltype(frameSort) *> SortedFrameMap;
 
                        protected:
-                        TAK::Engine::Raster::TileReader::TileReader2::AsynchronousIO *asyncio;
+                        std::shared_ptr<TAK::Engine::Raster::TileReader::TileReader2::AsynchronousIO> asyncio;
                         bool ownsIO;
                         bool textureCacheEnabled;
                         std::map<std::string, void *> controls;

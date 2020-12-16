@@ -9,7 +9,7 @@
 
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.6.3'
+        classpath 'com.android.tools.build:gradle:4.0.1'
     }
  }
 
@@ -85,6 +85,7 @@ android {
         debug.setRoot('build-types/debug')
         release.setRoot('build-types/release')
         sdk.setRoot('build-types/sdk')
+
         
     }
 }

@@ -1,7 +1,7 @@
 package com.atakmap.map.formats.c3dt;
 
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.io.ProtocolHandler;
 import com.atakmap.io.UriFactory;
 import com.atakmap.util.Collections2;
@@ -98,7 +98,7 @@ public final class ContentSources {
             @Override
             public void put(String uri, byte[] data, long version) {
                 final File cacheFile = getFile(uri);
-                FileIOProviderFactory.mkdirs(cacheFile.getParentFile());
+                IOProviderFactory.mkdirs(cacheFile.getParentFile());
                 try {
                     try(FileOutputStream fos = new FileOutputStream(cacheFile)) {
                         fos.write(data);
@@ -118,8 +118,8 @@ public final class ContentSources {
                 if(cacheFile == null)
                     return null;
                 try {
-                    byte[] data = new byte[(int) FileIOProviderFactory.length(cacheFile)];
-                    try(FileInputStream fis = FileIOProviderFactory.getInputStream(cacheFile)) {
+                    byte[] data = new byte[(int) IOProviderFactory.length(cacheFile)];
+                    try(FileInputStream fis = IOProviderFactory.getInputStream(cacheFile)) {
                         int off = 0;
                         while(off < data.length) {
                             final int r = fis.read(data, off, (data.length-off));
@@ -129,7 +129,7 @@ public final class ContentSources {
                         }
                     }
                     if(version != null)
-                        version[0] = FileIOProviderFactory.lastModified(cacheFile);
+                        version[0] = IOProviderFactory.lastModified(cacheFile);
                     return data;
                 } catch(IOException ignored) {
                     return null;

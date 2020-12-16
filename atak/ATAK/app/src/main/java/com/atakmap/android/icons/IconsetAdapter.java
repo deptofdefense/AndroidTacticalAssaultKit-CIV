@@ -24,7 +24,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.BufferedOutputStream;
@@ -167,7 +167,7 @@ public class IconsetAdapter extends BaseAdapter {
                                         .getName())
                                 + ".zip");
 
-                if (FileIOProviderFactory.exists(file)) {
+                if (IOProviderFactory.exists(file)) {
                     new AlertDialog.Builder(_context)
                             .setTitle(R.string.point_dropper_text24)
                             .setMessage(
@@ -402,7 +402,7 @@ public class IconsetAdapter extends BaseAdapter {
 
             ZipOutputStream zos = null;
             try {
-                FileOutputStream fos = FileIOProviderFactory.getOutputStream(zip);
+                FileOutputStream fos = IOProviderFactory.getOutputStream(zip);
                 zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
                 //add iconset.xml

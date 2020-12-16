@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Implementation of Database interface atop SpatiaLite.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Feb 13, 2015
+////      Feb 13, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -101,7 +101,7 @@ class SpatiaLiteDB
         throw (DB_Error);
 
     ~SpatiaLiteDB ()
-        throw ()
+        NOTHROWS
       { closeConnection (); }
 
     //
@@ -155,13 +155,13 @@ class SpatiaLiteDB
     bool
     inTransaction ()
         const
-        throw ()
+        NOTHROWS
       { return inTrans; }
 
     bool
     isReadOnly ()
         const
-        throw ()
+        NOTHROWS
       { return false; }
 
     db::Cursor*

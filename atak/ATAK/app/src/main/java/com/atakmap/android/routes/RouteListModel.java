@@ -376,6 +376,7 @@ public class RouteListModel extends FilterMapOverlay.ListModelImpl
                     : View.GONE);
             h.actions.setImageResource(showActions ? R.drawable.arrow_down
                     : R.drawable.arrow_right);
+            h.delete.setEnabled(_route.getMetaBoolean("removable", true));
             v.setBackgroundColor(om != null && FileSystemUtils.isEquals(
                     om.getHighlightUID(), getUID()) ? 0x8000AF4F : 0);
             return v;

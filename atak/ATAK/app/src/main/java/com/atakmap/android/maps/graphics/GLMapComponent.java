@@ -5,19 +5,23 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 
-import com.atakmap.app.R;
 import com.atakmap.android.maps.AbstractMapComponent;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.database.CursorIface;
 import com.atakmap.database.DatabaseIface;
 import com.atakmap.database.Databases;
+import com.atakmap.database.StatementIface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 
 public class GLMapComponent extends AbstractMapComponent {
 
@@ -110,33 +114,93 @@ public class GLMapComponent extends AbstractMapComponent {
     }
 
     private static void initializeIconCacheDB(Context context) {
-        final String assetPath = "dbs" + File.separatorChar
+        final String iconCachePath = "Databases" + File.separatorChar
                 + "iconcache.sqlite";
-        final String outputPath = "Databases" + File.separatorChar
-                + "iconcache.sqlite";
-        final File output = FileSystemUtils.getItem(outputPath);
-        if (FileIOProviderFactory.exists(output)) {
-            // try to open the icon cache and check its version. if the version
-            // does not match the version provided by the application, replace
-            DatabaseIface db = null;
-            try {
-                db = Databases.openDatabase(
-                        output.getAbsolutePath(),
-                        true);
-                if (db.getVersion() == GLBitmapLoader.ICON_CACHE_DB_VERSION)
-                    return;
-            } finally {
-                if (db != null)
-                    db.close();
-            }
-        }
-
-        Log.d(TAG, "Deploying asset iconcache database");
-
-        if (!FileSystemUtils.copyFromAssetsToStorageFile(context,
-                assetPath, outputPath, true)) {
-            Log.w(TAG, "Failed to extract iconcache database: " + outputPath);
-        }
+        GLBitmapLoader.setIconCacheDb(FileSystemUtils.getItem(iconCachePath),
+                new IconCacheSeeder(context));
     }
 
+    private static class IconCacheSeeder
+            implements GLBitmapLoader.IconCacheSeed {
+
+        final Context context;
+
+        IconCacheSeeder(Context context) {
+            this.context = context;
+        }
+
+        /**
+         * Load assets packaged in APK as asset file and adds to the icon cache database
+         */
+        @Override
+        public void seed(DatabaseIface db) {
+            Log.d(TAG, "Deploying asset iconcache database");
+
+            final String assetPath = "dbs" + File.separatorChar
+                    + "iconcache.sqlite";
+
+            File tmpdir = null;
+            try {
+                tmpdir = FileSystemUtils.createTempDir("iconcache", "",
+                        context.getCacheDir());
+                final File seedDbPath = new File(tmpdir, "iconcache.sqlite");
+
+                InputStream assetInputStream = FileSystemUtils
+                        .getInputStreamFromAsset(context, assetPath);
+                if (assetInputStream == null) {
+                    Log.w(TAG, "Unable to obtain asset " + assetPath);
+                    return;
+                }
+                // copy the APK asset using naked IO to the context cache directory
+                FileSystemUtils.copyStream(
+                        assetInputStream,
+                        true,
+                        new FileOutputStream(seedDbPath.getAbsolutePath()),
+                        true);
+
+                DatabaseIface assetsDb = null;
+                try {
+                    assetsDb = Databases.openDatabase(
+                            seedDbPath.getAbsolutePath(),
+                            true);
+                    CursorIface cursor = null;
+
+                    db.beginTransaction();
+                    try {
+                        cursor = assetsDb
+                                .query("SELECT url, bitmap FROM cache;", null);
+                        while (cursor.moveToNext()) {
+                            String statement = "INSERT INTO cache (url, bitmap) VALUES (?,?);";
+                            StatementIface insert = null;
+                            try {
+                                insert = db.compileStatement(statement);
+                                insert.bind(1, cursor.getString(0));
+                                insert.bind(2, cursor.getBlob(1));
+                                insert.execute();
+                            } finally {
+                                if (insert != null)
+                                    insert.close();
+                            }
+                        }
+
+                        db.setTransactionSuccessful();
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error during initial population. "
+                                + e.getMessage());
+                    } finally {
+                        if (cursor != null)
+                            cursor.close();
+                        db.endTransaction();
+                    }
+                } finally {
+                    assetsDb.close();
+                }
+            } catch (Throwable t) {
+                Log.w(TAG, "Failed to seed the iconcache DB", t);
+            } finally {
+                if (tmpdir != null)
+                    IOProviderFactory.delete(tmpdir);
+            }
+        }
+    }
 }

@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.atakmap.annotations.DeprecatedApi;
 
 /**
  * 
@@ -118,16 +119,18 @@ public class ActionBarReceiver extends BroadcastReceiver {
     private ActionBarView _activeToolView = null;
 
     private static ActionBarReceiver _instance;
-    private View actionBarHandle;
-    private LinearLayout actionBarDrawer;
+    private final View actionBarHandle;
+    private final LinearLayout actionBarDrawer;
     private boolean showFloatingActionBar = true;
 
-    private List<String> customActionBarIntents = new ArrayList<>();
+    private final List<String> customActionBarIntents = new ArrayList<>();
     private static final List<ActionBarChangeListener> listeners = new ArrayList<>();
 
     /**
      * Specifically for deployment of ATAK 3.3 on a NettWarrior device running CM 11.
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public static boolean nwTimSortFix = false;
 
     public ActionBarReceiver(Activity activity) {
@@ -143,6 +146,7 @@ public class ActionBarReceiver extends BroadcastReceiver {
         _actionBarDisabledReason = null;
 
         mActionBars = loadActionBars(mActivity);
+
         _prefs = PreferenceManager.getDefaultSharedPreferences(activity);
         _prefs.registerOnSharedPreferenceChangeListener(_prefListener);
         setPrefs();
@@ -455,6 +459,17 @@ public class ActionBarReceiver extends BroadcastReceiver {
         return AtakActionBarListData.loadActionBars(context);
     }
 
+    public void reloadActionBars() {
+        // reload from file system and re-populate (with currently selected action bar)
+        //Log.d(TAG, "Reloading Action Bar");
+
+        if (mActivity != null) {
+            mActionBars = loadActionBars(mActivity);
+            onChange();
+            mActivity.invalidateOptionsMenu();
+        }
+    }
+
     @Override
     public void onReceive(Context context, Intent intent) {
         final String action = intent.getAction();
@@ -462,160 +477,169 @@ public class ActionBarReceiver extends BroadcastReceiver {
             return;
 
         Log.d(TAG, "Received intent: " + action);
-        if (RELOAD_ACTION_BAR.equals(action)) {
-            // reload from file system and re-populate (with currently selected action bar)
-            //Log.d(TAG, "Reloading Action Bar");
+        switch (action) {
+            case RELOAD_ACTION_BAR:
+                reloadActionBars();
+                break;
+            case REFRESH_ACTION_BAR:
+                Log.d(TAG, "Refreshing Action Bar");
+                if (!nwTimSortFix && mActivity != null) {
+                    mActivity.invalidateOptionsMenu();
+                }
+                break;
+            case ADD_NEW_TOOL: {
+                ActionMenuData actionMenuData = null;
+                try {
+                    String ref = intent.getStringExtra("ref");
+                    String title = intent.getStringExtra("title");
+                    String iconPath = intent.getStringExtra("iconPath");
+                    String enabledIconPath = intent
+                            .getStringExtra("enabledIconPath");
+                    String selectedIconPath = intent
+                            .getStringExtra("selectedIconPath");
+                    String preferredMenu = intent
+                            .getStringExtra("preferredMenu");
+                    boolean hideable = intent.getBooleanExtra("hideable",
+                            false);
+                    String actionToBroadcast = intent
+                            .getStringExtra("actionToBroadcast");
+                    boolean selected = intent.getBooleanExtra("selected",
+                            false);
+                    boolean enabled = intent.getBooleanExtra("enabled", false);
+                    ArrayList<ActionClickData> temp = new ArrayList<>();
+                    temp.add(new ActionClickData(new ActionBroadcastData(
+                            actionToBroadcast, null), ActionClickData.CLICK));
+                    actionMenuData = new ActionMenuData(
+                            ref,
+                            title,
+                            iconPath,
+                            enabledIconPath,
+                            selectedIconPath,
+                            preferredMenu,
+                            hideable,
+                            temp,
+                            /*null,*/
+                            selected,
+                            enabled,
+                            false);
+                } catch (Exception e) {
+                    Log.w(TAG, "Unable to decode intent into ActionMenuData "
+                            + intent);
+                }
 
-            mActionBars = loadActionBars(context);
-            onChange();
-            if (mActivity != null) {
-                mActivity.invalidateOptionsMenu();
-            }
-        } else if (REFRESH_ACTION_BAR.equals(action)) {
-            Log.d(TAG, "Refreshing Action Bar");
-            if (!nwTimSortFix && mActivity != null) {
-                mActivity.invalidateOptionsMenu();
-            }
-        } else if (ADD_NEW_TOOL.equals(action)) {
-            ActionMenuData actionMenuData = null;
-            try {
-                String ref = intent.getStringExtra("ref");
-                String title = intent.getStringExtra("title");
-                String iconPath = intent.getStringExtra("iconPath");
-                String enabledIconPath = intent
-                        .getStringExtra("enabledIconPath");
-                String selectedIconPath = intent
-                        .getStringExtra("selectedIconPath");
-                String preferredMenu = intent.getStringExtra("preferredMenu");
-                boolean hideable = intent.getBooleanExtra("hideable", false);
-                String actionToBroadcast = intent
-                        .getStringExtra("actionToBroadcast");
-                boolean selected = intent.getBooleanExtra("selected", false);
-                boolean enabled = intent.getBooleanExtra("enabled", false);
-                ArrayList<ActionClickData> temp = new ArrayList<>();
-                temp.add(new ActionClickData(new ActionBroadcastData(
-                        actionToBroadcast, null), ActionClickData.CLICK));
-                actionMenuData = new ActionMenuData(
-                        ref,
-                        title,
-                        iconPath,
-                        enabledIconPath,
-                        selectedIconPath,
-                        preferredMenu,
-                        hideable,
-                        temp,
-                        /*null,*/
-                        selected,
-                        enabled,
-                        false);
-            } catch (Exception e) {
-                Log.w(TAG, "Unable to decode intent into ActionMenuData "
-                        + intent);
-            }
+                if (actionMenuData == null || !actionMenuData.isValid()) {
+                    Log.w(TAG,
+                            "Ignoring invalid plugin menu: "
+                                    + (actionMenuData == null ? "null"
+                                            : actionMenuData.toString()));
+                    return;
+                }
 
-            if (actionMenuData == null || !actionMenuData.isValid()) {
-                Log.w(TAG,
-                        "Ignoring invalid plugin menu: "
-                                + (actionMenuData == null ? "null"
-                                        : actionMenuData.toString()));
-                return;
+                List<ActionMenuData> list = new ArrayList<>();
+                list.add(actionMenuData);
+                addPlugins(list, mActionBars);
+                break;
             }
+            case ADD_NEW_TOOLS: {
+                Parcelable[] pl = intent.getParcelableArrayExtra("menus");
 
-            List<ActionMenuData> list = new ArrayList<>();
-            list.add(actionMenuData);
-            addPlugins(list, mActionBars);
-        } else if (ADD_NEW_TOOLS.equals(action)) {
-            Parcelable[] pl = intent.getParcelableArrayExtra("menus");
-
-            List<ActionMenuData> list = new ArrayList<>();
-            if (pl != null && pl.length > 0) {
-                for (Parcelable p : pl) {
-                    if (p instanceof ActionMenuData) {
-                        list.add((ActionMenuData) p);
-                    } else {
-                        Log.w(TAG,
-                                "Ignoring invalid plugin menu of type");
+                List<ActionMenuData> list = new ArrayList<>();
+                if (pl != null && pl.length > 0) {
+                    for (Parcelable p : pl) {
+                        if (p instanceof ActionMenuData) {
+                            list.add((ActionMenuData) p);
+                        } else {
+                            Log.w(TAG,
+                                    "Ignoring invalid plugin menu of type");
+                        }
                     }
                 }
+
+                addPlugins(list, mActionBars);
+                break;
             }
+            case REMOVE_TOOLS: {
+                Parcelable[] pl = intent.getParcelableArrayExtra("menus");
 
-            addPlugins(list, mActionBars);
-        } else if (REMOVE_TOOLS.equals(action)) {
-            Parcelable[] pl = intent.getParcelableArrayExtra("menus");
-
-            List<ActionMenuData> list = new ArrayList<>();
-            if (pl != null && pl.length > 0) {
-                for (Parcelable p : pl) {
-                    if (p instanceof ActionMenuData) {
-                        list.add((ActionMenuData) p);
-                    } else {
-                        Log.w(TAG,
-                                "Ignoring invalid plugin menu of type");
+                List<ActionMenuData> list = new ArrayList<>();
+                if (pl != null && pl.length > 0) {
+                    for (Parcelable p : pl) {
+                        if (p instanceof ActionMenuData) {
+                            list.add((ActionMenuData) p);
+                        } else {
+                            Log.w(TAG,
+                                    "Ignoring invalid plugin menu of type");
+                        }
                     }
                 }
-            }
 
-            removePlugins(list, mActionBars);
-        } else if (DISABLE_ACTIONBAR.equals(action)) {
-            _disableActionBar = intent.getBooleanExtra("disable", false);
-            _actionBarDisabledReason = intent.getStringExtra("message");
-            if (FileSystemUtils.isEmpty(_actionBarDisabledReason)) {
-                _actionBarDisabledReason = DISABLE_ACTIONBAR_DEFAULT_REASON;
+                removePlugins(list, mActionBars);
+                break;
             }
-            Log.d(TAG, "DISABLE_ACTIONBAR: " + _disableActionBar + ", "
-                    + _actionBarDisabledReason);
-        } else if (TOGGLE_ACTIONBAR.equals(action)) {
-            final ActionBar ab;
-            if (mActivity == null || (ab = mActivity.getActionBar()) == null) {
-                return;
-            }
-            //see if tool wants to set a specific state
-            if (intent.hasExtra("show")) {
-                boolean show = intent.getBooleanExtra("show", true);
-                if (!show) {
-                    if (!atakTapToggleActionBar
-                            || (_activeToolView != null && !_activeToolView
-                                    .isClosable())) {
-                        Log.d(TAG,
-                                "Not hiding action bar, toggling disabled");
-                        return;
-                    }
+            case DISABLE_ACTIONBAR:
+                _disableActionBar = intent.getBooleanExtra("disable", false);
+                _actionBarDisabledReason = intent.getStringExtra("message");
+                if (FileSystemUtils.isEmpty(_actionBarDisabledReason)) {
+                    _actionBarDisabledReason = DISABLE_ACTIONBAR_DEFAULT_REASON;
+                }
+                Log.d(TAG, "DISABLE_ACTIONBAR: " + _disableActionBar + ", "
+                        + _actionBarDisabledReason);
+                break;
+            case TOGGLE_ACTIONBAR:
+                final ActionBar ab;
+                if (mActivity == null
+                        || (ab = mActivity.getActionBar()) == null) {
+                    return;
+                }
+                //see if tool wants to set a specific state
+                if (intent.hasExtra("show")) {
+                    boolean show = intent.getBooleanExtra("show", true);
+                    if (!show) {
+                        if (!atakTapToggleActionBar
+                                || (_activeToolView != null && !_activeToolView
+                                        .isClosable())) {
+                            Log.d(TAG,
+                                    "Not hiding action bar, toggling disabled");
+                            return;
+                        }
 
-                    Log.d(TAG, "Hiding action bar");
-                    ab.hide();
-                    refreshFloatingActionBar();
-                    MapView.getMapView().onActionBarToggled(0);
-                    showActionBarHandle(intent.getBooleanExtra("handle", true));
-                    if (intent.hasExtra("toolbar")) {
-                        showFloatingActionBar(intent.getBooleanExtra(
-                                "toolbar", true));
+                        Log.d(TAG, "Hiding action bar");
+                        ab.hide();
+                        refreshFloatingActionBar();
+                        MapView.getMapView().onActionBarToggled(0);
+                        showActionBarHandle(
+                                intent.getBooleanExtra("handle", true));
+                        if (intent.hasExtra("toolbar")) {
+                            showFloatingActionBar(intent.getBooleanExtra(
+                                    "toolbar", true));
+                        }
+                    } else {
+                        Log.d(TAG, "Showing action bar");
+                        showActionBarHelper(ab);
                     }
                 } else {
-                    Log.d(TAG, "Showing action bar");
-                    showActionBarHelper(ab);
-                }
-            } else {
-                //just toggle from current state
-                boolean showing = ab.isShowing();
-                if (showing) {
-                    if (!atakTapToggleActionBar
-                            || (_activeToolView != null && !_activeToolView
-                                    .isClosable())) {
-                        Log.d(TAG,
-                                "Not hiding action bar, toggling disabled");
-                        return;
-                    }
+                    //just toggle from current state
+                    boolean showing = ab.isShowing();
+                    if (showing) {
+                        if (!atakTapToggleActionBar
+                                || (_activeToolView != null && !_activeToolView
+                                        .isClosable())) {
+                            Log.d(TAG,
+                                    "Not hiding action bar, toggling disabled");
+                            return;
+                        }
 
-                    Log.d(TAG, "Hiding action bar");
-                    ab.hide();
-                    refreshFloatingActionBar();
-                    MapView.getMapView().onActionBarToggled(0);
-                    showActionBarHandle(true);
-                } else {
-                    Log.d(TAG, "Showing action bar");
-                    showActionBarHelper(ab);
+                        Log.d(TAG, "Hiding action bar");
+                        ab.hide();
+                        refreshFloatingActionBar();
+                        MapView.getMapView().onActionBarToggled(0);
+                        showActionBarHandle(true);
+                    } else {
+                        Log.d(TAG, "Showing action bar");
+                        showActionBarHelper(ab);
+                    }
                 }
-            }
+                break;
         }
     }
 
@@ -1292,8 +1316,8 @@ public class ActionBarReceiver extends BroadcastReceiver {
                 ActionItemPaddingLR, ActionItemPaddingTB * pxToDPconversion);
     }
 
-    static private Map<Drawable, Drawable> regularIconCache = new HashMap<>();
-    static private Map<Drawable, Drawable> largeIconCache = new HashMap<>();
+    static private final Map<Drawable, Drawable> regularIconCache = new HashMap<>();
+    static private final Map<Drawable, Drawable> largeIconCache = new HashMap<>();
 
     public static Drawable getScaledIcon(Context context, boolean bLargeIcons,
             Drawable icon, boolean cache) {

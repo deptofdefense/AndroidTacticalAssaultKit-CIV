@@ -42,7 +42,7 @@ import com.atakmap.android.util.ServerListDialog;
 import com.atakmap.app.R;
 import com.atakmap.comms.NetConnectString;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.foxykeep.datadroid.requestmanager.Request;
 import com.foxykeep.datadroid.requestmanager.RequestManager;
@@ -464,7 +464,7 @@ public class MissionPackageDownloader implements RequestListener {
                             File img = new File(c.getParameter("localpath")
                                     .getValue());
                             if (FileSystemUtils.isFile(img)
-                                    && img.isFile()
+                                    && IOProviderFactory.isFile(img)
                                     && ImageDropDownReceiver.ImageFileFilter
                                             .accept(img.getParentFile(),
                                                     img.getName())) {
@@ -775,7 +775,7 @@ public class MissionPackageDownloader implements RequestListener {
                             FileSystemUtils.getRoot().getAbsolutePath()),
                     fileRequest.getFileTransfer()
                             .getUID());
-            if (FileIOProviderFactory.exists(temp))
+            if (IOProviderFactory.exists(temp))
                 FileSystemUtils.deleteFile(temp);
 
             Log.e(TAG,

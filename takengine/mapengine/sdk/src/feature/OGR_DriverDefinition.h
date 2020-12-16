@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Abstract base class for OGR driver definitions.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Apr 16, 2015
+////      Apr 16, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -78,7 +78,7 @@ class ENGINE_API OGR_DriverDefinition
 
     virtual
     ~OGR_DriverDefinition ()
-        throw ()
+        NOTHROWS
         = 0;
 
     //
@@ -94,14 +94,14 @@ class ENGINE_API OGR_DriverDefinition
     const char*
     getDriverName ()
         const
-        throw ()
+        NOTHROWS
         = 0;
 
     virtual
     FeatureDataSource::FeatureDefinition::Encoding
     getFeatureEncoding ()
         const
-        throw ()
+        NOTHROWS
         = 0;
 
     //
@@ -122,14 +122,14 @@ class ENGINE_API OGR_DriverDefinition
     const char*
     getType ()
         const
-        throw ()
+        NOTHROWS
         = 0;
 
     virtual
     unsigned int
     parseVersion ()
         const
-        throw ()
+        NOTHROWS
         = 0;
 
     //

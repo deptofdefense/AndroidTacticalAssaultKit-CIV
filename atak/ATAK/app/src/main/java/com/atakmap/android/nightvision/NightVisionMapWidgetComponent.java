@@ -139,7 +139,7 @@ public class NightVisionMapWidgetComponent extends AbstractWidgetMapComponent
                 nvIcon = (_mapView.getContext().getPackageManager()
                         .getApplicationIcon("com.atak.nightvision"));
             } catch (PackageManager.NameNotFoundException e) {
-                Log.e(TAG, "error occured", e);
+                Log.e(TAG, "error occurred", e);
                 nvIcon = null;
                 //no icon found no icon on preference simple! :)
             }
@@ -164,7 +164,7 @@ public class NightVisionMapWidgetComponent extends AbstractWidgetMapComponent
      * listen for when app/plugins are installed /uninstalled
      * we only care about the night vision app here so filter that out
      */
-    private BroadcastReceiver packageReceiver = new BroadcastReceiver() {
+    private final BroadcastReceiver packageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();

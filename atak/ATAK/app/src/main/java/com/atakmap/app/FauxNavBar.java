@@ -28,8 +28,8 @@ import android.view.ViewGroup;
 import android.view.LayoutInflater;
 
 public class FauxNavBar implements OnSharedPreferenceChangeListener {
-    private Activity activity;
-    private SharedPreferences prefs;
+    private final Activity activity;
+    private final SharedPreferences prefs;
 
     public static final String TAG = "FauxNavBar";
 

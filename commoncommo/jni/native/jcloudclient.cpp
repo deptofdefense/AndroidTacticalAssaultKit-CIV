@@ -254,7 +254,7 @@ JNIEXPORT jint JNICALL Java_com_atakmap_commoncommo_CloudClient_testServerInitNa
   (JNIEnv *env, jclass selfCls, jlong nativePtr)
 {
     CloudClient *c = JLONG_TO_PTR(CloudClient, nativePtr);
-    jint id = 0;
+    int id = 0;
     CommoResult r = c->testServerInit(&id);
     if (r != COMMO_SUCCESS)
         env->ThrowNew(CommoJNI::jclass_commoexception, "");
@@ -271,7 +271,7 @@ JNIEXPORT jint JNICALL Java_com_atakmap_commoncommo_CloudClient_listCollectionIn
     if (!path)
         return 0;
     
-    jint id = 0;
+    int id = 0;
     CommoResult r = c->listCollectionInit(&id, path);
     env->ReleaseStringUTFChars(jpath, path);
     if (r != COMMO_SUCCESS)
@@ -295,7 +295,7 @@ JNIEXPORT jint JNICALL Java_com_atakmap_commoncommo_CloudClient_getFileInitNativ
         return 0;
     }
     
-    jint id = 0;
+    int id = 0;
     CommoResult r = c->getFileInit(&id, localFile, path);
     env->ReleaseStringUTFChars(jpath, path);
     env->ReleaseStringUTFChars(jlocalFile, localFile);
@@ -319,7 +319,7 @@ JNIEXPORT jint JNICALL Java_com_atakmap_commoncommo_CloudClient_putFileInitNativ
         return 0;
     }
     
-    jint id = 0;
+    int id = 0;
     CommoResult r = c->putFileInit(&id, path, localFile);
     env->ReleaseStringUTFChars(jpath, path);
     env->ReleaseStringUTFChars(jlocalFile, localFile);
@@ -343,7 +343,7 @@ JNIEXPORT jint JNICALL Java_com_atakmap_commoncommo_CloudClient_moveResourceInit
         return 0;
     }
     
-    jint id = 0;
+    int id = 0;
     CommoResult r = c->moveResourceInit(&id, from, to);
     env->ReleaseStringUTFChars(jto, to);
     env->ReleaseStringUTFChars(jfrom, from);
@@ -362,7 +362,7 @@ JNIEXPORT jint JNICALL Java_com_atakmap_commoncommo_CloudClient_deleteResourceIn
     if (!path)
         return 0;
     
-    jint id = 0;
+    int id = 0;
     CommoResult r = c->deleteResourceInit(&id, path);
     env->ReleaseStringUTFChars(jpath, path);
     if (r != COMMO_SUCCESS)
@@ -380,7 +380,7 @@ JNIEXPORT jint JNICALL Java_com_atakmap_commoncommo_CloudClient_createCollection
     if (!path)
         return 0;
     
-    jint id = 0;
+    int id = 0;
     CommoResult r = c->createCollectionInit(&id, path);
     env->ReleaseStringUTFChars(jpath, path);
     if (r != COMMO_SUCCESS)

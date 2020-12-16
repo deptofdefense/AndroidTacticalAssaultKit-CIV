@@ -14,6 +14,7 @@ import android.widget.Toast;
 
 import com.atakmap.android.preference.AtakPreferenceFragment;
 import com.atakmap.app.R;
+import com.atakmap.app.system.ResourceUtil;
 
 /*
  */
@@ -25,6 +26,7 @@ public class WMSPreferenceFragment extends AtakPreferenceFragment implements
 
     public WMSPreferenceFragment() {
         super(R.xml.wms_preferences, R.string.wms_preferences_summary);
+
     }
 
     @Override
@@ -62,6 +64,15 @@ public class WMSPreferenceFragment extends AtakPreferenceFragment implements
 
         context = getActivity();
         _prefs = PreferenceManager.getDefaultSharedPreferences(context);
+
+        Preference numberOfSpis = findPreference(
+                "prefs_layer_grg_map_interaction");
+        numberOfSpis.setTitle(
+                ResourceUtil.getResource(R.string.civ_enable_grg_interact,
+                        R.string.enable_grg_interact));
+        numberOfSpis.setSummary(
+                ResourceUtil.getResource(R.string.civ_enable_grg_interact_summ,
+                        R.string.enable_grg_interact_summ));
 
         Preference redeploy = findPreference("redeploywms");
         redeploy

@@ -37,7 +37,7 @@ import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.app.R;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 
@@ -99,7 +99,7 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
      * CoTEvent, if format is "ATAK Route"
      */
     private CotEvent routeEvent;
-    private MapGroup routeGroup;
+    private final MapGroup routeGroup;
 
     /**
      * ctor
@@ -460,7 +460,7 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
         ZipOutputStream zos = null;
         try {
 
-            FileOutputStream fos = FileIOProviderFactory.getOutputStream(kmz);
+            FileOutputStream fos = IOProviderFactory.getOutputStream(kmz);
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             //and doc.kml
@@ -503,7 +503,7 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
         ZipOutputStream zos = null;
         try {
 
-            FileOutputStream fos = FileIOProviderFactory.getOutputStream(kmz);
+            FileOutputStream fos = IOProviderFactory.getOutputStream(kmz);
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             //and doc.kml
@@ -1028,7 +1028,7 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
         Writer fileWriter = null;
         try {
             fileWriter = new OutputStreamWriter(
-                    FileIOProviderFactory.getOutputStream(exportFile),
+                    IOProviderFactory.getOutputStream(exportFile),
                     FileSystemUtils.UTF8_CHARSET);
 
             if (bExportHeaders) {

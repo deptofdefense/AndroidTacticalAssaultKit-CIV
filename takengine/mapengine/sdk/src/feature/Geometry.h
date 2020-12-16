@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Declaration of abstract base for geometric features.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Dec 3, 2014
+////      Dec 3, 2014   scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -124,7 +124,7 @@ class ENGINE_API Geometry
 
     virtual
     ~Geometry ()
-        throw ()
+        NOTHROWS
         = 0;
 
     //
@@ -153,7 +153,7 @@ class ENGINE_API Geometry
     Dimension
     getDimension ()
         const
-        throw ()
+        NOTHROWS
       { return dimension_; }
 
     //
@@ -168,7 +168,7 @@ class ENGINE_API Geometry
     Type
     getType()
         const
-        throw ()
+        NOTHROWS
     { return type_; }
 
     void

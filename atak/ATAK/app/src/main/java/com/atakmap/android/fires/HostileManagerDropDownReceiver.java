@@ -4,7 +4,6 @@ package com.atakmap.android.fires;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,6 +13,7 @@ import android.widget.ImageButton;
 import android.widget.ListView;
 import android.graphics.Color;
 
+import com.atakmap.android.data.ClearContentRegistry;
 import com.atakmap.android.dropdown.DropDown;
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.hierarchy.HierarchyManagerView;
@@ -27,13 +27,12 @@ import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.util.LimitingThread;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.map.AtakMapView;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -105,6 +104,8 @@ public class HostileManagerDropDownReceiver extends DropDownReceiver implements
         dispatcher.addMapEventListener(MapEvent.ITEM_REFRESH, this);
         dispatcher.addMapEventListener(MapEvent.ITEM_PERSIST, this);
 
+        ClearContentRegistry.getInstance().registerListener(dataMgmtReceiver);
+
         hostilesListBase = new ArrayList<>();
         displayList = new ArrayList<>();
 
@@ -158,6 +159,8 @@ public class HostileManagerDropDownReceiver extends DropDownReceiver implements
         dispatcher.removeMapEventListener(MapEvent.ITEM_REMOVED, this);
         dispatcher.removeMapEventListener(MapEvent.ITEM_REFRESH, this);
         dispatcher.removeMapEventListener(MapEvent.ITEM_PERSIST, this);
+        ClearContentRegistry.getInstance().unregisterListener(dataMgmtReceiver);
+
         saveContacts();
         calc.dispose();
     }
@@ -199,13 +202,11 @@ public class HostileManagerDropDownReceiver extends DropDownReceiver implements
 
     private ArrayList<MapItemHolder> readContacts() {
         ArrayList<MapItemHolder> items = new ArrayList<>();
-        File inputFile = new File(Environment.getExternalStorageDirectory()
-                .getAbsoluteFile()
-                + "/atak/Databases/" + FILENAME);
-        if (FileIOProviderFactory.exists(inputFile)) {
+        File inputFile = FileSystemUtils.getItem("Databases/" + FILENAME);
+        if (IOProviderFactory.exists(inputFile)) {
             InputStream is = null;
             try {
-                is = FileIOProviderFactory.getInputStream(inputFile);
+                is = IOProviderFactory.getInputStream(inputFile);
                 byte[] temp = new byte[is.available()];
                 int read = is.read(temp);
                 String menuString = new String(temp, 0, read,
@@ -259,7 +260,7 @@ public class HostileManagerDropDownReceiver extends DropDownReceiver implements
         final File outputFile = FileSystemUtils
                 .getItem("Databases/" + FILENAME);
 
-        if (FileIOProviderFactory.exists(outputFile))
+        if (IOProviderFactory.exists(outputFile))
             FileSystemUtils.delete(outputFile);
         try {
             StringBuilder builder = new StringBuilder();
@@ -275,14 +276,12 @@ public class HostileManagerDropDownReceiver extends DropDownReceiver implements
                     }
                 }
             }
-            os = FileIOProviderFactory.getOutputStream(outputFile);
+            os = IOProviderFactory.getOutputStream(outputFile);
             is = new ByteArrayInputStream(builder.toString()
                     .getBytes());
             FileSystemUtils.copy(is, os);
-        } catch (FileNotFoundException e) {
-            Log.e(TAG, "error occured", e);
         } catch (IOException e) {
-            Log.e(TAG, "error occured", e);
+            Log.e(TAG, "error occurred", e);
         } finally {
             if (os != null) {
                 try {
@@ -552,4 +551,14 @@ public class HostileManagerDropDownReceiver extends DropDownReceiver implements
             }
         }
     }
+
+    private final ClearContentRegistry.ClearContentListener dataMgmtReceiver = new ClearContentRegistry.ClearContentListener() {
+        @Override
+        public void onClearContent(boolean clearmaps) {
+            File inputFile = FileSystemUtils.getItem("Databases/" + FILENAME);
+            if (!IOProviderFactory.delete(inputFile)) {
+                Log.d(TAG, "could not clear: " + FILENAME);
+            }
+        }
+    };
 }

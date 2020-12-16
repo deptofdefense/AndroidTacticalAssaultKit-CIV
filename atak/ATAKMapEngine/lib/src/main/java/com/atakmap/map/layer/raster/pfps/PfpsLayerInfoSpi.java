@@ -12,7 +12,7 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import android.os.SystemClock;
 import android.util.Pair;
 
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.raster.mosaic.ATAKMosaicDatabase3;
 import com.atakmap.map.layer.raster.mosaic.MosaicDatabase2;
@@ -40,7 +40,7 @@ public class PfpsLayerInfoSpi extends AbstractDatasetDescriptorSpi implements St
 
     @Override
     protected Set<DatasetDescriptor> create(File f, File workingDir, final InteractiveServiceProvider.Callback callback) {
-        if (!FileIOProviderFactory.isDirectory(f))
+        if (!IOProviderFactory.isDirectory(f))
             return null;
 
         MosaicDatabase2 database = null;
@@ -85,10 +85,10 @@ public class PfpsLayerInfoSpi extends AbstractDatasetDescriptorSpi implements St
 
             File tilecacheDir = new File(workingDir, "tilecache");
             FileSystemUtils.delete(tilecacheDir);
-            if (FileIOProviderFactory.exists(tilecacheDir)) {
+            if (IOProviderFactory.exists(tilecacheDir)) {
                 Log.d(TAG, "could not delete tile cache directory: " + tilecacheDir);
             }
-            if(FileIOProviderFactory.mkdirs(tilecacheDir))
+            if(IOProviderFactory.mkdirs(tilecacheDir))
                 extraData.put("tilecacheDir", tilecacheDir.getAbsolutePath());
 
             Set<String> types = dbCoverages.keySet();

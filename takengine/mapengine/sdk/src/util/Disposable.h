@@ -4,14 +4,14 @@
 ////
 ////    DESCRIPTION:    Interface supporting object disposal.
 ////
-
+////    AUTHOR(S):      scott           scott_barrett@partech.com
 ////
 ////
 ////    HISTORY:
 ////
 ////      DATE          AUTHOR          COMMENTS
 ////      ------------  --------        --------
-////      Jan 23, 2015
+////      Jan 23, 2015  scott           Created.
 ////
 ////========================================================================////
 ////                                                                        ////
@@ -29,6 +29,8 @@
 ////    INCLUDES AND MACROS                                                 ////
 ////                                                                        ////
 ////========================================================================////
+
+#include "port/Platform.h"
 
 ////========================================================================////
 ////                                                                        ////
@@ -68,7 +70,7 @@ class Disposable
 
     virtual
     ~Disposable ()
-        throw ()
+        NOTHROWS
         = 0;
 
     //

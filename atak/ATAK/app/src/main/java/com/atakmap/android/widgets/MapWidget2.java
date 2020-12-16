@@ -25,6 +25,7 @@ public class MapWidget2 extends MapWidget {
     protected float[] _padding = new float[] {
             0, 0, 0, 0
     };
+    protected boolean _touchable = true;
 
     public boolean setWidth(float width) {
         return setSize(width, _height);
@@ -128,9 +129,21 @@ public class MapWidget2 extends MapWidget {
 
     public MapWidget seekHit(MotionEvent event, float x, float y) {
         MapWidget r = null;
-        if (isVisible() && testHit(x, y))
+        if (isVisible() && isTouchable() && testHit(x, y))
             r = this;
         return r;
+    }
+
+    /**
+     * Set whether this widget can be touched
+     * @param touchable True if touchable
+     */
+    public void setTouchable(boolean touchable) {
+        _touchable = touchable;
+    }
+
+    public boolean isTouchable() {
+        return _touchable;
     }
 
     @Override

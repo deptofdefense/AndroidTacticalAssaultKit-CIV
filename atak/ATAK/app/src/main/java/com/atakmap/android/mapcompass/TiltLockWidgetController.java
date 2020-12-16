@@ -44,9 +44,9 @@ class TiltLockWidgetController implements
     private final MapView _mapView;
     private final CompassArrowWidget _compass;
 
-    private MarkerIconWidget _tiltWidget;
-    private MarkerIconWidget _pointerWidget;
-    private SliderWidget _sliderWidget;
+    private final MarkerIconWidget _tiltWidget;
+    private final MarkerIconWidget _pointerWidget;
+    private final SliderWidget _sliderWidget;
     private boolean _enableSlider = true;
     private GeoPoint _mapFocus;
 
@@ -60,6 +60,7 @@ class TiltLockWidgetController implements
                 .getComponentExtra("rootLayoutWidget");
         LayoutWidget layoutWidget = new LayoutWidget();
         layoutWidget.setName("TiltLockLayout");
+        layoutWidget.setTouchable(false);
         root.addWidget(layoutWidget);
 
         _tiltWidget = new MarkerIconWidget();

@@ -7,11 +7,14 @@ import android.os.Parcelable;
 import android.widget.SimpleAdapter;
 
 import com.atakmap.android.metrics.activity.MetricListActivity;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
+@Deprecated
+@DeprecatedApi(since = "4.1", forRemoval = true, removeAt = "4.4")
 public class CotObjectsListActivity extends MetricListActivity {
     // private ObjectProperties[] _props;
     private SimpleAdapter _adapter;

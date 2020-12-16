@@ -10,6 +10,7 @@ import com.atakmap.android.hierarchy.filters.FOVFilter;
 import com.atakmap.android.maps.ILocation;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.menu.MapMenuReceiver;
+import com.atakmap.android.menu.MapMenuReceiverCompat;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
 import com.atakmap.coremap.maps.coords.GeoBounds;
@@ -69,7 +70,7 @@ public abstract class FileOverlayContentHandler extends FileContentHandler
     @Override
     public boolean goTo(boolean select) {
         if (_bounds != null) {
-            MapMenuReceiver.getInstance().hideMenu();
+            MapMenuReceiverCompat.hideMenu();
             ATAKUtilities.scaleToFit(this);
             return true;
         }

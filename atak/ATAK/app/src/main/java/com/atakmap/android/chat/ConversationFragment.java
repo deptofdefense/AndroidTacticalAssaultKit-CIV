@@ -10,6 +10,7 @@ import android.content.Intent;
 
 import com.atakmap.android.contact.Contact;
 import com.atakmap.android.contact.Contacts;
+import com.atakmap.android.contact.IndividualContact;
 import com.atakmap.android.hierarchy.action.GoTo;
 import com.atakmap.android.hierarchy.items.MapItemUser;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
@@ -31,6 +32,7 @@ import android.widget.ListView;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.atakmap.android.chat.ModePicker.ModeUpdateListener;
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -291,14 +293,17 @@ public class ConversationFragment extends Fragment implements
         rootView.findViewById(R.id.chat_user_entry_area).setVisibility(
                 editAreaVisibility);
 
-        ImageButton panTo = rootView
+        final ImageButton panTo = rootView
                 .findViewById(R.id.conversationPanButton);
         panTo.setOnClickListener(this);
 
-        Contact target = getTarget();
-        panTo.setVisibility(target instanceof GoTo
-                || target instanceof MapItemUser
-                || target instanceof Location ? View.VISIBLE : View.GONE);
+        final Contact target = getTarget();
+        panTo.setVisibility(target instanceof MapItemUser
+                && ((MapItemUser) target).getMapItem() != null
+                || target instanceof Location
+                || (target != null && target.getAction(GoTo.class) != null)
+                        ? View.VISIBLE
+                        : View.GONE);
 
         inputMessage = rootView.findViewById(R.id.messageBox);
 
@@ -535,8 +540,36 @@ public class ConversationFragment extends Fragment implements
         // Send message
         else if (id == R.id.sendButton) {
             String msg = inputMessage.getText().toString();
+
+            // Ignore empty message
             if (msg.isEmpty())
                 return;
+
+            // Check if the message has anywhere to go
+            final List<Contact> contacts = _destinations.getDestinations();
+            final List<Contact> recipients = new ArrayList<>();
+            for (Contact c : contacts) {
+                if (c != null) {
+                    final List<Contact> filtered = c.getFiltered(true, true);
+                    if (filtered != null) {
+                        for (Contact c2 : filtered) {
+                            if (c2 instanceof IndividualContact)
+                                recipients.add(c2);
+                        }
+                    }
+                } else {
+                    Log.d(TAG, "contact was null for: " + _destinations);
+                }
+            }
+
+            // Nobody to send it to
+            if (recipients.isEmpty()) {
+                Toast.makeText(getContext(),
+                        R.string.chat_message_no_recipients,
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+
             ChatLine toAdd = new ChatLine();
             toAdd.messageId = UUID.randomUUID().toString();
             toAdd.timeSent = (new CoordinatedTime()).getMilliseconds();

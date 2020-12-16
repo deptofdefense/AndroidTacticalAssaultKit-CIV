@@ -3,7 +3,7 @@ package com.atakmap.android.video;
 
 import com.atakmap.android.video.manager.VideoManager;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.FileIOProviderFactory;
+import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
@@ -106,6 +106,12 @@ public class ConnectionEntry implements Serializable {
     private int roverPort = -1;
     private boolean ignoreEmbeddedKLV = false;
     private String path = "";
+
+    /**
+     * Fortify has flagged this as Password Management: Hardcoded Password
+     * This is a empty assignment just for the purposes of making the code simpler instead of
+     * extra null pointer checks.    This is not hardcoded.
+     */
     private String passphrase = "";
 
     private Protocol protocol = Protocol.UDP;
@@ -210,8 +216,9 @@ public class ConnectionEntry implements Serializable {
             final int bufferTime,
             final int rtspReliable,
             final Source source) {
-           this(alias, address, macAddress, port, roverPort, path, protocol, networkTimeout, bufferTime, rtspReliable, "", source);
-      }
+        this(alias, address, macAddress, port, roverPort, path, protocol,
+                networkTimeout, bufferTime, rtspReliable, "", source);
+    }
 
     public ConnectionEntry(File f) {
         this.alias = f.getName();
@@ -224,7 +231,8 @@ public class ConnectionEntry implements Serializable {
         } catch (Exception e) {
             this.uid = UUID.randomUUID().toString();
         }
-        this.protocol = FileIOProviderFactory.isDirectory(f) ? Protocol.DIRECTORY : Protocol.FILE;
+        this.protocol = IOProviderFactory.isDirectory(f) ? Protocol.DIRECTORY
+                : Protocol.FILE;
     }
 
     /**
@@ -807,7 +815,8 @@ public class ConnectionEntry implements Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(alias, uid, address, macAddress, port,
-                roverPort, ignoreEmbeddedKLV, path, protocol, passphrase, source,
+                roverPort, ignoreEmbeddedKLV, path, protocol, passphrase,
+                source,
                 networkTimeout, bufferTime, rtspReliable, localFile,
                 childrenUIDs, parentUID);
     }

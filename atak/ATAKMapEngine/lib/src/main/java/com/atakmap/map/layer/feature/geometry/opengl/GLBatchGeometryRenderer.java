@@ -1,7 +1,7 @@
 package com.atakmap.map.layer.feature.geometry.opengl;
 
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -20,11 +21,11 @@ import android.graphics.PointF;
 import android.opengl.GLES30;
 
 import com.atakmap.annotations.DeprecatedApi;
+import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.lang.Unsafe;
-import com.atakmap.map.AtakMapView;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureDataStore;
@@ -36,13 +37,111 @@ import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
+import com.atakmap.math.Matrix;
+import com.atakmap.math.PointD;
 import com.atakmap.math.Rectangle;
+import com.atakmap.map.opengl.GLAntiAliasedLine;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLRenderBatch2;
 import com.atakmap.opengl.GLTextureAtlas;
 import com.atakmap.util.ConfigOptions;
 
 public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable2 {
+
+    /*
+     {
+         float x0; // 12
+         float y0;
+         float z0;
+         float x1; // 12
+         float y1;
+         float z1;
+         uint8_t r; // 4
+         uint8_t g;
+         uint8_t b;
+         uint8_t a;
+         uint8_t normalDir; // 1
+         uint8_t halfWidthPixels; // 1
+         uint8_t dir; // 1
+         uint8_t patternLen; // 1
+         uint32_t pattern; // 4
+     }
+     */
+    private final static int LINES_VERTEX_SIZE = (12+12+4+1+1+4+1+1); // 36
+
+
+    private final static String LINE_VSH =
+        "#version 300 es\n" +
+        "precision highp float;\n" +
+        "const float c_smoothBuffer = 2.0;\n" +
+        "uniform mat4 u_mvp;\n" +
+        "uniform mediump vec2 u_viewportSize;\n" +
+        "in vec3 a_vertexCoord0;\n" +
+        "in vec3 a_vertexCoord1;\n" +
+        "in vec2 a_texCoord;\n" +
+        "in vec4 a_color;\n" +
+        "in float a_normal;\n" +
+        "in float a_dir;\n" +
+        "in int a_pattern;\n" +
+        "in int a_factor;\n" +
+        "in float a_halfStrokeWidth;\n" +
+        "out vec4 v_color;\n" +
+        "flat out int f_pattern;\n" +
+        "out vec2 v_offset;\n" +
+        "flat out float f_halfStrokeWidth;\n" +
+        "flat out int f_factor;\n" +
+        "flat out vec2 f_origin;\n" +
+        "flat out vec2 f_normal;\n" +
+        "void main(void) {\n" +
+        "  gl_Position = u_mvp * vec4(a_vertexCoord0.xyz, 1.0);\n" +
+        "  vec4 next_gl_Position = u_mvp * vec4(a_vertexCoord1.xyz, 1.0);\n" +
+        "  vec4 p0 = (gl_Position / gl_Position.w)*vec4(u_viewportSize, 1.0, 1.0);\n" +
+        "  vec4 p1 = (next_gl_Position / next_gl_Position.w)*vec4(u_viewportSize, 1.0, 1.0);\n" +
+        "  float dist = distance(p0.xy, p1.xy);\n" +
+        "  float dx = p1.x - p0.x;\n" +
+        "  float dy = p1.y - p0.y;\n" +
+        "  float normalDir = (2.0*a_normal) - 1.0;\n" +
+        "  float adjX = normalDir*(dx/dist)*((a_halfStrokeWidth+c_smoothBuffer)/u_viewportSize.y);\n" +
+        "  float adjY = normalDir*(dy/dist)*((a_halfStrokeWidth+c_smoothBuffer)/u_viewportSize.x);\n" +
+        "  gl_Position.x = gl_Position.x - adjY;\n" +
+        "  gl_Position.y = gl_Position.y + adjX;\n" +
+        "  v_color = a_color;\n" +
+        "  v_offset = vec2(-normalDir*(dy/dist)*(a_halfStrokeWidth+c_smoothBuffer), normalDir*(dx/dist)*(a_halfStrokeWidth+c_smoothBuffer));\n" +
+        "  f_pattern = a_pattern;\n" +
+        "  f_factor = a_factor;\n" +
+        "  f_halfStrokeWidth = a_halfStrokeWidth;\n" +
+        // flip the normal used in the distance calculation here to avoid unnecessary per-fragment overhead
+        "  f_normal = normalize(vec2(p1.xy-p0.xy)) * ((2.0*a_dir) - 1.0);\n" +
+        // select an origin to measure `gl_FragCoord` distance from.
+        "  f_origin = mix(p0.xy, p1.xy, a_dir);\n" +
+        "  f_origin.x = -1.0*mod(f_origin.x, u_viewportSize.x);\n" +
+        "  f_origin.y = -1.0*mod(f_origin.y, u_viewportSize.y);\n" +
+        "}";
+
+    private final static String LINE_FSH =
+        "#version 300 es\n" +
+        "precision mediump float;\n" +
+        "in vec4 v_color;\n" +
+        "flat in int f_pattern;\n" +
+        "flat in int f_factor;\n" +
+        "flat in vec2 f_origin;\n" +
+        "flat in vec2 f_normal;\n" +
+        "in vec2 v_offset;\n" +
+        "flat in float f_halfStrokeWidth;\n" +
+        "out vec4 v_FragColor;\n" +
+        "void main(void) {\n" +
+        // measure the distance of the frag coordinate to the origin
+        "  float d = dot(f_normal, gl_FragCoord.xy-f_origin);\n" +
+        "  int idist = int(d);\n" +
+        "  float b0 = float((f_pattern>>((idist/f_factor)%16))&0x1);\n" +
+        "  float b1 = float((f_pattern>>(((idist+1)/f_factor)%16))&0x1);\n" +
+        "  float alpha = mix(b0, b1, fract(d));\n" +
+        "  float antiAlias = smoothstep(-1.0, 0.25, f_halfStrokeWidth-length(v_offset));\n" +
+        "  v_FragColor = vec4(v_color.rgb, v_color.a*antiAlias*alpha);\n" +
+        "}";
+
+    private static final String TAG = "GLBatchGeometryRenderer";
+
 
     private static Comparator<GLBatchPoint> POINT_BATCH_COMPARATOR = new Comparator<GLBatchPoint>() {
         @Override
@@ -86,7 +185,8 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     
     private LinkedList<GLBatchPolygon> polys = new LinkedList<GLBatchPolygon>();
     private LinkedList<GLBatchPolygon> extrudedPolys = new LinkedList<>();
-    private LinkedList<GLBatchLineString> lines = new LinkedList<GLBatchLineString>();
+    private LinkedList<GLBatchLineString> spriteLines = new LinkedList<GLBatchLineString>();
+    private LinkedList<GLBatchLineString> surfaceLines = new LinkedList<GLBatchLineString>();
     private LinkedList<GLBatchPoint> batchPoints2 = new LinkedList<GLBatchPoint>();
     private LinkedList<GLBatchPoint> labels = new LinkedList<GLBatchPoint>();
     private LinkedList<GLBatchPoint> loadingPoints = new LinkedList<GLBatchPoint>();
@@ -114,7 +214,17 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     private VectorProgram vectorProgram3d;
 
     private GLMapView glmv;
-        
+    GLAntiAliasedLine _lineRenderer;
+    private int batchSrid = -1;
+    private PointD batchCentroidProj = new PointD(0d, 0d, 0d);
+    private GeoPoint batchCentroid = GeoPoint.createMutable();
+    private int rebuildBatchBuffers = -1;
+    private int batchTerrainVersion = -1;
+    private Matrix localFrame = Matrix.getIdentity();
+    private Collection<LinesBuffer> surfaceLineBuffers = new ArrayList<>();
+    private Collection<LinesBuffer> spriteLineBuffers = new ArrayList<>();
+    private LineShader lineShader = null;
+
     public GLBatchGeometryRenderer() {
         this(null);
     }
@@ -127,6 +237,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         this.batch = null;
         
         this.buffers = null;
+        _lineRenderer = new GLAntiAliasedLine();
     }
 
     /**
@@ -176,38 +287,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         if (glmv != null)
             screenPoint.y = (glmv.getTop() - glmv.getBottom()) - screenPoint.y;
 
-        // Screen based hit test for points
-        // Each point contains the last computed screen location
-        final Rectangle hitBox = new Rectangle(
-                screenPoint.x - screenRadius,
-                screenPoint.y - screenRadius,
-                screenRadius * 2, screenRadius * 2);
-
-        Iterator<GLBatchPoint> pointIter;
-
-        pointIter = this.labels.descendingIterator();
-        while(pointIter.hasNext()) {
-            GLBatchPoint item = pointIter.next();
-            if(hitBox.contains(item.screenX, item.screenY)) {
-                fids.add(item.featureId);
-                if(fids.size() == limit)
-                    return;
-            }
-        }
-
-        for(int i = this.batchPoints2.size()-1; i >= 0; i--) {
-            GLBatchPoint item = this.batchPoints2.get(i);
-            if(hitBox.contains(item.screenX, item.screenY)) {
-                fids.add(item.featureId);
-                if(fids.size() == limit)
-                    return;
-            }
-        }
-
-        // Switch to geodetic hit tests for lines
-        // This is more memory-efficient than storing the screen point for every line vertex
-        // Also, since lines (currently) aren't rendered floating above terrain this will
-        // work just fine, for now.
+        // Build hit envelope
         double locx = geoPoint.getLongitude();
         double locy = geoPoint.getLatitude();
         double rlat = Math.toRadians(locy);
@@ -217,29 +297,40 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         double ra = metersRadius / metersDegLat;
         double ro = metersRadius / metersDegLng;
 
-        Envelope hitEnv = new Envelope(locx-ro, locy-ra, Double.NaN, locx+ro, locy+ra, Double.NaN);
+        // Setup query params
+        HitTestQueryParams params = new HitTestQueryParams();
+        params.loc = geoPoint;
+        params.meterRadius = metersRadius;
+        params.hitBox = new Rectangle(screenPoint.x - screenRadius,
+                screenPoint.y - screenRadius,
+                screenRadius * 2, screenRadius * 2);
+        params.hitEnvelope = new Envelope(locx-ro, locy-ra, Double.NaN, locx+ro,
+                locy+ra, Double.NaN);
+        params.view = glmv;
+        params.screenPoint = screenPoint;
+        params.screenRadius = screenRadius;
+        params.limit = limit;
 
-        Iterator<? extends GLBatchLineString> lineIter;
+        // Points
+        fids.addAll(hitTestGeometry(this.labels, params));
+        fids.addAll(hitTestGeometry(this.batchPoints2, params));
 
-        lineIter = this.lines.descendingIterator();
-        do {
-            long fid = hitTestLineStrings(lineIter, geoPoint, metersRadius, hitEnv, glmv, screenPoint, screenRadius);
-            if(fid != FeatureDataStore.FEATURE_ID_NONE) {
-                fids.add(fid);
-                if(fids.size() == limit)
-                    return;
-            }
-        } while(lineIter.hasNext());
+        // Lines
+        fids.addAll(hitTestGeometry(this.surfaceLines, params));
+        fids.addAll(hitTestGeometry(this.spriteLines, params));
+        fids.addAll(hitTestGeometry(this.polys, params));
+        fids.addAll(hitTestGeometry(this.extrudedPolys, params));
+    }
 
-        lineIter = this.polys.descendingIterator();
-        do {
-            long fid = hitTestLineStrings(lineIter, geoPoint, metersRadius, hitEnv, glmv, screenPoint, screenRadius);
-            if(fid != FeatureDataStore.FEATURE_ID_NONE) {
-                fids.add(fid);
-                if(fids.size() == limit)
-                    return;
-            }
-        } while(lineIter.hasNext());
+    private static class HitTestQueryParams {
+        GeoPoint loc;
+        double meterRadius;
+        Rectangle hitBox;
+        Envelope hitEnvelope;
+        GLMapView view;
+        PointF screenPoint;
+        float screenRadius;
+        int limit, count;
     }
 
     public void setBatch(Collection<GLBatchGeometry> geoms) {
@@ -248,7 +339,8 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
 
         polys.clear();
         extrudedPolys.clear();
-        lines.clear();
+        spriteLines.clear();
+        surfaceLines.clear();
 
         loadingPoints.clear();
         batchPoints2.clear();
@@ -262,19 +354,20 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         else if(sortInfo.order == SortInfo.DEPTH)
             Collections.sort(this.batchPoints2, new DepthComparator(sortInfo.centerLat, sortInfo.measureFromLat, sortInfo.measureFromLng));
 
-        Iterator<GLBatchGeometry> iter;
-        
-        iter = this.sortedLines.iterator();
-        while(iter.hasNext()) {
-            this.lines.add((GLBatchLineString)iter.next());
-            iter.remove();
+        for(GLBatchGeometry geom : this.sortedLines) {
+            final GLBatchLineString line = (GLBatchLineString)geom;
+            if(line.altitudeMode == Feature.AltitudeMode.ClampToGround)
+                surfaceLines.add(line);
+            else
+                spriteLines.add(line);
         }
+        this.sortedLines.clear();
         
-        iter = this.sortedPolys.iterator();
-        while(iter.hasNext()) {
-            this.polys.add((GLBatchPolygon)iter.next());
-            iter.remove();
-        }
+        for(GLBatchGeometry geom : this.sortedPolys)
+            this.polys.add((GLBatchPolygon)geom);
+        this.sortedPolys.clear();
+
+        batchSrid = -1;
     }
     
     private void fillBatchLists(Collection<GLBatchGeometry> geoms) {
@@ -350,6 +443,24 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             this.textureAtlasIndicesBuffer = buffers.textureAtlasIndicesBuffer;            
         }
 
+        // match batches as dirty
+        if (batchSrid != view.drawSrid) {
+            // reset relative to center
+            batchCentroid.set(view.drawLat, view.drawLng);
+            view.scene.mapProjection.forward(batchCentroid, batchCentroidProj);
+            batchSrid = view.drawSrid;
+
+            localFrame.setToTranslation(batchCentroidProj.x, batchCentroidProj.y, batchCentroidProj.z);
+
+            // mark batches dirty
+            rebuildBatchBuffers = 0xFFFFFFFF;
+            batchTerrainVersion = view.getTerrainVersion();
+        } else if (batchTerrainVersion != view.getTerrainVersion()) {
+            // mark batches dirty
+            rebuildBatchBuffers = 0xFFFFFFFF;
+            batchTerrainVersion = view.getTerrainVersion();
+        }
+
         // reset the state to the defaults
         this.state.color = 0xFFFFFFFF;
         this.state.lineWidth = 1.0f;
@@ -361,23 +472,35 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         
         if(MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SURFACE))
             this.renderSurface(view);
-        if(MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES)) {
+        if(MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES))
             this.renderSprites(view);
-        }
+
+        rebuildBatchBuffers &= ~renderPass;
     }
 
     private void renderSurface(GLMapView view) {
         // polygons
-        if(this.polys.size() > 0) {
-            if(this.batch == null)
+        if (this.polys.size() > 0) {
+            if (this.batch == null)
                 this.batch = new GLRenderBatch2();
 
             renderPolygons(view, polys);
         }
         // lines
-        if(this.lines.size() > 0)
-            this.batchDrawLines(view, true);
+        if (!this.surfaceLines.isEmpty()) {
+            if (MathUtils.hasBits(rebuildBatchBuffers, GLMapView.RENDER_PASS_SURFACE)) {
+                for (LinesBuffer lb : surfaceLineBuffers)
+                    GLES30.glDeleteBuffers(1, lb.vbo, 0);
+                surfaceLineBuffers.clear();
+                this.buildLineBuffers(surfaceLineBuffers, view, surfaceLines);
+            }
 
+            this.drawLineBuffers(view, surfaceLineBuffers);
+        } else if(!surfaceLineBuffers.isEmpty()) {
+            for (LinesBuffer lb : surfaceLineBuffers)
+                GLES30.glDeleteBuffers(1, lb.vbo, 0);
+            surfaceLineBuffers.clear();
+        }
     }
 
     private void renderPolygons(GLMapView view, LinkedList<GLBatchPolygon> polygons) {
@@ -460,6 +583,7 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             if(point.textureKey != 0L) {
                 this.batchPoints2.add(point);
                 iter.remove();
+                rebuildBatchBuffers |= GLMapView.RENDER_PASS_SPRITES;
             }
         }
 
@@ -526,8 +650,20 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         }
 
         // lines
-        if(this.lines.size() > 0)
-            this.batchDrawLines(view, false);
+        if (!this.spriteLines.isEmpty()) {
+            if (MathUtils.hasBits(rebuildBatchBuffers, GLMapView.RENDER_PASS_SPRITES)) {
+                for (LinesBuffer lb : spriteLineBuffers)
+                    GLES30.glDeleteBuffers(1, lb.vbo, 0);
+                spriteLineBuffers.clear();
+                this.buildLineBuffers(spriteLineBuffers, view, spriteLines);
+            }
+
+            this.drawLineBuffers(view, spriteLineBuffers);
+        } else if(!spriteLineBuffers.isEmpty()) {
+            for (LinesBuffer lb : spriteLineBuffers)
+                GLES30.glDeleteBuffers(1, lb.vbo, 0);
+            spriteLineBuffers.clear();
+        }
     }
     
     int forceGLRB = -1;
@@ -538,170 +674,194 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         return GLMapView.RENDER_PASS_SPRITES|GLMapView.RENDER_PASS_SURFACE;
     }
 
-    private void batchDrawLines(GLMapView view, boolean renderClampToGroundPass) {
-        final boolean hardwareTransforms = (view.drawMapResolution > view.hardwareTransformResolutionThreshold/4d);
-        if(hardwareTransforms) {
-            GLES20FixedPipeline.glPushMatrix();
-            GLES20FixedPipeline.glLoadMatrixf(view.sceneModelForwardMatrix, 0);
-            batchDrawLinesImpl(view, GLGeometry.VERTICES_PROJECTED, renderClampToGroundPass);
-            GLES20FixedPipeline.glPopMatrix();
-        } else {
-            batchDrawLinesImpl(view, GLGeometry.VERTICES_PIXEL, renderClampToGroundPass);
-        }
+    private static void bls3_vertex(ByteBuffer vbuf, GLBatchLineString.RenderState state, PointD v1, PointD v2, int n, int dir) {
+        vbuf.putFloat((float)v1.x);
+        vbuf.putFloat((float)v1.y);
+        vbuf.putFloat((float)v1.z);
+        vbuf.putFloat((float)v2.x);
+        vbuf.putFloat((float)v2.y);
+        vbuf.putFloat((float)v2.z);
+        vbuf.put((byte)((state.strokeColor>>16)&0xFF));
+        vbuf.put((byte)((state.strokeColor>>8)&0xFF));
+        vbuf.put((byte)(state.strokeColor&0xFF));
+        vbuf.put((byte)((state.strokeColor>>24)&0xFF));
+        vbuf.put((byte)n);
+        vbuf.put((byte)Math.min(state.strokeWidth/2.0f, 255.0f));
+        vbuf.put((byte)dir);
+        vbuf.put((byte)MathUtils.clamp(state.factor, 1, 255));
+        vbuf.putInt(state.pattern);
     }
-    
-    private void batchDrawLinesImpl(GLMapView view, int vertexType, boolean renderClampToGroundPass) {
-        VectorProgram vectorProgram;
-        final int maxBufferedPoints;
-        if(this.vectorProgram3d == null)
-            this.vectorProgram3d = new VectorProgram(3);
-        else
-            GLES20FixedPipeline.glUseProgram(this.vectorProgram3d.programHandle);
-        vectorProgram = this.vectorProgram3d;
-        maxBufferedPoints = MAX_BUFFERED_3D_POINTS;
 
-        
-        GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_PROJECTION, view.scratch.matrixF, 0);
-        GLES20FixedPipeline.glUniformMatrix4fv(vectorProgram.uProjectionHandle, 1, false,
-                view.scratch.matrixF, 0);
+    void buildLineBuffers(Collection<LinesBuffer> linesBuf, GLMapView view, Collection<GLBatchLineString> lines) {
+        // pointer to head of buffer; remains unmodified
+        ByteBuffer buf = this.buffers.buffer.duplicate();
+        buf.clear();
 
-        GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_MODELVIEW, view.scratch.matrixF, 0);
-        GLES20FixedPipeline.glUniformMatrix4fv(vectorProgram.uModelViewHandle, 1, false, view.scratch.matrixF,
-                0);
-        
-        // sync the current color with the shader
-        GLES20FixedPipeline.glUniform4f(vectorProgram.uColorHandle,
-                                        Color.red(this.state.color) / 255f,
-                                        Color.green(this.state.color) / 255f,
-                                        Color.blue(this.state.color) / 255f,
-                                        Color.alpha(this.state.color) / 255f);
-        
-        // sync the current line width
-        GLES20FixedPipeline.glLineWidth(this.state.lineWidth);
-        
-        this.pointsBuffer.clear();
-        final FloatBuffer linesBuffer = this.pointsBuffer;
-        final long linesBufferPtr = this.pointsBufferPtr;
+        // streaming vertex buffer
+        ByteBuffer vbuf = this.buffers.buffer.duplicate();
+        vbuf.order(ByteOrder.nativeOrder());
+        vbuf.clear();
 
-        GLBatchLineString.RenderState[] defaultrs = new GLBatchLineString.RenderState[] {GLBatchLineString.DEFAULT_RS};
-
-        GLBatchLineString line;
-        for(GLBatchGeometry g : this.lines) {
-            line = (GLBatchLineString)g;
-            if (!renderClampToGroundPass && line.altitudeMode == Feature.AltitudeMode.ClampToGround)
-                continue;
-            if (renderClampToGroundPass && line.altitudeMode != Feature.AltitudeMode.ClampToGround)
-                continue;
-            
-            if(line.numRenderPoints < 2)
+        GLBatchLineString.RenderState[] defaultrs = { GLBatchLineString.DEFAULT_RS };
+        for (GLBatchLineString line : lines) {
+            if (line.numPoints < 2)
                 continue;
 
-            GLBatchLineString.RenderState[] renderStates = line.renderStates;
-            if(renderStates == null)
-                renderStates = defaultrs;
-            for(GLBatchLineString.RenderState rs : renderStates) {
-                if (rs.strokeColor != this.state.color) {
-                    if (linesBuffer.position() > 0) {
-                        linesBuffer.flip();
-                        renderLinesBuffers(vectorProgram,
-                                linesBuffer,
-                                GLES20FixedPipeline.GL_LINES,
-                                linesBuffer.remaining() / vectorProgram.vertSize);
-                        linesBuffer.clear();
-                    }
+            // project the line vertices, applying the batch centroid
+            line.projectedVerticesSrid = -1;
+            line.centroidProj.x = batchCentroidProj.x;
+            line.centroidProj.y = batchCentroidProj.y;
+            line.centroidProj.z = batchCentroidProj.z;
+            line.projectVertices(view, GLGeometry.VERTICES_PROJECTED);
+            line.projectedVerticesSrid = -1;
 
-                    GLES20FixedPipeline.glUniform4f(vectorProgram.uColorHandle,
-                            rs.strokeColorR,
-                            rs.strokeColorG,
-                            rs.strokeColorB,
-                            rs.strokeColorA);
+            PointD p0 = new PointD(0d, 0d, 0d);
+            PointD p1 = new PointD(0d, 0d, 0d);
 
-                    this.state.color = rs.strokeColor;
-                }
-
-                if (rs.strokeWidth != this.state.lineWidth) {
-                    if (linesBuffer.position() > 0) {
-                        linesBuffer.flip();
-                        renderLinesBuffers(vectorProgram,
-                                linesBuffer,
-                                GLES20FixedPipeline.GL_LINES,
-                                linesBuffer.remaining() / vectorProgram.vertSize);
-                        linesBuffer.clear();
-                    }
-
-                    GLES20FixedPipeline.glLineWidth(rs.strokeWidth);
-                    this.state.lineWidth = rs.strokeWidth;
-                }
-
-                line.projectVertices(view, vertexType);
-                if (((line.numRenderPoints - 1) * 2) > maxBufferedPoints) {
-                    // the line has more points than can be buffered -- render it
-                    // immediately as a strip and don't touch the buffer.
-                    // technically, this will violate Z-order, but since we have the
-                    // same state (color, line-width) with everything currently
-                    // batched we shouldn't be able to distinguish Z anyway...
-                    renderLinesBuffers(vectorProgram,
-                            line.vertices,
-                            GLES20FixedPipeline.GL_LINE_STRIP,
-                            line.numRenderPoints);
-                } else {
-                    int remainingSegments = line.numRenderPoints - 1;
-                    int numSegsToExpand;
-                    int off = 0;
-                    while (remainingSegments > 0) {
-                        numSegsToExpand = Math.min(linesBuffer.remaining() / (2 * vectorProgram.vertSize), remainingSegments);
-                        expandLineStringToLines(vectorProgram.vertSize,
-                                line.verticesPtr,
-                                off,
-                                linesBufferPtr,
-                                linesBuffer.position(),
-                                numSegsToExpand + 1);
-
-                        linesBuffer.position(linesBuffer.position() + (numSegsToExpand * (2 * vectorProgram.vertSize)));
-                        off += numSegsToExpand * vectorProgram.vertSize;
-                        remainingSegments -= numSegsToExpand;
-                        if (linesBuffer.remaining() < (2 * vectorProgram.vertSize)) {
-                            linesBuffer.flip();
-                            renderLinesBuffers(vectorProgram,
-                                    linesBuffer,
-                                    GLES20FixedPipeline.GL_LINES,
-                                    linesBuffer.remaining() / vectorProgram.vertSize);
-                            linesBuffer.clear();
+            GLBatchLineString.RenderState[] rs = line.renderStates;
+            if(rs == null)
+                rs = defaultrs;
+            for (int i = 0; i < rs.length; i++) {
+                for (int j = 0; j < (line.numRenderPoints-1); j++) {
+                    if (vbuf.remaining() < (6 * LINES_VERTEX_SIZE)) {
+                        LinesBuffer b = new LinesBuffer();
+                        GLES30.glGenBuffers(1, b.vbo, 0);
+                        if (b.vbo[0] == GLES30.GL_NONE) {
+                            Log.e(TAG, "Failed to allocate VBO, lines will not be drawn");
+                        } else {
+                            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, b.vbo[0]);
+                            GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, vbuf.position(), buf, GLES30.GL_STATIC_DRAW);
+                            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, GLES30.GL_NONE);
+                            b.count = vbuf.position() / LINES_VERTEX_SIZE;
+                            linesBuf.add(b);
                         }
+                        vbuf.clear();
                     }
+
+                    p0.x = line.vertices.get(j * 3);
+                    p0.y = line.vertices.get(j * 3+1);
+                    p0.z = line.vertices.get(j * 3+2);
+                    p1.x = line.vertices.get((j+1) * 3);
+                    p1.y = line.vertices.get((j+1) * 3+1);
+                    p1.z = line.vertices.get((j+1) * 3+2);
+
+                    bls3_vertex(vbuf, rs[i], p0, p1, 0xFF, 0xFF);
+                    bls3_vertex(vbuf, rs[i], p1, p0, 0xFF, 0x00);
+                    bls3_vertex(vbuf, rs[i], p0, p1, 0x00, 0xFF);
+
+                    bls3_vertex(vbuf, rs[i], p0, p1, 0xFF, 0xFF);
+                    bls3_vertex(vbuf, rs[i], p1, p0, 0xFF, 0x00);
+                    bls3_vertex(vbuf, rs[i], p1, p0, 0x00, 0x00);
                 }
             }
         }
 
-        if(linesBuffer.position() > 0) {
-            linesBuffer.flip();
-            renderLinesBuffers(vectorProgram,
-                               linesBuffer,
-                               GLES20FixedPipeline.GL_LINES,
-                               linesBuffer.remaining() / vectorProgram.vertSize);
-            linesBuffer.clear();
+        // flush the remaining record
+        if (vbuf.position() > 0) {
+            LinesBuffer b = new LinesBuffer();
+            GLES30.glGenBuffers(1, b.vbo, 0);
+            if (b.vbo[0] == GLES30.GL_NONE) {
+                Log.e(TAG, "Failed to allocate VBO, lines will not be drawn");
+            } else {
+                GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, b.vbo[0]);
+                GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, vbuf.position(), buf, GLES30.GL_STATIC_DRAW);
+                GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, GLES30.GL_NONE);
+                b.count = vbuf.position() / LINES_VERTEX_SIZE;
+                linesBuf.add(b);
+            }
+            vbuf.clear();
+        }
+    }
+
+    void drawLineBuffers(GLMapView view, Collection<LinesBuffer> buf) {
+        if (this.lineShader == null) {
+            this.lineShader = new LineShader();
+            final int vertShader = GLES20FixedPipeline.loadShader(GLES30.GL_VERTEX_SHADER, LINE_VSH);
+            final int fragShader = GLES20FixedPipeline.loadShader(GLES30.GL_FRAGMENT_SHADER, LINE_FSH);
+
+            lineShader.handle = GLES20FixedPipeline.createProgram(vertShader, fragShader);
+            GLES30.glDeleteShader(vertShader);
+            GLES30.glDeleteShader(fragShader);
+
+            GLES30.glUseProgram(lineShader.handle);
+            lineShader.u_mvp = GLES30.glGetUniformLocation(lineShader.handle, "u_mvp");
+            lineShader.u_viewportSize = GLES30.glGetUniformLocation(lineShader.handle, "u_viewportSize");
+            lineShader.a_vertexCoord0 = GLES30.glGetAttribLocation(lineShader.handle, "a_vertexCoord0");
+            lineShader.a_vertexCoord1 = GLES30.glGetAttribLocation(lineShader.handle, "a_vertexCoord1");
+            lineShader.a_color = GLES30.glGetAttribLocation(lineShader.handle, "a_color");
+            lineShader.a_normal = GLES30.glGetAttribLocation(lineShader.handle, "a_normal");
+            lineShader.a_halfStrokeWidth = GLES30.glGetAttribLocation(lineShader.handle, "a_halfStrokeWidth");
+            lineShader.a_dir = GLES30.glGetAttribLocation(lineShader.handle, "a_dir");
+            lineShader.a_pattern = GLES30.glGetAttribLocation(lineShader.handle, "a_pattern");
+            lineShader.a_factor = GLES30.glGetAttribLocation(lineShader.handle, "a_factor");
         }
 
-        // sync the current color with the pipeline
-        GLES20FixedPipeline.glColor4f(Color.red(this.state.color) / 255f,
-                                      Color.green(this.state.color) / 255f,
-                                      Color.blue(this.state.color) / 255f,
-                                      Color.alpha(this.state.color) / 255f);
-    }
-    
-    private static void renderLinesBuffers(VectorProgram vectorProgram, FloatBuffer buf, int mode, int numPoints) {
-        GLES20FixedPipeline.glVertexAttribPointer(vectorProgram.aVertexCoordsHandle,
-                                                  vectorProgram.vertSize,
-                                                  GLES20FixedPipeline.GL_FLOAT,
-                                                  false,
-                                                  0,
-                                                  buf);
+        GLES30.glUseProgram(lineShader.handle);
 
-        GLES20FixedPipeline.glEnableVertexAttribArray(vectorProgram.aVertexCoordsHandle);        
-        GLES30.glDrawArrays(mode, 0, numPoints);
-        GLES20FixedPipeline.glDisableVertexAttribArray(vectorProgram.aVertexCoordsHandle);
+        // MVP
+        {
+            // projection
+            GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_PROJECTION, view.scratch.matrixF, 0);
+            for(int i = 0; i < 16; i++)
+                view.scratch.matrix.set(i%4, i/4, view.scratch.matrixF[i]);
+            // model-view
+            view.scratch.matrix.concatenate(view.scene.forward);
+            view.scratch.matrix.translate(batchCentroidProj.x, batchCentroidProj.y, batchCentroidProj.z);
+            for (int i = 0; i < 16; i++) {
+                double v;
+                v = view.scratch.matrix.get(i % 4, i / 4);
+                view.scratch.matrixF[i] = (float)v;
+            }
+            GLES30.glUniformMatrix4fv(lineShader.u_mvp, 1, false, view.scratch.matrixF, 0);
+        }
+        // viewport size
+        {
+            int[] viewport = new int[4];
+            GLES30.glGetIntegerv(GLES30.GL_VIEWPORT, viewport, 0);
+            GLES30.glUniform2f(lineShader.u_viewportSize, (float)viewport[2] / 2.0f, (float)viewport[3] / 2.0f);
+        }
+
+        GLES30.glEnableVertexAttribArray(lineShader.a_vertexCoord0);
+        GLES30.glEnableVertexAttribArray(lineShader.a_vertexCoord1);
+        GLES30.glEnableVertexAttribArray(lineShader.a_color);
+        GLES30.glEnableVertexAttribArray(lineShader.a_normal);
+        GLES30.glEnableVertexAttribArray(lineShader.a_halfStrokeWidth);
+        GLES30.glEnableVertexAttribArray(lineShader.a_dir);
+        GLES30.glEnableVertexAttribArray(lineShader.a_pattern);
+        GLES30.glEnableVertexAttribArray(lineShader.a_factor);
+
+        GLES30.glEnable(GLES30.GL_BLEND);
+        GLES30.glBlendFunc(GLES30.GL_SRC_ALPHA, GLES30.GL_ONE_MINUS_SRC_ALPHA);
+
+        for (LinesBuffer it : buf) {
+            GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, it.vbo[0]);
+            GLES30.glVertexAttribPointer(lineShader.a_vertexCoord0, 3, GLES30.GL_FLOAT, false, LINES_VERTEX_SIZE, 0);
+            GLES30.glVertexAttribPointer(lineShader.a_vertexCoord1, 3, GLES30.GL_FLOAT, false, LINES_VERTEX_SIZE, 12);
+            GLES30.glVertexAttribPointer(lineShader.a_color, 4, GLES30.GL_UNSIGNED_BYTE, true, LINES_VERTEX_SIZE, 24);
+            GLES30.glVertexAttribPointer(lineShader.a_normal, 1, GLES30.GL_UNSIGNED_BYTE, true, LINES_VERTEX_SIZE, 28);
+            GLES30.glVertexAttribPointer(lineShader.a_halfStrokeWidth, 1, GLES30.GL_UNSIGNED_BYTE, false, LINES_VERTEX_SIZE, 29);
+            GLES30.glVertexAttribPointer(lineShader.a_dir, 1, GLES30.GL_UNSIGNED_BYTE, true, LINES_VERTEX_SIZE, 30);
+            // pattern
+            GLES30.glVertexAttribPointer(lineShader.a_factor, 1, GLES30.GL_UNSIGNED_BYTE, false, LINES_VERTEX_SIZE, 31);
+            GLES30.glVertexAttribPointer(lineShader.a_pattern, 1, GLES30.GL_UNSIGNED_INT, false, LINES_VERTEX_SIZE, 32);
+            GLES30.glDrawArrays(GLES30.GL_TRIANGLES, 0, it.count);
+        }
+        GLES30.glDisable(GLES30.GL_BLEND);
+
+        GLES30.glDisableVertexAttribArray(lineShader.a_vertexCoord0);
+        GLES30.glDisableVertexAttribArray(lineShader.a_vertexCoord1);
+        GLES30.glDisableVertexAttribArray(lineShader.a_color);
+        GLES30.glDisableVertexAttribArray(lineShader.a_normal);
+        GLES30.glDisableVertexAttribArray(lineShader.a_halfStrokeWidth);
+        GLES30.glDisableVertexAttribArray(lineShader.a_dir);
+        GLES30.glDisableVertexAttribArray(lineShader.a_pattern);
+        GLES30.glDisableVertexAttribArray(lineShader.a_factor);
+
+        GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, GLES30.GL_NONE);
+        GLES30.glUseProgram(GLES30.GL_NONE);
     }
-    
+
+
     private void batchDrawPoints(GLMapView view) {
         this.state.color = 0xFFFFFFFF;
         this.state.texId = 0;
@@ -912,7 +1072,8 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     
     @Override
     public void release() {
-        this.lines.clear();
+        this.surfaceLines.clear();
+        this.spriteLines.clear();
         this.polys.clear();
         
         this.batchPoints2.clear();
@@ -938,27 +1099,63 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             this.textureAtlasIndicesBuffer = null;
             this.buffers = null;
         }
+
+        for (LinesBuffer it : surfaceLineBuffers)
+            GLES30.glDeleteBuffers(1, it.vbo, 0);
+        surfaceLineBuffers.clear();
+        for (LinesBuffer it : spriteLineBuffers)
+            GLES30.glDeleteBuffers(1, it.vbo, 0);
+        spriteLineBuffers.clear();
     }
     
     /**************************************************************************/
-    
-    private static long hitTestLineStrings(Iterator<? extends GLBatchLineString> iter,
-            GeoPoint loc, double radius, Envelope hitBox, GLMapView view,
-            PointF screenPoint, float screenRadius) {
-        GLBatchLineString item;
+
+    /**
+     * Perform a hit test using a list of batch geometry
+     * @param list List of batch geometry (points or line)
+     * @param params Hit test query params
+     * @return List of hit FIDs
+     */
+    private static List<Long> hitTestGeometry(
+            LinkedList<? extends GLBatchGeometry> list,
+            HitTestQueryParams params) {
+        List<Long> fids = new ArrayList<>();
+
+        // Hit query limit
+        if (params.count >= params.limit)
+            return fids;
+
+        Iterator<? extends GLBatchGeometry> iter = list.descendingIterator();
         while (iter.hasNext()) {
-            item = iter.next();
-            if(item.renderPoints == null)
-                continue;            
-            if(testOrthoHit(item.renderPoints, item.numRenderPoints, 3,
-                    item.mbb, item.altitudeMode, loc, radius, hitBox, view,
-                    screenPoint, screenRadius))
-                return item.featureId;
+            GLBatchGeometry item = iter.next();
+
+            boolean hit = false;
+
+            // Screen based hit test for points
+            // Each point contains the last computed screen location
+            if (item instanceof GLBatchPoint) {
+                GLBatchPoint point = (GLBatchPoint) item;
+                hit = params.hitBox.contains(point.screenX, point.screenY);
+            }
+
+            // Geodetic hit tests for lines
+            // This is more memory-efficient than storing the screen point for every line vertex
+            // Also, since lines (currently) aren't rendered floating above terrain this will
+            // work just fine, for now.
+            else if (item instanceof GLBatchLineString) {
+                GLBatchLineString line = (GLBatchLineString) item;
+                hit = testOrthoHit(line, params);
+            }
+
+            if (hit) {
+                fids.add(item.featureId);
+                if (++params.count == params.limit)
+                    return fids;
+            }
         }
 
-        return FeatureDataStore.FEATURE_ID_NONE;
+        return fids;
     }
-
 
     /**************************************************************************/
     
@@ -969,25 +1166,6 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                                                 int textureSize,
                                                 FloatBuffer vertsTexCoords,
                                                 int count);
-    
-    /**
-     * Expands a buffer containing a line strip into a buffer containing lines.
-     * None of the properties of the specified buffers (e.g. position, limit)
-     * are modified as a result of this method.
-     * 
-     * @param size              The vertex size, in number of elements
-     * @param linestripPtr         The pointer to the base of the line strip buffer
-     * @param linestripPosition The position of the linestrip buffer (should
-     *                          always be <code>linestrip.position()</code>).
-     * @param linesPtr             The pointer to the base of the destination
-     *                          buffer for the lines
-     * @param linesPosition     The position of the lines buffer (should always
-     *                          be <code>lines.position()</code>).
-     * @param count             The number of points in the line string to be
-     *                          consumed.
-     */
-    private static native void expandLineStringToLines(int size, long linestripPtr,
-            int linestripPosition, long linesPtr, int linesPosition, int count);
     
     /**************************************************************************/
     
@@ -1135,20 +1313,21 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         return (DistanceCalculations.calculateRange(new GeoPoint(fromY, fromX), new GeoPoint(y, x)) < radiusMeters);
     }
     
-    private static boolean testOrthoHit(DoubleBuffer linestring, int numPoints,
-            int size, Envelope mbr, Feature.AltitudeMode altMode, GeoPoint loc,
-            double radius, Envelope test, GLMapView view, PointF screenPoint,
-            float screenRadius) {
-        long linestringPtr = Unsafe.getBufferPointer(linestring);
+    private static boolean testOrthoHit(GLBatchLineString line,
+                                        HitTestQueryParams params) {
+        if (line.renderPoints == null)
+            return false;
+
+        long linestringPtr = Unsafe.getBufferPointer(line.renderPoints);
         double x0;
         double y0;
         double x1;
         double y1;
         double z0, z1;
 
-        double lx = loc.getLongitude();
-        Envelope t2 = new Envelope(test.minX, test.minY, test.minZ,
-                test.maxX, test.maxY, test.maxZ);
+        double lx = params.loc.getLongitude();
+        Envelope t2 = new Envelope(params.hitEnvelope);
+        Envelope mbr = line.mbb;
 
         // Account for unwrapped longitudes
         if (mbr.maxX > 180 && mbr.minX > t2.maxX) {
@@ -1161,7 +1340,8 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             lx -= 360;
         }
 
-        boolean onGround = view.drawTilt == 0 || altMode == Feature.AltitudeMode.ClampToGround;
+        boolean onGround = params.view.drawTilt == 0
+                || line.altitudeMode == Feature.AltitudeMode.ClampToGround;
 
         // if it is not tilted, then a simple intersect should suffice for the first pass.
         if (onGround && !Rectangle.intersects(mbr.minX, mbr.minY, mbr.maxX, mbr.maxY,
@@ -1172,35 +1352,36 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         }
 
         // Distance calculation is squared
-        float radiusSq = screenRadius * screenRadius;
+        double radiusSq = Math.pow(params.screenRadius, 2);
 
-        int bytesPerPoint = size * 8;
-        final double ly = loc.getLatitude();
-        for (int i = 0; i < numPoints-1; ++i) {
+        int bytesPerPoint = 24;
+        final double ly = params.loc.getLatitude();
+        for (int i = 0; i < line.numRenderPoints-1; ++i) {
             x0 = Unsafe.getDouble(linestringPtr);
             y0 = Unsafe.getDouble(linestringPtr + 8);
             x1 = Unsafe.getDouble(linestringPtr + bytesPerPoint);
             y1 = Unsafe.getDouble(linestringPtr + bytesPerPoint + 8);
 
-            if(onGround && isectTest(x0, y0, x1, y1, lx, ly, radius, t2)) {
+            if(onGround && isectTest(x0, y0, x1, y1, lx, ly, params.meterRadius, t2)) {
                 return true;
             }
 
             // perform Vector3D intersection
-            if (view.drawTilt > 0) {
+            if (params.view.drawTilt > 0) {
 
                 z0 = Unsafe.getDouble(linestringPtr + 16);
                 z1 = Unsafe.getDouble(linestringPtr + bytesPerPoint + 16);
 
-                if (altMode == Feature.AltitudeMode.Relative) {
-                    z0 += view.getTerrainMeshElevation(y0, x0);
-                    z1 += view.getTerrainMeshElevation(y1, x1);
+                if (line.altitudeMode == Feature.AltitudeMode.Relative) {
+                    z0 += params.view.getTerrainMeshElevation(y0, x0);
+                    z1 += params.view.getTerrainMeshElevation(y1, x1);
                 }
 
                 com.atakmap.coremap.maps.coords.Vector3D touch =
-                        new com.atakmap.coremap.maps.coords.Vector3D(screenPoint.x, screenPoint.y, 0);
-                PointF spt1 = view.forward(new GeoPoint(y0, x0, z0));
-                PointF spt2 = view.forward(new GeoPoint(y1, x1, z1));
+                        new com.atakmap.coremap.maps.coords.Vector3D(
+                                params.screenPoint.x, params.screenPoint.y, 0);
+                PointF spt1 = params.view.forward(new GeoPoint(y0, x0, z0));
+                PointF spt2 = params.view.forward(new GeoPoint(y1, x1, z1));
 
                 com.atakmap.coremap.maps.coords.Vector3D nearest = com.atakmap.coremap.maps.coords.Vector3D.nearestPointOnSegment(touch,
                         new com.atakmap.coremap.maps.coords.Vector3D(spt1.x, spt1.y, 0),
@@ -1246,14 +1427,15 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     
     protected final static class RenderBuffers {
         public int references;
+        public final ByteBuffer buffer;
         public final FloatBuffer pointsBuffer;
         public final long pointsBufferPtr;
         public final FloatBuffer pointsVertsTexCoordsBuffer;
         public final IntBuffer textureAtlasIndicesBuffer;
         
         public RenderBuffers(int maxBuffered2dPoints) {
-            this.pointsBuffer = com.atakmap.lang.Unsafe.allocateDirect(maxBuffered2dPoints * 2 * 4)
-                    .order(ByteOrder.nativeOrder()).asFloatBuffer();
+            this.buffer = Unsafe.allocateDirect(maxBuffered2dPoints * 2 * 4, ByteBuffer.class);
+            this.pointsBuffer = this.buffer.asFloatBuffer();
             this.pointsBufferPtr = Unsafe.getBufferPointer(pointsBuffer);
 
             this.pointsVertsTexCoordsBuffer = Unsafe
@@ -1326,4 +1508,25 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                 return FID_COMPARATOR.compare(a, b);
         }
     }
+
+    final static class LinesBuffer {
+        int[] vbo = {GLES30.GL_NONE};
+        int count = 0;
+    }
+
+    final static class LineShader {
+        public int handle;
+        int u_mvp;
+        int u_viewportSize;
+        int a_vertexCoord0;
+        int a_vertexCoord1;
+        int a_texCoord;
+        int a_color;
+        int a_normal;
+        int a_halfStrokeWidth;
+        int a_dir;
+        int a_pattern;
+        int a_factor;
+    }
+
 }

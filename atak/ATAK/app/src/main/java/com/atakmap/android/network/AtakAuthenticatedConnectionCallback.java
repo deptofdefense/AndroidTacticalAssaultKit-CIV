@@ -43,7 +43,6 @@ public class AtakAuthenticatedConnectionCallback implements
 
         final String requestingSite = url.getHost();
 
-
         final String[] result = new String[] {
                 null, null
         };
@@ -55,7 +54,8 @@ public class AtakAuthenticatedConnectionCallback implements
             this.activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    showPrompt(requestingSite, previousStatus, result, complete);
+                    showPrompt(requestingSite, previousStatus, result,
+                            complete);
                 }
             });
             while (!complete[0])
@@ -70,7 +70,8 @@ public class AtakAuthenticatedConnectionCallback implements
             return result;
     }
 
-    private void showPrompt(final String site, final int previousStatus, final String[] result,
+    private void showPrompt(final String site, final int previousStatus,
+            final String[] result,
             final boolean[] complete) {
         LayoutInflater inflater = LayoutInflater.from(this.activity);
         View dialogView = inflater.inflate(R.layout.login_dialog, null);
@@ -84,13 +85,13 @@ public class AtakAuthenticatedConnectionCallback implements
             // authentication is required and has failed or has not yet been provided.
             reason.setText(R.string.http_401_message);
 
-        }else if (previousStatus == HttpURLConnection.HTTP_FORBIDDEN) {
+        } else if (previousStatus == HttpURLConnection.HTTP_FORBIDDEN) {
             //The request contained valid data and was understood by the server,
             // but the server is refusing action. This may be due to the user not
             // having the necessary permissions for a resource or needing an account
             // of some sort, or attempting a prohibited action
             reason.setText(R.string.http_403_message);
-        } else { 
+        } else {
             reason.setVisibility(View.GONE);
         }
 
@@ -103,29 +104,32 @@ public class AtakAuthenticatedConnectionCallback implements
         final EditText uidText = dialogView
                 .findViewById(R.id.txt_name);
 
-
         final EditText pwdText = dialogView
                 .findViewById(R.id.password);
 
-
-        final CheckBox checkBox = dialogView.findViewById(R.id.password_checkbox);
-        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean isChecked) {
-                if (isChecked) {
-                    pwdText.setTransformationMethod(HideReturnsTransformationMethod.getInstance());
-                } else {
-                    pwdText.setTransformationMethod(PasswordTransformationMethod.getInstance());
-                }
-            }
-        });
-
-
+        final CheckBox checkBox = dialogView
+                .findViewById(R.id.password_checkbox);
+        checkBox.setOnCheckedChangeListener(
+                new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton compoundButton,
+                            boolean isChecked) {
+                        if (isChecked) {
+                            pwdText.setTransformationMethod(
+                                    HideReturnsTransformationMethod
+                                            .getInstance());
+                        } else {
+                            pwdText.setTransformationMethod(
+                                    PasswordTransformationMethod.getInstance());
+                        }
+                    }
+                });
 
         // case password exists, do not show the password to the user but allow them to reuse it
-        final AtakAuthenticationCredentials credentials =
-                AtakAuthenticationDatabase.getCredentials(
-                        AtakAuthenticationCredentials.TYPE_HTTP_BASIC_AUTH, site);
+        final AtakAuthenticationCredentials credentials = AtakAuthenticationDatabase
+                .getCredentials(
+                        AtakAuthenticationCredentials.TYPE_HTTP_BASIC_AUTH,
+                        site);
 
         if (credentials != null && credentials.username != null)
             uidText.setText(credentials.username);

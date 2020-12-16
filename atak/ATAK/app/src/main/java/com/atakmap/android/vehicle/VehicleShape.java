@@ -44,7 +44,7 @@ public class VehicleShape extends EditablePolyline implements VehicleMapItem {
 
     public static final String COT_TYPE = "u-d-v";
 
-    private MapGroup _mapGroup;
+    private final MapGroup _mapGroup;
     private boolean _setup = false;
     private int _strokeColor = DEFAULT_STROKE;
     private int _fillColor = DEFAULT_FILL;

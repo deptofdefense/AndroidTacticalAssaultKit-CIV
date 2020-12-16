@@ -225,7 +225,7 @@ public class VehiclePalletFragment extends Fragment implements
             String blockName;
         }
 
-        private Context _context;
+        private final Context _context;
         private final List<String> _blocks = new ArrayList<>();
 
         VehicleBlockAdapter(Context c) {

@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.TreeMap;
 
 /**
@@ -506,6 +507,11 @@ public class GLTriangulate {
             return false;
         }
 
+        @Override
+        public int hashCode() {
+            return Objects.hash( startID, endID);
+        }
+
         public boolean sharesPoint(Segment s) {
             return hasPoint(s.start) || hasPoint(s.end);
         }
@@ -547,6 +553,10 @@ public class GLTriangulate {
                 return x == e.x && y == e.y;
             }
             return false;
+        }
+        @Override
+        public int hashCode() {
+            return Objects.hash( x, y);
         }
 
     }
@@ -757,10 +767,13 @@ public class GLTriangulate {
                     newB = segment;
                 }
             }
-            newA.key = b.key;
-            newB.key = a.key;
-            add(newA);
-            add(newB);
+            
+            if (newA != null && newB != null) { 
+                newA.key = b.key;
+                newB.key = a.key;
+                add(newA);
+                add(newB);
+            }
         }
 
         public Segment findAbove(Segment segment) {
