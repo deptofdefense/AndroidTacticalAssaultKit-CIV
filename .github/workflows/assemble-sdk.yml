@@ -56,8 +56,10 @@ jobs:
        echo "ANDROID_NDK=$PWD/android-ndk-r${NDK_VERSION}" >> $GITHUB_ENV
     - name: Build Dependencies
       run: |
+        pushd .
         cd scripts
         bash ./prebuild.sh
+        popd
         cd takthirdparty
         rm -rf distfiles ; \
         for i in builds/* ; do \
