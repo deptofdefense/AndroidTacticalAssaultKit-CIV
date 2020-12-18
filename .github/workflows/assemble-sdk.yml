@@ -1,7 +1,7 @@
 name: Assemble ATAK
 
 on:
-  pull_request:
+  push:
 jobs:
   assemble:
     name: Build
@@ -58,6 +58,15 @@ jobs:
       run: |
         cd scripts
         bash ./prebuild.sh
+        cd takthirdparty
+        rm -rf distfiles ; \
+        for i in builds/* ; do \
+            pushd $i ; \
+            (find * -type d -not -name "include" -not -name "java" -not -name "lib" -print0 | xargs -0 -I {} rm -rf {}) ; \
+            (find . -maxdepth 1 -type f -print0 | xargs -0 -I {} rm -f {}) ; \
+            (cd lib && (find . -maxdepth 1 -type f -not -name "*.so" -print0 | xargs -0 -I {} rm -f {})) ; \
+            popd ; \
+        done
     - name: Create Keystore
       run: |
         echo y | $JAVA_HOME/bin/keytool -genkeypair -dname "cn=ATAK CIV, ou=, o=, c=US" -alias $KEYSTORE_ALIAS -keypass $KEYSTORE_KEY_PASSWORD -keystore $HOME/secrets/android_keystore -storepass $KEYSTORE_STORE_PASSWORD -validity 10000
@@ -71,14 +80,45 @@ jobs:
         echo "takReleaseKeyFilePassword=$KEYSTORE_STORE_PASSWORD" >> local.properties
         echo "takReleaseKeyAlias=$KEYSTORE_ALIAS" >> local.properties
         echo "takReleaseKeyPassword=$KEYSTORE_KEY_PASSWORD" >> local.properties
-    - name: Assemble SDK
+    - name: Assemble ATAK APK
       run: |
         cd atak
         rm -rf ATAK/app/build
         bash ./gradlew assembleCivSdk
+    - name: generate ATAK CIV SDK package
+      run: |
+        rm -rf takthirdparty
+        rm -rf takengine
+        rm -rf pluginsdk/
+        unzip -qq pluginsdk.zip
+        cp ./atak/ATAK/app/build/outputs/apk/civ/sdk/*-sdk.apk ./pluginsdk/atak.apk
+        cp ./atak/ATAK/app/build/libs/main.jar ./pluginsdk
+        cp ./atak/ATAK/app/src/civ/assets/support/license/LICENSE.txt ./pluginsdk
+        cp -r ./plugin-examples ./pluginsdk/
+        echo "ATAK CIV SDK `git rev-parse --short HEAD` (`git show -s --format=%ct`)" > pluginsdk/VERSION.txt
+        rm -rf javadoc
+        mkdir -p tmp/src
+        cp -R ./atak/ATAK/app/src/civ/java/* tmp/src
+        cp -R ./atak/ATAK/app/src/main/java/* tmp/src
+        cp -R ./atak/ATAKMapEngine/lib/src/main/java/* tmp/src
+        cp -R ./atak/MapCoreInterfaces/lib/src/main/java/* tmp/src
+        pushd .
+        cd tmp/src && javadoc -linkoffline http://d.android.com/reference file://$ANDROID_HOME/docs/reference -d ../javadoc -classpath .:$ANDROID_HOME/platforms/android-${ANDROID_COMPILE_SDK}/android.jar -subpackages . &> /dev/null || echo "success by failure"
+        popd
+        pushd .
+        cd tmp/javadoc && jar cvf ../../pluginsdk/atak-javadoc.jar .
+        popd
+        pushd .
+        cd atak-gradle-takdev
+        chmod 755 gradlew
+        dos2unix gradlew
+        ./gradlew jar
+        cp ./build/libs/atak-gradle-takdev-*.jar ../pluginsdk/atak-gradle-takdev.jar
+        popd
+        mv pluginsdk atak-civ-sdk
     - name: Upload SDK build output
       uses: actions/upload-artifact@v2
       with:
         name: assembleCivSdk
         path: |
-            atak/ATAK/app/build/outputs
+            atak-civ-sdk
