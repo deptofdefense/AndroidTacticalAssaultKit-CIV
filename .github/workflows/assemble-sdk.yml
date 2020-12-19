@@ -95,7 +95,7 @@ jobs:
         unzip -qq pluginsdk.zip
         cp ./atak/ATAK/app/build/outputs/apk/civ/sdk/*-sdk.apk ./pluginsdk/atak.apk
         cp ./atak/ATAK/app/build/libs/main.jar ./pluginsdk
-        cp ./atak/ATAK/app/src/civ/assets/support/license/LICENSE.txt ./pluginsdk
+        cp ./atak/ATAK/app/src/main/assets/support/license/LICENSE.txt ./pluginsdk
         cp -r ./plugin-examples ./pluginsdk/
         echo "ATAK CIV SDK `git rev-parse --short HEAD` (`git show -s --format=%ct`)" > pluginsdk/VERSION.txt
         rm -rf javadoc
