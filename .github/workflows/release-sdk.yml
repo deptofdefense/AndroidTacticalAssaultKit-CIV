@@ -64,7 +64,7 @@ jobs:
         rm -rf distfiles ; \
         for i in builds/* ; do \
             pushd $i ; \
-            (find * -type d -not -name "include" -not -path "include/*" -not -name "java" -not -name "lib" -print0 | xargs -0 -I {} rm -rf {}) ; \
+            (find * -type d -not -name "include" -not -path "include/*" -not -name "java" -not -name "lib" -not -path "lib/ogdi" -print0 | xargs -0 -I {} rm -rf {}) ; \
             (find . -maxdepth 1 -type f -print0 | xargs -0 -I {} rm -f {}) ; \
             (cd lib && (find . -maxdepth 1 -type f -not -name "*.so" -print0 | xargs -0 -I {} rm -f {})) ; \
             popd ; \
