@@ -173,7 +173,8 @@
         android:usesCleartextTraffic="true"
         android:description="@string/app_desc"
         android:allowBackup="false"
-        android:supportsRtl="false">
+        android:supportsRtl="false"
+        android:networkSecurityConfig="@xml/network_security_config">
 
         <meta-data android:name="plugin-api" android:value="${atakApiVersion}"/>
         <meta-data android:name="app_desc" android:value="@string/app_desc"/>
