@@ -1,8 +1,9 @@
 <network-security-config>    
-    <debug-overrides> 
+    <base-config> 
         <trust-anchors> 
-            <!-- Trust user added CAs -->
-            <certificates src="user" /> 
+          <!-- Trust user added CAs -->
+          <certificates src="system" />
+          <certificates src="user" />
         </trust-anchors>    
-    </debug-overrides>  
+    </base-config>  
 </network-security-config>
