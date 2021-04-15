@@ -8,7 +8,7 @@
 #include <Mutex.h>
 #include <Lock.h>
 
-#include <string.h>
+#include <string>
 #include <stdint.h>
 
 using namespace atakmap::jni::commoncommo;
@@ -54,7 +54,12 @@ bool atakmap::jni::commoncommo::checkEnum(JNIEnv *env,
 // CommoLoggerJNI
 
 jmethodID CommoLoggerJNI::jmethod_log = NULL;
+jclass CommoLoggerJNI::jclass_networkDetail = NULL;
+jmethodID CommoLoggerJNI::jmethod_networkDetailCtor = NULL;
+jclass CommoLoggerJNI::jclass_parsingDetail = NULL;
+jmethodID CommoLoggerJNI::jmethod_parsingDetailCtor = NULL;
 jglobalobjectref CommoLoggerJNI::nativeLevelsToJava[NUM_LOGGER_LEVELS];
+jglobalobjectref CommoLoggerJNI::nativeTypesToJava[NUM_LOGGER_TYPES];
 
 
 CommoLoggerJNI::CommoLoggerJNI(JNIEnv *env, jobject jlogger) COMMO_THROW (int) :
@@ -74,7 +79,7 @@ void CommoLoggerJNI::destroy(JNIEnv *env, CommoLoggerJNI *logger)
     delete logger;
 }
 
-void CommoLoggerJNI::log(Level level, const char *message)
+void CommoLoggerJNI::log(Level level, Type type, const char* message, void* data)
 {
     JNIEnv *env = NULL;
     LocalJNIEnv localEnv(&env);
@@ -82,13 +87,50 @@ void CommoLoggerJNI::log(Level level, const char *message)
         return;
     
     jobject jlevel = nativeLevelsToJava[level];
+    jobject jtype = nativeTypesToJava[type];
     jstring jmessage = env->NewStringUTF(message);
     if (!jmessage)
         return;
-    
-    env->CallVoidMethod(jlogger, jmethod_log, jlevel, jmessage);
-}
 
+    jobject jdetail = nullptr;
+
+    if (type == Type::TYPE_PARSING) {
+        const auto parsing_detail = static_cast<ParsingDetail*>(data);
+        if (parsing_detail != nullptr) {
+            jbyteArray jbytes = env->NewByteArray(parsing_detail->messageLen);
+            if (!jbytes) {
+                env->ExceptionClear();
+                return;
+            }
+            jstring jerror = env->NewStringUTF(parsing_detail->errorDetailString);
+            jstring jremoteEndpoint = env->NewStringUTF(parsing_detail->rxIfaceEndpointId);
+
+            env->SetByteArrayRegion(jbytes, 0, parsing_detail->messageLen, (const jbyte*)parsing_detail->messageData);
+
+            jdetail = env->NewObject(jclass_parsingDetail,
+                jmethod_parsingDetailCtor,
+                jbytes,
+                jerror,
+                jremoteEndpoint);
+            if (!jdetail)
+                // continue with no detail
+                env->ExceptionClear();
+        }
+    }
+    else if (type == Type::TYPE_NETWORK) {
+        const auto network_detail = static_cast<NetworkDetail*>(data);
+        if (network_detail != nullptr) {
+            jdetail = env->NewObject(jclass_networkDetail,
+                jmethod_networkDetailCtor,
+                network_detail->port);
+            if (!jdetail)
+                // continue with no detail
+                env->ExceptionClear();
+        }
+    }
+
+    env->CallVoidMethod(jlogger, jmethod_log, jlevel, jtype, jmessage, jdetail);
+}
 
 bool CommoLoggerJNI::reflectionInit(JNIEnv *env)
 {
@@ -100,12 +142,31 @@ bool CommoLoggerJNI::reflectionInit(JNIEnv *env)
     jmethodID method_levelName;
     jmethodID method_levelValue;
     jsize numVals;
+    jclass class_log_type;
+    jobjectArray jtypeVals;
+    jmethodID method_typeValues;
+    jmethodID method_typeName;
+    jmethodID method_typeValue;
+    jsize numTypes;
     
     memset(nativeLevelsToJava, 0, sizeof(nativeLevelsToJava));
+    memset(nativeTypesToJava, 0, sizeof(nativeTypesToJava));
 
     LOOKUP_CLASS(class_log, COMMO_PACKAGE "CommoLogger", true);
     LOOKUP_CLASS(class_log_level, COMMO_PACKAGE "CommoLogger$Level", true);
-    LOOKUP_METHOD(jmethod_log, class_log, "log", "(L" COMMO_PACKAGE "CommoLogger$Level;Ljava/lang/String;)V");
+    LOOKUP_CLASS(class_log_type, COMMO_PACKAGE "CommoLogger$Type", true);
+    LOOKUP_METHOD(jmethod_log, class_log, "log", "(L" COMMO_PACKAGE "CommoLogger$Level;L" COMMO_PACKAGE "CommoLogger$Type;Ljava/lang/String;L" COMMO_PACKAGE "CommoLogger$LoggingDetail;)V");
+
+    LOOKUP_CLASS(jclass_networkDetail,
+        COMMO_PACKAGE "CommoLogger$NetworkDetail", false);
+    LOOKUP_METHOD(jmethod_networkDetailCtor, jclass_networkDetail,
+        "<init>",
+        "(I)V");
+    LOOKUP_CLASS(jclass_parsingDetail,
+        COMMO_PACKAGE "CommoLogger$ParsingDetail", false);
+    LOOKUP_METHOD(jmethod_parsingDetailCtor, jclass_parsingDetail,
+        "<init>",
+        "([BLjava/lang/String;Ljava/lang/String;)V");
 
     // Build mapping of native levels to java levels
     LOOKUP_STATIC_METHOD(method_levelValues, class_log_level, "values", "()[L" COMMO_PACKAGE "CommoLogger$Level;");
@@ -137,6 +198,36 @@ bool CommoLoggerJNI::reflectionInit(JNIEnv *env)
     ret = ret && CHECK_LEVEL(INFO);
     ret = ret && CHECK_LEVEL(ERROR);
 #undef CHECK_LEVEL
+    if (!ret)
+        goto cleanup;
+
+    // Build mapping of native types to java levels
+    LOOKUP_STATIC_METHOD(method_typeValues, class_log_type, "values", "()[L" COMMO_PACKAGE "CommoLogger$Type;");
+    jtypeVals = (jobjectArray)env->CallStaticObjectMethod(class_log_type, method_typeValues);
+    if (env->ExceptionOccurred())
+        goto cleanup;
+
+    numTypes = env->GetArrayLength(jtypeVals);
+
+    if (numTypes != NUM_LOGGER_TYPES)
+        goto cleanup;
+
+    LOOKUP_METHOD(method_typeName, class_log_type, "name", "()Ljava/lang/String;");
+    LOOKUP_METHOD(method_typeValue, class_log_type, "ordinal", "()I");
+
+#define CHECK_TYPE(type) checkEnum(env, method_typeName,                    \
+                                      method_typeValue,                     \
+                                      jtypeVals, numTypes,                  \
+                                      #type,                                \
+                                      nativeTypesToJava,                    \
+                                      PASTE(CommoLogger::TYPE_, type),      \
+                                      PASTE(CommoLogger::TYPE_, type))      \
+
+    ret = true;
+    ret = ret && CHECK_TYPE(GENERAL);
+    ret = ret && CHECK_TYPE(PARSING);
+    ret = ret && CHECK_TYPE(NETWORK);
+#undef CHECK_TYPE
 
 cleanup:
     return ret;
@@ -148,6 +239,11 @@ void CommoLoggerJNI::reflectionRelease(JNIEnv *env)
         if (nativeLevelsToJava[i])
             env->DeleteGlobalRef(nativeLevelsToJava[i]);
         nativeLevelsToJava[i] = NULL;
+    }
+    for (int i = 0; i < NUM_LOGGER_TYPES; ++i) {
+        if (nativeTypesToJava[i])
+            env->DeleteGlobalRef(nativeTypesToJava[i]);
+        nativeTypesToJava[i] = NULL;
     }
 }
 

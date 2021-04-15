@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<links xmlns="http://titanium.dstc.edu.au/xml/xs3p">
+    <schema file-location="details/__chat.xsd" docfile-location="details/__chat.html"/>
+    <schema file-location="details/__geofence.xsd" docfile-location="details/__geofence.html"/>
+    <schema file-location="details/__group.xsd" docfile-location="details/__group.html"/>
+    <schema file-location="details/__serverdestination.xsd" docfile-location="details/__serverdestination.html"/>
+    <schema file-location="details/__video.xsd" docfile-location="details/__video.html"/>
+    <schema file-location="details/archive.xsd" docfile-location="details/archive.html"/>
+    <schema file-location="details/attachment_list.xsd" docfile-location="details/attachment_list.html"/>
+    <schema file-location="details/color.xsd" docfile-location="details/color.html"/>
+    <schema file-location="details/contact.xsd" docfile-location="details/contact.html"/>
+    <schema file-location="details/emergency.xsd" docfile-location="details/emergency.html"/>
+    <schema file-location="details/environment.xsd" docfile-location="details/environment.html"/>
+    <schema file-location="details/fileshare.xsd" docfile-location="details/fileshare.html"/>
+    <schema file-location="details/fillColor.xsd" docfile-location="details/fillColor.html"/>
+    <schema file-location="details/height.xsd" docfile-location="details/height.html"/>
+    <schema file-location="details/height_unit.xsd" docfile-location="details/height_unit.html"/>
+    <schema file-location="details/labels_on.xsd" docfile-location="details/labels_on.html"/>
+    <schema file-location="details/link.xsd" docfile-location="details/link.html"/>
+    <schema file-location="details/mission.xsd" docfile-location="details/mission.html"/>
+    <schema file-location="details/precisionlocation.xsd" docfile-location="details/precisionlocation.html"/>
+    <schema file-location="details/remarks.xsd" docfile-location="details/remarks.html"/>
+    <schema file-location="details/shape.xsd" docfile-location="details/shape.html"/>
+    <schema file-location="details/status.xsd" docfile-location="details/status.html"/>
+    <schema file-location="details/strokeColor.xsd" docfile-location="details/strokeColor.html"/>
+    <schema file-location="details/strokeWeight.xsd" docfile-location="details/strokeWeight.html"/>
+    <schema file-location="details/takv.xsd" docfile-location="details/takv.html"/>
+    <schema file-location="details/uid.xsd" docfile-location="details/uid.html"/>
+    <schema file-location="details/usericon.xsd" docfile-location="details/usericon.html"/>
+
+    <schema file-location="event/point.xsd" docfile-location="event/point.html"/>
+</links>

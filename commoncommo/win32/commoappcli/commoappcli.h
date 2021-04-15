@@ -31,7 +31,7 @@ namespace TAK {
                 virtual void ContactAdded(System::String ^ const c);
                 virtual void ContactRemoved(System::String ^const c);
 
-                virtual void Log(ICommoLogger::Level level, System::String ^message);
+                virtual void Log(ICommoLogger::Level level, ICommoLogger::Type type, System::String^ message, System::Object^ data);
 
                 virtual void InterfaceDown(NetInterface ^iface);
                 virtual void InterfaceUp(NetInterface ^iface);

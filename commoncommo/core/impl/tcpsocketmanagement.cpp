@@ -475,7 +475,7 @@ void TcpSocketManagement::ioThreadProcess()
 
         } catch (SocketException &) {
             // odd. Force a rebuild
-            logger->log(CommoLogger::LEVEL_ERROR, "tcp main io select failed");
+            InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "tcp main io select failed");
             killAllSockets = true;
         }
 
@@ -644,7 +644,8 @@ void TcpSocketManagement::recvQueueThreadProcess()
             }
         } catch (std::invalid_argument &e) {
             // Drop this item
-            InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Invalid CoT message received: %s", e.what() == NULL ? "unknown error" : e.what());
+            CommoLogger::ParsingDetail detail{ data, dataLen, e.what() == NULL ? "" : e.what(), qItem.endpoint.c_str() };
+            InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, CommoLogger::TYPE_PARSING, &detail, "Invalid CoT message received: %s", e.what() == NULL ? "unknown error" : e.what());
         }
         if (decrypted)
             delete[] data;

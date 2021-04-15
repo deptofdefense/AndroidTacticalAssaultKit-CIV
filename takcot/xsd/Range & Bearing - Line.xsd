@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="event/point.xsd"/>
+  <xs:include schemaLocation="details/contact.xsd"/>
+  <xs:include schemaLocation="details/remarks.xsd"/>
+  <xs:include schemaLocation="details/precisionlocation.xsd"/>
+  <xs:include schemaLocation="details/labels_on.xsd"/>  
+  <xs:include schemaLocation="details/color.xsd"/>  
+  <xs:include schemaLocation="details/status.xsd"/>
+  <xs:include schemaLocation="details/remarks.xsd"/>
+  <xs:include schemaLocation="details/strokeColor.xsd"/>
+  <xs:include schemaLocation="details/strokeWeight.xsd"/>
+
+  <xs:simpleType name="rangeUnits">
+    <xs:restriction base="xs:integer">
+      <xs:enumeration value="0" />
+      <xs:enumeration value="1" />
+      <xs:enumeration value="2" />
+      <xs:enumeration value="3" />
+      <xs:enumeration value="4" />
+      <xs:enumeration value="5" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="bearingUnits">
+    <xs:restriction base="xs:integer">
+      <xs:enumeration value="0" />
+      <xs:enumeration value="1" />
+      <xs:enumeration value="2" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="northRef">
+    <xs:restriction base="xs:integer">
+      <xs:enumeration value="0" />
+      <xs:enumeration value="1" />
+      <xs:enumeration value="2" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="event">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="point" type="event_point" />
+        <xs:element name="detail">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="range">
+                <xs:complexType>
+                  <xs:attribute name="value" type="xs:decimal" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                          The range distance
+                        </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="bearing">
+                <xs:complexType>
+                  <xs:attribute name="value" type="xs:decimal" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                          The bearing angle
+                        </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="inclination">
+                <xs:complexType>
+                  <xs:attribute name="value" type="xs:decimal" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                          The slope angle
+                        </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="rangeUnits">
+                <xs:complexType>
+                  <xs:attribute name="value" type="rangeUnits" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                          0 - kilometers
+                          1 - meters
+                          2 - miles
+                          3 - yards
+                          4 - feet
+                          5 - nautical miles
+                        </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="bearingUnits">
+                <xs:complexType>
+                  <xs:attribute name="value"  type="bearingUnits" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        0 - degrees
+                        1 - mils
+                        2 - radians
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="northRef">
+                <xs:complexType>
+                  <xs:attribute name="value" type="northRef" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        0 - true north
+                        1 - magnetic north
+                        2 - grid north
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="strokeColor" type="strokeColor" />
+              <xs:element name="strokeWeight" type="strokeWeight" />
+              <xs:element name="contact" type="contact" />
+              <xs:element name="remarks" type="remarks" />
+              <xs:element name="archive" />
+              <xs:element name="labels_on" type="labels_on" />
+              <xs:element name="color">
+                <xs:complexType>
+                  <xs:attribute name="value" type="xs:int" use="required" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="version" type="xs:decimal" use="required" />
+      <xs:attribute name="uid" type="xs:string" use="required" />
+      <xs:attribute name="type" type="xs:string" fixed="u-rb-a" use="required" />
+      <xs:attribute name="time" type="xs:dateTime" use="required" />
+      <xs:attribute name="start" type="xs:dateTime" use="required" />
+      <xs:attribute name="stale" type="xs:dateTime" use="required" />
+      <xs:attribute name="how" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

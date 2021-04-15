@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:html="http://www.w3.org/1999/xhtml" xmlns="http://titanium.dstc.edu.au/xml/xs3p" targetNamespace="http://titanium.dstc.edu.au/xml/xs3p">
+   <xsd:element name="links">
+      <xsd:annotation>
+         <xsd:documentation>
+            <html:p>List of mappings from schema file locations (<html:code style="color:blue;">@file-location</html:code>) to their documentation file locations (<html:code style="color:blue;">@docfile-location</html:code>)</html:p>
+         </xsd:documentation>
+      </xsd:annotation>
+      <xsd:complexType>
+         <xsd:sequence>
+            <xsd:element name="schema" minOccurs="1" maxOccurs="unbounded">
+               <xsd:complexType>
+                  <xsd:attribute name="file-location" type="xsd:string" use="required"/>
+                  <xsd:attribute name="docfile-location" type="xsd:string" use="required"/>
+               </xsd:complexType>
+            </xsd:element>
+         </xsd:sequence>
+      </xsd:complexType>
+   </xsd:element>
+</xsd:schema>

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: CoT_sensor.xsd,v 1.9 2008/01/16 14:03:38 mel Exp $ 
+ Copyright (c) 2005-2008. The MITRE Corporation.  All rights reserved.
+ Approved for Public Release; Distribution Unlimited.
+ MITRE Case #11-3909  (CoT_sensor.xsd)
+ MITRE Case #07-1249  (superseded)
+
+- - - - - - - - - - - - -
+ Version History
+- - - - - - - - - - - - -
+  - 0.6: 16 Jan 2008
+    1. Corrected fov and vFov so that 360 is NOT included in range.
+    2. Added value restriction to north, [0..360)
+  - 0.5: 07 Nov 2007
+    1. Added optional attribute, vfov
+    2. Added [0..360) restriction to azimuth
+    3. Added [-90..90] restriction to elevation
+  - 0.4: 9 May 2007
+    1. Added roll attribute.
+  - 0.3: 15 Dec 2005
+    1. version attribute definition modified
+      a) Changed data type to xs:decimal
+      b) Deleted 'fixed' facet
+      c) Changed use to optional
+-->
+<!-- edited with XMLSPY v5 rel. 3 U (http://www.xmlspy.com) by Michael Los (The Mitre Corporation) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:element name="sensor">
+		<xs:annotation>
+			<xs:documentation>This is (the root class of) a Cursor On Target sub-schema for a steerable, staring sensor such as EO, IR, or Radar sensor. The root class is intended to capture only information on the sensor's orientation and field of view is.  Details about it's spectrum, sensitivity, resolution, modality, performance, etc., shouldbe captured in a "derived" subschema for that particular type of sensor.  All orientation attributes associated with sensor are normalized to an geodedic frame of reference, removing platform factors such as roll, pitch, yaw, etc. Therefore an "azimuth" of 0 means the sensor is pointed north regardless of its platform heading or attitude.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:attribute name="azimuth" use="optional">
+				<xs:annotation>
+					<xs:documentation>Direction (with respect to true north) that the sensor is pointed.  Azimuth is corrected for platform heading and attitude so an azimuth of 0 means the sensor is looking due north (albeit with some possible elevation)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="0"/>
+						<xs:maxExclusive value="360"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="elevation" use="optional">
+				<xs:annotation>
+					<xs:documentation>The vertical "tilt" of the sensor in degrees.  Zero is level (sensor looking at the horizon), positive indicates the sensor is elevated above the horizon.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="-90"/>
+						<xs:maxInclusive value="90"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="roll" use="optional">
+				<xs:annotation>
+					<xs:documentation>Roll of sensor in degrees. A positive value indicates right-side down.  
+          The intent of this attribute is to provide a means for reporting roll when it cannot be corrected 
+          with respect to the platform attitude. 
+          
+          To visualize sensor roll, consider a fixed camera on an aircraft aimed straight ahead. 
+          When the aircraft is in a roll, the camera will rotate with the aircraft
+          and the resulting image will be skewed.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minExclusive value="-180"/>
+						<xs:maxInclusive value="180"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="fov" use="optional">
+				<xs:annotation>
+					<xs:documentation>This is an angular measure of the sensor's field of view (beam width) expressed in degrees.  (This measurement is made from visible edge to visible edge, not from center of field to edge.)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="0"/>
+						<xs:maxExclusive value="360"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="vfov" use="optional">
+				<xs:annotation>
+					<xs:documentation>This is an angular measure of the sensor's vertical field of view (beam width) expressed in degrees.  (This measurement is made from visible edge to visible edge, not from center of field to edge.)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="0"/>
+						<xs:maxExclusive value="360"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="north" use="optional">
+				<xs:annotation>
+					<xs:documentation>As sensor and platform orientation change, so does the apparent direction of "north" on the resulting sensor image.  This attribute indicates the orientation (in degrees clockwise) of a "north" arrow if it were painted on the image.  Zero indicates that the north arrow would be oriented "up" on the image, 90 indicates the north arrow would point to the right.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="0"/>
+						<xs:maxExclusive value="360"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="version" type="xs:decimal" use="optional">
+				<xs:annotation>
+					<xs:documentation>Version tag for this sub schema.  Neccessary to ensure upward compatibility with future revisions.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="type" type="xs:string" use="optional">
+				<xs:annotation>
+					<xs:documentation>The sensor type.   This is a type hierarchy much like the CoT type tree.  E.g., r - raster, r-e - raster EO, r-e-z-c - raster EO zoom continuous.  See types.txt for details</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="model" type="xs:string" use="optional">
+				<xs:annotation>
+					<xs:documentation>This is the sensor model.  E.g., LANTRIN, TARPS, etc.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="range" use="optional">
+				<xs:annotation>
+					<xs:documentation>Range to target (meters).  This is the distance from the image plane to the object occupying the center pixel of the image array.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

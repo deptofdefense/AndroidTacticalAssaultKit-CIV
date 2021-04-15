@@ -1,0 +1,14 @@
+syntax = "proto3";
+option optimize_for = LITE_RUNTIME;
+
+package atakmap.commoncommo.protobuf.v1;
+
+// All items are required unless otherwise noted!
+// "required" means if they are missing on send, the conversion
+// to the message format will be rejected and fall back to opaque
+// XML representation
+message Contact {
+     // Endpoint is optional; if missing/empty do not populate.
+     string endpoint = 1;           // endpoint=
+     string callsign = 2;           // callsign=
+}

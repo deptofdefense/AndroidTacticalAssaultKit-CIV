@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v5 rel. 3 U (http://www.xmlspy.com) by . (The Mitre Corporation) 
+ Copyright (c) 2005-2007. The MITRE Corporation.  All rights reserved.
+ Approved for Public Release; Distribution Unlimited.
+ MITRE Case #06-0356
+
+- - - - - - - - - - - - -
+ Version History
+- - - - - - - - - - - - -
+  - 0.3: 26 Feb 2007
+    1. Added keywords attribute
+  - 0.2: 15 Dec 2005
+    1. version attribute definition modified
+      a) Changed data type to xs:decimal
+      b) Deleted 'fixed' facet
+  - 0.1: Initial version
+-->
+<!-- $Id: CoT_remarks.xsd,v 1.8 2007/11/15 19:17:24 mel Exp $ 
+Copyright (c) 2005 The MITRE Corporation.  All rights reserved.
+ Approved for Public Release; Distribution Unlimited.
+ MITRE Case #11-3903 (CoT_remarks_.xsd)
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" elementFormDefault="qualified" attributeFormDefault="unqualified" xsi:schemaLocation="http://www.w3.org/2001/XMLSchema http://www.w3.org/2001/XMLSchema.xsd">
+	<xs:element name="remarks">
+		<xs:annotation>
+			<xs:documentation>This is a Cursor On Target sub-schema for a generic remarks (aka "FreeText").  While the use of free text is strongly discouraged (it hampers machine-to-machine communication) it is a pragmatic necessity.  This entity attempts to encapsulate freetext in a way that simplifies subsequent machine processing.  The content of this entity is presumed to be a human-readable chunk of textual data.  The attributes merely aid in the machine handling of the data.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType mixed="true">
+			<xs:sequence>
+				<xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:attribute name="source" type="xs:string" use="optional">
+				<xs:annotation>
+					<xs:documentation>String identifying the source of this remark. (Field encoding is currently unspecified.)</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="time" type="xs:dateTime" use="optional">
+				<xs:annotation>
+					<xs:documentation>Time this remark was added to the CoT object</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="to" type="xs:string" use="optional">
+				<xs:annotation>
+					<xs:documentation>Intended recipeint(s) of this remark information. Tentative field coding as follows: The to attribute may contain the UID of the entity to whom the message is addressed.  (Implementors should expect that future versions of this sub schema will allow a comma separated list of UIDs.)  Absense of an explict addressee means the message is broadcast.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="keywords" use="optional">
+				<xs:annotation>
+					<xs:documentation>Used to track a conversation thread.  The format is a comma-separated list of freetext keywords.
+
+               ex. keywords="debriefing"            - Describes a conversation about debriefing
+               ex. keywords="mission-A"             - Describes a conversation about mission-A
+               ex. keywords="tasking_B, subject_C"  - Describes a conversation about tasking_B and subject_C
+               </xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:pattern value="[\w\- ]+(,[\w\- ]+)*"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="version" type="xs:decimal" use="optional">
+				<xs:annotation>
+					<xs:documentation>Version tag for this sub schema.  Neccessary to ensure upward compatibility with future revisions.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="environment">
+    <xs:complexType>
+      <xs:attribute name="temperature" use="required" type="xs:decimal"/>
+      <xs:attribute name="windDirection" use="required" type="xs:decimal"/>
+      <xs:attribute name="windSpeed" use="required" type="xs:decimal"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

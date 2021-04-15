@@ -267,7 +267,7 @@ void DatagramSocketManagement::interfaceUp(
     try {
         InterfaceContext *ctx = interfaceContexts.at(addr);
         if (ctx->netAddr) {
-            logger->log(CommoLogger::LEVEL_ERROR, "Interface up for already up interface? Ignoring");
+            InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Interface up for already up interface? Ignoring");
             return;
         } else {
             PGSC::Thread::LockPtr slock(NULL, NULL);
@@ -278,7 +278,7 @@ void DatagramSocketManagement::interfaceUp(
         // Flag for rebuild on receive thread
         rxNeedsRebuild = true;
     } catch (std::out_of_range &) {
-        logger->log(CommoLogger::LEVEL_ERROR, "Interface up for unknown interface?");
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Interface up for unknown interface?");
     }
 }
 
@@ -296,10 +296,10 @@ void DatagramSocketManagement::interfaceDown(
             ctx->netAddr = NULL;
             fireIfaceStatus(ctx, false);
         } else {
-            logger->log(CommoLogger::LEVEL_ERROR, "Interface down for already down interface? Ignoring");
+            InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Interface down for already down interface? Ignoring");
         }
     } catch (std::out_of_range &) {
-        logger->log(CommoLogger::LEVEL_ERROR, "Interface down for unknown interface?");
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Interface down for unknown interface?");
     }
 }
 
@@ -705,8 +705,11 @@ void DatagramSocketManagement::recvThreadProcess()
                             delete bindAddr;
                             socketContext->lastRxTime = CommoTime::now();
                         } catch (SocketException &) {
+                            CommoLogger::NetworkDetail detail{ curPort };
                             InternalUtils::logprintf(logger,
-                                    CommoLogger::LEVEL_WARNING,
+                                    CommoLogger::LEVEL_ERROR,
+                                    CommoLogger::TYPE_NETWORK,
+                                    &detail,
                                     "Unable to create listening UDP socket on port %d", curPort);
                             delete bindAddr;
                             continue;
@@ -739,7 +742,7 @@ void DatagramSocketManagement::recvThreadProcess()
                     } catch (SocketException &) {
                         // Kill the socket and we'll try again as
                         // all the joins we try should've succeeded
-                        logger->log(CommoLogger::LEVEL_ERROR, "Error joining mcast group - will rebuild socket");
+                        InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Error joining mcast group - will rebuild socket");
                         killRXSocket(socketContext);
                         continue;
                     }
@@ -765,7 +768,7 @@ void DatagramSocketManagement::recvThreadProcess()
 
         } catch (SocketException &) {
             // odd. Force a rebuild
-            logger->log(CommoLogger::LEVEL_ERROR, "datagram rx select failed");
+            InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "datagram rx select failed");
             killAllSockets = true;
         }
 
@@ -881,7 +884,8 @@ void DatagramSocketManagement::recvQueueThreadProcess()
                 }
             } catch (std::invalid_argument &e) {
                 // Drop this item
-                InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Invalid CoT Message received; dropping (%s)", e.what());
+                CommoLogger::ParsingDetail detail{ data, dataLen, e.what(), qItem.endpointId.c_str() };
+                InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, CommoLogger::TYPE_PARSING, &detail, "Invalid CoT Message received; dropping (%s)", e.what());
             }
             if (decrypted)
                 delete[] data;
@@ -1146,7 +1150,7 @@ void DatagramSocketManagement::outQueueThreadProcess()
                             }
                         }
                     } catch (SocketException &) {
-                        logger->log(CommoLogger::LEVEL_ERROR, "Socket error sending UDP message");
+                        InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Socket error sending UDP message");
                         delete *sock;
                         *sock = NULL;
                         break;

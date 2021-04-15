@@ -1,3 +1,30 @@
+** IN DEVELOPMENT
+NEW FEATURES
+* Additional detail has been added for some types of logging events, most
+  notably for incoming message parsing problems.
+
+API CHANGES
+* CommoLogger's log() method signature has changed to include additional
+  information (see NEW FEATURES).  Existing implementations can adapt to the
+  change by simply ignoring the new "type" and "detail" arguments;  the 
+  other arguments are populated as they have been in the past. The new
+  arguments add specific details about log events for more sophisicated
+  logging display without need to parse the opaque log message string.
+
+BUG FIXES
+* Prevent a potential crash (at worst) or misbehavior (at best) of mission
+  package uploads to a TAK server on architectures where a long is not
+  64-bits due to a mismatch in data type passing through variadic function
+  arguments. The most common instance of this is 32-bit Linux and Windows
+  systems.  This bug will *not* impact 64-bit systems. This bug was
+  introduced in Release 2020-09-29.
+* Java only: Fix a resource leak issue in the JNI layer of the relatively
+  new file-based I/O abstraction layer.  This bug will only surface if
+  a Java-based "file i/o provider" is installed. All native i/o providers
+  (including the default) are not impacted by this bug.  This bug was
+  introduced in Release 2020-09-29.
+
+
 ** Release 2020-09-29
 NEW FEATURES
 * File-based I/O is now performed through a layer of abstraction allowing

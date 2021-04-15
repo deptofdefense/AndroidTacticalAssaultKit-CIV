@@ -21,7 +21,8 @@
   <ItemGroup>
     <CustomBuild Include="..\..\core\impl\protobuf\*.proto">
       <Message>Running protoc compiler</Message>
-      <Command>$(ProjectDir)\..\..\..\takthirdparty\builds\win32-release\host-protobuf\bin\protoc.exe -I=$(ProjectDir)\..\..\core\impl\protobuf --cpp_out=$(ProjectDir)\..\..\core\impl\protobuf $(ProjectDir)\%(Identity)</Command>
+      <Command Condition="'$(Platform)'=='x64'">$(ProjectDir)\..\..\..\takthirdparty\builds\win64-$(Configuration)\bin\protoc.exe -I=$(ProjectDir)\..\..\core\impl\protobuf --cpp_out=$(ProjectDir)\..\..\core\impl\protobuf $(ProjectDir)\%(Identity)</Command>
+      <Command Condition="'$(Platform)'=='Win32'">$(ProjectDir)\..\..\..\takthirdparty\builds\win32-$(Configuration)\host-protobuf\bin\protoc.exe -I=$(ProjectDir)\..\..\core\impl\protobuf --cpp_out=$(ProjectDir)\..\..\core\impl\protobuf $(ProjectDir)\%(Identity)</Command>
       <Outputs>$(ProjectDir)\..\..\core\impl\protobuf\%(Filename).pb.h;$(ProjectDir)\..\..\core\impl\protobuf\%(Filename).pb.cc</Outputs>
     </CustomBuild>
   </ItemGroup>
@@ -148,30 +149,44 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>commoncommo</RootNamespace>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(WindowsTargetPlatformVersion)'=='' And '$(VisualStudioVersion)'!='14.0'">
+    <!-- Latest Target Version property -->
+    <LatestTargetPlatformVersion>$([Microsoft.Build.Utilities.ToolLocationHelper]::GetLatestSDKTargetPlatformVersion('Windows', '10.0'))</LatestTargetPlatformVersion>
+    <WindowsTargetPlatformVersion Condition="'$(WindowsTargetPlatformVersion)' == ''">$(LatestTargetPlatformVersion)</WindowsTargetPlatformVersion>
+    <TargetPlatformVersion>$(WindowsTargetPlatformVersion)</TargetPlatformVersion>
+  </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='14.0'">v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='15.0'">v141</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='16.0'">v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='14.0'">v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='15.0'">v141</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='16.0'">v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='14.0'">v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='15.0'">v141</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='16.0'">v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='14.0'">v140</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='15.0'">v141</PlatformToolset>
+    <PlatformToolset Condition="'$(VisualStudioVersion)'=='16.0'">v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -209,14 +224,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;_USRDLL;COMMONCOMMO_EXPORTS;PROTOBUF_USE_DLLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\raster\takthirdparty\builds\win32-debug\include\libxml2;..\..\..\raster\takthirdparty\builds\win32-debug\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\takthirdparty\builds\win32-debug\include\libxml2;..\..\..\takthirdparty\builds\win32-debug\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4290;4251;4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\..\raster\takthirdparty\builds\win32-debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\takthirdparty\builds\win32-debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>ws2_32.lib;libcurl_debug.lib;libxml2.lib;libmicrohttpd-dll_d.lib;pgscthread.lib;libssl.lib;libcrypto.lib;libprotobuf-lite.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
@@ -230,14 +245,14 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_DEBUG;_WINDOWS;_USRDLL;COMMONCOMMO_EXPORTS;PROTOBUF_USE_DLLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\raster\takthirdparty\builds\win64-debug\include\libxml2;..\..\..\raster\takthirdparty\builds\win64-debug\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\takthirdparty\builds\win64-debug\include\libxml2;..\..\..\takthirdparty\builds\win64-debug\include;..\..\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DisableSpecificWarnings>4290;4251;4351;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\..\raster\takthirdparty\builds\win64-debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\takthirdparty\builds\win64-debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>ws2_32.lib;libcurl_debug.lib;libxml2.lib;libmicrohttpd-dll_d.lib;pgscthread.lib;libssl.lib;libcrypto.lib;libprotobuf-lite.lib;iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>

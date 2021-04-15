@@ -75,7 +75,7 @@ namespace commoncommo {
         CommoLoggerJNI(JNIEnv *env, jobject jlogger) COMMO_THROW (int);
         static void destroy(JNIEnv *env, CommoLoggerJNI *logger);
 
-        virtual void log(Level level, const char *message);
+        virtual void log(Level level, Type type, const char* message, void* detail) override;
         
         static bool reflectionInit(JNIEnv *env);
         static void reflectionRelease(JNIEnv *env);
@@ -86,8 +86,14 @@ namespace commoncommo {
         jglobalobjectref jlogger;
         
         static jmethodID jmethod_log;
+        static jclass jclass_networkDetail;
+        static jmethodID jmethod_networkDetailCtor;
+        static jclass jclass_parsingDetail;
+        static jmethodID jmethod_parsingDetailCtor;
         static const int NUM_LOGGER_LEVELS = 5;
+        static const int NUM_LOGGER_TYPES = 3;
         static jglobalobjectref nativeLevelsToJava[NUM_LOGGER_LEVELS];
+        static jglobalobjectref nativeTypesToJava[NUM_LOGGER_TYPES];
     };
 
 

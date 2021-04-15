@@ -143,7 +143,7 @@ public:
             message->serialize(&data);
         } catch (std::invalid_argument &) {
             // Can't serialize this message - give up.
-            logger->log(CommoLogger::LEVEL_DEBUG, "Unserializable CoT message?");
+            InternalUtils::logprintf(logger, CommoLogger::LEVEL_DEBUG, "Unserializable CoT message?");
             return;
         }
         // Copy endpoint, if provided
@@ -530,10 +530,10 @@ void Commo::deregisterFileIOProvider(const FileIOProvider& provider)
 
 void Commo::setWorkaroundQuirks(int quirksMask) {
     if (quirksMask & QUIRK_MAGTAB) {
-        impl->logger->log(CommoLogger::LEVEL_INFO, "Magtab Quirk enabled");
+        InternalUtils::logprintf(impl->logger, CommoLogger::LEVEL_INFO, "Magtab Quirk enabled");
         impl->dgMgmt->setMagtabWorkaroundEnabled(true);
     } else {
-        impl->logger->log(CommoLogger::LEVEL_INFO, "Magtab Quirk disabled");
+        InternalUtils::logprintf(impl->logger, CommoLogger::LEVEL_INFO, "Magtab Quirk disabled");
         impl->dgMgmt->setMagtabWorkaroundEnabled(false);
     }
 }

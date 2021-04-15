@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: CoT_request.xsd,v 1.8 2007/11/15 19:17:24 mel Exp $ 
+ Copyright (c) 2005-2007 The MITRE Corporation.  All rights reserved.
+ Approved for Public Release; Distribution Unlimited.
+ MITRE Case #11-3910 (CoT_request.xsd)
+ MITRE Case #07-1248 (superseded)
+
+ 
+- - - - - - - - - - - - -
+ Version History
+- - - - - - - - - - - - -
+  - 0.4: 21 Oct 2007
+  1. Changed notify attribute to be an URL and deprecated previous format.  
+  - 0.3: 15 Dec 2005
+    1. version attribute definition modified
+      a) Changed data type to xs:decimal
+      b) Deleted 'fixed' facet
+-->
+<!-- edited with XMLSPY v5 rel. 3 U (http://www.xmlspy.com) by . (The Mitre Corporation) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:element name="request">
+		<xs:annotation>
+			<xs:documentation>This is a Cursor On Target sub-schema for a generic request.  This schema contains information common to all requests, specifically where responses should be sent, the overall priority of the request, if immediate willco/cantco acknowledgement is needed, etc.  Detail infomration for specific request types are carried in sub-schemas nested within this one.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:attribute name="notify" type="xs:string" use="required">
+				<xs:annotation>
+					<xs:documentation>Network endpoint to which status notifications should be delivered. (A network endpoint is represented as an URL, e.g., tcp://hostname:port,  udp://hostname:port.   The previous format, host:port, e.g., 192.168.0.1:71556, is deprecated, but implementers should be aware that this format may be in use.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="wilcoby" type="xs:dateTime" use="optional">
+				<xs:annotation>
+					<xs:documentation>An optional field that requests the receiving system to provide a positive or negative akcnowledgement (WILCO/CANTCO) by a specific time.  This is used to ensure that deadline driven requests are made known to the operator.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="priority" type="xs:string" use="optional">
+				<xs:annotation>
+					<xs:documentation>This optional field indicates this request's relative priority with respect to other requests.  (At present, no specific coding scheme is in mandated, but a floating point value between 0.0(low) and 1.0(high) is in current (limited) use.)</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="version" type="xs:decimal" use="optional">
+				<xs:annotation>
+					<xs:documentation>Version tag for this sub schema.  Neccessary to ensure upward compatibility with future revisions.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="to" type="xs:string" use="optional">
+				<xs:annotation>
+					<xs:documentation>When present, this field contains the CoT UID of the specific entity who is being addressed.  It is assumed that all CoT entities that can provide a service are reported as friendly atoms.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="authority" type="xs:string" use="optional">
+				<xs:annotation>
+					<xs:documentation>This is a 'signature block' which holds the CoT uid of the entity which has uathorized the request.  The authorizing entity is not necessarily the originator of the request and might not be associated with the 'notify' field. Authority is intended to provide services (such as a striker) a mechanism to verify that the request has been approved.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="streamto" type="xs:string" use="optional"/>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

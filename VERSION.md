@@ -1,8 +1,14 @@
 # Version History
 
+## 4.2.0.1
+
+* Fix crash for 32-bit hosts when trying to upload Data Package to TAK Server
+* Fix JNI local reference leak
+* Potential `NullPointerException` in `AppMgmtUtils`
+* Refactor logic in `MyPreferenceFragment` to avoid potential `NullPointerException`
+
 ## 4.2.0.0
 
-* Add helloworld example plugin to distribution.
 * ATAK CIV plugins are compatible with all variants of ATAK.
 * 3D Billboard Feature.  Marker image attachments can appear as 3D Billboards when navigating routes.
 * Point Dropper - 3D Vehicle Icons improvement. Higher contrast outlines are rendered around the icons in the point dropper selector.
@@ -12,8 +18,6 @@
 * Added DTED Data Manager.
 * Added GeoPDF support.
 * Upgrade to GDAL 2.4.4.
-* ASSIMP now included as tarball.
-* Upgraded to `atak-gradle-takdev` 2.0.0.
 * Various bug fixes
 
 ## 4.1.1.17

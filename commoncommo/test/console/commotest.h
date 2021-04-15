@@ -45,33 +45,33 @@ public:
 
     void run(int argc, char *argv[]);
 
-    virtual void sendCoTFailure(const char *host, int port, const char *errorReason);
-    virtual void cotMessageReceived(const char *msg, const char *rxIfaceEndpointId);
-    virtual void genericDataReceived(const uint8_t *data, size_t length, const char *rxIfaceEndpointId);
-    virtual void contactAdded(const ContactUID *c);
-    virtual void contactRemoved(const ContactUID *c);
+    virtual void sendCoTFailure(const char *host, int port, const char *errorReason) override;
+    virtual void cotMessageReceived(const char *msg, const char *rxIfaceEndpointId) override;
+    virtual void genericDataReceived(const uint8_t *data, size_t length, const char *rxIfaceEndpointId) override;
+    virtual void contactAdded(const ContactUID *c) override;
+    virtual void contactRemoved(const ContactUID *c) override;
 
-    virtual void log(Level level, const char *message);
+    virtual void log(Level level, Type type, const char* message, void* data) override;
 
-    virtual void interfaceDown(NetInterface *iface);
-    virtual void interfaceUp(NetInterface *iface);
-    virtual void interfaceError(NetInterface *iface, netinterfaceenums::NetInterfaceErrorCode errCode);
+    virtual void interfaceDown(NetInterface *iface) override;
+    virtual void interfaceUp(NetInterface *iface) override;
+    virtual void interfaceError(NetInterface *iface, netinterfaceenums::NetInterfaceErrorCode errCode) override;
     
     
     virtual MissionPackageTransferStatus missionPackageReceiveInit(
                 char *destFile, size_t destFileSize,
                 const char *transferName, const char *sha256hash,
                 uint64_t expectedByteSize,
-                const char *senderCallsign);
-    virtual void missionPackageReceiveStatusUpdate(const MissionPackageReceiveStatusUpdate *update);
-    virtual void missionPackageSendStatusUpdate(const MissionPackageSendStatusUpdate *update);
-    virtual CoTPointData getCurrentPoint();
-    virtual void createUUID(char *uuidString);
+                const char *senderCallsign) override;
+    virtual void missionPackageReceiveStatusUpdate(const MissionPackageReceiveStatusUpdate *update) override;
+    virtual void missionPackageSendStatusUpdate(const MissionPackageSendStatusUpdate *update) override;
+    virtual CoTPointData getCurrentPoint() override;
+    virtual void createUUID(char *uuidString) override;
     
 
-    virtual void fileTransferUpdate(const SimpleFileIOUpdate *update);
+    virtual void fileTransferUpdate(const SimpleFileIOUpdate *update) override;
 
-    virtual void cloudOperationUpdate(const CloudIOUpdate *up);
+    virtual void cloudOperationUpdate(const CloudIOUpdate *up) override;
 
 private:
     std::string myUID;

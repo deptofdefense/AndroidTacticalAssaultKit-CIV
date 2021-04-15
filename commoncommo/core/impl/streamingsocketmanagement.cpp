@@ -764,7 +764,7 @@ void StreamingSocketManagement::connectionThreadProcess()
                 // Weird to get an error here, unless your name is Solaris
                 // which will apparently error on select() for sockets in error
                 // state.  Anyway, if this happens restart all of them
-                logger->log(CommoLogger::LEVEL_ERROR, "Error from tcp connection select() - retrying connections");
+                InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Error from tcp connection select() - retrying connections");
                 CommoTime rTime = CommoTime::now() + CONN_RETRY_SECONDS;
                 for (ctxIter = pendingContexts.begin(); ctxIter != pendingContexts.end(); ++ctxIter) {
                     ConnectionContext *ctx = *ctxIter;
@@ -1052,7 +1052,7 @@ void StreamingSocketManagement::ioThreadProcess()
                 } catch (SocketException &) {
                     // Socket error. Queue for going to down state.
                     fireInterfaceErr(ctx, netinterfaceenums::ERR_IO);
-                    logger->log(CommoLogger::LEVEL_ERROR, "Error sending tcp data");
+                    InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Error sending tcp data");
                     errorSet.insert(ctx);
                 }
 
@@ -1079,7 +1079,7 @@ void StreamingSocketManagement::ioThreadProcess()
             try {
                 selector.doSelect(100);
             } catch (SocketException &) {
-                logger->log(CommoLogger::LEVEL_ERROR, "Error from tcp io select()?");
+                InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Error from tcp io select()?");
                 fireInterfaceErr(ctx, netinterfaceenums::ERR_OTHER);
                 errorSet.insert(rxSet.begin(), rxSet.end());
             }
@@ -1340,7 +1340,8 @@ bool StreamingSocketManagement::dispatchRxMessage(ConnectionContext *ctx,
         }
     } catch (std::invalid_argument &e) {
         std::string s((const char *)ctx->rxBuf + ctx->rxBufStart, len);
-        InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, "Invalid CoT message received from stream: {%s} -- %s", s.c_str(), e.what() == NULL ? "" : e.what());
+        CommoLogger::ParsingDetail detail{ ctx->rxBuf + ctx->rxBufStart, len, e.what() == NULL ? "" : e.what(), ctx->remoteEndpoint.c_str() };
+        InternalUtils::logprintf(logger, CommoLogger::LEVEL_ERROR, CommoLogger::TYPE_PARSING, &detail, "Invalid CoT message received from stream: {%s} -- %s", s.c_str(), e.what() == NULL ? "" : e.what());
     }
     
     return ret;

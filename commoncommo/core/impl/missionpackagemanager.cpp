@@ -1101,7 +1101,7 @@ void MissionPackageManager::uploadThreadInitCtx(TxUploadContext *upCtx) COMMO_TH
                     CURLFORM_COPYNAME, "assetfile",
                     CURLFORM_STREAM, upCtx,
                     CURLFORM_FILENAME, upCtx->owner->filename.c_str(),
-                    CURLFORM_CONTENTSLENGTH, upCtx->owner->fileSize,
+                    CURLFORM_CONTENTSLENGTH, (long)upCtx->owner->fileSize,
                     CURLFORM_CONTENTTYPE, "application/x-zip-compressed",
                     CURLFORM_END));
             upCtx->uploadData = uploadData;

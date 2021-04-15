@@ -1,0 +1,7 @@
+<!ELEMENT links (schema)+>
+<!ATTLIST links 
+	xmlns CDATA #FIXED "http://titanium.dstc.edu.au/xml/xs3p">
+<!ELEMENT schema EMPTY>
+<!ATTLIST schema 
+	file-location CDATA #REQUIRED
+	docfile-location CDATA #REQUIRED>

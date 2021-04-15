@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: CoT_spatial.xsd,v 1.5 2007/11/15 19:17:24 mel Exp $ 
+ Copyright (c) 2005-2007. The MITRE Corporation.  All rights reserved.
+ Approved for Public Release; Distribution Unlimited.
+ MITRE Case #11-3912 (CoT_spatial.xsd)
+ MITRE Case #07-1251 (superseded)
+ 
+- - - - - - - - - - - - -
+ Version History
+- - - - - - - - - - - - -
+  - 0.3:
+    09 May 2007
+    1. Clarified definition of yaw.
+    17 Aug 2006
+    1. attitude/@yaw and spin/@yaw are now optional
+  - 0.2: 15 Dec 2005
+    1. version attribute definition modified
+      a) Changed data type to xs:decimal
+      b) Deleted 'fixed' facet
+      c) Changed use to optional
+-->
+<!-- edited with XMLSPY v5 rel. 3 U (http://www.xmlspy.com) by Douglas Robbins (The Mitre Corporation) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:element name="spatial">
+		<xs:annotation>
+			<xs:documentation>This is a Cursor On Target sub-schema for spatial information of physical entity.  It is intended to appear in the detail section of the Cursor On Target schema. It has elements to represent attitude and associated first derivatives (spin). The intention behind the spatial element is to convey the attitude of a body moving through space with respect to its "nominal" flight attitude.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="attitude">
+					<xs:annotation>
+						<xs:documentation>Attitude  represents the attitude of the entity described by the Cursor On Target base schema.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence>
+							<xs:any minOccurs="0" maxOccurs="unbounded"/>
+						</xs:sequence>
+						<xs:attribute name="roll" use="required">
+							<xs:annotation>
+								<xs:documentation>Roll of entity in degrees. Positive indicates listing to the right.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:decimal">
+									<xs:minExclusive value="-180"/>
+									<xs:maxInclusive value="180"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="pitch" use="required">
+							<xs:annotation>
+								<xs:documentation>Pitch of entity in degrees. Positive indicates nose point up.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:decimal">
+									<xs:maxInclusive value="180"/>
+									<xs:minExclusive value="-180"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="yaw" use="optional">
+							<xs:annotation>
+								<xs:documentation>Yaw of entity in degrees. Positive indicates turned to the right.
+									
+                  Yaw is defined here as is the difference between the craft's
+                  pointing direction and it's movement direction (its heading and
+                  coruse) (heading - course).  Thinking of this in terms of 
+                  "oversteer" and "understeer" in a car provides an example.  
+                  If your car is traveling normally, going in the direction 
+                  it's pointed, you have zero yaw.  If you're skidding sideways, 
+                  you'd then have a "yaw" of 90 degrees, and if that skid is to
+                  the right (the passenger side is going to hit first) then your 
+                  "yaw" is -90 degrees (since you're car is pointed 90 degrees 
+                  to the left of the direction you're moving.)
+								</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:decimal">
+									<xs:maxInclusive value="180"/>
+									<xs:minExclusive value="-180"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="eRoll" use="optional">
+							<xs:annotation>
+								<xs:documentation>1-sigma error of roll with respect to a zero mean normal Gaussian distribution.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:decimal">
+									<xs:minExclusive value="0"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="ePitch" use="optional">
+							<xs:annotation>
+								<xs:documentation>1-sigma error of pitch with respect to a zero mean normal Gaussian distribution.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:decimal">
+									<xs:minExclusive value="0"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="eYaw" use="optional">
+							<xs:annotation>
+								<xs:documentation>1-sigma error of yaw with respect to a zero mean normal Gaussian distribution.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:decimal">
+									<xs:minExclusive value="0"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="spin">
+					<xs:annotation>
+						<xs:documentation>Spin represents the first derivative of attributes found in attitude.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence>
+							<xs:any minOccurs="0" maxOccurs="unbounded"/>
+						</xs:sequence>
+						<xs:attribute name="roll" use="required" form="qualified">
+							<xs:annotation>
+								<xs:documentation>Degrees per second with positive indicating to the pilots right</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:decimal"/>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="pitch" use="required">
+							<xs:annotation>
+								<xs:documentation>Degrees per second with positive indicating nose up.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:decimal"/>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="yaw" use="optional">
+							<xs:annotation>
+								<xs:documentation>Degrees per second with positive indicating right.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:decimal"/>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="eRoll" use="optional">
+							<xs:annotation>
+								<xs:documentation>1-sigma error of roll with respect to a zero mean normal Gaussian distribution.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:decimal">
+									<xs:minExclusive value="0"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="ePitch" use="optional">
+							<xs:annotation>
+								<xs:documentation>1-sigma error of pitch with respect to a zero mean normal Gaussian distribution.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:decimal">
+									<xs:minExclusive value="0"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="eYaw" use="optional">
+							<xs:annotation>
+								<xs:documentation>1-sigma error of yaw with respect to a zero mean normal Gaussian distribution.</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:decimal">
+									<xs:minExclusive value="0"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="version" type="xs:decimal" use="optional">
+				<xs:annotation>
+					<xs:documentation>Version tag for this sub schema.  Neccessary to ensure upward compatibility with future revisions.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

@@ -61,13 +61,18 @@ namespace {
             "INFO",
             "ERROR"
     };
+    const char* TYPE_STRINGS[] = {
+            "GENERAL",
+            "PARSING",
+            "NETWORK"
+    };
     class Logger : public CommoLogger {
     public:
-        void log(Level level, const char* message) {
+        void log(Level level, Type type, const char* message, void* data) override {
             std::string s(LEVEL_STRINGS[level]);
-            fprintf(stderr, "[%s]: %s\n", s.c_str(), message);
+            std::string t(TYPE_STRINGS[type]);
+            fprintf(stderr, "[%s-%s]: %s\n", s.c_str(), t.c_str(), message);
         }
-
     };
 
 }

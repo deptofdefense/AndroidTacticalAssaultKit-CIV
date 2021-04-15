@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="event/point.xsd"/>
+  <xs:include schemaLocation="details/contact.xsd"/>
+  <xs:include schemaLocation="details/remarks.xsd"/>
+  <xs:include schemaLocation="details/precisionlocation.xsd"/>
+  <xs:include schemaLocation="details/usericon.xsd"/>
+  <xs:include schemaLocation="details/color.xsd"/>  
+  <xs:include schemaLocation="details/status.xsd"/>
+  <xs:include schemaLocation="details/link.xsd"/>
+
+  <xs:simpleType name="bullseye_bearingRef">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="T" />
+      <xs:enumeration value="M" />
+      <xs:enumeration value="G" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="event">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="point" type="event_point" />
+        <xs:element name="detail">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:choice maxOccurs="unbounded">
+                <xs:element name="archive" />
+                <xs:element name="bullseye">
+                  <xs:complexType>
+                    <xs:attribute name="mils" type="xs:boolean" use="required" />
+                    <xs:attribute name="distance" type="xs:decimal" use="required" />
+                    <xs:attribute name="bearingRef" type="bullseye_bearingRef" use="required">
+                      <xs:annotation>
+                        <xs:documentation>
+                          "M" magnetic north
+                          "T" true north
+                          "G" grid north
+                        </xs:documentation>
+                      </xs:annotation>
+                    </xs:attribute>
+                    <xs:attribute name="bullseyeUID" type="xs:string" use="required" />
+                    <xs:attribute name="distanceUnits" type="xs:string" fixed="u-r-b-bullseye" use="required" />
+                    <xs:attribute name="edgeToCenter" type="xs:boolean" use="required" />
+                    <xs:attribute name="rangeRingVisible" type="xs:boolean" use="required" />
+                    <xs:attribute name="title" type="xs:string" use="required" />
+                    <xs:attribute name="hasRangeRings" type="xs:boolean" use="required" />
+                  </xs:complexType>
+                </xs:element>
+                <xs:element name="contact" type="contact" />
+                <xs:element name="remarks" type="remarks" />
+                <xs:element name="precisionlocation" type="precisionlocation" />
+              </xs:choice>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="version" type="xs:decimal" use="required" />
+      <xs:attribute name="uid" type="xs:string" use="required" />
+      <xs:attribute name="type" type="xs:string" use="required" />
+      <xs:attribute name="time" type="xs:dateTime" use="required" />
+      <xs:attribute name="start" type="xs:dateTime" use="required" />
+      <xs:attribute name="stale" type="xs:dateTime" use="required" />
+      <xs:attribute name="how" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

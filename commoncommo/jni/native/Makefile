@@ -28,11 +28,17 @@ endif
 
 ifeq ($(findstring linux,$(TARGET)),linux)
   JAVA_TARGET=linux
+else ifeq ($(findstring macos,$(TARGET)),macos)
+  JAVA_TARGET=darwin
 else
   JAVA_TARGET=$(TARGET)
 endif
 
-ifneq ($(findstring android,$(TARGET)),android)
+ifeq ($(findstring macos,$(TARGET)),macos)
+JAVA_INC=-I"$(JAVA_HOME)/include" -I"$(JAVA_HOME)/include/$(JAVA_TARGET)"
+PTHREAD_LIB=-lpthread
+LINK_FLAGS += -Wl
+else ifneq ($(findstring android,$(TARGET)),android)
 JAVA_INC=-I"$(JAVA_HOME)/include" -I"$(JAVA_HOME)/include/$(JAVA_TARGET)"
 PTHREAD_LIB=-lpthread
 LINK_FLAGS += -Wl,--hash-style=both
@@ -60,9 +66,13 @@ RELEASE_CXXFLAGS = -O2
 
 OBJS=$(subst .cpp,.o,$(wildcard *.cpp))
 
+ifeq ($(findstring macos,$(TARGET)),macos)
+LIBRARY = lib$(LIBNAME).dylib
+else
+LIBRARY = lib$(LIBNAME).so
+endif
 
 LINK_FLAGS += -shared
-LIBRARY = lib$(LIBNAME).so
 SEP=:
 EXESUF=
 

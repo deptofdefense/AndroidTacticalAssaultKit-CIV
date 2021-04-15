@@ -38,6 +38,11 @@ namespace {
             "INFO",
             "ERROR"
     };
+    const char* TYPE_STRINGS[] = {
+            "GENERAL",
+            "PARSING",
+            "NETWORK"
+    };
 
 
     std::string getTimeString() {
@@ -860,7 +865,7 @@ void test::CommoTest::contactAdded(const ContactUID *c)
     contactList.insert(s);
     contactsMenuDirty = true;
     s.insert(0, "Contact Added: ");
-    log(LEVEL_INFO, s.c_str());
+    log(LEVEL_INFO, TYPE_GENERAL, s.c_str(), nullptr);
 }
 
 void test::CommoTest::contactRemoved(const ContactUID* c)
@@ -874,14 +879,15 @@ void test::CommoTest::contactRemoved(const ContactUID* c)
         contactsMenuDirty = true;
     }
     s.insert(0, "Contact Removed: ");
-    log(LEVEL_INFO, s.c_str());
+    log(LEVEL_INFO, TYPE_GENERAL, s.c_str(), nullptr);
 }
 
-void test::CommoTest::log(Level level, const char* message)
+void test::CommoTest::log(Level level, Type type, const char* message, void* data)
 {
     std::string s(LEVEL_STRINGS[level]);
+    std::string t(TYPE_STRINGS[type]);
     std::string time(getTimeString());
-    fprintf(logFile, "[%s] %s: %s\n", s.c_str(), time.c_str(), message);
+    fprintf(logFile, "[%s-%s] %s: %s\n", s.c_str(), t.c_str(), time.c_str(), message);
     fflush(logFile);
 }
 
@@ -900,7 +906,7 @@ void test::CommoTest::genericDataReceived(const uint8_t *data, size_t length, co
         ss << std::setw(2) << (int)data[i];
     ss << "}";
     std::string s = ss.str();
-    log(LEVEL_INFO, s.c_str());
+    log(LEVEL_INFO, TYPE_GENERAL, s.c_str(), nullptr);
 }
 
 void test::CommoTest::cotMessageReceived(const char* msg, const char *rxIfaceEndpointId)
