@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:complexType name="status">
+    <xs:attribute name="battery" type="xs:integer"/>
+    <xs:attribute name="readiness" type="xs:boolean"/>
+  </xs:complexType>
+  <xs:element name="status" type="status">  
+  </xs:element>
+</xs:schema>

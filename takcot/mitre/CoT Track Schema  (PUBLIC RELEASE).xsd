@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: CoT_track.xsd,v 1.6 2008/10/26 12:36:17 mel Exp $ 
+ Copyright (c) 2005 The MITRE Corporation.  All rights reserved.
+ Approved for Public Release; Distribution Unlimited.
+ MITRE Case #06-0358
+
+- - - - - - - - - - - - -
+ Version History
+- - - - - - - - - - - - -
+  - 0.2: 15 Dec 2005
+    1. version attribute definition modified
+      a) Changed data type to xs:decimal
+      b) Deleted 'fixed' facet
+    2. Clarification on meaning of speed add 10/26/2008
+  - 0.1: Initial version
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.w3.org/2001/XMLSchema http://www.w3.org/2001/XMLSchema.xsd"
+   elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:element name="track">
+		<xs:annotation>
+			<xs:documentation>This is a Cursor On Target detail sub-schema for track information.  The root element and associated attributes of this schema are intended to appear in the detail element of the Cursor On Target schema.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:attribute name="course" use="required">
+				<xs:annotation>
+					<xs:documentation>Direction of motion with respect to true north. Measured in degrees.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="0"/>
+						<xs:maxExclusive value="360"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="speed" use="required">
+				<xs:annotation>
+					<xs:documentation>Magnitude of motion measured in meters per second
+          
+          The “speed” attribute in the track entity represents the magnitude of 
+          the object’s velocity in three space.  That is, an object is falling 
+          vertically toward the Earth at a velocity of 100m/s it should have a 
+          reported “speed” of 100m/s even though it’s effective “ground speed” is 
+          zero.  Furthermore, the reported speed reflect that objects changing 
+          position in three space, not it’s motion through the medium, hence, an 
+          object flying at 100m/s directly into a 100m/s head wind would have a 
+          reported “speed” of zero despite the fact that it’s indicated airspeed 
+          in 100m/s.  
+
+          We observe that many systems (incorrectly) report only the horizontal
+          components of their velocity.  While not strictly correct, the resultant 
+          velocity errors tend to be small for terrestrial and surface systems.  
+          While airborne systems have the potential for much larger vertical 
+          components, vertical velocities generally remain relatively small for 
+          lift-based air vehicles in typical flight profiles.  Aggressively 
+          maneuvering aircraft and ballistic vehicles may have dominant vertical 
+          velocities and should accurately report the 3D vector.  We expect that 
+          the systems that (incorrectly) report only their horizontal velocity 
+          will not populate the “slope” attribute the of the track entity.
+          </xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="0.0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="slope" use="optional">
+				<xs:annotation>
+					<xs:documentation>Vertical component of motion vector. Measured in degrees. Negative indicates downward motion.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="-90.0"/>
+						<xs:maxInclusive value="90.0"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="eCourse" type="xs:decimal" use="optional">
+				<xs:annotation>
+					<xs:documentation>1-sigma error on a Gaussian distribution associated with the course attribute</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="eSpeed" type="xs:decimal" use="optional">
+				<xs:annotation>
+					<xs:documentation>1-sigma error on a Gaussian distribution associated with the speed attribute</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="eSlope" type="xs:decimal" use="optional">
+				<xs:annotation>
+					<xs:documentation>1-sigma error on a Gaussian distribution associated with the slope attribute</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="version" type="xs:decimal" use="optional"/>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:complexType name="link">
+    <xs:attribute name="parent_callsign" type="xs:NCName"/>
+    <xs:attribute name="production_time" type="xs:dateTime"/>
+    <xs:attribute name="relation" use="required" type="xs:NCName"/>
+    <xs:attribute name="type" use="required" type="xs:NCName"/>
+    <xs:attribute name="uid" use="required" type="xs:NMTOKEN"/>
+  </xs:complexType>
+  <xs:element name="link">  
+  </xs:element>
+</xs:schema>

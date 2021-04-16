@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: CoT__flow-tags_.xsd,v 1.5 2007/11/15 19:17:24 mel Exp $
+ Copyright (c) 2005 The MITRE Corporation.  All rights reserved.
+ Approved for Public Release; Distribution Unlimited.
+ MITRE Case #11-3899 (CoT_flow-tags_.xsd)
+ MITRE Case #06-0355 (superseded)
+ 
+- - - - - - - - - - - - -
+ Version History
+- - - - - - - - - - - - -
+  - 0.2: 15 Dec 2005
+    1. version attribute definition modified
+      a) Changed data type to xs:decimal
+      b) Deleted 'fixed' facet 
+  - 0.1: Initial version
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" elementFormDefault="qualified" attributeFormDefault="unqualified" xsi:schemaLocation="http://www.w3.org/2001/XMLSchema http://www.w3.org/2001/XMLSchema.xsd">
+	<xs:element name="_flow-tags_">
+		<xs:annotation>
+			<xs:documentation>This is a Cursor On Target detail sub-schema that holds "fingerprints" of the system that have processed a particular CoT event.  This information aids in the routine of CoT messages along a particular processing chain.  Each system that touches a particular CoT event is expected to add its own attribute to this entity.  The attribute name should reflect the particular system name, and the value should be the time stamp when the information was sent out from that system.  Some illustrative _flow-tags_ attributes are adocs, fbcb2, and tadilj, but the attribute list is not a closed set.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:attribute name="version" type="xs:decimal" use="optional"/>
+			<xs:anyAttribute processContents="lax">
+				<xs:annotation>
+					<xs:documentation>A system-specific flowtag identifier associated with the encapsulating CoT object. The attribute value should be an xs:dateTime value.</xs:documentation>
+				</xs:annotation>
+			</xs:anyAttribute>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

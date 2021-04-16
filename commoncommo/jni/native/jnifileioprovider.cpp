@@ -23,6 +23,33 @@ namespace {
         jmethodID m_positionId;
         jmethodID m_seekMethodId;
     } FileChannel_class;
+
+    class JNILocalRef
+    {
+    public :
+        JNILocalRef(JNIEnv &env, jobject obj) : env(env), obj(obj) {}
+        ~JNILocalRef()
+        {
+            if(obj)
+                env.DeleteLocalRef(obj);
+        }
+    public :
+        operator jobject () const
+        {
+            return obj;
+        }
+        operator jstring () const
+        {
+            return (jstring)obj;
+        }
+        operator bool () const
+        {
+            return !!obj;
+        }
+    private :
+        JNIEnv &env;
+        jobject obj;
+    };
 }
 
 namespace atakmap {
@@ -60,20 +87,20 @@ namespace commoncommo {
             return NULL;
         }
 
-        jstring jpath(env->NewStringUTF(path));
+        JNILocalRef jpath(*env, env->NewStringUTF(path));
         if (!jpath || env->ExceptionCheck()) {
             env->ExceptionClear();
             return NULL;
         }
 
-        jstring jmode(env->NewStringUTF(mode));
+        JNILocalRef jmode(*env, env->NewStringUTF(mode));
         if (!jmode || env->ExceptionCheck()) {
             env->ExceptionClear();
             return NULL;
         }
 
         // returned a FileChannel object
-        jobject jfileIoClass = env->CallObjectMethod(m_instance, FileIOProvider_class.open, jpath, jmode);
+        JNILocalRef jfileIoClass(*env, env->CallObjectMethod(m_instance, FileIOProvider_class.open, (jstring)jpath, (jstring)jmode));
         if (!jfileIoClass || env->ExceptionCheck()) {
             env->ExceptionClear();
             return NULL;
@@ -131,13 +158,13 @@ namespace commoncommo {
         }
 
         jobject mchannel = static_cast<jobject>(filePtr);
-        jobject mbuf(env->NewDirectByteBuffer(buf, size*nmemb));
+        JNILocalRef mbuf(*env, env->NewDirectByteBuffer(buf, size*nmemb));
         if (!mbuf || env->ExceptionCheck()) {
             env->ExceptionClear();
             return 0;
         }
 
-        jint retval = env->CallIntMethod(mchannel, FileChannel_class.m_readMethodId, mbuf);
+        jint retval = env->CallIntMethod(mchannel, FileChannel_class.m_readMethodId, (jobject)mbuf);
         if (env->ExceptionCheck()) {
             env->ExceptionClear();
             return 0;  // appropriate value on error
@@ -157,13 +184,13 @@ namespace commoncommo {
         }
 
         jobject mchannel = static_cast<jobject>(filePtr);
-        jobject mbuf(env->NewDirectByteBuffer(buf, size*nmemb));
+        JNILocalRef mbuf(*env, env->NewDirectByteBuffer(buf, size*nmemb));
         if (!mbuf || env->ExceptionCheck()) {
             env->ExceptionClear();
             return 0;
         }
 
-        jlong retval = env->CallIntMethod(mchannel, FileChannel_class.m_writeMethodId, mbuf);
+        jlong retval = env->CallIntMethod(mchannel, FileChannel_class.m_writeMethodId, (jobject)mbuf);
         if (env->ExceptionCheck()) {
             env->ExceptionClear();
             return 0;  // appropriate value on error
@@ -257,7 +284,7 @@ namespace commoncommo {
             return -1;  // appropriate value on error
         }
 
-        jobject newChannel = env->CallObjectMethod(mchannel, FileChannel_class.m_seekMethodId, off);
+        JNILocalRef newChannel(*env, env->CallObjectMethod(mchannel, FileChannel_class.m_seekMethodId, off));
 
         if (env->ExceptionCheck()) {
             env->ExceptionClear();
@@ -281,13 +308,13 @@ namespace commoncommo {
             return 0;
         }
 
-        jstring jpath(env->NewStringUTF(path));
+        JNILocalRef jpath(*env, env->NewStringUTF(path));
         if (!jpath || env->ExceptionCheck()) {
             env->ExceptionClear();
             return 0;
         }
 
-        jlong size = env->CallLongMethod(m_instance, FileIOProvider_class.getSize, jpath);
+        jlong size = env->CallLongMethod(m_instance, FileIOProvider_class.getSize, (jstring)jpath);
         if (env->ExceptionCheck())
         {
             env->ExceptionClear();

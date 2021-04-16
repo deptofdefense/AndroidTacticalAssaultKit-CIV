@@ -21,7 +21,8 @@
   <ItemGroup>
     <CustomBuild Include="..\..\core\impl\protobuf\*.proto">
       <Message>Running protoc compiler</Message>
-      <Command>$(ProjectDir)\..\..\..\takthirdparty\builds\win32-release\host-protobuf\bin\protoc.exe -I=$(ProjectDir)\..\..\core\impl\protobuf --cpp_out=$(ProjectDir)\..\..\core\impl\protobuf $(ProjectDir)\%(Identity)</Command>
+      <Command Condition="'$(Platform)'=='x64'">$(ProjectDir)\..\..\..\takthirdparty\builds\win64-$(Configuration)\host-protobuf\bin\protoc.exe -I=$(ProjectDir)\..\..\core\impl\protobuf --cpp_out=$(ProjectDir)\..\..\core\impl\protobuf $(ProjectDir)\%(Identity)</Command>
+      <Command Condition="'$(Platform)'=='Win32'">$(ProjectDir)\..\..\..\takthirdparty\builds\win32-$(Configuration)\host-protobuf\bin\protoc.exe -I=$(ProjectDir)\..\..\core\impl\protobuf --cpp_out=$(ProjectDir)\..\..\core\impl\protobuf $(ProjectDir)\%(Identity)</Command>
       <Outputs>$(ProjectDir)\..\..\core\impl\protobuf\%(Filename).pb.h;$(ProjectDir)\..\..\core\impl\protobuf\%(Filename).pb.cc</Outputs>
     </CustomBuild>
   </ItemGroup>

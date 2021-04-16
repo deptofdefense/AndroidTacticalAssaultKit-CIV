@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="mission">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="MissionChanges"/>
+      </xs:sequence>
+      <xs:attribute name="authorUid" type="xs:NMTOKEN"/>
+      <xs:attribute name="name" use="required"/>
+      <xs:attribute name="tool" use="required" type="xs:NCName"/>
+      <xs:attribute name="type" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="MissionChanges">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="MissionChange"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="MissionChange">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice minOccurs="0">
+          <xs:element ref="contentResource"/>
+          <xs:element ref="contentUid"/>
+        </xs:choice>
+        <xs:element ref="creatorUid"/>
+        <xs:element minOccurs="0" ref="externalData"/>
+        <xs:element ref="missionName"/>
+        <xs:element ref="timestamp"/>
+        <xs:element ref="type"/>
+        <xs:element minOccurs="0" ref="details"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="contentResource">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice>
+          <xs:element ref="creatorUid"/>
+          <xs:element ref="filename"/>
+        </xs:choice>
+        <xs:element ref="hash"/>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="keywords"/>
+        <xs:element ref="mimeType"/>
+        <xs:element ref="name"/>
+        <xs:element ref="size"/>
+        <xs:element ref="submissionTime"/>
+        <xs:element ref="submitter"/>
+        <xs:element minOccurs="0" ref="tool"/>
+        <xs:element ref="uid"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="filename" type="xs:string"/>
+  <xs:element name="hash" type="xs:string"/>
+  <xs:element name="keywords" type="xs:NMTOKEN"/>
+  <xs:element name="mimeType" type="xs:string"/>
+  <xs:element name="size" type="xs:integer"/>
+  <xs:element name="submissionTime" type="xs:dateTime"/>
+  <xs:element name="submitter" type="xs:NCName"/>
+  <xs:element name="contentUid" type="xs:NMTOKEN"/>
+  <xs:element name="externalData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="uid"/>
+        <xs:element ref="name"/>
+        <xs:element ref="tool"/>
+        <xs:element ref="urlData"/>
+        <xs:element ref="urlView"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="urlData" type="xs:anyURI"/>
+  <xs:element name="urlView" type="xs:anyURI"/>
+  <xs:element name="missionName" type="xs:string"/>
+  <xs:element name="timestamp" type="xs:dateTime"/>
+  <xs:element name="type" type="xs:NCName"/>
+  <xs:element name="details">
+    <xs:complexType>
+      <xs:attribute name="callsign"/>
+      <xs:attribute name="color" type="xs:integer"/>
+      <xs:attribute name="iconsetPath"/>
+      <xs:attribute name="type" use="required" type="xs:NCName"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="creatorUid" type="xs:string"/>
+  <xs:element name="name" type="xs:string"/>
+  <xs:element name="tool" type="xs:NCName"/>
+  <xs:element name="uid" type="xs:string"/>
+</xs:schema>

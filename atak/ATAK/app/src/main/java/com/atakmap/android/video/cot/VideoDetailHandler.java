@@ -99,6 +99,8 @@ public class VideoDetailHandler extends CotDetailHandler
                         parseInt(ce.getAttribute("rtspReliable"), 0),
                         "",
                         ConnectionEntry.Source.EXTERNAL);
+                entry.setIgnoreEmbeddedKLV(Boolean.parseBoolean(
+                        ce.getAttribute("ignoreEmbeddedKLV")));
                 entry.setUID(uid);
                 ConnectionEntry existing = VideoManager.getInstance()
                         .getEntry(uid);

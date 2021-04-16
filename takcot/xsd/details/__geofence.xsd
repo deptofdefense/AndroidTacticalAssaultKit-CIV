@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="__geofence">
+    <xs:attribute name="elevationMonitored" type="xs:boolean" use="required" />
+    <xs:attribute name="minElevation" type="xs:decimal" use="required" />
+    <xs:attribute name="monitor" type="xs:string" use="required" />
+    <xs:attribute name="trigger" type="xs:string" use="required" />
+    <xs:attribute name="tracking" type="xs:boolean" use="required" />
+    <xs:attribute name="maxElevation" type="xs:decimal" use="required" />
+    <xs:attribute name="boundingSphere" type="xs:decimal" use="required" />
+  </xs:complexType>
+</xs:schema>

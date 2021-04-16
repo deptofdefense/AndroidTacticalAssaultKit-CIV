@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v5 rel. 3 U (http://www.xmlspy.com) by . (The Mitre Corporation) -->
+<!-- $Id: CoT_uid.xsd,v 1.6 2007/11/15 19:17:24 mel Exp $ 
+ Copyright (c) 2005 The MITRE Corporation.  All rights reserved.
+ Approved for Public Release; Distribution Unlimited.
+ MITRE Case #11-3907  (CoT_uid.xsd)
+ MITRE Case #06-0359  (superseded)
+
+- - - - - - - - - - - - -
+ Version History
+- - - - - - - - - - - - -
+  - 0.2: 15 Dec 2005
+    1. version attribute definition modified
+      a) Changed data type to xs:decimal
+      b) Deleted 'fixed' facet
+  - 0.1: Initial version
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" elementFormDefault="qualified" attributeFormDefault="unqualified" xsi:schemaLocation="http://www.w3.org/2001/XMLSchema http://www.w3.org/2001/XMLSchema.xsd">
+	<xs:element name="uid">
+		<xs:annotation>
+			<xs:documentation>This is a Cursor On Target detail sub-schema that holds the unique ID assigned by each system that processed this event.  Most systems (including CoT) have their own method for assigning system-wide unique identifiers for a particular object.  In general, it is not possible for a single UID to be used for all systems.  This 'uid' entity provides a common place where each systems can record its  particular UID for each CoT event.  Like the _flow-tags_ element, each system is responsible for adding its own attribute to this entity.  The name of the attribute should represent the system, and the value of the attribute should be the id that system assigned to this CoT object.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:attribute name="version" type="xs:decimal" use="optional"/>
+			<xs:anyAttribute processContents="lax">
+				<xs:annotation>
+					<xs:documentation>The system-specific identifier (a.k.a UID, or track number) associated with the entity described by the encapsulating CoT object.</xs:documentation>
+				</xs:annotation>
+			</xs:anyAttribute>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>
