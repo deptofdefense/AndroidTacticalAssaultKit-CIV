@@ -1,5 +1,10 @@
 # Version History
 
+## 4.2.0.2
+
+* Address potential crash when receiving CoT shape with invalid points
+* Address potential crash when importing DTED without a file extension
+
 ## 4.2.0.1
 
 * Fix crash for 32-bit hosts when trying to upload Data Package to TAK Server

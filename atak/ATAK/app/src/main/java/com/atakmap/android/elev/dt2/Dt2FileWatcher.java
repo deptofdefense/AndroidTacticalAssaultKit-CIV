@@ -403,16 +403,20 @@ public class Dt2FileWatcher extends Thread {
             if (f.isDirectory()) {
                 res.add(scan(f));
             } else {
-                Dt2File dt = new Dt2File(f);
-                res.coverages[dt.level]
-                        .set(getCoverageIndex(dt.latitude, dt.longitude));
-                res.totalFiles++;
-                List<String> levelToFile = fileCache.get(dt.level);
-                if (levelToFile == null) {
-                    levelToFile = new ArrayList<>();
-                    fileCache.put(dt.level, levelToFile);
+                try {
+                    Dt2File dt = new Dt2File(f);
+                    res.coverages[dt.level]
+                            .set(getCoverageIndex(dt.latitude, dt.longitude));
+                    res.totalFiles++;
+                    List<String> levelToFile = fileCache.get(dt.level);
+                    if (levelToFile == null) {
+                        levelToFile = new ArrayList<>();
+                        fileCache.put(dt.level, levelToFile);
+                    }
+                    levelToFile.add(getRelativePath(f));
+                } catch (Exception e) {
+                    Log.d(TAG, "invalid dted file encountered " + f);
                 }
-                levelToFile.add(getRelativePath(f));
             }
         }
 
