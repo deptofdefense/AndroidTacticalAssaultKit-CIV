@@ -2428,14 +2428,22 @@ public class CommsMapComponent extends AbstractMapComponent implements
 
             // Generate new cert
             byte[] cert = commo.generateSelfSignedCert("atakatak");
+            FileOutputStream fos = null;
             try {
-                FileOutputStream fos = IOProviderFactory
+                 fos = IOProviderFactory
                         .getOutputStream(httpsCertFile);
                 fos.write(cert);
                 fos.close();
                 Log.d(TAG, "HttpsCert new cert stored for later use");
             } catch (IOException ex) {
                 Log.e(TAG, "Could not write https certificate file", ex);
+            } finally {
+                if (fos != null) {
+                    try {
+                        fos.close();
+                    } catch (IOException ignored) {
+                    }
+                }
             }
             return cert;
 

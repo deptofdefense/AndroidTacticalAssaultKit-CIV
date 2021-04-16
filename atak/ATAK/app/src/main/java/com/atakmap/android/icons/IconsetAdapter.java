@@ -401,8 +401,9 @@ public class IconsetAdapter extends BaseAdapter {
             }
 
             ZipOutputStream zos = null;
+            FileOutputStream fos = null;
             try {
-                FileOutputStream fos = IOProviderFactory.getOutputStream(zip);
+                fos = IOProviderFactory.getOutputStream(zip);
                 zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
                 //add iconset.xml
@@ -443,6 +444,12 @@ public class IconsetAdapter extends BaseAdapter {
                         Log.w(TAG,
                                 "Failed to close iconset: "
                                         + zip.getAbsolutePath());
+                    }
+                }
+                if (fos != null) {
+                    try {
+                        fos.close();
+                    } catch (Exception ignored) {
                     }
                 }
             }

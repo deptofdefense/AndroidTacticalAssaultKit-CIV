@@ -48,6 +48,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
@@ -430,14 +431,21 @@ public class ImageAdapter2 extends BaseAdapter {
                         synchronized (lock) {
                             BitmapFactory.Options opts = new BitmapFactory.Options();
                             opts.inJustDecodeBounds = true;
+                            InputStream is = null;
                             try {
                                 BitmapFactory.decodeStream(
-                                        IOProviderFactory
+                                        is = IOProviderFactory
                                                 .getInputStream(new File(bmpFile
                                                         .getAbsolutePath())),
                                         null, opts);
                             } catch (IOException e) {
-                                e.printStackTrace();
+                                Log.e(TAG, "error encountered", e);
+                            } finally { 
+                                if (is != null) { 
+                                   try { 
+                                       is.close();
+                                   } catch (IOException ignored) { }
+                                }
                             }
 
                             int sample = Math.max(1, (opts.outWidth / _width));
@@ -569,9 +577,10 @@ public class ImageAdapter2 extends BaseAdapter {
 
     private File _readLink(File linkFile) {
         File link = null;
+        InputStream is = null;
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(
-                    IOProviderFactory.getInputStream(linkFile)));
+                    is = IOProviderFactory.getInputStream(linkFile)));
             try {
                 String line = br.readLine();
                 link = new File(
@@ -581,6 +590,13 @@ public class ImageAdapter2 extends BaseAdapter {
             }
         } catch (IOException ex) {
             Log.e(TAG, "error: ", ex);
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException ignored) {
+                }
+            }
         }
         return link;
     }

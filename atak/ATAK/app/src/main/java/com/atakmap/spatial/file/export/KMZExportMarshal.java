@@ -161,8 +161,9 @@ public class KMZExportMarshal extends KMLExportMarshal {
         //TODO sits at 94% during serialization to KMZ/zip. Could serialize during marshall above
         ZipOutputStream zos = null;
         File kmz = getFile();
+        FileOutputStream fos = null;
         try {
-            FileOutputStream fos = IOProviderFactory.getOutputStream(kmz);
+            fos = IOProviderFactory.getOutputStream(kmz);
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             //and doc.kml
@@ -191,6 +192,11 @@ public class KMZExportMarshal extends KMLExportMarshal {
                 } catch (Exception e) {
                     Log.w(TAG, "Failed to close KMZ: " + kmz.getAbsolutePath());
                 }
+            }
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException ioe) {}
             }
         }
     }
@@ -224,20 +230,33 @@ public class KMZExportMarshal extends KMLExportMarshal {
     }
 
     private void addFile(ZipOutputStream zos, Pair<String, String> file) {
+        InputStream in = null;
         try {
             // create new zip entry
             ZipEntry entry = new ZipEntry(file.second);
             zos.putNextEntry(entry);
 
             // stream file into zipstream
-            InputStream in = getInputStream(context, file.first);
+            in = getInputStream(context, file.first);
             FileSystemUtils.copyStream(in, true, zos, false, _buffer);
 
             // close current file & corresponding zip entry
-            zos.closeEntry();
+
             Log.d(TAG, "Compressing file " + file.first);
         } catch (IOException e) {
             Log.e(TAG, "Failed to add File: " + file.second, e);
+        } finally {
+            if (zos != null) {
+                try {
+                    zos.closeEntry();
+                } catch (IOException e) { }
+            }
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException ioe) {
+                }
+            }
         }
     }
 

@@ -19,13 +19,19 @@ public class FileProtocolHandler implements ProtocolHandler {
         File file = getFile(uri);
         if (file == null)
             return null;
-
+        UriFactory.OpenResult result = null;
         try {
-            UriFactory.OpenResult result = new UriFactory.OpenResult();
+            result = new UriFactory.OpenResult();
             result.inputStream = openStream(file);
             result.contentLength = IOProviderFactory.length(file);
             return result;
         } catch (Exception e) {
+            if (result != null && result.inputStream != null) {
+                try {
+                    result.inputStream.close();
+                } catch (IOException ignored) {
+                }
+            }
             return null;
         }
     }

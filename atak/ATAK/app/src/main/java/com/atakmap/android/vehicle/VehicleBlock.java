@@ -271,9 +271,11 @@ public class VehicleBlock {
         PointF lp = null;
         double la = Double.NaN;
         CSVReader csv = null;
+        InputStream is = null;
+        InputStreamReader isr = null;
         try {
-            InputStreamReader isr = new InputStreamReader(
-                    IOProviderFactory.getInputStream(_file));
+            isr = new InputStreamReader(
+                    is = IOProviderFactory.getInputStream(_file));
             csv = new CSVReader(isr);
             //Skip the header
             csv.readNext();
@@ -340,6 +342,19 @@ public class VehicleBlock {
                     csv.close();
             } catch (IOException ignored) {
             }
+            if (isr != null) {
+                try {
+                    isr.close();
+                } catch (IOException ignored) {
+                }
+            }
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException ignored) {
+                }
+            }
+
         }
     }
 

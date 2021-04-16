@@ -14,6 +14,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringBufferInputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,9 +73,10 @@ public class PlainZipExtractor implements IMissionPackageExtractor {
         MissionPackageManifest manifest = getManifest(inZip);
         ZipInputStream zin = null;
         ZipOutputStream zos = null;
+        InputStream is = null;
         try {
             // read in from plain old zip
-            zin = new ZipInputStream(IOProviderFactory.getInputStream(inZip));
+            zin = new ZipInputStream(is = IOProviderFactory.getInputStream(inZip));
             ZipEntry zinEntry = null;
 
             // write out to mission package zip
@@ -235,6 +237,12 @@ public class PlainZipExtractor implements IMissionPackageExtractor {
                     Log.w(TAG,
                             "Failed to close Mission Package zip: "
                                     + outZip.getAbsolutePath());
+                }
+            }
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (Exception ignored) {
                 }
             }
         }

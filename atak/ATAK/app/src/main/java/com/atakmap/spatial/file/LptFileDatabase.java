@@ -18,6 +18,7 @@ import com.healthmarketscience.jackcess.Table;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import com.atakmap.coremap.locale.LocaleUtil;
 import java.util.Map;
@@ -76,9 +77,10 @@ public class LptFileDatabase extends FileDatabase {
             return;
         Envelope.Builder bounds = new Envelope.Builder();
         Database msaccessDb = null;
+        FileChannel fc = null;
         try {
             DatabaseBuilder db = new DatabaseBuilder();
-            db.setChannel(IOProviderFactory.getChannel(lptFile, "r"));
+            db.setChannel(fc = IOProviderFactory.getChannel(lptFile, "r"));
             db.setReadOnly(true);
             msaccessDb = db.open();
 
@@ -139,6 +141,13 @@ public class LptFileDatabase extends FileDatabase {
                 } catch (Exception ignored) {
                 }
             }
+            if (fc != null) {
+                try {
+                    fc.close();
+                } catch (IOException ignored) {
+                }
+            }
+
         }
 
         // Add to content handler

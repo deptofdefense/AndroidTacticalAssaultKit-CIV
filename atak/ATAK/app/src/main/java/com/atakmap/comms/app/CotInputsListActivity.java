@@ -9,6 +9,8 @@ import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
+import android.widget.Toast;
+
 import com.atakmap.comms.CotServiceRemote;
 
 import com.atakmap.app.R;
@@ -63,11 +65,25 @@ public class CotInputsListActivity extends CotPortListActivity {
                     Bundle inputData = data.getBundleExtra("data");
                     String connectString = data
                             .getStringExtra(CotPort.CONNECT_STRING_KEY);
-                    _remote.addInput(connectString, inputData);
+                    try {
+                        _remote.addInput(connectString, inputData);
+                    } catch (IllegalArgumentException iae) {
+                        Toast.makeText(
+                                this,
+                               "Invalid output encountered, make sure the address does not contain the protocol or port", Toast.LENGTH_LONG)
+                                .show();
+                    }
                 }
                 break;
             default:
-                super.onActivityResult(requestCode, resultCode, data);
+                try {
+                    super.onActivityResult(requestCode, resultCode, data);
+                } catch (IllegalArgumentException iae) {
+                    Toast.makeText(
+                            this,
+                            "Invalid output encountered, make sure the address does not contain the protocol or port", Toast.LENGTH_LONG)
+                            .show();
+                }
                 break;
         }
     }

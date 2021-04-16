@@ -72,6 +72,8 @@ import com.atakmap.map.layer.opengl.GLLayerSpi2;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.SortedSet;
@@ -463,14 +465,30 @@ public class ModelMapComponent extends AbstractMapComponent {
     static String getPointIconUri(Context ctx) {
         File f = new File(ctx.getCacheDir(), "icon_3d_map.png");
         if (!IOProviderFactory.exists(f)) {
+            InputStream is = null;
+            OutputStream os = null;
             try {
                 FileSystemUtils.copyStream(
-                        ctx.getResources()
+                        is = ctx.getResources()
                                 .openRawResource(R.drawable.icon_3d_map),
-                        true, IOProviderFactory.getOutputStream(f), true);
+                        true, os = IOProviderFactory.getOutputStream(f), true);
             } catch (Throwable t) {
                 return "resource://" + R.drawable.icon_3d_map;
+            } finally {
+                if (is != null) {
+                    try {
+                        is.close();
+                    } catch (Exception ignored) {
+                    }
+                }
+                if (os != null) {
+                    try {
+                        os.close();
+                    } catch (Exception ignored) {
+                    }
+                }
             }
+
         }
         return "file://" + f.getAbsolutePath();
     }

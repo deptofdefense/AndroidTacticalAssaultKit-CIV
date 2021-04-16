@@ -1,5 +1,10 @@
 # Version History
 
+## 4.2.0.3
+
+* Address various cases where streams may not be closed if exceptions are raised
+* Fix bug in 3D Tiles for bad bounding volume compute on Box or Sphere bounding volumes
+
 ## 4.2.0.2
 
 * Address potential crash when receiving CoT shape with invalid points

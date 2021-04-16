@@ -183,23 +183,27 @@ public final class GetFileTransferOperation extends HTTPOperation {
             response.verifyOk();
 
             // open up for writing
-            FileOutputStream fos = IOProviderFactory.getOutputStream(temp,
-                    bRestart);
-            // stream in content, keep user notified on progress
-            builder.setProgress(100, 1, false);
-            if (notifyManager != null)
-                notifyManager.notify(fileRequest.getNotificationId(),
-                        builder.build());
-
-            int len;
-            byte[] buf = new byte[8192];
-            progressTracker = new DownloadProgressTracker(fileRequest
-                    .getFileTransfer().getSize());
-            // if this is a restart, update initial content length
-            progressTracker.setCurrentLength((bRestart ? existingLength : 0));
-
+            FileOutputStream fos = null;
             InputStream in = null;
+
             try {
+
+                fos = IOProviderFactory.getOutputStream(temp,
+                        bRestart);
+                // stream in content, keep user notified on progress
+                builder.setProgress(100, 1, false);
+                if (notifyManager != null)
+                    notifyManager.notify(fileRequest.getNotificationId(),
+                            builder.build());
+
+                int len;
+                byte[] buf = new byte[8192];
+                progressTracker = new DownloadProgressTracker(fileRequest
+                        .getFileTransfer().getSize());
+                // if this is a restart, update initial content length
+                progressTracker.setCurrentLength((bRestart ? existingLength : 0));
+
+
                 in = resEntity.getContent();
                 while ((len = in.read(buf)) > 0) {
                     fos.write(buf, 0, len);
@@ -245,7 +249,12 @@ public final class GetFileTransferOperation extends HTTPOperation {
                     } catch (IOException ignored) {
                     }
                 }
-                fos.close();
+                if (fos != null) {
+                    try {
+                        fos.close();
+                    } catch (IOException ignored) {
+                    }
+                }
             }
 
             // Now verify we got download correctly

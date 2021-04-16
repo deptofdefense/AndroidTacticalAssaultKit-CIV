@@ -194,6 +194,7 @@ public class ImportDTEDZSort extends ImportInPlaceResolver {
         Notification.Builder builder = NotificationUtil.getInstance()
                 .getNotificationBuilder(notificationId);
 
+        InputStream is = null;
         try {
             // create output directory is not exists
             File folder = FileSystemUtils
@@ -204,9 +205,9 @@ public class ImportDTEDZSort extends ImportInPlaceResolver {
                 }
             }
 
-            InputStream in = IOProviderFactory.getInputStream(dtedFile);
+            is = IOProviderFactory.getInputStream(dtedFile);
             // get the zip file content
-            zis = new ZipInputStream(in);
+            zis = new ZipInputStream(is);
 
             // get the zipped file list entry
             java.util.zip.ZipEntry ze = zis.getNextEntry();
@@ -323,6 +324,12 @@ public class ImportDTEDZSort extends ImportInPlaceResolver {
                     zis.close();
                 } catch (IOException ioe) {
                     Log.d(TAG, "error occurred during unzipping", ioe);
+                }
+            }
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException ignored) {
                 }
             }
         }
