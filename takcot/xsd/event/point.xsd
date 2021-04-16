@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="event_point">
+    <xs:attribute name="lat" use="required">
+      <xs:annotation>
+        <xs:documentation>Latitude based on WGS-84 ellipsoid in signed degree-decimal format (e.g. -33.350000). Range -90 -> +90.</xs:documentation>
+      </xs:annotation>
+      <xs:simpleType>
+        <xs:restriction base="xs:decimal">
+          <xs:minInclusive value="-90"/>
+          <xs:maxInclusive value="90"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="lon" use="required">
+      <xs:annotation>
+        <xs:documentation>Longitude based on WGS-84 ellipsoid in signed degree-decimal format (e.g. 44.383333). Range -180 -> +180.</xs:documentation>
+      </xs:annotation>
+      <xs:simpleType>
+        <xs:restriction base="xs:decimal">
+          <xs:minInclusive value="-180"/>
+          <xs:maxInclusive value="180"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="hae" type="xs:decimal" use="required">
+      <xs:annotation>
+        <xs:documentation>HAE acronym for Height above Ellipsoid based on WGS-84 ellipsoid (measured in meters).</xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="ce" type="xs:decimal" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          Circular Error around point defined by lat and lon fields in meters. Although
+          named ce, this field is intended to define a circular area around the event point, not
+          necessarily an error (e.g. Describing a reservation area is not an
+          "error").  If it is appropriate for the "ce" field to represent
+          an error value (e.g. event describes laser designated target), the
+          value will represent the one sigma point for a zero mean 
+          normal (Guassian) distribution.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="le" type="xs:decimal" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          Linear Error in meters associated with the HAE field. Although named le, this 
+          field is intended to define a height range about the event point, not 
+          necessarily an error. This field, along with the ce field allow for the 
+          definition of a cylindrical volume about the point. If it is appropriate 
+          for the "le" field to represent an error (e.g. event describes laser 
+          designated target), the value will represent the one sigma point for 
+          a zero mean normal (Guassian) distribution.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+  </xs:complexType>
+</xs:schema>

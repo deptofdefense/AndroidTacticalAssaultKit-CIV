@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:complexType name="contact">
+    <xs:attribute name="callsign" use="required"/>
+    <xs:attribute name="emailAddress"/>
+    <xs:attribute name="endpoint"/>
+    <xs:attribute name="phone" type="xs:integer"/>
+    <xs:attribute name="xmppUsername"/>
+  </xs:complexType>
+  <xs:element name="contact" type="contact" />
+</xs:schema>

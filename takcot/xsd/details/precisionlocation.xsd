@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	<xs:complexType name="precisionlocation">
+		<xs:attribute name="geopointsrc" type="xs:string" />
+		<xs:attribute name="altsrc" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:documentation>
+					Common values:
+						??? - Unknown
+						DTED0
+						DTED1
+						DTED2
+						DTED3
+						LIDAR
+						USER
+						GPS
+						SRTM1
+						COT
+						CALC
+						ESTIMATED
+						RTK
+						DGPS
+						GPS_PPS
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="PRECISE_IMAGE_FILE" type="xs:string" />
+		<xs:attribute name="PRECISE_IMAGE_FILE_X" type="xs:decimal" />
+		<xs:attribute name="PRECISE_IMAGE_FILE_Y" type="xs:decimal" />
+	</xs:complexType>
+	<xs:element name="precisionlocation" type="precisionlocation">
+	</xs:element>
+</xs:schema>

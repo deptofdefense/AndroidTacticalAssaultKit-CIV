@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- $Id: CoT_image.xsd,v 1.11 2009/01/05 19:28:42 jmathews Exp $ 
+ Copyright (c) 2005-2008 The MITRE Corporation.  All rights reserved.
+ Approved for Public Release; Distribution Unlimited.
+ MITRE Case #11-3901 (CoT_image.xsd)
+ MITRE Case #07-1252 (superseded)
+ 
+- - - - - - - - - - - - -
+ Version History
+- - - - - - - - - - - - -
+  - 0.5: 16 Jan 2008
+    a) Added a description for the bands attribute
+    b) Added restriction to fov to be in range [0..360)
+    c) Added restriction to north to be in range [0..360)
+  - 0.4: 23 Jan 2006
+    [mgb] change meaning of FOV from meters to degrees reflect reality
+    [mgb] Deprecate 'analysis'
+    [mgb] Make 'source' be the UID of the original producer
+    [mgb] Deprecate "georegistered"
+    [mgb] Add 'reason' code to indicate why this image was originally produced (bda, fam, ...)
+  - 0.3: 15 Dec 2005
+    1. version attribute definition modified
+      a) Changed data type to xs:decimal
+      b) Deleted 'fixed' facet 
+
+-->
+<!-- edited with XMLSPY v5 rel. 3 U (http://www.xmlspy.com) by . (The Mitre Corporation) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:element name="image">
+		<xs:annotation>
+			<xs:documentation>This is a Cursor On Target sub-schema for abstract image product metadata. It is specifically limited to geographically located (though not necessarily geographically registered) image products.  It is not intended to contain all the meta data typically found in the NITF header associated with such images, but rather provides sufficient "hints" about the ISR product to facilitate collection queuing and ipl searching.  Full meta data will reside in the NITF header or other IPL-specific schemas.  This sub schema borrows from the NITF standard.  Note, also, that this subschema presumes is is contained within a CoT base element which provides information about center poiint, etc.  Similarly, the CoT_shape schema can be used to delimit the bounds of the image.  Furthermore, this element may conatin a base64 encoded image file.  In this case, the 'mime' attribute should indicate the image type.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType mixed="true">
+			<xs:sequence>
+				<xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:attribute name="type" type="xs:string" use="optional">
+				<xs:annotation>
+					<xs:documentation>Image type, drawn from NITF specification.  E.g., SL - side-looking radar, TI - thermal infrared, FL - forward looking infrared, RD - radar, EO - electro-optical, OP - optical, HR - high resolution radar, HS - hyperspectral, CP - color frame photography, BP - black/white frame photography, SAR - synthetic aperture radar, SARIQ - SAR radio hologram, IR - infrared, MS - multispectral, ...</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="georegistered" type="xs:boolean" use="optional">
+				<xs:annotation>
+					<xs:documentation>(DEPRECATED) True if this image has been properly geo-registered</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="source" type="xs:string" use="optional">
+				<xs:annotation>
+					<xs:documentation>(REVISED) The source of this image, specifically the CoT UID of the producer. (The intention is to indicate equipment type used to collect imagery, not organization owning image.)</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="resolution" type="xs:decimal" use="optional">
+				<xs:annotation>
+					<xs:documentation>Image product resolution (expressed in meters per pixel)</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="url" type="xs:anyURI" use="optional">
+				<xs:annotation>
+					<xs:documentation>URL link to image if the image is not embedded</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="fov" use="optional">
+				<xs:annotation>
+					<xs:documentation>(REVISED) Approximate angular field of view (degrees)</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="0"/>
+						<xs:maxExclusive value="360"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="version" type="xs:decimal" use="optional">
+				<xs:annotation>
+					<xs:documentation>Version tag for this sub schema.  Neccessary to ensure upward compatibility with future revisions.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="size" type="xs:nonNegativeInteger" use="optional">
+				<xs:annotation>
+					<xs:documentation>Approximate image file size (bytes)</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="analysis" type="xs:boolean" use="optional">
+				<xs:annotation>
+					<xs:documentation>(DEPRECATED) True if image analysis (e.g., markup) is available</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="mime" type="xs:string" use="required">
+				<xs:annotation>
+					<xs:documentation>If an in-lined image is contained in this entity, then this attribute describes the mime type of that image.  The actual image data will be base64 encoded. See http://www.w3schools.com/media/media_mimeref.asp for list of common mime types.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="width" type="xs:nonNegativeInteger" use="optional">
+				<xs:annotation>
+					<xs:documentation>The width of the image (in pixels)</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="height" type="xs:nonNegativeInteger" use="optional">
+				<xs:annotation>
+					<xs:documentation>The height of the image (in pixels)</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="reason" type="xs:string" use="optional">
+				<xs:annotation>
+					<xs:documentation>(NEW) The reason this image was originally produced (BHA, BDA, ISR, ...)  Coding is TBD but will reflect the CoT type coding structure.  E.g., a-d-b Assesment-Damage-Bomb, etc...</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="bands" type="xs:nonNegativeInteger" use="optional">
+				<xs:annotation>
+					<xs:documentation>Number of data bands within the image. For example, an RGB image as 3 bands (Red, Green, Blue bands/channels)</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="mimecsv" type="xs:string" use="optional">
+				<xs:annotation>
+					<xs:documentation>Used only if the attribute 'mime' references a container type (e.g., image/x-nitf21).  In this case, 'mimecsv' holds a list of Comma Separated Values to supplement the MIME type in the mime field.  Nominally, the values in 'mimecsv' wil lbe mime types of the elements in the composite image.  For example, if 'mime' 'image/x-nitf21', then 'mimecsv' may hold 'image/jpeg', 'image/jpeg2000', or 'image/x-eagleeye'.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="north" use="optional">
+				<xs:annotation>
+					<xs:documentation>Indicates the orientation of 'north' (true) on the image.  This is an angular measure in degrees.  Zero indicates that the north arrow would point up (towards 12 o'clock) on the image, 90 indicates that the the north arrow would point right (3 o'clock).</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="0"/>
+						<xs:maxExclusive value="360"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="quality" type="xs:string" use="optional">
+				<xs:annotation>
+					<xs:documentation>This expresses how the tradeoff between image quality and compression were made for this image.  This is usually a 'relative' quality measure, an unsigned floating point value between 0.0 (highest compression) and 1.0 (highest quality). Implementers should attempt to map this scalar value to an approximate linear progression of visual quality as determined on a typical sample image.  If the field's value carries an explicit sign (+/-) including +0 or -0, it represents the exact value expressed in a range appropriate to the compression type expressed in 'mime' or 'mimecsv'.  For example,  with 'image/x-eagleeye' the EagleEye clip setting, the quality setting may range from -4096.0 to +4096.0.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

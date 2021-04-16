@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <!-- shape choice types -->
+  <xs:complexType name="shape_ellipse">
+      <xs:attribute name="angle" use="required" type="xs:integer"/>
+      <xs:attribute name="major" use="required" type="xs:decimal"/>
+      <xs:attribute name="minor" use="required" type="xs:decimal"/>
+  </xs:complexType>
+
+  <xs:complexType name="shape_polyline">
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="vertex"/>
+      </xs:sequence>
+      <xs:attribute name="closed" use="required" type="xs:boolean"/>
+  </xs:complexType>
+
+  <xs:complexType name="shape_link">
+    <xs:sequence>
+      <xs:element minOccurs="0" ref="Style"/>
+    </xs:sequence>
+    <xs:attribute name="relation" use="required" type="xs:NCName"/>
+    <xs:attribute name="type" use="required" type="xs:NCName"/>
+    <xs:attribute name="uid" use="required"/>
+  </xs:complexType>
+
+  <xs:element name="shape">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="polyline"/>
+        <xs:sequence>
+          <xs:element ref="ellipse"/>
+          <xs:element maxOccurs="unbounded" ref="link"/>
+        </xs:sequence>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="polyline" type="shape_polyline" />
+  <xs:element name="vertex">
+    <xs:complexType>
+      <xs:attribute name="hae" use="required" type="xs:decimal"/>
+      <xs:attribute name="lat" use="required" type="xs:double"/>
+      <xs:attribute name="lon" use="required" type="xs:double"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ellipse" type="shape_ellipse" />
+  <xs:element name="link" type="shape_link" />
+  <xs:element name="Style">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="LineStyle"/>
+        <xs:element ref="PolyStyle"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="LineStyle">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="color">
+          <xs:sequence>
+            <xs:element ref="width"/>
+            <xs:element ref="alpha" minOccurs="0" maxOccurs="1" />
+          </xs:sequence>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="width" type="xs:decimal"/>
+  <xs:element name="alpha" type="xs:integer"/>
+  <xs:element name="PolyStyle" type="color"/>
+  <xs:complexType name="color">
+    <xs:sequence>
+      <xs:element ref="color"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="color" type="xs:NMTOKEN"/>
+</xs:schema>

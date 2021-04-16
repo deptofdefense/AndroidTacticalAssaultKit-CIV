@@ -226,12 +226,12 @@ public class MyPreferenceFragment extends AtakPreferenceFragment {
     private void refreshStatus() {
 
         final MapView mapView = MapView.getMapView();
-        final Context context = mapView.getContext();
-
-        CotMapComponent inst = CotMapComponent.getInstance();
+        final CotMapComponent inst = CotMapComponent.getInstance();
 
         if (mapView == null || inst == null)
             return;
+
+        final Context context = mapView.getContext();
 
         if (_myServers != null) {
             CotPortListActivity.CotPort[] servers = inst.getServers();

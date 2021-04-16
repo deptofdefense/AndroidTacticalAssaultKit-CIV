@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="event/point.xsd"/>
+  <xs:include schemaLocation="details/strokeColor.xsd"/>
+  <xs:include schemaLocation="details/strokeWeight.xsd"/>
+  <xs:include schemaLocation="details/contact.xsd"/>
+  <xs:include schemaLocation="details/remarks.xsd"/>
+  
+  <xs:simpleType name="route_fil">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Infil" />
+      <xs:enumeration value="Exfil" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="route_method">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Driving" />
+      <xs:enumeration value="Walking" />
+      <xs:enumeration value="Flying" />
+      <xs:enumeration value="Swimming" />
+      <xs:enumeration value="Watercraft" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="route_routetype">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Primary" />
+      <xs:enumeration value="Secondary" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="route_order">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Ascending Check Points" />
+      <xs:enumeration value="Descending Check Points" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:element name="event">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="point" type="event_point" />
+        <xs:element name="detail">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element maxOccurs="unbounded" name="link">
+                <xs:complexType>
+                  <xs:attribute name="uid" type="xs:string" use="required" />
+                  <xs:attribute name="callsign" type="xs:string" use="required" />
+                  <xs:attribute name="type" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        Common types:
+                          "b-m-p-c" Control Point
+                          "b-m-p-w" Waypoint
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="point" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        Format: "Lat,Lng" decimal values
+                      </xs:documentation>
+                    </xs:annotation>
+                  </xs:attribute>
+                  <xs:attribute name="remarks" type="xs:string" use="required" />
+                  <xs:attribute name="relation" type="xs:string" use="required">
+                    <xs:annotation>
+                      <xs:documentation>
+                        Common values:
+                          "c"
+                        </xs:documentation>
+                      </xs:annotation>
+                  </xs:attribute>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="link_attr">
+                <xs:complexType>
+                  <xs:attribute name="planningmethod" type="route_fil" use="required" />
+                  <xs:attribute name="color" type="xs:byte" use="required" />
+                  <xs:attribute name="method" type="route_method" use="required" />
+                  <xs:attribute name="prefix" type="xs:string" use="required" />
+                  <xs:attribute name="type" type="xs:string" use="required" />
+                  <xs:attribute name="stroke" type="xs:unsignedByte" use="required" />
+                  <xs:attribute name="direction" type="route_fil" use="required" />
+                  <xs:attribute name="routetype" type="route_routetype" use="required" />
+                  <xs:attribute name="order" type="route_order" use="required" />
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="strokeColor" type="strokeColor" />
+              <xs:element name="strokeWeight" type="strokeWeight" />
+              <xs:element name="__routeinfo">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="__navcues" />
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="contact" type="contact" />
+              <xs:element name="remarks" type="remarks" />
+              <xs:element name="archive" />
+              <xs:element name="labels_on" type="labels_on" />
+              <xs:element name="color">
+                <xs:complexType>
+                  <xs:attribute name="value" type="xs:byte" use="required" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="version" type="xs:decimal" use="required" />
+      <xs:attribute name="uid" type="xs:string" use="required" />
+      <xs:attribute name="type" type="xs:string" fixed="b-m-r" use="required" />
+      <xs:attribute name="time" type="xs:dateTime" use="required" />
+      <xs:attribute name="start" type="xs:dateTime" use="required" />
+      <xs:attribute name="stale" type="xs:dateTime" use="required" />
+      <xs:attribute name="how" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

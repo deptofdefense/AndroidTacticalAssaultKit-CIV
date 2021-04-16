@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="event/point.xsd"/>
+  <xs:include schemaLocation="details/contact.xsd"/>
+  <xs:include schemaLocation="details/remarks.xsd"/>
+  <xs:include schemaLocation="details/labels_on.xsd"/>
+  <xs:include schemaLocation="details/precisionlocation.xsd"/>
+  <xs:include schemaLocation="details/strokeColor.xsd"/>
+  <xs:include schemaLocation="details/strokeWeight.xsd"/>
+  <xs:element name="event">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="point" type="event_point" />
+        <xs:element name="detail">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="link">
+                <xs:complexType>
+                  <xs:attribute name="line" type="xs:string" use="required" />
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="strokeColor" type="strokeColor" />
+              <xs:element name="strokeWeight" type="strokeWeight" />
+              <xs:element name="contact" type="contact" />
+              <xs:element name="remarks" type="remarks" />
+              <xs:element name="archive" />
+              <xs:element name="labels_on" type="labels_on" />
+              <xs:element name="color">
+                <xs:complexType>
+                  <xs:attribute name="value" type="xs:byte" use="required" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="version" type="xs:decimal" use="required" />
+      <xs:attribute name="uid" type="xs:string" use="required" />
+      <xs:attribute name="type" type="xs:string" fixed="u-d-f-m" use="required" />
+      <xs:attribute name="time" type="xs:dateTime" use="required" />
+      <xs:attribute name="start" type="xs:dateTime" use="required" />
+      <xs:attribute name="stale" type="xs:dateTime" use="required" />
+      <xs:attribute name="how" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

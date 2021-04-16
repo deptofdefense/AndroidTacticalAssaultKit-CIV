@@ -1,0 +1,24 @@
+syntax = "proto3";
+option optimize_for = LITE_RUNTIME;
+
+package atakmap.commoncommo.protobuf.v1;
+
+// TAK Protocol control message
+// This specifies to a recipient what versions
+// of protocol elements this sender supports during
+// decoding.
+message TakControl {
+    // Lowest TAK protocol version supported
+    // If not filled in (reads as 0), version 1 is assumed
+    uint32 minProtoVersion = 1;
+
+    // Highest TAK protocol version supported
+    // If not filled in (reads as 0), version 1 is assumed
+    uint32 maxProtoVersion = 2;
+
+    // UID of the sending contact. May be omitted if
+    // this message is paired in a TakMessage with a CotEvent
+    // and the CotEvent contains this information
+    string contactUid = 3;
+}
+

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:complexType name="remarks" mixed="true">
+    <xs:attribute name="source" type="xs:NCName"/>
+    <xs:attribute name="sourceID"/>
+    <xs:attribute name="time" type="xs:dateTime"/>
+    <xs:attribute name="to"/>
+  </xs:complexType>
+  <xs:element name="remarks" type="remarks">  
+  </xs:element>
+</xs:schema>

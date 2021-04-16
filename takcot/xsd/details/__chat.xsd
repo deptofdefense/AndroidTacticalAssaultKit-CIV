@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="__chat">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="chatgrp"/>
+      </xs:sequence>
+      <xs:attribute name="chatroom" use="required"/>
+      <xs:attribute name="groupOwner" use="required" type="xs:boolean"/>
+      <xs:attribute name="id" use="required"/>
+      <xs:attribute name="parent" type="xs:NCName"/>
+      <xs:attribute name="senderCallsign" use="required" type="xs:NMTOKEN"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="chatgrp">
+    <xs:complexType>
+      <xs:attribute name="id" use="required"/>
+      <xs:attribute name="uid0" use="required" type="xs:NMTOKEN"/>
+      <xs:attribute name="uid1" use="required"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

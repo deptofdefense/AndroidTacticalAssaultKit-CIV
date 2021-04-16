@@ -1,0 +1,521 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Schema for Cursor-On-Target (CoT) Event data model (Version 2.0) 13-June-2003 -->
+<!--
+        CLARIFICATIONS to 2.0 DOCUMENTATION
+  
+1) [26 Feb 07] The name portion of an opex attribute value is optional.
+2) [26 Feb 07] The opex attribute value can begin with 's' to denote a simulation.
+3) [26 Feb 07] The fractional seconds component of time, start, and stale is optional
+   and can contain any number of digits.
+  
+Copyright (c) 2005 The MITRE Corporation.  All rights reserved.
+Approved for Public Release; Distribution Unlimited.
+MITRE Case #11-3895 (Event-PUBLIC.xsd)
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	<xs:element name="event">
+		<xs:annotation>
+			<xs:documentation>Event Definition</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:all>
+				<xs:element ref="point"/>
+				<xs:element ref="detail" minOccurs="0"/>
+			</xs:all>
+			<xs:attribute name="version" use="required">
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="type" use="required">
+				<xs:annotation>
+					<xs:documentation>
+   The "type" attribute is a composite of components delimited by the semi-colon
+   character. The first component of this composite attribute is defined below.
+   Future versions of this schema will define other components which we expect
+   will aid in machine filtering. Despite the exclusion of definitions
+   for additional components in this version of the schema, users of
+   this schema should expect and design an optional trailing field 
+   delimited by the semi-colon character. This field can be ignored.
+
+   component1;optional field
+  
+   The first component (component1) is a hierarchically organized hint about type.
+   The intention is that this hierarchy be flexible and extensible and
+   facilitate simple filtering, translation and display.  To
+   facilitate  filtering, the hierarchy needs to present key
+   fields in an easily parsed and logical order.  To facilitate
+   this, this component is a composite of fields separated by the "-" punctuation
+   character, so a valid type would be: x-x-X-X-x.  Using a
+   punctuation for field separation allows arbitrary expansion of the
+   type space, e.g., a-fzp-mlk-gm-...
+
+   Field meanings are type specific.  That is, the third field of an
+   "atom" type may represent air vs. ground while the same field for a
+   "reservation" type may represent purpose. 
+
+   The "Atoms" portion of the type tree requires some additional
+   explanation past the taxonomy defined below. The "Atoms" portion of
+   the type tree contains CoT defined fields and part of the MIL-STD-2525
+   type definition. To distinguish MIL-STD-2525 type strings from CoT defined
+   fields, the MIL-STD-2525 types must be represented in all upper
+   case. Differentiation of type namespace with upper/lower case
+   facilitates extension of CoT types and MIL-STD-2525 types without 
+   name space confliction. An example:
+
+   a-f-A-B-C-x 
+
+   The organization of CoT and MIL-STD-2525 types can be determined
+   from the taxonomy below, but additional details are provided here.
+
+   The "Atoms" portion of the "type" tree contains the "Battle
+   Dimension" and  "Function ID" fields taken from MIL-STD-2525.
+   "Battle Dimension" is a single character taken from
+   MIL-STD-2525. 
+
+   The typical 2525 representation for "Function ID" is three groups of
+   two characters separated by a space (e.g. "12 34 56"). The CoT
+   schema maps this to a "-" delimited list of characters. (e.g. "1-2-3-4-5-6").
+   The concatenation of the "Battle Dimension" and "Function ID" fields
+   from the MIL-STD-2525 specification represented in the CoT schema
+   will be as follows:
+
+   battle dimension-func id char1-func id char2- ... -func id char6
+
+   When an appropriate MIL-STD-2525 type exists, it should be used. If
+   there is a MIL-STD-2525 representation which is close, but may be
+   refined, a CoT extension to the 2525 type can be appended. For
+   example...
+
+   for example: a-h-X-X-X-X-X-i might represent 
+ 
+   hostile MIL-STD-2525 type X-X-X-X-X  of
+   Israeli manufacture. Again, the CoT extension uses lower case. 
+   Conceptually, this extension defines further branching from the 
+   nearest MIL-STD-2525 tree point.
+
+   If no appropriate 2525 representation exists, a type definition can
+   be added to the CoT tree defined here. The resulting definition
+   would be represented in all lower case. For example
+
+   a-h-G-p-i
+
+   might define atoms-hostile-Ground-photon cannon-infrared.
+
+   The taxonomy currently looks like this: Note that the coding of the
+   sub fields are determined entirely by the preceding fields!) The
+   current type tree is defined here. 
+
+       +--- First position, this event describes
+       |
+       V
+
+       a - Atoms - this event describes an actual "thing"
+
+           +--- CoT affiliation of these atoms
+           |
+           V
+
+           p - Pending
+           u - Unknown
+           a - Assumed friend
+           f - Friend
+           n - Neutral
+           s - Suspect
+           h - Hostile
+           j - Joker
+           k - Faker
+           o - None specified
+           x - Other
+
+               +--- Battle dimension
+               |    Taken from MIL-STD-2525 "Battle Dimension" (upper case)
+               |
+               V
+
+               See MIL-STD-2525B specification for single charcter battle dimension
+
+                   +--- Function (dimension specific!)
+                   |    
+                   |
+                   V
+                   ...
+                   See MIL-STD-2525B specification for  function fields (must be upper case)    
+                   ...
+
+       +--- The event describes ...
+       |
+       V
+
+       b - Bits - Events in the "Bit" group carry meta information
+                  about raw data sources.  For example, range-doppler
+                  radar returns or SAR imagery represent classes of
+                  information that are "bits".  However, tracks
+                  derived from such sources represent objects on the
+                  battlespace and this have event type "A-..."
+
+                  The intention with the "Bit" type is to facilitate
+                  the identification of germane information products.
+                  This hierarchy is not intended to replace more
+                  detailed domain-specific meta information (such as
+                  that contained in NITF image headers or the GMTI
+                  data formats), rather it is intended to provide a
+                  domain-neutral mechanism for rapid filtering of
+                  information products.
+
+           +--- Dimension
+           |
+           V
+
+           i - Imagery
+               e - Electro-optical
+               i - Infra red
+               s - SAR
+               v - video
+               ...
+           r - Radar
+               m - MTI data
+               ...
+           d - Sensor detection events
+               s - Seismic
+               d - Doppler
+               a - Acoustic
+               m - Motion (e.g., IR)
+           m - Mapping
+               p - Designated point (rally point, etc.)
+                   i - initial points
+                   r - rally points
+                   ...
+
+       r - Reservation/Restriction/References
+                  Events in this category are generally "notices"
+                  about specific areas.  These events are used for
+                  deconfliction and conveyance of significant "area"
+                  conditions.  Generally, the "point" entity will
+                  describe a conical region that completely encloses
+                  the affected area.  The details entity will provide
+                  more specific bounds on precisely the region
+                  affected.
+           u - Unsafe (hostile capability)
+           o - Occupied (e.g., SOF forces on ground)
+           c - Contaminated (NBC event)
+               c - chemical
+                   x - agents, direction,
+                   y
+                   z
+           f - Flight restrictions
+
+       t - Tasking (requests/orders)
+                  Events in this category are generalized requests for
+                  service.  These may be used to request for data
+                  collection, request mensuration of a specific
+                  object, order an asset to take action against a
+                  specific point.  Generally, the "details" entity
+                  will identify the general or specific entity being
+                  tasked.
+           s - Surveillance
+           r - Relocate
+           e - Engage
+           m - Mensurate
+
+       c - Capability (applied to an area)
+           s - Surveillance
+           r - Rescue
+           f - Fires
+               d - Direct fires
+               i - Indirect fires
+           l - Logistics (supply)
+               f - Fuel
+               ...
+           c - Communications
+</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:pattern value="\w+(-\w+)*(;[^;]*)?"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="access" type="xs:string" use="optional">
+				<xs:annotation>
+					<xs:documentation>
+	The access field is intended to indicates who has access to this
+        event. (e.g. unrestricted, nato, army, coalition...) 
+	It is currently defined as a string, and is optional in V2.0.
+	Future version of the event schema will provide formal
+	definition of this field.
+</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="qos" use="optional">
+				<xs:annotation>
+					<xs:documentation>
+    format - digit-character-character as defined below
+
+    The QoS attribute will determine the preferential treatment events
+    receive as they proceed through the kill chain.  The field has
+    several distinct but related components.
+
+    A "priority" value indicates queuing and processing order for
+    competing events.  At a processing bottleneck (e.g., bandwidth
+    limited link) high priority events will be processed before lower
+    priority events.  Priority determines queuing order at a
+    bottleneck.
+
+        9 - highest (most significant) priority
+        0 - lowest (least significant) priority
+
+    A "overtaking" value indicates how two events for the same uid are
+    reconciled when they "catch up" to one another.  The more recent
+    event (by timestamp) may supersede the older event (deleting the
+    old event) when it catches it, or it may follow the old event so
+    that event order is preserved, or it may be routed independently
+    of previous events.
+
+        r - replace - new event replaces (deletes) old event
+        f - follow  - new event must follow previous events
+        i - independent - new event processed independently of old events
+
+    An "assurance" value indicates how much effort must be placed in
+    delivering this particular event.  Events from sources that
+    continually send updates (blue force tracks) or that are sent for
+    information purposes only require a lower level of delivery
+    effort.  Events that are singletons (sent only once) and are
+    critical require guaranteed delivery.
+
+        g - guaranteed delivery (message never dropped even if delivered late)
+        d - deadline (message dropped only after "stale" time)
+        c - congestion - message dropped when link congestion encountered
+
+     Thus, a valid QoS field looks like:
+
+        qos="1-r-c"
+
+     Note that different events with the same UID may have differing
+     QoS values.  This enables a graceful degradation in the presence
+     of congestion.  For example, a blue force tracker may output a
+     sequence of events with like
+         ... qos="1-r-c" ...  frequent, low priority updates
+         ... qos="1-r-c" ... 
+         ... qos="1-r-c" ... 
+         ... qos="5-r-d" ...  occasional "push" priority update
+         ... qos="1-r-c" ... 
+         ... qos="1-r-c" ... 
+         ... qos="9-r-g" ...  "Mayday" position report
+
+</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:pattern value="\d-\w-\w"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="opex" type="xs:string" use="optional">
+				<xs:annotation>
+					<xs:documentation>
+  The opex field is intended to indicate that the event is part of a
+  live operation, an exercise, or a simulation.  For backward compatibility, absence
+  of the opex indicates "no statement", which will be interpreted in
+  an installation specific manner.
+  
+  opex="o-&lt;name&gt;" or "e-&lt;nickname&gt;"  or "s-&lt;nickname&gt;",
+  where "-&lt;name&gt;" is optional.  That is, it is permissible to
+  specify only "o", "e", or "s" for the opex value.
+
+  o = operations
+  e = exercise
+  s = simulation
+				</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="uid" type="xs:string" use="required">
+				<xs:annotation>
+					<xs:documentation>
+The "uid" attribute is a globally unique name for this specific piece of information.
+Several "events" may be associated with one UID, but in that case, the latest (ordered by timestamp), 
+overwrites all previous events for that UID.
+</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="time" type="xs:dateTime" use="required">
+				<xs:annotation>
+					<xs:documentation>
+The CoT XML schema includes three time values:
+time, start, and stale.  "time" is a time stamp placed on the event
+when generated. start and stale define an interval in time for which
+the event is valid. Example: For the scenario where we have intel
+reports about a meeting of terrorist operatives later in the day: An
+event might be generated at noon (time) to describe a ground based
+target which is valid from 1300 (start) until 1330 (stale).  All time
+fields are required. In version 1.1 of the CoT schema, the time and stale
+attributes together defined and interval of time for which the event was
+valid. In V2.0, time indicates the "birth" of an event and the start and stale pair
+define the validity interval.
+
+The "time" attribute is a time stamp indicating when an event was generated. 
+The format of time, start, and stale are in standard date format (ISO 8601):
+CCYY-MM-DDThh:mm:ss.ssZ (e.g., 2002-10-05T17:01:14.00Z), where the presence of 
+fractional seconds (including the delimeter) is optional.  Also, there is no constraint
+on the number of digits to use for fractional seconds.  The following are all valid:
+ 2002-10-05T18:00:23Z,  2002-10-05T18:00:23.12Z, 2002-10-05T18:00:23.123456Z
+</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="start" type="xs:dateTime" use="required">
+				<xs:annotation>
+					<xs:documentation>
+  format - DTG
+
+The "start" attribute defines the starting time of the event's validity
+interval. The start and stale fields together define an interval in time.
+It has the same format as time and stale.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="stale" type="xs:dateTime" use="required">
+				<xs:annotation>
+					<xs:documentation>
+The "stale" attribute defines the ending time of the event's validity
+interval. The start and stale fields together define an interval in time.
+It has the same format as time and start.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="how" use="required">
+				<xs:annotation>
+					<xs:documentation>
+ format = character-character
+
+    The "how" attribute gives a hint about how the coordinates were
+    generated.  It is used specifically to relay a hint about the
+    types of errors that may be expected in the data and to weight the
+    data in systems that fuse multiple inputs.  For example,
+    coordinates transcribed by humans may have digit transposition,
+    missing or repeated digits, estimated error bounds, etc.  As such,
+    they may require special attention as they propagate through the
+    kill chain (e.g., they may require an additional review).
+    Similarly, machine generated coordinates derived solely from
+    magnetic sources may be subject to known anomalies in certain
+    geographical areas, etc.
+
+        h - human entered or modified (someone typed the coordinates)
+            e - estimated (a swag by the user)
+            c - calculated (user probably calculated value by hand)
+            t - transcribed (from voice, paper, ...)
+            p - cut and paste from another window
+        m - machine generated
+            i - mensurated (from imagery)
+            g - derived from GPS receiver
+            m - magnetic    - derived from magnetic sources
+            s - simulated   - out of a simulation
+            f - fused       - corroborated from multiple sources
+            c - configured  - out of a configuration file
+            p - predicted   - prediction of future (e.g., a from a tracker)
+            r - relayed     - imported from another system (gateway)
+
+  As with other compound fields, the elements of the how field
+  will be delimited by the field separator character "-".  E.g,
+  A coordinate mensurated from imagery would have a how field of "m-i".
+</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:pattern value="\w(-\w+)*"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="detail">
+		<xs:annotation>
+			<xs:documentation>
+    format = XML schema defined outside of this document
+
+    Detail entities...
+
+    The "detail" entity is intended to carry information that is
+    specific to smaller communities of producers and consumers and
+    require more intimate knowledge of the operating domain.  For
+    example, mensurated "target" events may come from dramatically
+    different sources and need to propagate dramatically different
+    "detail" information.  A close-air-support mission will augment
+    target details with initial point and callsign details to
+    facilitate coordination of weapon delivery.  In contrast, a
+    mission planning system may augment planned targets with target
+    catalog information and weapon fuzing requirements.
+
+    Because the "details" portion of the event are of interest only to
+    a subset of subscribers, that entity may be mentioned by reference
+    when the event is communicated.  This reduces the congestion when
+    events are transmitted over bandwidth limited links and also
+    prevents the retransmission of static data elements.
+</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+			</xs:sequence>
+			<xs:anyAttribute processContents="skip"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="point">
+		<xs:complexType>
+			<xs:attribute name="lat" use="required">
+				<xs:annotation>
+					<xs:documentation>Latitude based on WGS-84 ellipsoid in signed degree-decimal format (e.g. -33.350000). Range -90 -> +90.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="-90"/>
+						<xs:maxInclusive value="90"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="lon" use="required">
+				<xs:annotation>
+					<xs:documentation>Longitude based on WGS-84 ellipsoid in signed degree-decimal format (e.g. 44.383333). Range -180 -> +180.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="-180"/>
+						<xs:maxInclusive value="180"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+			<xs:attribute name="hae" type="xs:decimal" use="required">
+				<xs:annotation>
+					<xs:documentation>HAE acronym for Height above Ellipsoid based on WGS-84 ellipsoid (measured in meters).</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="ce" type="xs:decimal" use="required">
+				<xs:annotation>
+					<xs:documentation>
+Circular Error around point defined by lat and lon fields in meters. Although
+named ce, this field is intended to define a circular area around the event point, not
+necessarily an error (e.g. Describing a reservation area is not an
+"error").  If it is appropriate for the "ce" field to represent
+an error value (e.g. event describes laser designated target), the
+value will represent the one sigma point for a zero mean 
+normal (Guassian) distribution.
+</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="le" type="xs:decimal" use="required">
+				<xs:annotation>
+					<xs:documentation>
+Linear Error in meters associated with the HAE field. Although named le, this 
+field is intended to define a height range about the event point, not 
+necessarily an error. This field, along with the ce field allow for the 
+definition of a cylindrical volume about the point. If it is appropriate 
+for the "le" field to represent an error (e.g. event describes laser 
+designated target), the value will represent the one sigma point for 
+a zero mean normal (Guassian) distribution.
+</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

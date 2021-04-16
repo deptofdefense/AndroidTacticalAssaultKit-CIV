@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation="details/contact.xsd"/>
+  <xs:include schemaLocation="details/remarks.xsd"/>
+  <xs:include schemaLocation="details/precisionlocation.xsd"/>
+  <xs:include schemaLocation="details/usericon.xsd"/>
+  <xs:include schemaLocation="details/color.xsd"/>  
+  <xs:include schemaLocation="details/status.xsd"/>
+  <xs:include schemaLocation="details/link.xsd"/> 
+  <xs:element name="event">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="point" type="event_point"/>
+        <xs:element name="detail">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:choice maxOccurs="unbounded">
+                <xs:element name="status" type="status" />
+                <xs:element name="archive" />
+                <xs:element name="precisionlocation" type="precisionlocation" />
+                <xs:element name="usericon" type="usericon">
+                  <xs:annotation>
+                    <xs:documentation>
+                      2525 icons use the following template for iconsetpath:
+                        "COT_MAPPING_2525B/a-AFFILIATION/a-AFFILIATION-..."
+                        where AFFILIATION is one of:
+                          "u" - Unknown
+                          "f" - Friend
+                          "n" - Neutral
+                          "h" - Hostile
+                        and ... is the remaining CoT type that defines the 2525 icon (See CoT Base-Event Schema  (PUBLIC RELEASE).xsd for more details)
+                    </xs:documentation>
+                  </xs:annotation>
+                </xs:element>
+                <xs:element name="link" type="link">
+                  <xs:annotation>
+                    <xs:documentation>
+                      Link should reference the TAK instance's SA event that produces it. For instance, for a TAK instance with uid, 'ANDROID-589520ccfcd20f01', callsign, 'HOPE', and type 'a-f-G-U-C', the following link attributes values apply:
+                        uid='ANDROID-589520ccfcd20f01' 
+                        production_time='2020-12-16T19:50:57.629Z' 
+                        type='a-f-G-U-C' 
+                        parent_callsign='HOPE' 
+                        relation='p-p'
+                    </xs:documentation>
+                  </xs:annotation>
+                </xs:element>
+                <xs:element name="contact" type="contact" />
+                <xs:element name="color" type="detail_color" />
+                <xs:element name="remarks" type="remarks" />
+              </xs:choice>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="version" type="xs:decimal" use="required" />
+      <xs:attribute name="uid" type="xs:string" use="required" />
+      <xs:attribute name="type" type="xs:string" use="required" />
+      <xs:attribute name="time" type="xs:dateTime" use="required" />
+      <xs:attribute name="start" type="xs:dateTime" use="required" />
+      <xs:attribute name="stale" type="xs:dateTime" use="required" />
+      <xs:attribute name="how" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
