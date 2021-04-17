@@ -61,13 +61,21 @@ public class ImportAlternateContactSort extends ImportResolver {
         if (!super.match(file))
             return false;
 
+        InputStream is = null;
         try {
-            return isContact(IOProviderFactory.getInputStream(file),
+            return isContact(is = IOProviderFactory.getInputStream(file),
                     _charBuffer);
         } catch (IOException e) {
             Log.e(TAG,
                     "Error checking contact info: " + file.getAbsolutePath(),
                     e);
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException ioe) {
+                }
+            }
         }
 
         return false;

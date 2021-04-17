@@ -1244,10 +1244,19 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
             if (!IOProviderFactory.createNewFile(file)) {
                 toast("Snapshot already exists", Toast.LENGTH_SHORT);
             } else {
-                FileOutputStream ostream = IOProviderFactory
-                        .getOutputStream(file);
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream);
-                ostream.close();
+                FileOutputStream ostream = null;
+                try {
+                    ostream = IOProviderFactory
+                            .getOutputStream(file);
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream);
+                } finally {
+                    if (ostream != null) {
+                        try {
+                            ostream.close();
+                        } catch (IOException ignored) {
+                        }
+                    }
+                }
             }
 
         } catch (Exception e) {

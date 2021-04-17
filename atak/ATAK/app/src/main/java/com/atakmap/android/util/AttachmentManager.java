@@ -25,6 +25,9 @@ import java.io.FilenameFilter;
 
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
@@ -340,9 +343,25 @@ public class AttachmentManager {
             // the passed in file is equal to the location where it will be attached
             if (attachment.getCanonicalPath().equals(f.getCanonicalPath()))
                 return null;
-
-            FileSystemUtils.copy(IOProviderFactory.getInputStream(f),
-                    IOProviderFactory.getOutputStream(attachment));
+            InputStream is = null;
+            OutputStream os = null;
+            try {
+                FileSystemUtils.copy(is = IOProviderFactory.getInputStream(f),
+                        os = IOProviderFactory.getOutputStream(attachment));
+            } finally {
+                if (is != null) {
+                    try {
+                        is.close();
+                    } catch (Exception ignored) {
+                    }
+                }
+                if (os != null) {
+                    try {
+                        os.close();
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
         } catch (IOException ioe) {
             return null;
         }

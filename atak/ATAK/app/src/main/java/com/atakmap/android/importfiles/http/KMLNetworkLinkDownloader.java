@@ -247,12 +247,14 @@ public class KMLNetworkLinkDownloader implements RequestListener {
                             input = conn.getInputStream();
                         }
 
-                        File fout = new File(request.getDir(),
-                                request.getFileName());
-                        FileOutputStream fos = IOProviderFactory
-                                .getOutputStream(fout);
+
+                        FileOutputStream fos = null;
 
                         try {
+                            File fout = new File(request.getDir(),
+                                    request.getFileName());
+                            fos = IOProviderFactory
+                                    .getOutputStream(fout);
                             FileSystemUtils.copy(input, fos);
                             Log.d(TAG, "success: " + request.getDir() + "/"
                                     + request.getFileName());
@@ -262,6 +264,19 @@ public class KMLNetworkLinkDownloader implements RequestListener {
                                     NetworkOperationManager.REQUEST_TYPE_GET_FILES),
                                     new RequestManager.ConnectionError(900,
                                             "unable to write download"));
+                        } finally {
+                            if (input != null) {
+                                try {
+                                    input.close();
+                                } catch (IOException ignore) {
+                                }
+                            }
+                            if (fos != null) {
+                                try {
+                                    fos.close();
+                                } catch (IOException ignore) {
+                                }
+                            }
                         }
 
                     }

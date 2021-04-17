@@ -79,7 +79,7 @@ final class GLTile implements ContentSource.OnContentChangedListener {
 
             radius = sphere.radius;
 
-            PointD center = new PointD(sphere.centerX, sphere.centerX, sphere.centerZ);
+            PointD center = new PointD(sphere.centerX, sphere.centerY, sphere.centerZ);
             // transform the center
             if(transform != null)
                 transform.transform(center, center);
@@ -98,7 +98,7 @@ final class GLTile implements ContentSource.OnContentChangedListener {
                     MathUtils.distance(box.yDirHalfLen[0], box.yDirHalfLen[1], box.yDirHalfLen[2], 0d, 0d, 0d),
                     MathUtils.distance(box.zDirHalfLen[0], box.zDirHalfLen[1], box.zDirHalfLen[2], 0d, 0d, 0d));
 
-            PointD center = new PointD(box.centerX, box.centerX, box.centerZ);
+            PointD center = new PointD(box.centerX, box.centerY, box.centerZ);
             // transform the center
             if(transform != null)
                 transform.transform(center, center);

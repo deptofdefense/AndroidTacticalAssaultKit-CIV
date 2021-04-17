@@ -630,9 +630,10 @@ public class FileSystemUtils {
             throws Exception {
         List<String> ret = new java.util.LinkedList<>();
         BufferedReader reader = null;
+        InputStream is = null;
         try {
             reader = new BufferedReader(new InputStreamReader(
-                    IOProviderFactory.getInputStream(new File(filename)),
+                    is = IOProviderFactory.getInputStream(new File(filename)),
                     UTF8_CHARSET));
             String line = reader.readLine();
             while (line != null) {
@@ -646,6 +647,12 @@ public class FileSystemUtils {
             if (reader != null) {
                 try {
                     reader.close();
+                } catch (Exception ignored) {
+                }
+            }
+            if (is != null) {
+                try {
+                    is.close();
                 } catch (Exception ignored) {
                 }
             }
@@ -1584,6 +1591,7 @@ public class FileSystemUtils {
     public static boolean makeSDCardWritable() {
         Process cp;
         Process mount;
+        InputStream is = null;
 
         // ATAK root directory
         String rootDir = Environment.getExternalStorageDirectory()
@@ -1603,7 +1611,7 @@ public class FileSystemUtils {
             if (IOProviderFactory.exists(platform) && cp.exitValue() == 0) {
                 // Add the permission line to file
                 BufferedReader br = new BufferedReader(new InputStreamReader(
-                        IOProviderFactory.getInputStream(platform),
+                        is = IOProviderFactory.getInputStream(platform),
                         UTF8_CHARSET));
 
                 String line;
@@ -1701,6 +1709,13 @@ public class FileSystemUtils {
             }
         } catch (Exception e) {
             Log.e(TAG, "catch of any number of other errors", e);
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (Exception e) {
+                }
+            }
         }
         return false;
     }
@@ -1876,8 +1891,10 @@ public class FileSystemUtils {
         }
 
         ZipOutputStream zos = null;
+        FileOutputStream fos = null;
+
         try {
-            FileOutputStream fos = IOProviderFactory.getOutputStream(dest);
+            fos = IOProviderFactory.getOutputStream(dest);
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             // Don't compress the ZIP
@@ -1913,6 +1930,12 @@ public class FileSystemUtils {
                 } catch (Exception e) {
                     Log.w(TAG,
                             "Failed to close Zip: " + dest.getAbsolutePath());
+                }
+            }
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (Exception ignored) {
                 }
             }
         }
@@ -1956,8 +1979,9 @@ public class FileSystemUtils {
 
         List<String> filenames = new ArrayList<>();
         ZipOutputStream zos = null;
+        FileOutputStream fos = null;
         try {
-            FileOutputStream fos = IOProviderFactory.getOutputStream(dest);
+            fos = IOProviderFactory.getOutputStream(dest);
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             // Don't compress the ZIP
@@ -1991,6 +2015,12 @@ public class FileSystemUtils {
                 } catch (Exception e) {
                     Log.w(TAG,
                             "Failed to close Zip: " + dest.getAbsolutePath());
+                }
+            }
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (Exception ignored) {
                 }
             }
         }

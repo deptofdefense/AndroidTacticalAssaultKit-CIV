@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -510,12 +511,15 @@ public class NetworkDeviceManager {
     static synchronized private void initialize() {
         devices.clear();
         try {
+            InputStream is = null;
             File f = new File(directory, "network.map");
             if (IOProviderFactory.exists(f)) {
-                BufferedReader br = new BufferedReader(
-                        new InputStreamReader(
-                                IOProviderFactory.getInputStream(f)));
+                BufferedReader br = null;
+
                 try {
+                    br = new BufferedReader(
+                            new InputStreamReader(
+                                    is = IOProviderFactory.getInputStream(f)));
                     String line;
                     while ((line = br.readLine()) != null) {
                         NetworkDevice nd = NetworkDevice.fromCSVLine(line);
@@ -523,7 +527,14 @@ public class NetworkDeviceManager {
                             devices.add(nd);
                     }
                 } finally {
-                    br.close();
+                    if ( br != null)
+                        try {
+                            br.close();
+                       } catch (IOException ignored) { }
+                    if (is != null)
+                        try {
+                            is.close();
+                        } catch (IOException ignored) { }
                 }
             }
         } catch (IOException ioe) {

@@ -154,25 +154,21 @@ public final class QueryUserTracksOperation extends HTTPOperation {
                     tempFileName);
             Log.d(TAG,
                     "processing response into file: " + temp.getAbsolutePath());
-            FileOutputStream fos = IOProviderFactory.getOutputStream(temp);
-
-            // stream in content, keep user notified on progress
-            builder.setProgress(100, 1, false);
-            if (notifyManager != null) {
-                notifyManager.notify(queryRequest.getNotificationId(),
-                        builder.build());
-            }
-
-            int len;
-            byte[] buf = new byte[8192];
-
+            FileOutputStream fos = null;
             InputStream in = null;
+
             try {
+                fos = IOProviderFactory.getOutputStream(temp);
+
+                // stream in content, keep user notified on progress
+                builder.setProgress(100, 1, false);
+                if (notifyManager != null) {
+                    notifyManager.notify(queryRequest.getNotificationId(),
+                            builder.build());
+                }
+
                 in = resEntity.getContent();
-                while ((len = in.read(buf)) > 0) {
-                    fos.write(buf, 0, len);
-                } // end read loop
-                in.close();
+                FileSystemUtils.copy(in, fos);
             } finally {
                 if (in != null) {
                     try {
@@ -180,7 +176,11 @@ public final class QueryUserTracksOperation extends HTTPOperation {
                     } catch (IOException ignored) {
                     }
                 }
-                fos.close();
+                if (fos != null) {
+                    try {
+                        fos.close();
+                    } catch (IOException ignored) { }
+                }
             }
 
             // Now verify we got download correctly

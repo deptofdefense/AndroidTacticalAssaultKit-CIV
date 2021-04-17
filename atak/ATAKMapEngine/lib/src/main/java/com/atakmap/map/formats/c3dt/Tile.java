@@ -86,7 +86,7 @@ final class Tile {
 
             radius = sphere.radius;
 
-            center = new PointD(sphere.centerX, sphere.centerX, sphere.centerZ);
+            center = new PointD(sphere.centerX, sphere.centerY, sphere.centerZ);
         } else if(tile.boundingVolume instanceof Volume.Box) {
             Volume.Box box = (Volume.Box)tile.boundingVolume;
 
@@ -95,7 +95,7 @@ final class Tile {
                     MathUtils.distance(box.yDirHalfLen[0], box.yDirHalfLen[1], box.yDirHalfLen[2], 0d, 0d, 0d),
                     MathUtils.distance(box.zDirHalfLen[0], box.zDirHalfLen[1], box.zDirHalfLen[2], 0d, 0d, 0d));
 
-            center = new PointD(box.centerX, box.centerX, box.centerZ);
+            center = new PointD(box.centerX, box.centerY, box.centerZ);
         } else {
             throw new IllegalStateException();
         }

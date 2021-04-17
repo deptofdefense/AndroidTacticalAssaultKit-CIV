@@ -55,6 +55,7 @@ import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -202,13 +203,15 @@ public class RouteCreationDialog extends BroadcastReceiver implements
      */
     private void loadRecentlyUsed() {
         BufferedReader reader = null;
+        InputStream is = null;
         String line;
         RECENT_ADDRESSES.clear();
+
 
         if (IOProviderFactory.exists(recentlyUsed)) {
             try {
                 reader = new BufferedReader(
-                        new InputStreamReader(
+                        new InputStreamReader(is =
                                 IOProviderFactory.getInputStream(recentlyUsed),
                                 FileSystemUtils.UTF8_CHARSET));
 
@@ -226,9 +229,11 @@ public class RouteCreationDialog extends BroadcastReceiver implements
                 try {
                     if (reader != null)
                         reader.close();
-                } catch (Exception e) {
-                    // Ignored
-                }
+                } catch (Exception ignored) { }
+                try {
+                    if (is != null)
+                        is.close();
+                } catch (Exception ignored) { }
             }
         }
     }

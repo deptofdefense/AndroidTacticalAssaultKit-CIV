@@ -23,6 +23,8 @@ import com.foxykeep.datadroid.requestmanager.RequestManager.RequestListener;
 import com.atakmap.android.http.rest.request.GetFileRequest;
 
 import com.atakmap.net.AtakAuthenticationHandlerHTTP;
+
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -144,12 +146,14 @@ public class ImportFileDownloader implements RequestListener {
                         input = conn.getInputStream();
                     }
 
-                    File fout = new File(request.getDir(),
-                            request.getFileName());
-                    FileOutputStream fos = IOProviderFactory
-                            .getOutputStream(fout);
+
+                    FileOutputStream fos = null;
 
                     try {
+                        File fout = new File(request.getDir(),
+                                request.getFileName());
+                        fos = IOProviderFactory
+                                .getOutputStream(fout);
                         FileSystemUtils.copy(input, fos);
                         Log.d(TAG, "success: " + request.getFileName());
                     } catch (Exception e) {
@@ -158,8 +162,20 @@ public class ImportFileDownloader implements RequestListener {
                                 NetworkOperationManager.REQUEST_TYPE_GET_FILE),
                                 new RequestManager.ConnectionError(900,
                                         "unable to write download"));
+                    } finally {
+                        if (input != null) {
+                            try {
+                                input.close();
+                            } catch (IOException ioe) {
+                            }
+                        }
+                        if (fos != null) {
+                            try {
+                                fos.close();
+                            } catch (IOException ioe) {
+                            }
+                        }
                     }
-
                     Bundle b = new Bundle();
                     b.putParcelable(GetFileOperation.PARAM_GETFILE, request);
                     onRequestFinished(new Request(

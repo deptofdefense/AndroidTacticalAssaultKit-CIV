@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -104,8 +105,9 @@ public abstract class ExportFileTask extends ProgressTask {
         }
 
         ZipOutputStream zos = null;
+        FileOutputStream fos = null;
         try {
-            FileOutputStream fos = IOProviderFactory.getOutputStream(dest);
+            fos = IOProviderFactory.getOutputStream(dest);
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
             byte[] buf = new byte[FileSystemUtils.BUF_SIZE];
 
@@ -145,6 +147,12 @@ public abstract class ExportFileTask extends ProgressTask {
                 } catch (Exception e) {
                     Log.w(TAG,
                             "Failed to close Zip: " + dest.getAbsolutePath());
+                }
+            }
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (Exception e) {
                 }
             }
         }
@@ -238,8 +246,23 @@ public abstract class ExportFileTask extends ProgressTask {
                 ZipVirtualFile zf = new ZipVirtualFile(filePath);
                 if (!IOProviderFactory.exists(zf))
                     return;
-                FileSystemUtils.copy(zf.openStream(),
-                        IOProviderFactory.getOutputStream(outFile));
+                InputStream is = null;
+                OutputStream os = null;
+                try {
+                    FileSystemUtils.copy(is = zf.openStream(),
+                            os = IOProviderFactory.getOutputStream(outFile));
+                } finally {
+                    if (is != null) {
+                        try {
+                            is.close();
+                        } catch (IOException ignored) { }
+                    }
+                    if (os != null) {
+                        try {
+                            os.close();
+                        } catch (IOException ignored) { }
+                    }
+                }
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to copy file: " + filePath, e);

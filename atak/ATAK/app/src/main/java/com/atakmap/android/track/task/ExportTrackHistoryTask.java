@@ -458,9 +458,10 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
         File kml = new File(kmlFile);
         File kmz = new File(kml.getParentFile(), name + ".kmz");
         ZipOutputStream zos = null;
+        FileOutputStream fos = null;
         try {
 
-            FileOutputStream fos = IOProviderFactory.getOutputStream(kmz);
+            fos = IOProviderFactory.getOutputStream(kmz);
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             //and doc.kml
@@ -480,6 +481,11 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
                 } catch (Exception e) {
                     Log.w(TAG, "Failed to close KMZ: " + kmz.getAbsolutePath());
                 }
+            }
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (Exception ignored) { }
             }
         }
     }
@@ -501,9 +507,10 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
         File kml = new File(kmlFile);
         File kmz = new File(kml.getParentFile(), name + ".kmz");
         ZipOutputStream zos = null;
+        FileOutputStream fos = null;
         try {
 
-            FileOutputStream fos = IOProviderFactory.getOutputStream(kmz);
+            fos = IOProviderFactory.getOutputStream(kmz);
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             //and doc.kml
@@ -524,6 +531,12 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
                     Log.w(TAG, "Failed to close KMZ: " + kmz.getAbsolutePath());
                 }
             }
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (Exception ignored) { }
+            }
+
         }
     }
 

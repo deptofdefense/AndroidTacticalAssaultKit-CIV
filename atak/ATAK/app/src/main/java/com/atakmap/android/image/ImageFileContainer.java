@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import com.atakmap.android.maps.MapView;
@@ -320,11 +321,11 @@ public class ImageFileContainer
 
     private static File readLink(File linkFile) {
         File link = null;
-
+        InputStream is = null;
         try {
             BufferedReader br = new BufferedReader(
                     new InputStreamReader(
-                            IOProviderFactory.getInputStream(linkFile)));
+                            is = IOProviderFactory.getInputStream(linkFile)));
 
             try {
                 String line = br.readLine();
@@ -336,6 +337,12 @@ public class ImageFileContainer
             }
         } catch (IOException ex) {
             Log.e(TAG, "error: ", ex);
+        } finally {
+            if (is != null)
+                try {
+                    if (is != null)
+                        is.close();
+                } catch (Exception ignored) { }
         }
 
         return link;

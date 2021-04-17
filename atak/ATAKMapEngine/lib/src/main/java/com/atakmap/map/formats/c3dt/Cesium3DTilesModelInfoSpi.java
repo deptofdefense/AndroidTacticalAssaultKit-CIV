@@ -19,6 +19,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Collections;
@@ -85,8 +86,18 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
                     byte[] buffer = null;
                     if (uriOpenResult.contentLength > 0 && uriOpenResult.contentLength <= Integer.MAX_VALUE)
                         buffer = FileSystemUtils.read(uriOpenResult.inputStream, (int) uriOpenResult.contentLength, true);
-                    else
-                        buffer = FileSystemUtils.read(uriOpenResult.inputStream);
+                    else {
+                        try {
+                            buffer = FileSystemUtils.read(uriOpenResult.inputStream);
+                        } finally {
+                            if (uriOpenResult.inputStream != null) {
+                                try {
+                                    uriOpenResult.inputStream.close();
+                                } catch (IOException ioe) {
+                                }
+                            }
+                        }
+                    }
                     String name = s;
                     try {
                         name = Uri.parse(s).getPath();
@@ -148,7 +159,7 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
         if (ts.root.boundingVolume instanceof Volume.Sphere) {
             Volume.Sphere sphere = (Volume.Sphere) ts.root.boundingVolume;
 
-            PointD center = new PointD(sphere.centerX, sphere.centerX, sphere.centerZ);
+            PointD center = new PointD(sphere.centerX, sphere.centerY, sphere.centerZ);
             // transform the center
             if (ts.root.transform != null) {
                 Matrix transform = new Matrix(
@@ -164,7 +175,7 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
         } else if (ts.root.boundingVolume instanceof Volume.Box) {
             Volume.Box box = (Volume.Box) ts.root.boundingVolume;
 
-            PointD center = new PointD(box.centerX, box.centerX, box.centerZ);
+            PointD center = new PointD(box.centerX, box.centerY, box.centerZ);
             // transform the center
             if (ts.root.transform != null) {
                 Matrix transform = new Matrix(

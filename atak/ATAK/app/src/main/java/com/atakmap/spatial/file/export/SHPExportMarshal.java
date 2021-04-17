@@ -102,8 +102,9 @@ public class SHPExportMarshal extends OGRExportMarshal {
         File shpz = new File(baseSHP.getAbsolutePath() + ".zip");
         if (files != null) {
             ZipOutputStream zos = null;
+            FileOutputStream fos = null;
             try {
-                FileOutputStream fos = IOProviderFactory.getOutputStream(shpz);
+                fos = IOProviderFactory.getOutputStream(shpz);
                 zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
                 //loop and add all files
@@ -121,6 +122,12 @@ public class SHPExportMarshal extends OGRExportMarshal {
                         Log.w(TAG,
                                 "Failed to close SHPZ: "
                                         + shpz.getAbsolutePath());
+                    }
+                }
+                if (fos != null) {
+                    try {
+                        fos.close();
+                    } catch (Exception ignored) {
                     }
                 }
             }

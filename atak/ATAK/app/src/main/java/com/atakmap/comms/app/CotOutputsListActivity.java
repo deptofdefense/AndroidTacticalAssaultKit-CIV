@@ -77,7 +77,14 @@ public class CotOutputsListActivity extends CotPortListActivity {
                 }
                 break;
             default:
-                super.onActivityResult(requestCode, resultCode, data);
+                try {
+                    super.onActivityResult(requestCode, resultCode, data);
+                } catch (IllegalArgumentException iae) {
+                    Toast.makeText(
+                            CotOutputsListActivity.this,
+                            "Invalid output encountered, make sure the address does not contain the protocol or port", Toast.LENGTH_LONG)
+                            .show();
+                }
                 break;
         }
     }
