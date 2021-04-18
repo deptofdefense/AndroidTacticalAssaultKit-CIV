@@ -1,5 +1,10 @@
 # Version History
 
+## 4.2.0.5
+
+* Fix bug in `CommsMapComponent.removeOutputsChangedListener(...)`
+* Fix attach imave/video to marker from Downloads or Photos app
+
 ## 4.2.0.4
 
 * Improve handling for KML PolyStyle with <fill>0</fill>
