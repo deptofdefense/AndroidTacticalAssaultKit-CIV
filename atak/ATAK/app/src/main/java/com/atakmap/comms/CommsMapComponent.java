@@ -724,7 +724,7 @@ public class CommsMapComponent extends AbstractMapComponent implements
     public void removeOutputsChangedListener(
             CotServiceRemote.OutputsChangedListener listener) {
         synchronized (outputsChangedListeners) {
-            outputsChangedListeners.add(listener);
+            outputsChangedListeners.remove(listener);
         }
     }
 

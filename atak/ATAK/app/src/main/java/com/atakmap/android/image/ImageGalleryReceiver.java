@@ -1077,7 +1077,9 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
         // restrict the uris that are valid.
         final String sURI = contentURI.toString();
         if (sURI.startsWith("content://com.android.providers.media.documents")
+                || sURI.startsWith("content://com.android.providers.downloads.documents")
                 || sURI.startsWith("content://media/external")
+                || sURI.startsWith("content://0@media/external/")
                 || sURI.startsWith("content://com.android.externalstorage.documents")) {
             // nothing at this point
         } else {
