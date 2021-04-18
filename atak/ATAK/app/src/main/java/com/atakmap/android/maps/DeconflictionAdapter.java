@@ -43,13 +43,13 @@ public class DeconflictionAdapter extends ArrayAdapter<MapItem> {
 
     public static final String TAG = "DeconflictionAdapter";
 
-    private final Context mContext;
-    private final MapView mMapView;
+    protected final Context mContext;
+    protected final MapView mMapView;
     private final SharedPreferences _prefs;
     private final CoordinateFormat _cFormat;
     private final DeconflictionType type;
     //private OnClickListener clickAction;
-    private final MapTouchController mtc;
+    protected final MapTouchController mtc;
     private final MotionEvent event;
 
     public enum DeconflictionType {
@@ -111,7 +111,7 @@ public class DeconflictionAdapter extends ArrayAdapter<MapItem> {
     /**
      * Given a Map Item, center the item on the map display.
      */
-    private void jumpTo(final MapItem pmi) {
+    protected void jumpTo(final MapItem pmi) {
 
         MapItem resolved = ShapeUtils.resolveShape(pmi);
         if (resolved != null) {

@@ -2,6 +2,7 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:atak="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content">
@@ -124,16 +125,24 @@
             android:layout_width="45dp"
             android:layout_height="match_parent"
             android:src="@drawable/send_square"
-            android:textSize="@dimen/draper_title_font"
-             />
+            android:textSize="@dimen/draper_title_font"/>
         <ImageButton
             android:id="@+id/editImage"
             style="@style/darkButton"
             android:padding="6dp"
             android:layout_width="45dp"
             android:layout_height="match_parent"
-            android:src="@drawable/ic_pencil"
-            android:visibility="gone"/>
+            android:src="@drawable/ic_edit"
+            android:visibility="gone"
+            tools:visibility="visible"/>
+        <ImageButton
+            android:id="@+id/markupImage"
+            style="@style/darkButton"
+            android:layout_width="45dp"
+            android:layout_height="match_parent"
+            android:src="@drawable/ic_image_hud"
+            android:visibility="gone"
+            tools:visibility="visible"/>
         <ImageButton
             android:id="@+id/panButton"
             style="@style/darkButton"
@@ -143,7 +152,8 @@
             android:layout_gravity="center_vertical"
             android:scaleType="centerInside"
             android:src="@drawable/panto_button"
-            android:visibility="gone"/>
+            android:visibility="gone"
+            tools:visibility="visible"/>
         <ImageButton
             android:id="@+id/zoomOutButton"
             style="@style/darkButton"
@@ -151,7 +161,8 @@
             android:layout_width="45dp"
             android:layout_height="match_parent"
             android:src="@drawable/ic_menu_minus"
-            android:visibility="gone"/>
+            android:visibility="gone"
+            tools:visibility="visible"/>
         <ImageButton
             android:id="@+id/zoomInButton"
             style="@style/darkButton"
@@ -159,7 +170,8 @@
             android:layout_width="45dp"
             android:layout_height="match_parent"
             android:src="@drawable/ic_menu_plus"
-            android:visibility="gone"/>
+            android:visibility="gone"
+            tools:visibility="visible"/>
     </LinearLayout>
     
 </RelativeLayout>

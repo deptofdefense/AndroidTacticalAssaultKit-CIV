@@ -148,6 +148,18 @@ public class Dt2FileWatcher extends Thread {
     }
 
     /**
+     * Get corresponding file on each root given a relative path
+     * @param path Relative path
+     * @return List of files on each path
+     */
+    public List<File> getFiles(String path) {
+        List<File> ret = new ArrayList<>();
+        for (File root : getRootDirs())
+            ret.add(new File(root.getParentFile(), path));
+        return ret;
+    }
+
+    /**
      * Get coverage set for a specific DTED level
      * @param level DTED level (0 thru 3)
      * @return Bit set
@@ -209,12 +221,46 @@ public class Dt2FileWatcher extends Thread {
      * @param file File
      * @return Path relative to /atak (i.e. "/atak/DTED/w039" -> "DTED/w039")
      */
-    public String getRelativePath(File file) {
+    public static String getRelativePath(File file) {
         String path = file.getAbsolutePath();
         int dtedIdx = path.indexOf("/DTED");
         if (dtedIdx == -1)
             return file.getName();
         return path.substring(dtedIdx + 1);
+    }
+
+    /**
+     * Refresh the cache for a specific DTED file
+     * @param path Relative path to DTED file
+     * @param exists True if the file exists
+     */
+    public void refreshCache(String path, boolean exists) {
+        Dt2File d = new Dt2File(path);
+        if (d.parent == null)
+            return;
+        synchronized (_coverages) {
+            List<String> files = getFilesRef(d.level, d.parent);
+            if (files != null) {
+                if (exists && !files.contains(path)) {
+                    files.add(path);
+                    _totalFiles++;
+                } else if (!exists) {
+                    files.remove(path);
+                    _totalFiles--;
+                }
+            }
+            _coverages[d.level].set(getCoverageIndex(d.latitude, d.longitude),
+                    exists);
+        }
+        onDtedFilesUpdated();
+    }
+
+    /**
+     * Refresh the cache for a specific DTED file
+     * @param file DTED file
+     */
+    public void refreshCache(File file) {
+        refreshCache(getRelativePath(file), IOProviderFactory.exists(file));
     }
 
     /**
@@ -342,8 +388,8 @@ public class Dt2FileWatcher extends Thread {
         boolean ret = true;
 
         // Remove files from each directory
-        for (File root : _rootDirs)
-            ret &= delete(level, new File(root.getParentFile(), path));
+        for (File file : getFiles(path))
+            ret &= delete(level, file);
 
         // Signal files updated for listeners
         onDtedFilesUpdated();

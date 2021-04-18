@@ -22,6 +22,8 @@ import com.atakmap.android.user.icon.SpotMapReceiver;
 import com.atakmap.android.vehicle.VehicleMapComponent;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
+import com.atakmap.app.system.FlavorProvider;
+import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
@@ -79,6 +81,11 @@ public class CotMapAdapter {
         _spiGroup.setMetaBoolean("permaGroup", true);
         _spiGroup.setMetaString("iconUri", "asset://icons/b-m-p-s-p-i.png");
         _spiGroup.setDefaultZOrder(ZORDER_SPI);
+
+        FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+        if (fp == null || !fp.hasMilCapabilities())
+            _spiGroup.setMetaString("omNameOverride", "DPs");
+
         _mapView.getMapOverlayManager().addMarkersOverlay(
                 new DefaultMapGroupOverlay(mapView, _spiGroup, FilterMapOverlay
                         .getRejectFilter(mapView)));

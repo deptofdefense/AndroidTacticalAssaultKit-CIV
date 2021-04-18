@@ -261,7 +261,9 @@ public abstract class GenericDetailsView extends RelativeLayout implements
         if (acceptableValues == null) {
             acceptableValues = Span.values();
         }
-        new RangeEntryDialog(dropDown.getMapView()).show(titleId, heightM,
+        new RangeEntryDialog(dropDown.getMapView())
+                .allowSignedValues(true)
+                .show(titleId, heightM,
                 heightUnit, new RangeEntryDialog.Callback() {
                     @Override
                     public void onSetValue(double valueM, Span unit) {

@@ -33,7 +33,7 @@ class EncryptionUtils {
 
     static byte[] encrypt(byte[] symKeyData, byte[] encodedMessage)
             throws Exception {
-        final Cipher cipher = Cipher.getInstance(cipherOptions, "BC");
+        final Cipher cipher = Cipher.getInstance(cipherOptions);
         final int blockSize = cipher.getBlockSize();
 
         SecretKeySpec symKey = new SecretKeySpec(symKeyData, symKeyAlgorithm);
@@ -59,7 +59,7 @@ class EncryptionUtils {
     public static byte[] decrypt(byte[] symKeyData,
             byte[] ivAndEncryptedMessage) {
         try {
-            final Cipher cipher = Cipher.getInstance(cipherOptions, "BC");
+            final Cipher cipher = Cipher.getInstance(cipherOptions);
             final int blockSize = cipher.getBlockSize();
 
             // create the key

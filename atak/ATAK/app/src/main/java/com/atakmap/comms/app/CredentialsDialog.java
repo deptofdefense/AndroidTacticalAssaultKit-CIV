@@ -30,7 +30,7 @@ public class CredentialsDialog {
     public interface Callback {
         void onCredentialsEntered(String connectString, String cacheCreds,
                 String description,
-                String username, String password);
+                String username, String password, Long expiration);
 
         void onCredentialsCancelled(String connectString);
     }
@@ -51,6 +51,7 @@ public class CredentialsDialog {
             final String connectString, final String usernameString,
             final String passwordString,
             final String cacheCreds,
+            final Long expiration,
             final Context context,
             final CredentialsDialog.Callback callback) {
 
@@ -122,13 +123,13 @@ public class CredentialsDialog {
                                                     AtakAuthenticationCredentials.TYPE_COT_SERVICE,
                                                     host,
                                                     cacheUsername,
-                                                    cachePassword, true);
+                                                    cachePassword, expiration);
                                 }
 
                                 if (callback != null) {
                                     callback.onCredentialsEntered(
                                             connectString, cacheCreds, desc,
-                                            username, password);
+                                            username, password, expiration);
                                 } else {
                                     AtakBroadcast
                                             .getInstance()

@@ -86,12 +86,24 @@ public class Polyline extends Shape {
             HEIGHT_STYLE_OUTLINE = 2, // Draw an outline representing the height
             HEIGHT_STYLE_OUTLINE_SIMPLE = 4; // Simplified height outline
 
+    /**
+     * Methods for how to extrude the shape's height (mutually exclusive)
+     */
+    public static final int HEIGHT_EXTRUDE_DEFAULT = 0, // Default based on shape properties
+            HEIGHT_EXTRUDE_MIN_ALT = 1, // Extrude from the lowest point elevation
+            HEIGHT_EXTRUDE_MAX_ALT = 2, // Extrude from the highest point elevation
+            HEIGHT_EXTRUDE_CENTER_ALT = 3, // Extrude from the center elevation
+            HEIGHT_EXTRUDE_PER_POINT = 4; // Extrude from each point's elevation
+
     private Map<String, Object> labels;
 
     private int _labelTextSize = MapView.getDefaultTextFormat().getFontSize();
     private Typeface _labelTypeface = Typeface.DEFAULT;
 
     private AltitudeMode altitudeMode = AltitudeMode.ClampToGround;
+
+    // The maximum number of points per touch partition
+    public static final int PARTITION_SIZE = 25;
 
     /*
      * public Polyline() { this(MapItem.createSerialId(), new DefaultMetaDataHolder()); }
@@ -264,6 +276,7 @@ public class Polyline extends Shape {
 
     private int basicLineStyle = Polyline.BASIC_LINE_STYLE_SOLID;
     private int heightStyle = HEIGHT_STYLE_POLYGON | HEIGHT_STYLE_OUTLINE;
+    private int extrudeMode = HEIGHT_EXTRUDE_DEFAULT;
 
     public interface OnLabelsChangedListener {
         void onLabelsChanged(Polyline p);
@@ -439,6 +452,32 @@ public class Polyline extends Shape {
      */
     public void removeHeightStyle(int heightStyleBit) {
         setHeightStyle(heightStyle & ~heightStyleBit);
+    }
+
+    /**
+     * Set how the height is extruded off the shape
+     * Mode can be one of the following:
+     * {@link #HEIGHT_EXTRUDE_DEFAULT} Extrude based on shape properties
+     * {@link #HEIGHT_EXTRUDE_MIN_ALT} Extrude off the minimum point elevation
+     * {@link #HEIGHT_EXTRUDE_MAX_ALT} Extrude off the maximum point elevation
+     * {@link #HEIGHT_EXTRUDE_CENTER_ALT} Extrude off the center point elevation
+     * {@link #HEIGHT_EXTRUDE_PER_POINT} Extrude off each point's elevation
+     * @param mode Extrusion mode
+     */
+    public void setHeightExtrudeMode(int mode) {
+        if (this.extrudeMode != mode) {
+            this.extrudeMode = mode;
+            onHeightStyleChanged();
+        }
+    }
+
+    /**
+     * Get the height extrusion mode
+     * See {@link #setHeightExtrudeMode(int)}
+     * @return The height extrusion mode
+     */
+    public int getHeightExtrudeMode() {
+        return this.extrudeMode;
     }
 
     @Override

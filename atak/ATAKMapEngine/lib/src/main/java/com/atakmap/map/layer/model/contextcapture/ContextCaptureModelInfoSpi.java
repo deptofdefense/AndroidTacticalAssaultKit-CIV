@@ -1,5 +1,6 @@
 package com.atakmap.map.layer.model.contextcapture;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.model.ModelInfo;
@@ -36,7 +37,7 @@ public final class ContextCaptureModelInfoSpi implements ModelInfoSpi {
     }
     private boolean isSupported1(String path) {
         File f = new File(path);
-        if(f.getName().endsWith(".zip") || f.getAbsolutePath().contains(".zip")) {
+        if(FileSystemUtils.isZipPath(path)) {
             try {
                 File entry = ObjUtils.findObj(new ZipVirtualFile(f));
                 if (entry == null)
@@ -51,7 +52,7 @@ public final class ContextCaptureModelInfoSpi implements ModelInfoSpi {
     @Override
     public Set<ModelInfo> create(String path) {
         File f = new File(path);
-        if(f.getName().endsWith(".zip") || f.getAbsolutePath().contains(".zip")) {
+        if(FileSystemUtils.isZipPath(path)) {
             try {
                 ZipVirtualFile.mountArchive(f);
                 try {

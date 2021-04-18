@@ -683,84 +683,84 @@ class ENGINE_API FeatureDataStore
 
     virtual
     void
-    deleteAllFeaturesImpl (int64_t featureSetID)
+    deleteAllFeaturesImpl (int64_t /*featureSetID*/)
       { }
 
     virtual
     void
-    deleteFeatureImpl (int64_t featureID)
+    deleteFeatureImpl (int64_t /*featureID*/)
       { }
 
     virtual
     void
-    deleteFeatureSetImpl (int64_t featureSetID)
+    deleteFeatureSetImpl (int64_t /*featureSetID*/)
       { }
 
     virtual
     void
-    endBulkModificationImpl (bool successful)
+    endBulkModificationImpl (bool /*successful*/)
       { }
 
     virtual
     Feature*
-    insertFeatureImpl (int64_t featureSetID,
-                       const char* name,                // Not NULL.
+    insertFeatureImpl (int64_t /*featureSetID*/,
+                       const char* /*name*/,            // Not NULL.
                        Geometry*,                       // Not NULL.
                        Style*,                          // May be NULL.
                        const util::AttributeSet&,
-                       bool returnInstance)
+                       bool /*returnInstance*/)
       { return NULL; }
 
     virtual
     FeatureSet*
-    insertFeatureSetImpl (const char* provider,         // Not NULL.
-                          const char* type,             // Not NULL.
-                          const char* name,             // Not NULL.
-                          double minResolution,         // 0.0 means no min.
-                          double maxResolution,         // 0.0 means no max.
-                          bool returnInstance)
+    insertFeatureSetImpl (const char* /*provider*/,     // Not NULL.
+                          const char* /*type*/,         // Not NULL.
+                          const char* /*name*/,         // Not NULL.
+                          double /*minResolution*/,     // 0.0 means no min.
+                          double /*maxResolution*/,     // 0.0 means no max.
+                          bool /*returnInstance*/)
       { return NULL; }
 
     virtual
     void
-    setFeatureSetVisibleImpl (int64_t featureSetID,
-                              bool visible)
+    setFeatureSetVisibleImpl (int64_t /*featureSetID*/,
+                              bool /*visible*/)
       { }
 
     virtual
     void
-    setFeatureVisibleImpl (int64_t featureID,
-                           bool visible)
+    setFeatureVisibleImpl (int64_t /*featureID*/,
+                           bool /*visible*/)
       { }
 
     virtual
     void
-    updateFeatureImpl (int64_t featureID,
+    updateFeatureImpl (int64_t /*featureID*/,
                        const util::AttributeSet&)
       { }
 
     virtual
     void
-    updateFeatureImpl (int64_t featureID,
+    updateFeatureImpl (int64_t /*featureID*/,
                        const Geometry&)
       { }
 
     virtual
     void
-    updateFeatureImpl (int64_t featureID,
-                       const char* featureName)         // Not NULL.
+    updateFeatureImpl (int64_t /*featureID*/,
+                       const char* /*featureName*/)     // Not NULL.
       { }
 
     virtual
     void
-    updateFeatureImpl (int64_t featureID,
+    updateFeatureImpl (int64_t /*featureID*/,
                        const Style&)
       { }
 
     virtual
     void
-    updateFeatureImpl (int64_t featureID,
-                       const char* featureName,         // Not NULL.
+    updateFeatureImpl (int64_t /*featureID*/,
+                       const char* /*featureName*/,     // Not NULL.
                        const Geometry&,
                        const Style&,
                        const util::AttributeSet&)
@@ -768,23 +768,23 @@ class ENGINE_API FeatureDataStore
 
     virtual
     void
-    updateFeatureSetImpl (int64_t featureSetID,
-                          const char* featureSetName)   // Not NULL.
+    updateFeatureSetImpl (int64_t /*featureSetID*/,
+                          const char* /*featureSetName*/)   // Not NULL.
       { }
 
     virtual
     void
-    updateFeatureSetImpl (int64_t featureSetID,
-                          double minResolution,         // 0.0 means no min.
-                          double maxResolution)         // 0.0 means no max.
+    updateFeatureSetImpl (int64_t /*featureSetID*/,
+                          double /*minResolution*/,         // 0.0 means no min.
+                          double /*maxResolution*/)         // 0.0 means no max.
       { }
 
     virtual
     void
-    updateFeatureSetImpl (int64_t featureSetID,
-                          const char* featureSetName,   // Not NULL.
-                          double minResolution,         // 0.0 means no min.
-                          double maxResolution)         // 0.0 means no max.
+    updateFeatureSetImpl (int64_t /*featureSetID*/,
+                          const char* /*featureSetName*/,   // Not NULL.
+                          double /*minResolution*/,         // 0.0 means no min.
+                          double /*maxResolution*/)         // 0.0 means no max.
       { }
 
 

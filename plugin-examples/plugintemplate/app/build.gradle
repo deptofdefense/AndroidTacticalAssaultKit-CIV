@@ -9,7 +9,7 @@
 buildscript {
 
     ext.PLUGIN_VERSION = "1.0"
-    ext.ATAK_VERSION = "4.2.0"
+    ext.ATAK_VERSION = "4.2.1"
 
     def takdevVersion = '2.0.0'
 
@@ -223,6 +223,10 @@ android {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".HUN"]
         }
+        bel {
+            dimension "application"
+            manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".BEL"]
+        }
         gbr {
             dimension "application"
             manifestPlaceholders = [atakApiVersion: "com.atakmap.app@" + ATAK_VERSION + ".GBR"]
@@ -243,6 +247,9 @@ android {
 
     sourceSets {
         main {
+
+            // It is strongly encouraged that plugin developers do not modify the archiveBaseName, version code logic and version 
+            // name logic to provide for consistency within the community.   
             setProperty("archivesBaseName", "ATAK-Plugin-" + rootProject.name + "-" + PLUGIN_VERSION + "-" + getVersionName() + "-" + ATAK_VERSION)
             defaultConfig.versionCode = getVersionCode()
             defaultConfig.versionName = PLUGIN_VERSION + " (" + getVersionName() + ") - [" + ATAK_VERSION + "]"

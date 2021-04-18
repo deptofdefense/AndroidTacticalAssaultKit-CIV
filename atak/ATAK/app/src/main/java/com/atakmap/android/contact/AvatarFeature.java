@@ -17,6 +17,7 @@ import com.atakmap.filesystem.HashingUtils;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * Represents an avatar (e.g. profile pic) provided by an
@@ -104,25 +105,13 @@ public abstract class AvatarFeature {
         }
 
         if (bCreate) {
-            FileOutputStream fos = null;
-            try {
+            try(OutputStream fos = IOProviderFactory.getOutputStream(avatarFile)) {
                 Log.d(TAG, "Creating avatar file: " + avatarFile + ", hash="
                         + newHash);
-                fos = IOProviderFactory.getOutputStream(avatarFile);
                 fos.write(getAvatarBytes());
+                fos.flush();
             } catch (IOException e) {
                 Log.w(TAG, "Failed to create avatar file", e);
-            } finally {
-                if (fos != null) {
-                    try {
-                        fos.flush();
-                    } catch (Exception ignored) {
-                    }
-                    try {
-                        fos.close();
-                    } catch (Exception ignored) {
-                    }
-                }
             }
         }
 

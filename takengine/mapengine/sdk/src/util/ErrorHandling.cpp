@@ -69,7 +69,7 @@ namespace TAK
 					errorMessage += strm.str();
 				}
 
-				Logger_log(LogLevel::TELL_Error, errorMessage.c_str());
+				Logger_log(LogLevel::TELL_Severe, errorMessage.c_str());
 
 #ifdef _DEBUG
                 __debugbreak();
@@ -109,7 +109,7 @@ namespace TAK
 					errorMessage += str;
 				}
 
-				Logger_log(LogLevel::TELL_Error, errorMessage.c_str());
+				Logger_log(LogLevel::TELL_Severe, errorMessage.c_str());
 
 #ifdef _DEBUG
                 __debugbreak();
@@ -208,7 +208,7 @@ namespace TAK
 					break;
 				}
 
-				Logger_log(LogLevel::TELL_Error, errorMessage.c_str());
+				Logger_log(LogLevel::TELL_Severe, errorMessage.c_str());
 				
 #ifdef _DEBUG
                 __debugbreak();

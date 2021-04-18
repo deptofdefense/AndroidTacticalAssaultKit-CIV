@@ -238,6 +238,21 @@ GLLabel::GLLabel(const TextFormatParams &fmt,
                  TextAlignment alignment,
                  VerticalAlignment vertical_alignment, int color,
                  int fill_color, bool fill,
+                 TAK::Engine::Feature::AltitudeMode altitude_mode) :
+    GLLabel(std::move(geometry), text, desired_offset, max_draw_resolution, alignment, vertical_alignment, color, fill_color, fill, altitude_mode)
+{
+    gltext_ = GLText2_intern(fmt);
+    rotation_.angle_ = 0.0f;
+    rotation_.absolute_ = false;
+    rotation_.explicit_ = false;
+}
+
+GLLabel::GLLabel(const TextFormatParams &fmt,
+                 TAK::Engine::Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::String text,
+                 Math::Point2<double> desired_offset, double max_draw_resolution,
+                 TextAlignment alignment,
+                 VerticalAlignment vertical_alignment, int color,
+                 int fill_color, bool fill,
                  TAK::Engine::Feature::AltitudeMode altitude_mode,
                  float rotation, bool rotationAbsolute) :
     GLLabel(std::move(geometry), text, desired_offset, max_draw_resolution, alignment, vertical_alignment, color, fill_color, fill, altitude_mode)
@@ -295,6 +310,13 @@ void GLLabel::setText(TAK::Engine::Port::String text) NOTHROWS {
         text_ = text.get();
     else
         text_.clear();
+}
+
+void GLLabel::setTextFormat(const TextFormatParams* fmt) NOTHROWS {
+    if (fmt != nullptr) 
+        gltext_ = GLText2_intern(*fmt);
+    else
+        gltext_ = nullptr;
 }
 
 void GLLabel::setVisible(const bool visible) NOTHROWS { visible_ = visible; }
@@ -700,12 +722,12 @@ void GLLabel::validateProjectedLocation(const GLMapView2& view) NOTHROWS {
                     lineString.getY(&y1, 0);
                     lineString.getY(&y2, 1);
 
+                    TAK::Engine::Core::GeoPoint2 sp(y1, x1);
+                    TAK::Engine::Core::GeoPoint2 ep(y2, x2);
                     try {
                         auto startPoint = TAK::Engine::Math::Point2<float>();
-                        TAK::Engine::Core::GeoPoint2 sp(y1, x1);
                         view.forward(&startPoint, sp);
                         auto endPoint = TAK::Engine::Math::Point2<float>();
-                        TAK::Engine::Core::GeoPoint2 ep(y2, x2);
                         view.forward(&endPoint, ep);
 
                         if (FindIntersection(startPoint, endPoint, (float)view.left, (float)view.bottom, (float)view.right,
@@ -718,6 +740,11 @@ void GLLabel::validateProjectedLocation(const GLMapView2& view) NOTHROWS {
                             y2 = ep.latitude;
                         }
 
+                        if (!rotation_.explicit_) {
+                            rotation_.angle_ = (float)(atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x) * ONE_EIGHTY_OVER_PI);
+                            if (rotation_.angle_ > 90 || rotation_.angle_ < -90) rotation_.angle_ += 180.0;
+                            rotation_.absolute_ = false;
+                        }
                         // auto intersectionGeomPtr = spatialCalc.getGeometry(intersectionId);
                         // if (intersectionGeomPtr != nullptr) {
                         //    switch (intersectionGeomPtr->getType()) {
@@ -733,17 +760,11 @@ void GLLabel::validateProjectedLocation(const GLMapView2& view) NOTHROWS {
                     } catch (...) { /* ignored */
                     }
 
-                    projected_size_ =
-                        atakmap::util::distance::calculateRange(atakmap::core::GeoPoint(y1, x1), atakmap::core::GeoPoint(y2, x2));
+                    projected_size_ = TAK::Engine::Core::GeoPoint2_distance(sp, ep, true);
 
                     scratchGeo.longitude = (x1 + x2) / 2.0;
                     scratchGeo.latitude = (y1 + y2) / 2.0;
                     // if rotation was not explicitly specified, align with segment
-                    if (!rotation_.explicit_) {
-                        rotation_.angle_ = (float)(atan2(y2 - y1, x2 - x1) * ONE_EIGHTY_OVER_PI);
-                        if (rotation_.angle_ > 90 || rotation_.angle_ < -90) rotation_.angle_ += 180.0;
-                        rotation_.absolute_ = true;
-                    }
                 }
             }
         } break;

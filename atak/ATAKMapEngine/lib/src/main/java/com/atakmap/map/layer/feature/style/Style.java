@@ -111,12 +111,14 @@ public abstract class Style implements Disposable {
     static native float BasicPointStyle_getSize(long ptr);
 
     static native Pointer IconPointStyle_create(int color, String uri, float width, float height, int halign, int valign, float rotation, boolean isRotationAbsolute);
+    static native Pointer IconPointStyle_create(int color, String uri, float scale, int halign, int valign, float rotation, boolean isRotationAbsolute);
     static native int IconPointStyle_getColor(long ptr);
     static native String IconPointStyle_getUri(long ptr);
     static native float IconPointStyle_getWidth(long ptr);
     static native float IconPointStyle_getHeight(long ptr);
     static native int IconPointStyle_getHorizontalAlignment(long ptr);
     static native int IconPointStyle_getVerticalAlignment(long ptr);
+    static native float IconPointStyle_getScaling(long ptr);
     static native float IconPointStyle_getRotation(long ptr);
     static native boolean IconPointStyle_isRotationAbsolute(long ptr);
     static native int getIconPointStyle_HorizontalAlignment_LEFT();
@@ -126,7 +128,7 @@ public abstract class Style implements Disposable {
     static native int getIconPointStyle_VerticalAlignment_V_CENTER();
     static native int getIconPointStyle_VerticalAlignment_BELOW();
 
-    static native Pointer LabelPointStyle_create(String text, int textColor, int bgColor, int scrollMode, float textSize, int halign, int valign, float rotation, boolean isRotationAbsolute, double labelMinRenderResolution);
+    static native Pointer LabelPointStyle_create(String text, int textColor, int bgColor, int scrollMode, float textSize, int halign, int valign, float rotation, boolean isRotationAbsolute, double labelMinRenderResolution, float scale);
     static native String LabelPointStyle_getText(long ptr);
     static native int LabelPointStyle_getTextColor(long ptr);
     static native int LabelPointStyle_getBackgroundColor(long ptr);
@@ -137,6 +139,7 @@ public abstract class Style implements Disposable {
     static native float LabelPointStyle_getRotation(long ptr);
     static native boolean LabelPointStyle_isRotationAbsolute(long ptr);
     static native double LabelPointStyle_getLabelMinRenderResolution(long ptr);
+    static native float LabelPointStyle_getLabelScale(long ptr);
 
     static native int getLabelPointStyle_HorizontalAlignment_LEFT();
     static native int getLabelPointStyle_HorizontalAlignment_H_CENTER();

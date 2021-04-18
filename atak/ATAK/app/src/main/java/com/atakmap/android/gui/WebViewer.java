@@ -18,9 +18,11 @@ import android.widget.TextView;
 
 import com.atakmap.app.R;
 import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.log.Log;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -86,7 +88,7 @@ public class WebViewer {
             try {
                 v.loadUrl(file.toURL().toString());
             } catch (MalformedURLException e) {
-                e.printStackTrace();
+                Log.e(TAG, "error encountered", e);
             }
             v.setInitialScale(scale);
         }
@@ -166,17 +168,15 @@ public class WebViewer {
                         final WebView view, String url) {
                     if (url.contains("file:///")) {
                         try {
-                            try {
+                            try(InputStream is = IOProviderFactory.getInputStream(new File(
+                                                new URL(url).toURI()))) {
                                 return new WebResourceResponse(getMimeType(url),
-                                        "UTF-8",
-                                        IOProviderFactory
-                                                .getInputStream(new File(
-                                                        new URL(url).toURI())));
+                                        "UTF-8",is);
                             } catch (URISyntaxException e) {
-                                e.printStackTrace();
+                                Log.e(TAG, "error encountered", e);
                             }
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            Log.e(TAG, "error encountered", e);
                         }
                     }
                     return super.shouldInterceptRequest(view, url);

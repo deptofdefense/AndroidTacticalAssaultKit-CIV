@@ -2,7 +2,8 @@
 package com.atakmap.comms;
 
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.OutputStream;
 import java.net.*;
 import java.security.cert.Certificate;
 import java.util.*;
@@ -68,6 +69,7 @@ import com.atakmap.comms.NetworkDeviceManager.NetworkDevice;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.net.AtakAuthenticationCredentials;
 import com.atakmap.net.AtakCertificateDatabaseIFace;
+import com.atakmap.util.zip.IoUtils;
 
 public class CommsMapComponent extends AbstractMapComponent implements
         CoTMessageListener, ContactPresenceListener, InterfaceStatusListener,
@@ -191,8 +193,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
         }
     }
 
-    private Set<HwAddress> hwAddressesIn;
-    private Set<HwAddress> hwAddressesOut;
+    private final Set<HwAddress> hwAddressesIn;
+    private final Set<HwAddress> hwAddressesOut;
 
     private static class InputPortInfo {
         CotPort inputPort;
@@ -245,7 +247,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
     private final Map<String, StreamingNetInterface> streamingIfaces;
 
     private final Map<String, Contact> uidsToContacts;
-    private final List<CotServiceRemote.CotEventListener> cotEventListeners = new ArrayList<>();
+    private final ConcurrentLinkedQueue<CotServiceRemote.CotEventListener> cotEventListeners =
+            new ConcurrentLinkedQueue<>();
 
     private WifiManager.MulticastLock multicastLock;
     private WifiManager.WifiLock wifiLock;
@@ -473,8 +476,11 @@ public class CommsMapComponent extends AbstractMapComponent implements
                 errStatus = "commo initialization failed";
             }
 
-            hwAddressesIn = scanInterfaces(true, true);
-            hwAddressesOut = scanInterfaces(false, true);
+            // likely not needed but for semantic symmetry
+            hwAddressesOut.clear();
+            hwAddressesIn.clear();
+            hwAddressesIn.addAll(scanInterfaces(true, true));
+            hwAddressesOut.addAll(scanInterfaces(false, true));
             scannerThread = new Thread("CommsMapComponent iface scan") {
                 @Override
                 public void run() {
@@ -884,10 +890,21 @@ public class CommsMapComponent extends AbstractMapComponent implements
         }
     }
 
+    /**
+     * Registers an additional CoT event listener to be used if the CoT Event is completely unknown by the
+     * system.   Note that a base type of the CoTEvent might be supported by the system and not the
+     * subtype.   In this case the system will still process the CoTEvent and the supplied CoTEventListener
+     * will not be called.
+     * @param cel the cot event listener
+     */
     public void addOnCotEventListener(CotServiceRemote.CotEventListener cel) {
         cotEventListeners.add(cel);
     }
 
+    /**
+     * Unregisters the previously registered additional CoT event listener.
+     * @param cel the cot event listener
+     */
     public void removeOnCotEventListener(
             CotServiceRemote.CotEventListener cel) {
         cotEventListeners.remove(cel);
@@ -2420,6 +2437,8 @@ public class CommsMapComponent extends AbstractMapComponent implements
                             fis.close();
                         } catch (IOException ignored) {
                         }
+                } finally {
+                    IoUtils.close(fis);
                 }
             }
 
@@ -2428,22 +2447,12 @@ public class CommsMapComponent extends AbstractMapComponent implements
 
             // Generate new cert
             byte[] cert = commo.generateSelfSignedCert("atakatak");
-            FileOutputStream fos = null;
-            try {
-                 fos = IOProviderFactory
-                        .getOutputStream(httpsCertFile);
+            try(OutputStream fos = IOProviderFactory
+                    .getOutputStream(httpsCertFile)) {
                 fos.write(cert);
-                fos.close();
                 Log.d(TAG, "HttpsCert new cert stored for later use");
             } catch (IOException ex) {
                 Log.e(TAG, "Could not write https certificate file", ex);
-            } finally {
-                if (fos != null) {
-                    try {
-                        fos.close();
-                    } catch (IOException ignored) {
-                    }
-                }
             }
             return cert;
 

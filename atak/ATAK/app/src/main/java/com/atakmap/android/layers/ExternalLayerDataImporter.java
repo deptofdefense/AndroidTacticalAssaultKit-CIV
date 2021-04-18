@@ -7,10 +7,12 @@ import android.os.Bundle;
 
 import com.atakmap.android.importexport.ImportReceiver;
 import com.atakmap.android.importexport.Importer;
+import com.atakmap.android.importexport.ImporterManager;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.map.layer.raster.LocalRasterDataStore;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.spatial.file.KmlFileSpatialDb;
 
 import java.io.File;
 import java.io.IOException;
@@ -94,7 +96,7 @@ public class ExternalLayerDataImporter implements Importer {
         // Remove existing data if it exists
         boolean bDelete = this.database.contains(file);
         if (bDelete)
-            this.database.remove(file);
+            deleteData(uri, mime);
 
         if (showNotifications)
             LayersNotificationManager.notifyImportStarted(file);
@@ -113,7 +115,17 @@ public class ExternalLayerDataImporter implements Importer {
                 LayersNotificationManager.notifyImportComplete(file, success);
         }
 
-        return ImportResult.SUCCESS;
+        // Import vector parts of the GRG if there are any
+        if (success && FileSystemUtils.checkExtension(file, "kmz")) {
+            Importer kmzImporter = ImporterManager.findImporter(
+                    KmlFileSpatialDb.KML_CONTENT_TYPE,
+                    KmlFileSpatialDb.KMZ_FILE_MIME_TYPE);
+            if (kmzImporter != null)
+                kmzImporter.importData(Uri.fromFile(file),
+                        KmlFileSpatialDb.KMZ_FILE_MIME_TYPE, null);
+        }
+
+        return success ? ImportResult.SUCCESS : ImportResult.FAILURE;
     }
 
     @Override
@@ -129,6 +141,16 @@ public class ExternalLayerDataImporter implements Importer {
 
         Log.d(TAG, "call to remove: " + file + " from " + database.getClass());
         this.database.remove(file);
+
+        // Remove from KMZ handler as well
+        if (FileSystemUtils.checkExtension(file, "kmz")) {
+            Importer kmzImporter = ImporterManager.findImporter(
+                    KmlFileSpatialDb.KML_CONTENT_TYPE,
+                    KmlFileSpatialDb.KMZ_FILE_MIME_TYPE);
+            if (kmzImporter != null)
+                kmzImporter.deleteData(Uri.fromFile(file),
+                        KmlFileSpatialDb.KMZ_FILE_MIME_TYPE);
+        }
 
         return true;
     }

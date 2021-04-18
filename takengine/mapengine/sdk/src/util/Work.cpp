@@ -290,6 +290,18 @@ namespace {
 		const int64_t keepAliveMillis;
 	};
 
+	class OverrideWorker : public Worker {
+	public:
+		explicit OverrideWorker(const SharedWorkerPtr& bw) NOTHROWS
+			: backing_worker_(bw), task_num_(0) {}
+
+		virtual TAKErr scheduleWork(std::shared_ptr<Work> work) NOTHROWS;
+		Mutex state_mutex_;
+		const SharedWorkerPtr& backing_worker_;
+		std::shared_ptr<Work> ongoing_work_;
+		uint64_t task_num_;
+	};
+
 	//
 	// ControlQueue
 	//
@@ -609,6 +621,32 @@ namespace {
 
 		return code;
 	}
+
+	//
+	// OverrideWorker
+	//
+
+	TAKErr OverrideWorker::scheduleWork(std::shared_ptr<Work> work) NOTHROWS {
+		
+		if (!work)
+			return TE_InvalidArg;
+
+		{
+			Lock lock(state_mutex_);
+			if (lock.status != TE_Ok)
+				return lock.status;
+
+			task_num_++;
+
+			if (ongoing_work_) {
+				ongoing_work_->preempt(TE_Canceled);
+				ongoing_work_ = work;
+			}
+		}
+
+		// backing_worker_ isn't transient-- don't need lock
+		return this->backing_worker_->scheduleWork(work);
+	}
 }
 
 TAKErr TAK::Engine::Util::Worker_createThread(SharedWorkerPtr &worker) NOTHROWS {
@@ -642,6 +680,17 @@ TAKErr TAK::Engine::Util::Worker_createThreadPool(SharedWorkerPtr &worker, size_
 	if (code == TE_Ok)
 		worker = threadWorker;
 	return code;
+}
+
+TAKErr TAK::Engine::Util::Worker_createOverrideTasker(SharedWorkerPtr& result,
+	const uint64_t** task_num_address, const SharedWorkerPtr& dest_worker) NOTHROWS {
+
+	std::shared_ptr<OverrideWorker> overrideWorker = std::make_shared<OverrideWorker>(dest_worker);
+	if (task_num_address)
+		*task_num_address = &overrideWorker->task_num_;
+
+	result = overrideWorker;
+	return TE_Ok;
 }
 
 //

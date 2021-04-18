@@ -13,6 +13,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.BitmapRegionDecoder;
 import android.graphics.Rect;
+import com.atakmap.util.zip.IoUtils;
 
 public class AndroidTileReader extends TileReader {
 
@@ -41,8 +42,7 @@ public class AndroidTileReader extends TileReader {
             this.width = opts.outWidth;
             this.height = opts.outHeight;
         } finally {
-            if(stream != null)
-                stream.close();
+            IoUtils.close(stream, TAG);
         }
         
         if(tileWidth > 0)

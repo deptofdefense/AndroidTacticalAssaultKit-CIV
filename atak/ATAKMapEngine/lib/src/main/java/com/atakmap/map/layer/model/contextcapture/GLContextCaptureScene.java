@@ -40,6 +40,7 @@ import com.atakmap.math.PointD;
 import com.atakmap.opengl.Tessellate;
 import com.atakmap.util.ConfigOptions;
 
+import com.atakmap.util.zip.IoUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -766,13 +767,8 @@ ebi = System.currentTimeMillis();
         gridJson.put("tiles", new JSONArray(tileJson));
         metadata.put("TileGrid", gridJson);
 
-        FileOutputStream stream = null;
-        try {
-            stream = IOProviderFactory.getOutputStream(file);
+        try (FileOutputStream stream = IOProviderFactory.getOutputStream(file)) {
             FileSystemUtils.write(stream, metadata.toString());
-        } finally {
-            if(stream != null)
-                stream.close();
         }
     }
 
@@ -876,7 +872,7 @@ ebi = System.currentTimeMillis();
                     continue;
                 InputStream stream = null;
                 try {
-                    if (textureUri.contains(".zip"))
+                    if (FileSystemUtils.isZipPath(textureUri))
                         stream = (new ZipVirtualFile(textureUri)).openStream();
                     else
                         stream = IOProviderFactory.getInputStream(new File(textureUri));
@@ -887,10 +883,7 @@ ebi = System.currentTimeMillis();
                         maxHeight = opts.outHeight;
                 } catch(Throwable ignored) {
                 } finally {
-                    if(stream != null)
-                        try {
-                            stream.close();
-                        } catch(IOException ignored) {}
+                    IoUtils.close(stream);
                 }
             }
         }

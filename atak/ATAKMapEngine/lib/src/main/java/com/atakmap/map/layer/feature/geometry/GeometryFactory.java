@@ -203,7 +203,13 @@ public final class GeometryFactory {
     public static Geometry extrude(Geometry geom, double extrude, ExtrusionHints extrusionHints) {
         if(geom == null)
             throw new NullPointerException();
-        return extrude(geom.pointer.raw, extrude, extrusionHints.getId());
+        return extrudeConstant(geom.pointer.raw, extrude, extrusionHints.getId());
+    }
+
+    public static Geometry extrude(Geometry geom, double[] extrude, ExtrusionHints extrusionHints) {
+        if(geom == null)
+            throw new NullPointerException();
+        return extrudePerVertex(geom.pointer.raw, extrude, extrusionHints.getId());
     }
 
     public enum ExtrusionHints {
@@ -243,7 +249,8 @@ public final class GeometryFactory {
     static native Geometry parseWkb(long ptr, int len, int[] numRead);
     static native Geometry createEllipse(long locationPtr, double orientation, double major, double minor, int algoPtr);
     static native Geometry createEllipse(double minX, double minY, double maxX, double maxY, int algoPtr);
-    static native Geometry extrude(long pointer, double extrude, int hint);
+    static native Geometry extrudeConstant(long pointer, double extrude, int hint);
+    static native Geometry extrudePerVertex(long pointer, double[] extrude, int hint);
     static native Geometry createRectangle(long corner1Ptr, long corner2Ptr, int algoPtr);
     static native Geometry createRectangle(long point1Ptr, long point2Ptr, long point3Ptr, int algoPtr);
     static native Geometry createRectangle(long locationPtr, double orientation, double length, double width, int algoPtr);

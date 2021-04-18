@@ -177,7 +177,7 @@ namespace TAK
                      */
                     void release() NOTHROWS;
                     Util::TAKErr getTerrainMeshElevation(double *value, const double latitude, const double longitude) const NOTHROWS;
-                    Elevation::TerrainRenderService &getTerrainRenderService() NOTHROWS;
+                    Elevation::TerrainRenderService &getTerrainRenderService() const NOTHROWS;
                 public: // coordinate transformation functions
                     Util::TAKErr forward(Math::Point2<float> *value, const TAK::Engine::Core::GeoPoint2 &geo) const NOTHROWS;
                     Util::TAKErr forward(float *value, const size_t dstSize, const float *src, const size_t srcSize, const size_t count) const NOTHROWS;
@@ -218,7 +218,7 @@ namespace TAK
                     static double getRecommendedGridSampleDistance() NOTHROWS;
                 private :
                     TAK::Engine::Util::TAKErr intersectWithTerrainImpl(TAK::Engine::Core::GeoPoint2 *retGP, std::shared_ptr<const Elevation::TerrainTile> &focusTile, const TAK::Engine::Core::MapSceneModel2 &map_scene, const float x, const float y) const NOTHROWS;
-                    static TAK::Engine::Util::TAKErr glPickTerrainTile(std::shared_ptr<const Elevation::TerrainTile> &retGP, GLMapView2 *view, const TAK::Engine::Core::MapSceneModel2 &map_scene, const float x, const float y) NOTHROWS;
+                    static TAK::Engine::Util::TAKErr glPickTerrainTile(std::shared_ptr<const Elevation::TerrainTile> *value, GLMapView2 *view, const TAK::Engine::Core::MapSceneModel2 &map_scene, const float x, const float y) NOTHROWS;
                     static void glPickTerrainTile2(void *opaque) NOTHROWS;
                 private: // protected interface
                     /** prepares the scene for rendering */
@@ -237,8 +237,6 @@ namespace TAK
 
                     void drawTerrainTiles(const TAK::Engine::Renderer::GLTexture2 &tex, const std::size_t drawSurfaceWidth, const std::size_t drawSurfaceHeight) NOTHROWS;
                     void drawTerrainMeshes() NOTHROWS;
-
-                    void drawTerrainMesh(const TAK::Engine::Elevation::ElevationChunk::Data &tile) NOTHROWS;
 
                     Util::TAKErr constructOffscreenRenderPass(const bool preserveBounds, const double resolution, const double tilt, const bool base_map, const std::size_t drawSurfaceWidth, const std::size_t drawSurfaceHeight, const float x, const float y, const float width, const float height) NOTHROWS;
                     void refreshSceneMatrices() NOTHROWS;

@@ -171,15 +171,15 @@ public class GLInstancedMesh extends GLInstancedRenderable {
         VertexDataLayout vdl = _subject.getVertexDataLayout();
 
         // Positions buffer
-        _posBuffer = setupVertexBuffer(LOC_POSITION,
+        _posBuffer = setupVertexBuffer(LOC_POSITION, vdl,
                 Mesh.VERTEX_ATTR_POSITION, vdl.position, 3);
 
         // Normals buffer
-        _normalBuffer = setupVertexBuffer(LOC_NORMAL,
+        _normalBuffer = setupVertexBuffer(LOC_NORMAL, vdl,
                 Mesh.VERTEX_ATTR_NORMAL, vdl.normal, 3);
 
         // Textures buffer
-        _texBuffer = setupVertexBuffer(LOC_TEXTURE,
+        _texBuffer = setupVertexBuffer(LOC_TEXTURE, vdl,
                 Mesh.VERTEX_ATTR_TEXCOORD_0, vdl.texCoord0, 2);
 
         // Load materials for this mesh
@@ -330,13 +330,16 @@ public class GLInstancedMesh extends GLInstancedRenderable {
     /**
      * Generic method for setting up a vertex buffer for the subject mesh
      * @param idx Vertex attribute array index (see vertex shader layout locations)
+     * @param vdl The vertex data layout
      * @param attr Mesh attribute index (i.e. {@link Mesh#VERTEX_ATTR_POSITION})
      * @param vdlArr Vertex data layout array (for reading stride and offset)
      * @param size Size of the vertex (usually 2 for texture coordinates, 3 for everything else)
      * @return Generated buffer ID
      */
-    private int[] setupVertexBuffer(int idx, int attr,
+    private int[] setupVertexBuffer(int idx, VertexDataLayout vdl, int attr,
             VertexDataLayout.Array vdlArr, int size) {
+        if (!MathUtils.hasBits(vdl.attributes, attr))
+            return null;
         Buffer buf = _subject.getVertices(attr);
         buf.position(vdlArr.offset);
         int[] bufID = new int[1];

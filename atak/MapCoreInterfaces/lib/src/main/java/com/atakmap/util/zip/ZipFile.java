@@ -56,6 +56,7 @@ import java.util.zip.ZipException;
  * an existing zip file.
  */
 public class ZipFile implements Closeable, ZipConstants {
+    private static final String TAG = "ZipFile";
     /**
      * General Purpose Bit Flags, Bit 0.
      * If set, indicates that the file is encrypted.
@@ -171,7 +172,7 @@ public class ZipFile implements Closeable, ZipConstants {
             mustCloseFile = false;
         } finally {
             if (mustCloseFile) {
-                IoUtils.closeQuietly(raf);
+                IoUtils.close(raf);
             }
         }
         guard.open("close");

@@ -71,10 +71,81 @@ namespace
                                       const TAKEndian order,
                                       const GeometryCollection2 &c) NOTHROWS;
 
-    TAKErr extrudePointAsLine(Geometry2Ptr& value, const Point2& point, const double extrude) NOTHROWS;
-    TAKErr extrudeLineAsPolygon(Geometry2Ptr& value, const LineString2& line, const double extrude) NOTHROWS;
-    TAKErr extrudeLineAsCollection(Geometry2Ptr& value, const LineString2& line, const double extrude, const int hints) NOTHROWS;
-    TAKErr extrudePolygonAsCollection(Geometry2Ptr& value, const Polygon2& polygon, const double extrude, const int hints) NOTHROWS;
+    /*************************************************************************/
+    // Extrude Specitication
+    /*
+     * struct
+     * {
+     *     // returns `true` if all vertices can be extruded, `false` otherwise
+     *     bool operator()(const Geometry2 &src) const;
+     *     // returns the extrude height for the given vertex
+     *     double operator[](const std::size_t) const;
+     * };
+     */
+    /*************************************************************************/
+
+    struct ExtrudeConstant
+    {
+        ExtrudeConstant(const double v) NOTHROWS :
+            value(v)
+        {}
+        bool operator()(const Geometry2 &src) const NOTHROWS
+        {
+            return true;
+        }
+        double operator[](const std::size_t idx) const NOTHROWS
+        {
+            return value;
+        }
+
+        double value;
+    };
+    struct ExtrudePerVertex
+    {
+        ExtrudePerVertex(const double *v, const std::size_t count_) NOTHROWS :
+            value(v),
+            count(count_)
+        {}
+        bool operator()(const Geometry2 &src) const NOTHROWS
+        {
+            switch(src.getClass()) {
+                case TEGC_Point :
+                    return !!count;
+                case TEGC_LineString :
+                    return (count >= static_cast<const LineString2 &>(src).getNumPoints());
+                case TEGC_Polygon :
+                {
+                    std::shared_ptr<LineString2> ring;
+                    if(static_cast<const Polygon2 &>(src).getExteriorRing(ring) != TE_Ok)
+                        return false;
+                    return (*this)(*ring);
+                }
+                default :
+                    return false;
+            }
+        }
+        double operator[](const std::size_t idx) const NOTHROWS
+        {
+            if(idx >= count)
+                return NAN;
+            return value[idx];
+        }
+
+        const double *value;
+        const std::size_t count;
+    };
+
+    template<class T>
+    TAKErr extrudeGeometry(Geometry2Ptr &value, const Geometry2 &src, const T &extrude, const int hints) NOTHROWS;
+
+    template<class T>
+    TAKErr extrudePointAsLine(Geometry2Ptr& value, const Point2& point, const T &extrude) NOTHROWS;
+    template<class T>
+    TAKErr extrudeLineAsPolygon(Geometry2Ptr& value, const LineString2& line, const T &extrude) NOTHROWS;
+    template<class T>
+    TAKErr extrudeLineAsCollection(Geometry2Ptr& value, const LineString2& line, const T &extrude, const int hints) NOTHROWS;
+    template<class T>
+    TAKErr extrudePolygonAsCollection(Geometry2Ptr& value, const Polygon2& polygon, const T &extrude, const int hints) NOTHROWS;
 
 	int samplingFactor(const double &semiMajorAxis, const double &semiMinorAxis) NOTHROWS;
 }
@@ -531,54 +602,18 @@ TAKErr TAK::Engine::Feature::GeometryFactory_toSpatiaLiteBlob(DataOutput2 &sink,
     }
 }
 
-TAKErr TAK::Engine::Feature::GeometryFactory_extrude(Geometry2Ptr &value, const Geometry2 &src, const double extrude, const int hints) NOTHROWS
+TAKErr TAK::Engine::Feature::GeometryFactory_extrude(Geometry2Ptr &value, const Geometry2 &src, const double height, const int hints) NOTHROWS
 {
-    TAKErr code(TE_Ok);
-
-	if (3 != src.getDimension())
-		return TE_InvalidArg;
-
-    switch (src.getClass()) {
-	case GeometryClass::TEGC_Point:
-	{
-		static const int invalidHints = TEEH_GeneratePolygons | TEEH_IncludeBottomFace;
-		if (0 != (invalidHints & hints))
-			return TE_InvalidArg;
-
-		code = extrudePointAsLine(value, static_cast<const Point2&>(src), extrude);
-	}
-	break;
-	case GeometryClass::TEGC_LineString:
-	{
-		static const int invalidHints = TEEH_IncludeBottomFace;
-		if (0 != (invalidHints & hints))
-			return TE_InvalidArg;
-
-		const auto& line = static_cast<const LineString2 &>(src);
-		if (2 > line.getNumPoints())
-			return TE_InvalidArg;
-
-		code = ((hints & TEEH_GeneratePolygons) == TEEH_GeneratePolygons) ?
-			extrudeLineAsPolygon(value, line, extrude) :
-			extrudeLineAsCollection(value, line, extrude, hints);
-	}
-	break;
-    case GeometryClass::TEGC_Polygon:
-	{
-		static const int invalidHints = TEEH_GeneratePolygons;
-		if (0 != (invalidHints & hints))
-			return TE_InvalidArg;
-
-		code = extrudePolygonAsCollection(value, static_cast<const Polygon2&>(src), extrude, hints);
-	}
-	break;
-    default:
-        break;
-    }
-
-	return code;
+    ExtrudeConstant impl(height);
+    return extrudeGeometry(value, src, impl, hints);
 }
-
+TAKErr TAK::Engine::Feature::GeometryFactory_extrude(Geometry2Ptr &value, const Geometry2 &src, const double *vertexHeights, const std::size_t count, const int hints) NOTHROWS
+{
+    if(!vertexHeights)
+        return TE_InvalidArg;
+    ExtrudePerVertex impl(vertexHeights, count);
+    return extrudeGeometry(value, src, impl, hints);
+}
 
 TAKErr TAK::Engine::Feature::GeometryFactory_createRectangle(Geometry2Ptr& value, const Math::Point2<double>& corner1, const Math::Point2<double>& corner2, const Renderer::Algorithm& algo) NOTHROWS
 {
@@ -1602,7 +1637,58 @@ namespace
 		return code;
 	}
 
-	TAKErr extrudePointAsLine(Geometry2Ptr& value, const Point2& point, const double extrude) NOTHROWS
+	template<class T>
+    TAKErr extrudeGeometry(Geometry2Ptr &value, const Geometry2 &src, const T &extrude, const int hints) NOTHROWS
+    {
+        TAKErr code(TE_Ok);
+
+        if (3 != src.getDimension())
+            return TE_InvalidArg;
+
+        if(!extrude(src))
+            return TE_InvalidArg;
+
+        switch (src.getClass()) {
+        case GeometryClass::TEGC_Point:
+        {
+            static const int invalidHints = TEEH_GeneratePolygons | TEEH_IncludeBottomFace;
+            if (0 != (invalidHints & hints))
+                return TE_InvalidArg;
+            code = extrudePointAsLine(value, static_cast<const Point2&>(src), extrude);
+        }
+        break;
+        case GeometryClass::TEGC_LineString:
+        {
+            static const int invalidHints = TEEH_IncludeBottomFace;
+            if (0 != (invalidHints & hints))
+                return TE_InvalidArg;
+
+            const auto& line = static_cast<const LineString2 &>(src);
+            if (2 > line.getNumPoints())
+                return TE_InvalidArg;
+
+            code = ((hints & TEEH_GeneratePolygons) == TEEH_GeneratePolygons) ?
+                extrudeLineAsPolygon(value, line, extrude) :
+                extrudeLineAsCollection(value, line, extrude, hints);
+        }
+        break;
+        case GeometryClass::TEGC_Polygon:
+        {
+            static const int invalidHints = TEEH_GeneratePolygons;
+            if (0 != (invalidHints & hints))
+                return TE_InvalidArg;
+
+            code = extrudePolygonAsCollection(value, static_cast<const Polygon2&>(src), extrude, hints);
+        }
+        break;
+        default:
+            break;
+        }
+
+        return code;
+    }
+    template<class T>
+	TAKErr extrudePointAsLine(Geometry2Ptr& value, const Point2& point, const T &extrude) NOTHROWS
 	{
 		TAKErr code(TE_Ok);
 		std::unique_ptr<LineString2> line(new LineString2);
@@ -1610,14 +1696,14 @@ namespace
 		TE_CHECKRETURN_CODE(code);
 		code = line->addPoint(point.x, point.y, point.z);
 		TE_CHECKRETURN_CODE(code);
-		code = line->addPoint(point.x, point.y, point.z + extrude);
+		code = line->addPoint(point.x, point.y, point.z + extrude[0u]);
 		TE_CHECKRETURN_CODE(code);
 
 		value = Geometry2Ptr(line.release(), Memory_deleter_const<Geometry2, LineString2>);
 		return code;
 	}
-
-	TAKErr extrudeLineAsPolygon(Geometry2Ptr& value, const LineString2& line, const double extrude) NOTHROWS
+    template<class T>
+	TAKErr extrudeLineAsPolygon(Geometry2Ptr& value, const LineString2& line, const T &extrude) NOTHROWS
 	{
 		TAKErr code(TE_Ok);
 
@@ -1631,7 +1717,7 @@ namespace
 			base[0] = point.x;
 			base[1] = point.y;
 			base[2] = point.z;
-			point.z += extrude;
+			point.z += extrude[index];
 			double *mirror = points.get() + 3 * (last - index);
 			mirror[0] = point.x;
 			mirror[1] = point.y;
@@ -1652,8 +1738,8 @@ namespace
 		value = Geometry2Ptr(new Polygon2(ring), Memory_deleter_const<Geometry2, Polygon2>);
 		return code;
 	}
-
-	TAKErr extrudeLineAsCollection(Geometry2Ptr& value, const LineString2& line, const double extrude, const int hints) NOTHROWS
+    template<class T>
+	TAKErr extrudeLineAsCollection(Geometry2Ptr& value, const LineString2& line, const T &extrude, const int hints) NOTHROWS
 	{
 		TAKErr code(TE_Ok);
 
@@ -1671,7 +1757,7 @@ namespace
 				base[0] = point.x;
 				base[1] = point.y;
 				base[2] = point.z;
-				point.z += extrude;
+				point.z += extrude[index+offset];
 				double *mirror = points + 3 * (3 - offset);
 				mirror[0] = point.x;
 				mirror[1] = point.y;
@@ -1726,14 +1812,15 @@ namespace
 		return code;
 	}
 
-	TAKErr projectLineString(LineString2Ptr &projected, const LineString2 &source, const double distance) {
+	template<class T>
+	TAKErr projectLineString(LineString2Ptr &projected, const LineString2 &source, const T &extrude) {
 		TAKErr code(TE_Ok);
 		LineString2Ptr line(new LineString2(source), Memory_deleter_const<LineString2>);
 		for (std::size_t index = 0, max = line->getNumPoints(); max > index; ++index) {
 			double zValue;
 			code = line->getZ(&zValue, index);
 			TE_CHECKRETURN_CODE(code);
-			zValue += distance;
+			zValue += extrude[index];
 			code = line->setZ(index, zValue);
 			TE_CHECKRETURN_CODE(code);
 		}
@@ -1741,7 +1828,8 @@ namespace
 		return code;
 	}
 
-	TAKErr extrudePolygonAsCollection(Geometry2Ptr& value, const Polygon2& polygon, const double extrude, const int hints) NOTHROWS
+	template<class T>
+	TAKErr extrudePolygonAsCollection(Geometry2Ptr& value, const Polygon2& polygon, const T &extrude, const int hints) NOTHROWS
 	{
 		static const ExtrusionHints faceHints = TEEH_OmitTopFace;
 

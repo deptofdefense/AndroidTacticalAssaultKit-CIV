@@ -43,7 +43,9 @@ public class AtakCertificateDatabase {
     private static AtakCertificateDatabaseAdapter atakCertificateDatabaseAdapter;
     private static Context ctx;
 
-
+    /**
+     * Gets the adapter which is used to access the underlying database
+     */
     public static synchronized AtakCertificateDatabaseAdapter getAdapter() {
         if (atakCertificateDatabaseAdapter == null) {
             atakCertificateDatabaseAdapter = new AtakCertificateDatabaseAdapter();
@@ -51,10 +53,22 @@ public class AtakCertificateDatabase {
         return atakCertificateDatabaseAdapter;
     }
 
+    /**
+     * Sets the device uid which is used as part of the password generation
+     * @param id the device identifier to be used
+     */
     public static synchronized void setDeviceId(String id) {
         deviceId = id;
     }
 
+    /**
+     * Gets the password which is used to initialize the sqlcipher database. The password
+     * is derived from the sha256 checksum of 1) a random uuid stored in shared preferences
+     * and 2) the device uid
+     * @param context the context to be used when creating the shared preference
+     * @param key the key to be used
+     * @param deviceId the device identifier
+     */
     public static synchronized String getPwd(Context context, String key, String deviceId) {
         String databaseId;
         File token = new File(context.getFilesDir(), key);
@@ -78,6 +92,11 @@ public class AtakCertificateDatabase {
         return HashingUtils.sha256sum(databaseId + deviceId);
     }
 
+    /**
+     * Initializes the certificate database by opening or creating the underlying sqlcipher
+     * database. If the initialization fails, the database will be deleted and recreated
+     * @param context the context to use when initializing the Certificate database
+     */
     public static void initialize(Context context) {
         synchronized (getAdapter().lock) {
             try {
@@ -129,6 +148,10 @@ public class AtakCertificateDatabase {
         }
     }
 
+    /**
+     * Calls dispose on the database adapter, which closes the underlyign sqlcipher database
+     * connection
+     */
     public static void dispose() {
         synchronized (getAdapter().lock) {
             if (!initialized) {
@@ -140,12 +163,25 @@ public class AtakCertificateDatabase {
         }
     }
 
+    /**
+     * Deletes the underlying database file from the filesystem
+     */
     public static void clear() {
         synchronized (getAdapter().lock) {
             getAdapter().clear(databaseFile);
         }
     }
 
+    /**
+     * Gets the default certificate for the requested type. Default certificates are not associated
+     * with any particular server.
+     *
+     * @param type the type of certificate being requested, ATAK core defines a set of TYPE constants
+     *            in AtakCertificateDatabaseIFace for the certificate types used in core. Plugins
+     *             may specify any unique type
+     *
+     * @return p12 file for the requested certificate
+     */
     public static byte[] getCertificate(
             String type) {
         synchronized (getAdapter().lock) {
@@ -158,6 +194,15 @@ public class AtakCertificateDatabase {
         }
     }
 
+    /**
+     * Sets the default certificate for the requested type. Default certificates are not associated
+     * with any particular server.
+     *
+     * @param type the type of certificate being requested, ATAK core defines a set of TYPE constants
+     *            in AtakCertificateDatabaseIFace for the certificate types used in core. Plugins
+     *             may specify any unique type
+     * @param certificate containing hte p12 file for the requested certificate
+     */
     public static void saveCertificate(
             String type, byte[] certificate) {
         synchronized (getAdapter().lock) {
@@ -176,6 +221,16 @@ public class AtakCertificateDatabase {
         }
     }
 
+    /**
+     * Gets the certificate for the requested type and server
+     *
+     * @param type the type of certificate being requested, ATAK core defines a set of TYPE constants
+     *            in AtakCertificateDatabaseIFace for the certificate types used in core. Plugins
+     *             may specify any unique type
+     * @param server host of certificate being requested
+     *
+     * @return byte[] containing hte p12 file for the requested certificate
+     */
     public static byte[] getCertificateForServer(
             String type, String server) {
         synchronized (getAdapter().lock) {
@@ -188,6 +243,15 @@ public class AtakCertificateDatabase {
         }
     }
 
+    /**
+     * Sets the certificate for the requested type and server
+     *
+     * @param type the type of certificate being requested, ATAK core defines a set of TYPE constants
+     *            in AtakCertificateDatabaseIFace for the certificate types used in core. Plugins
+     *             may specify any unique type
+     * @param server host of certificate being saved
+     * @param byte[] containing hte p12 file for the requested certificate
+     */
     public static void saveCertificateForServer(
             String type, String server, byte[] certificate) {
         synchronized (getAdapter().lock) {
@@ -205,6 +269,13 @@ public class AtakCertificateDatabase {
         }
     }
 
+    /**
+     * deletes the default certificate of the requested type
+     *
+     * @param type the type of certificate being requested, ATAK core defines a set of TYPE constants
+     *            in AtakCertificateDatabaseIFace for the certificate types used in core. Plugins
+     *             may specify any unique type
+     */
     public static void deleteCertificate(
             String type) {
         synchronized (getAdapter().lock) {
@@ -226,6 +297,14 @@ public class AtakCertificateDatabase {
         }
      }
 
+    /**
+     * deletes the certificate for the requested type and server
+     *
+     * @param type the type of certificate being requested, ATAK core defines a set of TYPE constants
+     *            in AtakCertificateDatabaseIFace for the certificate types used in core. Plugins
+     *             may specify any unique type
+     * @param server host of certificate being saved
+     */
     public static void deleteCertificateForServer(
             String type, String server) {
         synchronized (getAdapter().lock) {
@@ -247,6 +326,15 @@ public class AtakCertificateDatabase {
         }
     }
 
+    /**
+     * Imports certificates being imported from mission packages into the certificate database
+     *
+     * @param loaction location on disk to load certificate from
+     * @param connectString if present, the certificate will associated with the host from the
+     *                      connectString
+     * @param type the type of certificate being import
+     * @param delete boolean indicating if the certificate should be deleted after import
+     */
     public static byte[] importCertificate(
             String location,
             String connectString,
@@ -294,6 +382,14 @@ public class AtakCertificateDatabase {
         }
     }
 
+    /**
+     * Saves the certificate password within the AtakAuthenticationDatabase
+     *
+     * @param password password for the certificate
+     * @param type certificate type
+     * @param connectString if present, the password will be associated with the host within
+     *                      the connectString
+     */
     public static AtakAuthenticationCredentials
         saveCertificatePassword(
             String password,
@@ -314,6 +410,11 @@ public class AtakCertificateDatabase {
         }
     }
 
+    /**
+     * Migrates legacy certificates to sqlcipher
+     *
+     * @param context
+     */
     public static void migrateCertificatesToSqlcipher(Context context) {
 
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -350,6 +451,12 @@ public class AtakCertificateDatabase {
         }
     }
 
+    /**
+     * Helper method that extracts a list of x509 certificates from the encrypted container
+     *
+     * @param p12 encrypted certificate container
+     * @param password certificate container password
+     */
     public static List<X509Certificate> loadCertificate(byte[] p12, String password) {
         try {
             List<X509Certificate> results = new LinkedList<X509Certificate>();
@@ -478,7 +585,12 @@ public class AtakCertificateDatabase {
         return null;
     }
 
-
+    /**
+     * Helper method that concerts the given x509 certificate to a PEM formatted String
+     *
+     * @param cert X509Certificate
+     * @return PEM formatted String
+     */
     protected static String convertToPem(X509Certificate cert)
             throws CertificateEncodingException {
         String cert_begin = "-----BEGIN CERTIFICATE-----\n";

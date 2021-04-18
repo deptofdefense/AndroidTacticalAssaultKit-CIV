@@ -61,23 +61,15 @@ final class B3DM {
     // batchTableJsonByteLength int32
     // batchTableBinaryByteLength int32
 
-    public static B3DM parse(String uri, ContentSource handler) throws JSONException, IOException, URISyntaxException {
-        UriFactory.OpenResult openResult = UriFactory.open(uri);
-        if (openResult == null || openResult.inputStream == null)
-            return null;
-        try {
+    public static B3DM parse(String uri, ContentSource handler) throws JSONException, IOException {
+        try(UriFactory.OpenResult openResult = UriFactory.open(uri)) {
+            if (openResult == null || openResult.inputStream == null)
+                return null;
             byte[] bytes = openResult.contentLength > 0 ?
-                    FileSystemUtils.read(openResult.inputStream, (int) openResult.contentLength, true) :
+                    FileSystemUtils.read(openResult.inputStream, (int)openResult.contentLength, true) :
                     FileSystemUtils.read(openResult.inputStream);
 
             return parse(ByteBuffer.wrap(bytes), Util.resolve(uri), handler);
-        } finally {
-            if (openResult.inputStream != null) {
-                try {
-                    openResult.inputStream.close();
-                } catch (IOException ignore) {
-                }
-            }
         }
     }
     public static B3DM parse(File file) throws JSONException, IOException {

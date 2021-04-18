@@ -83,7 +83,8 @@ public class ImportManagerDropdown extends DropDownReceiver {
 
         } else if (DLOAD_RESOURCE.equals(intent.getAction())) {
             RemoteResource resource = intent.getParcelableExtra("resource");
-            _component.download(resource);
+            _component.download(resource,
+                    intent.getBooleanExtra("showNotifications", true));
         } else if (UPDATE_RESOURCE.equals(intent.getAction())) {
             if (_overlay != null) {
                 RemoteResource resource = intent.getParcelableExtra("resource");

@@ -113,20 +113,12 @@ public class JSONPreferenceControl {
 
         // Read preferences from file
         JSONObject root;
-        FileReader fr = null;
         try {
-            fr = IOProviderFactory.getFileReader(file);
             root = new JSONObject(new String(FileSystemUtils.read(file),
                     FileSystemUtils.UTF8_CHARSET));
         } catch (Exception e) {
             Log.e(TAG, "Failed to read preferences from file: " + file, e);
             return false;
-        } finally {
-            try {
-                if (fr != null)
-                    fr.close();
-            } catch (Exception ignore) {
-            }
         }
 
         // Load from JSON
@@ -166,19 +158,11 @@ public class JSONPreferenceControl {
             Log.d(TAG, "Failed to create directory: " + dir);
             return false;
         }
-        FileWriter fw = null;
-        try {
-            fw = IOProviderFactory.getFileWriter(file);
+        try (FileWriter fw = IOProviderFactory.getFileWriter(file)) {
             fw.write(root.toString(2));
         } catch (Exception e) {
             Log.e(TAG, "Failed to write preferences to file: " + file, e);
             return false;
-        } finally {
-            try {
-                if (fw != null)
-                    fw.close();
-            } catch (Exception ignore) {
-            }
         }
         return true;
     }

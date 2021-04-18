@@ -30,6 +30,8 @@ public class MapMenuWidget extends LayoutWidget {
     float _coveredAngle = 360f;
     float _startAngle = -90f;
 
+    boolean _explicitSizing = false;
+
     private boolean _clockwiseWinding = false;
 
     /**
@@ -45,6 +47,23 @@ public class MapMenuWidget extends LayoutWidget {
         _buttonSpan = span;
         _buttonBackground = bg;
         _dragDismiss = dragDismiss;
+    }
+
+    /**
+     * Get whether *any* of the sizing of buttons has been explicitly set in configuration.
+     * Default values applied while reading missing configuration are not considered explicit.
+     * @return true if any of the width, span, or radius were specified.
+     */
+    public boolean getExplicitSizing() {
+        return _explicitSizing;
+    }
+
+    /**
+     * Provides expected arc length of each button.
+     * @return button span dimension.
+     */
+    public float getButtonSpan() {
+        return _buttonSpan;
     }
 
     /**
@@ -147,6 +166,8 @@ public class MapMenuWidget extends LayoutWidget {
         final XmlResourceResolver _resolver;
         final float _maxRadius;
 
+        boolean _explicitSizing = false;
+
         Factory(final Context context, final XmlResourceResolver resolver,
                 float maxRadius) {
             this._context = context;
@@ -160,6 +181,7 @@ public class MapMenuWidget extends LayoutWidget {
             MapMenuWidget widget = new MapMenuWidget();
             configAttributes(widget, config, defNode.getAttributes());
             _parseChildren(widget, config, defNode.getFirstChild());
+            widget._explicitSizing = _explicitSizing;
             return widget;
         }
 
@@ -191,14 +213,32 @@ public class MapMenuWidget extends LayoutWidget {
                 ConfigEnvironment config,
                 NamedNodeMap attrs) {
             super.configAttributes(widget, config, attrs);
+
             float radius = DataParser.parseFloatText(
-                    attrs.getNamedItem("buttonRadius"), 45f)
-                    * MapView.DENSITY;
+                    attrs.getNamedItem("buttonRadius"), -1f);
+            if (0.0 > radius) {
+                radius = 45f;
+            } else {
+                _explicitSizing = true;
+            }
+            radius *= MapView.DENSITY;
+
             float width = DataParser.parseFloatText(
-                    attrs.getNamedItem("buttonWidth"), 100f)
-                    * MapView.DENSITY;
+                    attrs.getNamedItem("buttonWidth"), -1f);
+            if (0.0 > width) {
+                width = 100f;
+            } else {
+                _explicitSizing = true;
+            }
+            width *= MapView.DENSITY;
+
             float span = DataParser.parseFloatText(
-                    attrs.getNamedItem("buttonSpan"), 45f);
+                    attrs.getNamedItem("buttonSpan"), -1f);
+            if (0.0 > span) {
+                span = 45f;
+            } else {
+                _explicitSizing = true;
+            }
 
             boolean dragDismiss = false;
             try {
@@ -248,14 +288,17 @@ public class MapMenuWidget extends LayoutWidget {
                     if (null == attrs.getNamedItem("radius")) {
                         button.setOrientation(button.getOrientationAngle(),
                                 menu._buttonRadius);
+                        _explicitSizing = true;
                     }
                     if (null == attrs.getNamedItem("span")) {
                         button.setButtonSize(menu._buttonSpan,
                                 button.getButtonWidth());
+                        _explicitSizing = true;
                     }
                     if (null == attrs.getNamedItem("width")) {
                         button.setButtonSize(button.getButtonSpan(),
                                 menu._buttonWidth);
+                        _explicitSizing = true;
                     }
 
                     // By prior convention, the "angle" attribute has not been specified

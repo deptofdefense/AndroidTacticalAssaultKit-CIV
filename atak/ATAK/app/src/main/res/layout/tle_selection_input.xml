@@ -23,7 +23,7 @@
             android:layout_height="wrap_content"
             android:textSize="14sp"
             android:text="@string/category"/>
-        <Spinner
+        <com.atakmap.android.gui.PluginSpinner
             android:id="@+id/tle_spinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

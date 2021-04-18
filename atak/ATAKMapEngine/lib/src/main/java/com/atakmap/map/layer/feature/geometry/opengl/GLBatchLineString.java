@@ -15,6 +15,7 @@ import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.feature.Feature;
+import com.atakmap.map.layer.feature.style.BasicFillStyle;
 import com.atakmap.map.layer.feature.style.PatternStrokeStyle;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Envelope;
@@ -22,9 +23,11 @@ import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.geometry.LineString;
 import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
 import com.atakmap.map.layer.feature.style.CompositeStyle;
+import com.atakmap.map.opengl.GLAntiMeridianHelper;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.MathUtils;
+import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 import com.atakmap.map.opengl.GLAntiAliasedLine;
 import com.atakmap.opengl.GLES20FixedPipeline;
@@ -71,8 +74,8 @@ public class GLBatchLineString extends GLBatchGeometry {
     }
     private final static String TAG = "GLLineString";
 
-    static double threshold = 1250000d;
-    static double thresholdxyz = GLMapView.recommendedGridSampleDistance;
+    protected double threshold = 1_250_000D;
+    protected double thresholdxyz = GLMapView.recommendedGridSampleDistance;
 
     /** the source points, xyz triplets */
     protected DoubleBuffer points;
@@ -91,6 +94,7 @@ public class GLBatchLineString extends GLBatchGeometry {
      * populated with actual and should be adjusted when converting to vertices
      */
     DoubleBuffer renderPoints;
+    Envelope renderBounds;
     /** the render point count */
     int numRenderPoints;
 
@@ -100,7 +104,8 @@ public class GLBatchLineString extends GLBatchGeometry {
 
     PointD centroidProj = new PointD(0d, 0d, 0d);
 
-    private double unwrap;
+    boolean crossesIDL;
+    int primaryHemi;
     private boolean needsTessellate;
     protected boolean tessellated;
     protected boolean tessellatable;
@@ -112,6 +117,14 @@ public class GLBatchLineString extends GLBatchGeometry {
 
     private boolean _aalineDirty;
     private GLAntiAliasedLine _lineRenderer;
+
+    protected boolean hasBeenExtruded;
+
+    protected DoubleBuffer extrudedPolygons;
+    protected FloatBuffer projectedExtrudedPolygons;
+
+    protected DoubleBuffer extrudedOutline;
+    protected FloatBuffer projectedExtrudedOutline;
 
     public GLBatchLineString(GLMapSurface surface) {
         this(surface.getGLMapView());
@@ -156,6 +169,10 @@ public class GLBatchLineString extends GLBatchGeometry {
         this.extrude = value;
     }
 
+    public boolean isExtruded() {
+        return Double.compare(this.extrude, 0.0) != 0;
+    }
+
     public void setTessellationEnabled(boolean e) {
         this.tessellationEnabled = e;
     }
@@ -192,6 +209,25 @@ public class GLBatchLineString extends GLBatchGeometry {
             for (int i = 0; i < numStyles; i++)
                 getRenderStates(ctx, c.getStyle(i), states);
 
+            // Consolidate fill color with matching stroke color
+            int fillColorIdx = -1;
+            RenderState stroke = null;
+            for (int i = olen; i < states.size(); i++) {
+                RenderState rs = states.get(i);
+                if (rs.fillColor != 0)
+                    fillColorIdx = i;
+                else if (rs.strokeColor != 0)
+                    stroke = rs;
+            }
+            if (fillColorIdx != -1 && stroke != null) {
+                RenderState f = states.remove(fillColorIdx);
+                stroke.fillColor = f.fillColor;
+                stroke.fillColorR = f.fillColorR;
+                stroke.fillColorG = f.fillColorG;
+                stroke.fillColorB = f.fillColorB;
+                stroke.fillColorA = f.fillColorA;
+            }
+
             // look for outline emulation
             if(states.size() == olen+2) {
                 final RenderState a = states.get(olen);
@@ -227,7 +263,7 @@ public class GLBatchLineString extends GLBatchGeometry {
                 }
             }
         } else if(s instanceof BasicStrokeStyle) {
-            BasicStrokeStyle basicStroke = (BasicStrokeStyle)s;
+            BasicStrokeStyle basicStroke = (BasicStrokeStyle) s;
             RenderState rs = new RenderState();
             rs.strokeWidth = basicStroke.getStrokeWidth();
             rs.strokeColor = basicStroke.getColor();
@@ -235,6 +271,17 @@ public class GLBatchLineString extends GLBatchGeometry {
             rs.strokeColorG = Color.green(rs.strokeColor) / 255f;
             rs.strokeColorB = Color.blue(rs.strokeColor) / 255f;
             rs.strokeColorA = Color.alpha(rs.strokeColor) / 255f;
+            states.add(rs);
+        } else if (s instanceof BasicFillStyle) {
+            BasicFillStyle bs = (BasicFillStyle) s;
+            RenderState rs = new RenderState();
+            rs.fillColor = bs.getColor();
+            rs.fillColorR = Color.red(rs.fillColor) / 255f;
+            rs.fillColorG = Color.green(rs.fillColor) / 255f;
+            rs.fillColorB = Color.blue(rs.fillColor) / 255f;
+            rs.fillColorA = Color.alpha(rs.fillColor) / 255f;
+            if (rs.fillColorA <= 0)
+                rs.fillColorA = 1f;
             states.add(rs);
         } else if(s instanceof PatternStrokeStyle) {
             final PatternStrokeStyle ps = (PatternStrokeStyle) s;
@@ -253,6 +300,7 @@ public class GLBatchLineString extends GLBatchGeometry {
 
     @Override
     protected void setGeometryImpl(final ByteBuffer blob, final int type) {
+        hasBeenExtruded = false;
         setGeometryImpl(blob, type, null);
     }
     
@@ -262,6 +310,7 @@ public class GLBatchLineString extends GLBatchGeometry {
     
     @Override
     protected void setGeometryImpl(Geometry geometry) {
+        hasBeenExtruded = false;
         setGeometryImpl(null, -1, (LineString) geometry);
     }
 
@@ -326,6 +375,9 @@ public class GLBatchLineString extends GLBatchGeometry {
         // while iterating points, obtain rough estimate of max inter-point
         // distance to determine if tessellation should be performed
         this.tessellatable = false;
+
+        this.crossesIDL = false;
+        this.primaryHemi = 0;
 
         if(this.numPoints > 0) {
             final double thresholdSq;
@@ -408,10 +460,15 @@ public class GLBatchLineString extends GLBatchGeometry {
             }
 
             this.points.limit(pointsPos / 8);
+
+            final int idlInfo = GLAntiMeridianHelper.normalizeHemisphere(3, this.points, this.points);
+            this.points.flip();
+
+            this.primaryHemi = (idlInfo&GLAntiMeridianHelper.MASK_PRIMARY_HEMISPHERE);
+            this.crossesIDL = (idlInfo&GLAntiMeridianHelper.MASK_IDL_CROSS) != 0;
         } else {
             this.points.limit(0);
         }
-
 
         // force tessellation sync
         this.tessellated = !this.needsTessellate;
@@ -460,6 +517,24 @@ public class GLBatchLineString extends GLBatchGeometry {
                 this.verticesPtr = Unsafe.getBufferPointer(this.vertices);
             }
 
+            // Update render bounds
+            Envelope.Builder eb = new Envelope.Builder();
+            eb.setHandleIdlCross(false);
+            for(int i = 0; i < numRenderPoints * 3; i += 3) {
+                double lat = renderPoints.get(i+1);
+                double lng = renderPoints.get(i);
+                eb.add(lng, lat);
+            }
+            this.renderBounds = eb.build();
+            // if the geometry crosses the IDL, the minimum and maximum will be
+            // reversed and need to be wrapped
+            if(this.crossesIDL) {
+                final double minX = this.renderBounds.minX;
+                final double maxX = this.renderBounds.maxX;
+                this.renderBounds.minX = GeoCalculations.wrapLongitude(maxX);
+                this.renderBounds.maxX = GeoCalculations.wrapLongitude(minX);
+            }
+
             this.tessellated = this.needsTessellate;
 
             this.vertices.clear();
@@ -474,6 +549,17 @@ public class GLBatchLineString extends GLBatchGeometry {
         }
 
         return false;
+    }
+
+    public Envelope getBounds(int srid) {
+        this.needsTessellate = srid == 4978 && this.tessellationEnabled;
+        this.validateGeometry();
+        return this.renderBounds;
+    }
+
+    public void setTesselationThreshold(double threshold) {
+        this.threshold = threshold;
+        this.thresholdxyz = threshold / 10_000_000D;
     }
 
     boolean projectVertices(GLMapView view, int vertices) {
@@ -492,13 +578,12 @@ public class GLBatchLineString extends GLBatchGeometry {
         boolean retval = false;
 
         // project the vertices
-        final double unwrap = view.idlHelper.getUnwrap(this.mbb);
-
+        final double unwrap = GLAntiMeridianHelper.getUnwrap(view, this.crossesIDL, this.primaryHemi);
         switch(vertices) {
             case GLGeometry.VERTICES_PIXEL :
                 if(this.verticesDrawVersion != view.drawVersion
                         || this.vertexType != vertices
-                        || Double.compare(unwrap, this.unwrap) != 0 || !isTerrainValid(view)) {
+                        || !isTerrainValid(view)) {
 
                     projectVerticesImpl(view,
                             this.renderPoints,
@@ -512,13 +597,12 @@ public class GLBatchLineString extends GLBatchGeometry {
                     retval = true;
                 }
                 this.verticesDrawVersion = view.drawVersion;
-                this.unwrap = unwrap;
 
                 break;
             case GLGeometry.VERTICES_PROJECTED :
                 if(view.drawSrid != this.projectedVerticesSrid
                         || this.vertexType != vertices
-                        || Double.compare(unwrap, this.unwrap) != 0 || !isTerrainValid(view)) {
+                        || !isTerrainValid(view)) {
 
                     projectVerticesImpl(view,
                                         this.renderPoints,
@@ -530,7 +614,6 @@ public class GLBatchLineString extends GLBatchGeometry {
                                         centroidProj);
 
                     this.projectedVerticesSrid = view.drawSrid;
-                    this.unwrap = unwrap;
                     retval = true;
                 }
                 break;
@@ -692,7 +775,19 @@ public class GLBatchLineString extends GLBatchGeometry {
         if(_lineRenderer != null) {
             _lineRenderer.release();
             _lineRenderer = null;
-    }
+        }
+
+        Unsafe.free(extrudedPolygons);
+        extrudedPolygons = null;
+
+        Unsafe.free(projectedExtrudedPolygons);
+        projectedExtrudedPolygons = null;
+
+        Unsafe.free(extrudedOutline);
+        extrudedOutline = null;
+
+        Unsafe.free(projectedExtrudedOutline);
+        projectedExtrudedOutline = null;
     }
 
     @Override
@@ -701,7 +796,7 @@ public class GLBatchLineString extends GLBatchGeometry {
     }
 
     public final void batch(GLMapView view, GLRenderBatch2 batch, int renderPass, int vertices) {
-        if(!MathUtils.hasBits(renderPass, this.getRenderPass()))
+        if(!MathUtils.hasBits(getRenderPass(), renderPass))
             return;
 
         this.projectVertices(view, vertices);
@@ -722,34 +817,143 @@ public class GLBatchLineString extends GLBatchGeometry {
      * @param v
      */
     protected void batchImpl(GLMapView view, GLRenderBatch2 batch, int renderPass, int vertices, int size, FloatBuffer v) {
-        if (!MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SURFACE))
+        if (!MathUtils.hasBits(getRenderPass(), renderPass))
             return;
 
         final RenderState[] toDraw = this.renderStates;
         if(toDraw == null) {
-            batchImpl(view, batch, vertices, size, v, DEFAULT_RS);
+            batchImpl(view, batch, renderPass, vertices, size, v, DEFAULT_RS);
         } else {
             for(RenderState rs : toDraw)
-                batchImpl(view, batch, vertices, size, v, rs);
+                batchImpl(view, batch, renderPass, vertices, size, v, rs);
         }
     }
 
-    private void batchImpl(GLMapView view, GLRenderBatch2 batch, int vertices, int size, FloatBuffer v, RenderState rs) {
+    private void batchImpl(GLMapView view, GLRenderBatch2 batch, int renderPass,
+            int vertices, int size, FloatBuffer v, RenderState rs) {
+        drawExtrusion(view, batch, renderPass, vertices, rs);
         batch.setLineWidth(rs.strokeWidth);
         batch.batch(-1,
-                    GLES20FixedPipeline.GL_LINE_STRIP,
-                    size,
-                    0, v,
-                    0, null,
-                    rs.strokeColorR,
-                    rs.strokeColorG,
-                    rs.strokeColorB,
-                    rs.strokeColorA);
+                GLES20FixedPipeline.GL_LINE_STRIP,
+                size,
+                0, v,
+                0, null,
+                rs.strokeColorR,
+                rs.strokeColorG,
+                rs.strokeColorB,
+                rs.strokeColorA);
+    }
+
+    public void drawExtrusion(GLMapView view, GLRenderBatch2 batch, int renderPass, int vertices, RenderState rs) {
+        if (!isExtruded() || !MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SPRITES))
+            return;
+
+        if (!hasBeenExtruded || extrudedPolygons == null
+                || extrudedOutline == null) {
+            int last = points.limit() - 3;
+            boolean closed = points.get(0) == points.get(last)
+                    && points.get(1) == points.get(last + 1)
+                    && points.get(2) == points.get(last + 2);
+            hasBeenExtruded = true;
+
+            DoubleBuffer extPoints = Unsafe.allocateDirect(this.numPoints*3,
+                    DoubleBuffer.class);
+            extPoints.put(points);
+
+            // Fetch terrain elevation for each point and find the minimum
+            double minAlt = Double.MAX_VALUE;
+            double maxAlt = -Double.MAX_VALUE;
+            for (int i = 0; i < points.limit(); i+= 3) {
+                double lng = points.get(i);
+                double lat = points.get(i + 1);
+                double alt = view.getTerrainMeshElevation(lat, lng);
+                extPoints.put(i + 2, alt);
+                minAlt = Math.min(minAlt, alt);
+                maxAlt = Math.max(maxAlt, alt);
+            }
+
+            double centerAlt = (maxAlt + minAlt) / 2;
+
+            // Calculate relative height per point
+            int h = 0;
+            double[] heights = new double[points.limit() / 3];
+            for (int i = 0; i < points.limit(); i+= 3) {
+                // Height/top altitude (depending on altitude mode)
+                double height = points.get(i + 2);
+
+                // (Minimum altitude + height) - point elevation
+                double alt = extPoints.get(i + 2);
+                heights[h++] = altitudeMode == Feature.AltitudeMode.Absolute
+                        ? height - alt : (centerAlt + height) - alt;
+            }
+
+            Unsafe.free(extrudedPolygons);
+            extrudedPolygons = GLExtrude.extrudeRelative(Double.NaN, extPoints, 3, false, heights);
+
+            Unsafe.free(projectedExtrudedPolygons);
+            projectedExtrudedPolygons = Unsafe.allocateDirect(extrudedPolygons.limit(), FloatBuffer.class);
+            extrudedPolygons.rewind();
+
+            Unsafe.free(extrudedOutline);
+            extrudedOutline = GLExtrude.extrudeOutline(Double.NaN, extPoints, 3, false, closed, heights);
+
+            Unsafe.free(projectedExtrudedOutline);
+            projectedExtrudedOutline = Unsafe.allocateDirect(extrudedOutline.limit(), FloatBuffer.class);
+            extrudedOutline.rewind();
+
+            Unsafe.free(extPoints);
+        }
+        final double unwrap = view.idlHelper.getUnwrap(this.mbb);
+        projectVerticesImpl(view, extrudedPolygons, extrudedPolygons.limit()/3, vertices, Feature.AltitudeMode.Absolute, unwrap, projectedExtrudedPolygons, this.centroidProj);
+        batch.batch(-1,
+                GLES20FixedPipeline.GL_TRIANGLES,
+                3,
+                0, projectedExtrudedPolygons,
+                0, null,
+                rs.fillColorR,
+                rs.fillColorG,
+                rs.fillColorB,
+                rs.fillColorA);
+
+        projectVerticesImpl(view, extrudedOutline, extrudedOutline.limit() / 3, vertices, Feature.AltitudeMode.Absolute, unwrap, projectedExtrudedOutline, centroidProj);
+
+        // It would be preferable to do this using glPolygonOffset, although that (would?)
+        // require changes to how batching works.
+        // This constant seems to work well for offsetting the outlines so they render on top of
+        // the mesh, just a bit awkward to do it here.
+        // NOTE: when multiple objects are near each other, the outlines of background objects
+        // might appear above the nearby objects, this looks weird and is not preferable.
+        double zOffset = -1.0e-4;
+        view.scratch.matrix.setToTranslation(0, 0, zOffset);
+        view.scratch.matrix.get(view.scratch.matrixD, Matrix.MatrixOrder.COLUMN_MAJOR);
+        for(int i = 0; i < view.scratch.matrixF.length; ++i) {
+            view.scratch.matrixF[i] = (float)view.scratch.matrixD[i];
+        }
+
+        // Make sure the lines appear relatively linear in size regardless of zoom level
+        // using drawMapResolution on it's own (or it's reciprocal) had issues at the extremes,
+        // raising to a power < 1/2 seems to work well.
+        batch.setLineWidth(4.0f * (float)Math.pow(1.0 / view.drawMapResolution, 0.2));
+
+        batch.pushMatrix(GLES20FixedPipeline.GL_MODELVIEW);
+        batch.setMatrix(GLES20FixedPipeline.GL_MODELVIEW, view.scratch.matrixF, 0);
+        // TODO: mess around with the outline color, maybe just make this white/black like the
+        // the non-extruded KMLs?
+        batch.batch(-1, GLES20FixedPipeline.GL_LINES,
+                3,
+                0, projectedExtrudedOutline,
+                0, null,
+                rs.strokeColorR,
+                rs.strokeColorG,
+                rs.strokeColorB,
+                rs.strokeColorA);
+        batch.popMatrix(GLES20FixedPipeline.GL_MODELVIEW);
+        batch.setLineWidth(1);
     }
     
     @Override
     public int getRenderPass() {
-        return GLMapView.RENDER_PASS_SURFACE; 
+        return GLMapView.RENDER_PASS_SURFACE | GLMapView.RENDER_PASS_SPRITES;
     }
 
     static class RenderState {
@@ -760,6 +964,12 @@ public class GLBatchLineString extends GLBatchGeometry {
         float strokeColorB;
         float strokeColorA;
         int strokeColor;
+        // fill (used for extrusions)
+        float fillColorR;
+        float fillColorG;
+        float fillColorB;
+        float fillColorA;
+        int fillColor;
         // outline
         float outlineWidth;
         float outlineColorR;

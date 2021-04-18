@@ -40,9 +40,7 @@ public class ShapefileSpatialDb extends OgrSpatialDb {
             if (!(file instanceof ZipVirtualFile)) {
                 do {
                     // check if it is a zip file
-                    if (file.getAbsolutePath()
-                            .toLowerCase(LocaleUtil.getCurrent())
-                            .contains(".zip")) {
+                    if (FileSystemUtils.isZipPath(file)) {
                         try {
                             // to to create, if we fail, we'll drop through to return null
                             file = new ZipVirtualFile(file);
@@ -139,7 +137,7 @@ public class ShapefileSpatialDb extends OgrSpatialDb {
 
     @Override
     public boolean processFile(File file) {
-        if (file.getName().endsWith(".zip"))
+        if (FileSystemUtils.checkExtension(file, "zip"))
             try {
                 file = new ZipVirtualFile(file);
             } catch (IllegalArgumentException | IllegalStateException ignored) {

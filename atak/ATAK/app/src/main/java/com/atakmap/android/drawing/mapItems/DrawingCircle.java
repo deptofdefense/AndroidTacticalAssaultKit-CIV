@@ -109,6 +109,13 @@ public class DrawingCircle extends Shape implements
     // Listeners
     protected final Set<OnRadiusChangedListener> _radiusListeners = new HashSet<>();
 
+    // Utilized in the case where two rings are interlocked on ajoining markers, ie
+    // the first ring center point marker is marker 1 with the radius marker being marker 2
+    // and the second ring center point marker is marker 2 with the radius marker being marker 1
+    // this breaks the infinite loop that occurs when recalculating positions of the radius
+    // marker which in tern causes the recalculation of the center point.
+    private boolean updatingRadiusMarker = false;
+
     /**
      * Create a new drawing circle
      * @param mapView Map view instance
@@ -380,12 +387,14 @@ public class DrawingCircle extends Shape implements
             refresh();
     }
 
+
     /**
      * Set the center point of this circle
      * This will move the anchor marker as well
      * @param point Center point
      */
     public void setCenterPoint(GeoPointMetaData point) {
+
         GeoPoint oldCenter = _center.get();
         _center = point;
         for (Circle c : getRings())
@@ -399,16 +408,20 @@ public class DrawingCircle extends Shape implements
 
         // Update radius marker position (relative to old center)
         Marker radius = getRadiusMarker();
-        if (radius != null &&
-                oldCenter != null &&
-                !oldCenter.equals(point.get())) {
+        if (!updatingRadiusMarker && radius != null && oldCenter != null
+                && !oldCenter.equals(point.get())) {
 
             double bearing = DistanceCalculations.computeDirection(
                     oldCenter, radius.getPoint())[1];
             GeoPoint rPoint = DistanceCalculations.computeDestinationPoint(
                     point.get(), bearing, getRadius());
+
+            // If the radius marker is being set, then do not allow for a
+            // looping condition where it keeps getting set.
+            updatingRadiusMarker = true;
             radius.setPoint(new GeoPointMetaData(rPoint)
                     .setGeoPointSource(GeoPointMetaData.CALCULATED));
+            updatingRadiusMarker = false;
         }
 
         onPointsChanged();

@@ -5,31 +5,25 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
-import java.util.ArrayList;
 
 import android.graphics.Color;
+import android.opengl.GLES20;
 import android.opengl.GLES30;
 
-import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.feature.Feature;
-import com.atakmap.map.layer.feature.geometry.GeometryCollection;
-import com.atakmap.map.layer.feature.geometry.GeometryFactory;
-import com.atakmap.map.layer.feature.geometry.LineString;
-import com.atakmap.map.layer.feature.geometry.Point;
+import com.atakmap.map.layer.feature.Feature.AltitudeMode;
 import com.atakmap.map.layer.feature.style.Style;
 import com.atakmap.map.layer.feature.geometry.Geometry;
 import com.atakmap.map.layer.feature.geometry.Polygon;
 import com.atakmap.map.layer.feature.style.BasicFillStyle;
 import com.atakmap.map.layer.feature.style.CompositeStyle;
+import com.atakmap.map.opengl.GLAntiMeridianHelper;
 import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.MathUtils;
 import com.atakmap.math.Matrix;
-import com.atakmap.math.PointD;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLRenderBatch2;
 import com.atakmap.opengl.Tessellate;
@@ -43,18 +37,11 @@ public class GLBatchPolygon extends GLBatchLineString {
     float fillColorB;
     float fillColorA;
     int fillColor;
-    protected boolean hasBeenExtruded;
 
     boolean drawStroke;
 
     DoubleBuffer polyTriangles;
     FloatBuffer polyVertices;
-
-    protected DoubleBuffer extrudedPolygons;
-    protected FloatBuffer projectedExtrudedPolygons;
-
-    protected DoubleBuffer extrudedOutline;
-    protected FloatBuffer projectedExtrudedOutline;
 
     public GLBatchPolygon(GLMapSurface surface) {
         this(surface.getGLMapView());
@@ -68,9 +55,6 @@ public class GLBatchPolygon extends GLBatchLineString {
         this.fillColorB = 0.0f;
         this.fillColorA = 0.0f;
         this.fillColor = 0;
-        this.hasBeenExtruded = false;
-        extrudedPolygons = null;
-        projectedExtrudedPolygons = null;
     }
 
     @Override
@@ -101,7 +85,7 @@ public class GLBatchPolygon extends GLBatchLineString {
         final RenderState[] rs = this.renderStates;
         if(!this.drawStroke && rs != null) {
             for(RenderState s : rs) {
-                this.drawStroke |= (s.strokeColorA != 0f);
+                this.drawStroke = (s.strokeColorA != 0f);
                 if(this.drawStroke)
                     break;
             }
@@ -148,7 +132,7 @@ public class GLBatchPolygon extends GLBatchLineString {
                                                         24,
                                                         3,
                                                         this.numRenderPoints-1,
-                                                        this.tessellated ? GLBatchLineString.threshold : 0d,
+                                                        this.tessellated ? threshold : 0d,
                                                         true);
                 }
             } catch (Exception e) {
@@ -183,7 +167,7 @@ public class GLBatchPolygon extends GLBatchLineString {
             this.polyVertices = Unsafe.allocateDirect(this.polyTriangles.limit(), FloatBuffer.class);
         }
 
-        final double unwrap = view.idlHelper.getUnwrap(this.mbb);
+        final double unwrap = GLAntiMeridianHelper.getUnwrap(view, this.crossesIDL, this.primaryHemi);
         projectVerticesImpl(view, this.polyTriangles, this.polyTriangles.limit()/3, vertices, altitudeMode, unwrap, this.polyVertices, this.centroidProj);
 
         return true;
@@ -213,32 +197,44 @@ public class GLBatchPolygon extends GLBatchLineString {
         if(v == null)
             return;
 
-        if(this.fillColorA > 0f && this.polyTriangles != null) {
-            ByteBuffer bb = Unsafe.allocateDirect(this.polyTriangles.limit()*4);
-            bb.order(ByteOrder.nativeOrder());
-            FloatBuffer toDraw = bb.asFloatBuffer();
-            view.forward(polyTriangles, 3, toDraw, 3);
-
-
+        if(this.fillColorA > 0f && this.polyVertices != null) {
             GLES20FixedPipeline.glEnableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
             GLES20FixedPipeline.glEnable(GLES20FixedPipeline.GL_BLEND);
             GLES20FixedPipeline.glBlendFunc(GLES20FixedPipeline.GL_SRC_ALPHA,
                     GLES20FixedPipeline.GL_ONE_MINUS_SRC_ALPHA);
 
-            GLES20FixedPipeline.glVertexPointer(3, GLES20FixedPipeline.GL_FLOAT, 0, toDraw);
+            GLES20FixedPipeline.glVertexPointer(3, GLES20FixedPipeline.GL_FLOAT, 0, this.polyVertices);
 
             GLES20FixedPipeline.glColor4f(this.fillColorR,
                     this.fillColorG,
                     this.fillColorB,
                     this.fillColorA);
 
+            GLES20FixedPipeline.glPushMatrix();
+            switch(vertices) {
+                case GLGeometry.VERTICES_PIXEL :
+                    // nothing to do, already projected
+                    break;
+                case GLGeometry.VERTICES_PROJECTED:
+                    // set Model-View as current scene forward
+                    view.scratch.matrix.set(view.scene.forward);
+                    // apply the RTC offset to translate from local to world coordinate system (map projection)
+                    view.scratch.matrix.translate(this.centroidProj.x, this.centroidProj.y, this.centroidProj.z);
+                    view.scratch.matrix.get(view.scratch.matrixD, Matrix.MatrixOrder.COLUMN_MAJOR);
+                    for (int i = 0; i < 16; i++) {
+                        view.scratch.matrixF[i] = (float)view.scratch.matrixD[i];
+                    }
+                    GLES20FixedPipeline.glLoadMatrixf(view.scratch.matrixF, 0);
+                    break;
+            }
+
             GLES20FixedPipeline.glDrawArrays(GLES30.GL_TRIANGLES, 0,
-                    toDraw.limit()/3);
+                    this.polyVertices.limit()/3);
+
+            GLES20FixedPipeline.glPopMatrix();
 
             GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_BLEND);
             GLES20FixedPipeline.glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-
-            Unsafe.free(toDraw);
         }
 
         if (this.drawStroke)
@@ -248,9 +244,16 @@ public class GLBatchPolygon extends GLBatchLineString {
 
     @Override
     protected void batchImpl(GLMapView view, GLRenderBatch2 batch, int renderPass, int vertices, int size, FloatBuffer v) {
-        if(!MathUtils.hasBits(renderPass, GLMapView.RENDER_PASS_SURFACE))
+        boolean sprites = MathUtils.hasBits(renderPass,
+                GLMapView.RENDER_PASS_SPRITES);
+        boolean surface = MathUtils.hasBits(renderPass,
+                GLMapView.RENDER_PASS_SURFACE);
+
+        if (surface && altitudeMode != AltitudeMode.ClampToGround
+                || sprites && altitudeMode == AltitudeMode.ClampToGround)
             return;
-        if (extrude == -1.0) {
+
+        if (isExtruded() && sprites) {
             if (!hasBeenExtruded || extrudedPolygons == null
                     || extrudedOutline == null) {
                 int last = points.limit() - 3;
@@ -258,31 +261,56 @@ public class GLBatchPolygon extends GLBatchLineString {
                         && points.get(1) == points.get(last + 1)
                         && points.get(2) == points.get(last + 2);
                 hasBeenExtruded = true;
-                double altitude = view.getTerrainMeshElevation(points.get(0), points.get(1));
+
+                DoubleBuffer extPoints = Unsafe.allocateDirect(this.numPoints*3,
+                        DoubleBuffer.class);
+                extPoints.put(points);
+
+                // Fetch terrain elevation for each point and find the minimum
+                double minAlt = Double.MAX_VALUE;
+                double maxAlt = -Double.MAX_VALUE;
+                for (int i = 0; i < points.limit(); i+= 3) {
+                    double lng = points.get(i);
+                    double lat = points.get(i + 1);
+                    double alt = view.getTerrainMeshElevation(lat, lng);
+                    extPoints.put(i + 2, alt);
+                    minAlt = Math.min(minAlt, alt);
+                    maxAlt = Math.max(maxAlt, alt);
+                }
+
+                double centerAlt = (maxAlt + minAlt) / 2;
+
+                // Calculate relative height per point
+                int h = 0;
+                double[] heights = new double[points.limit() / 3];
+                for (int i = 0; i < points.limit(); i+= 3) {
+                    // Height/top altitude (depending on altitude mode)
+                    double height = points.get(i + 2);
+
+                    // (Minimum altitude + height) - point elevation
+                    double alt = extPoints.get(i + 2);
+                    heights[h++] = altitudeMode == Feature.AltitudeMode.Absolute
+                            ? height - alt : (centerAlt + height) - alt;
+                }
 
                 Unsafe.free(extrudedPolygons);
-                extrudedPolygons = GLExtrude.extrudeRelative(altitude, points.get(2), points, 3, closed);
+                extrudedPolygons = GLExtrude.extrudeRelative(Double.NaN, extPoints, 3, closed, heights);
 
                 Unsafe.free(projectedExtrudedPolygons);
                 projectedExtrudedPolygons = Unsafe.allocateDirect(extrudedPolygons.limit(), FloatBuffer.class);
                 extrudedPolygons.rewind();
 
                 Unsafe.free(extrudedOutline);
-                extrudedOutline = GLExtrude.extrudeOutline(altitude, points.get(2), points, 3, closed, false);
+                extrudedOutline = GLExtrude.extrudeOutline(Double.NaN, extPoints, 3, closed, false, heights);
 
                 Unsafe.free(projectedExtrudedOutline);
                 projectedExtrudedOutline = Unsafe.allocateDirect(extrudedOutline.limit(), FloatBuffer.class);
                 extrudedOutline.rewind();
+
+                Unsafe.free(extPoints);
             }
             final double unwrap = view.idlHelper.getUnwrap(this.mbb);
-            projectVerticesImpl(view, extrudedPolygons, extrudedPolygons.limit()/3, vertices, Feature.AltitudeMode.Relative, unwrap, projectedExtrudedPolygons, this.centroidProj);
-            if (this.fillColor == 0) {
-                this.fillColorR = 1.0f;
-                this.fillColorG = 1.0f;
-                this.fillColorB = 1.0f;
-                this.fillColorA = 0.5f;
-
-            }
+            projectVerticesImpl(view, extrudedPolygons, extrudedPolygons.limit()/3, vertices, AltitudeMode.Absolute, unwrap, projectedExtrudedPolygons, this.centroidProj);
             batch.batch(-1,
                     GLES20FixedPipeline.GL_TRIANGLES,
                     3,
@@ -293,7 +321,7 @@ public class GLBatchPolygon extends GLBatchLineString {
                     this.fillColorB,
                     this.fillColorA);
 
-            projectVerticesImpl(view, extrudedOutline, extrudedOutline.limit() / 3, vertices, Feature.AltitudeMode.Relative, unwrap, projectedExtrudedOutline, centroidProj);
+            projectVerticesImpl(view, extrudedOutline, extrudedOutline.limit() / 3, vertices, AltitudeMode.Absolute, unwrap, projectedExtrudedOutline, centroidProj);
 
             // It would be preferable to do this using glPolygonOffset, although that (would?)
             // require changes to how batching works.
@@ -327,8 +355,7 @@ public class GLBatchPolygon extends GLBatchLineString {
                     1.0f);
             batch.popMatrix(GLES20FixedPipeline.GL_MODELVIEW);
             batch.setLineWidth(1);
-        }
-        else {
+        } else {
             if (this.fillColorA > 0 && this.polyTriangles != null) {
                 batch.batch(-1,
                         GLES20FixedPipeline.GL_TRIANGLES,
@@ -356,17 +383,5 @@ public class GLBatchPolygon extends GLBatchLineString {
 
         Unsafe.free(this.polyTriangles);
         this.polyTriangles = null;
-
-        Unsafe.free(extrudedPolygons);
-        extrudedPolygons = null;
-
-        Unsafe.free(projectedExtrudedPolygons);
-        projectedExtrudedPolygons = null;
-
-        Unsafe.free(extrudedOutline);
-        extrudedOutline = null;
-
-        Unsafe.free(projectedExtrudedOutline);
-        projectedExtrudedOutline = null;
     }
 }

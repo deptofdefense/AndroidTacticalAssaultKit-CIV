@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -55,21 +56,21 @@ public class FavoriteListAdapter extends BaseAdapter {
 
     private final static int VERSION = 5;
 
-    private final List<Favorite> mData;
+    protected final List<Favorite> mData;
     public static final String DIRNAME = FileSystemUtils.TOOL_DATA_DIRECTORY
             + File.separatorChar + "favorites";
     private static final String FILENAME = "favs.txt";
     private static final String PATH_TO_FILE = FileSystemUtils.getItem(
             DIRNAME + File.separator + FILENAME).toString();
 
-    private final LayoutInflater mInflater;
+    protected final LayoutInflater mInflater;
     private static Drawable DELETE_ICON;
     private static Drawable EDIT_ICON;
     private static Drawable SEND_ICON;
     private static final String DELIMITER = "\t";
-    private final Context _context;
+    protected final Context _context;
 
-    private final SharedPreferences _prefs;
+    protected final SharedPreferences _prefs;
 
     public FavoriteListAdapter(Context context) {
         mInflater = LayoutInflater.from(context);
@@ -253,8 +254,8 @@ public class FavoriteListAdapter extends BaseAdapter {
         writeList();
     }
 
-    private String getLocationText(final int position,
-            final CoordinateFormat cf) {
+    protected String getLocationText(final int position,
+                                     final CoordinateFormat cf) {
         final Favorite fav = mData.get(position);
         if (fav != null) {
             final GeoPoint gp = new GeoPoint(fav.latitude, fav.longitude);
@@ -263,7 +264,7 @@ public class FavoriteListAdapter extends BaseAdapter {
         return "";
     }
 
-    private void setText(ViewHolder holder, int position) {
+    protected void setText(ViewHolder holder, int position) {
         String name = mData.get(position).title;
         if (name.length() > 24)
             holder.titleText.setTextSize(13);
@@ -299,76 +300,59 @@ public class FavoriteListAdapter extends BaseAdapter {
      */
     public static List<Favorite> loadList(final String file) {
         ArrayList<Favorite> result = new ArrayList<>();
-        BufferedReader reader = null;
-        InputStreamReader isr = null;
-        FileInputStream fis = null;
 
         try {
             File f = new File(
                     FileSystemUtils.sanitizeWithSpacesAndSlashes(file));
             if (IOProviderFactory.exists(f)) {
-                reader = new BufferedReader(
-                        isr = new InputStreamReader(
-                                fis = IOProviderFactory.getInputStream(f),
-                                FileSystemUtils.UTF8_CHARSET));
-                String line;
-                int version = 0;
-                Favorite fav;
-                while ((line = reader.readLine()) != null) {
-                    // drop all newlines from the input
-                    line = line.replace("\n", "");
-                    // process any header
-                    if (line.startsWith("::")) {
-                        if (version == 0 && line.startsWith("::VERSION")) {
-                            // obtain the version
-                            String versionStr = line.substring(9).trim();
-                            if (versionStr.matches("\\d+"))
-                                version = Integer.parseInt(versionStr);
+                try (InputStream is = IOProviderFactory.getInputStream(f);
+                     InputStreamReader isr = new InputStreamReader(is,
+                             FileSystemUtils.UTF8_CHARSET);
+                     BufferedReader reader = new BufferedReader(isr)) {
+
+                    String line;
+                    int version = 0;
+                    Favorite fav;
+                    while ((line = reader.readLine()) != null) {
+                        // drop all newlines from the input
+                        line = line.replace("\n", "");
+                        // process any header
+                        if (line.startsWith("::")) {
+                            if (version == 0 && line.startsWith("::VERSION")) {
+                                // obtain the version
+                                String versionStr = line.substring(9).trim();
+                                if (versionStr.matches("\\d+"))
+                                    version = Integer.parseInt(versionStr);
+                            }
+
+                            continue;
                         }
 
-                        continue;
-                    }
+                        // parse the line per the version
+                        switch (version) {
+                            case 5:
+                                fav = parseVersion5(line);
+                                break;
+                            case 4:
+                                fav = parseVersion4(line);
+                                break;
+                            case 3:
+                                fav = parseVersion3(line);
+                                break;
+                            case 2:
+                                fav = parseVersion2(line);
+                                break;
+                            default:
+                                fav = parseLegacy(line);
+                                break;
+                        }
 
-                    // parse the line per the version
-                    switch (version) {
-                        case 5:
-                            fav = parseVersion5(line);
-                            break;
-                        case 4:
-                            fav = parseVersion4(line);
-                            break;
-                        case 3:
-                            fav = parseVersion3(line);
-                            break;
-                        case 2:
-                            fav = parseVersion2(line);
-                            break;
-                        default:
-                            fav = parseLegacy(line);
-                            break;
+                        if (fav != null)
+                            result.add(fav);
                     }
-
-                    if (fav != null)
-                        result.add(fav);
                 }
             }
         } catch (IOException ignored) {
-        } finally {
-            if (reader != null)
-                try {
-                    reader.close();
-                } catch (IOException ignored) {
-                }
-            if (isr != null)
-                try {
-                    isr.close();
-                } catch (IOException ignored) {
-                }
-            if (fis != null)
-                try {
-                    fis.close();
-                } catch (IOException ignored) {
-                }
         }
         return result;
     }
@@ -482,17 +466,13 @@ public class FavoriteListAdapter extends BaseAdapter {
             return;
         }
 
-        FileWriter fos = null;
-        BufferedWriter bufferedWriter = null;
-        try {
+        try(Writer fos = IOProviderFactory.getFileWriter(file);
+            BufferedWriter bufferedWriter = new BufferedWriter(fos)) {
             File parent = file.getParentFile();
             if (parent != null && !IOProviderFactory.exists(parent)
                     && !IOProviderFactory.mkdirs(parent)) {
                 Log.w(TAG, "Failed to create dirs: " + file.getAbsolutePath());
             }
-
-            fos = IOProviderFactory.getFileWriter(file);
-            bufferedWriter = new BufferedWriter(fos);
 
             bufferedWriter.write(FAVS + "\n");
             bufferedWriter.write("::VERSION " + VERSION);
@@ -521,17 +501,6 @@ public class FavoriteListAdapter extends BaseAdapter {
             } while (iter.hasNext());
         } catch (IOException io) {
             Log.e(TAG, "error: ", io);
-        } finally {
-            if (bufferedWriter != null)
-                try {
-                    bufferedWriter.close();
-                } catch (IOException ignored) {
-                }
-            if (fos != null)
-                try {
-                    fos.close();
-                } catch (IOException ignored) {
-                }
         }
     }
 
@@ -653,7 +622,7 @@ public class FavoriteListAdapter extends BaseAdapter {
         }
     }
 
-    private static class ViewHolder {
+    protected static class ViewHolder {
         ImageButton editButton;
         ImageButton deleteButton;
         ImageButton sendButton;

@@ -1,6 +1,8 @@
 
 package com.atakmap.net;
 
+import com.atakmap.annotations.DeprecatedApi;
+
 public interface AtakAuthenticationDatabaseIFace {
 
     /**
@@ -27,7 +29,11 @@ public interface AtakAuthenticationDatabaseIFace {
      * @param site the site
      * @param username the username to save
      * @param password the password to save
+     * @param expires true if the system should expire the certificate after 30 days
+     * @deprecated see saveCredentialsForType with a number passed in.
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.2.1", forRemoval = true, removeAt = "4.5")
     void saveCredentialsForType(
             String type,
             String site,
@@ -36,16 +42,47 @@ public interface AtakAuthenticationDatabaseIFace {
             boolean expires);
 
     /**
+     * Saves the specific type of credentials for a given site.
+     * @param type the type
+     * @param site the site
+     * @param username the username to save
+     * @param password the password to save
+     * @param expires the number of milliseconds that this certificate remains valid.
+     */
+    void saveCredentialsForType(
+            String type,
+            String site,
+            String username,
+            String password,
+            long expires);
+
+    /**
      * Saves the specific type of credentials.
      * @param type the type
      * @param username the username to save
      * @param password the password to save
+     * @deprecated see saveCredentialsForType with a number passed in.
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.2.1", forRemoval = true, removeAt = "4.5")
     void saveCredentialsForType(
             String type,
             String username,
             String password,
             boolean expires);
+
+    /**
+     * Saves the specific type of credentials for a given site.
+     * @param type the type
+     * @param username the username to save
+     * @param password the password to save
+     * @param expires the number of milliseconds that this certificate remains valid.
+     */
+    void saveCredentialsForType(
+            String type,
+            String username,
+            String password,
+            long expires);
 
     void invalidateForType(
             String type,

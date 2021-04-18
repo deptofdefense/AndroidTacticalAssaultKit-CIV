@@ -510,11 +510,9 @@ public class ProductInformation {
         Bitmap bm = null;
         String iconPath = getIconPath(this);
         if (FileSystemUtils.isFile(iconPath)) {
-            try {
-                try (FileInputStream stream = IOProviderFactory
-                        .getInputStream(new File(iconPath))) {
-                    bm = BitmapFactory.decodeStream(stream);
-                }
+            try (FileInputStream stream = IOProviderFactory
+                    .getInputStream(new File(iconPath))) {
+                bm = BitmapFactory.decodeStream(stream);
             } catch (IOException ignored) {
             }
         }

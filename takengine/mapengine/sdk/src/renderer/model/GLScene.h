@@ -31,6 +31,7 @@ namespace TAK {
                     class SceneControlImpl;
                 public :
                     GLScene(TAK::Engine::Core::RenderContext &ctx, const TAK::Engine::Model::SceneInfo &info, const GLSceneSpi::Options &opts) NOTHROWS;
+                    GLScene(TAK::Engine::Core::RenderContext& ctx, const TAK::Engine::Model::SceneInfo& info, TAK::Engine::Model::ScenePtr&& scene, const GLSceneSpi::Options& opts) NOTHROWS;
                     ~GLScene() NOTHROWS;
                 public: // HitTestControl
                     Util::TAKErr hitTest(TAK::Engine::Core::GeoPoint2 *value, const TAK::Engine::Core::MapSceneModel2 &sceneModel, const float x, const float y) NOTHROWS;

@@ -63,7 +63,7 @@ public class VideoMetadata {
     public void update(
             final Map<DecodedMetadataItem.MetadataItemIDs, DecodedMetadataItem> items) {
 
-        if (items.keySet().contains(
+        if (items.containsKey(
                 DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_FRAME_CENTER_LATITUDE)) {
 
             // if the frame contains the center latitude and longitude but does not contain 
@@ -75,7 +75,7 @@ public class VideoMetadata {
             double newLatitude = (Double) decodedMetadataItem.getValue();
 
             DecodedMetadataItem.MetadataItemIDs id = DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_CORNER_LATITUDE_POINT_1;
-            if (!items.keySet().contains(id)) {
+            if (!items.containsKey(id)) {
                 if (!Double.isNaN(corner1lat)) {
                     double newCorner1lat = corner1lat - frameLatitude
                             + newLatitude;
@@ -86,7 +86,7 @@ public class VideoMetadata {
             }
 
             id = DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_CORNER_LATITUDE_POINT_2;
-            if (!items.keySet().contains(id)) {
+            if (!items.containsKey(id)) {
                 if (!Double.isNaN(corner2lat)) {
                     double newCorner2lat = corner2lat - frameLatitude
                             + newLatitude;
@@ -97,7 +97,7 @@ public class VideoMetadata {
             }
 
             id = DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_CORNER_LATITUDE_POINT_3;
-            if (!items.keySet().contains(id)) {
+            if (!items.containsKey(id)) {
                 if (!Double.isNaN(corner3lat)) {
                     double newCorner3lat = corner3lat - frameLatitude
                             + newLatitude;
@@ -108,7 +108,7 @@ public class VideoMetadata {
             }
 
             id = DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_CORNER_LATITUDE_POINT_4;
-            if (!items.keySet().contains(id)) {
+            if (!items.containsKey(id)) {
                 if (!Double.isNaN(corner4lat)) {
                     double newCorner4lat = corner4lat - frameLatitude
                             + newLatitude;
@@ -119,14 +119,14 @@ public class VideoMetadata {
             }
         }
 
-        if (items.keySet().contains(
+        if (items.containsKey(
                 DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_FRAME_CENTER_LONGITUDE)) {
             DecodedMetadataItem decodedMetadataItem = items.get(
                     DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_FRAME_CENTER_LONGITUDE);
             double newLongitude = (Double) decodedMetadataItem.getValue();
 
             DecodedMetadataItem.MetadataItemIDs id = DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_CORNER_LONGITUDE_POINT_1;
-            if (!items.keySet().contains(id)) {
+            if (!items.containsKey(id)) {
                 if (!Double.isNaN(corner1lon)) {
                     double newCorner1lon = corner1lon - frameLongitude
                             + newLongitude;
@@ -137,7 +137,7 @@ public class VideoMetadata {
             }
 
             id = DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_CORNER_LONGITUDE_POINT_2;
-            if (!items.keySet().contains(id)) {
+            if (!items.containsKey(id)) {
                 if (Double.isNaN(corner2lon)) {
                     double newCorner2lon = corner2lon - frameLongitude
                             + newLongitude;
@@ -148,7 +148,7 @@ public class VideoMetadata {
             }
 
             id = DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_CORNER_LONGITUDE_POINT_3;
-            if (!items.keySet().contains(id)) {
+            if (!items.containsKey(id)) {
                 if (!Double.isNaN(corner3lon)) {
                     double newCorner3lon = corner3lon - frameLongitude
                             + newLongitude;
@@ -159,7 +159,7 @@ public class VideoMetadata {
             }
 
             id = DecodedMetadataItem.MetadataItemIDs.METADATA_ITEMID_CORNER_LONGITUDE_POINT_4;
-            if (!items.keySet().contains(id)) {
+            if (!items.containsKey(id)) {
                 if (!Double.isNaN(corner4lon)) {
                     double newCorner4lon = corner4lon - frameLongitude
                             + newLongitude;

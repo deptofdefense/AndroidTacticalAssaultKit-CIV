@@ -155,8 +155,8 @@
 -keep class com.lizardtech.android.mrsid.** {*;}
 -keep class com.iai.** {*;}
 -keep class com.atak.plugins.impl.** {*;}
--keep class com.atak.plugins.impl.AtakPluginRegistry.PluginDescriptor {*;}
--keep class com.atak.plugins.impl.AtakPluginRegistry.Extension {*;}
+-keep class com.atak.plugins.impl.AtakPluginRegistry$PluginDescriptor {*;}
+-keep class com.atak.plugins.impl.AtakPluginRegistry$Extension {*;}
 -keep class com.atakmap.android.toolbar.IToolbarExtension {*;}
 
 # For newer Android distributions

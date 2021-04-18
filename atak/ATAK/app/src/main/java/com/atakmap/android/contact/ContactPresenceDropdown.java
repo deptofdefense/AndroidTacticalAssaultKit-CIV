@@ -797,19 +797,13 @@ public class ContactPresenceDropdown extends DropDownReceiver
             if (IOProviderFactory.isDirectory(f))
                 FileSystemUtils.deleteDirectory(f, false);
             if (IOProviderFactory.exists(f)) {
-                BufferedReader reader = new BufferedReader(
-                        IOProviderFactory.getFileReader(f));
-                try {
+                try (BufferedReader reader = new BufferedReader(
+                        IOProviderFactory.getFileReader(f))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
                         line = line.replace("\n", "");
                         if (!line.isEmpty())
                             _favUIDs.add(line);
-                    }
-                } finally {
-                    try {
-                        reader.close();
-                    } catch (IOException ignored) {
                     }
                 }
 
@@ -850,16 +844,10 @@ public class ContactPresenceDropdown extends DropDownReceiver
                         + fd.getAbsolutePath());
                 return;
             }
-            BufferedWriter writer = new BufferedWriter(
-                    IOProviderFactory.getFileWriter(f));
-            try {
+            try (BufferedWriter writer = new BufferedWriter(
+                    IOProviderFactory.getFileWriter(f))) {
                 for (String uid : _favUIDs)
                     writer.write(uid + "\n");
-            } finally {
-                try {
-                    writer.close();
-                } catch (IOException ignored) {
-                }
             }
         } catch (IOException i) {
             Log.e(TAG, "Failed to create favorites file: " + path, i);

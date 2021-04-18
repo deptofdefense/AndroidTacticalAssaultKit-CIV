@@ -53,11 +53,13 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 
+import com.atakmap.util.zip.IoUtils;
 import org.acra.util.ReportUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
@@ -355,11 +357,8 @@ public class MetricReportMapComponent extends AbstractMapComponent
             f = new File(f, FileSystemUtils.sanitizeWithSpacesAndSlashes(
                     name + "-" + String.format(LocaleUtil.US, "%03d", roll)
                             + EXT_COTDUMP));
-            try {
-
-                FileSystemUtils.write(IOProviderFactory.getOutputStream(
-                        f),
-                        child.toString());
+            try(OutputStream os = IOProviderFactory.getOutputStream(f)) {
+                FileSystemUtils.write(os,child.toString());
             } catch (IOException ioe) {
                 Log.e(TAG, "unable to write file: " + f, ioe);
             }
@@ -384,9 +383,8 @@ public class MetricReportMapComponent extends AbstractMapComponent
 
         f = new File(f, type + "-" + System.currentTimeMillis()
                 + EXT_COTDUMP);
-        try {
-            FileSystemUtils.write(IOProviderFactory.getOutputStream(f),
-                    ce.toString());
+        try(OutputStream os = IOProviderFactory.getOutputStream(f)) {
+            FileSystemUtils.write(os, ce.toString());
         } catch (IOException ioe) {
             Log.e(TAG, "unable to write file: " + f, ioe);
         }
@@ -644,12 +642,7 @@ public class MetricReportMapComponent extends AbstractMapComponent
             } catch (Exception ignored) {
             }
         }
-        if (fos != null) {
-            try {
-                fos.close();
-            } catch (Exception ignored) {
-            }
-        }
+        IoUtils.close(fos);
         fos = null;
 
     }

@@ -15,6 +15,7 @@ import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.locale.LocaleUtil;
 
+import com.atakmap.util.zip.IoUtils;
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
 
@@ -354,11 +355,7 @@ public class AtakActionBarListData {
                     } catch (Exception e) {
                         Log.e(TAG, "error loading actionbar data: " + f, e);
                     } finally {
-                        try {
-                            if (fis != null)
-                                fis.close();
-                        } catch (Exception ignore) {
-                        }
+                        IoUtils.close(fis);
                     }
                 }
                 return data;
@@ -385,20 +382,13 @@ public class AtakActionBarListData {
                                     + actionBar.getOrientation()
                                     + ".xml".toLowerCase(
                                             LocaleUtil.getCurrent())));
-            FileOutputStream fos = null;
-            try {
-                fos = IOProviderFactory.getOutputStream(actionBarFile);
+            try (FileOutputStream fos = IOProviderFactory
+                    .getOutputStream(actionBarFile)) {
                 Serializer serializer = new Persister();
                 serializer.write(actionBar, fos);
             } catch (Exception e) {
                 Log.e(TAG, "failed to write Action bar to: " + actionBarFile,
                         e);
-            } finally {
-                try {
-                    if (fos != null)
-                        fos.close();
-                } catch (Exception ignore) {
-                }
             }
         }
         return true;

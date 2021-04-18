@@ -40,11 +40,9 @@ public class ImportVideoAliasSort extends ImportResolver {
     public boolean match(final File file) {
         if (!super.match(file))
             return false;
-        BufferedReader br = null;
-        try {
+        try(BufferedReader br = new BufferedReader(IOProviderFactory.getFileReader(file))) {
             // read first few hundred bytes and search for known strings
             char[] buffer = new char[1024];
-            br = new BufferedReader(IOProviderFactory.getFileReader(file));
             int numRead = br.read(buffer);
             br.close();
             if (numRead < 1) {
@@ -56,12 +54,6 @@ public class ImportVideoAliasSort extends ImportResolver {
                     || content.contains("<feed>");
         } catch (Exception e) {
             Log.d(TAG, "Failed to match txt", e);
-        } finally {
-            try {
-                if (br != null)
-                    br.close();
-            } catch (Exception ignore) {
-            }
         }
         return false;
     }

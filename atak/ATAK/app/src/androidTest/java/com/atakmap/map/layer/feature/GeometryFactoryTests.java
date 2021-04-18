@@ -696,6 +696,30 @@ public class GeometryFactoryTests extends ATAKInstrumentedTest {
     }
 
     @Test
+    public void extrude_linestring_per_vertex() {
+        LineString lineString = new LineString(3);
+        lineString.addPoint(100, 200, 300);
+        lineString.addPoint(500, 200, 300);
+
+        final Geometry result = GeometryFactory.extrude(lineString, new double[] { 50d, -50d},
+                GeometryFactory.ExtrusionHints.TEEH_None);
+
+        assertNotNull(result);
+
+        // we expect a GeometryCollection with one quad
+        GeometryCollection c = new GeometryCollection(3);
+        LineString ls = new LineString(3);
+        ls.addPoint(100, 200, 300); // extruded point 1
+        ls.addPoint(500, 200, 300); // extruded point 1
+        ls.addPoint(500, 200, 250); // extruded point 1
+        ls.addPoint(100, 200, 350); // extruded point 1
+        ls.addPoint(100, 200, 300); // extruded point 1
+        c.addGeometry(new Polygon(ls));
+
+        AbstractGeometryTests.assertEqual(c, result);
+    }
+
+    @Test
     public void createRectangle() {
         final Geometry result = GeometryFactory.createRectangle(
                 new Point(0, 1, 2), new Point(2, 3, 4),

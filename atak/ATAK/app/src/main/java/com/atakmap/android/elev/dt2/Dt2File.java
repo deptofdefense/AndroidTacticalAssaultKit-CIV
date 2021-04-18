@@ -8,13 +8,14 @@ import java.util.Objects;
 
 public class Dt2File {
 
-    public final File file;
+    public final String path, parent;
     public final int latitude, longitude, level;
 
-    public Dt2File(File file) {
-        this.file = file;
+    public Dt2File(String path) {
+        this.path = path;
 
-        String name = file.getName();
+        int lastSlash = path.lastIndexOf('/');
+        String name = path.substring(lastSlash + 1);
         char ns = Character.toUpperCase(name.charAt(0));
         int lastIdx = name.indexOf('.');
         if (lastIdx < 0)
@@ -24,14 +25,22 @@ public class Dt2File {
 
         this.level = MathUtils.parseInt(name.substring(lastIdx + 3), 0);
 
-        File parent = file.getParentFile();
-        if (parent != null) {
-            name = parent.getName();
+        int parentSlash = lastSlash != -1 ? path.lastIndexOf('/',
+                lastSlash - 1) : -1;
+        if (parentSlash != -1) {
+            this.parent = path.substring(0, parentSlash);
+            name = path.substring(parentSlash + 1, lastSlash);
             char ew = Character.toUpperCase(name.charAt(0));
             this.longitude = MathUtils.parseInt(name.substring(1), 0)
                     * (ew == 'W' ? -1 : 1);
-        } else
+        } else {
             this.longitude = 0;
+            this.parent = null;
+        }
+    }
+
+    public Dt2File(File file) {
+        this(Dt2FileWatcher.getRelativePath(file));
     }
 
     @Override

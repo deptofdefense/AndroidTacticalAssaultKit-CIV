@@ -1,6 +1,8 @@
 
 package com.atakmap.coremap.maps.coords;
 
+import java.util.Objects;
+
 public class GeoBounds {
 
     protected double _south, _west;
@@ -162,4 +164,20 @@ public class GeoBounds {
         return createFromPoints(points, false);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GeoBounds geoBounds = (GeoBounds) o;
+        return Double.compare(geoBounds._south, _south) == 0 &&
+                Double.compare(geoBounds._west, _west) == 0 &&
+                Double.compare(geoBounds._north, _north) == 0 &&
+                Double.compare(geoBounds._east, _east) == 0 &&
+                _wrap180 == geoBounds._wrap180;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(_south, _west, _north, _east, _wrap180);
+    }
 }

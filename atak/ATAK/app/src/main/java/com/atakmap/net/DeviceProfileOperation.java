@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.UUID;
 
@@ -312,10 +313,8 @@ public class DeviceProfileOperation extends HTTPOperation {
 
         int len;
         byte[] buf = new byte[8192];
-        FileOutputStream fos = IOProviderFactory.getOutputStream(downloaded);
-        InputStream in = null;
-        try {
-            in = resEntity.getContent();
+        try (OutputStream fos = IOProviderFactory.getOutputStream(downloaded);
+             InputStream in = resEntity.getContent()) {
             while ((len = in.read(buf)) > 0) {
                 fos.write(buf, 0, len);
 
@@ -352,15 +351,6 @@ public class DeviceProfileOperation extends HTTPOperation {
                     progressTracker.notified(currentTime);
                 }
             } // end read loop
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException ignored) {
-                }
-            }
-            if (fos != null)
-                fos.close();
         }
 
         //more than one file was requested, unzip and return path to that dir

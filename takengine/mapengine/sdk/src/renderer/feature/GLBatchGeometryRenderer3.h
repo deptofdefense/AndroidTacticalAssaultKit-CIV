@@ -84,6 +84,18 @@ namespace TAK {
                         GLuint vbo;
                         GLsizei count;
                     };
+                    struct PointsBuffer
+                    {
+                        GLuint texid;
+                        GLuint vbo;
+                        GLsizei count;
+                    };
+                    struct BatchState {
+                        TAK::Engine::Core::GeoPoint2 centroid;
+                        Math::Point2<double> centroidProj;
+                        int srid{ -1 };
+                        Math::Matrix2 localFrame;
+                    };
                 private:
 
                     /// <summary>
@@ -97,9 +109,9 @@ namespace TAK {
                     std::list<GLBatchLineString3 *> surfaceLines;
                     std::list<GLBatchLineString3 *> spriteLines;
                     std::vector<std::unique_ptr<GLBatchLineString3>> pointLollipops;
-                    std::set<GLBatchPoint3 *, BatchPointComparator> batchPoints;
-                    std::list<GLBatchPoint3 *> draw_points_;
-                    std::list<GLBatchPoint3 *> labels;
+                    std::vector<GLBatchPoint3 *> batchPoints;
+                    std::vector<GLBatchPoint3 *> draw_points_;
+                    std::vector<GLBatchPoint3 *> labels;
                     std::list<GLBatchPoint3 *> loadingPoints;
 
                     std::set<GLBatchGeometry3 *, FidComparator> sortedPolys;
@@ -108,8 +120,8 @@ namespace TAK {
                     std::vector<LinesBuffer> surfaceLineBuffers;
                     std::vector<LinesBuffer> spriteLineBuffers;
 
-                    std::map<std::pair<int, int>, GLBatchPointBuffer> pointsBuffers;
-                    Util::MemBuffer2 pointsBuffer;
+                    std::vector<PointsBuffer> pointsBuffers;
+                    //Util::MemBuffer2 pointsBuffer;
 
                     BatchPipelineState state;
 
@@ -126,7 +138,7 @@ namespace TAK {
                         GLint uColorHandle;
                         GLint uTexSizeHandle;
                         GLint uPointSizeHandle;
-                    } textureShader;
+                    } pointShader;
 
                     struct
                     {
@@ -150,11 +162,10 @@ namespace TAK {
 
                     const CachePolicy cachePolicy;
 
-                    Math::Matrix2 localFrame;
-
-                    TAK::Engine::Core::GeoPoint2 batchCentroid;
-                    Math::Point2<double> batchCentroidProj;
-                    int batchSrid;
+                    struct {
+                        BatchState surface;
+                        BatchState sprites;
+                    } batchState;
                     int batchTerrainVersion;
                     int rebuildBatchBuffers;
                 public:
@@ -181,10 +192,11 @@ namespace TAK {
                     Util::TAKErr extrudePoints() NOTHROWS;
 
                     Util::TAKErr batchDrawLollipops(const TAK::Engine::Renderer::Core::GLMapView2 &view) NOTHROWS;
-                    Util::TAKErr buildLineBuffers(std::vector<LinesBuffer> &bufs, const TAK::Engine::Renderer::Core::GLMapView2 &view, const std::list<GLBatchLineString3 *> &lines) NOTHROWS;
-                    Util::TAKErr drawLineBuffers(const TAK::Engine::Renderer::Core::GLMapView2 &view, const std::vector<LinesBuffer> &bufs) NOTHROWS;
+                    Util::TAKErr buildLineBuffers(std::vector<LinesBuffer> &bufs, const TAK::Engine::Renderer::Core::GLMapView2 &view, const BatchState &ctx, const std::list<GLBatchLineString3 *> &lines) NOTHROWS;
+                    Util::TAKErr drawLineBuffers(const TAK::Engine::Renderer::Core::GLMapView2 &view, const BatchState &ctx, const std::vector<LinesBuffer> &bufs) NOTHROWS;
 
-                    Util::TAKErr batchDrawPoints(const TAK::Engine::Renderer::Core::GLMapView2 &view) NOTHROWS;
+                    Util::TAKErr buildPointsBuffers(std::vector<PointsBuffer> &bufs, const TAK::Engine::Renderer::Core::GLMapView2 &view, const BatchState &ctx, const std::vector<GLBatchPoint3 *> &lines) NOTHROWS;
+                    Util::TAKErr batchDrawPoints(const TAK::Engine::Renderer::Core::GLMapView2 &view, const BatchState &ctx) NOTHROWS;
 
                     Util::TAKErr drawPoints(const TAK::Engine::Renderer::Core::GLMapView2 &view) NOTHROWS;
 

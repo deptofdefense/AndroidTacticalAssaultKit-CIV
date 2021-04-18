@@ -80,6 +80,36 @@ public final class LabelPointStyle extends Style {
      * @param minRenderResolution The minimum render resolution for the label.
      */
     public LabelPointStyle(String text, int textColor, int bgColor, ScrollMode mode, float textSize, int alignX, int alignY, float rotation, boolean rotationAbsolute, double minRenderResolution) {
+        this(text, textColor, bgColor, mode, textSize, alignX, alignY, rotation, rotationAbsolute, minRenderResolution, 100.0f);
+    }
+
+    /**
+     * Creates a new icon style with the specified properties.
+     *
+     * @param text                The label text
+     * @param textColor           The text color
+     * @param bgColor             The background color for the text (0 for no background)
+     * @param mode                The auto-scrolling mode to use for the label
+     * @param textSize            The text size (in points). A value of 0.0f indicates that
+     *                            the default system setting should be used.   At this time
+     *                            textSize is not honored and it will always be the default
+     *                            value.
+     * @param alignX              The horizontal alignment of the label. Less than
+     *                            <code>0</code> for to the left, <code>0</code>
+     *                            for horizontally centered, greater than
+     *                            <code>0</code> for to the right
+     * @param alignY              The vertical alignment of the label. Less than
+     *                            <code>0</code> for above, <code>0</code> for
+     *                            vertically centered, greater than <code>0</code>
+     *                            for below
+     * @param rotation            The rotation of the label, in degrees counter-clockwise
+     * @param rotationAbsolute    <code>true</code> if the rotation is absolute
+     *                            (relative to North), <code>false</code> if the
+     *                            rotation is relative.
+     * @param minRenderResolution The minimum render resolution for the label.
+     * @param scale The scale to be applied to the label. 1.0f is unscaled
+     */
+    public LabelPointStyle(String text, int textColor, int bgColor, ScrollMode mode, float textSize, int alignX, int alignY, float rotation, boolean rotationAbsolute, double minRenderResolution, float scale) {
         this(LabelPointStyle_create(text,
                                     textColor,
                                     bgColor, getScrollMode(mode),
@@ -96,7 +126,8 @@ public final class LabelPointStyle extends Style {
                                                     getLabelPointStyle_VerticalAlignment_BELOW()),
                                     (float)Math.toRadians(rotation),
                                     rotationAbsolute,
-                                    minRenderResolution),
+                                    minRenderResolution,
+                                    scale),
              null);
     }
 
@@ -277,6 +308,21 @@ public final class LabelPointStyle extends Style {
         this.rwlock.acquireRead();
         try {
             return LabelPointStyle_getLabelMinRenderResolution(this.pointer.raw);
+        } finally {
+            this.rwlock.releaseRead();
+        }
+    }
+
+    /**
+     * Returns the scaling factor to be applied to the rendering of the label.
+     *
+     * @return  The render scaling factor for the label
+     *
+     */
+    public float getLabelScale() {
+        this.rwlock.acquireRead();
+        try {
+            return LabelPointStyle_getLabelScale(this.pointer.raw);
         } finally {
             this.rwlock.releaseRead();
         }

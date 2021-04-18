@@ -431,21 +431,13 @@ public class ImageAdapter2 extends BaseAdapter {
                         synchronized (lock) {
                             BitmapFactory.Options opts = new BitmapFactory.Options();
                             opts.inJustDecodeBounds = true;
-                            InputStream is = null;
-                            try {
-                                BitmapFactory.decodeStream(
-                                        is = IOProviderFactory
-                                                .getInputStream(new File(bmpFile
-                                                        .getAbsolutePath())),
+                            try(InputStream is = IOProviderFactory
+                                    .getInputStream(new File(bmpFile
+                                            .getAbsolutePath()))) {
+                                BitmapFactory.decodeStream(is,
                                         null, opts);
                             } catch (IOException e) {
                                 Log.e(TAG, "error encountered", e);
-                            } finally { 
-                                if (is != null) { 
-                                   try { 
-                                       is.close();
-                                   } catch (IOException ignored) { }
-                                }
                             }
 
                             int sample = Math.max(1, (opts.outWidth / _width));
@@ -577,26 +569,14 @@ public class ImageAdapter2 extends BaseAdapter {
 
     private File _readLink(File linkFile) {
         File link = null;
-        InputStream is = null;
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(
-                    is = IOProviderFactory.getInputStream(linkFile)));
-            try {
-                String line = br.readLine();
-                link = new File(
-                        FileSystemUtils.sanitizeWithSpacesAndSlashes(line));
-            } finally {
-                br.close();
-            }
+        try(InputStream is = IOProviderFactory.getInputStream(linkFile);
+            InputStreamReader isr = new InputStreamReader(is);
+            BufferedReader br = new BufferedReader(isr)) {
+            String line = br.readLine();
+            link = new File(
+                    FileSystemUtils.sanitizeWithSpacesAndSlashes(line));
         } catch (IOException ex) {
             Log.e(TAG, "error: ", ex);
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException ignored) {
-                }
-            }
         }
         return link;
     }

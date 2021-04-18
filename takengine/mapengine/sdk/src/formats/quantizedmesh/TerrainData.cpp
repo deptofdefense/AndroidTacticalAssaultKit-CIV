@@ -2,6 +2,8 @@
 
 #include "core/Projection2.h"
 #include "core/ProjectionFactory3.h"
+#include "elevation/ElevationManager.h"
+#include "formats/egm/EGM96.h"
 #include "math/Triangle.h"
 #include "math/Vector4.h"
 #include "util/DataInput2.h"
@@ -80,6 +82,11 @@ TAKErr TAK::Engine::Formats::QuantizedMesh::TerrainData::getElevation(double lat
 
     getTileCoord(lat, lon, &vec);
     getElevation(vec, elevationHae, false);
+    if(!isnan(*elevationHae)) {
+        double geoidHeight;
+        Elevation::ElevationManager_getGeoidHeight(&geoidHeight, lat, lon);
+        *elevationHae += geoidHeight;
+    }
 
     return TE_Ok;
 }
@@ -126,7 +133,7 @@ TAKErr TAK::Engine::Formats::QuantizedMesh::TerrainData::getElevation(Math::Vect
     for(int level = TriangleIndices::MAX_LEVEL; level >= TriangleIndices::MIN_LEVEL; level--)
     {
         auto indices = indexData->getTriangleIndices(level, x, y);
-            if(indices.empty()) continue;
+        if(indices.empty()) continue;
         
         for(auto tidx = indices.begin(); tidx != indices.end(); ++tidx) {
             int i = *tidx * 3;

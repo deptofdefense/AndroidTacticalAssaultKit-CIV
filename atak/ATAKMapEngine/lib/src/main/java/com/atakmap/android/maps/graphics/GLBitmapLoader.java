@@ -4,9 +4,9 @@ package com.atakmap.android.maps.graphics;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URL;
@@ -25,6 +25,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.ThreadFactory;
+
+import com.atakmap.util.zip.IoUtils;
 import com.atakmap.util.zip.ZipEntry;
 import com.atakmap.util.zip.ZipFile;
 
@@ -847,7 +849,6 @@ public class GLBitmapLoader {
             }
 
             URLConnection connection;
-            InputStream is = null;
             try {
                 URL u = new URL(url);
                 synchronized (dnsLookup) {
@@ -885,27 +886,18 @@ public class GLBitmapLoader {
 
                 connection.setConnectTimeout(500);
                 connection.setReadTimeout(5000);
-                is = connection.getInputStream();
+                InputStream is = connection.getInputStream();
 
                 File cacheFile = null;
                 if (cache) {
                     cacheFile = IOProviderFactory.createTempFile("icon", ".cache", null);
 
-                    FileOutputStream fos = null;
-
-                    try {
-                        FileSystemUtils.copyStream(is, fos = IOProviderFactory.getOutputStream(cacheFile));
+                    try(OutputStream fos = IOProviderFactory.getOutputStream(cacheFile)) {
+                        FileSystemUtils.copyStream(is, fos);
                     } finally {
                         // if during construction of the FileOutputStream, there is an
                         // exception thrown, is will not be closed right away.
-                        if (fos != null)
-                            try {
-                                fos.close();
-                            } catch (Exception ignored) {}
-                        if (is != null)
-                            try {
-                                is.close();
-                            } catch (Exception ignored) {}
+                        IoUtils.close(is);
                     }
                     is = IOProviderFactory.getInputStream(cacheFile);
                 }
@@ -944,9 +936,6 @@ public class GLBitmapLoader {
                 Log.e(TAG, "Failed to load url: " + url, e);
                 // failed to load the bitmap
                 return null;
-            } finally {
-                if (is != null)
-                    is.close();
             }
         }
     }

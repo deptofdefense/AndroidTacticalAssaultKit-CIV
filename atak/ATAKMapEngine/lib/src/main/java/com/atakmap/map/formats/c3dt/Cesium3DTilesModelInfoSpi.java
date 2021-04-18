@@ -2,8 +2,8 @@ package com.atakmap.map.formats.c3dt;
 
 import android.net.Uri;
 
+import android.util.Log;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.io.UriFactory;
@@ -15,6 +15,7 @@ import com.atakmap.map.projection.ECEFProjection;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 
+import com.atakmap.util.zip.IoUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -26,6 +27,7 @@ import java.util.Collections;
 import java.util.Set;
 
 public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
+    private static final String TAG = "Cesium3DTilesModelInfoSpi";
     public final static ModelInfoSpi INSTANCE = new Cesium3DTilesModelInfoSpi();
     static {
         GLSceneFactory.registerSpi(GLTileset.SPI);
@@ -56,7 +58,7 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
 
         // fallback on File test
         File f = new File(s);
-        if(f.getName().endsWith(".zip")) {
+        if(FileSystemUtils.checkExtension(f, "zip")) {
             try {
                 f = new ZipVirtualFile(f);
             } catch(Throwable ignored) {}
@@ -73,39 +75,33 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
     @Override
     public Set<ModelInfo> create(String s) {
         File f = new File(s);
-        if(f.getName().endsWith(".zip")) {
+        if(FileSystemUtils.checkExtension(f, "zip")) {
             try {
                 f = new ZipVirtualFile(f);
             } catch(Throwable ignored) {}
         }
         // remote URL load
         if(!IOProviderFactory.exists(f)) {
-            UriFactory.OpenResult uriOpenResult = UriFactory.open(s);
-            if (uriOpenResult != null) {
-                try {
-                    byte[] buffer = null;
-                    if (uriOpenResult.contentLength > 0 && uriOpenResult.contentLength <= Integer.MAX_VALUE)
-                        buffer = FileSystemUtils.read(uriOpenResult.inputStream, (int) uriOpenResult.contentLength, true);
-                    else {
-                        try {
-                            buffer = FileSystemUtils.read(uriOpenResult.inputStream);
-                        } finally {
-                            if (uriOpenResult.inputStream != null) {
-                                try {
-                                    uriOpenResult.inputStream.close();
-                                } catch (IOException ioe) {
-                                }
-                            }
-                        }
-                    }
-                    String name = s;
+            try(UriFactory.OpenResult uriOpenResult = UriFactory.open(s)) {
+                if (uriOpenResult != null) {
                     try {
-                        name = Uri.parse(s).getPath();
-                    } catch (Throwable ignored) {}
-                    return createFromString(new String(buffer, FileSystemUtils.UTF8_CHARSET), name, s);
-                } catch (Throwable e) {
-                    return null;
+                        byte[] buffer = null;
+                        if (uriOpenResult.contentLength > 0 && uriOpenResult.contentLength <= Integer.MAX_VALUE)
+                            buffer = FileSystemUtils.read(uriOpenResult.inputStream, (int) uriOpenResult.contentLength, true);
+                        else
+                            buffer = FileSystemUtils.read(uriOpenResult.inputStream);
+                        String name = s;
+                        try {
+                            name = Uri.parse(s).getPath();
+                        } catch (Throwable ignored) {
+                        }
+                        return createFromString(new String(buffer, FileSystemUtils.UTF8_CHARSET), name, s);
+                    } catch (Throwable e) {
+                        return null;
+                    }
                 }
+            } catch (IOException e) {
+                Log.e("Cesium3DTiles", "create: ", e);
             }
         }
 
@@ -123,8 +119,8 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
         if (!IOProviderFactory.exists(f) || !f.getName().equals("tileset.json"))
             return null;
 
+        InputStream is = null;
         try {
-            InputStream is;
             if(f instanceof ZipVirtualFile)
                 is = ((ZipVirtualFile)f).openStream();
             else
@@ -136,6 +132,8 @@ public final class Cesium3DTilesModelInfoSpi implements ModelInfoSpi {
                     f.getAbsolutePath());
         } catch (Throwable t) {
             return null;
+        } finally {
+            IoUtils.close(is, TAG);
         }
     }
 

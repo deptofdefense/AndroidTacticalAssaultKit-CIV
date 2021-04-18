@@ -5,11 +5,12 @@ import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.coremap.locale.LocaleUtil;
+import com.atakmap.util.zip.IoUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.HashMap;
@@ -126,8 +127,7 @@ public final class ObjUtils {
             }
             return retval;
         } finally {
-            if(reader != null)
-                reader.close();
+            IoUtils.close(reader, TAG);
         }
     }
 
@@ -242,11 +242,9 @@ public final class ObjUtils {
      */
     public static File findMaterialLibrary(File obj) {
         StringBuilder lib = new StringBuilder();
-        FileInputStream fis = null;
-        try {
+        try(InputStream fis = IOProviderFactory.getInputStream(obj)) {
             byte[] mtlBytes = "mtllib ".getBytes(FileSystemUtils.UTF8_CHARSET);
             int mtlLength = mtlBytes.length;
-            fis = IOProviderFactory.getInputStream(obj);
             int numRead;
             boolean stopAtNL = false;
             byte[] buf = new byte[FileSystemUtils.BUF_SIZE * 8];
@@ -276,11 +274,6 @@ public final class ObjUtils {
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to find mtllib in " + obj, e);
-        } finally {
-            try {
-                if (fis != null)
-                    fis.close();
-            } catch (Exception ignore) {}
         }
         String name = FileSystemUtils.sanitizeFilename(lib.toString());
         if (FileSystemUtils.isEmpty(name))
@@ -296,9 +289,8 @@ public final class ObjUtils {
      */
     public static Set<File> findMaterials(File mtl) {
         Set<File> ret = new HashSet<>();
-        BufferedReader br = null;
-        try {
-            br = new BufferedReader(IOProviderFactory.getFileReader(mtl));
+        try (Reader r = IOProviderFactory.getFileReader(mtl);
+             BufferedReader br = new BufferedReader(r)) {
             String line;
             while ((line = br.readLine()) != null) {
                 if (line.startsWith("map_")
@@ -319,11 +311,6 @@ public final class ObjUtils {
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to find materials in " + mtl, e);
-        } finally {
-            try {
-                if (br != null)
-                    br.close();
-            } catch (Exception ignore) {}
         }
         return ret;
     }

@@ -1112,8 +1112,8 @@ void GLQuadTileNode2::resolveTexture()
 
             int parts = 0;
             GLint currentFrameBuffer;
-            GLuint frameBuffer = this->core_->frameBufferHandle;
-            GLuint depthBuffer = this->core_->depthBufferHandle;
+            GLuint &frameBuffer = this->core_->frameBufferHandle;
+            GLuint &depthBuffer = this->core_->depthBufferHandle;
 
             glGetIntegerv(GL_FRAMEBUFFER_BINDING, &currentFrameBuffer);
 

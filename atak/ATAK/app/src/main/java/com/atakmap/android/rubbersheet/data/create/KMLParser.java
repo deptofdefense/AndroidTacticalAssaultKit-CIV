@@ -41,20 +41,12 @@ public class KMLParser implements ContentHandler {
 
     public KMLParser(File docKml) {
         _file = docKml;
-        InputStream is = null;
-        try {
-            is = IOProviderFactory.getInputStream(docKml);
+        try (InputStream is = IOProviderFactory.getInputStream(docKml)) {
             Xml.parse(is, Xml.Encoding.UTF_8, this);
         } catch (IOException e) {
             Log.e(TAG, "Failed to read doc.kml: " + docKml);
         } catch (SAXException e) {
             Log.e(TAG, "Failed to parse doc.kml: " + docKml);
-        } finally {
-            try {
-                if (is != null)
-                    is.close();
-            } catch (IOException ignored) {
-            }
         }
     }
 

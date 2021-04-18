@@ -46,17 +46,12 @@ public class ImportSHPSort extends ImportInPlaceResolver {
         }
 
         // it is a .shp, now lets see if it contains reasonable data
-        try {
-            InputStream is = IOProviderFactory.getInputStream(file);
-            try {
-                boolean b = isShp(is);
-                Log.d(TAG, (b ? "Matched Shapefile: " + file.getAbsolutePath()
-                        : "Not a Shapefile: "
-                                + file.getAbsolutePath()));
-                return b;
-            } finally {
-                is.close();
-            }
+        try(InputStream is = IOProviderFactory.getInputStream(file)) {
+            boolean b = isShp(is);
+            Log.d(TAG, (b ? "Matched Shapefile: " + file.getAbsolutePath()
+                    : "Not a Shapefile: "
+                            + file.getAbsolutePath()));
+            return b;
         } catch (IOException e) {
             Log.e(TAG, "Error checking if SHP: " + file.getAbsolutePath(), e);
         }

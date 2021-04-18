@@ -70,7 +70,7 @@ public class CotInputsListActivity extends CotPortListActivity {
                     } catch (IllegalArgumentException iae) {
                         Toast.makeText(
                                 this,
-                               "Invalid output encountered, make sure the address does not contain the protocol or port", Toast.LENGTH_LONG)
+                                R.string.invalid_cot_address, Toast.LENGTH_LONG)
                                 .show();
                     }
                 }
@@ -81,7 +81,7 @@ public class CotInputsListActivity extends CotPortListActivity {
                 } catch (IllegalArgumentException iae) {
                     Toast.makeText(
                             this,
-                            "Invalid output encountered, make sure the address does not contain the protocol or port", Toast.LENGTH_LONG)
+                            R.string.invalid_cot_address, Toast.LENGTH_LONG)
                             .show();
                 }
                 break;

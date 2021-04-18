@@ -164,11 +164,11 @@ class FeatureCatalogDatabase
 
 
     void
-    catalogEntryAdded (int64_t catalogID)
+    catalogEntryAdded (int64_t /*catalogID*/)
       { }
 
     void
-    catalogEntryMarkedValid (int64_t catalogID)
+    catalogEntryMarkedValid (int64_t /*catalogID*/)
       { }
 
     void

@@ -45,15 +45,8 @@ public class MobacMapSourceFactory {
     }
 
     private static MobacMapSource parseXmlMapSource(File f) throws IOException {
-        FileInputStream fileInputStream = null;
-        try {
-            fileInputStream = IOProviderFactory.getInputStream(f);
+        try(InputStream fileInputStream = IOProviderFactory.getInputStream(f)) {
             return parseXmlMapSource(fileInputStream);
-        } finally {
-            if(fileInputStream != null)
-                try {
-                    fileInputStream.close();
-                } catch(IOException ignored) {}
         }
     }
 

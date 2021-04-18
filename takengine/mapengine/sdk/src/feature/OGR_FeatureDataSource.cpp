@@ -494,12 +494,18 @@ namespace {
             OGRFieldDefn * ogrfdn = currentFeature->GetFieldDefnRef(i);
             const char * name = ogrfdn->GetNameRef();
             const OGRFieldType ogrFieldtype = ogrfdn->GetType();
+			if (!TAK::Engine::Port::String_strcasecmp(name, "gx:altitudeMode"))
+				name = "altitudeMode";
             if (!TAK::Engine::Port::String_strcasecmp(name, "altitudeMode")) {
                 const char * value = currentFeature->GetFieldAsString(i);
                 int altitudeMode = 0;
                 if (!TAK::Engine::Port::String_strcasecmp (value, "clampToGround"))
                     altitudeMode = 0;
+				else if (!TAK::Engine::Port::String_strcasecmp (value, "clampToSeaFloor"))
+                    altitudeMode = 0;
                 else if (!TAK::Engine::Port::String_strcasecmp (value, "relativeToGround"))
+                    altitudeMode = 1;
+                else if (!TAK::Engine::Port::String_strcasecmp (value, "relativeToSeaFloor"))
                     altitudeMode = 1;
                 else if (!TAK::Engine::Port::String_strcasecmp (value, "absolute"))
                     altitudeMode = 2;

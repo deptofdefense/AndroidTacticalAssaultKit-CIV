@@ -72,18 +72,10 @@ class DrawingToolsKMLImporter extends AbstractImporter {
         if (!FileSystemUtils.isFile(path))
             return ImportResult.FAILURE;
 
-        FileInputStream fis = null;
-        try {
-            fis = IOProviderFactory.getInputStream(new File(path));
+        try (FileInputStream fis = IOProviderFactory.getInputStream(new File(path))) {
             return importKmlImpl(fis);
         } catch (Exception e) {
             Log.e(TAG, "Failed to import KML shape", e);
-        } finally {
-            try {
-                if (fis != null)
-                    fis.close();
-            } catch (Exception ignore) {
-            }
         }
         return ImportResult.FAILURE;
     }

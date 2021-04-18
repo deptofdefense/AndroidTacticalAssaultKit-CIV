@@ -3,6 +3,8 @@ package com.atakmap.coremap.maps.time;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.io.PrintWriter;
 import java.io.IOException;
@@ -308,14 +310,12 @@ public class CoordinatedTime implements Parcelable {
                     }
                 }
 
-                PrintWriter w = null;
-                OutputStreamWriter osw = null;
-                try {
-                    w = new PrintWriter(osw = new OutputStreamWriter(
-                            IOProviderFactory
-                                    .getOutputStream(new File(directory,
-                                            "bad_time.txt"), true),
-                            FileSystemUtils.UTF8_CHARSET));
+                try (OutputStream is = IOProviderFactory
+                             .getOutputStream(new File(directory,
+                                             "bad_time.txt"),true);
+                     OutputStreamWriter osw = new OutputStreamWriter(
+                             is,FileSystemUtils.UTF8_CHARSET);
+                     PrintWriter w = new PrintWriter(osw)) {
                     w.append(msg).append("\r\n");
                     e.printStackTrace(w);
                 } catch (FileNotFoundException e1) {
@@ -326,14 +326,6 @@ public class CoordinatedTime implements Parcelable {
                     Log.e(TAG,
                             "Encountered IO issue while attempting to write bad_time.txt",
                             e2);
-                } finally {
-                    if (w != null)
-                        w.close();
-                    if (osw != null)
-                        try {
-                            osw.close();
-                        } catch (IOException ignored) {
-                        }
                 }
             }
         }

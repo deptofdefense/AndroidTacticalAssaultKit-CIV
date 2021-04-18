@@ -12,17 +12,25 @@ import android.widget.Toast;
 import com.atakmap.android.importfiles.task.ImportFileTask;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.DefaultIOProvider;
+import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.concurrent.Semaphore;
 
 /**
  * Background task to attach a single file to a map item
  * 
- * 
+ * <P>This class may make use of IO that is not through the default
+ * abstraction layer in order to support the following use-cases:
+ * <UL>
+ *     <LI>Files chosen through Android system file browser
+ * </UL>
  */
 public class AttachFileTask extends
         AsyncTask<File, File, AttachFileTask.Result> {
@@ -43,6 +51,7 @@ public class AttachFileTask extends
     protected ProgressDialog _progressDialog;
 
     private int _importFlags;
+    private IOProvider _provider;
 
     private static final int FlagRejectFilesInATAKdir = 1;
     public static final int FlagPromptOverwrite = 4;
@@ -89,6 +98,7 @@ public class AttachFileTask extends
         this._semaphore = new Semaphore(0);
         this._bOverwrite = false;
         this._importFlags = 0;
+        this._provider = null;
     }
 
     /**
@@ -113,6 +123,18 @@ public class AttachFileTask extends
         if (_importFlags != flags) {
             _importFlags = flags;
         }
+    }
+
+    /**
+     * Set the {@link IOProvider} to use to read the source file. Specify
+     * <code>null</code> to use the {@link IOProvider} instance registered with
+     * {@link IOProviderFactory}.
+     *
+     * @param provider  The {@link IOProvider} to use to access the source file
+     *                  during task execution
+     */
+    public void setProvider(IOProvider provider) {
+        _provider = provider;
     }
 
     @Override
@@ -144,6 +166,10 @@ public class AttachFileTask extends
             return new Result("No file specified");
         }
 
+        // obtain the provider instance to be used for the task execution
+        final IOProvider sourceProvider = (_provider != null) ?
+                _provider : IOProviderFactory.getProvider();
+
         // just take first file for now
         File file = params[0];
 
@@ -157,7 +183,7 @@ public class AttachFileTask extends
             return new Result("File already in ATAK: " + file.getName());
         }
 
-        if (!IOProviderFactory.exists(file)) {
+        if (!sourceProvider.exists(file)) {
             Log.w(TAG, "Import file not found: " + file.getAbsolutePath());
             return new Result("Import file not found: " + file.getName());
         }
@@ -165,22 +191,22 @@ public class AttachFileTask extends
         File parent = new File(FileSystemUtils.getItem("attachments")
                 .getAbsolutePath() + File.separatorChar + _uid);
 
-        if (IOProviderFactory.isDirectory(file)) {
-            File[] files = IOProviderFactory.listFiles(file);
+        if (sourceProvider.isDirectory(file)) {
+            String[] files = sourceProvider.list(file);
             if (FileSystemUtils.isEmpty(files))
                 return new Result(
                         "Import directory is empty: " + file.getName());
-            for (File f : files) {
-                Result res = copyFile(parent, f);
+            for (String fn : files) {
+                Result res = copyFile(parent, new File(file, fn), sourceProvider);
                 if (!res.success)
                     return res;
             }
             return new Result(file);
         }
-        return copyFile(parent, file);
+        return copyFile(parent, file, sourceProvider);
     }
 
-    private Result copyFile(File parent, File file) {
+    private Result copyFile(File parent, File file, IOProvider sourceProvider) {
         File destPath = new File(parent, file.getName());
         if (IOProviderFactory.exists(destPath)) {
 
@@ -218,18 +244,54 @@ public class AttachFileTask extends
             Log.w(TAG,
                     "Failed to create directories" + parent.getAbsolutePath());
 
-        if (checkFlag(ImportFileTask.FlagCopyFile))
-            try {
-                FileSystemUtils.copyFile(file, destPath);
-            } catch (IOException e) {
-                Log.e(TAG, "Failed to copy file: " + file, e);
-                return new Result("Failed to copy: " + file.getName());
-            }
-        else {
-            FileSystemUtils.renameTo(file, destPath);
+        try {
+            copyMoveFile(file, destPath, sourceProvider, !checkFlag(ImportFileTask.FlagCopyFile));
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to copy file: " + file, e);
+            return new Result("Failed to copy: " + file.getName());
         }
 
         return new Result(destPath);
+    }
+
+    /**
+     * Safely copies or moves the specified file, including case where source
+     * and destination files are the same. The source file will be accessed
+     * using the specified {@link IOProvider} instance; the destination file
+     * will be accessed using {@link IOProviderFactory}.
+     *
+     * @param srcFile           The source file
+     * @param dstFile           The destination file
+     * @param srcFileProvider   The {@link IOProvider} instance used to access
+     *                          the source file
+     * @param move              If <code>true</code>, the source file is
+     *                          effectively moved to the destination file path,
+     *                          otherwise a copy is executed. Note that the
+     *                          move may be implemented via copy followed by
+     *                          delete.
+     * @throws IOException
+     */
+    private static void copyMoveFile(File srcFile, File dstFile, IOProvider srcFileProvider, boolean move) throws IOException {
+        if(!srcFile.equals(dstFile)) {
+            try (FileInputStream fis = srcFileProvider.getInputStream(srcFile);
+                 OutputStream os = IOProviderFactory.getOutputStream(dstFile)) {
+                FileSystemUtils.copyStream(fis, os);
+            }
+        } else if(srcFileProvider != IOProviderFactory.getProvider()) {
+            try (FileInputStream fis = srcFileProvider.getInputStream(srcFile);
+                 OutputStream os = IOProviderFactory.getOutputStream(dstFile)) {
+
+                FileSystemUtils.copyStream(fis, os);
+            }
+        } else {
+            // file is the same and using same IO provider so copy/move
+            // operation is no-op. toggle the move flag if set so we don't
+            // delete the file
+            move = false;
+        }
+        // move was requested, perform delete in the case that we copied
+        if(move)
+            srcFileProvider.delete(srcFile, IOProvider.SECURE_DELETE);
     }
 
     @Override

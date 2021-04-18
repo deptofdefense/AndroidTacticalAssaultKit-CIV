@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
+import com.atakmap.util.zip.IoUtils;
 import org.gdal.gdal.Dataset;
 import org.gdal.gdal.gdal;
 import org.gdal.ogr.DataSource;
@@ -27,7 +28,6 @@ import android.database.DatabaseErrorHandler;
 import android.database.sqlite.SQLiteDatabase;
 
 import com.atakmap.annotations.DeprecatedApi;
-import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
@@ -38,10 +38,10 @@ import com.atakmap.util.ConfigOptions;
 
 import static com.atakmap.map.gdal.VSIJFileFilesystemHandler.installFilesystemHandler;
 
-
 public class GdalLibrary {
 
     public static SpatialReference EPSG_4326 = null;
+    private static final String TAG = "GdalLibrary";
     private static boolean initialized = false;
     private static boolean initSuccess = false;
 
@@ -100,16 +100,12 @@ public class GdalLibrary {
         boolean unpackData = true;
         if (IOProviderFactory.exists(gdalDataVer)) {
             byte[] versionBytes = new byte[(int) IOProviderFactory.length(gdalDataVer)];
-            InputStream inputStream = null;
-            try {
-                inputStream = IOProviderFactory.getInputStream(gdalDataVer);
+            try (InputStream inputStream = IOProviderFactory
+                    .getInputStream(gdalDataVer)) {
                 int r = inputStream.read(versionBytes);
-                if (r != versionBytes.length) 
+                if (r != versionBytes.length)
                     Log.d("GdalLibrary", "versionBytes, read: " + r + " expected: " + versionBytes.length);
 
-            } finally {
-                if (inputStream != null)
-                    inputStream.close();
             }
             final int libVersion = Integer.parseInt(gdal.VersionInfo("VERSION_NUM"));
             final int devVersion = Integer.parseInt(new String(versionBytes, FileSystemUtils.UTF8_CHARSET));
@@ -120,34 +116,27 @@ public class GdalLibrary {
         // make sure all files from the last unpack are present
         File gdalDataList = new File(gdalDir, "gdaldata.list2");
         if(!unpackData && IOProviderFactory.exists(gdalDataList)) {
-            FileInputStream inputStream = null;
-            DataInputStream dataInput = null;
-            try {
-                inputStream = IOProviderFactory.getInputStream(gdalDataList);
-                dataInput = new DataInputStream(inputStream);
-                
+            try (FileInputStream inputStream = IOProviderFactory
+                    .getInputStream(gdalDataList);
+                 DataInputStream dataInput = new DataInputStream(inputStream)) {
+
                 final int numFiles = dataInput.readInt();
                 int fileSize;
                 String fileName;
                 File dataFile;
-                for(int i = 0; i < numFiles; i++) {
+                for (int i = 0; i < numFiles; i++) {
                     fileSize = dataInput.readInt();
                     fileName = dataInput.readUTF();
-                    
+
                     dataFile = new File(gdalDir, FileSystemUtils.sanitizeWithSpacesAndSlashes(fileName));
-                    if(!IOProviderFactory.exists(dataFile)|| IOProviderFactory.length(dataFile) != fileSize) {
+                    if (!IOProviderFactory.exists(dataFile) || IOProviderFactory.length(dataFile) != fileSize) {
                         unpackData = true;
                         break;
                     }
                 }
-            } catch(IOException e) {
+            } catch (IOException e) {
                 Log.w("GdalLibrary", "Unexpected IO error validating GDAL data list", e);
                 unpackData = true;
-            } finally {
-                if(dataInput != null)
-                    dataInput.close();
-                if(inputStream != null)
-                    inputStream.close();
             }
         } else {
             unpackData = true;
@@ -228,12 +217,9 @@ public class GdalLibrary {
         byte[] transfer = new byte[8192];
         int transferSize;
         File dataFile;
-        FileOutputStream dataListFileStream = null;
-        DataOutputStream dataListStream = null;
-        try {
-            dataListFileStream = IOProviderFactory.getOutputStream(gdalDataList);
-            dataListStream = new DataOutputStream(dataListFileStream);
-            
+        try (FileOutputStream dataListFileStream = IOProviderFactory.getOutputStream(gdalDataList);
+             DataOutputStream dataListStream = new DataOutputStream(dataListFileStream)) {
+
             dataListStream.writeInt(dataFiles.size());
 
             while (iter.hasNext()) {
@@ -246,27 +232,20 @@ public class GdalLibrary {
                     inputStream = url.openStream();
                     dataFile = new File(gdalDir, dataFileName);
                     fileOutputStream = IOProviderFactory.getOutputStream(dataFile);
-    
+
                     do {
                         transferSize = inputStream.read(transfer);
                         if (transferSize > 0)
                             fileOutputStream.write(transfer, 0, transferSize);
                     } while (transferSize >= 0);
                 } finally {
-                    if (fileOutputStream != null)
-                        fileOutputStream.close();
-                    if (inputStream != null)
-                        inputStream.close();
+                    IoUtils.close(fileOutputStream, TAG);
+                    IoUtils.close(inputStream, TAG);
                 }
-                
-                dataListStream.writeInt((int)IOProviderFactory.length(dataFile));
+
+                dataListStream.writeInt((int) IOProviderFactory.length(dataFile));
                 dataListStream.writeUTF(dataFileName);
             }
-        } finally {
-            if(dataListFileStream != null)
-                dataListFileStream.close();
-            if(dataListStream != null)
-                dataListStream.close();
         }
 
         // write out the gdal version that the data files correspond to
@@ -276,11 +255,7 @@ public class GdalLibrary {
         } catch (IOException ignored) {
             // not really a major issue
         } finally {
-            if (fileOutputStream != null)
-                try {
-                    fileOutputStream.close();
-                } catch (IOException ignored) {
-                }
+            IoUtils.close(fileOutputStream);
         }
     }
 
@@ -428,14 +403,17 @@ public class GdalLibrary {
 
     public static Dataset openDatasetFromPath(String path) {
         File file;
-        if(path.startsWith("zip://")) {
+        if (path.startsWith("zip://")) {
             path = path.replace("zip://", "");
             path = path.replace("%20", " ").
                         replace("%23", "#").
                         replace("%5B", "[").
                         replace("%5D", "]");
             file = new ZipVirtualFile(path);
-        } else if (path.contains(".zip")) {
+        } else if (path.startsWith("/vsizip")) {
+            path = path.replace("/vsizip", "");
+            file = new ZipVirtualFile(path);
+        } else if (FileSystemUtils.checkExtension(path, "zip")) {
             file = new ZipVirtualFile(path);
         } else {
             if(path.startsWith("file:///"))

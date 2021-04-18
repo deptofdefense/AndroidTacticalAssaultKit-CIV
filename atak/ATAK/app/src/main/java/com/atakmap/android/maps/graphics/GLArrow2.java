@@ -15,6 +15,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.feature.Feature;
+import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.LineString;
 import com.atakmap.map.layer.feature.geometry.opengl.GLBatchLineString;
 import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
@@ -62,6 +63,7 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
      */
     private static final double minClampDistance = 30000d;
     private static final double slantMinElAngle = 10d;
+    private static final double threshold = 10000;
 
     private GeoPoint[] _pts;
     private boolean drawText = true;
@@ -82,7 +84,9 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
         _ninePatch = GLRenderGlobals.get(surface).getMediumNinePatch();
         updateText(GLText.localize(arrow.getText()), arrow.getTextColor());
         this.impl = new GLBatchLineString(surface);
+        this.impl.setTesselationThreshold(threshold);
         this.ximpl = new GLBatchLineString(surface);
+        this.ximpl.setTesselationThreshold(threshold);
     }
 
     @Override
@@ -406,8 +410,15 @@ public class GLArrow2 extends GLShape2 implements OnPointsChangedListener,
                 ximpl.setTessellationEnabled(_clampToGround);
 
                 MapView mv = MapView.getMapView();
-                bounds.set(_pts, mv.isContinuousScrollEnabled());
-                dispatchOnBoundsChanged();
+                if (mv != null) {
+                    Envelope env = impl.getBounds(mv.getProjection()
+                            .getSpatialReferenceID());
+                    if (env != null) {
+                        bounds.setWrap180(mv.isContinuousScrollEnabled());
+                        bounds.set(env.minY, env.minX, env.maxY, env.maxX);
+                        dispatchOnBoundsChanged();
+                    }
+                }
                 currentDraw = 0;
             }
         });

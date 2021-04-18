@@ -5,6 +5,7 @@ import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.util.ConfigOptions;
+import com.atakmap.util.zip.IoUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -38,11 +39,7 @@ public final class DeveloperOptions {
         } catch (IOException e) {
             Log.w(TAG, "Failed to load options", e);
         } finally {
-            if (in != null)
-                try {
-                    in.close();
-                } catch (IOException ignored) {
-                }
+            IoUtils.close(in);
         }
 
         // populate any map engine config options

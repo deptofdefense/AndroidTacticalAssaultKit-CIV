@@ -24,18 +24,13 @@ public class MenuMapAdapter {
 
     public void loadMenuFilters(MapAssets mapAssets, String filtersPath)
             throws IOException {
-        InputStream in = mapAssets.getInputStream(Uri.parse(filtersPath));
-        try {
+        try (InputStream in = mapAssets.getInputStream(Uri.parse(filtersPath))) {
             _filters = FiltersConfig.parseFromStream(in);
             if (_filters != null)
                 _filters.setComparator("type",
                         new FiltersConfig.StringStartsWithComparator());
         } catch (Exception e) {
             Log.e(_TAG, "Error loading filters for MenuMapAdapter", e);
-        } finally {
-            if (in != null) {
-                in.close();
-            }
         }
     }
 

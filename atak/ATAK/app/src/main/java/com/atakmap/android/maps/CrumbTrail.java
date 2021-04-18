@@ -286,13 +286,6 @@ public class CrumbTrail extends MapItem implements FOVFilter.Filterable,
             }
             if (rab[0] < threshM)
                 return;
-        } else if (theTarget.getType().equals("self")
-                && !newP.isAltitudeValid()) {
-            // Bandaid fix for ATAK-8373
-            // First GPS point has an altitude of zero for some reason
-            // Now a few releases later the altitude is NaN (ATAK-12958)
-            Log.w(TAG, "Ignoring invalid altitude on first GPS point: " + newP);
-            return;
         }
 
         Crumb crumb;

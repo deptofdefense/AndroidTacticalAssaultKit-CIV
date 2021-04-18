@@ -38,12 +38,21 @@ namespace {
     }
 }
 
-TAKErr TAK::Engine::Renderer::GLOffscreenFramebuffer_create(GLOffscreenFramebufferPtr& resultOut, int width, int height, GLOffscreenFramebuffer::Options options) NOTHROWS {
+TAKErr TAK::Engine::Renderer::GLOffscreenFramebuffer_create(GLOffscreenFramebufferPtr& resultOut, int width, int height, GLOffscreenFramebuffer::Options options) NOTHROWS
+{
+    TAKErr code(TE_Ok);
 
     GLOffscreenFramebufferPtr result(new (std::nothrow) GLOffscreenFramebuffer(), TAK::Engine::Util::Memory_deleter<GLOffscreenFramebuffer>);
     if (!result)
         return TE_OutOfMemory;
-
+    result->releaseOnDestruct = true;
+    code = GLOffscreenFramebuffer_create(result.get(), width, height, options);
+    TE_CHECKRETURN_CODE(code);
+    resultOut = std::move(result);
+    return code;
+}
+TAKErr TAK::Engine::Renderer::GLOffscreenFramebuffer_create(GLOffscreenFramebuffer *result, int width, int height, GLOffscreenFramebuffer::Options options) NOTHROWS
+{
     GLFBOGuard fboGuard;
 
     result->width = width;
@@ -133,22 +142,28 @@ TAKErr TAK::Engine::Renderer::GLOffscreenFramebuffer_create(GLOffscreenFramebuff
         if (fboStatus != GL_FRAMEBUFFER_COMPLETE)
             break;
 
-        resultOut = std::move(result);
         return TE_Ok;
     } while (false);
 
     return TE_Err;
 }
-
-GLOffscreenFramebuffer::~GLOffscreenFramebuffer() NOTHROWS {
-    GLuint textures[] = { colorTexture, depthTexture, stencilTexture };
+TAKErr TAK::Engine::Renderer::GLOffscreenFramebuffer_release(GLOffscreenFramebuffer& offscreen)
+{
+    GLuint textures[] = { offscreen.colorTexture, offscreen.depthTexture, offscreen.stencilTexture };
     glDeleteTextures(3, textures);
-    colorTexture = GL_NONE;
-    depthTexture = GL_NONE;
-    stencilTexture = GL_NONE;
+    offscreen.colorTexture = GL_NONE;
+    offscreen.depthTexture = GL_NONE;
+    offscreen.stencilTexture = GL_NONE;
 
-    glDeleteFramebuffers(1, &handle);
-    handle = GL_NONE;
+    glDeleteFramebuffers(1, &offscreen.handle);
+    offscreen.handle = GL_NONE;
+
+    return TE_Ok;
+}
+GLOffscreenFramebuffer::~GLOffscreenFramebuffer() NOTHROWS
+{
+    if (releaseOnDestruct)
+        GLOffscreenFramebuffer_release(*this);
 }
 
 void GLOffscreenFramebuffer::bind() {

@@ -195,7 +195,28 @@ GLMesh::GLMesh(RenderContext &ctx, const Matrix2 *localFrame, const AltitudeMode
             anchor,
             matmgr)
 {}
-GLMesh::GLMesh(RenderContext &ctx, Matrix2Ptr_const &&localFrame, const AltitudeMode altitudeMode, const std::shared_ptr<const TAK::Engine::Model::Mesh> &subject, const TAK::Engine::Math::Point2<double> &anchor, const std::shared_ptr<MaterialManager>&matmgr) NOTHROWS :
+
+GLMesh::GLMesh(TAK::Engine::Core::RenderContext& ctx, const Matrix2* localFrame, const TAK::Engine::Feature::AltitudeMode altitudeMode, const std::shared_ptr<const TAK::Engine::Model::Mesh>& subject, const TAK::Engine::Math::Point2<double>& anchor, const std::shared_ptr<MaterialManager>& matmgr, int srid) NOTHROWS
+: GLMesh(ctx,
+    std::move(Matrix2Ptr_const(localFrame ? new Matrix2(*localFrame) : nullptr, Memory_deleter_const<Matrix2>)),
+    altitudeMode,
+    subject,
+    anchor,
+    matmgr,
+    srid) 
+{}
+
+GLMesh::GLMesh(TAK::Engine::Core::RenderContext& ctx, Matrix2Ptr_const&& localFrame, const TAK::Engine::Feature::AltitudeMode altitudeMode, const std::shared_ptr<const TAK::Engine::Model::Mesh>& subject, const TAK::Engine::Math::Point2<double>& anchor, const std::shared_ptr<MaterialManager>& matmgr) NOTHROWS 
+ : GLMesh(ctx, 
+     std::move(localFrame), 
+     altitudeMode,
+     subject,
+     anchor,
+     matmgr,
+     4326)
+{}
+
+GLMesh::GLMesh(RenderContext &ctx, Matrix2Ptr_const &&localFrame, const AltitudeMode altitudeMode, const std::shared_ptr<const TAK::Engine::Model::Mesh> &subject, const TAK::Engine::Math::Point2<double> &anchor, const std::shared_ptr<MaterialManager>&matmgr, int srid) NOTHROWS :
     ctx_(ctx),
     subject_(subject),
     local_frame_(std::move(localFrame)),
@@ -215,7 +236,7 @@ GLMesh::GLMesh(RenderContext &ctx, Matrix2Ptr_const &&localFrame, const Altitude
     g_(1.0),
     b_(1.0),
     a_(1.0),
-    srid_(4326)
+    srid_(srid)
 {
     if (subject_.get()) {
         use_vbo_ = subject_->isIndexed() ? subject_->getNumVertices() <= 0xFFFFu : subject_->getNumVertices() <= (3u * 0xFFFFu);

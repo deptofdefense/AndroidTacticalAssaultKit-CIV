@@ -1,7 +1,6 @@
 
 package com.atakmap.android.dropdown;
 
-import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -11,22 +10,13 @@ import android.view.View.OnTouchListener;
 import android.view.MotionEvent;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.RelativeLayout.LayoutParams;
-import android.widget.TextView;
-import android.widget.Toolbar;
 
-import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapEvent;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.toolbars.ToolbarCompat;
 import com.atakmap.app.R;
 import com.atakmap.coremap.log.Log;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -39,13 +29,9 @@ class SidePane implements OnTouchListener {
     private final FrameLayout mapLayout;
     private final ViewGroup sideLayout;
     private final RelativeLayout parent;
-    private final Toolbar sidePanelToolbar;
 
     final private View sideHandle;
     final private View bottomHandle; // for portrait mode
-    private TextView toolbarTitle;
-    private LinearLayout toolbarButtonLayout;
-    private ImageButton closeButton;
     private final MapView mapView;
     private final boolean layoutIsPortrait;
     private DropDown dd, leftDD;
@@ -69,17 +55,6 @@ class SidePane implements OnTouchListener {
 
         sideLayout = ((FragmentActivity) view.getContext())
                 .findViewById(R.id.right_side_panel_container);
-
-        sidePanelToolbar = sideLayout
-                .findViewById(ToolbarCompat.side_panel_toolbar);
-        if (sidePanelToolbar != null) {
-            toolbarTitle = sidePanelToolbar
-                    .findViewById(ToolbarCompat.side_panel_toolbar_title);
-            toolbarButtonLayout = sidePanelToolbar
-                    .findViewById(ToolbarCompat.side_panel_toolbar_buttons);
-            closeButton = new ImageButton(view.getContext());
-            initToolbar();
-        }
 
         parent = ((FragmentActivity) view.getContext())
                 .findViewById(R.id.map_parent);
@@ -195,10 +170,6 @@ class SidePane implements OnTouchListener {
                 : mapView
                         .getWidth();
 
-        if (sidePanelToolbar != null) {
-            sidePanelToolbar.setVisibility(View.VISIBLE);
-        }
-
         LayoutParams mapPanelLP;
         LayoutParams sidePanelLP;
 
@@ -306,11 +277,7 @@ class SidePane implements OnTouchListener {
                         .getWidth();
 
         contractSidePane();
-        if (sidePanelToolbar != null) {
-            removeToolbarButtons();
-        } else {
-            sideLayout.removeAllViews();
-        }
+        sideLayout.removeAllViews();
 
         widthFraction = DropDownReceiver.NO_WIDTH;
         heightFraction = DropDownReceiver.FULL_HEIGHT;
@@ -344,63 +311,6 @@ class SidePane implements OnTouchListener {
         }
     }
 
-    public void setTitle(String title) {
-        if (toolbarTitle != null) {
-            toolbarTitle.setText(title);
-        }
-    }
-
-    public void setButtons(List<ImageButton> buttons) {
-        if (toolbarButtonLayout != null) {
-            toolbarButtonLayout.removeAllViews();
-            toolbarButtonLayout.addView(closeButton);
-            int buttonPadding = (int) mapView.getResources()
-                    .getDimension(R.dimen.top_bar_button_padding);
-            for (ImageButton button : buttons) {
-                button.setBackgroundColor(Color.TRANSPARENT);
-                button.setPadding(buttonPadding, 0, buttonPadding, 0);
-                toolbarButtonLayout.addView(button, 0);
-            }
-        }
-    }
-
-    private void initToolbar() {
-        closeButton.setBackgroundColor(Color.TRANSPARENT);
-        closeButton.setImageResource(ToolbarCompat.drawable_sidemenu_close);
-        closeButton.setPadding(0, 0, 0, 0);
-        closeButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                DropDownManager.getInstance().closeAllDropDowns();
-            }
-        });
-        if (toolbarButtonLayout.indexOfChild(closeButton) == -1) {
-            toolbarButtonLayout.addView(closeButton);
-        }
-    }
-
-    private void removeToolbarButtons() {
-        ArrayList<View> toDelete = new ArrayList<>();
-        for (int i = 0; i < sideLayout.getChildCount(); i++) {
-            if (sideLayout.getChildAt(i) != sidePanelToolbar) {
-                toDelete.add(sideLayout.getChildAt(i));
-            }
-        }
-        for (View child : toDelete) {
-            sideLayout.removeView(child);
-        }
-        toDelete.clear();
-
-        for (int i = 0; i < toolbarButtonLayout.getChildCount(); i++) {
-            if (toolbarButtonLayout.getChildAt(i) != closeButton) {
-                toDelete.add(toolbarButtonLayout.getChildAt(i));
-            }
-        }
-        for (View child : toDelete) {
-            toolbarButtonLayout.removeView(child);
-        }
-    }
-
     private void showHandle() {
         if (dd == null) {
             sideHandle.setVisibility(View.GONE);
@@ -425,10 +335,6 @@ class SidePane implements OnTouchListener {
     }
 
     private void contractSidePane() {
-
-        if (sidePanelToolbar != null) {
-            sidePanelToolbar.setVisibility(View.INVISIBLE);
-        }
 
         LayoutParams mapPanelLP = (LayoutParams) mapLayout
                 .getLayoutParams();

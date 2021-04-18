@@ -207,19 +207,6 @@ public abstract class DropDownReceiver extends BroadcastReceiver {
      */
     abstract protected void disposeImpl();
 
-    /**
-     * Get current DropDown toolbar title.
-     *
-     * @return current DropDown
-     */
-    public String getToolbarTitle() {
-        return "";
-    }
-
-    public List<ImageButton> getToolbarButtons() {
-        return new ArrayList<>();
-    }
-
     public void callResize(double w, double h) {
         this.resize(w, h);
     }

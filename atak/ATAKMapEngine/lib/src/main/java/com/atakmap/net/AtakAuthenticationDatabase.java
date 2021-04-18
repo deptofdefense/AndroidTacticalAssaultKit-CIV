@@ -99,7 +99,6 @@ public class AtakAuthenticationDatabase {
      * database and delete any credentials which have expired.
      *
      * @param context A valid application context
-     * @return void
      */
     public static void initialize(Context context) {
         synchronized (getAdapter().lock) {
@@ -163,7 +162,6 @@ public class AtakAuthenticationDatabase {
      * Frees all runtime resources associated with the database. This function should be called
      * when the application shuts down to ensure that the sqlcihper database is properly closed.
      *
-     * @return void
      */
     public static void dispose() {
         synchronized (getAdapter().lock) {
@@ -179,7 +177,6 @@ public class AtakAuthenticationDatabase {
     /**
      * Deletes the underlying sqlcipher database.
      *
-     * @return void
      */
     public static void clear() {
         synchronized (getAdapter().lock) {
@@ -213,7 +210,7 @@ public class AtakAuthenticationDatabase {
      *
      * @param type Credential type per TYPE_ constants in AtakAuthenticationCredentials
      * @param site FQDN or IP associated with credentials
-     * @return AtakAuthenticationCredentials
+     * @return AtakAuthenticationCredentials for the type and site
      */
     public static AtakAuthenticationCredentials getCredentials(
             String type,
@@ -255,6 +252,32 @@ public class AtakAuthenticationDatabase {
             String site,
             String username,
             String password,
+            long expires) {
+        //Log.i(TAG, "saveCredentials = " + type);
+
+        synchronized (getAdapter().lock) {
+            if (!initialized) {
+                Log.e(TAG, "Calling saveCredentials prior to initialization!");
+                return;
+            }
+
+            getAdapter().saveCredentialsForType(type, site, username, password, expires);
+        }
+    }
+
+    /**
+     * Saves username and password credentials for the given type/site pair.
+     *
+     * @param type Credential type per TYPE_ constants in AtakAuthenticationCredentials
+     * @param site FQDN or IP to associate credentials with
+     * @param username the username to save
+     * @param password the password to save
+     */
+    public static void saveCredentials(
+            String type,
+            String site,
+            String username,
+            String password,
             boolean expires) {
         //Log.i(TAG, "saveCredentials = " + type);
 
@@ -272,9 +295,25 @@ public class AtakAuthenticationDatabase {
      * Saves username and password as the default credentials for the given type.
      *
      * @param type Credential type per TYPE_ constants in AtakAuthenticationCredentials
-     * @param username
-     * @param password
-     * @return void
+     * @param username the username associated with the credential
+     * @param password the password associated with the credential
+     */
+    public static void saveCredentials(
+            String type,
+            String username,
+            String password,
+            long expires) {
+        synchronized (getAdapter().lock) {
+            saveCredentials(type, type, username, password, expires);
+        }
+    }
+
+    /**
+     * Saves username and password as the default credentials for the given type.
+     *
+     * @param type Credential type per TYPE_ constants in AtakAuthenticationCredentials
+     * @param username the username associated with the credential
+     * @param password the password associated with the credential
      */
     public static void saveCredentials(
             String type,
@@ -291,7 +330,6 @@ public class AtakAuthenticationDatabase {
      *
      * @param type Credential type per TYPE_ constants in AtakAuthenticationCredentials
      * @param site FQDN or IP associated with credentials
-     * @return void
      */
     public static void delete(
             String type,

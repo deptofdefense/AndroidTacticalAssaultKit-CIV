@@ -477,7 +477,10 @@ TAKErr SceneLayer::removeScene(const int64_t sid) NOTHROWS
     cleanCache(FID2SID(f->getFeatureSetId(), (isTransient ? TRANSIENT_BIT : PERSISTENT_BIT)));
 
     // delete the parent FS
-    code = store.deleteFeatureSet(f->getFeatureSetId());
+    auto fsid = f->getFeatureSetId();
+    code = store.setFeatureSetReadOnly(fsid, false);
+    TE_CHECKRETURN_CODE(code);
+    code = store.deleteFeatureSet(fsid);
     TE_CHECKRETURN_CODE(code);
 
     // clear the entry
@@ -501,6 +504,8 @@ TAKErr SceneLayer::removeSceneSet(const int64_t ssid) NOTHROWS
     cleanCache(ssid);
 
     // delete the parent FS
+    code = store.setFeatureSetReadOnly(FID(ssid), false);
+    TE_CHECKRETURN_CODE(code);
     code = store.deleteFeatureSet(FID(ssid));
     TE_CHECKRETURN_CODE(code);
 

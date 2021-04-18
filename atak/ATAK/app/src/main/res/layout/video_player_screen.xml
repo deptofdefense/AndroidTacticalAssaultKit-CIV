@@ -18,6 +18,18 @@
             android:scaleType="fitCenter" />
 
         <RelativeLayout
+            android:id="@+id/overlays"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:orientation="horizontal"
+            android:layout_centerHorizontal="true"
+            android:layout_centerInParent="true"
+            android:scaleType="fitCenter"
+            android:clickable="false"
+            android:focusable="false"
+            android:focusableInTouchMode="false"/>
+
+        <RelativeLayout
             android:id="@+id/metadata_controls"
             android:layout_alignParentTop="true"
             android:layout_width="fill_parent"
@@ -162,12 +174,5 @@
                 android:scaleType="fitCenter"
                 android:src="@drawable/record_icon" />
         </LinearLayout>
-
-
-        <RelativeLayout
-            android:id="@+id/overlays"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:orientation="horizontal"/>
 
 </RelativeLayout>

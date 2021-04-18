@@ -6,10 +6,14 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.SystemClock;
 
+import com.atakmap.android.data.URIContentManager;
+import com.atakmap.android.data.URIContentResolver;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.graphics.GLBitmapLoader;
 import com.atakmap.android.maps.graphics.GLTriangle;
 import com.atakmap.android.maps.tilesets.graphics.GLPendingTexture;
+import com.atakmap.android.model.ModelContentHandler;
+import com.atakmap.android.model.ModelContentResolver;
 import com.atakmap.app.DeveloperOptions;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -50,14 +54,17 @@ import com.atakmap.math.Rectangle;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLTexture;
 import com.atakmap.spatial.GeometryTransformer;
+import com.atakmap.util.zip.IoUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
@@ -505,8 +512,22 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
                         xformed, null, null, 0);
                 feature = Utils.getFeature(dataStore,
                         feature.getId());
-                if (feature != null)
+                if (feature != null) {
                     featureBounds = feature.getGeometry().getEnvelope();
+
+                    // Update the model handler(s)
+                    long fsid = feature.getFeatureSetId();
+                    List<URIContentResolver> resolvers = URIContentManager
+                            .getInstance().getResolvers();
+                    for (URIContentResolver r : resolvers) {
+                        if (!(r instanceof ModelContentResolver))
+                            continue;
+                        ModelContentHandler h = ((ModelContentResolver) r)
+                                .getHandler(fsid);
+                        if (h != null)
+                            h.addFeatureBounds(featureBounds);
+                    }
+                }
             } catch (Exception e) {
                 Log.e(TAG, "error", e);
             }
@@ -618,11 +639,7 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
         } catch (Throwable t) {
             Log.e(TAG, "error", t);
         } finally {
-            if (fos != null)
-                try {
-                    fos.close();
-                } catch (IOException ignored) {
-                }
+            IoUtils.close(fos);
         }
     }
 
@@ -671,21 +688,13 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
         if (!exists)
             return false;
 
-        FileInputStream fis = null;
-        try {
-            fis = IOProviderFactory.getInputStream(f);
+        try(FileInputStream fis = IOProviderFactory.getInputStream(f)) {
             props.load(fis);
             return true;
         } catch (IOException e) {
             if (logEx)
                 Log.w(TAG, "Failed to load properties", e);
             return false;
-        } finally {
-            if (fis != null)
-                try {
-                    fis.close();
-                } catch (IOException ignored) {
-                }
         }
     }
 
@@ -695,21 +704,13 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
                 Log.w(TAG,
                         "Could not create the directory: " + f.getParentFile());
 
-        FileOutputStream fis = null;
-        try {
-            fis = IOProviderFactory.getOutputStream(f);
-            props.store(fis, null);
+        try(OutputStream os = IOProviderFactory.getOutputStream(f)) {
+            props.store(os, null);
             return true;
         } catch (IOException e) {
             if (logEx)
                 Log.w(TAG, "Failed to store properties", e);
             return false;
-        } finally {
-            if (fis != null)
-                try {
-                    fis.close();
-                } catch (IOException ignored) {
-                }
         }
     }
 
@@ -922,9 +923,8 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
 
                     // XXX - save the subsampled version
                     if (textureDir != null) {
-                        FileOutputStream fos = null;
-                        try {
-                            fos = IOProviderFactory.getOutputStream(rsetFile);
+                        try (FileOutputStream fos = IOProviderFactory
+                                .getOutputStream(rsetFile)) {
 
                             s = SystemClock.elapsedRealtime();
                             b.compress(Bitmap.CompressFormat.JPEG, 75, fos);
@@ -935,13 +935,6 @@ public class GLModelRenderer2 implements GLMapRenderable2, ModelHitTestControl {
                             Log.w(TAG,
                                     "Failed to save subsampled texture version",
                                     t);
-                        } finally {
-                            if (fos != null) {
-                                try {
-                                    fos.close();
-                                } catch (IOException ignored) {
-                                }
-                            }
                         }
                     }
 

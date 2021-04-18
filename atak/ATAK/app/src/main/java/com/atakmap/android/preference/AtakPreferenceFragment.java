@@ -7,9 +7,11 @@ import android.app.Activity;
 import android.app.KeyguardManager;
 import android.app.KeyguardManager.KeyguardLock;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
+import android.preference.PreferenceCategory;
 import android.preference.PreferenceGroup;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
@@ -22,6 +24,7 @@ import android.view.WindowManager.LayoutParams;
 import android.content.res.Configuration;
 
 import com.atakmap.android.metrics.MetricsApi;
+import com.atakmap.android.overlay.MapOverlay;
 import com.atakmap.android.util.ATAKConstants;
 import com.atakmap.app.preferences.ToolsPreferenceFragment;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
@@ -33,7 +36,9 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public abstract class AtakPreferenceFragment extends PreferenceFragment {
 
@@ -49,6 +54,8 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
     protected Bundle _externalPreferenceBundle;
 
     private static Context appContext;
+
+    private final Map<String, Preference> allkeys = new HashMap<>();
 
     /**
      * For plugins we are REQUIRED to set the application context to the
@@ -98,19 +105,73 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
     }
 
     @Override
+    public void addPreferencesFromResource(int preferencesResId) {
+        super.addPreferencesFromResource(preferencesResId);
+        processPreferences();
+    }
+
+    @Override
+    public void addPreferencesFromIntent(Intent intent) {
+        super.addPreferencesFromIntent(intent);
+        processPreferences();
+    }
+
+    private void processPreferences() {
+        try {
+            final PreferenceScreen screen = getPreferenceScreen();
+            final int count = getPreferenceScreen().getPreferenceCount();
+            final List<Preference> pList = new ArrayList<>();
+            for (int i = 0; i < count; ++i) {
+                pList.add(screen.getPreference(i));
+            }
+            for (Preference p : pList)
+                processPreference(p);
+        } catch (Exception e) {
+            Log.e(TAG, "error processing preferences",e);
+
+        }
+    }
+
+    @Override
     public Preference findPreference(final CharSequence key) {
 
         if (_mainControlPrefs == null)
             _mainControlPrefs = PreferenceManager
                     .getDefaultSharedPreferences(getActivity());
 
-        final Preference p = super.findPreference(key);
+        Preference p = super.findPreference(key);
+        if (p == null)
+            p = allkeys.get(key);
+        return p;
+    }
 
-        //Log.d(TAG, "showPreferenceItem_" + key);
-        if (p != null) {
+    private void processPreference(final Preference p) {
+        if (p == null)
+            return;
+        if (p instanceof PreferenceCategory) {
+
+            try {
+                final PreferenceCategory pc = (PreferenceCategory)p;
+                final int count = pc.getPreferenceCount();
+                final List<Preference> pList = new ArrayList<>();
+                for (int i = 0; i < count; ++i) {
+                    pList.add(pc.getPreference(i));
+                }
+                for (Preference subp : pList)
+                    processPreference(subp);
+            } catch (Exception e) {
+                Log.e(TAG, "error processing preferences",e);
+            }
+
+        }
+
+        final String key = p.getKey();
+        if (key != null) {
+            allkeys.put(key, p);
+
             final String disablePref = "disablePreferenceItem_" + key;
-            //Log.d(TAG, "'" + p.getTitle().toString().replaceAll("'","") + "','" + statePref + "'");
-            if (!_mainControlPrefs.getBoolean(disablePref, true)) {
+            //Log.d(TAG, "'" + p.getTitle().toString().replaceAll("'","") + "','" + disablePref + "'");
+            if (_mainControlPrefs.getBoolean(disablePref, false)) {
                 final Activity a = getActivity();
                 final Runnable r = new Runnable() {
                     public void run() {
@@ -129,7 +190,7 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
             }
 
             final String hidePref = "hidePreferenceItem_" + key;
-            if (!_mainControlPrefs.getBoolean(hidePref, true)) {
+            if (_mainControlPrefs.getBoolean(hidePref, false)) {
                 try {
                     removePreference(p);
                 } catch (Exception e) {
@@ -138,7 +199,6 @@ public abstract class AtakPreferenceFragment extends PreferenceFragment {
             }
         }
 
-        return p;
     }
 
     @Override

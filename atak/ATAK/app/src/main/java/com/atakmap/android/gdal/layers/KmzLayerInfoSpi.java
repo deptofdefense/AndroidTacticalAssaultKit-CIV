@@ -38,6 +38,7 @@ import android.content.res.XmlResourceParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -79,6 +80,13 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
     static {
         LATLON_QUAD_PARSE_TAGS.add("coordinates");
     }
+
+    public static final FileFilter KML_FILTER = new FileFilter() {
+        @Override
+        public boolean accept(File f) {
+            return FileSystemUtils.checkExtension(f, "kml");
+        }
+    };
 
     public final static DatasetDescriptorSpi INSTANCE = new KmzLayerInfoSpi();
 
@@ -220,6 +228,20 @@ public class KmzLayerInfoSpi extends AbstractDatasetDescriptorSpi {
             // If we can successfully open the inputstream to doc.kml,
             // and it has the GroundOverlay element, then this is probably a KMZ layer file.
             ZipVirtualFile docFile = new ZipVirtualFile(kmzFile, "doc.kml");
+
+            // Look for other KML
+            if (!IOProviderFactory.exists(docFile)) {
+                File[] files = IOProviderFactory.listFiles(kmzFile, KML_FILTER);
+                if (files != null) {
+                    for (File f : files) {
+                        if (f instanceof ZipVirtualFile) {
+                            docFile = (ZipVirtualFile) f;
+                            break;
+                        }
+                    }
+                }
+            }
+
             inputStream = docFile.openStream();
             parser = Xml.newPullParser();
 

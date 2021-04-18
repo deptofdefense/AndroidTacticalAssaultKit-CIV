@@ -4,6 +4,7 @@ package com.atakmap.android.database;
 import android.database.sqlite.SQLiteException;
 import android.net.Uri;
 
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.DatabaseInformation;
 import com.atakmap.coremap.log.Log;
@@ -15,7 +16,11 @@ import com.atakmap.net.AtakAuthenticationCredentials;
 import com.atakmap.net.AtakAuthenticationDatabase;
 
 import java.io.File;
-
+/**
+ * @deprecated
+ */
+@Deprecated
+@DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
 class DefaultDatabaseProvider {
 
     private static final String TAG = "DatabaseProvider";

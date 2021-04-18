@@ -7,8 +7,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 
 import com.atakmap.android.data.URIScheme;
-import com.atakmap.android.layers.LayersMapComponent;
-import com.atakmap.android.maps.CardLayer;
+import com.atakmap.android.layers.RasterUtils;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.graphics.GLCapture;
 import com.atakmap.android.math.MathUtils;
@@ -27,15 +26,10 @@ import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.Vector2D;
 import com.atakmap.map.gdal.GdalLibrary;
-import com.atakmap.map.layer.Layer;
-import com.atakmap.map.layer.raster.AbstractRasterLayer2;
 import com.atakmap.map.layer.raster.DatasetDescriptor;
 import com.atakmap.map.layer.raster.DatasetProjection2;
 import com.atakmap.map.layer.raster.DefaultDatasetProjection2;
 import com.atakmap.map.layer.raster.ImageDatasetDescriptor;
-import com.atakmap.map.layer.raster.LocalRasterDataStore;
-import com.atakmap.map.layer.raster.RasterDataStore;
-import com.atakmap.map.layer.raster.RasterDataStore.DatasetQueryParameters;
 import com.atakmap.map.layer.raster.mobac.MobacMapSource;
 import com.atakmap.map.layer.raster.mobac.MobacMapSourceFactory;
 import com.atakmap.map.layer.raster.mobac.MobacTileClient2;
@@ -49,7 +43,6 @@ import org.gdal.gdalconst.gdalconst;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -139,63 +132,36 @@ public class TileCapture extends DatasetTileReader {
         return tc;
     }
 
+    /**
+     * Create a tile capture instance given a set of geobounds
+     * @param bounds Bounds to query
+     * @return Tile capture instance or null if failed
+     */
     public static TileCapture create(GeoBounds bounds) {
         MapView mv = MapView.getMapView();
         if (mv == null)
             return null;
 
-        // TODO: Simpler way to get the current on-screen imagery
-        AbstractRasterLayer2 layer = null;
-        List<Layer> layers = mv.getLayers(MapView.RenderStack.MAP_LAYERS);
-        for (Layer l : layers) {
-            if (!l.getName().equals("Raster Layers"))
-                continue;
-            CardLayer cd = (CardLayer) l;
-            layer = (AbstractRasterLayer2) cd.get();
-            break;
-        }
-        if (layer == null)
-            return null;
-
-        boolean mobile = layer instanceof MobileImageryRasterLayer2;
-        LocalRasterDataStore db = LayersMapComponent.getLayersDatabase();
-        DatasetQueryParameters dp = new DatasetQueryParameters();
-        if (mobile) {
-            dp.names = Collections.singleton(layer.getSelection());
-            dp.providers = Collections.singleton("mobac");
-        }
-        dp.spatialFilter = new DatasetQueryParameters.RegionSpatialFilter(
-                new GeoPoint(bounds.getNorth(), bounds.getWest()),
-                new GeoPoint(bounds.getSouth(), bounds.getEast()));
-
+        // Create tile capture instances for all applicable layers
         TileCapture lastCap = null;
         List<TileCapture> captures = new ArrayList<>();
-        RasterDataStore.DatasetDescriptorCursor c = null;
-        try {
-            c = db.queryDatasets(dp);
-            while (c != null && c.moveToNext()) {
-                DatasetDescriptor d = c.get();
-                if (!(d instanceof ImageDatasetDescriptor))
-                    continue;
-                ImageDatasetDescriptor info = (ImageDatasetDescriptor) d;
-                if (info.getProvider().equals("mobac") && !mobile)
-                    continue;
-                TileCapture tc = create(info);
-                if (tc == null || tc.tooSmall(info, bounds))
-                    continue;
-                if (lastCap != null && !lastCap.compatible(tc))
-                    continue;
-                captures.add(tc);
-                lastCap = tc;
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "Failed to query datasets", e);
-        } finally {
-            if (c != null)
-                c.close();
+        List<ImageDatasetDescriptor> datasets = RasterUtils.getCurrentImagery(
+                mv, bounds);
+        for (ImageDatasetDescriptor info : datasets) {
+            TileCapture tc = create(info);
+            if (tc == null || tc.tooSmall(info, bounds))
+                continue;
+            if (lastCap != null && !lastCap.compatible(tc))
+                continue;
+            captures.add(tc);
+            lastCap = tc;
         }
+
+        // No layers - fallback to basemap
         if (captures.isEmpty())
             return createBasemapReader(mv);
+
+        // If there's only one layer then use it
         else if (captures.size() == 1)
             return captures.get(0);
 

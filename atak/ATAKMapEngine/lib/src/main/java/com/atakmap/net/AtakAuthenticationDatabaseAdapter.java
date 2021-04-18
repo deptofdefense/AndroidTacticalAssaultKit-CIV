@@ -54,8 +54,8 @@ public final class AtakAuthenticationDatabaseAdapter implements AtakAuthenticati
 
     /**
      * Gets the credentials by the given type and site.
-     * @param type the type
-     * @param site the site
+     * @param type the type the type associated with the credential
+     * @param site the site the site associated with the credential
      * @return a {@link AtakAuthenticationCredentials}
      */
     @Override
@@ -88,7 +88,8 @@ public final class AtakAuthenticationDatabaseAdapter implements AtakAuthenticati
      * @param site     the site
      * @param username the username
      * @param password the password
-     * @param expires  when this credential expires.
+     * @param expires  if true the expiration time is set to 30 days from the current system time
+     *                 from the time this method is called.
      */
     @Override
     public void saveCredentialsForType(
@@ -98,7 +99,29 @@ public final class AtakAuthenticationDatabaseAdapter implements AtakAuthenticati
             String password,
             boolean expires) {
         synchronized (lock) {
-            long expireTime = expires ? System.currentTimeMillis() + EXPIRATION_INTERVAL : -1;
+            long expireTime = expires ? EXPIRATION_INTERVAL : -1;
+            saveCredentialsForType(type, site, username, password, expireTime);
+        }
+    }
+
+    /**
+     * Saves the {@link AtakAuthenticationCredentials} represented by the given parameters to the
+     * Auth DB.
+     *
+     * @param type     the type
+     * @param site     the site
+     * @param username the username
+     * @param password the password
+     * @param expires  when this credential expires as a time in milliseconds since the current
+     *                 system time wehn the save command is invoked.
+     */
+    @Override
+    public void saveCredentialsForType(String type, String site, String username, String password, long expires) {
+        long expireTime = -1;
+        if (expires > 0)
+            expireTime = System.currentTimeMillis() + expires;
+
+        synchronized (lock) {
             boolean rc = saveCredentials(type, site, username, password, expireTime);
             if (!rc) {
                 Log.w(TAG, "saveCredentials returned false");
@@ -125,6 +148,27 @@ public final class AtakAuthenticationDatabaseAdapter implements AtakAuthenticati
             String username,
             String password,
             boolean expires) {
+        synchronized (lock) {
+            saveCredentialsForType(type, type, username, password, expires);
+        }
+    }
+
+    /**
+     * Saves the {@link AtakAuthenticationCredentials} represented by the given parameters to the
+     * Auth DB.<p>
+     * NOTE: This will save the type parameter into both the type and site column.
+     * @param type     the type
+     * @param username the username
+     * @param password the password
+     * @param expires  when this credential expires as a time in milliseconds since the current
+     *                 system time wehn the save command is invoked.
+     */
+    @Override
+    public void saveCredentialsForType(
+            String type,
+            String username,
+            String password,
+            long expires) {
         synchronized (lock) {
             saveCredentialsForType(type, type, username, password, expires);
         }

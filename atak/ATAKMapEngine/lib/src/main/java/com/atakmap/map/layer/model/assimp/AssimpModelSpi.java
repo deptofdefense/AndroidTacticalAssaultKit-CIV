@@ -2,6 +2,7 @@ package com.atakmap.map.layer.model.assimp;
 
 import android.graphics.Color;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.feature.geometry.Envelope;
@@ -313,7 +314,7 @@ public class AssimpModelSpi implements ModelSpi {
                             };
 
                     File parent = file.getParentFile();
-                    if (!(parent instanceof ZipVirtualFile) && parent.getAbsolutePath().contains(".zip")) {
+                    if (!(parent instanceof ZipVirtualFile) && FileSystemUtils.isZipPath(parent)) {
                         try {
                             parent = new ZipVirtualFile(parent);
                         } catch (Throwable ignored) {
@@ -553,7 +554,7 @@ public class AssimpModelSpi implements ModelSpi {
                             };
 
                     File parent = file.getParentFile();
-                    if (!(parent instanceof ZipVirtualFile) && parent.getAbsolutePath().contains(".zip")) {
+                    if (!(parent instanceof ZipVirtualFile) && FileSystemUtils.isZipPath(parent)) {
                         try {
                             parent = new ZipVirtualFile(parent);
                         } catch (Throwable ignored) {

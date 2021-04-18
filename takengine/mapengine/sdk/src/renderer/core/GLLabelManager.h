@@ -41,6 +41,7 @@ namespace TAK
                     void setGeometry(const uint32_t id, const TAK::Engine::Feature::Geometry2& geometry) NOTHROWS;
                     void setAltitudeMode(const uint32_t id, const TAK::Engine::Feature::AltitudeMode altitude_mode) NOTHROWS;
                     void setText(const uint32_t id, const TAK::Engine::Port::String text) NOTHROWS;
+                    void setTextFormat(const uint32_t id, const TextFormatParams* fmt) NOTHROWS;
                     void setVisible(const uint32_t id, const bool visible) NOTHROWS;
                     void setAlwaysRender(const uint32_t id, const bool always_render) NOTHROWS;
                     void setMaxDrawResolution(const uint32_t id, const double max_draw_resolution) NOTHROWS;

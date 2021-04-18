@@ -104,11 +104,9 @@ public abstract class ExportFileTask extends ProgressTask {
             return null;
         }
 
-        ZipOutputStream zos = null;
-        FileOutputStream fos = null;
-        try {
-            fos = IOProviderFactory.getOutputStream(dest);
-            zos = new ZipOutputStream(new BufferedOutputStream(fos));
+        try(FileOutputStream fos = IOProviderFactory.getOutputStream(dest);
+            BufferedOutputStream bfos = new BufferedOutputStream(fos);
+            ZipOutputStream zos = new ZipOutputStream(bfos)) {
             byte[] buf = new byte[FileSystemUtils.BUF_SIZE];
 
             // Progress on the entire task
@@ -140,21 +138,6 @@ public abstract class ExportFileTask extends ProgressTask {
         } catch (Exception e) {
             Log.e(TAG, "Failed to create Zip file", e);
             throw new IOException(e);
-        } finally {
-            if (zos != null) {
-                try {
-                    zos.close();
-                } catch (Exception e) {
-                    Log.w(TAG,
-                            "Failed to close Zip: " + dest.getAbsolutePath());
-                }
-            }
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (Exception e) {
-                }
-            }
         }
 
         //validate the required files
@@ -186,12 +169,10 @@ public abstract class ExportFileTask extends ProgressTask {
 
     protected static void appendStream(File file, OutputStream os, byte[] buf,
             FileProgressCallback cb) {
-        FileInputStream fis = null;
         long totalProg = IOProviderFactory.length(file);
-        try {
+        try(InputStream fis = IOProviderFactory.getInputStream(file)) {
             int len;
             long prog = 0;
-            fis = IOProviderFactory.getInputStream(file);
             while ((len = fis.read(buf)) > 0) {
                 os.write(buf, 0, len);
                 if (cb != null) {
@@ -202,30 +183,20 @@ public abstract class ExportFileTask extends ProgressTask {
             }
         } catch (Exception e) {
             Log.e(TAG, "Failed to append stream " + file, e);
-        } finally {
-            try {
-                if (fis != null)
-                    fis.close();
-            } catch (Exception ignore) {
-            }
         }
     }
 
     protected static boolean writeToFile(File file, String... lines) {
-        PrintWriter pw = null;
-        try {
-            pw = new PrintWriter(new OutputStreamWriter(
-                    IOProviderFactory.getOutputStream(file),
-                    FileSystemUtils.UTF8_CHARSET.name()));
+        try (OutputStream os = IOProviderFactory.getOutputStream(file);
+             OutputStreamWriter osw = new OutputStreamWriter(
+                os,FileSystemUtils.UTF8_CHARSET.name());
+             PrintWriter pw = new PrintWriter(osw)) {
             for (String s : lines)
                 pw.println(s);
             return true;
         } catch (Exception e) {
             Log.e(TAG, "Failed to write to " + file, e);
             return false;
-        } finally {
-            if (pw != null)
-                pw.close();
         }
     }
 
@@ -246,22 +217,11 @@ public abstract class ExportFileTask extends ProgressTask {
                 ZipVirtualFile zf = new ZipVirtualFile(filePath);
                 if (!IOProviderFactory.exists(zf))
                     return;
-                InputStream is = null;
-                OutputStream os = null;
-                try {
-                    FileSystemUtils.copy(is = zf.openStream(),
-                            os = IOProviderFactory.getOutputStream(outFile));
-                } finally {
-                    if (is != null) {
-                        try {
-                            is.close();
-                        } catch (IOException ignored) { }
-                    }
-                    if (os != null) {
-                        try {
-                            os.close();
-                        } catch (IOException ignored) { }
-                    }
+
+                try(InputStream inputStream = zf.openStream();
+                    OutputStream os = IOProviderFactory
+                            .getOutputStream(outFile)) {
+                    FileSystemUtils.copy(inputStream, os);
                 }
             }
         } catch (Exception e) {

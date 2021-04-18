@@ -762,8 +762,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
                         File exportDir = FileSystemUtils
                                 .getItem(FileSystemUtils.EXPORT_DIRECTORY);
 
-                        if (exportDir != null
-                                && IOProviderFactory.exists(exportDir)
+                        if (exportDir != null && IOProviderFactory.exists(exportDir)
                                 && IOProviderFactory.isDirectory(exportDir))
                             startDirectory = exportDir.getAbsolutePath();
                         else
@@ -1095,7 +1094,7 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
     /**
      * This sets up the Overlay Manager Action bar to the current mode
      */
-    public void setViewToMode() {
+   public void setViewToMode() {
         if (adapter == null || !overlayManagerDropDown.isVisible())
             return;
 
@@ -1609,7 +1608,6 @@ public class HierarchyListReceiver extends BroadcastReceiver implements
         public void disposeImpl() {
         }
 
-        @Override
         public String getToolbarTitle() {
             return adapter.getListTitle();
         }

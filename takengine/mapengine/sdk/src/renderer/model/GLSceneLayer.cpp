@@ -18,6 +18,7 @@
 #include "renderer/model/GLScene.h"
 #include "renderer/model/SceneObjectControl.h"
 #include "thread/Lock.h"
+#include "renderer/model/GLC3DTRenderer.h"
 
 using namespace TAK::Engine::Renderer::Model;
 
@@ -476,6 +477,14 @@ GLSceneLayer::SceneRenderer::SceneRenderer(GLSceneLayer &owner_, RenderContext &
             void *octrl;
             if(scene->getControl(&octrl, "TAK.Engine.Renderer.Model.SceneObjectControl") == TE_Ok)
                 ctrl = static_cast<SceneObjectControl *>(octrl);
+        }
+
+        //XXX-- this should be some common interface instead of specific impls
+        auto* c3dt = dynamic_cast<GLC3DTRenderer*>(value.get());
+        if (c3dt) {
+            void* octrl;
+            if (c3dt->getControl(&octrl, "TAK.Engine.Renderer.Model.SceneObjectControl") == TE_Ok)
+                ctrl = static_cast<SceneObjectControl*>(octrl);
         }
 
         if (ctrl)

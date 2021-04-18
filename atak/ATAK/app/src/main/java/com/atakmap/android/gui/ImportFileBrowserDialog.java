@@ -18,9 +18,83 @@ import com.atakmap.android.maps.MapView;
 
 import java.io.File;
 
+/**
+ * File browser within a dialog
+ */
 public class ImportFileBrowserDialog {
 
     public static final String TAG = "ImportFileBrowserDialog";
+
+    private final Context _context;
+    private String _title, _startPath;
+    private String[] _exts;
+    private boolean _useProvider;
+    private DialogDismissed _dismissListener;
+
+    public ImportFileBrowserDialog(MapView mapView) {
+        _context = mapView.getContext();
+    }
+
+    /**
+     * Set the title of the dialog
+     * @param title Title string
+     * @return Dialog
+     */
+    public ImportFileBrowserDialog setTitle(String title) {
+        _title = title;
+        return this;
+    }
+
+    /**
+     * Set which file extensions should be displayed by the browser
+     * @param exts File extensions
+     * @return Dialog
+     */
+    public ImportFileBrowserDialog setExtensionTypes(String... exts) {
+        _exts = exts;
+        return this;
+    }
+
+    /**
+     * Set the default directory to display when opening this browser
+     * @param path Path to directory
+     * @return Dialog
+     */
+    public ImportFileBrowserDialog setStartDirectory(String path) {
+        _startPath = path;
+        return this;
+    }
+
+    public ImportFileBrowserDialog setStartDirectory(File dir) {
+        return setStartDirectory(dir.getAbsolutePath());
+    }
+
+    /**
+     * Set whether to use the file IO provider proxy or the default
+     * @param useIoProvider True to use the proxy provider, false to use the default
+     * @return Dialog
+     */
+    public ImportFileBrowserDialog setUseProvider(boolean useIoProvider) {
+        _useProvider = useIoProvider;
+        return this;
+    }
+
+    /**
+     * Show the dialog
+     */
+    public void show() {
+        show(_title, _startPath, _exts, _dismissListener, _context, _useProvider);
+    }
+
+    /**
+     * Set a listener to be used when a file is selected or the dialog is closed
+     * @param l Listener
+     * @return Dialog
+     */
+    public ImportFileBrowserDialog setOnDismissListener(DialogDismissed l) {
+        _dismissListener = l;
+        return this;
+    }
 
     public interface DialogDismissed {
         /**

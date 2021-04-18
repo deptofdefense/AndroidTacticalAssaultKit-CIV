@@ -8,6 +8,7 @@
 
 #include "common.h"
 #include "interop/JNIByteArray.h"
+#include "interop/JNIDoubleArray.h"
 #include "interop/JNIIntArray.h"
 #include "interop/feature/Interop.h"
 
@@ -292,9 +293,6 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_geometry_GeometryFa
         alg = TAK::Engine::Renderer::Tessellate_CartesianAlgorithm();
     }
     code = GeometryFactory_createEllipse(cgeom2Value, *cgeomlocationPtr, orientation, major, minor, alg);
-
-    Logger_log(TELL_Info, "createEllipse: got code %d", (int)code);
-
     if(code != TE_Ok)
         return NULL;
 
@@ -320,9 +318,6 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_geometry_GeometryFa
             alg = TAK::Engine::Renderer::Tessellate_CartesianAlgorithm();
         }
         code = GeometryFactory_createEllipse(cgeom2Value, *cgeomEnvelope, alg);
-
-        Logger_log(TELL_Info, "createEllipse2: got code %d", (int)code);
-
         if(code != TE_Ok)
             return NULL;
 
@@ -354,9 +349,6 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_geometry_GeometryFa
         alg = TAK::Engine::Renderer::Tessellate_CartesianAlgorithm();
     }
     code = GeometryFactory_createRectangle(cgeom2Value, *cgeomcorner1Ptr, *cgeomcorner2Ptr, alg);
-
-    Logger_log(TELL_Info, "createRectangle: got code %d", (int)code);
-
     if(code != TE_Ok)
         return NULL;
 
@@ -375,9 +367,6 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_geometry_GeometryFa
             TAK::Engine::Feature::Point2, point1Ptr);
     TAK::Engine::Math::Point2<double> *cgeompoint1Ptr =
             new TAK::Engine::Math::Point2<double>(cgeomFeatpoint1Ptr->x, cgeomFeatpoint1Ptr->y, cgeomFeatpoint1Ptr->z);
-    Logger_log(TELL_Info, "createRectangle2 first point: algoPtr %d, %d, %d",
-            (int)cgeomFeatpoint1Ptr->x, (int)cgeomFeatpoint1Ptr->y, (int)cgeomFeatpoint1Ptr->z);
-
     const TAK::Engine::Feature::Point2 *cgeomFeatpoint2Ptr = JLONG_TO_INTPTR(TAK::Engine::Feature::Point2, point2Ptr);
     TAK::Engine::Math::Point2<double> *cgeompoint2Ptr =
             new TAK::Engine::Math::Point2<double>(cgeomFeatpoint2Ptr->x, cgeomFeatpoint2Ptr->y, cgeomFeatpoint2Ptr->z);
@@ -387,15 +376,11 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_geometry_GeometryFa
             new TAK::Engine::Math::Point2<double>(cgeomFeatpoint3Ptr->x, cgeomFeatpoint3Ptr->y, cgeomFeatpoint3Ptr->z);
 
     TAK::Engine::Renderer::Algorithm alg = TAK::Engine::Renderer::Tessellate_WGS84Algorithm();
-    Logger_log(TELL_Info, "createRectangle2: algoPtr %d", (int)algoPtr);
     if (algoPtr == 0)
     {
         alg = TAK::Engine::Renderer::Tessellate_CartesianAlgorithm();
     }
     code = GeometryFactory_createRectangle(cgeom2Value, *cgeompoint1Ptr, *cgeompoint2Ptr, *cgeompoint3Ptr, alg);
-
-    Logger_log(TELL_Info, "createRectangle2: got code %d", (int)code);
-
     if(code != TE_Ok)
         return NULL;
 
@@ -415,15 +400,11 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_geometry_GeometryFa
             new TAK::Engine::Math::Point2<double>(cgeomFeatlocationPtr->x, cgeomFeatlocationPtr->y, cgeomFeatlocationPtr->z);
 
     TAK::Engine::Renderer::Algorithm alg = TAK::Engine::Renderer::Tessellate_WGS84Algorithm();
-    Logger_log(TELL_Info, "createRectangle3: algoPtr %d", (int)algoPtr);
     if (algoPtr == 0)
     {
         alg = TAK::Engine::Renderer::Tessellate_CartesianAlgorithm();
     }
     code = GeometryFactory_createRectangle(cgeom2Value, *cgeomlocationPtr, orientation, length, width, alg);
-
-    Logger_log(TELL_Info, "createRectangle3: got code %d", (int)code);
-
     if(code != TE_Ok)
         return NULL;
 
@@ -433,7 +414,7 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_geometry_GeometryFa
     return Feature::Interop_create(env, *cgeom2Value);
 }
 
-JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_geometry_GeometryFactory_extrude
+JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_geometry_GeometryFactory_extrudeConstant
         (JNIEnv *env, jclass clazz, jlong ptr, jdouble extrude, jint hint)
 {
     TAKErr code(TE_Ok);
@@ -446,8 +427,33 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_geometry_GeometryFa
     }
 
     code = GeometryFactory_extrude(cgeom2Value, *cgeomSrc, extrude, hint);
-    Logger_log(TELL_Info, "extrude: got code %d", (int)code);
+    if(code != TE_Ok)
+        return NULL;
 
+    if(!cgeom2Value.get())
+        return NULL;
+
+    return Feature::Interop_create(env, *cgeom2Value);
+}
+JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_geometry_GeometryFactory_extrudePerVertex
+        (JNIEnv *env, jclass clazz, jlong ptr, jdoubleArray extrude, jint hint)
+{
+    TAKErr code(TE_Ok);
+    Geometry2Ptr cgeom2Value(nullptr, nullptr);
+    Geometry2 *cgeomSrc = JLONG_TO_INTPTR(Geometry2, ptr);
+
+    if(!cgeomSrc) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return NULL;
+    }
+
+    if(!extrude) {
+        ATAKMapEngineJNI_checkOrThrow(env, TE_InvalidArg);
+        return NULL;
+    }
+
+    JNIDoubleArray jarr(*env, extrude, JNI_ABORT);
+    code = GeometryFactory_extrude(cgeom2Value, *cgeomSrc, jarr.get<const double>(), jarr.length(), hint);
     if(code != TE_Ok)
         return NULL;
 

@@ -92,22 +92,25 @@ private :
 };
 
 
-GLScene::GLScene(RenderContext &ctx, const SceneInfo &info, const GLSceneSpi::Options &opts) NOTHROWS :
+GLScene::GLScene(RenderContext& ctx, const SceneInfo& info, const GLSceneSpi::Options& opts) NOTHROWS :
+    GLScene(ctx, info, ScenePtr(nullptr, nullptr), opts) {}
+
+GLScene::GLScene(TAK::Engine::Core::RenderContext& ctx, const TAK::Engine::Model::SceneInfo& info, TAK::Engine::Model::ScenePtr&& scene, const GLSceneSpi::Options& opts) NOTHROWS :
     ctx_(ctx),
     info_(info),
     opts_(opts),
-    scene_(nullptr, nullptr),
+    scene_(std::move(scene)),
     initializer(nullptr, nullptr),
     indicator(ctx),
     cancelInitialize(true),
     mutex_(TEMT_Recursive),
     clampRequested(info.altitudeMode == TEAM_ClampToGround),
     location_dirty_(false),
-    xray_color_(0x3F07FFFFu)
+    xray_color_(0x3F07FFFFu) 
 {
     sceneCtrl.reset(new SceneControlImpl(*this));
 
-    controls_["TAK.Engine.Renderer.Model.SceneObjectControl"] = (void *)static_cast<SceneObjectControl *>(sceneCtrl.get());
+    controls_["TAK.Engine.Renderer.Model.SceneObjectControl"] = (void*)static_cast<SceneObjectControl*>(sceneCtrl.get());
 
     TAK::Engine::Port::String modelIcon;
     if (ConfigOptions_getOption(modelIcon, "TAK.Engine.Model.default-icon") != TE_Ok) modelIcon = "null";

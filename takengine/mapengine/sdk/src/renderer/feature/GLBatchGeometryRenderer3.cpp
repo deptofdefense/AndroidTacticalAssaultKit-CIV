@@ -23,7 +23,7 @@
 #include "renderer/feature/GLBatchGeometryCollection3.h"
 #include "renderer/feature/GLBatchPoint3.h"
 #include "renderer/feature/GLGeometry.h"
-#include "renderer/GLES20FixedPipeline.h"
+#include "renderer/GLMatrix.h"
 #include "renderer/map/GLMapView.h"
 #include "util/ConfigOptions.h"
 #include "util/Distance.h"
@@ -45,34 +45,8 @@ using namespace atakmap::renderer::map;
 using namespace atakmap::renderer::feature;
 using namespace atakmap::util::distance;
 
-#define VECTOR_2D_VERT_SHADER_SRC \
-    "uniform mat4 uProjection;\n" \
-    "uniform mat4 uModelView;\n" \
-    "attribute vec2 aVertexCoords;\n" \
-    "void main() {\n" \
-    "  gl_Position = uProjection * uModelView * vec4(aVertexCoords.xy, 0.0, 1.0);\n" \
-    "}"
 
-#define VECTOR_3D_VERT_SHADER_SRC \
-    "uniform mat4 uProjection;\n" \
-    "uniform mat4 uModelView;\n" \
-    "attribute vec3 aVertexCoords;\n" \
-    "void main() {\n" \
-    "  gl_Position = uProjection * uModelView * vec4(aVertexCoords.xyz, 1.0);\n" \
-    "}"
-
-#define TEXTURE_2D_VERT_SHADER_SRC \
-    "uniform mat4 uProjection;\n" \
-    "uniform mat4 uModelView;\n" \
-    "attribute vec2 aVertexCoords;\n" \
-    "attribute vec2 aTextureCoords;\n" \
-    "varying vec2 vTexPos;\n" \
-    "void main() {\n" \
-    "  vTexPos = aTextureCoords;\n" \
-    "  gl_Position = uProjection * uModelView * vec4(aVertexCoords.xy, 0.0, 1.0);\n" \
-    "}"
-
-#define TEXTURE_3D_VERT_SHADER_SRC \
+#define POINT_VSH \
     "uniform mat4 uProjection;\n" \
     "uniform mat4 uModelView;\n" \
     "uniform float uPointSize;\n" \
@@ -88,7 +62,7 @@ using namespace atakmap::util::distance;
     "  gl_Position = uProjection * uModelView * vec4(aVertexCoords.xyz, 1.0);\n" \
     "}"
 
-#define MODULATED_TEXTURE_FRAG_SHADER_SRC \
+#define POINT_FSH \
     "precision mediump float;\n" \
     "uniform sampler2D uTexture;\n" \
     "uniform vec4 uColor;\n" \
@@ -97,13 +71,6 @@ using namespace atakmap::util::distance;
     "void main(void) {\n" \
     "  vec2 atlasTexPos = vTexPos + (gl_PointCoord * vPointTexSize);\n" \
     "  gl_FragColor = uColor * texture2D(uTexture, atlasTexPos);\n" \
-    "}"
-
-#define GENERIC_VECTOR_FRAG_SHADER_SRC \
-    "precision mediump float;\n" \
-    "uniform vec4 uColor;\n" \
-    "void main(void) {\n" \
-    "  gl_FragColor = uColor;\n" \
     "}"
 
 #define LINE_VSH \
@@ -286,12 +253,10 @@ namespace
 }
 
 GLBatchGeometryRenderer3::GLBatchGeometryRenderer3(const CachePolicy &cachePolicy_) NOTHROWS :
-    pointsBuffer(MAX_BUFFERED_3D_POINTS * 3u * 4u),
     cachePolicy(cachePolicy_),
     labelBackgrounds(true),
     fadingLabelsCount(0),
     drawResolution(50.0),
-    batchSrid(-1),
     batchTerrainVersion(-1),
     rebuildBatchBuffers(0)
 {
@@ -310,16 +275,14 @@ GLBatchGeometryRenderer3::GLBatchGeometryRenderer3(const CachePolicy &cachePolic
     if (code == TE_Ok)
         drawResolution = atof(opt);
 
-    textureShader.base.handle = 0u;
+    pointShader.base.handle = 0u;
     lineShader.base.handle = 0u;
 }
 
 GLBatchGeometryRenderer3::GLBatchGeometryRenderer3() NOTHROWS :
-    pointsBuffer(MAX_BUFFERED_3D_POINTS * 3u * 4u),
     labelBackgrounds(true),
     fadingLabelsCount(0),
     drawResolution(50.0),
-    batchSrid(-1),
     batchTerrainVersion(-1),
     rebuildBatchBuffers(0)
 {
@@ -334,7 +297,7 @@ GLBatchGeometryRenderer3::GLBatchGeometryRenderer3() NOTHROWS :
     if (code == TE_Ok)
         fadingLabelsCount = atoi(opt);
 
-    textureShader.base.handle = 0u;
+    pointShader.base.handle = 0u;
     lineShader.base.handle = 0u;
 }
 
@@ -371,9 +334,8 @@ TAKErr GLBatchGeometryRenderer3::hitTest2(Collection<int64_t> &fids, const Point
     const Envelope hitBox(loc.x - ro, loc.y - ra, NAN, loc.x + ro, loc.y + ra, NAN);
 
     {
-        std::list<GLBatchPoint3 *>::const_reverse_iterator pointIter;
 #ifdef __APPLE__
-        pointIter = this->labels.rbegin();
+        auto pointIter = this->labels.rbegin();
         do {
             int64_t fid;
             code = hitTestPoints<std::list<GLBatchPoint3 *>::const_reverse_iterator>(&fid, pointIter, this->labels.rend(), loc, resolution, radius, noid);
@@ -390,7 +352,7 @@ TAKErr GLBatchGeometryRenderer3::hitTest2(Collection<int64_t> &fids, const Point
         } while (true);
 #else
         GLLabelManager *labelManager = nullptr;
-        for (pointIter = this->labels.rbegin(); pointIter != this->labels.rend(); pointIter++) {
+        for (auto pointIter = this->labels.rbegin(); pointIter != this->labels.rend(); pointIter++) {
             GLBatchPoint3 *item = *pointIter;
             Envelope labelHitBox = hitBox;
             if (item->labelId != GLLabelManager::NO_ID) {
@@ -417,9 +379,8 @@ TAKErr GLBatchGeometryRenderer3::hitTest2(Collection<int64_t> &fids, const Point
     }
 
     {
-        std::set<GLBatchPoint3 *>::const_reverse_iterator pointIter;
 #ifdef __APPLE__
-        pointIter = this->batchPoints.rbegin();
+        auto pointIter = this->batchPoints.rbegin();
         do {
             int64_t fid;
             code = hitTestPoints(&fid, pointIter, this->batchPoints.rend(), loc, resolution, radius, noid);
@@ -435,7 +396,7 @@ TAKErr GLBatchGeometryRenderer3::hitTest2(Collection<int64_t> &fids, const Point
             }
         } while (true);
 #else
-        for (pointIter = this->batchPoints.rbegin(); pointIter != this->batchPoints.rend(); pointIter++) {
+        for (auto pointIter = this->batchPoints.rbegin(); pointIter != this->batchPoints.rend(); pointIter++) {
             GLBatchPoint3 *item = *pointIter;
             Envelope iconHitBox = screen_hit_box;
             double iconSize = 0;
@@ -591,6 +552,12 @@ TAKErr GLBatchGeometryRenderer3::setBatch(Collection<GLBatchGeometry3 *> &value)
         TE_CHECKRETURN_CODE(code);
     }
 
+    // sort points
+    {
+        BatchPointComparator cmp;
+        std::sort(this->batchPoints.begin(), this->batchPoints.end(), cmp);
+    }
+
     std::set<GLBatchGeometry3 *, FidComparator>::iterator iter;
 
     for (iter = this->sortedLines.begin(); iter != this->sortedLines.end(); iter++) {
@@ -611,7 +578,8 @@ TAKErr GLBatchGeometryRenderer3::setBatch(Collection<GLBatchGeometry3 *> &value)
     }
     this->sortedPolys.clear();
 
-    batchSrid = -1;
+    batchState.sprites.srid = -1;
+    batchState.surface.srid = -1;
 
     return code;
 }
@@ -648,6 +616,12 @@ TAKErr GLBatchGeometryRenderer3::setBatch(Collection<SharedGLBatchGeometryPtr> &
         TE_CHECKRETURN_CODE(code);
     }
 
+    // sort points
+    {
+        BatchPointComparator cmp;
+        std::sort(this->batchPoints.begin(), this->batchPoints.end(), cmp);
+    }
+
     std::set<GLBatchGeometry3 *, FidComparator>::iterator iter;
 
     for (iter = this->sortedLines.begin(); iter != this->sortedLines.end(); iter++) {
@@ -668,7 +642,8 @@ TAKErr GLBatchGeometryRenderer3::setBatch(Collection<SharedGLBatchGeometryPtr> &
     }
     this->sortedPolys.clear();
 
-    batchSrid = -1;
+    batchState.surface.srid = -1;
+    batchState.sprites.srid = -1;
 
     return code;
 }
@@ -691,7 +666,7 @@ TAKErr GLBatchGeometryRenderer3::fillBatchLists(Iterator2<SharedGLBatchGeometryP
                 auto *point = static_cast<GLBatchPoint3 *>(g.get());
                 if (point->textureKey != 0LL) {
                     if (!point->hasBatchProhibitiveAttributes()) {
-                        batchPoints.insert(point);
+                        batchPoints.push_back(point);
                     } else {
                         draw_points_.push_back(point);
                     }
@@ -777,7 +752,7 @@ TAKErr GLBatchGeometryRenderer3::fillBatchLists(Iterator2<GLBatchGeometry3 *> &i
             auto *point = static_cast<GLBatchPoint3 *>(g);
             if (point->textureKey != 0LL) {
                 if (!point->hasBatchProhibitiveAttributes()) {
-                    batchPoints.insert(point);
+                    batchPoints.push_back(point);
                 } else {
                     draw_points_.push_back(point);
                 }
@@ -930,8 +905,7 @@ TAKErr GLBatchGeometryRenderer3::createLabels() NOTHROWS
 TAKErr GLBatchGeometryRenderer3::extrudePoints() NOTHROWS {
     TAKErr code(TE_Ok);
     if (!this->labels.empty()) {
-        std::list<GLBatchPoint3 *>::iterator labelIter;
-        for (labelIter = this->labels.begin(); labelIter != this->labels.end(); labelIter++) {
+        for (auto labelIter = this->labels.begin(); labelIter != this->labels.end(); labelIter++) {
             GLBatchPoint3 *lbl = *labelIter;
             if (lbl->extrude >= 0.0 || lbl->altitudeMode == TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround) continue;
 
@@ -949,8 +923,7 @@ TAKErr GLBatchGeometryRenderer3::extrudePoints() NOTHROWS {
     }
 
     if (!this->batchPoints.empty()) {
-        std::set<GLBatchPoint3 *, BatchPointComparator>::iterator iter;
-        for (iter = this->batchPoints.begin(); iter != this->batchPoints.end(); iter++) {
+        for (auto iter = this->batchPoints.begin(); iter != this->batchPoints.end(); iter++) {
             GLBatchPoint3 *point = *iter;
             if (point->extrude >= 0.0 || point->altitudeMode == TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround) continue;
 
@@ -968,8 +941,7 @@ TAKErr GLBatchGeometryRenderer3::extrudePoints() NOTHROWS {
     }
 
     if (!this->draw_points_.empty()) {
-        std::list<GLBatchPoint3 *>::iterator iter;
-        for (iter = this->draw_points_.begin(); iter != this->draw_points_.end(); iter++) {
+        for (auto iter = this->draw_points_.begin(); iter != this->draw_points_.end(); iter++) {
             GLBatchPoint3 *point = *iter;
             if (point->extrude >= 0.0 || point->altitudeMode == TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround) continue;
 
@@ -991,31 +963,50 @@ TAKErr GLBatchGeometryRenderer3::extrudePoints() NOTHROWS {
 void GLBatchGeometryRenderer3::draw(const GLMapView2 &view, const int renderPass) NOTHROWS
 {
     const bool depthEnabled = glIsEnabled(GL_DEPTH_TEST) != 0;
-    if ((renderPass&GLMapView2::Surface) || (view.drawTilt == 0.0))
+    const bool surface = !!(renderPass & GLMapView2::Surface);
+    const bool sprites = !!(renderPass & GLMapView2::Sprites);
+    if (surface || (view.drawTilt == 0.0))
         glDisable(GL_DEPTH_TEST);
     
+    const int terrainVersion = view.getTerrainVersion();
+
     // match batches as dirty
-    if (batchSrid != view.drawSrid) {
+    if (surface && batchState.surface.srid != view.drawSrid) {
         // reset relative to center
-        batchCentroid.latitude = view.drawLat;
-        batchCentroid.longitude = view.drawLng;
-        view.scene.projection->forward(&batchCentroidProj, batchCentroid);
-        batchSrid = view.drawSrid;
+        batchState.surface.centroid.latitude = view.drawLat;
+        batchState.surface.centroid.longitude = view.drawLng;
+        view.scene.projection->forward(&batchState.surface.centroidProj, batchState.surface.centroid);
+        batchState.surface.srid = view.drawSrid;
 
-        localFrame.setToTranslate(batchCentroidProj.x, batchCentroidProj.y, batchCentroidProj.z);
+        batchState.surface.localFrame.setToTranslate(batchState.surface.centroidProj.x, batchState.surface.centroidProj.y, batchState.surface.centroidProj.z);
 
-        // mark batches dirty
-        rebuildBatchBuffers = 0xFFFFFFFF;
-        batchTerrainVersion = view.getTerrainVersion();
-    } else if (batchTerrainVersion != view.getTerrainVersion()) {
         // mark batches dirty
         rebuildBatchBuffers = 0xFFFFFFFF;
         batchTerrainVersion = view.getTerrainVersion();
     }
+    if (sprites && batchState.sprites.srid != view.drawSrid) {
+        // reset relative to center
+        batchState.sprites.centroid.latitude = view.drawLat;
+        batchState.sprites.centroid.longitude = view.drawLng;
+        view.scene.projection->forward(&batchState.sprites.centroidProj, batchState.sprites.centroid);
+        batchState.sprites.srid = view.drawSrid;
 
-    if (renderPass&GLMapView2::Surface)
+        batchState.sprites.localFrame.setToTranslate(batchState.sprites.centroidProj.x, batchState.sprites.centroidProj.y, batchState.sprites.centroidProj.z);
+
+        // mark batches dirty
+        rebuildBatchBuffers = 0xFFFFFFFF;
+        batchTerrainVersion = view.getTerrainVersion();
+    }
+    
+    if (batchTerrainVersion != terrainVersion) {
+        // mark batches dirty
+        rebuildBatchBuffers = 0xFFFFFFFF;
+        batchTerrainVersion = terrainVersion;
+    }
+
+    if (surface)
         drawSurface(view);
-    if (renderPass&GLMapView2::Sprites)
+    if (sprites)
         drawSprites(view);
 
     rebuildBatchBuffers &= ~renderPass;
@@ -1048,12 +1039,7 @@ void GLBatchGeometryRenderer3::drawSurface(const GLMapView2 &view) NOTHROWS
         }
 
         try {
-            GLES20FixedPipeline::getInstance()->glPushMatrix();
-
-            // XXX - batch currently only supports 2D vertices
-
-            // JAVA TO C# CONVERTER WARNING: The original Java variable was marked 'final':
-            // ORIGINAL LINE: final int vertType;
+            float modelView[16u];
             int vertType;
             if (view.drawMapResolution < view.hardwareTransformResolutionThreshold) {
                 // XXX - force all polygons projected as pixels as stroking does
@@ -1064,10 +1050,11 @@ void GLBatchGeometryRenderer3::drawSurface(const GLMapView2 &view) NOTHROWS
                 //       resolutions but cause width to converge to zero (32-bit
                 //       precision?) at higher resolutions
                 vertType = GLGeometry::VERTICES_PIXEL;
+
+                atakmap::renderer::GLMatrix::identity(modelView);
             } else {
                 vertType = GLGeometry::VERTICES_PROJECTED;
-
-                GLES20FixedPipeline::getInstance()->glLoadMatrixf(view.sceneModelForwardMatrix);
+                memcpy(modelView, view.sceneModelForwardMatrix, sizeof(float) * 16u);
             }
 
             int hints = GLRenderBatch2::Untextured;
@@ -1075,19 +1062,14 @@ void GLBatchGeometryRenderer3::drawSurface(const GLMapView2 &view) NOTHROWS
 
             this->batch->begin(hints);
             {
-                float mx[16];
-                GLES20FixedPipeline::getInstance()->readMatrix(GLES20FixedPipeline::MatrixMode::MM_GL_PROJECTION, mx);
-                this->batch->setMatrix(GL_PROJECTION, mx);
-                GLES20FixedPipeline::getInstance()->readMatrix(GLES20FixedPipeline::MatrixMode::MM_GL_MODELVIEW, mx);
-                this->batch->setMatrix(GL_MODELVIEW, mx);
+                float proj[16];
+                atakmap::renderer::GLMatrix::orthoM(proj, (float)view.left, (float)view.right, (float)view.bottom, (float)view.top, (float)view.scene.camera.near, (float)view.scene.camera.far);
+                this->batch->setMatrix(GL_PROJECTION, proj);
+                this->batch->setMatrix(GL_MODELVIEW, modelView);
             }
-            std::list<GLBatchPolygon3 *>::iterator poly;
-            for (poly = this->surfacePolys.begin(); poly != this->surfacePolys.end(); poly++) {
+            for (auto poly = this->surfacePolys.begin(); poly != this->surfacePolys.end(); poly++)
                 (*poly)->batch(view, GLMapView2::Surface, *this->batch, vertType);
-            }
             this->batch->end();
-
-            GLES20FixedPipeline::getInstance()->glPopMatrix();
         }
         catch (std::out_of_range &e) {
             Util::Logger_log(Util::LogLevel::TELL_Error, "Error drawing surface: %s", e.what());
@@ -1101,10 +1083,10 @@ void GLBatchGeometryRenderer3::drawSurface(const GLMapView2 &view) NOTHROWS
             for (auto it = surfaceLineBuffers.begin(); it != surfaceLineBuffers.end(); it++)
                 glDeleteBuffers(1u, &(*it).vbo);
             surfaceLineBuffers.clear();
-            this->buildLineBuffers(surfaceLineBuffers, view, surfaceLines);
+            this->buildLineBuffers(surfaceLineBuffers, view, batchState.surface, surfaceLines);
         }
 
-        this->drawLineBuffers(view, surfaceLineBuffers);
+        this->drawLineBuffers(view, batchState.surface, surfaceLineBuffers);
     }
 }
 
@@ -1136,13 +1118,15 @@ void GLBatchGeometryRenderer3::drawSprites(const GLMapView2 &view) NOTHROWS
     // check all points with loading icons and move those whose icon has
     // loaded into the batchable list
     //iter = this->loadingPoints->GetEnumerator();
+    bool resortBatchPoints = false;
     auto node = this->loadingPoints.begin();
     while (node != this->loadingPoints.end()) {
         GLBatchPoint3 &point = **node;
         GLBatchPoint3::getOrFetchIcon(view.context, point);
         if (point.textureKey != 0LL && !point.iconDirty) {
             if (!point.hasBatchProhibitiveAttributes()) {
-                batchPoints.insert(*node);
+                batchPoints.push_back(*node);
+                resortBatchPoints = true;
             } else {
                 draw_points_.push_back(*node);
             }
@@ -1152,6 +1136,10 @@ void GLBatchGeometryRenderer3::drawSprites(const GLMapView2 &view) NOTHROWS
             node++;
         }
     }
+    if(resortBatchPoints) {
+        BatchPointComparator cmp;
+        std::sort(this->batchPoints.begin(), this->batchPoints.end(), cmp);
+    }
 
     // polygons
     if (!this->spritePolys.empty()) {
@@ -1160,12 +1148,7 @@ void GLBatchGeometryRenderer3::drawSprites(const GLMapView2 &view) NOTHROWS
         }
 
         try {
-            GLES20FixedPipeline::getInstance()->glPushMatrix();
-
-            // XXX - batch currently only supports 2D vertices
-
-            // JAVA TO C# CONVERTER WARNING: The original Java variable was marked 'final':
-            // ORIGINAL LINE: final int vertType;
+            float modelView[16u];
             int vertType;
             if (view.drawMapResolution < view.hardwareTransformResolutionThreshold) {
                 // XXX - force all polygons projected as pixels as stroking does
@@ -1176,10 +1159,11 @@ void GLBatchGeometryRenderer3::drawSprites(const GLMapView2 &view) NOTHROWS
                 //       resolutions but cause width to converge to zero (32-bit
                 //       precision?) at higher resolutions
                 vertType = GLGeometry::VERTICES_PIXEL;
+
+                atakmap::renderer::GLMatrix::identity(modelView);
             } else {
                 vertType = GLGeometry::VERTICES_PROJECTED;
-
-                GLES20FixedPipeline::getInstance()->glLoadMatrixf(view.sceneModelForwardMatrix);
+                memcpy(modelView, view.sceneModelForwardMatrix, sizeof(float) * 16u);;
             }
 
             int hints = GLRenderBatch2::Untextured;
@@ -1187,19 +1171,14 @@ void GLBatchGeometryRenderer3::drawSprites(const GLMapView2 &view) NOTHROWS
 
             this->batch->begin(hints);
             {
-                float mx[16];
-                GLES20FixedPipeline::getInstance()->readMatrix(GLES20FixedPipeline::MatrixMode::MM_GL_PROJECTION, mx);
-                this->batch->setMatrix(GL_PROJECTION, mx);
-                GLES20FixedPipeline::getInstance()->readMatrix(GLES20FixedPipeline::MatrixMode::MM_GL_MODELVIEW, mx);
-                this->batch->setMatrix(GL_MODELVIEW, mx);
+                float proj[16];
+                atakmap::renderer::GLMatrix::orthoM(proj, (float)view.left, (float)view.right, (float)view.bottom, (float)view.top, (float)view.scene.camera.near, (float)view.scene.camera.far);
+                this->batch->setMatrix(GL_PROJECTION, proj);
+                this->batch->setMatrix(GL_MODELVIEW, modelView);
             }
-            std::list<GLBatchPolygon3 *>::iterator poly;
-            for (poly = this->spritePolys.begin(); poly != this->spritePolys.end(); poly++) {
-                (*poly)->batch(view, GLMapView2::Sprites, *this->batch, vertType);
-            }
+            for (auto poly = this->spritePolys.begin(); poly != this->spritePolys.end(); poly++)
+                (*poly)->batch(view, GLMapView2::Surface, *this->batch, vertType);
             this->batch->end();
-
-            GLES20FixedPipeline::getInstance()->glPopMatrix();
         } catch (std::out_of_range &e) {
             Util::Logger_log(Util::LogLevel::TELL_Error, "Error drawing sprites: %s", e.what());
         }
@@ -1211,15 +1190,21 @@ void GLBatchGeometryRenderer3::drawSprites(const GLMapView2 &view) NOTHROWS
             for (auto it = spriteLineBuffers.begin(); it != spriteLineBuffers.end(); it++)
                 glDeleteBuffers(1u, &(*it).vbo);
             spriteLineBuffers.clear();
-            this->buildLineBuffers(spriteLineBuffers, view, spriteLines);
+            this->buildLineBuffers(spriteLineBuffers, view, batchState.sprites, spriteLines);
         }
 
-        this->drawLineBuffers(view, spriteLineBuffers);
+        this->drawLineBuffers(view, batchState.sprites, spriteLineBuffers);
     }
 
     if (!this->batchPoints.empty() || !this->pointsBuffers.empty()) {
+        if (rebuildBatchBuffers&GLMapView2::Sprites) {
+            for (auto it = pointsBuffers.begin(); it != pointsBuffers.end(); it++)
+                glDeleteBuffers(1u, &(*it).vbo);
+            pointsBuffers.clear();
+            this->buildPointsBuffers(pointsBuffers, view, batchState.sprites, batchPoints);
+        }
         // render points with icons// render points with icons
-        this->batchDrawPoints(view);
+        this->batchDrawPoints(view, batchState.sprites);
     }
     if (!this->draw_points_.empty()) {
         this->drawPoints(view);
@@ -1231,7 +1216,7 @@ int GLBatchGeometryRenderer3::getRenderPass() NOTHROWS
     return GLMapView2::Surface | GLMapView2::Sprites;
 }
 
-TAKErr GLBatchGeometryRenderer3::buildLineBuffers(std::vector<LinesBuffer> &linesBuf, const GLMapView2 &view, const std::list<GLBatchLineString3 *> &lines) NOTHROWS {
+TAKErr GLBatchGeometryRenderer3::buildLineBuffers(std::vector<LinesBuffer> &linesBuf, const GLMapView2 &view, const BatchState &ctx, const std::list<GLBatchLineString3 *> &lines) NOTHROWS {
     TAKErr code(TE_Ok);
 
     try {
@@ -1246,7 +1231,7 @@ TAKErr GLBatchGeometryRenderer3::buildLineBuffers(std::vector<LinesBuffer> &line
 
             // project the line vertices, applying the batch centroid
             line.projectedVerticesSrid = -1;
-            line.projectedCentroid = batchCentroidProj;
+            line.projectedCentroid = ctx.centroidProj;
             const float *ignored;
             code = line.projectVertices(&ignored, view, GLGeometry::VERTICES_PROJECTED);
             TE_CHECKBREAK_CODE(code);
@@ -1318,7 +1303,7 @@ TAKErr GLBatchGeometryRenderer3::buildLineBuffers(std::vector<LinesBuffer> &line
 
     return code;
 }
-TAKErr GLBatchGeometryRenderer3::drawLineBuffers(const GLMapView2 &view, const std::vector<LinesBuffer> &buf) NOTHROWS {
+TAKErr GLBatchGeometryRenderer3::drawLineBuffers(const GLMapView2 &view, const BatchState &ctx, const std::vector<LinesBuffer> &buf) NOTHROWS {
     TAKErr code(TE_Ok);
 
     if (!this->lineShader.base.handle) {
@@ -1357,12 +1342,12 @@ TAKErr GLBatchGeometryRenderer3::drawLineBuffers(const GLMapView2 &view, const s
         Matrix2 mvp;
         // projection
         float matrixF[16u];
-        atakmap::renderer::GLES20FixedPipeline::getInstance()->readMatrix(atakmap::renderer::GLES20FixedPipeline::MM_GL_PROJECTION, matrixF);
+        atakmap::renderer::GLMatrix::orthoM(matrixF, (float)view.left, (float)view.right, (float)view.bottom, (float)view.top, (float)view.scene.camera.near, (float)view.scene.camera.far);
         for(std::size_t i = 0u; i < 16u; i++)
             mvp.set(i%4, i/4, matrixF[i]);
         // model-view
         mvp.concatenate(view.scene.forwardTransform);
-        mvp.translate(batchCentroidProj.x, batchCentroidProj.y, batchCentroidProj.z);
+        mvp.translate(ctx.centroidProj.x, ctx.centroidProj.y, ctx.centroidProj.z);
         for (std::size_t i = 0u; i < 16u; i++) {
             double v;
             mvp.get(&v, i % 4, i / 4);
@@ -1418,7 +1403,79 @@ TAKErr GLBatchGeometryRenderer3::drawLineBuffers(const GLMapView2 &view, const s
     return code;
 }
 
-TAKErr GLBatchGeometryRenderer3::batchDrawPoints(const GLMapView2 &view) NOTHROWS
+TAKErr GLBatchGeometryRenderer3::buildPointsBuffers(std::vector<PointsBuffer> &linesBuf, const GLMapView2 &view, const BatchState &ctx, const std::vector<GLBatchPoint3 *> &points) NOTHROWS {
+    TAKErr code(TE_Ok);
+
+    try {
+#define VERTEX_BUF_SIZE 0xFFFFu
+        uint8_t buf[VERTEX_BUF_SIZE];
+
+        MemBuffer2 vbuf(buf, VERTEX_BUF_SIZE);
+        GLuint lastTexId = (points.empty()) ? GL_NONE : points[0]->textureId;
+        for (auto g = points.begin(); g != points.end(); g++) {
+            GLBatchPoint3 &point = **g;
+
+            if (vbuf.remaining() < POINT_VERTEX_SIZE || point.textureId != lastTexId) {
+                PointsBuffer b;
+                glGenBuffers(1u, &b.vbo);
+                if (!b.vbo)
+                    return TE_OutOfMemory;
+                glBindBuffer(GL_ARRAY_BUFFER, b.vbo);
+                glBufferData(GL_ARRAY_BUFFER, vbuf.position(), vbuf.get(), GL_STATIC_DRAW);
+                glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
+                b.count = static_cast<GLsizei>(vbuf.position()) / POINT_VERTEX_SIZE;
+                b.texid = point.textureId;
+                linesBuf.push_back(b);
+                vbuf.reset();
+            }
+
+            lastTexId = point.textureId;
+            point.validateProjectedLocation(view);
+
+            auto relativeScaling = static_cast<float>(1.0f / view.pixelDensity);
+
+            int textureSize = static_cast<int>(std::ceil(point.iconAtlas->getTextureSize() * relativeScaling));
+            std::size_t iconSize;
+            point.iconAtlas->getImageWidth(&iconSize, point.textureKey);
+            int iconIndex = point.textureIndex;
+
+            auto fTextureSize = static_cast<float>(textureSize);
+
+            int numIconsX = (int)(textureSize / iconSize);
+
+            auto iconX = static_cast<float>((iconIndex % numIconsX) * iconSize);
+            auto iconY = static_cast<float>((iconIndex / numIconsX) * iconSize);
+
+            vbuf.put<float>(static_cast<float>(point.posProjected.x-ctx.centroidProj.x));
+            vbuf.put<float>(static_cast<float>(point.posProjected.y-ctx.centroidProj.y));
+            vbuf.put<float>(static_cast<float>(point.posProjected.z-ctx.centroidProj.z));
+            vbuf.put<float>(iconX / fTextureSize);
+            vbuf.put<float>(iconY / fTextureSize);
+        }
+        TE_CHECKRETURN_CODE(code);
+
+        // flush the remaining record
+        if (vbuf.position()) {
+            PointsBuffer b;
+            glGenBuffers(1u, &b.vbo);
+            if (!b.vbo)
+                return TE_OutOfMemory;
+            glBindBuffer(GL_ARRAY_BUFFER, b.vbo);
+            glBufferData(GL_ARRAY_BUFFER, vbuf.position(), vbuf.get(), GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, GL_NONE);
+            b.count = static_cast<GLsizei>(vbuf.position()) / POINT_VERTEX_SIZE;
+            b.texid = lastTexId;
+            linesBuf.push_back(b);
+            vbuf.reset();
+        }
+    } catch (std::out_of_range &e) {
+        code = TE_Err;
+        Util::Logger_log(Util::LogLevel::TELL_Error, "Error building points buffers: %s", e.what());
+    }
+
+    return code;
+}
+TAKErr GLBatchGeometryRenderer3::batchDrawPoints(const GLMapView2 &view, const BatchState &ctx) NOTHROWS
 {
     TAKErr code(TE_Ok);
 
@@ -1426,19 +1483,13 @@ TAKErr GLBatchGeometryRenderer3::batchDrawPoints(const GLMapView2 &view) NOTHROW
     this->state.texId = 0;
 
     try {
-        GLES20FixedPipeline::getInstance()->glPushMatrix();
-        GLES20FixedPipeline::getInstance()->glLoadIdentity();
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-        if (textureShader.base.handle == 0) {
+        if (pointShader.base.handle == 0) {
             int vertShader = GL_NONE;
-            code = GLSLUtil_loadShader(&vertShader, TEXTURE_3D_VERT_SHADER_SRC, GL_VERTEX_SHADER);
+            code = GLSLUtil_loadShader(&vertShader, POINT_VSH, GL_VERTEX_SHADER);
             TE_CHECKRETURN_CODE(code);
 
             int fragShader = GL_NONE;
-            code = GLSLUtil_loadShader(&fragShader, MODULATED_TEXTURE_FRAG_SHADER_SRC, GL_FRAGMENT_SHADER);
+            code = GLSLUtil_loadShader(&fragShader, POINT_FSH, GL_FRAGMENT_SHADER);
             TE_CHECKRETURN_CODE(code);
 
             ShaderProgram prog{ 0u, 0u, 0u };
@@ -1447,140 +1498,97 @@ TAKErr GLBatchGeometryRenderer3::batchDrawPoints(const GLMapView2 &view) NOTHROW
             glDeleteShader(prog.vertShader);
             TE_CHECKRETURN_CODE(code);
 
-            textureShader.base.handle = prog.program;
-            glUseProgram(textureShader.base.handle);
+            pointShader.base.handle = prog.program;
+            glUseProgram(pointShader.base.handle);
 
-            textureShader.uProjectionHandle = glGetUniformLocation(textureShader.base.handle, "uProjection");
-
-            textureShader.uModelViewHandle = glGetUniformLocation(textureShader.base.handle, "uModelView");
-
-            textureShader.uTextureHandle = glGetUniformLocation(textureShader.base.handle, "uTexture");
-
-            textureShader.uColorHandle = glGetUniformLocation(textureShader.base.handle, "uColor");
-
-            textureShader.uTexSizeHandle = glGetUniformLocation(textureShader.base.handle, "uTexSize");
-
-            textureShader.uPointSizeHandle = glGetUniformLocation(textureShader.base.handle, "uPointSize");
-
-            textureShader.aVertexCoordsHandle = glGetAttribLocation(textureShader.base.handle, "aVertexCoords");
-            textureShader.aTextureCoordsHandle = glGetAttribLocation(textureShader.base.handle, "aTextureCoords");
+            pointShader.uProjectionHandle = glGetUniformLocation(pointShader.base.handle, "uProjection");
+            pointShader.uModelViewHandle = glGetUniformLocation(pointShader.base.handle, "uModelView");
+            pointShader.uTextureHandle = glGetUniformLocation(pointShader.base.handle, "uTexture");
+            pointShader.uColorHandle = glGetUniformLocation(pointShader.base.handle, "uColor");
+            pointShader.uTexSizeHandle = glGetUniformLocation(pointShader.base.handle, "uTexSize");
+            pointShader.uPointSizeHandle = glGetUniformLocation(pointShader.base.handle, "uPointSize");
+            pointShader.aVertexCoordsHandle = glGetAttribLocation(pointShader.base.handle, "aVertexCoords");
+            pointShader.aTextureCoordsHandle = glGetAttribLocation(pointShader.base.handle, "aTextureCoords");
         } else {
-            glUseProgram(textureShader.base.handle);
+            glUseProgram(pointShader.base.handle);
         }
 
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+
         float scratchMatrix[16];
-        GLES20FixedPipeline::getInstance()->readMatrix(GLES20FixedPipeline::MatrixMode::MM_GL_PROJECTION, scratchMatrix);
-        glUniformMatrix4fv(textureShader.uProjectionHandle, 1, false, scratchMatrix);
+        atakmap::renderer::GLMatrix::orthoM(scratchMatrix, (float)view.left, (float)view.right, (float)view.bottom, (float)view.top, (float)view.scene.camera.near, (float)view.scene.camera.far);
+        glUniformMatrix4fv(pointShader.uProjectionHandle, 1, false, scratchMatrix);
 
         // we will concatenate the local frame to the MapSceneModel's Model-View matrix to transform
         // from the Local Coordinate System into world coordinates before applying the model view.
         // If we do this all in double precision, then cast to single-precision, we'll avoid the
         // precision issues with trying to cast the world coordinates to float
         Matrix2 modelView(view.scene.forwardTransform);
-        modelView.concatenate(localFrame);
+        modelView.concatenate(ctx.localFrame);
         double modelViewMxD[16];
         modelView.get(modelViewMxD, Matrix2::COLUMN_MAJOR);
         float modelViewMxF[16];
         for (std::size_t i = 0u; i < 16u; i++) modelViewMxF[i] = (float)modelViewMxD[i];
 
-        glUniformMatrix4fv(textureShader.uModelViewHandle, 1, false, modelViewMxF);
+        glUniformMatrix4fv(pointShader.uModelViewHandle, 1, false, modelViewMxF);
 
         // work with texture0
-        GLES20FixedPipeline::getInstance()->glActiveTexture(this->state.textureUnit);
-        glUniform1i(textureShader.uTextureHandle, this->state.textureUnit - GL_TEXTURE0);
+        glActiveTexture(this->state.textureUnit);
+        glUniform1i(pointShader.uTextureHandle, this->state.textureUnit - GL_TEXTURE0);
 
         // sync the current color with the shader
-        glUniform4f(textureShader.uColorHandle, ((this->state.color >> 16) & 0xFF) / (float)255, ((this->state.color >> 8) & 0xFF) / (float)255,
+        glUniform4f(pointShader.uColorHandle, ((this->state.color >> 16) & 0xFF) / (float)255, ((this->state.color >> 8) & 0xFF) / (float)255,
                     (this->state.color & 0xFF) / (float)255, ((this->state.color >> 24) & 0xFF) / (float)255);
 
         GLTextureAtlas *iconAtlas;
         GLMapRenderGlobals_getIconAtlas(&iconAtlas, view.context);
 
-        if (rebuildBatchBuffers & GLMapView2::Sprites) {
-            auto iter = pointsBuffers.begin();
+        auto texSize = static_cast<float>(iconAtlas->getTextureSize());
+        auto pointSize = static_cast<float>(iconAtlas->getImageWidth(0));
 
-            while (iter != pointsBuffers.end()) {
-                std::pair<int, int> batchId = (*iter).first;
-                GLBatchPointBuffer &batch_point_buffer = (*iter).second;
+        glUniform1f(pointShader.uTexSizeHandle, texSize);
+        glUniform1f(pointShader.uPointSizeHandle, pointSize);
 
-                if (batch_point_buffer.empty()) {
-                    // discard empty point batches
-                    iter = pointsBuffers.erase(iter);
-                } else {
-                    // clear point batch content
-                    batch_point_buffer.purge();
-                    ++iter;
-                }
-            }
+        glEnableVertexAttribArray(pointShader.aVertexCoordsHandle);
+        glEnableVertexAttribArray(pointShader.aTextureCoordsHandle);
 
-            // construct the inverse of the local frame. point locations will be
-            // transformed by this matrix to be in the local frame
-            Matrix2 invLocalFrame;
-            code = localFrame.createInverse(&invLocalFrame);
-            TE_CHECKRETURN_CODE(code);
-
-            GLBatchPoint3 *point;
-            std::set<GLBatchPoint3 *, BatchPointComparator>::iterator geom;
-            for (geom = this->batchPoints.begin(); geom != this->batchPoints.end(); geom++) {
-                point = *geom;
-
-                std::pair<int, int> batchId(point->textureId, point->color);
-                GLBatchPointBuffer &batch_point_buffer = pointsBuffers[batchId];
-
-                if (!point->iconUri) continue;
-
-                if (point->textureKey == 0LL || point->iconDirty) {
-                    code = GLBatchPoint3::getOrFetchIcon(view.context, *point);
-                    TE_CHECKBREAK_CODE(code);
-                    if (point->textureKey == 0LL) continue;
-                }
-
-                batch_point_buffer.validate(view, point, iconAtlas, invLocalFrame);
-            }
-        }
-
-        for (std::pair<const std::pair<int, int>, GLBatchPointBuffer> &batchPair : pointsBuffers) {
-            std::pair<int, int> batchId = batchPair.first;
-            GLBatchPointBuffer &batch_point_buffer = batchPair.second;
-
+        for (auto &buf : pointsBuffers) {
             // set the texture for this batch
-            this->state.texId = batchId.first;
+            this->state.texId = buf.texid;
+            if (!this->state.texId)
+                continue;
 
-            if (this->state.texId != 0) {
-#if POINT_SPRITE_VBOS_ENABLED
-                // commit the vertex data to the VBO if out of sync
-                if (batch_point_buffer.isDirty()) batch_point_buffer.commit();
-#endif
-                glBindTexture(GL_TEXTURE_2D, this->state.texId);
+            glBindTexture(GL_TEXTURE_2D, this->state.texId);
 
-                // set the color for this batch
-                this->state.color = batchId.second;
+            // set the color for this batch
+            // XXX - 
+            this->state.color = 0xFFFFFFFF;
 
-                glUniform4f(textureShader.uColorHandle, ((this->state.color >> 16) & 0xFF) / (float)255,
-                            ((this->state.color >> 8) & 0xFF) / (float)255, (this->state.color & 0xFF) / (float)255,
-                            ((this->state.color >> 24) & 0xFF) / (float)255);
+            glUniform4f(pointShader.uColorHandle, ((this->state.color >> 16) & 0xFF) / (float)255,
+                        ((this->state.color >> 8) & 0xFF) / (float)255, (this->state.color & 0xFF) / (float)255,
+                        ((this->state.color >> 24) & 0xFF) / (float)255);
 
-                // draw the batch
-                code = this->renderPointsBuffers(view, batch_point_buffer);
 
-                TE_CHECKBREAK_CODE(code);
-            }
+            glBindBuffer(GL_ARRAY_BUFFER, buf.vbo);
+
+            glVertexAttribPointer(pointShader.aVertexCoordsHandle, 3u, GL_FLOAT, false, POINT_VERTEX_SIZE, (const void *)nullptr);
+            glVertexAttribPointer(pointShader.aTextureCoordsHandle, 2u, GL_FLOAT, false, POINT_VERTEX_SIZE, (const void *)(0 + 12u));
+
+            glDrawArrays(GL_POINTS, 0, buf.count);
         }
+
+        glDisableVertexAttribArray(pointShader.aVertexCoordsHandle);
+        glDisableVertexAttribArray(pointShader.aTextureCoordsHandle);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-        GLES20FixedPipeline::getInstance()->glPopMatrix();
 
         glDisable(GL_BLEND);
 
         if (this->state.texId != 0) {
             glBindTexture(GL_TEXTURE_2D, 0);
         }
-
-        // sync the current color with the pipeline
-        GLES20FixedPipeline::getInstance()->glColor4f(
-            ((this->state.color >> 16) & 0xFF) / (float)255, ((this->state.color >> 8) & 0xFF) / (float)255,
-            (this->state.color & 0xFF) / (float)255, ((this->state.color >> 24) & 0xFF) / (float)255);
     } catch (std::out_of_range &e) {
         code = TE_Err;
         Util::Logger_log(Util::LogLevel::TELL_Error, "Error drawing points: %s", e.what());
@@ -1605,49 +1613,6 @@ TAKErr GLBatchGeometryRenderer3::drawPoints(const TAK::Engine::Renderer::Core::G
 
 TAKErr GLBatchGeometryRenderer3::renderPointsBuffers(const GLMapView2 &view, GLBatchPointBuffer & batch_point_buffer) NOTHROWS
 {
-    if (batch_point_buffer.size() < 1u)
-    {
-        return TE_Ok;
-    }
-
-    GLTextureAtlas *iconAtlas;
-    GLMapRenderGlobals_getIconAtlas(&iconAtlas, view.context);
-
-    auto texSize = static_cast<float>(iconAtlas->getTextureSize());
-    auto pointSize = static_cast<float>(iconAtlas->getImageWidth(0));
-
-    glUniform1f(textureShader.uTexSizeHandle, texSize);
-    glUniform1f(textureShader.uPointSizeHandle, pointSize);
-
-#if POINT_SPRITE_VBOS_ENABLED
-    glBindBuffer(GL_ARRAY_BUFFER, batch_point_buffer.vbo);
-
-    glVertexAttribPointer(textureShader.aVertexCoordsHandle, 3u, GL_FLOAT, false, POINT_VERTEX_SIZE, (const void *)nullptr);
-    glEnableVertexAttribArray(textureShader.aVertexCoordsHandle);
-
-    glVertexAttribPointer(textureShader.aTextureCoordsHandle, 2u, GL_FLOAT, false, POINT_VERTEX_SIZE, (const void *)(0 + 12u));
-    glEnableVertexAttribArray(textureShader.aTextureCoordsHandle);
-
-    glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(batch_point_buffer.size()));
-
-    glDisableVertexAttribArray(textureShader.aVertexCoordsHandle);
-    glDisableVertexAttribArray(textureShader.aTextureCoordsHandle);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-#else
-
-    glVertexAttribPointer(textureShader.aVertexCoordsHandle, 3u, GL_FLOAT, false, POINT_VERTEX_SIZE, batch_point_buffer.get());
-    glEnableVertexAttribArray(textureShader.aVertexCoordsHandle);
-
-    glVertexAttribPointer(textureShader.aTextureCoordsHandle, 2u, GL_FLOAT, false, POINT_VERTEX_SIZE, static_cast<const unsigned char *>(batch_point_buffer.get()) + 12u);
-    glEnableVertexAttribArray(textureShader.aTextureCoordsHandle);
-
-    glDrawArrays(GL_POINTS, 0, static_cast<GLsizei>(batch_point_buffer.size()));
-
-    glDisableVertexAttribArray(textureShader.aVertexCoordsHandle);
-    glDisableVertexAttribArray(textureShader.aTextureCoordsHandle);
-#endif
-
     return TE_Ok;
 }
 
@@ -1681,6 +1646,9 @@ void GLBatchGeometryRenderer3::release() NOTHROWS
     for (auto it = spriteLineBuffers.begin(); it != spriteLineBuffers.end(); it++)
         glDeleteBuffers(1u, &(*it).vbo);
     spriteLineBuffers.clear();
+    for (auto it = pointsBuffers.begin(); it != pointsBuffers.end(); it++)
+        glDeleteBuffers(1u, &(*it).vbo);
+    pointsBuffers.clear();
 }
 
 GLBatchGeometryRenderer3::CachePolicy::CachePolicy() NOTHROWS :

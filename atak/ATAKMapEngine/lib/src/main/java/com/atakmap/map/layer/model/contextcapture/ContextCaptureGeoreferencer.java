@@ -3,6 +3,7 @@ package com.atakmap.map.layer.model.contextcapture;
 import android.content.res.XmlResourceParser;
 import android.util.Xml;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
@@ -14,8 +15,10 @@ import com.atakmap.map.projection.ProjectionFactory;
 import com.atakmap.math.Matrix;
 import com.atakmap.math.PointD;
 
+import com.atakmap.util.zip.IoUtils;
 import org.xmlpull.v1.XmlPullParser;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -127,16 +130,9 @@ final class ContextCaptureGeoreferencer implements Georeferencer {
             Log.e(TAG, "error", t);
             return false;
         } finally {
-            if(stream != null)
-                try {
-                    stream.close();
-                } catch(IOException ignored) {}
-            if (parser != null) {
-                try {
-                    if (parser instanceof XmlResourceParser)
-                        ((XmlResourceParser)parser).close();
-                } catch (Exception ignored) {}
-            }
+            IoUtils.close(stream);
+            if(parser instanceof XmlResourceParser)
+                IoUtils.close((Closeable) parser);
         }
     }
 
@@ -169,7 +165,7 @@ final class ContextCaptureGeoreferencer implements Georeferencer {
         f = f.getParentFile();
 
         f = new File(f, "metadata.xml");
-        if(f.getAbsolutePath().contains(".zip")) {
+        if(FileSystemUtils.isZipPath(f)) {
             try {
                 f = new ZipVirtualFile(f);
             } catch(Throwable ignored) {}

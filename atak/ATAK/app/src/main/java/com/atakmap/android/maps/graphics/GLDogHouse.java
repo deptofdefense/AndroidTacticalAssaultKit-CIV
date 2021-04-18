@@ -8,8 +8,6 @@ import com.atakmap.android.maps.*;
 import com.atakmap.coremap.maps.coords.*;
 import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
-import com.atakmap.map.opengl.GLMapBatchable;
-import com.atakmap.map.opengl.GLMapSurface;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.opengl.*;
 
@@ -25,20 +23,16 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
 
     private Doghouse _doghouse;
     private final MapView _mapView;
-    private double sinBearing;
-    private double cosBearing;
-    private double sinRotate90;
-    private double cosRotate90;
-    private double sinMHalfNoseAngle;
-    private double cosMHalfNoseAngle;
-    private double sinPHalfNoseAngle;
-    private double cosPHalfNoseAngle;
-    private final float _textMidline;
     private FloatBuffer _vertices;
     private GLText _glText;
     private long _currentDraw;
     private boolean _recompute;
     private final Object _lock = new Object();
+    private GeoPoint _midpoint;
+    private GeoPoint _source;
+    private Vector2D _offset;
+    private double _bearing;
+    private Doghouse.DoghouseLocation _routeSide;
 
     // TODO: this needs to directly extend AbstractGLMapItem2 in the future
     // TODO: I want to have width and height that dictate the shape of these
@@ -57,22 +51,11 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
                         _doghouse.getFontOffset()));
         bounds.set(-90, -180, 90, 180);
 
-        // compute and cache the text midline point
-        // a and b are sides of the nose triangle that are known
-        // and in this case, they are equal
-        // c is the side that is unknown and being computed
-        // the nose angle is preset
-        // Using: Law of Cosines
-        // Original: cosC = (a^2 + b^2 - c^2) / 2ab
-        // Rerranged: c^2 = a^2 + b^2 - 2abcosC
-        // a = b, the triangle is isosceles
-        // C = angle opposite side c, which we are computing = NOSE_ANGLE = 120
-        // Becomes: c^2 = 2a^2 - 2a^2cos(120)
-        double a = SEGMENT_SIZE;
-        double c_squared = 2 * Math.pow(a, 2)
-                - 2 * Math.pow(a, 2) * Math.cos(Math.toRadians(NOSE_ANGLE));
-        double c = Math.sqrt(c_squared);
-        _textMidline = (float) (c / 2.0d);
+        _midpoint = GeoPoint.createMutable();
+        _source = GeoPoint.createMutable();
+        _offset = new Vector2D();
+        _bearing = 0.0;
+        _routeSide = Doghouse.DoghouseLocation.OUTSIDE_OF_TURN;
     }
 
     @Override
@@ -107,6 +90,8 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
         int strokeColor;
         float[] shadeColor;
         float[] textColor;
+        GeoPoint midpoint;
+        Doghouse.DoghouseLocation routeSide;
         synchronized (_lock) {
             rows = _doghouse.size();
             data = new String[rows];
@@ -116,53 +101,57 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
 
             translation = _doghouse.getTotalTranslation();
 
-            if (_doghouse
-                    .getRelativeLocation() == Doghouse.DoghouseLocation.RIGHT_OF_ROUTE) {
-                translation *= -1; // go the other way
-            }
+            routeSide = _doghouse.getRelativeLocation();
 
             bearing = _doghouse.getBearing() - ortho.drawRotation;
             strokeWidth = _doghouse.getStrokeWidth();
             strokeColor = _doghouse.getStrokeColor();
             shadeColor = _doghouse.getShadeColor();
             textColor = _doghouse.getTextColor();
+            _source.set(_doghouse.getSource());
+            midpoint = GeoCalculations.midPoint(_doghouse.getSource(), _doghouse.getTarget());
         }
 
-        if (_recompute) {
-            setConversions(bearing);
+        PointF midpointF = ortho.forward(midpoint);
+        if (!_midpoint.equals(midpoint) || _bearing != bearing || _routeSide != routeSide) {
+            _midpoint.set(midpoint);
+            _bearing = bearing;
+            _routeSide = routeSide;
 
-            GeoPoint midpoint;
-            synchronized (_lock) {
-                midpoint = _doghouse.getNose();
+            // Calculate the offset of the doghouse by finding the normal of the line segment,
+            // based on which side the doghouse should be on, and scale it by the translation value.
+            _offset.x = _source.getLongitude() - midpoint.getLongitude();
+            _offset.y = _source.getLatitude() - midpoint.getLatitude();
+            _offset = _offset.normalize();
+            if (_routeSide == Doghouse.DoghouseLocation.LEFT_OF_ROUTE) {
+                double tmpY = _offset.y;
+                _offset.y = -_offset.x;
+                _offset.x = tmpY;
+            } else {
+                double tmpX = _offset.x;
+                _offset.x = -_offset.y;
+                _offset.y = tmpX;
             }
-            PointF midpointF = ortho.forward(midpoint);
+            _offset.x *= translation;
+            _offset.y *= translation;
 
-            int nX = (int) (midpointF.x + translation * sinRotate90);
-            int nY = (int) (midpointF.y + translation * cosRotate90);
-            PointF nose = new PointF(new Point(nX, nY));
+            // Calculate the point positions of the doghouse in model space
+            PointF nose = new PointF(0.0f, 1.0f * SEGMENT_SIZE);
 
-            int tRX = (int) (nose.x - SEGMENT_SIZE * sinMHalfNoseAngle);
-            int tRY = (int) (nose.y - SEGMENT_SIZE * cosMHalfNoseAngle);
-            PointF topRight = new PointF(new Point(tRX, tRY));
+            PointF topRight = new PointF(1.0f * SEGMENT_SIZE, 0.5f * SEGMENT_SIZE);
 
-            int tLX = (int) (nose.x - SEGMENT_SIZE * sinPHalfNoseAngle);
-            int tLY = (int) (nose.y - SEGMENT_SIZE * cosPHalfNoseAngle);
-            PointF topLeft = new PointF(new Point(tLX, tLY));
+            PointF topLeft = new PointF(-1.0f * SEGMENT_SIZE, 0.5f * SEGMENT_SIZE);
 
-            int bRX = (int) (tRX - (SEGMENT_SIZE / 2) * rows * sinBearing);
-            int bRY = (int) (tRY - (SEGMENT_SIZE / 2) * rows * cosBearing);
-            PointF bottomRight = new PointF(new Point(bRX, bRY));
+            PointF bottomRight = new PointF(1.0f * SEGMENT_SIZE, -0.5f * SEGMENT_SIZE * rows);
 
-            int bLX = (int) (tLX - (SEGMENT_SIZE / 2) * rows * sinBearing);
-            int bLY = (int) (tLY - (SEGMENT_SIZE / 2) * rows * cosBearing);
-            PointF bottomLeft = new PointF(new Point(bLX, bLY));
+            PointF bottomLeft = new PointF(-1.0f * SEGMENT_SIZE, -0.5f * SEGMENT_SIZE * rows);
 
             GeoPoint[] geoPoints = new GeoPoint[] {
-                    ortho.inverse(nose),
-                    ortho.inverse(topLeft),
-                    ortho.inverse(bottomLeft),
-                    ortho.inverse(bottomRight),
-                    ortho.inverse(topRight),
+                    ortho.inverse(new PointF(nose.x + midpointF.x + (float)_offset.x, nose.y + midpointF.y + (float)_offset.y)),
+                    ortho.inverse(new PointF(topLeft.x + midpointF.x + (float)_offset.x, topLeft.y + midpointF.y + (float)_offset.y)),
+                    ortho.inverse(new PointF(bottomLeft.x + midpointF.x + (float)_offset.x, bottomLeft.y + midpointF.y + (float)_offset.y)),
+                    ortho.inverse(new PointF(bottomRight.x + midpointF.x + (float)_offset.x, bottomRight.y + midpointF.y + (float)_offset.y)),
+                    ortho.inverse(new PointF(topRight.x + midpointF.x + (float)_offset.x, topRight.y + midpointF.y + (float)_offset.y)),
             };
             computeGeoBounds(geoPoints);
 
@@ -179,6 +168,7 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
             _vertices.put(topRight.x);
             _vertices.put(topRight.y);
             _vertices.flip();
+
         }
 
         _recompute = false;
@@ -195,6 +185,19 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
                 shadeColor[2],
                 shadeColor[3],
                 shadeColor[0]);
+
+        GLES20FixedPipeline.glPushMatrix();
+
+        // translate the doghouse to the line segment midpoint plus the offset value we calculated.
+        GLES20FixedPipeline.glTranslatef(
+                midpointF.x + (float)_offset.x,
+                midpointF.y + (float)_offset.y,
+                0.0f);
+        GLES20FixedPipeline.glRotatef(
+                (float) bearing * -1f,
+                0.0f,
+                0.0f,
+                1.0f);
 
         GLES20FixedPipeline.glVertexPointer(
                 2, // number of coords per vertex
@@ -220,17 +223,11 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
         GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_BLEND);
         GLES20FixedPipeline
                 .glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
-        GLES20FixedPipeline.glPushMatrix();
         // shift the bottom left corner of the doghouse to the origin
         GLES20FixedPipeline.glTranslatef(
                 _vertices.get(4), // bottom left x
                 _vertices.get(5), // bottom left y
                 0.0f);
-        GLES20FixedPipeline.glRotatef(
-                (float) bearing * -1f,
-                0.0f,
-                0.0f,
-                1.0f);
 
         for (int line = 0; line < rows; line++) {
             String displayData = data[line];
@@ -238,7 +235,7 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
             float textWidth = _glText.getStringWidth(glString);
             GLES20FixedPipeline.glPushMatrix();
             GLES20FixedPipeline.glTranslatef(
-                    _textMidline - textWidth / 2.0f,
+                    SEGMENT_SIZE - textWidth / 2.0f,
                     (SEGMENT_SIZE / 2) * (rows - line),
                     0.0f);
             _glText.draw(
@@ -251,6 +248,7 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
         }
 
         GLES20FixedPipeline.glPopMatrix();
+
     }
 
     @Override
@@ -284,9 +282,10 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
     public void onDoghouseChanged(Doghouse doghouse) {
         synchronized (_lock) {
             _doghouse = doghouse;
-            _recompute = true;
+//            _recompute = true;
         }
     }
+
 
     @Override
     public void onDoghouseRemoved(Doghouse doghouse) {
@@ -297,18 +296,6 @@ public class GLDogHouse extends AbstractGLMapItem2 implements
 
     public boolean isBatchable(GLMapView view) {
         return false;
-    }
-
-    private void setConversions(double azimuth) {
-        sinBearing = Math.sin(Math.toRadians(azimuth));
-        cosBearing = Math.cos(Math.toRadians(azimuth));
-        sinRotate90 = Math.sin(Math.toRadians(azimuth - 90));
-        cosRotate90 = Math.cos(Math.toRadians(azimuth - 90));
-        double halfNoseAngle = NOSE_ANGLE / 2;
-        sinMHalfNoseAngle = Math.sin(Math.toRadians(azimuth - halfNoseAngle));
-        cosMHalfNoseAngle = Math.cos(Math.toRadians(azimuth - halfNoseAngle));
-        sinPHalfNoseAngle = Math.sin(Math.toRadians(azimuth + halfNoseAngle));
-        cosPHalfNoseAngle = Math.cos(Math.toRadians(azimuth + halfNoseAngle));
     }
 
     private void computeGeoBounds(GeoPoint[] points) {

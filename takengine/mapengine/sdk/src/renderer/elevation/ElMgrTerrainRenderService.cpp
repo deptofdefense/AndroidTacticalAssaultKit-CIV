@@ -8,8 +8,10 @@
 #include "elevation/ElevationManager.h"
 #include "elevation/ElevationSource.h"
 #include "elevation/ElevationSourceManager.h"
+#include "feature/GeometryTransformer.h"
 #include "feature/Polygon2.h"
 #include "math/AABB.h"
+#include "math/Frustum2.h"
 #include "math/Mesh.h"
 #include "math/Point2.h"
 #include "math/Rectangle.h"
@@ -44,23 +46,29 @@ using namespace atakmap::renderer;
 
 #define TERRAIN_LEVEL 8
 #define NUM_TILE_FETCH_WORKERS 4u
-#define MAX_LEVEL 19.0
+#define MAX_LEVEL 21.0
 
 namespace
 {
-    double estimateResolution(const GeoPoint2 &focus, const MapSceneModel2 &cmodel, const double ullat, const double ullng, const double lrlat, const double lrlng, GeoPoint2 *pclosest) NOTHROWS;
+    //https://stackoverflow.com/questions/1903954/is-there-a-standard-sign-function-signum-sgn-in-c-c
+    template <typename T>
+    int sgn(T val)
+    {
+        return (T(0) < val) - (val < T(0));
+    }
+
+    double estimateResolution(const GeoPoint2 &focus, const MapSceneModel2 &cmodel, const Envelope2 &bounds, GeoPoint2 *pclosest) NOTHROWS;
     double clamp(double v, double a, double b) NOTHROWS
     {
         if (v < a) return a;
         else if (v > b) return b;
         else return v;
     }
-    std::size_t computeTargetLevelImpl(const GeoPoint2 &focus, const MapSceneModel2 &view, const Envelope2 &bounds) NOTHROWS
+    std::size_t computeTargetLevelImpl(const GeoPoint2 &focus, const MapSceneModel2 &view, const Envelope2 &bounds, const double adj) NOTHROWS
     {
         if (std::min(fabs(bounds.minY), fabs(bounds.maxY)) > 84.0)
             return 0u;
-        
-        const double gsd = estimateResolution(focus, view, bounds.maxY, bounds.minX, bounds.minY, bounds.maxX, nullptr) * 8.0;
+        const double gsd = estimateResolution(focus, view, bounds, nullptr) * adj;
         auto level = (std::size_t)clamp(atakmap::raster::osm::OSMUtils::mapnikTileLeveld(gsd, 0.0), 0.0, MAX_LEVEL);
 
         // XXX - experimental
@@ -75,7 +83,7 @@ namespace
                 for (int i = -1; i <= 1; i++) {
                     const double minX = bounds.minX + (i*dlng);
                     Envelope2 nbounds(minX, maxY-dlat, minX+dlng, maxY);
-                    const double top_gsd = estimateResolution(focus, view, bounds.maxY, bounds.minX, bounds.minY, bounds.maxX, nullptr) * 8.0;
+                    const double top_gsd = estimateResolution(focus, view, bounds, nullptr) * 8.0;
                     const auto nlevel = (std::size_t)clamp(atakmap::raster::osm::OSMUtils::mapnikTileLeveld(top_gsd, 0.0), 0.0, MAX_LEVEL);
                     if (nlevel > level)
                         level = nlevel - 1u;
@@ -85,7 +93,7 @@ namespace
             for (int i = -1; i <= 1; i += 2) {
                 const double minX = bounds.minX + (i*dlng);
                 Envelope2 nbounds(minX, bounds.minY, minX+dlng, bounds.maxY);
-                const double center_gsd = estimateResolution(focus, view, bounds.maxY, bounds.minX, bounds.minY, bounds.maxX, nullptr) * 8.0;
+                const double center_gsd = estimateResolution(focus, view, bounds, nullptr) * 8.0;
                 const auto nlevel = (std::size_t)clamp(atakmap::raster::osm::OSMUtils::mapnikTileLeveld(center_gsd, 0.0), 0.0, MAX_LEVEL);
                 if (nlevel > level)
                     level = nlevel - 1u;
@@ -95,7 +103,7 @@ namespace
                 for (int i = -1; i <= 1; i++) {
                     const double minX = bounds.minX + (i*dlng);
                     Envelope2 nbounds(minX, maxY-dlat, minX+dlng, maxY);
-                    const double bottom_gsd = estimateResolution(focus, view, bounds.maxY, bounds.minX, bounds.minY, bounds.maxX, nullptr) * 8.0;
+                    const double bottom_gsd = estimateResolution(focus, view, bounds, nullptr) * 8.0;
                     const auto nlevel = (std::size_t)clamp(atakmap::raster::osm::OSMUtils::mapnikTileLeveld(bottom_gsd, 0.0), 0.0, 16.0);
                     if (nlevel > level)
                         level = nlevel - 1u;
@@ -322,7 +330,8 @@ ElMgrTerrainRenderService::ElMgrTerrainRenderService(RenderContext &renderer_) N
     terrainVersion(1),
     reset(false),
     numPosts(32),
-    resadj(10.0),
+    fetchResolutionAdjustment(10.0),
+    nodeSelectResolutionAdjustment(8.0),
     monitor(TEMT_Recursive),
     sticky(true),
     sourceVersion(0),
@@ -355,7 +364,19 @@ ElMgrTerrainRenderService::ElMgrTerrainRenderService(RenderContext &renderer_) N
     request.srid = -1;
     request.sceneVersion = -1;
 
-    resadj = getDoubleOpt("terrain.resadj", resadj);
+    const bool hiresMode = !!ConfigOptions_getIntOptionOrDefault("glmapview.surface-rendering-v2", 0);
+
+    // default to legacy values if not using high-res mode
+    if(hiresMode) {
+        fetchResolutionAdjustment = 2.0;
+#ifdef __ANDROID__
+        nodeSelectResolutionAdjustment = 4.0;
+#else
+        nodeSelectResolutionAdjustment = 2.0;
+#endif
+    }
+
+    fetchResolutionAdjustment = getDoubleOpt("terrain.resadj", fetchResolutionAdjustment);
 
     fetchOptions.constrainQueryRes = getBoolOpt("terrain.constrain-query-res", false);
     fetchOptions.fillWithHiRes = getBoolOpt("terrain.fill-with-hi-res", true);
@@ -408,7 +429,20 @@ TAKErr ElMgrTerrainRenderService::lock(TAK::Engine::Port::Collection<std::shared
             code = createEdgeIndices(edgeIndices, numPostsLat, numPostsLng);
             TE_CHECKRETURN_CODE(code);
 
-            code = fetch(tile, nullptr, atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(roots[i]->level))*resadj, roots[i]->bounds, srid, numPostsLat, numPostsLng, edgeIndices, false, fetchOptions.legacyElevationApi, fetchOptions.constrainQueryRes, fetchOptions.fillWithHiRes, meshAllocator, tileAllocator);
+            code = fetch(tile,
+                         nullptr,
+                         atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(roots[i]->level))*fetchResolutionAdjustment,
+                         roots[i]->bounds,
+                         srid,
+                         numPostsLat,
+                         numPostsLng,
+                         edgeIndices,
+                         false,
+                         fetchOptions.legacyElevationApi,
+                         fetchOptions.constrainQueryRes,
+                         fetchOptions.fillWithHiRes,
+                         meshAllocator,
+                         tileAllocator);
             if(code != TE_Ok) {
                 worldTerrain->tiles.clear();
                 TE_CHECKBREAK_CODE(code);
@@ -654,7 +688,20 @@ void *ElMgrTerrainRenderService::requestWorkerThread(void *opaque)
                     const std::size_t numEdgeVertices = getNumEdgeVertices(numPostsLat, numPostsLng);
                     MemBuffer2 edgeIndices(numEdgeVertices*sizeof(uint16_t));
                     createEdgeIndices(edgeIndices, numPostsLat, numPostsLng);
-                    ::fetch(owner.roots[i]->tile, nullptr, atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(owner.roots[i]->level))*owner.resadj, owner.roots[i]->bounds, fetchBuffer->srid, numPostsLat, numPostsLng, edgeIndices, false, owner.fetchOptions.legacyElevationApi, owner.fetchOptions.constrainQueryRes, owner.fetchOptions.fillWithHiRes, owner.meshAllocator, owner.tileAllocator);
+                    ::fetch(owner.roots[i]->tile,
+                            nullptr,
+                            atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(owner.roots[i]->level))*owner.fetchResolutionAdjustment,
+                            owner.roots[i]->bounds,
+                            fetchBuffer->srid,
+                            numPostsLat,
+                            numPostsLng,
+                            edgeIndices,
+                            false,
+                            owner.fetchOptions.legacyElevationApi,
+                            owner.fetchOptions.constrainQueryRes,
+                            owner.fetchOptions.fillWithHiRes,
+                            owner.meshAllocator,
+                            owner.tileAllocator);
                     owner.roots[i]->sourceVersion = fetchBuffer->sourceVersion;
                 }
 
@@ -765,7 +812,7 @@ void *ElMgrTerrainRenderService::fetchWorkerThread(void *opaque)
             fetchSrcVersion = service.sourceVersion;
         }
 
-        const double res = atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(node->level))*service.resadj;
+        const double res = atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(node->level))*service.fetchResolutionAdjustment;
         std::size_t numPostsLat;
         std::size_t numPostsLng;
         computePostCount(numPostsLat, numPostsLng, node->bounds, service.numPosts);
@@ -888,7 +935,8 @@ bool ElMgrTerrainRenderService::QuadNode::collect(ElMgrTerrainRenderService::Wor
     const std::size_t target_level = computeTargetLevelImpl(
         focus,
         scene,
-        this->bounds);
+        this->bounds,
+        service.nodeSelectResolutionAdjustment);
     if(target_level > this->level) {
         const double centerX = (this->bounds.minX+this->bounds.maxX)/2.0;
         const double centerY = (this->bounds.minY+this->bounds.maxY)/2.0;
@@ -916,22 +964,26 @@ bool ElMgrTerrainRenderService::QuadNode::collect(ElMgrTerrainRenderService::Wor
         computeTargetLevelImpl(
                 focus,
                 scene,
-                Envelope2(bounds.minX, bounds.minY, bounds.minZ, centerX, centerY, bounds.maxZ)) >= (this->level+1u);
+                Envelope2(bounds.minX, bounds.minY, bounds.minZ, centerX, centerY, bounds.maxZ),
+                service.nodeSelectResolutionAdjustment) >= (this->level+1u);
         bool recurseLR = 
         computeTargetLevelImpl(
                 focus,
                 scene,
-                Envelope2(centerX, bounds.minY, bounds.minZ, bounds.maxX, centerY, bounds.maxZ)) >= (this->level+1u);
+                Envelope2(centerX, bounds.minY, bounds.minZ, bounds.maxX, centerY, bounds.maxZ),
+                service.nodeSelectResolutionAdjustment) >= (this->level+1u);
         bool recurseUR = 
         computeTargetLevelImpl(
                 focus,
                 scene,
-                Envelope2(centerX, centerY, bounds.minZ, bounds.maxX, bounds.maxY, bounds.maxZ)) >= (this->level+1u);
+                Envelope2(centerX, centerY, bounds.minZ, bounds.maxX, bounds.maxY, bounds.maxZ),
+                service.nodeSelectResolutionAdjustment) >= (this->level+1u);
         bool recurseUL =
         computeTargetLevelImpl(
                 focus,
                 scene,
-                Envelope2(bounds.minX, centerY, bounds.minZ, centerX, bounds.maxY, bounds.maxZ)) >= (this->level+1u);
+                Envelope2(bounds.minX, centerY, bounds.minZ, centerX, bounds.maxY, bounds.maxZ),
+                service.nodeSelectResolutionAdjustment) >= (this->level+1u);
 #endif
         const bool fetchul = needsFetch(ul.get(), value.srid, value.sourceVersion);
         const bool fetchur = needsFetch(ur.get(), value.srid, value.sourceVersion);
@@ -1021,7 +1073,20 @@ bool ElMgrTerrainRenderService::QuadNode::collect(ElMgrTerrainRenderService::Wor
             const std::size_t numEdgeVertices = getNumEdgeVertices(numPostsLat, numPostsLng);
             MemBuffer2 edgeIndices(numEdgeVertices*sizeof(uint16_t));
             createEdgeIndices(edgeIndices, numPostsLat, numPostsLng);
-            fetch(this->tile, nullptr, atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(this->level))*service.resadj, this->bounds, value.srid, numPostsLat, numPostsLng, edgeIndices, false, service.fetchOptions.legacyElevationApi, service.fetchOptions.constrainQueryRes, service.fetchOptions.fillWithHiRes, service.meshAllocator, service.tileAllocator);
+            fetch(this->tile,
+                  nullptr,
+                  atakmap::raster::osm::OSMUtils::mapnikTileResolution(static_cast<int>(this->level))*service.fetchResolutionAdjustment,
+                  this->bounds,
+                  value.srid,
+                  numPostsLat,
+                  numPostsLng,
+                  edgeIndices,
+                  false,
+                  service.fetchOptions.legacyElevationApi,
+                  service.fetchOptions.constrainQueryRes,
+                  service.fetchOptions.fillWithHiRes,
+                  service.meshAllocator,
+                  service.tileAllocator);
             //this->tile.opaque = this;
         } else {
             // XXX - this is a little goofy
@@ -1369,21 +1434,46 @@ namespace
         return code;
     }
 
-    double estimateResolution(const GeoPoint2 &focus, const MapSceneModel2 &cmodel, const double ullat, const double ullng, const double lrlat, const double lrlng, GeoPoint2 *pclosest) NOTHROWS
+    double estimateResolution(const GeoPoint2 &focus, const MapSceneModel2 &cmodel, const Envelope2 &bounds, GeoPoint2 *pclosest) NOTHROWS
     {
+#if 0
+        // XXX - frustum based culling. currently pulls in way too many tiles
+        Matrix2 m(cmodel.camera.projection);
+        m.concatenate(cmodel.camera.modelView);
+        Frustum2 frustum(m);
+        // compute AABB in WCS and check for intersection with the frustum
+        TAK::Engine::Feature::Envelope2 aabbWCS(bounds);
+        const int srid = cmodel.projection->getSpatialReferenceID();
+        TAK::Engine::Feature::GeometryTransformer_transform(&aabbWCS, aabbWCS, 4326, srid);
+        if (frustum.intersects(AABB(TAK::Engine::Math::Point2<double>(aabbWCS.minX, aabbWCS.minY, aabbWCS.minZ), TAK::Engine::Math::Point2<double>(aabbWCS.maxX, aabbWCS.maxY, aabbWCS.maxZ))) ||
+            ((srid == 4326) && focus.longitude*((aabbWCS.minX+aabbWCS.maxX)/2.0) < 0 &&
+                frustum.intersects(
+                    AABB(TAK::Engine::Math::Point2<double>(aabbWCS.minX-(360.0*sgn((aabbWCS.minX+aabbWCS.maxX)/2.0)), aabbWCS.minY, aabbWCS.minZ),
+                            TAK::Engine::Math::Point2<double>(aabbWCS.maxX-(360.0*sgn((aabbWCS.minX+aabbWCS.maxX)/2.0)), aabbWCS.maxY, aabbWCS.maxZ))))) {
+
+            return cmodel.gsd;
+        } else {
+            return atakmap::raster::osm::OSMUtils::mapnikTileResolution(0);
+        }
+#else
         const TAK::Engine::Core::GeoPoint2 tgt(focus);
-        if (atakmap::math::Rectangle<double>::contains(ullng, lrlat, lrlng, ullat, tgt.longitude, tgt.latitude))
+        if (atakmap::math::Rectangle<double>::contains(bounds.minX, bounds.minY, bounds.maxX, bounds.maxY, tgt.longitude, tgt.latitude))
             return cmodel.gsd;
 
+#ifdef __ANDROID__
         const double sceneHalfWidth = cmodel.width / 2.0;
         const double sceneHalfHeight = cmodel.height / 2.0;
+#else
+        const double sceneHalfWidth = (double)cmodel.width / 2.0;
+        const double sceneHalfHeight = (double)cmodel.height / 2.0;
+#endif
         const double sceneRadius = cmodel.gsd*sqrt((sceneHalfWidth*sceneHalfWidth) + (sceneHalfHeight*sceneHalfHeight));
     
-        const TAK::Engine::Core::GeoPoint2 aoiCentroid((ullat + lrlat) / 2.0, (ullng + lrlng) / 2.0);
+        const TAK::Engine::Core::GeoPoint2 aoiCentroid((bounds.minY + bounds.maxY) / 2.0, (bounds.minX + bounds.maxX) / 2.0);
         double aoiRadius;
         {
-            const double uld = TAK::Engine::Core::GeoPoint2_distance(aoiCentroid, TAK::Engine::Core::GeoPoint2(ullat, ullng), true);
-            const double lrd = TAK::Engine::Core::GeoPoint2_distance(aoiCentroid, TAK::Engine::Core::GeoPoint2(lrlat, lrlng), true);
+            const double uld = TAK::Engine::Core::GeoPoint2_distance(aoiCentroid, TAK::Engine::Core::GeoPoint2(bounds.maxY, bounds.minX), true);
+            const double lrd = TAK::Engine::Core::GeoPoint2_distance(aoiCentroid, TAK::Engine::Core::GeoPoint2(bounds.minY, bounds.maxX), true);
             aoiRadius = std::max(uld, lrd);
         }
         const double d = TAK::Engine::Core::GeoPoint2_distance(aoiCentroid, tgt, true);
@@ -1391,6 +1481,7 @@ namespace
             return cmodel.gsd;
         // observation is that the value returned here really does not matter
         return cmodel.gsd*pow(2.0, 1.0+log((d-aoiRadius)-sceneRadius)/log(2.0));
+#endif
     }
 
     TAKErr subscribeOnContentChangedListener(void *opaque, ElevationSource &src) NOTHROWS

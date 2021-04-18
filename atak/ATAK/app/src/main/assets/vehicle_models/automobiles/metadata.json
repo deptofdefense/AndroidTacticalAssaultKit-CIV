@@ -26,6 +26,18 @@
       "file": "hmmwv.zip"
     },
     {
+      "name": "M-113",
+      "file": "m113.zip"
+    },
+    {
+      "name": "M-1A2",
+      "file": "m1a2.zip"
+    },
+    {
+      "name": "M-939",
+      "file": "m939.zip"
+    },
+    {
       "name": "NTV",
       "file": "ntv.zip"
     },
@@ -40,6 +52,10 @@
     {
       "name": "School Bus",
       "file": "schoolbus.zip"
+    },
+    {
+      "name": "Stryker",
+      "file": "stryker.zip"
     },
     {
       "name": "Squad Car",

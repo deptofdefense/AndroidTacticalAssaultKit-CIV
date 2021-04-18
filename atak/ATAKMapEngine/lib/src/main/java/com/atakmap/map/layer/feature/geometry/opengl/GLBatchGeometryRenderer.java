@@ -26,7 +26,9 @@ import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.lang.Unsafe;
+import com.atakmap.map.Interop;
 import com.atakmap.map.MapRenderer;
+import com.atakmap.map.MapSceneModel;
 import com.atakmap.map.layer.feature.Feature;
 import com.atakmap.map.layer.feature.FeatureDataStore;
 import com.atakmap.map.layer.feature.geometry.Envelope;
@@ -47,6 +49,8 @@ import com.atakmap.opengl.GLTextureAtlas;
 import com.atakmap.util.ConfigOptions;
 
 public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable2 {
+
+    final static Interop<MapSceneModel> MapSceneModel_interop = Interop.findInterop(MapSceneModel.class);
 
     /*
      {
@@ -183,8 +187,8 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
 
     /*************************************************************************/
     
-    private LinkedList<GLBatchPolygon> polys = new LinkedList<GLBatchPolygon>();
-    private LinkedList<GLBatchPolygon> extrudedPolys = new LinkedList<>();
+    private LinkedList<GLBatchPolygon> surfacePolys = new LinkedList<>();
+    private LinkedList<GLBatchPolygon> spritePolys = new LinkedList<>();
     private LinkedList<GLBatchLineString> spriteLines = new LinkedList<GLBatchLineString>();
     private LinkedList<GLBatchLineString> surfaceLines = new LinkedList<GLBatchLineString>();
     private LinkedList<GLBatchPoint> batchPoints2 = new LinkedList<GLBatchPoint>();
@@ -315,11 +319,11 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         fids.addAll(hitTestGeometry(this.labels, params));
         fids.addAll(hitTestGeometry(this.batchPoints2, params));
 
-        // Lines
-        fids.addAll(hitTestGeometry(this.surfaceLines, params));
+        // Lines and polygons
+        fids.addAll(hitTestGeometry(this.spritePolys, params));
         fids.addAll(hitTestGeometry(this.spriteLines, params));
-        fids.addAll(hitTestGeometry(this.polys, params));
-        fids.addAll(hitTestGeometry(this.extrudedPolys, params));
+        fids.addAll(hitTestGeometry(this.surfacePolys, params));
+        fids.addAll(hitTestGeometry(this.surfaceLines, params));
     }
 
     private static class HitTestQueryParams {
@@ -337,8 +341,8 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         sortedPolys.clear();
         sortedLines.clear();
 
-        polys.clear();
-        extrudedPolys.clear();
+        surfacePolys.clear();
+        spritePolys.clear();
         spriteLines.clear();
         surfaceLines.clear();
 
@@ -363,8 +367,13 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         }
         this.sortedLines.clear();
         
-        for(GLBatchGeometry geom : this.sortedPolys)
-            this.polys.add((GLBatchPolygon)geom);
+        for(GLBatchGeometry geom : this.sortedPolys) {
+            final GLBatchPolygon poly = (GLBatchPolygon)geom;
+            if (poly.altitudeMode == Feature.AltitudeMode.ClampToGround)
+                surfacePolys.add(poly);
+            else
+                spritePolys.add(poly);
+        }
         this.sortedPolys.clear();
 
         batchSrid = -1;
@@ -372,12 +381,6 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     
     private void fillBatchLists(Collection<GLBatchGeometry> geoms) {
         for(GLBatchGeometry g : geoms) {
-            if (g instanceof GLBatchPolygon) {
-                if (((GLBatchPolygon)g).extrude == -1.0) {
-                    extrudedPolys.add((GLBatchPolygon)g);
-                    continue;
-                }
-            }
             switch(g.zOrder) {
                 case 0: {
                     GLBatchPoint point = (GLBatchPoint)g;
@@ -480,12 +483,8 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
 
     private void renderSurface(GLMapView view) {
         // polygons
-        if (this.polys.size() > 0) {
-            if (this.batch == null)
-                this.batch = new GLRenderBatch2();
+        renderLines(view, surfacePolys, GLMapView.RENDER_PASS_SURFACE);
 
-            renderPolygons(view, polys);
-        }
         // lines
         if (!this.surfaceLines.isEmpty()) {
             if (MathUtils.hasBits(rebuildBatchBuffers, GLMapView.RENDER_PASS_SURFACE)) {
@@ -503,10 +502,13 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         }
     }
 
-    private void renderPolygons(GLMapView view, LinkedList<GLBatchPolygon> polygons) {
-        if(this.batch == null) {
+    private void renderLines(GLMapView view, Collection<? extends GLBatchLineString> lines, int renderPass) {
+        if (lines.isEmpty())
+            return;
+
+        if(this.batch == null)
             this.batch = new GLRenderBatch2();
-        }
+
         GLES20FixedPipeline.glPushMatrix();
 
         // XXX - batch currently only supports 2D vertices
@@ -540,11 +542,9 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
         GLES20FixedPipeline.glGetFloatv(GLES20FixedPipeline.GL_MODELVIEW, view.scratch.matrixF, 0);
         this.batch.setMatrix(GLES20FixedPipeline.GL_MODELVIEW, view.scratch.matrixF, 0);
 
-        GLBatchPolygon poly;
-        for(GLBatchGeometry g : polygons) {
-            poly = (GLBatchPolygon)g;
-            poly.batch(view, this.batch, GLMapView.RENDER_PASS_SURFACE, vertType);
-        }
+        for(GLBatchLineString g : lines)
+            g.batch(view, this.batch, renderPass, vertType);
+
         this.batch.end();
         GLES20FixedPipeline.glPopMatrix();
     }
@@ -645,20 +645,32 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                 point.batch(view, this.batch, GLMapView.RENDER_PASS_SPRITES);
             this.batch.end();
         }
-        if (!extrudedPolys.isEmpty()) {
-            renderPolygons(view, extrudedPolys);
-        }
+
+        // polygons
+        renderLines(view, spritePolys, GLMapView.RENDER_PASS_SPRITES);
 
         // lines
         if (!this.spriteLines.isEmpty()) {
+            List<GLBatchLineString> extrudeLines = new ArrayList<>();
+            List<GLBatchLineString> bufferLines = new ArrayList<>();
+            for (GLBatchLineString line : spriteLines) {
+                if (line.isExtruded() && view.drawTilt > 0d)
+                    extrudeLines.add(line);
+                else
+                    bufferLines.add(line);
+            }
+
+            // 2D lines
             if (MathUtils.hasBits(rebuildBatchBuffers, GLMapView.RENDER_PASS_SPRITES)) {
                 for (LinesBuffer lb : spriteLineBuffers)
                     GLES30.glDeleteBuffers(1, lb.vbo, 0);
                 spriteLineBuffers.clear();
-                this.buildLineBuffers(spriteLineBuffers, view, spriteLines);
+                this.buildLineBuffers(spriteLineBuffers, view, bufferLines);
             }
-
             this.drawLineBuffers(view, spriteLineBuffers);
+
+            // Extruded lines
+            renderLines(view, extrudeLines, GLMapView.RENDER_PASS_SPRITES);
         } else if(!spriteLineBuffers.isEmpty()) {
             for (LinesBuffer lb : spriteLineBuffers)
                 GLES30.glDeleteBuffers(1, lb.vbo, 0);
@@ -960,8 +972,9 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             if(textureProgram.vertSize == 2) {
                 Unsafe.setFloats(this.pointsBufferPtr+pointsBufferPos,
                                  (float)view.idlHelper.wrapLongitude(point.longitude),
-                                 (float)point.latitude);
-                pointsBufferPos += 8;
+                                 (float)point.latitude,
+                                 point.iconScale);
+                pointsBufferPos += 12;
             } else {
                 double alt = 0d;
                 if(view.drawTilt > 0d) {
@@ -981,12 +994,13 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
                 Unsafe.setFloats(this.pointsBufferPtr+pointsBufferPos,
                                  (float)view.idlHelper.wrapLongitude(point.longitude),
                                  (float)point.latitude,
-                                 (float)alt);
-                pointsBufferPos += 12;                
+                                 (float)alt,
+                                 point.iconScale);
+                pointsBufferPos += 16;
             }
             this.textureAtlasIndicesBuffer.put(point.textureIndex);
 
-            if(((pointsBufferPos/4)+3) >= this.pointsBuffer.limit()) {
+            if(((pointsBufferPos/4)+(textureProgram.vertSize+1)) >= this.pointsBuffer.limit()) {
                 this.pointsBuffer.position(pointsBufferPos/4);
                 this.renderPointsBuffers(view, textureProgram);
                 this.textureAtlasIndicesBuffer.clear();
@@ -1024,12 +1038,11 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
             return;
 
         this.pointsBuffer.flip();
-        view.forward(pointsBuffer, textureProgram.vertSize, pointsBuffer, textureProgram.vertSize);
-        pointsBuffer.clear();
 
         this.pointsVertsTexCoordsBuffer.clear();
 
-        fillVertexArrays(textureProgram.vertSize,
+        fillVertexArrays(MapSceneModel_interop.getPointer(view.currentPass.scene),
+                         textureProgram.vertSize,
                          this.pointsBuffer,
                          this.textureAtlasIndicesBuffer,
                          GLBatchPoint.ICON_ATLAS.getImageWidth(0), // fixed size
@@ -1074,7 +1087,8 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
     public void release() {
         this.surfaceLines.clear();
         this.spriteLines.clear();
-        this.polys.clear();
+        this.surfacePolys.clear();
+        this.spritePolys.clear();
         
         this.batchPoints2.clear();
         this.loadingPoints.clear();
@@ -1159,7 +1173,8 @@ public class GLBatchGeometryRenderer implements GLMapRenderable, GLMapRenderable
 
     /**************************************************************************/
     
-    private static native void fillVertexArrays(int vertSize,
+    private static native void fillVertexArrays(long scenePtr,
+                                                int vertSize,
                                                 FloatBuffer translations,
                                                 IntBuffer textureKeys,
                                                 int iconSize,

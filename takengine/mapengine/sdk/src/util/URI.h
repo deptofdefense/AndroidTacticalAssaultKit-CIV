@@ -45,6 +45,11 @@ namespace TAK {
 
             ENGINE_API TAKErr URI_getParent(Port::String *result, const char *URI) NOTHROWS;
 
+            /**
+             *
+             */
+            ENGINE_API TAKErr URI_combine(Port::String* result, const char *base, const char* suffix) NOTHROWS;
+
         }
     }
 }

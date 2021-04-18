@@ -73,15 +73,15 @@ public class PlainZipExtractor implements IMissionPackageExtractor {
         MissionPackageManifest manifest = getManifest(inZip);
         ZipInputStream zin = null;
         ZipOutputStream zos = null;
-        InputStream is = null;
-        try {
+        try(InputStream is = IOProviderFactory.getInputStream(inZip);
+            FileOutputStream fos = IOProviderFactory.getOutputStream(outZip);
+            BufferedOutputStream bfos = new BufferedOutputStream(fos)) {
             // read in from plain old zip
-            zin = new ZipInputStream(is = IOProviderFactory.getInputStream(inZip));
+            zin = new ZipInputStream(is);
             ZipEntry zinEntry = null;
 
             // write out to mission package zip
-            FileOutputStream fos = IOProviderFactory.getOutputStream(outZip);
-            zos = new ZipOutputStream(new BufferedOutputStream(fos));
+            zos = new ZipOutputStream(bfos);
 
             // iterate all zip entries
             while ((zinEntry = zin.getNextEntry()) != null) {
@@ -237,12 +237,6 @@ public class PlainZipExtractor implements IMissionPackageExtractor {
                     Log.w(TAG,
                             "Failed to close Mission Package zip: "
                                     + outZip.getAbsolutePath());
-                }
-            }
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (Exception ignored) {
                 }
             }
         }

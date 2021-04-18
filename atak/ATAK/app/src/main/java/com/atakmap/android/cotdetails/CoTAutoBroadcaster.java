@@ -16,6 +16,8 @@ import com.atakmap.android.maps.Marker;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.util.zip.IoUtils;
+import org.apache.sanselan.util.IOUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -131,9 +133,7 @@ public class CoTAutoBroadcaster implements
                 .getAbsoluteFile()
                 + "/atak/Databases/" + FILENAME);
         if (IOProviderFactory.exists(inputFile)) {
-            InputStream is = null;
-            try {
-                is = IOProviderFactory.getInputStream(inputFile);
+            try(InputStream is = IOProviderFactory.getInputStream(inputFile)) {
                 byte[] temp = new byte[is.available()];
                 int read = is.read(temp);
                 String menuString = new String(temp, 0, read,
@@ -150,15 +150,9 @@ public class CoTAutoBroadcaster implements
                 }
             } catch (IOException e) {
                 Log.e(TAG, "error occurred reading the list of hostiles", e);
-            } finally {
-                if (is != null)
-                    try {
-                        is.close();
-                    } catch (Exception ignore) {
-                    }
             }
         } else
-            Log.d(TAG, "No 9-line hostile file found");
+            Log.d(TAG, "File not found: " + FILENAME);
 
     }
 
@@ -167,15 +161,12 @@ public class CoTAutoBroadcaster implements
      * file in Databases
      */
     private void saveMarkers() {
-        OutputStream os = null;
-        InputStream is = null;
-
         final File outputFile = FileSystemUtils
                 .getItem("Databases/" + FILENAME);
 
         if (IOProviderFactory.exists(outputFile))
             FileSystemUtils.delete(outputFile);
-        try {
+        try(OutputStream os = IOProviderFactory.getOutputStream(outputFile)) {
             StringBuilder builder = new StringBuilder();
             synchronized (_markers) {
                 for (String m : _markers) {
@@ -185,25 +176,13 @@ public class CoTAutoBroadcaster implements
                     }
                 }
             }
-            os = IOProviderFactory.getOutputStream(outputFile);
-            is = new ByteArrayInputStream(builder.toString()
-                    .getBytes());
-            FileSystemUtils.copy(is, os);
+
+            try(InputStream is = new ByteArrayInputStream(builder.toString()
+                    .getBytes())) {
+                FileSystemUtils.copy(is, os);
+            }
         } catch (IOException e) {
             Log.e(TAG, "error occurred", e);
-        } finally {
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (Exception ignore) {
-                }
-            }
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (Exception ignore) {
-                }
-            }
         }
     }
 

@@ -1257,7 +1257,7 @@ namespace
             sqlite3_finalize(statement);   // Statement should be NULL anyways.
             logDB_Error(response, MEM_FN("prepareStatement"),
                 catStrings("preparing statement: ",
-                sql));
+                    sql));
             return TE_Err;
         }
 

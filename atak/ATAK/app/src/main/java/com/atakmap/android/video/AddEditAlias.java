@@ -709,11 +709,11 @@ public class AddEditAlias {
             final TextView ui) {
 
         if (ui.getText() != null && ui.getText().length() > 0) {
-            try { 
+            try {
                 int port = Integer.parseInt(ui.getText().toString());
                 if (port > 0 && (port <= MAX_PORT_VAL))
                     return true;
-            } catch (NumberFormatException nfe) { 
+            } catch (NumberFormatException nfe) {
                 Log.e(TAG, "not a valid integer: " + ui.getText(), nfe);
             }
         }
