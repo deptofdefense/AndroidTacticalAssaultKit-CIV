@@ -1,5 +1,9 @@
 # Version History
 
+## 4.2.0.4
+
+* Improve handling for KML PolyStyle with <fill>0</fill>
+
 ## 4.2.0.3
 
 * Address various cases where streams may not be closed if exceptions are raised
