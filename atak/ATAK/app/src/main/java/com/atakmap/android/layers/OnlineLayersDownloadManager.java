@@ -13,42 +13,20 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.atakmap.android.drawing.mapItems.DrawingRectangle;
-import com.atakmap.android.editableShapes.Rectangle;
-import com.atakmap.android.gui.RangeEntryDialog;
 import com.atakmap.android.layers.MobileLayerSelectionAdapter.MobileImagerySpec;
 import com.atakmap.android.layers.wms.DownloadAndCacheService;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.maps.Polyline;
 import com.atakmap.android.maps.Shape;
-import com.atakmap.android.missionpackage.MapItemSelectTool;
-import com.atakmap.android.routes.Route;
 import com.atakmap.android.toolbar.ToolManagerBroadcastReceiver;
 import com.atakmap.app.R;
-import com.atakmap.coremap.conversions.Span;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
-import com.atakmap.coremap.maps.coords.DistanceCalculations;
-import com.atakmap.coremap.maps.coords.GeoBounds;
 import com.atakmap.coremap.maps.coords.GeoPoint;
-import com.atakmap.coremap.maps.coords.GeoCalculations;
-import com.atakmap.map.contentservices.CacheRequest;
-import com.atakmap.map.layer.feature.geometry.Geometry;
-import com.atakmap.map.layer.feature.geometry.LineString;
-import com.atakmap.map.layer.feature.geometry.Polygon;
 import com.atakmap.map.layer.raster.mobileimagery.MobileImageryRasterLayer2;
-import com.atakmap.map.layer.raster.tilematrix.TileClient;
-import com.atakmap.map.layer.raster.tilematrix.TileClientFactory;
 import com.atakmap.map.layer.raster.tilematrix.TileMatrix;
 import com.atakmap.map.projection.Projection;
-import com.atakmap.math.MathUtils;
 import com.atakmap.math.PointD;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * This class handles selecting an area to download and downloading the tiles
@@ -56,20 +34,15 @@ import java.util.List;
 public class OnlineLayersDownloadManager {
 
     public final static String TAG = "OnlineLayersDownloadManager";
-    final static int MODE_RECTANGLE = 0;
-    final static int MODE_FREE_FORM = 1;
-    final static int MODE_MAP_SELECT = 2;
 
     private final static int MIN_TILES_PER_LAYER = 8;
 
-    private final MapView map;
-    private final Context context;
-    private GeoPoint ulPoint = null, lrPoint = null;
-    private Shape shape;
-    private Geometry shapeGeom;
-    private boolean selectingRegion = false;
-    private double shapeDistance = 100;
+    protected final MapView map;
+    protected final Context context;
+    protected Shape shape;
+    protected boolean selectingRegion = false;
 
+    private final LayerDownloader downloader;
     private final LayersManagerBroadcastReceiver callback;
 
     private final View progressViewsLayout;
@@ -79,7 +52,7 @@ public class OnlineLayersDownloadManager {
     private final TextView timeProg;
     private final TextView queueProg;
     private final View labelView;
-    private final ProgressBar downloadPB;
+    protected final ProgressBar downloadPB;
     private int lastQueue = 0;
 
     OnlineLayersDownloadManager(MapView mv,
@@ -89,6 +62,7 @@ public class OnlineLayersDownloadManager {
         this.context = mv.getContext();
         this.progressViewsLayout = progressView;
         this.mobileToolsLayout = mobileTools;
+        this.downloader = new LayerDownloader(mv);
         callback = lmbr;
         tileProg = progressView.findViewById(R.id.tileProgressTV);
         layerProg = progressView.findViewById(R.id.layerProgressTV);
@@ -176,7 +150,7 @@ public class OnlineLayersDownloadManager {
     }
 
     /** reset progressBar progress, secondary progress and max to 0 */
-    private void resetProgressBar() {
+    protected void resetProgressBar() {
         map.post(new Runnable() {
             @Override
             public void run() {
@@ -275,35 +249,18 @@ public class OnlineLayersDownloadManager {
         });
     }
 
-    void selectRegion(int mode) {
+    void promptSelectRegion() {
         if (isSelectingRegion())
             return;
         if (hasRegionShape())
             cancelRegionSelect();
-        String toolId;
-        Bundle b = new Bundle();
-        if (mode == MODE_RECTANGLE) {
-            toolId = RegionShapeTool.TOOL_ID;
-            b.putBoolean("freeform", false);
-        } else if (mode == MODE_FREE_FORM) {
-            toolId = RegionShapeTool.TOOL_ID;
-            b.putBoolean("freeform", true);
-        } else if (mode == MODE_MAP_SELECT) {
-            toolId = MapItemSelectTool.TOOL_NAME;
-            b.putString("prompt", context.getString(
-                    R.string.region_shape_select_prompt));
-            b.putBoolean("multiSelect", false);
-            b.putStringArray("allowTypes", new String[] {
-                    "u-d-f", "u-d-r", "b-m-r", "u-d-c-c", "u-r-b-c-c",
-                    "u-d-feature"
-            });
-        } else
-            return;
         Intent i = new Intent(
                 LayersManagerBroadcastReceiver.ACTION_TOOL_FINISHED);
-        i.putExtra("toolId", toolId);
+        i.putExtra("toolId", RegionShapeTool.TOOL_ID);
+        Bundle b = new Bundle();
         b.putParcelable("callback", i);
-        ToolManagerBroadcastReceiver.getInstance().startTool(toolId, b);
+        ToolManagerBroadcastReceiver.getInstance().startTool(
+                RegionShapeTool.TOOL_ID, b);
         selectingRegion = true;
     }
 
@@ -320,138 +277,24 @@ public class OnlineLayersDownloadManager {
             return;
         }
         shape = (Shape) mi;
-        GeoBounds bounds = GeoBounds.createFromPoints(
-                shape.getPoints(),
-                map.isContinuousScrollEnabled());
-        if (bounds.crossesIDL()) {
-            this.ulPoint = new GeoPoint(bounds.getNorth(), bounds.getEast());
-            this.lrPoint = new GeoPoint(bounds.getSouth(),
-                    bounds.getWest() + 360);
-
-        } else {
-            this.ulPoint = new GeoPoint(bounds.getNorth(), bounds.getWest());
-            this.lrPoint = new GeoPoint(bounds.getSouth(), bounds.getEast());
-        }
+        downloader.setShape(shape);
+        downloader.setExpandDistance(i.getDoubleExtra("expandDistance", 0));
         callback.receiveDownloadArea();
-
-        // Prompt for meters from route to extend the tile download
-        if (shape instanceof Route) {
-            RangeEntryDialog d = new RangeEntryDialog(map);
-            d.show(R.string.route_download_range, shapeDistance, Span.METER,
-                    new RangeEntryDialog.Callback() {
-                        @Override
-                        public void onSetValue(double valueM, Span unit) {
-                            shapeDistance = valueM;
-                        }
-                    });
-        }
-    }
-
-    private GeoPoint[] getPoints() {
-        if (this.shape == null)
-            return new GeoPoint[0];
-
-        GeoPoint[] points = shape.getPoints();
-        if (this.shape instanceof Rectangle)
-            points = Arrays.copyOf(points, 4);
-
-        List<GeoPoint> pointList = new ArrayList<>(points.length);
-        if (map.isContinuousScrollEnabled()
-                && GeoCalculations.crossesIDL(points, 0, points.length)) {
-            for (GeoPoint p : points) {
-                if (p.getLongitude() < 0)
-                    pointList.add(new GeoPoint(p.getLatitude(),
-                            p.getLongitude() + 360));
-                else
-                    pointList.add(p);
-            }
-        } else
-            pointList.addAll(Arrays.asList(points));
-
-        if (pointList.isEmpty())
-            return new GeoPoint[0];
-
-        boolean closed = this.shape instanceof DrawingRectangle
-                || MathUtils.hasBits(shape.getStyle(),
-                        Polyline.STYLE_CLOSED_MASK)
-                || points[0].equals(points[points.length - 1]);
-
-        // Extrude route by a certain meter distance
-        if (!closed && this.shapeDistance > 0) {
-            double d = this.shapeDistance;
-            double lastDist = 0;
-            double lb = 0;
-            List<GeoPoint> leftLine = new ArrayList<>();
-            List<GeoPoint> rightLine = new ArrayList<>();
-            int size = pointList.size();
-            for (int i = 0; i < size; i++) {
-                GeoPoint c = pointList.get(i);
-                GeoPoint n = pointList.get(i == size - 1 ? i - 1 : i + 1);
-                double[] ra = DistanceCalculations.computeDirection(c, n);
-                lastDist += ra[0];
-                if (i > 1 && i <= size - 2 && lastDist < 1)
-                    continue;
-                lastDist = 0;
-                double b = ra[1];
-                if (i > 0 && i < size - 1) {
-                    if (Math.abs(lb - b) > 180)
-                        b = ((Math.min(b, lb) + 360) + Math.max(b, lb)) / 2;
-                    else
-                        b = (b + lb) / 2;
-                } else if (i == size - 1)
-                    b += 180;
-                lb = ra[1];
-                GeoPoint left = GeoCalculations.pointAtDistance(c, b - 90, d);
-                GeoPoint right = GeoCalculations.pointAtDistance(c, b + 90, d);
-                if (i == 0 || i == size - 1) {
-                    b += i == 0 ? 180 : 0;
-                    left = GeoCalculations.pointAtDistance(left, b, d);
-                    right = GeoCalculations.pointAtDistance(right, b, d);
-                }
-                leftLine.add(left);
-                rightLine.add(right);
-            }
-            pointList.clear();
-            pointList.addAll(leftLine);
-            Collections.reverse(rightLine);
-            pointList.addAll(rightLine);
-            closed = true;
-        }
-
-        GeoPoint start = pointList.get(0);
-        GeoPoint end = pointList.get(pointList.size() - 1);
-        if (closed && !start.equals(end))
-            pointList.add(start);
-
-        return pointList.toArray(new GeoPoint[0]);
     }
 
     void startDownload(String title, String cacheUri,
             LayerSelection layerSelection,
             double minRes, double maxRes) {
-        if (shape == null)
-            return;
 
-        Intent i = new Intent();
-        i.setClass(context, DownloadAndCacheService.class);
-        i.putExtra(DownloadAndCacheService.QUEUE_DOWNLOAD, "");
-        i.putExtra(DownloadAndCacheService.TITLE, title);
-        if (cacheUri != null)
-            i.putExtra(DownloadAndCacheService.CACHE_URI, cacheUri);
-        i.putExtra(DownloadAndCacheService.SOURCE_URI,
-                ((MobileImagerySpec) layerSelection.getTag()).desc.getUri());
-        i.putExtra(DownloadAndCacheService.UPPERLEFT, ulPoint);
-        i.putExtra(DownloadAndCacheService.LOWERRIGHT, lrPoint);
-        i.putExtra(DownloadAndCacheService.GEOMETRY, getPoints());
-        i.putExtra(DownloadAndCacheService.MIN_RESOLUTION, minRes);
-        i.putExtra(DownloadAndCacheService.MAX_RESOLUTION, maxRes);
-        int numTiles = getTilesOverArea2(((MobileImagerySpec) layerSelection
-                .getTag()).desc.getUri(), minRes, maxRes);
-
-        resetProgressBar();
-        downloadPB.setMax(numTiles);
-
-        context.startService(i);
+        downloader.setTitle(title);
+        downloader.setResolution(minRes, maxRes);
+        downloader.setCacheURI(cacheUri);
+        downloader.setSourceURI(((MobileImagerySpec) layerSelection.getTag())
+                .desc.getUri());
+        if (downloader.startDownload()) {
+            resetProgressBar();
+            downloadPB.setMax(downloader.calculateTileCount());
+        }
     }
 
     public boolean isDownloading() {
@@ -486,16 +329,17 @@ public class OnlineLayersDownloadManager {
         if (shape != null && shape.hasMetaValue("layerDownload"))
             shape.removeFromGroup();
         shape = null;
-        shapeGeom = null;
+        downloader.reset();
         ToolManagerBroadcastReceiver.getInstance().endCurrentTool();
         selectingRegion = false;
     }
 
     void stopDownload() {
-        Intent stopIntent = new Intent(context,
-                DownloadAndCacheService.class);
-        stopIntent.putExtra(DownloadAndCacheService.CANCEL_DOWNLOAD, "");
-        context.startService(stopIntent);
+        downloader.stopDownload();
+    }
+
+    public void setCallback(LayerDownloader.Callback cb) {
+        downloader.setCallback(cb);
     }
 
     /**
@@ -507,42 +351,9 @@ public class OnlineLayersDownloadManager {
      * @return - the total number of tiles
      */
     int getTilesOverArea2(String layerUri, double minRes, double maxRes) {
-        // validate levels and rect bounds
-        if (shape == null)
-            return 0;
-        if (minRes < maxRes)
-            return 0;
-
-        CacheRequest request = new CacheRequest();
-        request.maxResolution = maxRes;
-        request.minResolution = minRes;
-        if (this.shapeGeom == null) {
-            LineString ls = new LineString(2);
-            GeoPoint[] geometry = getPoints();
-            if (FileSystemUtils.isEmpty(geometry))
-                return 0;
-            for (GeoPoint gp : geometry)
-                ls.addPoint(gp.getLongitude(), gp.getLatitude());
-            this.shapeGeom = new Polygon(ls);
-        }
-        request.region = this.shapeGeom;
-        request.countOnly = true;
-
-        int numTiles = 0;
-        TileClient client = null;
-        try {
-            client = TileClientFactory.create(layerUri, null, null);
-            if (client != null)
-                numTiles = client.estimateTileCount(request);
-        } finally {
-            if (client != null)
-                client.dispose();
-        }
-
-        // if all of the layers were too zoomed out, then it can be covered in one tile
-        if (numTiles == 0)
-            return 1;
-        return numTiles;
+        downloader.setSourceURI(layerUri);
+        downloader.setResolution(minRes, maxRes);
+        return downloader.calculateTileCount();
     }
 
     double estimateMinimumResolution(TileMatrix tiles, double maxResolution) {
@@ -556,7 +367,9 @@ public class OnlineLayersDownloadManager {
         at android.widget.AbsListView.obtainView(AbsListView.java:2823
          */
         // validate levels and rect bounds
-        if (ulPoint == null || lrPoint == null)
+        GeoPoint ul = downloader.getUpperLeft();
+        GeoPoint lr = downloader.getLowerRight();
+        if (ul == null || lr == null)
             return maxResolution;
 
         Projection proj = MobileImageryRasterLayer2.getProjection(tiles
@@ -564,8 +377,8 @@ public class OnlineLayersDownloadManager {
         if (proj == null)
             return maxResolution;
 
-        PointD ulProj = proj.forward(ulPoint, null);
-        PointD lrProj = proj.forward(lrPoint, null);
+        PointD ulProj = proj.forward(ul, null);
+        PointD lrProj = proj.forward(lr, null);
 
         TileMatrix.ZoomLevel[] zoomLevels = tiles.getZoomLevel();
         for (int i = 0; i < zoomLevels.length; i++) {

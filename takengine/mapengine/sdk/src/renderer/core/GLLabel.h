@@ -44,20 +44,28 @@ namespace TAK
                             VerticalAlignment vertical_alignment = VerticalAlignment::TEVA_Top, int color = 0xFFFFFFFF,
                             int fill_color = 0x00000000, bool fill = false,
                             TAK::Engine::Feature::AltitudeMode altitude_mode = TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround);
-                   GLLabel(const TextFormatParams &fmt,
-                           TAK::Engine::Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::String text,
-                           Math::Point2<double> desired_offset, double max_draw_resolution,
-                           TextAlignment alignment = TextAlignment::TETA_Center,
-                           VerticalAlignment vertical_alignment = VerticalAlignment::TEVA_Top, int color = 0xFFFFFFFF,
-                           int fill_color = 0x00000000, bool fill = false,
-                           TAK::Engine::Feature::AltitudeMode altitude_mode = TAK::Engine::Feature::AltitudeMode::TEAM_ClampToGround,
-                           float rotation = 0.0, bool rotationAbsolute = false);
+                    GLLabel(const TextFormatParams &fmt,
+                            TAK::Engine::Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::String text,
+                            Math::Point2<double> desired_offset, double max_draw_resolution,
+                            TextAlignment alignment,
+                            VerticalAlignment vertical_alignment, int color,
+                            int fill_color, bool fill,
+                            TAK::Engine::Feature::AltitudeMode altitude_mode);
+                    GLLabel(const TextFormatParams &fmt,
+                            TAK::Engine::Feature::Geometry2Ptr_const&& geometry, TAK::Engine::Port::String text,
+                            Math::Point2<double> desired_offset, double max_draw_resolution,
+                            TextAlignment alignment,
+                            VerticalAlignment vertical_alignment, int color,
+                            int fill_color, bool fill,
+                            TAK::Engine::Feature::AltitudeMode altitude_mode,
+                            float rotation, bool rotationAbsolute);
                     ~GLLabel() = default;
                     GLLabel& operator=(GLLabel&&) NOTHROWS;
                     void setGeometry(const TAK::Engine::Feature::Geometry2& geometry) NOTHROWS;
                     const TAK::Engine::Feature::Geometry2* getGeometry() const NOTHROWS;
                     void setAltitudeMode(const TAK::Engine::Feature::AltitudeMode altitude_mode) NOTHROWS;
                     void setText(const TAK::Engine::Port::String text) NOTHROWS;
+                    void setTextFormat(const TextFormatParams* fmt) NOTHROWS;
                     void setVisible(const bool visible) NOTHROWS;
                     void setAlwaysRender(const bool always_render) NOTHROWS;
                     void setMaxDrawResolution(const double max_draw_resolution) NOTHROWS;

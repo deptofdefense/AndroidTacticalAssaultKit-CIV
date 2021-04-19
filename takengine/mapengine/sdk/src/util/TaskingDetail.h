@@ -64,6 +64,14 @@ namespace TAK {
 				};
 
 				template <typename T>
+				struct Resolver<std::unique_ptr<T>> {
+					static TAKErr resolve(std::unique_ptr<T>& r, std::unique_ptr<T>& v) NOTHROWS {
+						r = std::move(v);
+						return TE_Ok;
+					}
+				};
+
+				template <typename T>
 				struct Resolver<Future<T>> {
 					static TAKErr resolve(T &result, Future<T> &future) NOTHROWS {
 						TAKErr callCode = TE_Err;
@@ -205,7 +213,7 @@ namespace TAK {
 				struct Capture;
 
 #define CAP_ST() typedef typename TaskArgsTypeOfT<Func>::ResultType ResultType; Func func
-#define CAP_IT(n) typedef typename TaskArgsTypeOfT<Func>::A##n##Type A##n##Type; typedef std::remove_reference_t<C##n> C##n##Type; C##n##Type c##n
+#define CAP_IT(n) typedef typename TaskArgsTypeOfT<Func>::A##n##Type A##n##Type; typedef typename std::decay<C##n>::type C##n##Type; C##n##Type c##n
 #define CAP_ID(n) A##n##Type a##n(Defaulter<A##n##Type>::value()); { TAKErr code = Resolver<C##n##Type>::resolve(a##n, c##n); if (code != TE_Ok) return code; }
 
 				// 0 Args
@@ -245,7 +253,10 @@ namespace TAK {
 				struct Capture<Func, C0, C1, C2> {
 					CAP_ST();
 					CAP_IT(0); CAP_IT(1); CAP_IT(2);
-					Capture(Func func, C0 c0, C1 c1, C2 c2) : func(func), c0(c0), c1(c1), c2(c2) { }
+
+					template <typename C0F, typename C1F, typename C2F>
+					Capture(Func func, C0F&& c0, C1F&& c1, C2F&& c2) 
+						: func(func), c0(std::forward<C0F>(c0)), c1(std::forward<C1F>(c1)), c2(std::forward<C2F>(c2)) { }
 					TAKErr invoke(ResultType& r) NOTHROWS {
 						CAP_ID(0); CAP_ID(1); CAP_ID(2);
 						return func(r, a0, a1, a2);
@@ -257,7 +268,9 @@ namespace TAK {
 				struct Capture<Func, C0, C1, C2, C3> {
 					CAP_ST();
 					CAP_IT(0); CAP_IT(1); CAP_IT(2); CAP_IT(3);
-					Capture(Func func, C0 c0, C1 c1, C2 c2, C3 c3) : func(func), c0(c0), c1(c1), c2(c2), c3(c3) { }
+					template <typename C0F, typename C1F, typename C2F, typename C3F>
+					Capture(Func func, C0F&& c0, C1F&& c1, C2F&& c2, C3F&& c3) : func(func), c0(std::forward<C0F>(c0)), c1(std::forward<C1F>(c1)), c2(std::forward<C2F>(c2)),
+					c3(std::forward<C3F>(c3)) { }
 					TAKErr invoke(ResultType& r) NOTHROWS {
 						CAP_ID(0); CAP_ID(1); CAP_ID(2); CAP_ID(3);
 						return func(r, a0, a1, a2, a3);
@@ -378,6 +391,37 @@ namespace TAK {
 				Tasking::Capture<Func, TAKErr, Caps...> capture;
 			};
 
+			template <typename T>
+			class AsyncPromise : public AsyncResult<T> {
+			public:
+				AsyncPromise() NOTHROWS { }
+
+				virtual ~AsyncPromise() NOTHROWS {}
+
+				TAKErr setValue(const T& value) NOTHROWS {
+					Thread::MonitorLockPtr lockPtr(nullptr, nullptr);
+					TAKErr code = this->beginWorking(lockPtr);
+					if (code != TE_Ok)
+						return code;
+					code = AsyncResult<T>::setValue(lockPtr, value);
+					return AsyncResult<T>::finishWorking(lockPtr, code);
+				}
+
+				TAKErr setValue(T&& value) NOTHROWS {
+					Thread::MonitorLockPtr lockPtr(nullptr, nullptr);
+					TAKErr code = this->beginWorking(lockPtr);
+					if (code != TE_Ok)
+						return code;
+					code = AsyncResult<T>::setValue(lockPtr, std::move(value));
+					return AsyncResult<T>::finishWorking(lockPtr, code);
+				}
+
+			protected:
+				virtual TAKErr onSignalWork(Thread::MonitorLockPtr& lockPtr) NOTHROWS {
+					return TE_Ok;
+				}
+			};
+
 			//
 			// AsyncResult<T> definition
 			//
@@ -464,6 +508,13 @@ namespace TAK {
 			}
 
 			template <typename T>
+			TAKErr Future<T>::cancel() NOTHROWS {
+				if (!this->impl)
+					return TE_IllegalState;
+				return this->impl->preempt(TE_Canceled);
+			}
+
+			template <typename T>
 			template <typename Func, typename ...Args>
 			FutureTask<TaskResultOfT<Func>>
 			Future<T>::thenOn(const SharedWorkerPtr &worker, Func func, Args &&...args) NOTHROWS {
@@ -512,14 +563,6 @@ namespace TAK {
 				: Future<T>(asyncResult),
 				worker(worker)
 			{ }
-
-
-			template <typename T>
-			TAKErr FutureTask<T>::cancel() NOTHROWS {
-				if (!this->impl)
-					return TE_IllegalState;
-				return this->impl->preempt(TE_Canceled);
-			}
 
 			template <typename T>
 			template <typename Func, typename ...Args>

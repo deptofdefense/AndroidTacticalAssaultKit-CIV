@@ -1,6 +1,7 @@
 
 package com.atakmap.android.model;
 
+import com.atakmap.android.data.FileContentHandler;
 import com.atakmap.android.data.FileContentResolver;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.model.opengl.GLModelLayer;
@@ -18,6 +19,8 @@ import com.atakmap.map.layer.model.ModelInfo;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Used to map model files to associated metadata (i.e. geo bounds, visibility)
@@ -28,6 +31,9 @@ public class ModelContentResolver extends FileContentResolver {
 
     private final MapView _mapView;
     private final FeatureDataStore2 _dataStore;
+
+    // Feature set ID -> model handler
+    private final Map<Long, ModelContentHandler> _fsToHandler = new HashMap<>();
 
     public ModelContentResolver(MapView mv, FeatureDataStore2 dataStore) {
         super(null);
@@ -89,5 +95,42 @@ public class ModelContentResolver extends FileContentResolver {
                 c.close();
         }
         addModelHandler(featureSet, bounds.build());
+    }
+
+    /**
+     * Get a model handler by its feature set ID
+     * @param fsid Feature set ID
+     * @return Model handler or null if not found
+     */
+    public synchronized ModelContentHandler getHandler(long fsid) {
+        return _fsToHandler.get(fsid);
+    }
+
+    @Override
+    public boolean addHandler(FileContentHandler handler, boolean allowUpdate) {
+        if (handler instanceof ModelContentHandler) {
+            ModelContentHandler h = (ModelContentHandler) handler;
+            synchronized (this) {
+                _fsToHandler.put(h.getFeatureSetID(), h);
+            }
+        }
+        return super.addHandler(handler, allowUpdate);
+    }
+
+    @Override
+    public void removeHandler(File file) {
+        if (file == null)
+            return;
+        FileContentHandler handler;
+        synchronized (this) {
+            handler = _handlers.get(file.getAbsolutePath());
+        }
+        if (handler instanceof ModelContentHandler) {
+            ModelContentHandler h = (ModelContentHandler) handler;
+            synchronized (this) {
+                _fsToHandler.remove(h.getFeatureSetID());
+            }
+        }
+        super.removeHandler(file);
     }
 }

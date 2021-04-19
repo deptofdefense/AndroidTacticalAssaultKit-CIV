@@ -71,7 +71,7 @@ class NativeLayerSelectionAdapter extends LayerSelectionAdapter
         }
     };
 
-    private final NativeImageryRasterLayer2 layer;
+    protected final NativeImageryRasterLayer2 layer;
     private final LocalRasterDataStore dataStore;
     private final LayoutInflater inflater;
     private AOIIsectComputer calc;
@@ -450,7 +450,7 @@ class NativeLayerSelectionAdapter extends LayerSelectionAdapter
         if (this.view == null)
             return;
         boolean showOutlines = getOutlinesDataStore() != null;
-        ToggleButton outlinesButton = view.getOutlineToggleButton();
+        CompoundButton outlinesButton = view.getOutlineToggleButton();
         if (showOutlines && outlinesButton != null) {
             final boolean outlinesVisible = getOutlinesDataStore()
                     .queryFeaturesCount(getAOIParams()) > 0;

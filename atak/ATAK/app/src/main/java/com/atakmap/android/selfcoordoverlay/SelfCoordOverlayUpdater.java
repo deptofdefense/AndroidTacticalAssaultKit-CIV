@@ -537,9 +537,7 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
                 locationStr = "";
 
             final float locationWidth = _format.measureTextWidth(locationStr);
-            final float maxWidth = (callsignWidth > locationWidth)
-                    ? callsignWidth
-                    : locationWidth;
+            final float maxWidth = Math.max(callsignWidth, locationWidth);
 
             final float spaceWidth = _format.measureTextWidth(" ");
 
@@ -655,26 +653,30 @@ public class SelfCoordOverlayUpdater extends CotStreamListener implements
 
         // User tapped self coordinate text - cycle coordinate or pan to self
         else if (widget == _text) {
-            if (_toggle.equals("cyclecoordinate")) {
-                toggleCoorDisplay();
-                calc.change();
-            } else if (_toggle.equals("panto") && _self.getGroup() != null) {
-                // Check if the radial is opened on another map item
-                MapItem mi = MapMenuReceiver.getCurrentItem();
-                if (mi != null && !mi.getUID().equals(_self.getUID())) {
-                    // Hide radial, coordinate info, and un-focus
-                    AtakBroadcast.getInstance().sendBroadcast(new Intent(
-                            MapMenuReceiver.HIDE_MENU));
-                    AtakBroadcast.getInstance().sendBroadcast(new Intent(
-                            "com.atakmap.android.maps.HIDE_DETAILS"));
-                    AtakBroadcast.getInstance().sendBroadcast(
-                            new Intent("com.atakmap.android.maps.UNFOCUS"));
-                }
-
-                // Pan to the self marker without triggering the receiver used
-                // to reset self lock-on
-                _mapView.getMapController().panTo(_self.getPoint(), true,
-                        false);
+            switch (_toggle) {
+                case "cyclecoordinate":
+                    toggleCoorDisplay();
+                    calc.change();
+                    break;
+                case "panto":
+                    if (_self != null && _self.getGroup() != null) {
+                        // Check if the radial is opened on another map item
+                        final MapItem mi = MapMenuReceiver.getCurrentItem();
+                        if (mi != null && !mi.getUID().equals(_self.getUID())) {
+                            // Hide radial, coordinate info, and un-focus
+                            AtakBroadcast.getInstance().sendBroadcast(new Intent(
+                                    MapMenuReceiver.HIDE_MENU));
+                            AtakBroadcast.getInstance().sendBroadcast(new Intent(
+                                    "com.atakmap.android.maps.HIDE_DETAILS"));
+                            AtakBroadcast.getInstance().sendBroadcast(
+                                    new Intent("com.atakmap.android.maps.UNFOCUS"));
+                        }
+                        // Pan to the self marker without triggering the receiver used
+                        // to reset self lock-on
+                        _mapView.getMapController().panTo(_self.getPoint(), true,
+                                false);
+                    }
+                    break;
             }
         }
 

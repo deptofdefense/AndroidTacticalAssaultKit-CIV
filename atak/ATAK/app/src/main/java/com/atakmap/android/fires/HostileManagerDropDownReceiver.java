@@ -204,9 +204,7 @@ public class HostileManagerDropDownReceiver extends DropDownReceiver implements
         ArrayList<MapItemHolder> items = new ArrayList<>();
         File inputFile = FileSystemUtils.getItem("Databases/" + FILENAME);
         if (IOProviderFactory.exists(inputFile)) {
-            InputStream is = null;
-            try {
-                is = IOProviderFactory.getInputStream(inputFile);
+            try(InputStream is = IOProviderFactory.getInputStream(inputFile)) {
                 byte[] temp = new byte[is.available()];
                 int read = is.read(temp);
                 String menuString = new String(temp, 0, read,
@@ -236,15 +234,9 @@ public class HostileManagerDropDownReceiver extends DropDownReceiver implements
                 }
             } catch (IOException e) {
                 Log.e(TAG, "error occurred reading the list of hostiles", e);
-            } finally {
-                if (is != null)
-                    try {
-                        is.close();
-                    } catch (Exception ignore) {
-                    }
             }
         } else
-            Log.d(TAG, "No 9-line hostile file found");
+            Log.d(TAG, "File not found: " + FILENAME);
 
         return items;
     }
@@ -254,15 +246,12 @@ public class HostileManagerDropDownReceiver extends DropDownReceiver implements
      */
 
     private void saveContacts() {
-        OutputStream os = null;
-        InputStream is = null;
-
         final File outputFile = FileSystemUtils
                 .getItem("Databases/" + FILENAME);
 
         if (IOProviderFactory.exists(outputFile))
             FileSystemUtils.delete(outputFile);
-        try {
+        try(OutputStream os = IOProviderFactory.getOutputStream(outputFile)) {
             StringBuilder builder = new StringBuilder();
             synchronized (lock) {
                 for (MapItem item : hostilesListBase) {
@@ -276,25 +265,11 @@ public class HostileManagerDropDownReceiver extends DropDownReceiver implements
                     }
                 }
             }
-            os = IOProviderFactory.getOutputStream(outputFile);
-            is = new ByteArrayInputStream(builder.toString()
-                    .getBytes());
-            FileSystemUtils.copy(is, os);
+            try(InputStream is = new ByteArrayInputStream(builder.toString().getBytes())) {
+                FileSystemUtils.copy(is, os);
+            }
         } catch (IOException e) {
             Log.e(TAG, "error occurred", e);
-        } finally {
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (Exception ignore) {
-                }
-            }
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (Exception ignore) {
-                }
-            }
         }
     }
 

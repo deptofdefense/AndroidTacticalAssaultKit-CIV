@@ -40,6 +40,7 @@ import java.util.LinkedList;
 import java.util.List;
 import com.atakmap.coremap.locale.LocaleUtil;
 import android.database.DatabaseUtils;
+import com.atakmap.util.zip.IoUtils;
 
 public class ChatDatabase {
     public static final String TAG = "ChatDatabase";
@@ -1101,11 +1102,7 @@ public class ChatDatabase {
             }
             writer.flush();
         } finally {
-            try {
-                writer.close();
-            } catch (IOException ioe) {
-                Log.d(TAG, "failed to close the writer");
-            }
+            IoUtils.close(writer,TAG,"failed to close the writer");
         }
     }
 }

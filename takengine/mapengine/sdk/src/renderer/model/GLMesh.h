@@ -31,7 +31,9 @@ namespace TAK {
                 {
                 public:
                     GLMesh(TAK::Engine::Core::RenderContext& ctx, const Math::Matrix2* localFrame, const TAK::Engine::Feature::AltitudeMode altitudeMode, const std::shared_ptr<const TAK::Engine::Model::Mesh>& subject, const Math::Point2<double>& anchor, const std::shared_ptr<MaterialManager>& matmgr) NOTHROWS;
+                    GLMesh(TAK::Engine::Core::RenderContext& ctx, const Math::Matrix2* localFrame, const TAK::Engine::Feature::AltitudeMode altitudeMode, const std::shared_ptr<const TAK::Engine::Model::Mesh>& subject, const Math::Point2<double>& anchor, const std::shared_ptr<MaterialManager>& matmgr, int srid) NOTHROWS;
                     GLMesh(TAK::Engine::Core::RenderContext& ctx, Math::Matrix2Ptr_const&& localFrame, const TAK::Engine::Feature::AltitudeMode altitudeMode, const std::shared_ptr<const TAK::Engine::Model::Mesh>& subject, const Math::Point2<double>& anchor, const std::shared_ptr<MaterialManager>& matmgr) NOTHROWS;
+                    GLMesh(TAK::Engine::Core::RenderContext& ctx, Math::Matrix2Ptr_const&& localFrame, const TAK::Engine::Feature::AltitudeMode altitudeMode, const std::shared_ptr<const TAK::Engine::Model::Mesh>& subject, const Math::Point2<double>& anchor, const std::shared_ptr<MaterialManager>& matmgr, int srid) NOTHROWS;
                 private:
                     Util::TAKErr initMaterials() NOTHROWS;
                 public:

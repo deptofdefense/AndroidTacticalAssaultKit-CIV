@@ -6,11 +6,12 @@ import android.content.Intent;
 import android.os.AsyncTask;
 
 import com.atakmap.android.importexport.ImportExportMapComponent;
-import com.atakmap.android.importfiles.resource.ChildResource;
 import com.atakmap.android.importfiles.resource.RemoteResource;
+import com.atakmap.android.importfiles.sort.ImportGRGSort;
 import com.atakmap.android.importfiles.sort.ImportKMLSort;
 import com.atakmap.android.importfiles.sort.ImportKMZSort;
 import com.atakmap.android.importfiles.sort.ImportResolver;
+import com.atakmap.android.importfiles.sort.ImportResolver.SortFlags;
 import com.atakmap.android.importfiles.ui.ImportManagerDropdown;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.util.NotificationUtil;
@@ -18,21 +19,22 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.filesystem.HashingUtils;
 import com.atakmap.spatial.kml.FeatureHandler;
 import com.atakmap.spatial.kml.KMLUtil;
-import com.ekito.simpleKML.model.Kml;
 import com.ekito.simpleKML.model.NetworkLink;
 
 import org.simpleframework.xml.Serializer;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Background task to import one or more KML files that were downloaded via NetworkLinks. Sends
@@ -47,6 +49,7 @@ public class ImportNetworkLinksTask extends
 
     private final Context _context;
     private final int _notificationId;
+    private final boolean _showNotifications;
     private final Serializer _serializer;
     private final RemoteResource _resource;
 
@@ -76,10 +79,11 @@ public class ImportNetworkLinksTask extends
     }
 
     public ImportNetworkLinksTask(Serializer serializer, Context context,
-            RemoteResource resource,
-            int notificationId) {
+            RemoteResource resource, int notificationId,
+            boolean showNotifications) {
         _context = context;
         _notificationId = notificationId;
+        _showNotifications = showNotifications;
         _serializer = serializer;
         _resource = resource;
     }
@@ -88,7 +92,7 @@ public class ImportNetworkLinksTask extends
     protected Result doInBackground(File... params) {
         Thread.currentThread().setName("ImportNetworkLinksTask");
 
-        if (params == null || params.length < 1) {
+        if (FileSystemUtils.isEmpty(params)) {
             Log.w(TAG, "No files to import...");
             return new Result(_context.getString(R.string.no_file_specified));
         }
@@ -97,9 +101,11 @@ public class ImportNetworkLinksTask extends
         File dir = params[0];
 
         // get sorters (just KML/Z)
+        // Also include GRG sorter because GRGs use the KMZ extension
         List<ImportResolver> sorters = new ArrayList<>();
-        sorters.add(new ImportKMLSort(_context, false, false, false));
-        sorters.add(new ImportKMZSort(_context, false, false, false, false));
+        sorters.add(new ImportGRGSort(_context, true, false, false));
+        sorters.add(new ImportKMZSort(_context, true, false, false, false));
+        sorters.add(new ImportKMLSort(_context, true, false, false));
 
         return sort(dir, sorters);
     }
@@ -122,7 +128,7 @@ public class ImportNetworkLinksTask extends
         }
 
         File[] downloads = IOProviderFactory.listFiles(dir);
-        if (downloads == null || downloads.length < 1) {
+        if (FileSystemUtils.isEmpty(downloads)) {
             Log.w(TAG,
                     "Remote KML Download Failed - No KML files downloaded: "
                             + dir.getAbsolutePath());
@@ -133,6 +139,7 @@ public class ImportNetworkLinksTask extends
 
         // loop all downloaded file
         int sortedCount = 0;
+        Set<SortFlags> flags = new HashSet<>();
         for (File file : downloads) {
             // use KML or KMZ to validate and import to proper location
             Log.d(TAG, "Importing Network Link: " + file.getAbsolutePath());
@@ -149,6 +156,7 @@ public class ImportNetworkLinksTask extends
                         continue;
                     }
 
+                    RemoteResource res;
                     String newMD5 = HashingUtils.md5sum(file);
 
                     // look for name match pull updated info for the resource
@@ -161,22 +169,29 @@ public class ImportNetworkLinksTask extends
                                     _resource.getName())) {
                         // Could be KML or KMZ but we dont update type, just leave as KML as "KML"
                         // has special handling by the UI code
-                        _resource.setLocalPath(destPath.getAbsolutePath());
-                        _resource.setMd5(newMD5);
-                        _resource.setLastRefreshed(
-                                IOProviderFactory.lastModified(file));
+                        res = _resource;
                         Log.d(TAG, "Found match on updated resource: "
                                 + _resource.toString());
                     } else {
                         // otherwise this is a child resource from a NetworkLink
-                        ChildResource child = new ChildResource();
-                        child.setName(name);
-                        child.setLocalPath(destPath.getAbsolutePath());
-                        // child.setMd5(newMD5);
-                        _resource.addChild(child);
-                        Log.d(TAG,
-                                "Adding child resource: " + child.toString());
+                        res = _resource.findChildByPath(file.getAbsolutePath());
                     }
+
+                    if (res == null) {
+                        Log.e(TAG, "Unknown resource with name: " + name);
+                        continue;
+                    }
+
+                    String ext = sorter.getExt();
+                    if (FileSystemUtils.isEmpty(ext))
+                        ext = FileSystemUtils.getExtension(destPath, true, false);
+                    if (ext.startsWith("."))
+                        ext = ext.substring(1).toUpperCase(LocaleUtil.getCurrent());
+
+                    res.setType(ext);
+                    res.setLocalPath(destPath.getAbsolutePath());
+                    res.setMd5(newMD5);
+                    res.setLastRefreshed(IOProviderFactory.lastModified(file));
 
                     if (IOProviderFactory.exists(destPath)) {
                         String existingMD5 = HashingUtils.md5sum(destPath);
@@ -203,7 +218,7 @@ public class ImportNetworkLinksTask extends
                     }
 
                     // now attempt to sort (i.e. move the file to proper location)
-                    if (sorter.beginImport(file)) {
+                    if (sorter.beginImport(file, flags)) {
                         sortedCount++;
                         Log.d(TAG,
                                 sorter.toString() + ", Sorted: "
@@ -212,10 +227,12 @@ public class ImportNetworkLinksTask extends
 
                         // setup refresh interval for NetworkLinks, if specified by user
                         if (_resource.getRefreshSeconds() > 0) {
-                            ImportNetworkLinksTask.beginNetworkLinkRefresh(
-                                    destPath, _serializer,
-                                    _context);
+                            beginNetworkLinkRefresh(destPath, _context);
                         }
+
+                        // XXX - Currently no reason to import using multiple
+                        // sorters here - only produces buggy behavior
+                        break;
                     } else
                         Log.w(TAG,
                                 sorter.toString()
@@ -228,7 +245,7 @@ public class ImportNetworkLinksTask extends
         // delete UID folder if all went well. If files left over, they will cleaned up by
         // DirectoryCleanup task/timer
         downloads = IOProviderFactory.listFiles(dir);
-        if (downloads == null || downloads.length < 1) {
+        if (FileSystemUtils.isEmpty(downloads)) {
             FileSystemUtils.delete(dir);
         } else
             Log.w(TAG,
@@ -242,17 +259,15 @@ public class ImportNetworkLinksTask extends
 
         if (result == null) {
             Log.e(TAG, "Failed to import Remote KML");
-
-            NotificationUtil
-                    .getInstance()
-                    .postNotification(
-                            _notificationId,
-                            R.drawable.ic_network_error_notification_icon,
-                            NotificationUtil.RED,
-                            _context.getString(
+            if (_showNotifications)
+                NotificationUtil.getInstance().postNotification(
+                        _notificationId,
+                        R.drawable.ic_network_error_notification_icon,
+                        NotificationUtil.RED,
+                        _context.getString(
                                     R.string.importmgr_remote_kml_import_failed),
-                            _context.getString(R.string.failed_to_import),
-                            _context.getString(R.string.failed_to_import));
+                        _context.getString(R.string.failed_to_import),
+                        _context.getString(R.string.failed_to_import));
             return;
         }
 
@@ -262,21 +277,16 @@ public class ImportNetworkLinksTask extends
             Log.d(TAG, "Finished importing: " + result.dir);
 
             // notify user
-            NotificationUtil
-                    .getInstance()
-                    .postNotification(
-                            _notificationId,
-                            R.drawable.ic_kml_file_notification_icon,
-                            NotificationUtil.GREEN,
-                            _context.getString(
-                                    R.string.importmgr_remote_kml_download_complete),
-                            String.format(
-                                    _context.getString(
-                                            R.string.importmgr_download_complete_importing_files),
+            if (_showNotifications)
+                NotificationUtil.getInstance().postNotification(
+                        _notificationId,
+                        R.drawable.ic_kml_file_notification_icon,
+                        NotificationUtil.GREEN,
+                        _context.getString(R.string.importmgr_remote_kml_download_complete),
+                        _context.getString(R.string.importmgr_download_complete_importing_files,
                                     result.fileCount),
-                            String.format(
-                                    _context.getString(
-                                            R.string.importmgr_download_complete_importing_files),
+                            _context.getString(
+                                    R.string.importmgr_download_complete_importing_files,
                                     result.fileCount));
 
             // send an intent so adapter can update details about the local cache of the remote
@@ -292,8 +302,7 @@ public class ImportNetworkLinksTask extends
                         "Scheduling refresh task for top level resource: "
                                 + _resource.toString());
                 Intent intent = new Intent();
-                intent.setAction(
-                        "com.atakmap.android.importfiles.KML_NETWORK_LINK");
+                intent.setAction(ImportExportMapComponent.KML_NETWORK_LINK_REFRESH);
                 intent.putExtra("kml_networklink_url", _resource.getUrl());
                 intent.putExtra("kml_networklink_filename",
                         _resource.getName());
@@ -310,20 +319,18 @@ public class ImportNetworkLinksTask extends
                         .getString(
                                 R.string.importmgr_failed_to_import_remote_kml_error_unknown);
 
-            NotificationUtil
-                    .getInstance()
-                    .postNotification(
-                            _notificationId,
-                            R.drawable.ic_network_error_notification_icon,
-                            NotificationUtil.RED,
-                            _context.getString(
+            if (_showNotifications)
+                NotificationUtil.getInstance().postNotification(
+                        _notificationId,
+                        R.drawable.ic_network_error_notification_icon,
+                        NotificationUtil.RED,
+                        _context.getString(
                                     R.string.importmgr_remote_kml_download_cancelled),
-                            error, error);
+                        error, error);
         }
     }
 
-    private static void beginNetworkLinkRefresh(File file,
-            Serializer serializer, Context context) {
+    private static void beginNetworkLinkRefresh(File file, Context context) {
 
         // Extract KML from KMZ if necessary
         File fileToParse = file;
@@ -344,48 +351,21 @@ public class ImportNetworkLinksTask extends
 
         // TODO for performance do not need to parse entire document? just need list of NetworkLinks
 
-        FileInputStream fis = null;
-        try {
-            // Open file in non-strict mode to ignore folks' non-standard or deprecated KML
-            Kml kml = serializer.read(Kml.class, new BufferedInputStream(
-                    fis = IOProviderFactory.getInputStream(
-                            fileToParse)),
-                    false);
-
-            if (kml == null) {
-                Log.e(TAG,
-                        "Unable to parse KML file: " + file.getAbsolutePath());
-                return;
-            }
-
-            beginNetworkLinkRefresh(kml, file.getName(), context);
-
+        try(InputStream is = IOProviderFactory.getInputStream(fileToParse)) {
+            beginNetworkLinkRefresh(is, file.getName());
         } catch (Exception e) {
             Log.e(TAG, "Error parsing KML file: " + file.getAbsolutePath(), e);
-
-        } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException ignore) {
-                    Log.e(TAG, "error closing stream");
-                }
-            }
         }
-
     }
 
     /**
-     * @param kml
+     * @param is XML Input stream to parse
      * @param filename (_not_ file path)
      */
-    private static void beginNetworkLinkRefresh(Kml kml, final String filename,
-            final Context context) {
-
+    private static void beginNetworkLinkRefresh(InputStream is,
+            final String filename) {
         Log.d(TAG, "Processing KML Network Links for: " + filename);
-
-        KMLUtil.deepFeatures(kml, new FeatureHandler<NetworkLink>() {
-
+        KMLUtil.parseNetworkLinks(is, new FeatureHandler<NetworkLink>() {
             @Override
             public boolean process(NetworkLink link) {
                 if (link == null || link.getLink() == null
@@ -422,23 +402,10 @@ public class ImportNetworkLinksTask extends
                             "Using default Network Link refreshInterval instead of: "
                                     + link.getLink().getRefreshInterval());
 
-                Intent intent = new Intent();
-                intent.setAction(
-                        ImportExportMapComponent.KML_NETWORK_LINK_REFRESH);
-                intent.putExtra("kml_networklink_url", url);
-                intent.putExtra("kml_networklink_filename", childFilename);
-                intent.putExtra("kml_networklink_intervalseconds",
-                        intervalSeconds);
-                intent.putExtra("kml_networklink_stop", false);
-                if (context != null) {
-                    Log.d(TAG, "Scheduling NetworkLink refresh: " + url);
-                    AtakBroadcast.getInstance().sendBroadcast(intent);
-                } else
-                    Log.w(TAG,
-                            "Context not ready, unable to schedule NetworkLink refresh: "
-                                    + url);
+                ImportExportMapComponent.getInstance().refreshNetworkLink(
+                        url, childFilename, intervalSeconds, false);
                 return false;
             }
-        }, NetworkLink.class);
+        });
     }
 }

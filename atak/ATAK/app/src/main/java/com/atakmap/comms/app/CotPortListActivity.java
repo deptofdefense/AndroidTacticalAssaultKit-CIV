@@ -478,6 +478,8 @@ public abstract class CotPortListActivity extends MetricActivity {
         String password = inputData.getString(CotPort.PASSWORD_KEY);
         String cacheCreds = inputData.getString(CotPort.CACHECREDS_KEY);
         String description = inputData.getString(CotPort.DESCRIPTION_KEY);
+        Long expiration = inputData.getLong(CotPort.EXPIRATION_KEY);
+
         if (creds == null
                 || !FileSystemUtils.isEquals(username, creds.username)
                 || !FileSystemUtils.isEquals(password, creds.password)
@@ -486,7 +488,7 @@ public abstract class CotPortListActivity extends MetricActivity {
                                 AtakCertificateDatabaseIFace.TYPE_CLIENT_CERTIFICATE,
                                 newServer) == null) {
             CertificateEnrollmentClient.getInstance().enroll(this,
-                    description, connectString, cacheCreds, null, true);
+                    description, connectString, cacheCreds, expiration, null, true);
         }
     }
 

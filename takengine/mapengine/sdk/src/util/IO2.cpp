@@ -1253,9 +1253,9 @@ namespace
         if(!path)
             return TE_InvalidArg;
         if(limit)
-            return getFileCountImpl(value, path);
-        else
             return getFileCountImpl(value, path, limit);
+        else
+            return getFileCountImpl(value, path);
     }
     TAKErr DefaultFilesystem::listFiles(TAK::Engine::Port::Collection<TAK::Engine::Port::String> &value, const char *path) NOTHROWS
     {
@@ -1345,9 +1345,12 @@ namespace
 #elif defined(PLATFORMSTL_OS_IS_UNIX)
                     *value = statData.st_mtime * 1000 + statData.st_mtimensec / 1000000;
 #else
-                    *value = (static_cast<uint64_t> (statData.ftLastWriteTime.dwHighDateTime)
+                    int64_t fileTimeMS = (static_cast<uint64_t> (statData.ftLastWriteTime.dwHighDateTime)
                         << 32 | statData.ftLastWriteTime.dwLowDateTime)
                         / 10000;
+                    if (fileTimeMS)
+                        fileTimeMS -= 11644473600000; // milliseconds from 1601 to UNIX epoch
+                    *value = fileTimeMS;
 #endif
                 }
                 else if (FS_Traits::is_directory(&statData))

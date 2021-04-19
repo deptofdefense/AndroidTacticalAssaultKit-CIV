@@ -5,7 +5,11 @@ import android.content.Context;
 
 import com.atakmap.android.androidtest.ATAKInstrumentedTest;
 import com.atakmap.android.androidtest.util.FileUtils;
+import com.atakmap.android.androidtest.util.RandomUtils;
+import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.io.ZipVirtualFile;
+import com.atakmap.util.Collections2;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
@@ -16,6 +20,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -26,9 +31,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.nio.file.FileSystem;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * Instrumented test, which will execute on an Android device.
@@ -477,7 +485,7 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
                 fos.write(arr);
             }
 
-            FileSystemUtils.copyFile(orig.file, copy.file, null);
+            FileSystemUtils.copyFile(orig.file, copy.file, (byte[])null);
             fail();
         }
     }
@@ -509,4 +517,33 @@ public class FileSystemUtilsTest extends ATAKInstrumentedTest {
 
     }
 
+    @Test
+    public void FileSystemUtils_unzip() throws IOException {
+        try(FileUtils.AutoDeleteFile src = FileUtils.AutoDeleteFile.createTempDir();
+            FileUtils.AutoDeleteFile zip = FileUtils.AutoDeleteFile.createTempFile(".zip");
+            FileUtils.AutoDeleteFile dst = FileUtils.AutoDeleteFile.createTempDir()) {
+
+            // stage some content to create a zip file
+            try(FileOutputStream fos = new FileOutputStream(new File(src.file, "dat256.dat"))) {
+                fos.write(RandomUtils.randomByteArray(256*1024));
+            }
+            try(FileOutputStream fos = new FileOutputStream(new File(src.file, "dat512.dat"))) {
+                fos.write(RandomUtils.randomByteArray(512*1024));
+            }
+            try(FileOutputStream fos = new FileOutputStream(new File(src.file, "dat1024.dat"))) {
+                fos.write(RandomUtils.randomByteArray(1024*1024));
+            }
+            // zip the contents
+            FileSystemUtils.delete(zip.file);
+            FileSystemUtils.zipDirectory(src.file, zip.file);
+
+            // unzip to new directory
+            FileSystemUtils.unzip(new ZipVirtualFile(zip.file), dst.file, false);
+
+            // compare the zip with the output
+            FileUtils.assertRelativeTreeEquals(new ZipVirtualFile(zip.file), dst.file);
+            // compare the source with the output
+            FileUtils.assertRelativeTreeEquals(src.file, dst.file);
+        }
+    }
 }

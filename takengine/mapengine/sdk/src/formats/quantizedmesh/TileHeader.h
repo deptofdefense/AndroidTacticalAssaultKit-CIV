@@ -1,6 +1,11 @@
 #pragma once
 #include "util/DataInput2.h"
 
+namespace TAK {
+namespace Engine {
+namespace Formats {
+namespace QuantizedMesh {
+
 struct TileHeader {
     // The center of the tile in Earth-centered Fixed coordinates.
     double centerX;
@@ -51,3 +56,8 @@ struct TileHeader {
         return maximumHeight - minimumHeight;
     }
 };
+
+}
+}
+}
+}

@@ -643,7 +643,7 @@ public class IOProviderFactory {
     public static boolean createNewFile(File f) {
         if (exists(f))
             return false;
-        try (FileOutputStream s = getOutputStream(f)) {
+        try (FileOutputStream ignored = getOutputStream(f)) {
             // opening the output stream will create a new, zero length file
             return true;
         } catch (IOException e) {

@@ -9,7 +9,6 @@ import com.atakmap.android.hierarchy.action.GoTo;
 import com.atakmap.android.hierarchy.filters.FOVFilter;
 import com.atakmap.android.maps.ILocation;
 import com.atakmap.android.maps.MapView;
-import com.atakmap.android.menu.MapMenuReceiver;
 import com.atakmap.android.menu.MapMenuReceiverCompat;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.app.R;
@@ -28,7 +27,7 @@ public abstract class FileOverlayContentHandler extends FileContentHandler
 
     protected final MapView _mapView;
     protected final Context _context;
-    protected final GeoBounds _bounds;
+    protected GeoBounds _bounds;
 
     protected FileOverlayContentHandler(MapView mapView, File file,
             Envelope bounds) {
@@ -36,8 +35,8 @@ public abstract class FileOverlayContentHandler extends FileContentHandler
         _mapView = mapView;
         _context = mapView.getContext();
         if (bounds != null)
-            _bounds = new GeoBounds(bounds.minY, bounds.minX, bounds.maxY,
-                    bounds.maxX);
+            _bounds = new MutableGeoBounds(bounds.minY, bounds.minX,
+                    bounds.maxY, bounds.maxX);
         else
             _bounds = null;
     }

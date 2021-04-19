@@ -72,12 +72,9 @@ public class CopyTask extends MissionPackageBaseTask {
 
         // now copy to deploy directory
 
-        FileInputStream fis = null;
-        FileOutputStream fos = null;
-        try {
-            FileSystemUtils.copyStream(
-                    fis = IOProviderFactory.getInputStream(source),
-                    fos = IOProviderFactory.getOutputStream(_destination));
+        try(FileInputStream fis = IOProviderFactory.getInputStream(source);
+            FileOutputStream fos = IOProviderFactory.getOutputStream(_destination)) {
+            FileSystemUtils.copyStream(fis, fos);
         } catch (Exception e) {
             Log.w(TAG, "Failed to deploy (1) to: " + _destination, e);
             cancel("Failed to deploy "
@@ -86,17 +83,6 @@ public class CopyTask extends MissionPackageBaseTask {
                                     R.string.mission_package_name))
                     + " (CODE=1): " + _manifest.getName());
             return false;
-        } finally {
-            if (fis != null)
-                try {
-                    fis.close();
-                } catch (Exception ignore) {
-                }
-            if (fos != null)
-                try {
-                    fos.close();
-                } catch (Exception ignore) {
-                }
         }
 
         // now that file was written out, set additional data

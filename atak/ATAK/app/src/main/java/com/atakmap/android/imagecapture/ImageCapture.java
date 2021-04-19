@@ -36,7 +36,9 @@ import org.gdal.gdal.Driver;
 import org.gdal.gdalconst.gdalconstConstants;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
@@ -475,12 +477,12 @@ public class ImageCapture extends AbstractLayer {
                 + "</gx:LatLonQuad>"
                 + "</GroundOverlay>"
                 + "</kml>";
-        try {
-            PrintWriter out = new PrintWriter(new OutputStreamWriter(
-                    IOProviderFactory.getOutputStream(new File(dir, "doc.kml")),
-                    FileSystemUtils.UTF8_CHARSET.name()));
+        try(OutputStream os = IOProviderFactory
+                .getOutputStream(new File(dir, "doc.kml"));
+            OutputStreamWriter osw = new OutputStreamWriter(os,
+                FileSystemUtils.UTF8_CHARSET.name());
+            PrintWriter out = new PrintWriter(osw)) {
             out.println(docSkel);
-            out.close();
         } catch (IOException ioe) {
             Log.d(TAG, "error occurred writing the doc.xml file", ioe);
         }

@@ -511,30 +511,17 @@ public class NetworkDeviceManager {
     static synchronized private void initialize() {
         devices.clear();
         try {
-            InputStream is = null;
             File f = new File(directory, "network.map");
             if (IOProviderFactory.exists(f)) {
-                BufferedReader br = null;
-
-                try {
-                    br = new BufferedReader(
-                            new InputStreamReader(
-                                    is = IOProviderFactory.getInputStream(f)));
+                try(InputStream is = IOProviderFactory.getInputStream(f);
+                    InputStreamReader isr = new InputStreamReader(is);
+                    BufferedReader br = new BufferedReader(isr)) {
                     String line;
                     while ((line = br.readLine()) != null) {
                         NetworkDevice nd = NetworkDevice.fromCSVLine(line);
                         if (nd != null)
                             devices.add(nd);
                     }
-                } finally {
-                    if ( br != null)
-                        try {
-                            br.close();
-                       } catch (IOException ignored) { }
-                    if (is != null)
-                        try {
-                            is.close();
-                        } catch (IOException ignored) { }
                 }
             }
         } catch (IOException ioe) {
@@ -570,8 +557,7 @@ public class NetworkDeviceManager {
                 }
 
             File f = new File(directory, "network.map");
-            FileWriter bw = IOProviderFactory.getFileWriter(f);
-            try {
+            try (FileWriter bw = IOProviderFactory.getFileWriter(f)) {
                 bw.write("#network map file created " + new Date() + "\r\n");
                 bw.write("#type values  " + NetworkDevice.Type.getStringList()
                         + "\r\n");
@@ -580,8 +566,6 @@ public class NetworkDeviceManager {
                 for (NetworkDevice n : devices) {
                     bw.write(n.toCSVLine() + "\r\n");
                 }
-            } finally {
-                bw.close();
             }
         } catch (IOException ie) {
             return false;

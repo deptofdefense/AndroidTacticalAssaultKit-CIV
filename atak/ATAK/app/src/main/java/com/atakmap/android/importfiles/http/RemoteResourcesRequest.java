@@ -16,15 +16,22 @@ import java.util.List;
 class RemoteResourcesRequest extends GetFilesRequest {
 
     private final RemoteResource _resource;
+    private final boolean _showNotifications;
 
     RemoteResourcesRequest(RemoteResource resource, String uid,
-            List<GetFileRequest> requests, int notificationId) {
+            List<GetFileRequest> requests, int notificationId,
+            boolean showNotifications) {
         super(uid, requests, notificationId);
         _resource = resource;
+        _showNotifications = showNotifications;
     }
 
     public RemoteResource getResource() {
         return _resource;
+    }
+
+    public boolean showNotifications() {
+        return _showNotifications;
     }
 
     @Override
@@ -32,6 +39,7 @@ class RemoteResourcesRequest extends GetFilesRequest {
         if (isValid()) {
             super.writeToParcel(dest, flags);
             dest.writeParcelable(_resource, flags);
+            dest.writeByte((byte) (_showNotifications ? 1 : 0));
         }
     }
 
@@ -50,6 +58,7 @@ class RemoteResourcesRequest extends GetFilesRequest {
     private RemoteResourcesRequest(Parcel in) {
         super(in);
         _resource = in.readParcelable(RemoteResource.class.getClassLoader());
+        _showNotifications = in.readByte() == 1;
     }
 
     @Override

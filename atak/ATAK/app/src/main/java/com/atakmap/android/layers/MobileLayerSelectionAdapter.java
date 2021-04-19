@@ -73,7 +73,7 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
     protected final AbstractDataStoreRasterLayer2 layer;
 
     // remember the location of the slider bar for each layer
-    private final Map<DatasetDescriptor, ResolutionLevelSpec> resolutionLevel = new HashMap<>();
+    protected final Map<DatasetDescriptor, ResolutionLevelSpec> resolutionLevel = new HashMap<>();
 
     private final static Comparator<LayerSelection> comparator = new Comparator<LayerSelection>() {
         @Override
@@ -366,7 +366,7 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
         return 0;
     }
 
-    private String getStringTileCount(int tiles) {
+    protected String getStringTileCount(int tiles) {
         if (tiles <= LayersManagerBroadcastReceiver.TILE_DOWNLOAD_LIMIT)
             return "≤ " + tiles + " tiles";
         else
@@ -374,8 +374,8 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
                     + " tiles";
     }
 
-    private int getTileCount2(MobileImagerySpec spec, double minRes,
-            double maxRes) {
+    protected int getTileCount2(MobileImagerySpec spec, double minRes,
+                                double maxRes) {
         ResolutionLevelSpec res = resolutionLevel.get(spec.desc);
         if (res != null && maxRes < res.defaultMinRes) {
 
@@ -774,7 +774,7 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
      * @param resMin - the minimum resolution chosen by the user
      * @param resMax - the max resolution chosen by the user
      */
-    private void setCurrentRes(TextView resView, double resMin, double resMax) {
+    protected void setCurrentRes(TextView resView, double resMin, double resMax) {
         String postfix1 = "m";
         String postfix2 = "m";
         String resString1 = String.valueOf(Math.round(resMin));
@@ -951,8 +951,8 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
     }
 
     static class MobileImagerySpec {
-        private File cache;
-        private long offlineSize;
+        protected File cache;
+        protected long offlineSize;
         public LayerSelection parent;
         private int count;
         private double distance;
@@ -971,7 +971,7 @@ class MobileLayerSelectionAdapter extends LayerSelectionAdapter
         }
     }
 
-    private static class ResolutionLevelSpec {
+    protected static class ResolutionLevelSpec {
         final DatasetDescriptor desc;
         final int levelOffset;
         final int numLevels;

@@ -104,6 +104,23 @@ void GLLabelManager::setText(const uint32_t id, TAK::Engine::Port::String text) 
     labels_[id].setText(text);
 }
 
+void GLLabelManager::setTextFormat(const uint32_t id, const TextFormatParams* fmt) NOTHROWS {
+    Lock lock(mutex_);
+
+    if (map_idx_ <= id) return;
+
+    draw_version_ = -1;
+
+    replace_labels_ = true;
+
+    // RWI - If it's the default font just reset to null
+    if (fmt == nullptr ||
+        (fmt->size == defaultFontSize && fmt->fontName == nullptr && !fmt->bold && !fmt->italic && !fmt->underline && !fmt->strikethrough))
+        labels_[id].setTextFormat(nullptr);
+    else
+        labels_[id].setTextFormat(fmt);
+}
+
 void GLLabelManager::setVisible(const uint32_t id, bool visible) NOTHROWS {
     Lock lock(mutex_);
 
@@ -210,7 +227,7 @@ void GLLabelManager::getSize(const uint32_t id, atakmap::math::Rectangle<double>
 
     if (size_rect.width == 0 && size_rect.height == 0) {
         GLText2* gltext = labels_[id].gltext_;
-        if (gltext)
+        if (!gltext)
             gltext = getDefaultText();
         if (gltext) {
             size_rect.width = gltext->getTextFormat().getStringWidth(labels_[id].text_.c_str());

@@ -25,11 +25,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.atakmap.android.gui.ImportFileBrowserDialog;
 import com.atakmap.android.hierarchy.HierarchyListReceiver;
 import com.atakmap.android.importexport.ImportExportMapComponent;
-import com.atakmap.android.importfiles.resource.ChildResource;
+import com.atakmap.android.importfiles.resource.RemoteResourceImporter;
 import com.atakmap.android.importfiles.resource.RemoteResource;
 import com.atakmap.android.importfiles.resource.RemoteResource.Type;
+import com.atakmap.android.importfiles.sort.ImportResolver;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.MRUStringCache;
@@ -42,6 +44,7 @@ import com.atakmap.spatial.kml.KMLUtil;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import com.atakmap.coremap.locale.LocaleUtil;
 import java.util.TimeZone;
@@ -58,6 +61,7 @@ public class AddEditResource {
 
     private RemoteResource _initialResource;
     private boolean _isUpdate = false;
+    private boolean _forceUpdate = false;
 
     private ImageView iconStatus = null;
     private TextView txtTitle = null;
@@ -69,6 +73,7 @@ public class AddEditResource {
     private TextView txtIntervalSeconds = null;
     private CheckBox chkDeleteOnShutdown = null;
     private ImageButton historyButton = null;
+    private AlertDialog dialog;
 
     private final MapView _mapView;
     private final Context _context;
@@ -80,6 +85,11 @@ public class AddEditResource {
         _context = _mapView.getContext();
         _prefs = PreferenceManager.getDefaultSharedPreferences(_context);
         _overlay = ImportManagerMapOverlay.getOverlay(mapView);
+    }
+
+    public AddEditResource setForceUpdate(boolean update) {
+        _forceUpdate = update;
+        return this;
     }
 
     public void add(RemoteResource.Type type) {
@@ -99,7 +109,7 @@ public class AddEditResource {
         View view = inflater.inflate(R.layout.importmgr_resource_edit, null);
 
         _initialResource = resource;
-        if (resource == null) {
+        if (resource == null || _forceUpdate) {
             Log.d(TAG, "User creating new Resource");
             _isUpdate = false;
         } else {
@@ -116,9 +126,9 @@ public class AddEditResource {
                 .setNegativeButton(R.string.cancel, null);
 
         alt_bld.setView(view);
-        final AlertDialog editDialog = alt_bld.show();
+        dialog = alt_bld.show();
 
-        Button b = editDialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        Button b = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
         b.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -128,7 +138,7 @@ public class AddEditResource {
 
                 createResource(resource, getEdited(type));
 
-                editDialog.dismiss();
+                dialog.dismiss();
                 ArrayList<String> paths = new ArrayList<>();
                 paths.add(_context
                         .getString(R.string.importmgr_remote_resource_plural));
@@ -141,7 +151,7 @@ public class AddEditResource {
             }
         });
 
-        Button c = editDialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+        Button c = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
         c.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -154,7 +164,7 @@ public class AddEditResource {
                     // test if anything changed. Only show dialog if info was changed.
                     RemoteResource newrr = getEdited(type);
                     if (_initialResource.equals(newrr)) {
-                        editDialog.dismiss();
+                        dialog.dismiss();
                         return;
                     }
                     confirm.setMessage(_context.getString(
@@ -169,7 +179,7 @@ public class AddEditResource {
                             @Override
                             public void onClick(DialogInterface d,
                                     int w) {
-                                editDialog.dismiss();
+                                dialog.dismiss();
                             }
                         });
                 confirm.setNegativeButton(R.string.no, null);
@@ -181,6 +191,14 @@ public class AddEditResource {
                 .findViewById(R.id.importmgr_resourceedit_status);
         txtTitle = view
                 .findViewById(R.id.importmgr_resourceedit_title);
+        ImageButton importBtn = view.findViewById(R.id.importmgr_resourceedit_import);
+        importBtn.setVisibility(_isUpdate ? View.GONE : View.VISIBLE);
+        importBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                promptImportLink();
+            }
+        });
 
         // allow only alphanumeric, space, underscore (this will be a filename)
         editName = view
@@ -307,7 +325,7 @@ public class AddEditResource {
                 .findViewById(R.id.importmgr_resourcedetails_txtlastRefreshed);
 
         // now populate from existing values (unless we are creating a new one)
-        if (_isUpdate) {
+        if (_isUpdate || _forceUpdate) {
             historyButton.setVisibility(ImageButton.GONE);
             iconStatus.setVisibility(ImageView.VISIBLE);
             String localPath = resource.getLocalPath();
@@ -417,19 +435,6 @@ public class AddEditResource {
                 txtTitle.setText(R.string.importmgr_add_remote_file_resource);
             }
         }
-
-        if (RemoteResource.isKML(type.toString())) {
-            chkAutoRefresh.setVisibility(CheckBox.VISIBLE);
-            editRefreshIntervalSeconds.setVisibility(CheckBox.VISIBLE);
-            txtInterval.setVisibility(CheckBox.VISIBLE);
-            txtIntervalSeconds.setVisibility(CheckBox.VISIBLE);
-
-        } else {
-            chkAutoRefresh.setVisibility(CheckBox.GONE);
-            editRefreshIntervalSeconds.setVisibility(CheckBox.GONE);
-            txtInterval.setVisibility(CheckBox.GONE);
-            txtIntervalSeconds.setVisibility(CheckBox.GONE);
-        }
     }
 
     private void createResource(final RemoteResource resource,
@@ -458,24 +463,16 @@ public class AddEditResource {
                         public void onClick(DialogInterface d, int w) {
                             Log.d(TAG, "Un-scheduling NetworkLink refresh: "
                                     + newrr.toString());
-                            Intent i = new Intent(
-                                    ImportExportMapComponent.KML_NETWORK_LINK_REFRESH);
-                            i.putExtra("kml_networklink_filename",
-                                    newrr.getName());
-                            i.putExtra("kml_networklink_stop", true);
-                            AtakBroadcast.getInstance().sendBroadcast(i);
+                            ImportExportMapComponent.getInstance()
+                                    .refreshNetworkLink(newrr, true);
 
                             // also stop refresh of child resources
-                            for (ChildResource child : newrr.getChildren()) {
+                            for (RemoteResource child : newrr.getChildren()) {
                                 Log.d(TAG,
                                         "Un-scheduling child NetworkLink refresh: "
                                                 + child.toString());
-                                i = new Intent(
-                                        ImportExportMapComponent.KML_NETWORK_LINK_REFRESH);
-                                i.putExtra("kml_networklink_filename",
-                                        child.getName());
-                                i.putExtra("kml_networklink_stop", true);
-                                AtakBroadcast.getInstance().sendBroadcast(i);
+                                ImportExportMapComponent.getInstance()
+                                        .refreshNetworkLink(child, true);
                             }
                             _overlay.replace(resource, newrr);
                             // now write out XML
@@ -598,7 +595,7 @@ public class AddEditResource {
             newrr.setLocalPath(_initialResource.getLocalPath());
             newrr.setLastRefreshed(_initialResource.getLastRefreshed());
 
-            for (ChildResource child : _initialResource.getChildren())
+            for (RemoteResource child : _initialResource.getChildren())
                 newrr.addChild(child);
         }
         return newrr;
@@ -660,12 +657,47 @@ public class AddEditResource {
         if (errorInterval) {
             Log.d(TAG, "User must specify valid Auto Refresh Interval");
             editRefreshIntervalSeconds.requestFocus();
-            Toast.makeText(_context,
+            Toast.makeText(_context, _context.getString(
                     R.string.importmgr_specify_valid_refresh_rate_for_resource,
+                    KMLUtil.MIN_NETWORKLINK_INTERVAL_SECS),
                     Toast.LENGTH_LONG).show();
             return false;
         }
 
         return true;
+    }
+
+    private void promptImportLink() {
+        ImportFileBrowserDialog d = new ImportFileBrowserDialog(_mapView);
+        d.setTitle(_context.getString(R.string.import_kml_network_link));
+        d.setExtensionTypes("kml", "xml");
+        d.setOnDismissListener(new ImportFileBrowserDialog.DialogDismissed() {
+            @Override
+            public void onFileSelected(File f) {
+                importFile(f);
+            }
+            @Override
+            public void onDialogClosed() {
+            }
+        });
+        d.show();
+    }
+
+    private void importFile(File f) {
+        Collection<ImportResolver> sorters = ImportExportMapComponent
+                .getInstance().getImporterResolvers();
+        ImportResolver importer = null;
+        for (ImportResolver sorter : sorters) {
+            if (sorter instanceof RemoteResourceImporter)
+                importer = sorter;
+        }
+        if (importer == null || !importer.match(f)) {
+            Toast.makeText(_context, R.string.kml_links_added_failed_msg,
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        importer.beginImport(f);
+        if (this.dialog != null)
+            this.dialog.dismiss();
     }
 }

@@ -122,16 +122,16 @@ public class DownloadAndCacheService extends IntentService {
 
     private static final String SERVICE_NAME = "DownloadAndCacheService";
     private static final String TAG = "DownloadAndCacheService";
-    private String title = "";
+    protected String title = "";
     private CacheRequest currentRequest = null;
     private GeoPoint upperLeft = null;
     private GeoPoint lowerRight = null;
     private GeoPoint[] geometry = null;
-    private int queuedDownloads = 0;
+    protected int queuedDownloads = 0;
 
-    private int currentProgress = 0;
-    private int secondaryProgress = 0;
-    private int maxProgress = 0;
+    protected int currentProgress = 0;
+    protected int secondaryProgress = 0;
+    protected int maxProgress = 0;
 
     public DownloadAndCacheService() {
         super(SERVICE_NAME);
@@ -494,7 +494,7 @@ public class DownloadAndCacheService extends IntentService {
      * Broadcasts an intent with the time left to download all the tilesets in the queue, the
      * current tile that has been downloaded, and the current layer that is being downloaded.
      */
-    private void reportDownloadStatus(Long time, String tile, String layer) {
+    protected void reportDownloadStatus(Long time, String tile, String layer) {
         Intent localIntent = new Intent(BROADCAST_ACTION);
         localIntent.putExtra(DOWNLOAD_STATUS, true);
 
@@ -508,13 +508,14 @@ public class DownloadAndCacheService extends IntentService {
         localIntent.putExtra(PROGRESS_BAR_PROGRESS, currentProgress);
         localIntent.putExtra(PROGRESS_BAR_ADJUST_SECONDARY, secondaryProgress);
         localIntent.putExtra(PROGRESS_BAR_SET_MAX, maxProgress);
+        localIntent.putExtra(TITLE, title);
 
         // Broadcasts the Intent to receivers in this app.
         AtakBroadcast.getInstance().sendBroadcast(
                 localIntent);
     }
 
-    private void reportJobStatus(int statusMessage) {
+    protected void reportJobStatus(int statusMessage) {
         Intent localIntent = new Intent(BROADCAST_ACTION);
 
         // Puts the status into the Intent
@@ -526,10 +527,11 @@ public class DownloadAndCacheService extends IntentService {
         AtakBroadcast.getInstance().sendBroadcast(localIntent);
     }
 
-    private void reportProgress(String name, int value) {
+    protected void reportProgress(String name, int value) {
         Intent localIntent = new Intent(BROADCAST_ACTION);
         localIntent.putExtra(PROGRESS_BAR_STATUS, true);
         localIntent.putExtra(name, value);
+        localIntent.putExtra(TITLE, title);
 
         // Broadcasts the Intent to receivers in this app.
         AtakBroadcast.getInstance().sendBroadcast(

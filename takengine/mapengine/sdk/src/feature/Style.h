@@ -419,6 +419,8 @@ namespace atakmap                       // Open atakmap namespace.
          *
          * The supplied rotation should be specified in degrees.  If the supplied value of absoluteRotation is true, the rotation is relative to north (and the icon will rotate as the displayed direction of north changes).  If the supplied value of absoluteRotation is false, the rotation is relative to the screen (and the icon will not rotate as the displayed direction of north changes).
          *
+         * The label scale controls render size of the label. 1.0 (the default) results in no scaling performed.
+         *
          * The default arguments create a new label style, centered on the Point at default system font size, displayed right side up (relative to the screen).
          *
          * Throws std::invalid_argument if the supplied label text is NULL or if the supplied textSize is negative.
@@ -438,7 +440,8 @@ namespace atakmap                       // Open atakmap namespace.
                          bool absoluteRotation = false, // Relative to screen.
                          float paddingX = 0.0, // offset from alignment position
                          float paddingY = 0.0,
-                         double labelMinRenderResolution = 13.0);
+                         double labelMinRenderResolution = 13.0,
+                         float labelScale = 1.0);
         LabelPointStyle (const char* text,
                          unsigned int textColor,    // 0xAARRGGBB
                          unsigned int backColor,    // 0xAARRGGBB
@@ -455,7 +458,8 @@ namespace atakmap                       // Open atakmap namespace.
                          bool absoluteRotation = false, // Relative to screen.
                          float paddingX = 0.0, // offset from alignment position
                          float paddingY = 0.0,
-                         double labelMinRenderResolution = 13.0);
+                         double labelMinRenderResolution = 13.0,
+                         float labelScale = 1.0);
 
         ~LabelPointStyle () NOTHROWS
           { }
@@ -501,6 +505,9 @@ namespace atakmap                       // Open atakmap namespace.
             double getLabelMinRenderResolution() const NOTHROWS 
               { return labelMinRenderResolution; }
 
+            float getLabelScale() const NOTHROWS
+              { return labelScale; }
+
            float getOffsetX() const NOTHROWS
              { return offsetX; }
            float getOffsetY() const NOTHROWS
@@ -531,6 +538,7 @@ namespace atakmap                       // Open atakmap namespace.
             float paddingY;
             bool absoluteRotation;
             double labelMinRenderResolution; 
+            float labelScale;
             float offsetX;
             float offsetY;
             LabelPointStyle::Style style;
@@ -601,7 +609,8 @@ namespace atakmap                       // Open atakmap namespace.
                                                                                      bool absoluteRotation = false, // Relative to screen.
                                                                                      float paddingX = 0.0, // offset from alignment position
                                                                                      float paddingY = 0.0,
-                                                                                     double labelMinRenderResolution = 13.0) NOTHROWS;
+                                                                                     double labelMinRenderResolution = 13.0,
+                                                                                     float labelScale = 1.0) NOTHROWS;
         ENGINE_API TAK::Engine::Util::TAKErr PatternStrokeStyle_create(StylePtr &value, const std::size_t factor,
                                                                                         const uint16_t pattern,
                                                                                         const unsigned int color,

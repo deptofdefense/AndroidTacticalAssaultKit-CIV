@@ -10,6 +10,7 @@ import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.coremap.cot.event.CotEvent;
+import com.atakmap.util.zip.IoUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -106,12 +107,7 @@ class OutboundLogger implements CommsLogger,
                     FileSystemUtils.UTF8_CHARSET.newEncoder());
         } catch (Exception e) {
             Log.w(TAG, "Could not open log file: " + f, e);
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (Exception ignore) {
-                }
-            }
+            IoUtils.close(fos);
         }
         return fw;
     }

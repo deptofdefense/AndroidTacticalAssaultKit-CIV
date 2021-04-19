@@ -668,9 +668,10 @@ Util::TAKErr TAK::Engine::Elevation::ElevationManager_getGeoidHeight(double *hei
             // initialize from the EGM96 file
             TAK::Engine::Port::String egmFilePath;
             code = ConfigOptions_getOption(egmFilePath, "egm96-file");
-            if(code != TE_Ok)
-                Logger_log(TELL_Warning, "EGM96 file is not configured");
-            TE_CHECKBREAK_CODE(code);
+            if (code != TE_Ok) {
+                Logger_log(TELL_Info, "EGM96 file is not configured");
+                break;
+            }
 
             // XXX - read the file into a byte array
             bool exists;

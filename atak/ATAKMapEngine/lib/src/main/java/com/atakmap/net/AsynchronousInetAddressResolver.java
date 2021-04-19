@@ -27,7 +27,7 @@ public class AsynchronousInetAddressResolver implements Runnable {
     /**
      * @param timeout - in ms
      * @return - the Inet address of the host, or null
-     * @throws IOException
+     * @throws IOException if a network IO error has occurred
      */
     public synchronized InetAddress get(long timeout) throws IOException {
         if (!this.initialized)

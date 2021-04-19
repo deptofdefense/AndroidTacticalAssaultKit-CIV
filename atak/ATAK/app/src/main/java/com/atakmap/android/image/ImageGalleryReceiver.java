@@ -56,6 +56,7 @@ import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.ATAKActivity;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.io.DefaultIOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
@@ -828,7 +829,7 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                     for (File file : selectedFiles) {
                         Log.d(TAG, "Importing file: " + file.getAbsolutePath());
                         try {
-                            attachFile(file, false);
+                            attachFile(file, false, true);
                         } catch (Exception ioe) {
                             Log.d(TAG, "file: " + file);
                         }
@@ -862,7 +863,13 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
         }
     }
 
-    private void attachFile(final File f, boolean captured) {
+    /**
+     * Attach a file to a marker
+     * @param f the file to attach
+     * @param captured true if the file was captured from the camera; false otherwise.
+     * @param useIOProvider true if the file should be attached using the system registered IOProvider; false otherwise.
+     */
+    private void attachFile(final File f, boolean captured, boolean useIOProvider) {
         if (f == null)
             return;
 
@@ -894,9 +901,15 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                     }
                 }
             });
-            if (!captured)
+            if(!captured)
                 attachTask.setFlags(AttachFileTask.FlagPromptOverwrite
                         | ImportFileTask.FlagCopyFile);
+
+            // if use of native IO is required, install a default provider
+            // instance on the task
+            if(!useIOProvider)
+                attachTask.setProvider(new DefaultIOProvider());
+
             attachTask.execute(f);
         } else if (onAddAction != null) {
             Intent i = new Intent(onAddAction);
@@ -1144,7 +1157,7 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
                     //Attach the file
                     File src = new File(FileSystemUtils
                             .validityScan(filePath));
-                    attachFile(src, true);
+                    attachFile(src, true, true);
                 } catch (Exception e) {
                     Log.w(TAG, "Cannot attach file", e);
                 }
@@ -1273,19 +1286,30 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
             } else
                 return;
 
-            if (!FileSystemUtils.isFile(filePath)) {
-                Log.w(TAG, "Skipping missing result: " + resultCode + ", "
-                        + filePath);
-                toast(R.string.failed_to_import);
-                return;
-            }
+            if(!PIC_CAPTURED.equals(intent.getAction())) {
+                if (!FileSystemUtils.isEmpty(filePath)) {
+                    File importFile = null;
+                    try {
+                        importFile = new File(FileSystemUtils.validityScan(filePath));
+                    } catch (Exception e) {
+                        Log.w(TAG, "Cannot import file", e);
+                    }
 
-            try {
-                File src = new File(
-                        FileSystemUtils.validityScan(filePath));
-                attachFile(src, PIC_CAPTURED.equals(intent.getAction()));
-            } catch (Exception e) {
-                Log.w(TAG, "Cannot import file", e);
+                    if (importFile == null || !importFile.exists()) {
+                        Log.w(TAG, "Skipping missing result: " + resultCode + ", "
+                                + filePath);
+                        toast(R.string.failed_to_import);
+                        return;
+                    }
+                }
+
+                try {
+                    File src = new File(
+                            FileSystemUtils.validityScan(filePath));
+                    attachFile(src, false, false);
+                } catch (Exception e) {
+                    Log.w(TAG, "Cannot import file", e);
+                }
             }
         }
     };
@@ -1299,15 +1323,13 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
      */
     public static boolean extractContent(Context ctx, Uri dataUri,
             File outFile) {
-        InputStream is = null;
-        OutputStream os = null;
-        try {
-            is = ctx.getContentResolver()
-                    .openInputStream(dataUri);
+        try(InputStream is = ctx.getContentResolver()
+                    .openInputStream(dataUri)) {
             if (is != null) {
-                FileSystemUtils.copyStream(is,
-                        os = IOProviderFactory.getOutputStream(
-                                outFile));
+                try(OutputStream os = IOProviderFactory
+                        .getOutputStream(outFile)) {
+                    FileSystemUtils.copyStream(is, os);
+                }
                 return IOProviderFactory.exists(outFile);
             } else {
                 Log.e(TAG, "Failed to extract content from "
@@ -1318,19 +1340,6 @@ public class ImageGalleryReceiver extends DropDownReceiver implements
             Log.e(TAG, "Failed to extract content from "
                     + dataUri + " to " + outFile, e);
             return false;
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException ignored) {
-                }
-            }
-            if (os != null) {
-                try {
-                    os.close();
-                } catch (IOException ignored) {
-                }
-            }
         }
     }
 

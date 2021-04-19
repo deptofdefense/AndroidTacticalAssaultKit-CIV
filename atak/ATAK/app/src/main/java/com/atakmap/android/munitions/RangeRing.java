@@ -11,7 +11,7 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
 import com.atakmap.android.munitions.util.MunitionsHelper;
-import com.atakmap.android.nineline.RemarksConstants;
+
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.util.Circle;
 import com.atakmap.app.R;
@@ -251,7 +251,7 @@ public class RangeRing extends PointMapItem implements AnchoredMapItem,
         if (_target != null) {
             if (!hasNoLine())
                 _target.setMetaBoolean(_fromLine
-                        + RemarksConstants.WPN_DISPLAY, visible);
+                        + MunitionsHelper.WPN_DISPLAY, visible);
             else
                 _target.setMetaBoolean(
                         TargetMunitionsDetailHandler.TARGET_MUNITIONS_VISIBLE,
@@ -279,7 +279,7 @@ public class RangeRing extends PointMapItem implements AnchoredMapItem,
     public boolean getVisible() {
         return super.getVisible() && (_target == null
                 || !hasNoLine() && _target.getMetaBoolean(_fromLine
-                        + RemarksConstants.WPN_DISPLAY, true)
+                        + MunitionsHelper.WPN_DISPLAY, true)
                 || _target.getMetaBoolean(
                         TargetMunitionsDetailHandler.TARGET_MUNITIONS_VISIBLE,
                         true));

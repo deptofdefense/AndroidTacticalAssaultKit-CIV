@@ -33,19 +33,19 @@ public class MissionPackageContents implements Parcelable {
     public MissionPackageContents(MissionPackageContents copy) {
         _contents = new ArrayList<>();
         for (MissionPackageContent content : copy.getContents())
-            setContent(new MissionPackageContent(content));
+            setContentNoSync(new MissionPackageContent(content));
     }
 
     public boolean isValid() {
         return true;
     }
 
-    public void clear() {
+    public synchronized void clear() {
         _contents.clear();
     }
 
-    public List<MissionPackageContent> getContents() {
-        return _contents;
+    public synchronized List<MissionPackageContent> getContents() {
+        return new ArrayList<>(_contents);
     }
 
     /**
@@ -54,7 +54,7 @@ public class MissionPackageContents implements Parcelable {
      * @param bIsCoT true to get CoT, false to get other files
      * @return
      */
-    public List<MissionPackageContent> getContents(boolean bIsCoT) {
+    public synchronized List<MissionPackageContent> getContents(boolean bIsCoT) {
         List<MissionPackageContent> contents = new ArrayList<>();
         for (MissionPackageContent c : _contents) {
             if (c != null && c.isCoT() == bIsCoT && !c.isIgnore()) {
@@ -65,25 +65,27 @@ public class MissionPackageContents implements Parcelable {
         return contents;
     }
 
-    public boolean setContent(MissionPackageContent content) {
+    public synchronized boolean setContent(MissionPackageContent content) {
+        return setContentNoSync(content);
+    }
+
+    private boolean setContentNoSync(MissionPackageContent content) {
         if (content == null || !content.isValid()) {
             Log.w(TAG, "Ignoring invalid content");
             return false;
         }
 
-        if (_contents.contains(content)) {
+        if (_contents.remove(content))
             Log.d(TAG, "Replacing content: " + content.toString());
-            _contents.remove(content);
-        }
 
         return _contents.add(content);
     }
 
-    public void setContents(List<MissionPackageContent> parameters) {
-        _contents = parameters;
+    public synchronized void setContents(List<MissionPackageContent> parameters) {
+        _contents = new ArrayList<>(parameters);
     }
 
-    public boolean hasContent(boolean bIsCoT) {
+    public synchronized boolean hasContent(boolean bIsCoT) {
         for (MissionPackageContent c : _contents) {
             if (c != null && c.isCoT() == bIsCoT && !c.isIgnore()) {
                 return true;
@@ -93,7 +95,7 @@ public class MissionPackageContents implements Parcelable {
         return false;
     }
 
-    public boolean hasContent(String zipEntry) {
+    public synchronized boolean hasContent(String zipEntry) {
         for (MissionPackageContent c : _contents) {
             if (c != null && !FileSystemUtils.isEmpty(c.getManifestUid())
                     && c.getManifestUid().equals(zipEntry)) {
@@ -104,25 +106,19 @@ public class MissionPackageContents implements Parcelable {
         return false;
     }
 
-    public boolean hasContent(MissionPackageContent content) {
+    public synchronized boolean hasContent(MissionPackageContent content) {
         if (content == null)
             return false;
 
         return _contents.contains(content);
     }
 
-    public boolean removeContent(MissionPackageContent content) {
-        if (content == null)
-            return false;
-
-        if (_contents.contains(content))
-            return _contents.remove(content);
-
-        return false;
+    public synchronized boolean removeContent(MissionPackageContent content) {
+        return content != null && _contents.remove(content);
     }
 
     @Override
-    public int hashCode() {
+    public synchronized int hashCode() {
         return (_contents == null) ? 0 : _contents.hashCode();
     }
 
@@ -136,11 +132,8 @@ public class MissionPackageContents implements Parcelable {
         }
     }
 
-    public boolean equals(MissionPackageContents rhsc) {
-        if (!FileSystemUtils.isEquals(_contents, rhsc._contents))
-            return false;
-
-        return true;
+    public synchronized boolean equals(MissionPackageContents rhsc) {
+        return FileSystemUtils.isEquals(_contents, rhsc._contents);
     }
 
     @Override
@@ -149,7 +142,7 @@ public class MissionPackageContents implements Parcelable {
     }
 
     @Override
-    public void writeToParcel(Parcel parcel, int flags) {
+    public synchronized void writeToParcel(Parcel parcel, int flags) {
         if (isValid()) {
             parcel.writeInt(_contents.size());
             if (_contents.size() > 0) {
@@ -168,7 +161,7 @@ public class MissionPackageContents implements Parcelable {
     private void readFromParcel(Parcel in) {
         int count = in.readInt();
         for (int cur = 0; cur < count; cur++) {
-            setContent((MissionPackageContent) in
+            setContentNoSync((MissionPackageContent) in
                     .readParcelable(MissionPackageContent.class
                             .getClassLoader()));
         }
@@ -187,7 +180,7 @@ public class MissionPackageContents implements Parcelable {
     };
 
     @Override
-    public String toString() {
+    public synchronized String toString() {
         return _contents == null ? "" : "" + _contents.size();
     }
 }

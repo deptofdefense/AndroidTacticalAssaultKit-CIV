@@ -38,11 +38,17 @@ namespace TAK {
 
             public:
                 GLOffscreenFramebuffer() = default;
+            private :
+                bool releaseOnDestruct{ false };
+
+                friend TAK::Engine::Util::TAKErr GLOffscreenFramebuffer_create(std::unique_ptr<GLOffscreenFramebuffer, void (*)(GLOffscreenFramebuffer*)>& result, int width, int height, GLOffscreenFramebuffer::Options opts) NOTHROWS;
             };
 
             typedef std::unique_ptr<GLOffscreenFramebuffer, void (*)(GLOffscreenFramebuffer*)> GLOffscreenFramebufferPtr;
 
             TAK::Engine::Util::TAKErr GLOffscreenFramebuffer_create(GLOffscreenFramebufferPtr& result, int width, int height, GLOffscreenFramebuffer::Options opts) NOTHROWS;
+            TAK::Engine::Util::TAKErr GLOffscreenFramebuffer_create(GLOffscreenFramebuffer *result, int width, int height, GLOffscreenFramebuffer::Options opts) NOTHROWS;
+            TAK::Engine::Util::TAKErr GLOffscreenFramebuffer_release(GLOffscreenFramebuffer &offscreen);
         }
     }
 }

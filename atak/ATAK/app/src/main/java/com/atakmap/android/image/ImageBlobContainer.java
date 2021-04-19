@@ -181,6 +181,9 @@ public class ImageBlobContainer
         final EditText caption = layout
                 .findViewById(R.id.image_caption);
 
+        // Markup not support for non-file images
+        layout.findViewById(R.id.markupImage).setVisibility(View.GONE);
+
         locText.setText("---");
         dateText.setText("---");
         caption.setText("");

@@ -221,11 +221,13 @@ public class GLOffscreenIndicators extends
                 break;
 
             m = iter.next();
-            if ((timeout <= 0d)
-                    || m.getMetaString("team", "").equals(teamColor)
-                    || (m.getMetaLong("offscreen_interest", -1)
-                            + timeout > SystemClock
-                                    .elapsedRealtime())) {
+            String mTeam = m.getMetaString("team", "");
+            long interest = m.getMetaLong("offscreen_interest", -1);
+            double intTime = timeout + interest;
+            long clock = SystemClock.elapsedRealtime();
+            if (timeout <= 0d
+                    || mTeam.equals(teamColor)
+                    || intTime > clock) {
                 distance = MapItem.computeDistance(m, viewCenter);
             } else {
                 distance = Double.NaN;
@@ -309,7 +311,7 @@ public class GLOffscreenIndicators extends
             if ((renderPass & GLMapView.RENDER_PASS_SPRITES) == 0)
                 return;
 
-            String iconUri;
+            String iconUri = null;
             int iconColor = 0;
             GLImageCache.Entry entry = null;
 
@@ -352,9 +354,7 @@ public class GLOffscreenIndicators extends
 
             GeoPoint mgp = GeoPoint.createMutable();
             for (Marker m : GLOffscreenIndicators.this.observed) {
-                if (m.hasMetaValue("disable_offscreen_indicator")
-                        && m.getMetaBoolean("disable_offscreen_indicator",
-                                false)) {
+                if (m.getMetaBoolean("disable_offscreen_indicator", false)) {
                     continue;
                 }
 
@@ -454,10 +454,16 @@ public class GLOffscreenIndicators extends
                 if (icon != null) {
                     iconUri = m.getIcon().getImageUri(m.getState());
                     iconColor = m.getIcon().getColor(m.getState());
+                }
 
+                // Icon override meta string
+                iconUri = m.getMetaString("offscreen_icon_uri", iconUri);
+                iconColor = m.getMetaInteger("offscreen_icon_color", iconColor);
+
+                // Load from bitmap
+                if (iconUri != null) {
                     GLImageCache imageCache = GLRenderGlobals.get(view)
                             .getImageCache();
-
                     entry = imageCache.tryFetch(iconUri, true);
                     if (entry == null)
                         entry = imageCache.tryFetch(iconUri, false);

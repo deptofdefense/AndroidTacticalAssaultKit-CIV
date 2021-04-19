@@ -75,8 +75,8 @@ namespace {
         const C3DTTile *tile;
     };
 
-    struct ParseArgs {
-        ParseArgs()
+    struct TilesetParser {
+        TilesetParser()
             : result(nullptr, nullptr)
         {}
 
@@ -131,7 +131,7 @@ TAKErr Cesium3DTilesSceneSpi::create(ScenePtr& scene, const char* URI, Processin
         return code;
 
     if (type == C3DTFileType_TilesetJSON) {
-        ParseArgs args;
+        TilesetParser args;
         args.callbacks = callbacks;
         args.resourceAliases = resourceAliases;
         args.baseURI = baseURI;
@@ -344,7 +344,7 @@ namespace {
 
     TAKErr parseVisitor(void* opaque, const C3DTTileset* tileset, const C3DTTile* tile) NOTHROWS {
 
-        ParseArgs *args = static_cast<ParseArgs *>(opaque);       
+        TilesetParser *args = static_cast<TilesetParser *>(opaque);       
         std::shared_ptr<C3DTSceneNode> node = std::make_shared<C3DTSceneNode>();
         
         if (!args->result) {
@@ -365,9 +365,10 @@ namespace {
 
         if (tile->hasTransform) {
             node->hasLocalFrame = true;
-            for (size_t r = 0; r < 4; ++r)
+            /*for (size_t r = 0; r < 4; ++r)
                 for (size_t c = 0; c < 4; ++c)
-                    node->localFrame.set(r, c, tile->transform[r * 4 + c]);
+                    node->localFrame.set(r, c, tile->transform[r * 4 + c]);*/
+            node->localFrame = tile->transform;
         }
 
         C3DTTileset_approximateTileBounds(&node->aabb, tile);

@@ -12,6 +12,7 @@ import com.atakmap.map.elevation.ElevationData;
 import com.atakmap.map.elevation.ElevationManager;
 import com.atakmap.map.layer.raster.ImageInfo;
 import com.atakmap.math.Rectangle;
+import com.atakmap.util.zip.IoUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -288,14 +289,7 @@ public class Dt2ElevationModel {
                             + file.getAbsolutePath(),
                     e);
         } finally {
-            if (raf != null) {
-                try {
-                    raf.close();
-                } catch (IOException e) {
-                    Log.e(TAG, "Error closing file: " + file.getAbsolutePath(),
-                            e);
-                }
-            }
+            IoUtils.close(raf,TAG,"Error closing file: " + file.getAbsolutePath());
         }
         return GeoPoint.UNKNOWN;
     }
@@ -432,14 +426,7 @@ public class Dt2ElevationModel {
                 points.next();
             }
         } finally {
-            if (raf != null) {
-                try {
-                    raf.close();
-                } catch (IOException ioe) {
-                    Log.e(TAG, "Error closing file: " + file.getAbsolutePath(),
-                            ioe);
-                }
-            }
+            IoUtils.close(raf,TAG,"Error closing file: " + file.getAbsolutePath());
         }
     }
 

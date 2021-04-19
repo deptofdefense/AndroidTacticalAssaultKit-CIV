@@ -21,6 +21,7 @@ import com.atakmap.coremap.maps.conversion.EGM96;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
+import com.atakmap.util.zip.IoUtils;
 import org.apache.sanselan.ImageReadException;
 import org.apache.sanselan.ImageWriteException;
 import org.apache.sanselan.Sanselan;
@@ -619,11 +620,7 @@ public class ExifHelper {
             Log.e(TAG, "Failed to save EXIF output to "
                     + imageFile.getAbsolutePath(), e);
         } finally {
-            try {
-                if (bos != null)
-                    bos.close();
-            } catch (IOException ignored) {
-            }
+            IoUtils.close(bos);
         }
         return false;
     }
@@ -1039,18 +1036,8 @@ public class ExifHelper {
         } catch (Exception e) {
             Log.e(TAG, "Failed to write PNG description", e);
         } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (Exception ignore) {
-                }
-            }
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (Exception ignore) {
-                }
-            }
+            IoUtils.close(fis);
+            IoUtils.close(fos);
             if (IOProviderFactory.exists(fOut))
                 FileSystemUtils.delete(fOut);
         }

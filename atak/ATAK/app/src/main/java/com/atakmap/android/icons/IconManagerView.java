@@ -226,7 +226,7 @@ public class IconManagerView extends LinearLayout {
                             return;
 
                         final String path = f.getAbsolutePath();
-                        if (!path.endsWith(".zip")) {
+                        if (!FileSystemUtils.checkExtension(f, "zip")) {
                             Log.w(TAG,
                                     "File Import Browser returned unsupported file: "
                                             + path);

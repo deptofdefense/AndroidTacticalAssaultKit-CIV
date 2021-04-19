@@ -3,13 +3,13 @@ package com.atakmap.coremap.filesystem;
 
 import android.content.Context;
 import android.os.Environment;
-
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
+import com.atakmap.util.zip.IoUtils;
 import com.atakmap.util.zip.ZipFile;
 
 import java.io.BufferedOutputStream;
@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -560,10 +559,18 @@ public class FileSystemUtils {
         copyStream(in, true, out, true);
     }
 
+    public static String copyStreamToString(final File file, IOProvider provider)
+            throws IOException {
+            return copyStreamToString(provider.getInputStream(file), true,
+                    FileSystemUtils.UTF8_CHARSET);
+    }
+
     public static String copyStreamToString(final File file)
             throws IOException {
-        return copyStreamToString(IOProviderFactory.getInputStream(file), true,
-                FileSystemUtils.UTF8_CHARSET);
+        try(InputStream is = IOProviderFactory.getInputStream(file)) {
+            return copyStreamToString(is, true,
+                    FileSystemUtils.UTF8_CHARSET);
+        }
     }
 
     public static String copyStreamToString(final InputStream in,
@@ -584,13 +591,11 @@ public class FileSystemUtils {
         if (buffer == null)
             buffer = new char[BUF_SIZE];
 
-        BufferedReader reader = null;
-        InputStreamReader isr = null;
         StringBuilder fileData = new StringBuilder(BUF_SIZE);
 
-        try {
-            reader = new BufferedReader(isr = new InputStreamReader(in,
-                    charSet));
+        try(InputStreamReader isr = new InputStreamReader(in, charSet);
+            BufferedReader reader = new BufferedReader(isr)) {
+
             int numRead;
             String readData;
             while ((numRead = reader.read(buffer)) != -1) {
@@ -599,20 +604,7 @@ public class FileSystemUtils {
             }
         } finally {
             if (closeIn) {
-                try {
-                    if (reader != null)
-                        reader.close();
-                } catch (IOException ignore) {
-                }
-                try {
-                    if (isr != null)
-                        isr.close();
-                } catch (IOException ignore) {
-                }
-                try {
-                    in.close();
-                } catch (IOException ignore) {
-                }
+                IoUtils.close(in);
             }
         }
         return fileData.toString();
@@ -629,32 +621,13 @@ public class FileSystemUtils {
     public static List<String> readLines(final String filename)
             throws Exception {
         List<String> ret = new java.util.LinkedList<>();
-        BufferedReader reader = null;
-        InputStream is = null;
-        try {
-            reader = new BufferedReader(new InputStreamReader(
-                    is = IOProviderFactory.getInputStream(new File(filename)),
-                    UTF8_CHARSET));
+        try (InputStream is = IOProviderFactory.getInputStream(new File(filename));
+             InputStreamReader isr = new InputStreamReader(is,UTF8_CHARSET);
+             BufferedReader reader = new BufferedReader(isr)) {
             String line = reader.readLine();
             while (line != null) {
                 ret.add(line);
                 line = reader.readLine();
-            }
-        } catch (Exception e) {
-            //Log.w(TAG, "Error reading file " + filename, e);
-            throw e;
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (Exception ignored) {
-                }
-            }
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (Exception ignored) {
-                }
             }
         }
         return ret;
@@ -710,8 +683,7 @@ public class FileSystemUtils {
         try {
             os.write(s.getBytes(FileSystemUtils.UTF8_CHARSET));
         } finally {
-            if (os != null)
-                os.close();
+            IoUtils.close(os, TAG);
         }
     }
 
@@ -817,6 +789,26 @@ public class FileSystemUtils {
             extension = extension.substring(0, MAX_EXT_LENGTH);
 
         return extension;
+    }
+
+    /**
+     * Check if a file ends with a given extension
+     *
+     * @param f File to check
+     * @param ext Extension (case insensitive; "." prefix is optional)
+     * @return True if the file ends with the extension
+     */
+    public static boolean checkExtension(File f, String ext) {
+        return checkExtension(f.getName(), ext);
+    }
+
+    public static boolean checkExtension(String path, String ext) {
+        if (path == null)
+            return false;
+        if (!ext.startsWith("."))
+            ext = "." + ext;
+        return path.toLowerCase(LocaleUtil.getCurrent()).endsWith(
+                ext.toLowerCase(LocaleUtil.getCurrent()));
     }
 
     /**
@@ -1139,9 +1131,6 @@ public class FileSystemUtils {
             return true;
         }
 
-        InputStream in = null;
-        OutputStream out = null;
-
         // attempt to make sure that the actual directory exists
         // before attempting to write into it.
         if (!IOProviderFactory.exists(outputFile.getParentFile())) {
@@ -1149,23 +1138,11 @@ public class FileSystemUtils {
                 Log.d(TAG, "Parent directory could not be created: " +
                         outputFile.getParentFile().getAbsolutePath());
         }
-        try {
-            in = context.getAssets().open(fileName);
-            out = IOProviderFactory.getOutputStream(outputFile);
+        try(InputStream in = context.getAssets().open(fileName);
+            OutputStream out = IOProviderFactory.getOutputStream(outputFile)) {
             FileSystemUtils.copyStream(in, out);
         } catch (IOException ioe) {
             Log.e(TAG, "could not copy " + fileName + " to " + outputPath, ioe);
-            try {
-                if (in != null)
-                    in.close();
-            } catch (IOException ignore) {
-            }
-            try {
-                if (out != null)
-                    out.close();
-            } catch (IOException ignore) {
-            }
-
             return false;
         }
         return true;
@@ -1451,6 +1428,11 @@ public class FileSystemUtils {
         return true;
     }
 
+    public static void copyFile(final File src, final File dst, IOProvider provider)
+            throws IOException {
+            copyFile(src, dst, new byte[BUF_SIZE], provider);
+    }
+
     public static void copyFile(final File src, final File dst)
             throws IOException {
 
@@ -1464,23 +1446,9 @@ public class FileSystemUtils {
 
     public static void copyFile(File src, File dst, byte[] buf, IOProvider provider)
             throws IOException {
-        FileInputStream fis = null;
-        FileOutputStream fos = null;
-        try {
-            fis = provider.getInputStream(src);
-            fos = provider.getOutputStream(dst, false);
+        try (FileInputStream fis = provider.getInputStream(src);
+             FileOutputStream fos = provider.getOutputStream(dst, false)) {
             copyStream(fis, fos, buf);
-        } finally {
-            try {
-                if (fis != null)
-                    fis.close();
-            } catch (IOException ignore) {
-            }
-            try {
-                if (fos != null)
-                    fos.close();
-            } catch (IOException ignore) {
-            }
         }
     }
 
@@ -1512,24 +1480,16 @@ public class FileSystemUtils {
             }
         } finally {
             if (closeIn) {
-                try {
-                    in.close();
-                } catch (Exception ignore) {
-                }
+                IoUtils.close(in);
             }
             if (closeOut) {
-                try {
-                    out.close();
-                } catch (Exception ignore) {
-                }
+                IoUtils.close(out);
             }
         }
     }
 
     public static byte[] read(File f) throws IOException {
-        FileInputStream inputStream = null;
-        try {
-            inputStream = IOProviderFactory.getInputStream(f);
+        try (FileInputStream inputStream = IOProviderFactory.getInputStream(f)) {
             final byte[] retval = new byte[(int) IOProviderFactory.length(f)];
 
             int numRead;
@@ -1542,9 +1502,6 @@ public class FileSystemUtils {
             } while (off < retval.length);
 
             return retval;
-        } finally {
-            if (inputStream != null)
-                inputStream.close();
         }
     }
 
@@ -1591,7 +1548,6 @@ public class FileSystemUtils {
     public static boolean makeSDCardWritable() {
         Process cp;
         Process mount;
-        InputStream is = null;
 
         // ATAK root directory
         String rootDir = Environment.getExternalStorageDirectory()
@@ -1609,10 +1565,7 @@ public class FileSystemUtils {
 
             // Copy succeeded
             if (IOProviderFactory.exists(platform) && cp.exitValue() == 0) {
-                // Add the permission line to file
-                BufferedReader br = new BufferedReader(new InputStreamReader(
-                        is = IOProviderFactory.getInputStream(platform),
-                        UTF8_CHARSET));
+                // Add the permission line to file;
 
                 String line;
                 StringBuilder permissions = new StringBuilder();
@@ -1620,7 +1573,9 @@ public class FileSystemUtils {
                 long fileLength = IOProviderFactory.length(platform);
                 boolean readingPermission = false;
                 boolean fileModified = false;
-                try {
+                try(InputStream is = IOProviderFactory.getInputStream(platform);
+                    InputStreamReader isr = new InputStreamReader(is,UTF8_CHARSET);
+                    BufferedReader br = new BufferedReader(isr)) {
                     while ((line = br.readLine()) != null) {
                         if (readingPermission)
                             permissions.append(line);
@@ -1648,26 +1603,16 @@ public class FileSystemUtils {
                         platformContents.append(line);
                         platformContents.append("\n");
                     }
-                } catch (java.io.IOException e) {
-                    br.close();
+                } catch (IOException ignored) {
                 }
-                br.close();
 
                 // Write permission to file
                 if (fileModified) {
-                    FileOutputStream fos = null;
-                    try {
-                        fos = IOProviderFactory.getOutputStream((platform));
+                    try (FileOutputStream fos = IOProviderFactory.getOutputStream((platform))) {
                         fos.write(platformContents.toString().getBytes(
                                 UTF8_CHARSET));
-                    } catch (UnsupportedEncodingException e) {
-                        Log.w(TAG, "error writing the file", e);
                     } catch (IOException e) {
                         Log.w(TAG, "error writing the file", e);
-                    } finally {
-                        if (fos != null) {
-                            fos.close();
-                        }
                     }
 
                     // Make sure there was no data lost in the process
@@ -1709,13 +1654,6 @@ public class FileSystemUtils {
             }
         } catch (Exception e) {
             Log.e(TAG, "catch of any number of other errors", e);
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (Exception e) {
-                }
-            }
         }
         return false;
     }
@@ -1798,28 +1736,16 @@ public class FileSystemUtils {
                         Log.d(TAG, "could not create: " + f.getParentFile());
                 }
 
-                FileOutputStream fos = provider.getOutputStream(f, false);
-
                 // stream from in zip to out file
 
-                try {
-                    if (provider.exists(f)) {
-                        if (overwrite) {
-                            Log.d(TAG,
-                                    "Overwriting zip file: "
-                                            + zinEntry.getName()
-                                            + " to " + f.getAbsolutePath());
-                            FileSystemUtils.copyStream(zin, false, fos, true,
-                                    buffer);
-                        }
-                    } else {
-                        Log.d(TAG, "Extracting zip file: " + zinEntry.getName()
-                                + " to " + f.getAbsolutePath());
+                final boolean exists = provider.exists(f);
+                try (FileOutputStream fos = provider.getOutputStream(f, false)) {
+                    if (!exists || overwrite) {
+                        Log.d(TAG, (exists ? "Overwriting" : "Extracting") + " zip file: "
+                                + zinEntry.getName() + " to " + f.getAbsolutePath());
                         FileSystemUtils.copyStream(zin, false, fos, true,
                                 buffer);
                     }
-                } finally {
-                    fos.close();
                 }
 
                 //see if created successfully
@@ -1891,11 +1817,9 @@ public class FileSystemUtils {
         }
 
         ZipOutputStream zos = null;
-        FileOutputStream fos = null;
-
-        try {
-            fos = IOProviderFactory.getOutputStream(dest);
-            zos = new ZipOutputStream(new BufferedOutputStream(fos));
+        try(FileOutputStream fos = IOProviderFactory.getOutputStream(dest);
+            BufferedOutputStream bfos = new BufferedOutputStream(fos)) {
+            zos = new ZipOutputStream(bfos);
 
             // Don't compress the ZIP
             if (!compress)
@@ -1920,24 +1844,17 @@ public class FileSystemUtils {
                     addFile(zos, file);
                 }
             }
+            // underlying streams will be closed prior to `finally` block since
+            // they are try-with-resources; if arrive at the end of scope,
+            // close the stream and clear the reference to ensure EOCD is
+            // written and stream is flushed
+            IoUtils.close(zos,TAG,"Failed to close Zip: " + dest.getAbsolutePath());
+            zos = null;
         } catch (Exception e) {
             Log.e(TAG, "Failed to create Zip file", e);
             throw new IOException(e);
         } finally {
-            if (zos != null) {
-                try {
-                    zos.close();
-                } catch (Exception e) {
-                    Log.w(TAG,
-                            "Failed to close Zip: " + dest.getAbsolutePath());
-                }
-            }
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (Exception ignored) {
-                }
-            }
+            IoUtils.close(zos,TAG,"Failed to close Zip: " + dest.getAbsolutePath());
         }
 
         //validate the required files
@@ -1979,10 +1896,9 @@ public class FileSystemUtils {
 
         List<String> filenames = new ArrayList<>();
         ZipOutputStream zos = null;
-        FileOutputStream fos = null;
-        try {
-            fos = IOProviderFactory.getOutputStream(dest);
-            zos = new ZipOutputStream(new BufferedOutputStream(fos));
+        try(FileOutputStream fos = IOProviderFactory.getOutputStream(dest);
+            final BufferedOutputStream bfos = new BufferedOutputStream(fos)) {
+            zos = new ZipOutputStream(bfos);
 
             // Don't compress the ZIP
             if (!compress)
@@ -2009,20 +1925,7 @@ public class FileSystemUtils {
             Log.e(TAG, "Failed to create Zip file", e);
             throw new IOException(e);
         } finally {
-            if (zos != null) {
-                try {
-                    zos.close();
-                } catch (Exception e) {
-                    Log.w(TAG,
-                            "Failed to close Zip: " + dest.getAbsolutePath());
-                }
-            }
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (Exception ignored) {
-                }
-            }
+            IoUtils.close(zos,TAG,"Failed to close Zip: " + dest.getAbsolutePath());
         }
 
         //validate the required files
@@ -2158,6 +2061,20 @@ public class FileSystemUtils {
     }
 
     /**
+     * Check if a given path contains ".zip"
+     *
+     * @param path Path (case insensitive)
+     * @return True if path contains ".zip"
+     */
+    public static boolean isZipPath(String path) {
+        return path.toLowerCase(LocaleUtil.getCurrent()).contains(".zip");
+    }
+
+    public static boolean isZipPath(File f) {
+        return isZipPath(f.getAbsolutePath());
+    }
+
+    /**
      * Add a file to a ZIP archive stream
      *
      * @param zos ZIP output stream
@@ -2181,11 +2098,7 @@ public class FileSystemUtils {
                     FileSystemUtils.copyStream(fis, true, zos, false);
                 }
             } finally {
-                try {
-                    if (fis != null)
-                        fis.close();
-                } catch (Exception ignored) {
-                }
+                IoUtils.close(fis);
 
                 // close current file & corresponding zip entry
                 zos.closeEntry();

@@ -57,18 +57,10 @@ public class TextureHelper {
 
         // Read out texture bytes first
         byte[] bytes = null;
-        InputStream is = null;
-        try {
-            is = getInputStream(filePath);
+        try (InputStream is = getInputStream(filePath)) {
             bytes = FileSystemUtils.read(is);
         } catch (Exception e) {
             Log.e(TAG, "Failed to read texture: " + filePath, e);
-        } finally {
-            try {
-                if (is != null)
-                    is.close();
-            } catch (Exception ignore) {
-            }
         }
         if (bytes == null)
             return 0;
@@ -114,7 +106,8 @@ public class TextureHelper {
     private static InputStream getInputStream(String filePath)
             throws IOException {
         File f = new File(filePath);
-        if (!IOProviderFactory.exists(f) && filePath.contains(".zip/")) {
+        if (!IOProviderFactory.exists(f) && (filePath.contains(".zip/")
+                || filePath.contains(".kmz/"))) {
             ZipVirtualFile zvf = new ZipVirtualFile(filePath);
             return zvf.openStream();
         } else

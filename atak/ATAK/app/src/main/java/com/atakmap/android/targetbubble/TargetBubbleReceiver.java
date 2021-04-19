@@ -511,12 +511,9 @@ public class TargetBubbleReceiver extends BroadcastReceiver implements
                             .getItem("support/logs/point_parse_error_"
                                     + date.getTime()
                                     + ".txt");
-                    FileOutputStream fos = IOProviderFactory
-                            .getOutputStream(file);
-                    try {
+                    try (FileOutputStream fos = IOProviderFactory
+                            .getOutputStream(file)) {
                         fos.write(output.toString().getBytes());
-                    } finally {
-                        fos.close();
                     }
                 } catch (IOException e) {
                     Log.e(TAG, "error: ", e);

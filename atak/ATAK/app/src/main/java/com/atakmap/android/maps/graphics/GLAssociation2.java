@@ -16,6 +16,7 @@ import com.atakmap.android.maps.Association.OnStyleChangedListener;
 import com.atakmap.android.maps.Association.OnTextChangedListener;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.PointMapItem;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.feature.Feature;
@@ -319,10 +320,19 @@ public class GLAssociation2 extends AbstractGLMapItem2 implements
                 @Override
                 public void run() {
                     MapView mv = MapView.getMapView();
-                    bounds.set(Math.max(lat0, lat1), // N
-                            Math.min(lon0, lon1), // W
-                            Math.min(lat0, lat1), // S
-                            Math.max(lon0, lon1)); // E
+                    final double N = Math.max(lat0, lat1); // N
+                    double W = Math.min(lon0, lon1); // W
+                    final double S = Math.min(lat0, lat1); // S
+                    double E = Math.max(lon0, lon1); // E
+
+                    // if both are unwrapped, wrap
+                    if(Math.abs(W) > 180d && Math.abs(E) > 180d) {
+                        final double ew = GeoCalculations.wrapLongitude(E);
+                        final double ww = GeoCalculations.wrapLongitude(W);
+                        E = Math.max(ew, ww);
+                        W = Math.min(ew, ww);
+                    }
+                    bounds.set(N, W, S, E);
                     bounds.setWrap180(mv != null
                             && mv.isContinuousScrollEnabled());
 

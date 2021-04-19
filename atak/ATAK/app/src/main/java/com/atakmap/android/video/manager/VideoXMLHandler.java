@@ -16,6 +16,7 @@ import com.atakmap.coremap.xml.XMLUtils;
 import com.atakmap.net.AtakAuthenticationCredentials;
 import com.atakmap.net.AtakAuthenticationDatabase;
 
+import com.atakmap.util.zip.IoUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -149,11 +150,7 @@ public class VideoXMLHandler {
         } catch (Exception e) {
             Log.e(TAG, "Failed to serialize connection entry: " + entry, e);
         } finally {
-            try {
-                if (fos != null)
-                    fos.close();
-            } catch (Exception ignore) {
-            }
+            IoUtils.close(fos);
         }
         return null;
     }

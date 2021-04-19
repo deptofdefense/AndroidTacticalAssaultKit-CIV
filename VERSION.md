@@ -1,5 +1,28 @@
 # Version History
 
+## 4.2.1.1
+
+* Fix reported issue with BP/HA placement
+* Align BP/HA dimension input with USMC doctrine
+* Update Mission Package Manager to store certs with connection vs defaults
+
+## 4.2.1.0
+
+* Add lasso tool to support region based imagery download
+* Add support for KML icon scaling
+* Sort icons by distance from camera to mitigate artifacts when map is tilted
+* Reset expiration on certificate when credentials are re-entered
+* Pull expiration from certificate if it's specified
+* Reimplement KML parsing for network link import
+* Fix GDAL band request parameters for monochrome imagery with alpha
+* Add additional vehicle models
+* Show nested child KML network links in Overlay Manager
+* Allow user to modify child KML network link download intervals
+* Handle KML altitude mode specified as `gx:altitudeMode` element
+* Add support for open polyline extrusions
+* Add extrusion support for negative heights (extrude down from base)
+* Various bug fixes
+
 ## 4.2.0.5
 
 * Fix bug in `CommsMapComponent.removeOutputsChangedListener(...)`

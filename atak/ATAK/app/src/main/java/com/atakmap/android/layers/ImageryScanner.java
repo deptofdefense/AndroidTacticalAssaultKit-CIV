@@ -113,7 +113,7 @@ final class ImageryScanner extends LayerScanner {
         boolean retval = false;
         // if we've got a zip at this point, it is not a valid tileset so we
         // will try to access the contents
-        if (f.getName().endsWith(".zip"))
+        if (FileSystemUtils.checkExtension(f, "zip"))
             try {
                 f = new ZipVirtualFile(f);
             } catch (Throwable ignored) {

@@ -337,30 +337,16 @@ public class AttachmentManager {
 
         File outDir = new File(path);
         File attachment;
-        try {
+        try(InputStream is = IOProviderFactory.getInputStream(f)) {
             attachment = new File(outDir, f.getName());
 
             // the passed in file is equal to the location where it will be attached
             if (attachment.getCanonicalPath().equals(f.getCanonicalPath()))
                 return null;
-            InputStream is = null;
-            OutputStream os = null;
-            try {
-                FileSystemUtils.copy(is = IOProviderFactory.getInputStream(f),
-                        os = IOProviderFactory.getOutputStream(attachment));
-            } finally {
-                if (is != null) {
-                    try {
-                        is.close();
-                    } catch (Exception ignored) {
-                    }
-                }
-                if (os != null) {
-                    try {
-                        os.close();
-                    } catch (Exception ignored) {
-                    }
-                }
+
+            try (OutputStream os = IOProviderFactory
+                    .getOutputStream(attachment)) {
+                FileSystemUtils.copy(is, os);
             }
         } catch (IOException ioe) {
             return null;

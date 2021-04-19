@@ -20,6 +20,8 @@ import com.atakmap.math.Ray;
 import com.atakmap.math.Vector3D;
 
 import java.nio.Buffer;
+import java.util.HashSet;
+import java.util.Set;
 
 public final class Models {
     public static interface OnTransformProgressListener {
@@ -28,28 +30,38 @@ public final class Models {
 
     private Models() {}
 
+    /**
+     * Find an appropriate anchor point for a model by finding a vertex with
+     * the lowest Z-value
+     * @param m Model
+     * @return Anchor point
+     */
     public static PointD findAnchorPoint(Model m) {
-        Envelope aabb = m.getAABB();
+        PointD point = new PointD(0, 0, 0);
+        PointD minZ = new PointD(0, 0, Double.MAX_VALUE);
         for(int i = 0; i < m.getNumMeshes(); i++) {
             Mesh mesh = m.getMesh(i);
-            int pointIndex = findMeshPointAtZ(mesh, aabb.minZ, 0.00001);
-            if(pointIndex != -1) {
-                PointD retval = new PointD(0d, 0d, 0d);
-                mesh.getPosition(pointIndex, retval);
-                return retval;
+            Envelope aabb = mesh.getAABB();
+            for (int j = 0; j < mesh.getNumVertices(); j++) {
+                mesh.getPosition(j, point);
+
+                // Check against the min Z-value of the AABB (saves time)
+                if (Math.abs(point.z - aabb.minZ) < 0.00001)
+                    return point;
+
+                // Otherwise track the lowest point for later
+                if (point.z < minZ.z) {
+                    minZ.x = point.x;
+                    minZ.y = point.y;
+                    minZ.z = point.z;
+                }
             }
         }
-        return null;
-    }
 
-    private static int findMeshPointAtZ(Mesh m, double z, double threnshold) {
-        PointD point = new PointD(0d, 0d, 0d);
-        for (int i = 0; i < m.getNumVertices(); i++) {
-            m.getPosition(i, point);
-            if (Math.abs(point.z - z) < threnshold)
-                return i;
-        }
-        return -1;
+        // Fallback to using the point with the lowest z-value
+        // Ideally this point should be the same as minZ of the AABB, but
+        // for some reason it isn't in this case.
+        return minZ;
     }
 
     public static PointD findAnchorPoint(Mesh m) {
@@ -100,13 +112,21 @@ public final class Models {
 
     public static Model transform(ModelInfo src, Model srcData, ModelInfo dst, VertexDataLayout dstLayout, OnTransformProgressListener listener) {
         Mesh[] dstMeshes = new Mesh[srcData.getNumMeshes()];
+        Matrix[] transforms = new Matrix[srcData.getNumMeshes()];
         for(int i = 0; i < srcData.getNumMeshes(); i++) {
-            dstMeshes[i] = transform(src, srcData.getMesh(i), dst, dstLayout, listener);
+            transforms[i] = srcData.getTransform(i);
+            if (transforms[i] != null) {
+                ModelInfo concatenatedSrc = new ModelInfo(src);
+                concatenatedSrc.localFrame.concatenate(transforms[i]);
+                dstMeshes[i] = transform(concatenatedSrc, srcData.getMesh(i, false), dst, dstLayout, listener);
+            } else {
+                dstMeshes[i] = transform(src, srcData.getMesh(i, false), dst, dstLayout, listener);
+            }
             if(dstMeshes[i] == null)
                 return null;
         }
         try {
-            return ModelBuilder.build(dstMeshes);
+            return ModelBuilder.build(dstMeshes, transforms);
         } catch(Throwable t) {
             Log.e("Models", "Failed to transform mesh", t);
             return null;

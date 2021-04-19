@@ -139,13 +139,8 @@ public final class GetFileOperation extends HTTPOperation {
             // Write file
             File temp = new File(fileRequest.getDir(),
                     fileRequest.getFileName());
-            FileOutputStream fos = null;
-            try {
-                fos = IOProviderFactory.getOutputStream(temp);
+            try (FileOutputStream fos = IOProviderFactory.getOutputStream(temp)) {
                 resEntity.writeTo(fos);
-            } finally {
-                if (fos != null)
-                    fos.close();
             }
 
             // Now verify we got download correctly

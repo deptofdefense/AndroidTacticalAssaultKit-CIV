@@ -518,6 +518,20 @@ public class GLTriangulate {
 
     }
 
+    // Vector2D with a height attribute
+    public static class HeightVector2D extends Vector2D {
+
+        public double height;
+
+        public HeightVector2D(double x, double y, double alt, double height) {
+            super(x, y, alt);
+            this.height = height;
+        }
+
+        public HeightVector2D(double x, double y, double height) {
+            this(x, y, 0d, height);
+        }
+    }
 
     private static class Event {
         enum Type {
@@ -525,38 +539,41 @@ public class GLTriangulate {
             DELETE,
             INTERSECT,
         }
-        double x;
-        double y;
+
+        Vector2D vec;
         Type type;
         ArrayList<Segment> segments;
 
-        public Event(double x, double y, Type type, Segment segment) {
-            this.x = x;
-            this.y = y;
+        public Event(Vector2D vec, Type type, Segment segment) {
+            this.vec = vec;
             this.type = type;
             this.segments = new ArrayList<>();
             segments.add(segment);
         }
-        public Event(double x, double y, Type type, Segment a, Segment b) {
-            this.x = x;
-            this.y = y;
+
+        public Event(Vector2D vec, Type type, Segment a, Segment b) {
+            this.vec = vec;
             this.type = type;
             this.segments = new ArrayList<>();
             segments.add(a);
             segments.add(b);
         }
 
+        public Vector2D getVector() {
+            return this.vec;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (o instanceof Event) {
                 Event e = (Event)o;
-                return x == e.x && y == e.y;
+                return vec.x == e.vec.x && vec.y == e.vec.y;
             }
             return false;
         }
         @Override
         public int hashCode() {
-            return Objects.hash( x, y);
+            return Objects.hash(vec.x, vec.y);
         }
 
     }
@@ -592,12 +609,12 @@ public class GLTriangulate {
             if (e == null) {
                 return;
             }
-            if (_queue.containsKey(e.x)) {
-                _queue.get(e.x).put(e.segments.get(0).slope, e);
+            if (_queue.containsKey(e.vec.x)) {
+                _queue.get(e.vec.x).put(e.segments.get(0).slope, e);
             } else {
                 TreeMap<Double, Event> treeMap = new TreeMap<>(leastToGreatestComparator);
                 treeMap.put(e.segments.get(0).slope, e);
-                _queue.put(e.x, treeMap);
+                _queue.put(e.vec.x, treeMap);
             }
         }
 
@@ -620,7 +637,7 @@ public class GLTriangulate {
         }
 
         public void delete(Event e) {
-            delete(e.x, e.segments.get(0).slope);
+            delete(e.vec.x, e.segments.get(0).slope);
         }
 
         private void delete(double x, double slope) {
@@ -665,10 +682,10 @@ public class GLTriangulate {
             for (Event event : removeList) {
                 delete(event);
             }
-            insert(new Event(newSegments.first.start.x, newSegments.first.start.y, Event.Type.INSERT, newSegments.first));
-            insert(new Event(newSegments.second.start.x, newSegments.second.start.y, Event.Type.INSERT, newSegments.second));
-            insert(new Event(newSegments.first.end.x, newSegments.first.end.y, Event.Type.DELETE, newSegments.first));
-            insert(new Event(newSegments.second.end.x, newSegments.second.end.y, Event.Type.DELETE, newSegments.second));
+            insert(new Event(newSegments.first.start, Event.Type.INSERT, newSegments.first));
+            insert(new Event(newSegments.second.start, Event.Type.INSERT, newSegments.second));
+            insert(new Event(newSegments.first.end, Event.Type.DELETE, newSegments.first));
+            insert(new Event(newSegments.second.end, Event.Type.DELETE, newSegments.second));
         }
 
         public void updateAdjacencies(SweepLineStatus status, ArrayList<Event> intersections, Event event) {
@@ -696,11 +713,11 @@ public class GLTriangulate {
         }
         private void add(Segment segment) {
             if (segment.start.x < segment.end.x) {
-                insert(new Event(segment.start.x, segment.start.y, Event.Type.INSERT, segment));
-                insert(new Event(segment.end.x, segment.end.y, Event.Type.DELETE, segment));
+                insert(new Event(segment.start, Event.Type.INSERT, segment));
+                insert(new Event(segment.end, Event.Type.DELETE, segment));
             } else {
-                insert(new Event(segment.start.x, segment.start.y, Event.Type.DELETE, segment));
-                insert(new Event(segment.end.x, segment.end.y, Event.Type.INSERT, segment));
+                insert(new Event(segment.start, Event.Type.DELETE, segment));
+                insert(new Event(segment.end, Event.Type.INSERT, segment));
             }
         }
     }
@@ -878,7 +895,7 @@ public class GLTriangulate {
      * @param vertices The array of 2d points that make up the self-intersecting polygon.
      * @return A list of simple polygons, represented as a list of doubles.
      */
-    static public ArrayList<ArrayList<Double>> extractIntersectingPolygons(Vector2D[] vertices) {
+    public static ArrayList<ArrayList<Double>> extractIntersectingPolygons(Vector2D[] vertices) {
         // We'll use a LinkedList of ordered Segments to store the polygon edges. As we do the line
         // sweep the LinkedList will be updated to contain the simple polygons.
         LinkedList<Segment> chains = new LinkedList<>();
@@ -888,7 +905,7 @@ public class GLTriangulate {
         }
 
         EventQueue eventQueue = new EventQueue(chains);
-        SweepLineStatus status = new SweepLineStatus(eventQueue.peek().x);
+        SweepLineStatus status = new SweepLineStatus(eventQueue.peek().vec.x);
         ArrayList<Event> intersections = new ArrayList<>();
         while (!eventQueue.isEmpty()) {
             Event event = eventQueue.extract();
@@ -935,10 +952,9 @@ public class GLTriangulate {
             for (Vector2D point : chain) {
                 points.add(point.x);
                 points.add(point.y);
-            }
-            double[] tmp = new double[points.size()];
-            for (int i = 0; i < points.size(); i++) {
-                tmp[i] = points.get(i);
+                points.add(point.alt);
+                if (point instanceof HeightVector2D)
+                    points.add(((HeightVector2D) point).height);
             }
             ret.add(points);
         }
@@ -955,7 +971,7 @@ public class GLTriangulate {
     private static ArrayList<Segment> updateChains(LinkedList<Segment> chains, Event event) {
         Segment first = event.segments.get(0);
         Segment second = event.segments.get(1);
-        Vector2D intersection = new Vector2D(event.x, event.y);
+        Vector2D intersection = event.getVector();
         int intersectionID = chains.size() + 1;
         Segment aFirstHalf = new Segment(first.start, intersection, first.startID, intersectionID);
         Segment aSecondHalf = new Segment(intersection, second.end, intersectionID, second.endID);
@@ -1040,22 +1056,22 @@ public class GLTriangulate {
         if (a.sharesPoint(b)) {
             return null;
         }
-        Vector2D intersection = Vector2D.segmentToSegmentIntersection(a.start, a.end, b.start, b.end);
+        Vector2D intersection = segmentToSegmentIntersection(a.start, a.end, b.start, b.end);
         if (intersection != null) {
             if (!a.hasPoint(intersection) && !b.hasPoint(intersection)) {
-                return new Event(intersection.x, intersection.y, Event.Type.INTERSECT, a, b);
+                return new Event(intersection, Event.Type.INTERSECT, a, b);
             }
         } else {
             // Have to do this ugly check since the intersection function doesn't give the correct
             // answer if a segment's endpoint is on another segment
             if (pointOnSegment(a.start, b)) {
-                return new Event(a.start.x, a.start.y, Event.Type.INTERSECT, a, b);
+                return new Event(a.start, Event.Type.INTERSECT, a, b);
             } else if (pointOnSegment(a.end, b)) {
-                return new Event(a.end.x, a.end.y, Event.Type.INTERSECT, a, b);
+                return new Event(a.end, Event.Type.INTERSECT, a, b);
             } else if (pointOnSegment(b.start, a)) {
-                return new Event(b.start.x, b.start.y, Event.Type.INTERSECT, a, b);
+                return new Event(b.start, Event.Type.INTERSECT, a, b);
             } else if (pointOnSegment(b.end, a)) {
-                return new Event(b.end.x, b.end.y, Event.Type.INTERSECT, a, b);
+                return new Event(b.end, Event.Type.INTERSECT, a, b);
             }
         }
         return null;
@@ -1066,4 +1082,32 @@ public class GLTriangulate {
                 segment.start.distance(segment.end)) == 0;
     }
 
+    // Copied from Vector2D class w/ added support for altitude and height
+    private static Vector2D segmentToSegmentIntersection(Vector2D seg10,
+            Vector2D seg11, Vector2D seg01, Vector2D seg00) {
+        Vector2D s0 = seg01.subtract(seg00);
+        Vector2D s1 = seg11.subtract(seg10);
+        double c1 = s1.cross(s0);
+        if (c1 != 0d) {
+            double t = seg00.subtract(seg10).cross(s0) / c1;
+            double u = seg00.subtract(seg10).cross(s1) / c1;
+            if ((t >= 0 && t <= 1) && (u >= 0 && u <= 1)) {
+                Vector2D ret = seg00.add(s0.scale(u));
+
+                // Interpolate altitude
+                ret.alt = seg01.alt * (1 - u) + seg00.alt * u;
+
+                // Interpolate height
+                if (seg00 instanceof HeightVector2D && seg01 instanceof HeightVector2D) {
+                    double h1 = ((HeightVector2D) seg00).height;
+                    double h2 = ((HeightVector2D) seg01).height;
+                    return new HeightVector2D(ret.x, ret.y, ret.alt,
+                            h2 * (1 - u) + h1 * u);
+                }
+
+                return ret;
+            }
+        }
+        return null;
+    }
 }

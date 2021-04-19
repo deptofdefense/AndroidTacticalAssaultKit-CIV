@@ -72,6 +72,7 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
      */
     public TileButtonDialog(MapView mapView, Context context, Context plugin,
             boolean bPersistent) {
+        // TODO: Document undocumented constructor parameters
         _mapView = mapView;
         _context = context;
         _plugin = plugin;
@@ -387,6 +388,7 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
     public class TileButton {
         final TileButtonView view;
         private View.OnClickListener internalClickListener;
+        private View.OnLongClickListener internalLongClickListener;
 
         TileButton(final Drawable icon, final String text) {
             view = (TileButtonView) _inflater.inflate(R.layout.tile_button,
@@ -408,6 +410,26 @@ public class TileButtonDialog implements DialogInterface.OnDismissListener,
                                 ocl.onClick(v);
                         }
                     });
+        }
+
+        /**
+         * Registers a long click listener on the button. Only one may be registered--any previously
+         * registered listener will be replaced.
+         * @param olcl The listener to register.
+         */
+        public synchronized void setOnLongClickListener(final View.OnLongClickListener olcl) {
+            view.setOnLongClickListener(
+                    internalLongClickListener = new View.OnLongClickListener() {
+
+                        @Override
+                        public boolean onLongClick(View v) {
+                            if (olcl != null) {
+                                return olcl.onLongClick(v);
+                            }
+                            return false;
+                        }
+                    }
+            );
         }
     }
 }

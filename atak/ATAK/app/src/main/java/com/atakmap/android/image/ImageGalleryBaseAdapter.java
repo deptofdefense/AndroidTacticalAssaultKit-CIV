@@ -16,6 +16,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.atakmap.util.zip.IoUtils;
 import org.apache.sanselan.formats.tiff.TiffImageMetadata;
 import org.apache.sanselan.formats.tiff.constants.TiffConstants;
 
@@ -476,13 +477,7 @@ public abstract class ImageGalleryBaseAdapter
                 raf.setLength(length + 1);
                 raf.setLength(length);
             } finally {
-                if (raf != null) {
-                    try {
-                        raf.close();
-                    } catch (IOException ioe) {
-                        Log.d(TAG, "failed to close the file");
-                    }
-                }
+                IoUtils.close(raf,TAG,"failed to close the file");
             }
         }
     }
@@ -624,8 +619,7 @@ public abstract class ImageGalleryBaseAdapter
                 } catch (IOException e) {
                     Log.w(TAG, "Failed to cache Exif for: " + cacheFile, e);
                 } finally {
-                    if (printWriter != null)
-                        printWriter.close();
+                    IoUtils.close(printWriter, TAG);
                 }
             }
         } catch (IOException e) {
@@ -635,12 +629,7 @@ public abstract class ImageGalleryBaseAdapter
             Log.w(TAG, "Failed to save (recycled): " + cacheFile, e);
             FileSystemUtils.delete(cacheFile);
         } finally {
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (Exception ignore) {
-                }
-            }
+            IoUtils.close(fos);
             imageCache.unreserve(cacheReservation);
         }
     }

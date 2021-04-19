@@ -370,10 +370,13 @@ public class ImportFileTask extends
                                             + file.getAbsolutePath());
                         // sorter matched and we decided not to sort/move, lets return
                         // use extension (except the period) as type
-                        String type = "";
+                        String type;
                         if (!FileSystemUtils.isEmpty(sorter.getExt()))
                             type = sorter.getExt().substring(1)
                                     .toUpperCase(LocaleUtil.getCurrent());
+                        else
+                            type = FileSystemUtils.getExtension(destPath,
+                                    true, false);
                         return new Result(destPath, type, newMD5, sorter);
                     } else {
                         Log.d(TAG,
@@ -452,10 +455,13 @@ public class ImportFileTask extends
                                 + file.getAbsolutePath() + " to "
                                 + destPath.getAbsolutePath());
                 // use extension (except the period) as type
-                String type = "";
+                String type;
                 if (!FileSystemUtils.isEmpty(sorter.getExt()))
                     type = sorter.getExt().substring(1)
                             .toUpperCase(LocaleUtil.getCurrent());
+                else
+                    type = FileSystemUtils.getExtension(destPath,
+                            true, false);
                 return new Result(destPath, type, newMD5, sorter);
             } else
                 Log.w(TAG,

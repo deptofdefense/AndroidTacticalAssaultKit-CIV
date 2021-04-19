@@ -14,6 +14,7 @@ import com.atakmap.android.hierarchy.action.GoTo;
 import com.atakmap.android.importexport.send.TAKContactSender;
 import com.atakmap.android.importexport.send.TAKServerSender;
 import com.atakmap.android.importexport.send.ThirdPartySender;
+import com.atakmap.android.importfiles.http.NetworkLinkDownloader;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -255,32 +256,7 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
                         KMLUtil.DEFAULT_NETWORKLINK_INTERVAL_SECS);
                 boolean bStop = intent.getBooleanExtra("kml_networklink_stop",
                         false);
-
-                if (_kmlDownloader == null) {
-                    Log.w(TAG, "Unable to process KML_NETWORK_LINK_REFRESH: "
-                            + url);
-                    return;
-                }
-
-                if (bStop) {
-                    if (filename == null) {
-                        Log.w(TAG,
-                                "Unable to remove KML_NETWORK_LINK_REFRESH with missing parameters");
-                        return;
-                    }
-
-                    _kmlDownloader.getLinkRefresh().remove(filename);
-                } else {
-                    if (url == null || filename == null) {
-                        Log.w(TAG,
-                                "Unable to add KML_NETWORK_LINK_REFRESH with missing parameters");
-                        return;
-                    }
-
-                    _kmlDownloader.getLinkRefresh().add(url, filename,
-                            intervalSeconds,
-                            TimeUnit.SECONDS);
-                }
+                refreshNetworkLink(url, filename, intervalSeconds, bStop);
             }
         }
     };
@@ -719,7 +695,7 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
         }
     }
 
-    public void download(RemoteResource resource) {
+    public void download(RemoteResource resource, boolean showNotifications) {
         if (resource == null) {
             return;
         }
@@ -731,11 +707,18 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
             return;
         }
 
-        if (resource.isKML()) {
-            _kmlDownloader.download(resource);
-        } else {
-            _downloader.download(resource);
-        }
+        if (resource.isKML())
+            _kmlDownloader.download(resource, showNotifications);
+        else
+            _downloader.download(resource, showNotifications);
+
+        // Ping refresher in case it hasn't been started yet
+        if (resource.getRefreshSeconds() > 0)
+            refreshNetworkLink(resource, false);
+    }
+
+    public void download(RemoteResource resource) {
+        download(resource, true);
     }
 
     @Override
@@ -916,5 +899,44 @@ public class ImportExportMapComponent extends AbstractMapComponent implements
                 AtakBroadcast.getInstance().sendBroadcast(intent);
             }
         }
+    }
+
+    public void refreshNetworkLink(RemoteResource res, boolean stop) {
+        if (_kmlDownloader == null || _downloader == null) {
+            Log.w(TAG, "Unable to process KML_NETWORK_LINK_REFRESH: " + res);
+            return;
+        }
+        if (stop) {
+            if (res == null) {
+                Log.w(TAG,
+                        "Unable to remove KML_NETWORK_LINK_REFRESH with missing parameters");
+                return;
+            }
+            _downloader.removeRefreshLink(res);
+            _kmlDownloader.removeRefreshLink(res);
+        } else {
+            if (res == null) {
+                Log.w(TAG,
+                        "Unable to add KML_NETWORK_LINK_REFRESH with missing parameters");
+                return;
+            }
+            NetworkLinkDownloader downloader = res.isKML()
+                    ? _kmlDownloader : _downloader;
+            downloader.addRefreshLink(res);
+        }
+    }
+
+    public void refreshNetworkLink(String url, String name, long interval, boolean stop) {
+        RemoteResource res = new RemoteResource();
+        res.setUrl(url);
+        res.setName(name);
+        res.setType(RemoteResource.Type.KML);
+        res.setDeleteOnExit(false);
+        res.setLocalPath("");
+        res.setRefreshSeconds(interval);
+        res.setLastRefreshed(0);
+        res.setMd5("");
+        res.setSource(RemoteResource.Source.LOCAL_STORAGE);
+        refreshNetworkLink(res, stop);
     }
 }

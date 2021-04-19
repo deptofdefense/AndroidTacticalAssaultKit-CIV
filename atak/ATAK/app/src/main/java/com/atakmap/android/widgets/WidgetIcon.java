@@ -123,11 +123,8 @@ public class WidgetIcon implements Cloneable {
         Uri iconUri = Uri.parse(iconUriString);
         String iconPath = iconUri.getPath();
         if (iconPath.toLowerCase(LocaleUtil.getCurrent()).endsWith(".xml")) {
-            InputStream in = config.getMapAssets().getInputStream(iconUri);
-            try {
+            try (InputStream in = config.getMapAssets().getInputStream(iconUri)) {
                 icon = _parseIconXml(config, in);
-            } finally {
-                in.close();
             }
         } else if (iconUriString.startsWith("base64:/")) {
             MapDataRef ref = MapDataRef.parseUri(iconUriString);

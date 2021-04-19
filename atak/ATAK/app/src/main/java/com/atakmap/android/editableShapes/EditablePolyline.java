@@ -126,7 +126,6 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
 
     private final List<MutableGeoBounds> _partitionBounds = new ArrayList<>();
     private final List<RectF> _partitionRects = new ArrayList<>();
-    private static final int PARTITION_SIZE = 25;
 
     private final GeoPointMetaData _avgAltitude = new GeoPointMetaData();
     private final GeoPointMetaData _maxAltitude = new GeoPointMetaData();
@@ -1070,10 +1069,12 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
             E = W = Ex = Wx = p.get().getLongitude() + 360;
 
         int numPoints = _points.size();
+        if (!isClosed())
+            numPoints--;
         int partNum = 1;
-        for (int i = 1; i <= numPoints; ++i) {
+        for (int i = 0; i <= numPoints; ++i) {
             boolean lastPoint = i == numPoints;
-            p = _points.get(lastPoint ? 0 : i);
+            p = _points.get(isClosed() && lastPoint ? 0 : i);
 
             double lat = p.get().getLatitude();
             double lon = p.get().getLongitude();
@@ -1090,16 +1091,14 @@ public class EditablePolyline extends Polyline implements AnchoredMapItem,
             else if (lon < W)
                 W = lon;
 
-            if (!lastPoint || isClosed()) {
-                if (lat > Nx)
-                    Nx = lat;
-                else if (lat < Sx)
-                    Sx = lat;
-                if (lon > Ex)
-                    Ex = lon;
-                else if (lon < Wx)
-                    Wx = lon;
-            }
+            if (lat > Nx)
+                Nx = lat;
+            else if (lat < Sx)
+                Sx = lat;
+            if (lon > Ex)
+                Ex = lon;
+            else if (lon < Wx)
+                Wx = lon;
 
             if (partNum == PARTITION_SIZE || lastPoint) {
                 if (wrap180 && Ex > 180)

@@ -161,6 +161,26 @@ namespace TAK {
             ENGINE_API Util::TAKErr GeometryFactory_extrude(Geometry2Ptr &value, const Geometry2 &src, const double extrude, const int hints = TEEH_None) NOTHROWS;
 
             /**
+             * Extrudes the source geometry along the z-axis by the specified
+             * per-vertex amounts. If the  geometry is 2D, the source z
+             * coordinate is assumed to be 0.0.
+             * <P>The behavior is as follows for the various geometry types:
+             * <UL>
+             *  <LI>Point2. Extrudes into a segment, represented by a LineString2.
+             *  <LI>LineString2. Extrudes into a GeometryCollection2. Each "face" is represented
+             *          by a distinct Polygon2.
+             *  <LI>Polygon2. Extrudes into a GeometryCollection2. Each "face" is represented by
+             *          a distinct Polygon2. A face for the bottom of the extrusion is included.
+             * </UL>
+             * @param value Returns the extruded geometry on success
+             * @param src The input geometry
+             * @param extrude The value to extrude along the z axis
+             *
+             * @return TE_Ok on success, various codes on failure
+             */
+            ENGINE_API Util::TAKErr GeometryFactory_extrude(Geometry2Ptr &value, const Geometry2 &src, const double *extrude, const std::size_t count, const int hints = TEEH_None) NOTHROWS;
+
+            /**
             * Creates a two  dimensional ellipse centered on location with a clockwise orientation
             * sized by major and minor axes. Cartesian, WGS84 or other conventions are determined by
             * a supplied set of algorithms.

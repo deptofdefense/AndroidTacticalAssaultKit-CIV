@@ -105,9 +105,8 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
 
     @Override
     public Set<DatasetDescriptor> create(File file, File workingDir, InteractiveServiceProvider.Callback callback) {
-        if (!(file instanceof ZipVirtualFile) &&
-            IOProviderFactory.isFile(file) &&
-            file.getAbsolutePath().toUpperCase(LocaleUtil.getCurrent()).endsWith(".ZIP")) {
+        if (!(file instanceof ZipVirtualFile) && IOProviderFactory.isFile(file)
+                && FileSystemUtils.checkExtension(file, "zip")) {
 
             try {
                 file = new ZipVirtualFile(file);
@@ -279,7 +278,7 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
         boolean isZip = false;
         if (file instanceof ZipVirtualFile) {
              isZip = true;
-        } else if (IOProviderFactory.isFile(file) && file.getAbsolutePath().toUpperCase(LocaleUtil.getCurrent()).endsWith(".ZIP")) {
+        } else if (IOProviderFactory.isFile(file) && FileSystemUtils.checkExtension(file, "zip")) {
             try {
                 file = new ZipVirtualFile(file);
                 isZip = true;
@@ -320,11 +319,15 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
             Dataset dataset = null;
             try{
                 dataset = GdalLibrary.openDatasetFromFile(file);
-                if (dataset == null){
+                if (dataset == null)
                     return false;
-                }else{
-                    return true;
-                }
+
+                // Shallow projection check
+                if (dataset.GetMetadata_Dict("SUBDATASETS").isEmpty()
+                        && GdalDatasetProjection2.getInstance(dataset) == null)
+                    return false;
+
+                return true;
             }finally{
                 if(dataset != null){
                     dataset.delete();
@@ -340,8 +343,8 @@ public class GdalLayerInfo extends AbstractDatasetDescriptorSpi {
             callback.progress(tmpCount);
         }
 
-        if (IOProviderFactory.isFile(file) && !(file instanceof ZipVirtualFile) &&
-            file.getAbsolutePath().toUpperCase(LocaleUtil.getCurrent()).endsWith(".ZIP")) {
+        if (IOProviderFactory.isFile(file) && !(file instanceof ZipVirtualFile)
+                && FileSystemUtils.checkExtension(file, "zip")) {
             try {
                 file = new ZipVirtualFile(file);
                 isZip = true;

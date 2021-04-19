@@ -2,6 +2,7 @@
 package com.atakmap.comms;
 
 import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.coremap.log.Log;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -10,6 +11,8 @@ import java.io.FileNotFoundException;
 import java.nio.channels.FileChannel;
 
 public class FileIOProvider implements com.atakmap.commoncommo.FileIOProvider {
+
+    private static final String TAG = "FileIOProvider";
 
     /**
      * Opens a file and returns the FileChannel for that file
@@ -24,7 +27,7 @@ public class FileIOProvider implements com.atakmap.commoncommo.FileIOProvider {
             mode = convertFileAccessMode(mode);
             return IOProviderFactory.getChannel(new File(filePath), mode);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            Log.e(TAG, "error encountered", e);
             return null;
         }
     }

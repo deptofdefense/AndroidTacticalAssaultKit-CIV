@@ -80,7 +80,6 @@ public class DoghouseReceiver extends BroadcastReceiver implements
     private final MapGroup _doghouseGroup;
     private final DoghouseViewModel _viewModel;
 
-    private final Debouncer<Route> _pointsChangedDebouncer = new Debouncer<>();
 
     private static DoghouseReceiver instance;
 
@@ -114,7 +113,6 @@ public class DoghouseReceiver extends BroadcastReceiver implements
     }
 
     public void dispose() {
-        _pointsChangedDebouncer.dispose();
         _doghouseGroup.clearItems();
         _mapView.getMapOverlayManager().removeOverlay(_overlay);
         _mapView.getMapEventDispatcher().removeMapEventListener(
@@ -272,15 +270,7 @@ public class DoghouseReceiver extends BroadcastReceiver implements
         final Route route = (Route) s;
         if (route.getRouteMethod() == Route.RouteMethod.Flying
                 && route.getMetaBoolean(META_SHOW_DOGHOUSES, true)) {
-            Runnable task = new Runnable() {
-                @Override
-                public void run() {
-                    _viewModel.removeDoghouses(route);
-                    _viewModel.addDoghouses(route);
-                }
-            };
-            _pointsChangedDebouncer.debounce(route, task, 500,
-                    TimeUnit.MILLISECONDS);
+            _viewModel.updateDoghouses(route);
         }
     }
 
@@ -447,80 +437,4 @@ public class DoghouseReceiver extends BroadcastReceiver implements
                 .apply();
     }
 
-    /**
-     * Debounce allows tasks to be scheduled to run only after a
-     * certain amount of time has passed.
-     *
-     * Events like user EditText inputs, Shape.OnPointsChanged events, and
-     * others that fire many events in a short period of time are
-     * good use cases for debounce.
-     *
-     * This implementation heavily inspired by the following code snippets:
-     *   - https://stackoverflow.com/a/20978973/5189340
-     *   - https://stackoverflow.com/a/38296055/5189340
-     *
-     * @param <T> The type of key being used to store scheduled tasks.
-     *            This key is used for lookup in a hash map of scheduled
-     *            tasks so that multiple successive calls to debounce
-     *            with the same key will cancel previous tasks, and schedule
-     *            a new one.
-     */
-    private static class Debouncer<T> implements Disposable {
-
-        private static final String TAG = "Debouncer";
-
-        /**
-         * Spawning many Debouncer instances will cause generation of many
-         * single thread Thread Pool Executors as well. It is intended that
-         * only one Debouncer is built and re-used when one is needed.
-         *
-         * If you would like to use one Debouncer that will use many types
-         * of keys, use <code>new Debouncer<Object></code>.
-         */
-        private final ScheduledExecutorService scheduler = Executors
-                .newSingleThreadScheduledExecutor();
-
-        /** Store scheduled tasks for easy lookup */
-        private final ConcurrentHashMap<T, Future<?>> taskMap = new ConcurrentHashMap<>();
-
-        /**
-         * @param key The key used to store scheduled tasks for lookup
-         * @param runnable The action to be preformed by the debouncer when
-         *                 the scheduled delay has elapsed.
-         * @param delay The length of time that must pass before a task is
-         *              executed
-         * @param timeUnit Units for the delay
-         */
-        public void debounce(final T key, final Runnable runnable, long delay,
-                TimeUnit timeUnit) {
-            Runnable wrapped = new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        runnable.run();
-                    } catch (Exception e) {
-                        Log.e(TAG,
-                                "Exception occurred in execution of a debounced Runnable",
-                                e);
-                    } finally {
-                        taskMap.remove(key);
-                    }
-                }
-            };
-            Future<?> previous = taskMap.put(key,
-                    scheduler.schedule(wrapped, delay, timeUnit));
-            if (previous != null) {
-                // interrupt the running task on cancel
-                // the assumption is that a more recent task with the same key
-                // will override the canceled one
-                previous.cancel(true);
-            }
-        }
-
-        public void dispose() {
-            if (!scheduler.isShutdown()) {
-                scheduler.shutdownNow();
-            }
-        }
-    }
 }

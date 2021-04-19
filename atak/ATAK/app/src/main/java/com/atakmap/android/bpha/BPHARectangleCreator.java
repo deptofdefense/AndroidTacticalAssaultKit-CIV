@@ -27,76 +27,61 @@ public class BPHARectangleCreator {
             String customTitle) {
         int rows = bPHA.getRows();
         int columns = bPHA.getColumns();
-        String[] mgrs = CoordinateFormatUtilities.formatToStrings(point.get(),
+
+        if (rows == 0 || columns == 0)
+            return null;
+
+        final String[] mgrs = CoordinateFormatUtilities.formatToStrings(point.get(),
                 CoordinateFormat.MGRS);
 
-        if (rows == 1 && columns == 1) {
-            mgrs[2] = roundToKm(mgrs[2], false);
-            mgrs[3] = roundToKm(mgrs[3], true);
-        } else {
-            mgrs[2] = roundToKm(mgrs[2]);
-            mgrs[3] = roundToKm(mgrs[3]);
-        }
 
-        MapGroup group = getGroup();
-        MapGroup childGroup = group.addGroup(_createTitle());
-        DrawingRectangle.Builder builder = new DrawingRectangle.Builder(
-                childGroup, Rectangle.Builder.Mode.START_END_CORNERS);
+        final int easting = nearest100(pad5(mgrs[2]));
+        final int northing = nearest100(pad5(mgrs[3]));
+
+        mgrs[2] = ""+easting;
+        mgrs[3] = ""+northing;
+
         GeoPoint gp = CoordinateFormatUtilities.convert(mgrs,
                 CoordinateFormat.MGRS);
         if (gp == null)
             return null;
+
+
+        MapGroup group = getGroup();
+        MapGroup childGroup = group.addGroup(_createTitle());
+        DrawingRectangle.Builder builder = new DrawingRectangle.Builder(
+                childGroup, Rectangle.Builder.Mode.THREE_POINTS);
+
         point = GeoPointMetaData.wrap(gp);
-        if (rows % 2 == 0 && columns % 2 == 0) {
-            GeoPoint firstPoint = DistanceCalculations.metersFromAtBearing(
-                    point.get(), (rows / 2f) * 1000, 0);
-            firstPoint = DistanceCalculations.metersFromAtBearing(firstPoint,
-                    (columns / 2f) * 1000, 270);
-            builder.setFirstPoint(GeoPointMetaData.wrap(firstPoint));
 
-            GeoPoint secondPoint = DistanceCalculations.metersFromAtBearing(
-                    point.get(), (rows / 2f) * 1000, 180);
-            secondPoint = DistanceCalculations.metersFromAtBearing(secondPoint,
-                    (columns / 2f) * 1000, 90);
-            builder.setSecondPoint(GeoPointMetaData.wrap(secondPoint));
-        } else if (rows % 2 == 0) {
-            GeoPoint firstPoint = DistanceCalculations.metersFromAtBearing(
-                    point.get(), (rows / 2f) * 1000, 0);
-            firstPoint = DistanceCalculations.metersFromAtBearing(firstPoint,
-                    ((columns - 1) / 2f) * 1000, 270);
-            builder.setFirstPoint(GeoPointMetaData.wrap(firstPoint));
 
-            GeoPoint secondPoint = DistanceCalculations.metersFromAtBearing(
-                    point.get(), (rows / 2f) * 1000, 180);
-            secondPoint = DistanceCalculations.metersFromAtBearing(secondPoint,
-                    ((columns + 1) / 2f) * 1000, 90);
-            builder.setSecondPoint(GeoPointMetaData.wrap(secondPoint));
-        } else if (columns % 2 == 0) {
-            GeoPoint firstPoint = DistanceCalculations.metersFromAtBearing(
-                    point.get(), ((rows - 1) / 2f) * 1000, 0);
-            firstPoint = DistanceCalculations.metersFromAtBearing(firstPoint,
-                    (columns / 2f) * 1000, 270);
-            builder.setFirstPoint(GeoPointMetaData.wrap(firstPoint));
+        int eastingOffset = 500 * columns;
+        int northingOffset = 500 * rows;
 
-            GeoPoint secondPoint = DistanceCalculations.metersFromAtBearing(
-                    point.get(), ((rows + 1) / 2f) * 1000, 180);
-            secondPoint = DistanceCalculations.metersFromAtBearing(secondPoint,
-                    (columns / 2f) * 1000, 90);
-            builder.setSecondPoint(GeoPointMetaData.wrap(secondPoint));
 
-        } else {
-            GeoPoint firstPoint = DistanceCalculations.metersFromAtBearing(
-                    point.get(), ((rows - 1) / 2f) * 1000, 0);
-            firstPoint = DistanceCalculations.metersFromAtBearing(firstPoint,
-                    ((columns - 1) / 2f) * 1000, 270);
-            builder.setFirstPoint(GeoPointMetaData.wrap(firstPoint));
+        String[] scratch = new String[] { mgrs[0], mgrs[1], mgrs[2], mgrs[3]};
 
-            GeoPoint secondPoint = DistanceCalculations.metersFromAtBearing(
-                    point.get(), ((rows + 1) / 2f) * 1000, 180);
-            secondPoint = DistanceCalculations.metersFromAtBearing(secondPoint,
-                    ((columns + 1) / 2f) * 1000, 90);
-            builder.setSecondPoint(GeoPointMetaData.wrap(secondPoint));
-        }
+
+        // first point upper left
+        scratch[2] = ""+ (easting - eastingOffset);
+        scratch[3] = ""+ (northing + northingOffset);
+        GeoPoint firstPoint = CoordinateFormatUtilities.convert(scratch, CoordinateFormat.MGRS);
+
+        // second point upper right
+        scratch[2] = ""+ (easting + eastingOffset);
+        scratch[3] = ""+ (northing + northingOffset);
+        GeoPoint secondPoint = CoordinateFormatUtilities.convert(scratch, CoordinateFormat.MGRS);
+
+        // third point lower right
+        scratch[2] = ""+ (easting + eastingOffset);
+        scratch[3] = ""+ (northing - northingOffset);
+        GeoPoint thirdPoint = CoordinateFormatUtilities.convert(scratch, CoordinateFormat.MGRS);
+
+
+        builder.setFirstPoint(GeoPointMetaData.wrap(firstPoint));
+        builder.setSecondPoint(GeoPointMetaData.wrap(secondPoint));
+        builder.setThirdPoint(GeoPointMetaData.wrap(thirdPoint));
+
         if (customTitle.equals("")) {
             builder.createCenterMarker();
         } else {
@@ -113,37 +98,9 @@ public class BPHARectangleCreator {
         return r;
     }
 
-    private static String roundToKm(String value) {
-        String roundedValue;
-        String subString = value.substring(0, 2);
-        int numberToCheck = Integer.parseInt(value.substring(2, 3));
-        int kmValue = Integer.parseInt(subString);
-        if (numberToCheck >= 5) {
-            kmValue++;
-        }
-        if (kmValue <= 9) {
-            roundedValue = "0" + kmValue + "000";
-        } else {
-            roundedValue = kmValue + "000";
-        }
-        return roundedValue;
-    }
 
-    private static String roundToKm(String value, boolean ceiling) {
-        String roundedValue;
-        String subString = value.substring(0, 2);
-        int kmValue = Integer.parseInt(subString);
-        if (ceiling) {
-            kmValue++;
-        }
-        if (kmValue <= 9) {
-            roundedValue = "0" + kmValue + "000";
-        } else {
-            roundedValue = kmValue + "000";
-        }
-        return roundedValue;
 
-    }
+
 
     private static List<MapItem> getAllBPHAs() {
         List<MapItem> items = new ArrayList<>();
@@ -202,4 +159,27 @@ public class BPHARectangleCreator {
             group = DrawingToolsMapComponent.getGroup();
         return group;
     }
+
+
+    /**
+     * Pads out the MGRS easting or westing so that it is only 5 digits of precision.
+     * @param s the input mgrs.
+     * @return the 5 digit MGRS easting or westing
+     */
+    private static int pad5(String s) {
+        final int len = s.length();
+        for (int i = len; i < 6; ++i)
+            s = s + "0";
+        return Integer.parseInt(s.substring(0,5));
+    }
+
+    /**
+     * Rounds a value to the nearest 100.
+     * @param val the value to round.
+     * @return the rounded value
+     */
+    private static int nearest100(int val) {
+        return (int) (Math.ceil(val/100.0))*100;
+    }
+
 }

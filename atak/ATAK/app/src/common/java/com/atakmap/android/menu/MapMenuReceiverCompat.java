@@ -1,4 +1,3 @@
-
 package com.atakmap.android.menu;
 
 import android.content.BroadcastReceiver;

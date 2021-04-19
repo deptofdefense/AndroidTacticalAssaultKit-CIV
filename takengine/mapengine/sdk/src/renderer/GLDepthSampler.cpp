@@ -377,6 +377,7 @@ TAK::Engine::Util::TAKErr GLDepthSampler::performDoublePassDepthSample(
 
     this->end();
 
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     RenderState_makeCurrent(restore);
 
 #if PROFILE_DEPTH_TESTS

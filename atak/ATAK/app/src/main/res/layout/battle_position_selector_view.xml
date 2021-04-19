@@ -18,17 +18,11 @@
         android:orientation="horizontal"
         android:layout_weight="1">
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight=".5"
-            android:text="@string/rows"/>
-
         <EditText
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight=".25"
-            android:id="@+id/rowsET"
+            android:layout_weight=".40"
+            android:id="@+id/columnsET"
             android:inputType="number"
             android:text="@string/_2"
             android:maxLength="1"
@@ -37,16 +31,16 @@
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight=".5"
-            android:text="@string/columns"/>
+            android:layout_weight=".20"
+            android:text="X"/>
 
         <EditText
-            android:id="@+id/columnsET"
+            android:id="@+id/rowsET"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:inputType="number"
             android:maxLength="1"
-            android:layout_weight=".25"
+            android:layout_weight=".40"
             android:text="@string/_2"
             android:digits="123456"/>
     </LinearLayout>
@@ -136,7 +130,7 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_weight="1"
                     android:gravity="bottom"
-                    android:text="@string/_2_x_3"
+                    android:text="@string/_3_x_2"
                     android:textAppearance="?android:attr/textAppearanceSmall"
                     android:textColor="@android:color/black" />
             </LinearLayout>
@@ -177,7 +171,7 @@
                     android:layout_gravity="center_horizontal"
                     android:layout_weight="1"
                     android:gravity="bottom"
-                    android:text="@string/_3_x_2"
+                    android:text="@string/_2_x_3"
                     android:textAppearance="?android:attr/textAppearanceSmall"
                     android:textColor="@android:color/black" />
             </LinearLayout>

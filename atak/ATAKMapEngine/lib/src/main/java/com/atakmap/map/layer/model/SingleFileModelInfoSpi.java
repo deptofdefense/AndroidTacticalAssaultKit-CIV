@@ -1,6 +1,6 @@
 package com.atakmap.map.layer.model;
 
-import com.atakmap.coremap.locale.LocaleUtil;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 
@@ -55,12 +55,11 @@ public class SingleFileModelInfoSpi implements ModelInfoSpi {
     public Set<ModelInfo> create(String path) {
         try {
             File file = new File(path);
-            String lowerName = file.getName().toLowerCase(LocaleUtil.getCurrent());
-            if (lowerName.endsWith(".zip")) {
+            if (FileSystemUtils.checkExtension(file, "zip")) {
                 ZipVirtualFile zf = new ZipVirtualFile(path);
                 List<File> plyFiles = ModelFileUtils.findFiles(zf, Collections.singleton(this.ext));
                 return create(plyFiles);
-            } else if (lowerName.endsWith("." + this.ext)) {
+            } else if (FileSystemUtils.checkExtension(file, this.ext)) {
                 return create(Collections.singletonList(file));
             }
         } catch (IllegalArgumentException | IOException e) {

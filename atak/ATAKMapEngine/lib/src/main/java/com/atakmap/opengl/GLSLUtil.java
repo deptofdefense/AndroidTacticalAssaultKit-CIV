@@ -12,8 +12,10 @@ import com.atakmap.util.ConfigOptions;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
+import com.atakmap.util.zip.IoUtils;
 
 public final class GLSLUtil {
+    private static final String TAG = "GLSLUtil";
     private static Context context = null;
 
     private GLSLUtil() {}
@@ -82,8 +84,7 @@ public final class GLSLUtil {
             
             return new String(FileSystemUtils.read(stream), FileSystemUtils.UTF8_CHARSET);
         } finally {
-            if(stream != null)
-                stream.close();
+            IoUtils.close(stream, TAG);
         }
     }
     

@@ -4,9 +4,9 @@ package com.atakmap.android.layers;
 import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.ImageButton;
-import android.widget.ToggleButton;
 
 import com.atakmap.app.R;
 
@@ -57,7 +57,7 @@ public class LayersManagerView extends AbstractLayersManagerView {
         return _downButton;
     }
 
-    public ToggleButton getAutoSelectButton() {
+    public CompoundButton getAutoSelectButton() {
         if (_autoSelectButton == null) {
             _autoSelectButton = findViewById(
                     R.id.auto_map_select_btn);
@@ -67,5 +67,5 @@ public class LayersManagerView extends AbstractLayersManagerView {
 
     private ImageButton _upButton;
     private ImageButton _downButton;
-    private ToggleButton _autoSelectButton;
+    private CompoundButton _autoSelectButton;
 }

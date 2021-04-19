@@ -16,6 +16,7 @@ import com.atakmap.android.math.MathUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 
+import com.atakmap.util.zip.IoUtils;
 import org.apache.sanselan.formats.tiff.TiffImageMetadata;
 import org.apache.sanselan.formats.tiff.constants.TiffConstants;
 
@@ -550,13 +551,7 @@ public class ImageGalleryBlobAdapter
                     retriever.release();
                 } catch (RuntimeException ignored) {
                 }
-                if (fos != null) {
-                    try {
-                        fos.close();
-                    } catch (IOException e) {
-                        Log.w(TAG, "Failed to close tmp file stream", e);
-                    }
-                }
+                IoUtils.close(fos, TAG, "Failed to close tmp file stream");
                 if (tmpFile != null)
                     FileSystemUtils.delete(tmpFile);
             }
@@ -600,21 +595,13 @@ public class ImageGalleryBlobAdapter
 
         if (reservation != null) {
             if (!IOProviderFactory.exists(cacheFile)) {
-                FileOutputStream fos = null;
 
-                try {
-                    fos = IOProviderFactory.getOutputStream(cacheFile);
+                try (FileOutputStream fos = IOProviderFactory
+                        .getOutputStream(cacheFile)) {
                     fos.write(blobItem.getImageBytes());
                 } catch (Exception e) {
                     FileSystemUtils.delete(cacheFile);
                     cacheFile = null;
-                } finally {
-                    if (fos != null) {
-                        try {
-                            fos.close();
-                        } catch (Exception ignored) {
-                        }
-                    }
                 }
             }
             fileCache.unreserve(reservation);

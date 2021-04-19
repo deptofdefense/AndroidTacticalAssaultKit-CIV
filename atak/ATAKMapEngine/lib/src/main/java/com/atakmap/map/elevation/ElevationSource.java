@@ -97,7 +97,7 @@ public abstract class ElevationSource {
         }
     };
 
-    ElevationSource() {}
+    protected ElevationSource() {}
 
     public abstract String getName();
     public abstract Cursor query(QueryParameters params);

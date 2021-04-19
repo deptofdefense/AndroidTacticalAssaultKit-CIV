@@ -6,12 +6,12 @@ import android.util.AttributeSet;
 import android.view.View;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
+import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.LinearLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.ToggleButton;
 
 public abstract class AbstractLayersManagerView extends LinearLayout {
 
@@ -19,7 +19,7 @@ public abstract class AbstractLayersManagerView extends LinearLayout {
     protected final int outlineToggleButtonId;
 
     private ListView _listView;
-    private ToggleButton _outlineToggleButton;
+    private CompoundButton _outlineToggleButton;
 
     protected AbstractLayersManagerView(Context context, AttributeSet attrs,
             int listViewId, int outlineToggleButtonId) {
@@ -75,7 +75,7 @@ public abstract class AbstractLayersManagerView extends LinearLayout {
         return _listView;
     }
 
-    protected ToggleButton getOutlineToggleButton() {
+    protected CompoundButton getOutlineToggleButton() {
         if (_outlineToggleButton == null) {
             _outlineToggleButton = findViewById(
                     this.outlineToggleButtonId);
@@ -85,12 +85,12 @@ public abstract class AbstractLayersManagerView extends LinearLayout {
 
     protected void setOnOutlineToggleListener(
             OnCheckedChangeListener listener) {
-        ToggleButton outlineButton = getOutlineToggleButton();
+        CompoundButton outlineButton = getOutlineToggleButton();
         outlineButton.setOnCheckedChangeListener(listener);
     }
 
     protected void setOutlineToggleState(boolean visible) {
-        ToggleButton outlineButton = getOutlineToggleButton();
+        CompoundButton outlineButton = getOutlineToggleButton();
         outlineButton.setChecked(visible);
     }
 }

@@ -1,5 +1,6 @@
 package com.atakmap.map.layer.model.obj;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.io.ZipVirtualFile;
@@ -49,7 +50,7 @@ public final class ObjModelInfoSpi implements ModelInfoSpi {
 
     private boolean isSupported(String uri, File[] f) {
         f[0] = new File(uri);
-        if(f[0].getName().endsWith(".zip") || f[0].getAbsolutePath().contains(".zip")) {
+        if(FileSystemUtils.isZipPath(uri)) {
             try {
                 File entry = ObjUtils.findObj(new ZipVirtualFile(f[0]));
                 if (entry != null)
@@ -60,9 +61,7 @@ public final class ObjModelInfoSpi implements ModelInfoSpi {
         if(!f[0].getName().toLowerCase(LocaleUtil.getCurrent()).endsWith(".obj"))
             return false;
 
-        Reader reader = null;
-        try {
-            reader = ObjUtils.open(f[0].getAbsolutePath());
+        try(Reader reader = ObjUtils.open(f[0].getAbsolutePath())) {
 
             if (reader == null)
                 return false;
@@ -200,11 +199,6 @@ public final class ObjModelInfoSpi implements ModelInfoSpi {
         } catch(Throwable t) {
             Log.d(TAG, "error reading .obj file: " + uri, t);
             return false;
-        } finally {
-            if(reader != null)
-                try {
-                    reader.close();
-                } catch(Throwable ignored) {}
         }
     }
 }

@@ -349,7 +349,9 @@ public class MarkerImporter extends MapItemImporter {
         // flag a marker as interesting at this time.  this will be used by the offscreen
         // search mechanism to weed out offscreen markers that are close but may no longer be
         // interesting.   New markers are interesting....
-        m.setMetaLong("offscreen_interest", SystemClock.elapsedRealtime());
+        if (!isStateSaverImport(extras))
+            m.setMetaLong("offscreen_interest", SystemClock.elapsedRealtime());
+
         return m;
     }
 

@@ -314,6 +314,14 @@ public final class Doghouse extends Polyline implements
         return _nose;
     }
 
+    public GeoPoint getSource() {
+        return _source.get();
+    }
+
+    public GeoPoint getTarget() {
+        return _target.get();
+    }
+
     public int getStrokeWidth() {
         return _strokeWidth;
     }
@@ -425,6 +433,7 @@ public final class Doghouse extends Polyline implements
             listener.onDoghouseChanged(this);
         }
     }
+
 
     private void fireOnDoghouseRemoved() {
         for (DoghouseChangeListener listener : _listeners) {

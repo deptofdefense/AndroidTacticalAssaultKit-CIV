@@ -257,17 +257,30 @@ public final class ModelBuilder {
         }
         return new ModelImpl(meshes, idx, aabb);
     }
-
     public static Model build(Mesh[] meshes) {
+        return build(meshes, null);
+    }
+
+    public static Model build(Mesh[] meshes, Matrix[] transforms) {
         if(meshes.length == 1)
             return build(meshes[0]);
 
         MeshReference[] refs = new MeshReference[meshes.length];
-        Envelope meshAabb = meshes[0].getAABB();
-        Envelope dstAabb = new Envelope(meshAabb.minX, meshAabb.minY, meshAabb.minZ, meshAabb.maxX, meshAabb.maxY, meshAabb.maxZ);
+        Envelope dstAabb = new Envelope(Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE);
         for(int i = 0; i < meshes.length; i++) {
-            refs[i] = new ReferenceMeshReference(meshes[i], Model.INSTANCE_ID_NONE, null);
-            meshAabb = meshes[i].getAABB();
+            Matrix transform = transforms == null ? null : transforms[i];
+            refs[i] = new ReferenceMeshReference(meshes[i], Model.INSTANCE_ID_NONE, transform);
+            Envelope meshAabb = meshes[i].getAABB();
+            if (transform != null) {
+                PointD p = transform.transform(new PointD(meshAabb.minX, meshAabb.minY, meshAabb.minZ), null);
+                meshAabb.minX = p.x;
+                meshAabb.minY = p.y;
+                meshAabb.minZ = p.z;
+                p = transform.transform(new PointD(meshAabb.maxX, meshAabb.maxY, meshAabb.maxZ), null);
+                meshAabb.maxX = p.x;
+                meshAabb.maxY = p.y;
+                meshAabb.maxZ = p.z;
+            }
             if(meshAabb.minX < dstAabb.minX)    dstAabb.minX = meshAabb.minX;
             if(meshAabb.minY < dstAabb.minY)    dstAabb.minY = meshAabb.minY;
             if(meshAabb.minZ < dstAabb.minZ)    dstAabb.minZ = meshAabb.minZ;

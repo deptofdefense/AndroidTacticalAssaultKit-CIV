@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.DatabaseInformation;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -919,15 +920,7 @@ public class TilesetInfo {
     private boolean _isArchiveUri = true;
 
     public static boolean isZipArchive(String path) {
-        if (path == null)
-            return false;
-        else if (path.length() < 4)
-            return false;
-        else if (path.endsWith(".zip"))
-            return true;
-        else
-            return path.toLowerCase(LocaleUtil.getCurrent()).endsWith(".zip");
-
+        return FileSystemUtils.checkExtension(path, "zip");
     }
     
     private static DatasetDescriptor createMOMAPDataset(File file, DatabaseIface database) {

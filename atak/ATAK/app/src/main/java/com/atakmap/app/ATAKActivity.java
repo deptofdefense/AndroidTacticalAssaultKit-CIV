@@ -120,6 +120,7 @@ import com.atakmap.net.CertificateManager;
 import com.atakmap.spatial.SpatialCalculator;
 import com.atakmap.util.ConfigOptions;
 
+import com.atakmap.util.zip.IoUtils;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -280,25 +281,29 @@ public class ATAKActivity extends MapActivity implements
 
         super.onCreate(null);
 
+
         // set up visual splash screen
+
+        final View splash;
         if (BuildConfig.FLAVOR.equalsIgnoreCase("civUIMods")) {
             _newNavView = NavigationCompat.setContentView(this);
             _newNavView.setVisibility(View.GONE);
-        } else {
-            NavigationCompat.setContentView(this);
-        }
-
-        final LinearLayout v = findViewById(R.id.splash);
-
-        final View splash;
-        if (_controlPrefs.getBoolean("atakControlForcePortrait",
-                false)) {
-            splash = View.inflate(ATAKActivity.this, R.layout.atak_splash_port,
-                    null);
-        } else {
+            // we can use the same screen
             splash = View
                     .inflate(ATAKActivity.this, R.layout.atak_splash, null);
+        } else {
+            NavigationCompat.setContentView(this);
+
+            if (_controlPrefs.getBoolean("atakControlForcePortrait",
+                    false)) {
+                splash = View.inflate(ATAKActivity.this, R.layout.atak_splash_port,
+                        null);
+            } else {
+                splash = View
+                        .inflate(ATAKActivity.this, R.layout.atak_splash, null);
+            }
         }
+        final LinearLayout v = findViewById(R.id.splash);
 
         setupSplash(splash);
         v.addView(splash);
@@ -986,8 +991,8 @@ public class ATAKActivity extends MapActivity implements
                 throw new ExceptionInInitializerError();
 
             File cofFile = new File(this.getFilesDir(), resourceName);
-            FileSystemUtils.copyStream(stream, false,
-                    IOProviderFactory.getOutputStream(cofFile), true);
+            FileSystemUtils.copy(stream,
+                    IOProviderFactory.getOutputStream(cofFile));
             long e = SystemClock.uptimeMillis();
 
             Log.v(TAG, "Extracted resource [" + resourceName + "] in " + (e - s)
@@ -998,11 +1003,7 @@ public class ATAKActivity extends MapActivity implements
         } catch (Throwable t) {
             throw new ExceptionInInitializerError(t);
         } finally {
-            if (stream != null)
-                try {
-                    stream.close();
-                } catch (IOException ignored) {
-                }
+            IoUtils.close(stream);
         }
     }
 

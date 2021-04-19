@@ -1,20 +1,29 @@
 
 package com.atakmap.android.vehicle.model.opengl;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.PointF;
 
+import com.atakmap.android.data.URIHelper;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
+import com.atakmap.android.maps.graphics.GLBitmapLoader;
+import com.atakmap.android.maps.graphics.GLImageCache;
+import com.atakmap.android.model.opengl.GLModelCaptureRequest;
 import com.atakmap.android.model.opengl.GLModelRenderer2.TextureLoader;
 import com.atakmap.android.rubbersheet.maps.AbstractSheet;
 import com.atakmap.android.rubbersheet.maps.GLRubberModel;
 import com.atakmap.android.rubbersheet.maps.GLRubberModelLayer;
 import com.atakmap.android.rubbersheet.maps.LoadState;
 import com.atakmap.android.rubbersheet.maps.RubberModel;
+import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.vehicle.model.VehicleModel;
 import com.atakmap.android.vehicle.model.VehicleModelCache;
 import com.atakmap.android.vehicle.model.VehicleModelInfo;
 import com.atakmap.android.vehicle.model.VehicleModelLayer;
+import com.atakmap.android.vehicle.model.icon.VehicleModelCaptureRequest;
+import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.model.Mesh;
@@ -22,6 +31,7 @@ import com.atakmap.map.layer.model.ModelInfo;
 import com.atakmap.map.layer.model.opengl.MaterialManager;
 import com.atakmap.map.opengl.GLMapRenderable2;
 import com.atakmap.map.opengl.GLMapView;
+import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
 
 import java.io.File;
@@ -47,6 +57,41 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
     private final Map<String, List<GLInstancedMesh>> _meshInstances = new HashMap<>();
     private final Map<String, GLInstancedPolyline> _lineInstances = new HashMap<>();
     private final GLMeshLayer _meshLayer = new GLMeshLayer();
+    private final GLBitmapLoader _bmpLoader;
+    private final GLImageCache _imageCache;
+    private final Map<String, GLImageCache.Entry> _iconCache = new HashMap<>();
+
+    private final GLBitmapLoader.LoaderSpi _iconLoader = new GLBitmapLoader.LoaderSpi() {
+        @Override
+        public Bitmap loadBitmap(String uri, BitmapFactory.Options opts) {
+            // URI structure: vehicle://category/name
+            // i.e. vehicle://Aircraft/AH-64
+            String content = URIHelper.getContent("vehicle://", uri);
+            if (content == null)
+                return null;
+
+            int slashIdx = content.indexOf('/');
+            if (slashIdx == -1)
+                return null;
+
+            String category = content.substring(0, slashIdx);
+            String name = content.substring(slashIdx + 1);
+
+            // Get vehicle info
+            VehicleModelInfo info = VehicleModelCache.getInstance()
+                    .get(category, name);
+            if (info == null)
+                return null;
+
+            // Attempt to read cached icon
+            return info.getCachedIcon();
+        }
+
+        @Override
+        public int getPriority() {
+            return -1;
+        }
+    };
 
     public GLVehicleModelLayer(MapRenderer renderer, VehicleModelLayer subject,
             MapGroup group) {
@@ -55,6 +100,26 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
         File resourceDir = new File(VehicleModelCache.DIR, ".resources");
         _matManager = new MaterialManager(renderer,
                 new TextureLoader(renderer, resourceDir, 4096));
+
+        // GL vehicle bitmaps (used for offscreen markers)
+        GLRenderGlobals g = GLRenderGlobals.get(renderer);
+        _bmpLoader = g.getBitmapLoader();
+        _imageCache = g.getImageCache();
+        _bmpLoader.registerLoader("vehicle", _iconLoader,
+                GLBitmapLoader.QueueType.LOCAL);
+
+        // Generic vehicle icon
+        cacheIcon(ATAKUtilities.getResourceUri(
+                R.drawable.pointtype_aircraft));
+    }
+
+    @Override
+    public void release() {
+        for (GLImageCache.Entry e : _iconCache.values())
+            e.release();
+        _iconCache.clear();
+        _bmpLoader.unregisterLoader(_iconLoader);
+        super.release();
     }
 
     @Override
@@ -103,6 +168,13 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
                     releaseMeshInstances(uri);
             }
         });
+    }
+
+    private void cacheIcon(String uri) {
+        if (_iconCache.get(uri) == null) {
+            _imageCache.prefetch(uri, false);
+            _iconCache.put(uri, _imageCache.fetchAndRetain(uri, false));
+        }
     }
 
     @Override
@@ -178,6 +250,26 @@ public class GLVehicleModelLayer extends GLRubberModelLayer implements
                 if (line != null) {
                     toRender.add(line);
                     line.reset();
+                }
+
+                // Prefetch icon URI so offscreen indicators work
+                final String iconURI = vInfo.getIconURI();
+                if (_iconCache.get(iconURI) == null) {
+                    if (vInfo.getCachedIcon() == null) {
+                        VehicleModelCaptureRequest req = vInfo.getIconRequest();
+                        req.setCallback(new GLModelCaptureRequest.Callback() {
+                            @Override
+                            public void onCaptureFinished(File file, Bitmap bmp) {
+                                renderContext.queueEvent(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        cacheIcon(iconURI);
+                                    }
+                                });
+                            }
+                        });
+                    } else
+                        cacheIcon(iconURI);
                 }
             }
 

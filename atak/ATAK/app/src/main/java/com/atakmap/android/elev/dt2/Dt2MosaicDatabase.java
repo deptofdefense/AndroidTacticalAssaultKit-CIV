@@ -2,13 +2,13 @@
 package com.atakmap.android.elev.dt2;
 
 import java.io.File;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.Geometry;
@@ -140,6 +140,7 @@ public class Dt2MosaicDatabase implements MosaicDatabase2 {
         File cell;
         Dt2ElevationData.DtedFormat cellFormat;
         Dt2ElevationData.DtedFormat[] formats;
+        private final BitSet[] coverages;
 
         CursorImpl(final File baseDir,
                 final Dt2ElevationData.DtedFormat[] formats,
@@ -160,45 +161,33 @@ public class Dt2MosaicDatabase implements MosaicDatabase2 {
 
             this.cell = null;
             this.cellFormat = null;
+            this.coverages = Dt2FileWatcher.getInstance().getCoverages();
         }
 
         @Override
         public boolean moveToNext() {
-
-            // check to see if there is even a base directory for the 
-            // dted, if there is not - short circuit.
-            if (!IOProviderFactory.exists(baseDir)) {
-                return false;
-            }
-
             do {
                 this.idx++;
                 this.cell = null;
                 if (this.idx >= this.limit)
                     break;
 
-                final String filename = Dt2ElevationModel._makeFileName(
-                        (this.getMinLat() + this.getMaxLat()) / 2d,
-                        (this.getMinLon() + this.getMaxLon()) / 2d);
+                int lat = (int) ((this.getMinLat() + this.getMaxLat()) / 2d);
+                int lng = (int) ((this.getMinLon() + this.getMaxLon()) / 2d);
+                int cvIdx = Dt2FileWatcher.getCoverageIndex(lat, lng);
 
-                // check to see if the ew directory exists before actually
-                // iterating through the extensions.
-                final File ewDir = new File(this.baseDir, filename)
-                        .getParentFile();
-                if (!IOProviderFactory.exists(ewDir)) {
-                    continue;
-                }
-
-                for (int i = (this.idx
-                        % this.numFormats); i < this.numFormats; i++) {
-                    final File f = new File(this.baseDir, filename
-                            + this.formats[i].extension);
-                    if (!IOProviderFactory.exists(f)) {
+                for (int i = (this.idx % this.numFormats); i < this.numFormats; i++) {
+                    Dt2ElevationData.DtedFormat fmt = this.formats[i];
+                    int level = fmt.ordinal();
+                    BitSet coverage = this.coverages[level];
+                    if (cvIdx < 0 || cvIdx >= coverage.length()
+                            || !coverage.get(cvIdx)) {
                         this.idx++;
                         continue;
                     }
-                    this.cell = f;
-                    this.cellFormat = this.formats[i];
+                    String fName = Dt2ElevationModel._makeFileName(lat, lng);
+                    this.cell = new File(this.baseDir, fName + fmt.extension);
+                    this.cellFormat = fmt;
                     break;
                 }
                 if (this.cell != null)

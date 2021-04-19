@@ -77,10 +77,9 @@ public class LptFileDatabase extends FileDatabase {
             return;
         Envelope.Builder bounds = new Envelope.Builder();
         Database msaccessDb = null;
-        FileChannel fc = null;
-        try {
+        try(FileChannel channel = IOProviderFactory.getChannel(lptFile, "r")) {
             DatabaseBuilder db = new DatabaseBuilder();
-            db.setChannel(fc = IOProviderFactory.getChannel(lptFile, "r"));
+            db.setChannel(channel);
             db.setReadOnly(true);
             msaccessDb = db.open();
 
@@ -139,12 +138,6 @@ public class LptFileDatabase extends FileDatabase {
                 try {
                     msaccessDb.close();
                 } catch (Exception ignored) {
-                }
-            }
-            if (fc != null) {
-                try {
-                    fc.close();
-                } catch (IOException ignored) {
                 }
             }
 

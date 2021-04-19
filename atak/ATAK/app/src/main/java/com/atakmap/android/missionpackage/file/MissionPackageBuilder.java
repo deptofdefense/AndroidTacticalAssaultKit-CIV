@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.atakmap.util.zip.IoUtils;
 import com.atakmap.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
@@ -130,20 +132,9 @@ public class MissionPackageBuilder {
             if (_progress != null)
                 _progress.cancel(e.getMessage());
         } finally {
-            if (_zos != null) {
-                try {
-                    _zos.close();
-                } catch (Exception e) {
-                    Log.w(TAG, "Failed to close Mission Package zip: "
-                            + (_contents == null ? "" : _contents.getPath()));
-                }
-            }
-            if (_existing != null) {
-                try {
-                    _existing.close();
-                } catch (Exception ignore) {
-                }
-            }
+            IoUtils.close(_zos,TAG,"Failed to close Mission Package zip: "
+                    + (_contents == null ? "" : _contents.getPath()));
+            IoUtils.close(_existing);
             if (tmpCopy != null)
                 FileSystemUtils.delete(tmpCopy);
         }
@@ -283,10 +274,11 @@ public class MissionPackageBuilder {
             _zos.putNextEntry(entry);
 
             // stream file into zipstream
-            FileInputStream fi = IOProviderFactory.getInputStream(f);
-            BufferedInputStream origin = new BufferedInputStream(fi,
-                    FileSystemUtils.BUF_SIZE);
-            write(origin, true);
+            try(FileInputStream fi = IOProviderFactory.getInputStream(f);
+                BufferedInputStream origin = new BufferedInputStream(fi,
+                    FileSystemUtils.BUF_SIZE)) {
+                write(origin, true);
+            }
 
             // close current file & corresponding zip entry
             _zos.closeEntry();

@@ -26,6 +26,13 @@ public final class GeoCalculations {
         return gp.getLongitude() < 0d ? HEMISPHERE_WEST : HEMISPHERE_EAST;
     }
 
+    /**
+     * Given a GeoPoint return a GeoPoint that is wrapped to the appropriate hemisphere.
+     * @param gp a GeoPoint
+     * @param toHemi the integer flag designating HEMISPHERE_WEST or HEMISPHERE_EAST
+     * @return the GeoPoint with the longitude wrapped to the correct hemisphere, more positive is
+     * east and more negative is west.
+     */
     public static GeoPoint wrapLongitude(GeoPoint gp, int toHemi) {
         int fromHemi = getHemisphere(gp);
         if (fromHemi == toHemi)
@@ -40,6 +47,10 @@ public final class GeoCalculations {
                 gp.getLE());
     }
 
+    /**
+     * @param longitude
+     * @return
+     */
     public static double wrapLongitude(double longitude) {
         if (longitude < -180d)
             return longitude + 360;
@@ -48,6 +59,14 @@ public final class GeoCalculations {
         return longitude;
     }
 
+    /**
+     * Given two lines described by points {start0, end0} and {start1, end1}, find the intersection
+     * @param start0 the start point of line 0
+     * @param end0 the end point of line 0
+     * @param start1 the start point of line 1
+     * @param end1 the end point of line 1
+     * @return return the geopoint formed by the intersection of these lines
+     */
     public static GeoPoint findIntersection(GeoPoint start0, GeoPoint end0,
             GeoPoint start1,
             GeoPoint end1) {
@@ -97,6 +116,13 @@ public final class GeoCalculations {
         return midPointCartesian(a, b, wrap180);
     }
 
+    /**
+     * Deternine the midpoint between two points in carteasian space
+     * @param a the first point
+     * @param b the second point
+     * @param wrap180 if the longitude should be wrapped to be within -180 to 180
+     * @return the carteasian center point
+     */
     public static GeoPoint midPointCartesian(GeoPoint a, GeoPoint b,
             boolean wrap180) {
         GeoPoint res = null;
@@ -116,6 +142,12 @@ public final class GeoCalculations {
         return res;
     }
 
+    /**
+     * Given a source and a destination compute the bearing.
+     * @param source the source point
+     * @param destination the destination point
+     * @return the bearing in degrees
+     */
     public static double bearingTo(final GeoPoint source,
             final GeoPoint destination) {
 
@@ -126,14 +158,32 @@ public final class GeoCalculations {
         return retval;
     }
 
+    /**
+     * Given an array of points compute the average point
+     * @param points the array of points
+     * @param wrap180 true if the value should be wrapped to be within -180..180
+     * @return the point that is the average.
+     */
     public static GeoPoint computeAverage(GeoPoint[] points, boolean wrap180) {
         return computeAverage(points, 0, points.length, wrap180);
     }
 
+    /**
+     * Given an array of points compute the average point
+     * @param points the array of points
+     * @return the point that is the average.
+     */
     public static GeoPoint computeAverage(GeoPoint[] points) {
         return computeAverage(points, false);
     }
 
+    /**
+     * Determine if an array of points crosses the IDL.
+     * @param points the array of points
+     * @param offset the offset within the array
+     * @param count the number of points to consider from the offset
+     * @return true if the designated points cross the IDL
+     */
     public static boolean crossesIDL(GeoPoint[] points, int offset, int count) {
         count = Math.min(count, points.length - offset);
         if (count <= 0)
@@ -156,6 +206,13 @@ public final class GeoCalculations {
         return maxLng - minLng > 180;
     }
 
+    /**
+     * Determine if an array of points crosses the IDL.
+     * @param points the array of points
+     * @param offset the offset within the array
+     * @param count the number of points to consider from the offset
+     * @return true if the designated points cross the IDL
+     */
     public static boolean crossesIDL(GeoPointMetaData[] points, int offset,
             int count) {
         count = Math.min(count, points.length - offset);
@@ -179,15 +236,35 @@ public final class GeoCalculations {
         return maxLng - minLng > 180;
     }
 
+    /**
+     * Determine if an array of points crosses the IDL.
+     * @param points the array of points
+     * @return true if the designated points cross the IDL
+     */
     public static boolean crossesIDL(GeoPoint[] points) {
         return crossesIDL(points, 0, points.length);
     }
 
+    /**
+     * Find the point that is the average in an array of points
+     * @param points the array of points
+     * @param offset the offset into the array of points
+     * @param count the number of points from the offset to consider
+     * @return the average point
+     */
     public static GeoPoint computeAverage(GeoPoint[] points, int offset,
             int count) {
         return computeAverage(points, offset, count, false);
     }
 
+    /**
+     * Find the point that is the average in an array of points
+     * @param points the array of points
+     * @param offset the offset into the array of points
+     * @param count the number of points from the offset to consider
+     * @param wrap180 if it is intended that these points will consider wrapping the IDL (continuous scrolling)
+     * @return the average point
+     */
     public static GeoPoint computeAverage(GeoPoint[] points, int offset,
             int count, boolean wrap180) {
         if (wrap180)
@@ -217,17 +294,39 @@ public final class GeoCalculations {
         return new GeoPoint(avgLat, avgLong);
     }
 
+    /**
+     * Find the point that is the center of the extremes witihn an array of points
+     * @param points the array of points
+     * @param offset the offset into the array of points
+     * @param count the number of points from the offset to consider
+     * @return the center point
+     */
     public static GeoPoint centerOfExtremes(GeoPoint[] points, int offset,
             int count) {
         return centerOfExtremes(points, offset, count, false);
     }
 
+    /**
+     * Find the point that is the center of the extremes witihn an array of points
+     * @param points the array of points
+     * @param offset the offset into the array of points
+     * @param count the number of points from the offset to consider
+     * @return the center point
+     */
     public static GeoPoint centerOfExtremes(GeoPointMetaData[] points,
             int offset,
             int count) {
         return centerOfExtremes(points, offset, count, false);
     }
 
+    /**
+     * Find the point that is the center of the extremes witihn an array of points
+     * @param points the array of points
+     * @param offset the offset into the array of points
+     * @param count the number of points from the offset to consider
+     * @param wrap180 if it is intended that these points will consider wrapping the IDL (continuous scrolling)
+     * @return the center point
+     */
     public static GeoPoint centerOfExtremes(GeoPoint[] points, int offset,
             int count, boolean wrap180) {
         GeoPoint pt = null;
@@ -248,6 +347,14 @@ public final class GeoCalculations {
         return pt;
     }
 
+    /**
+     * Find the point that is the center of the extremes witihn an array of points
+     * @param points the array of points
+     * @param offset the offset into the array of points
+     * @param count the number of points from the offset to consider
+     * @param wrap180 if it is intended that these points will consider wrapping the IDL (continuous scrolling)
+     * @return the center point
+     */
     public static GeoPoint centerOfExtremes(GeoPointMetaData[] points,
             int offset,
             int count, boolean wrap180) {
@@ -275,13 +382,12 @@ public final class GeoCalculations {
     }
 
     /**
-     * Find the most outlying points
-     *
-     * @param points Array of points
-     * @param offset Start offset
-     * @param count Number of points after start offset to check
-     * @param wrap180 True if continuous scrolling is enabled
-     * @return Point indices [W, N, E, S]
+     * GIven an array of points, find the outer most extremes
+     * @param points the array of points
+     * @param offset the offset into the array of points
+     * @param count the number of points from the offset to consider
+     * @param wrap180 if it is intended that these points will consider wrapping the IDL (continuous scrolling)
+     * @return the index of the 4 points that define the extremes of the array of points {W, N, E, S}
      */
     public static int[] findExtremes(GeoPoint[] points, int offset, int count,
             boolean wrap180) {
@@ -325,6 +431,14 @@ public final class GeoCalculations {
         return e;
     }
 
+    /**
+     * GIven an array of points, find the outer most extremes
+     * @param points the array of points
+     * @param offset the offset into the array of points
+     * @param count the number of points from the offset to consider
+     * @param wrap180 if it is intended that these points will consider wrapping the IDL (continuous scrolling)
+     * @return the index of the 4 points that define the extremes of the array of points {W, N, E, S}
+     */
     public static int[] findExtremes(GeoPointMetaData[] points, int offset,
             int count,
             boolean wrap180) {
@@ -368,10 +482,19 @@ public final class GeoCalculations {
         return e;
     }
 
+    /** @deprecated use {@link #midPointCartesian(GeoPoint, GeoPoint, boolean)} */
+    @Deprecated
+    @DeprecatedApi(since = "4.2.1", forRemoval = true, removeAt = "4.5")
     public static GeoPoint midPoint(GeoPoint a, GeoPoint b) {
         return midPointCartesian(a, b, false);
     }
 
+    /**
+     * Given two points, compute the midpoint utilizing WGS84.
+     * @param a the start point
+     * @param b the end point
+     * @return the computed mid point
+     */
     public static GeoPoint midPointWGS84(GeoPoint a, GeoPoint b) {
         if (a != null && b != null)
             return midpoint(a.getLatitude(), a.getLongitude(), a.getAltitude(),
@@ -386,6 +509,12 @@ public final class GeoCalculations {
             throw new IllegalStateException();
     }
 
+    /**
+     * Compute the straight line (as the crow flies) distance
+     * @param start the starting point
+     * @param destination the destination point
+     * @return value in meters for the straight line distance
+     */
     public static double distanceTo(final GeoPoint start,
             final GeoPoint destination) {
         return distance(start.getLatitude(), start.getLongitude(), 0d,
@@ -393,6 +522,12 @@ public final class GeoCalculations {
                 0);
     }
 
+    /**
+     * Compute the slant distance to (hypotenuse)
+     * @param start the starting point
+     * @param destination the destination point
+     * @return value in meters for the slant distance
+     */
     public static double slantDistanceTo(final GeoPoint start,
             final GeoPoint destination) {
         return distance(start.getLatitude(),
@@ -406,10 +541,10 @@ public final class GeoCalculations {
 
     /**
      * Calculates a new GeoPoint at the given azimuth and distance away from the source point
-     * @param src
+     * @param src the source point
      * @param azimuth Azimuth in degrees True North
      * @param distance Meters
-     * @return
+     * @return the point computed based on the src, azimuth and distance
      */
     public static GeoPoint pointAtDistance(GeoPoint src, double azimuth,
             double distance) {
@@ -417,6 +552,12 @@ public final class GeoCalculations {
                 distance, 0);
     }
 
+    /**
+     * Computes the inclination from one point to another.
+     * @param start the starting point
+     * @param destination the destination point
+     * @return the value in degrees
+     */
     public static double inclinationTo(final GeoPoint start,
             final GeoPoint destination) {
         return slantAngle(start.getLatitude(),
@@ -428,11 +569,21 @@ public final class GeoCalculations {
                 CALC_SLANT);
     }
 
+    /**
+     * Given a latitude, provides the approximate meters per degree at that latitude.
+     * @param latitude the latitude
+     * @return the approximate meters per degree for the longitude
+     */
     public static double approximateMetersPerDegreeLongitude(double latitude) {
         final double rlat = Math.toRadians(latitude);
         return 111412.84 * Math.cos(rlat) - 93.5 * Math.cos(3 * rlat);
     }
 
+    /**
+     * Given a latitude, provides the approximate meters per degree at that latitude.
+     * @param latitude the latitude
+     * @return the approximate meters per degree for the latitude
+     */
     public static double approximateMetersPerDegreeLatitude(double latitude) {
         final double rlat = Math.toRadians(latitude);
         return 111132.92 - 559.82 * Math.cos(2 * rlat)

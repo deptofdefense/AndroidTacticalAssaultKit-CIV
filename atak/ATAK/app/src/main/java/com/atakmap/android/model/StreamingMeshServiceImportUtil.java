@@ -46,9 +46,7 @@ final class StreamingMeshServiceImportUtil {
                 return null;
             try {
                 byte[] read = new byte[4096];
-                FileInputStream fis = null;
-                try {
-                    fis = IOProviderFactory.getInputStream(f);
+                try (FileInputStream fis = IOProviderFactory.getInputStream(f)) {
                     int count = fis.read(read);
                     if (count > 0) {
                         String s = new String(read, 0, count,
@@ -60,13 +58,6 @@ final class StreamingMeshServiceImportUtil {
                     }
                 } catch (IOException ignored) {
                     return null;
-                } finally {
-                    if (fis != null) {
-                        try {
-                            fis.close();
-                        } catch (IOException ignored) {
-                        }
-                    }
                 }
 
                 JSONObject obj = new JSONObject(FileSystemUtils

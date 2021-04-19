@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="of">의</string>
     <string name="hide">숨기</string>
@@ -2583,7 +2583,7 @@
     <string name="url_invalid">URL 잘못 됨</string>
     <string name="importmgr_specify_valid_url_for_resource">리소스에 대 한 올바른 URL을 지정 하십시오.</string>
     <string name="importmgr_invalid_refresh_rate">잘못 된 새로 고침 빈도</string>
-    <string name="importmgr_specify_valid_refresh_rate_for_resource">리소스에 대해 유효한 새로 고침 빈도 (30 초 미만)를 지정 하십시오.</string>
+    <string name="importmgr_specify_valid_refresh_rate_for_resource">리소스에 대해 유효한 새로 고침 빈도 (%d 초 미만)를 지정 하십시오.</string>
     <string name="importmgr_remote_resource_configuration_received">원격 리소스 구성 수신</string>
     <string name="download_available_via_import_manager">오버레이를 통한%s 다운로드 가능 &gt; 원격 리소스</string>
     <string name="switch_orientation">방향 전환</string>
@@ -3754,5 +3754,30 @@
     <string name="delete_elevation_data_warning">You cannot delete the entire elevation data set. Please select a specific set.</string>
     <string name="are_you_sure_delete_elevation">Are you sure you want to delete %s elevation data?</string>
     <string name="delete_elevation_please_lock">Please lock both switches to delete elevation</string>
+
+    <string name="resection_update_location_title">Update location?</string>
+    <string name="resection_update_location_message">Do you want to update your location to the resection estimate?\nLocation: %s</string>
+    <string name="resection_estimate_label">Provider: %1$s\nLocation: %2$s\nConfidence: %3$s</string>
+    <string name="resection_select_estimates_prompt_title">Select which location estimates to use</string>
+    <string name="resection_run_another_title">Run another Resection tool?</string>
+    <string name="resection_run_another_message">Do you want to run another Resection tool to get another estimate?</string>
+    <string name="resection_no_estimates_selected">No estimates were selected--unable to compute a location</string>
+    <string name="resection_classic_tool_description">Classic resection. Takes lines of bearing from observer\'s point to 2 or more landmarks</string>
+    <string name="resection_classic_tool_ideal_conditions">When there are landmarks you are able to identify and match to the map. Highest accuracy when angle between landmarks approaches 90 degrees</string>
+    <string name="resection_classic_tool_relative_accuracy">Dependent upon how accurately the landmarks and relative bearings are identified</string>
+    <string name="invalid_cot_address">Invalid output encountered, make sure the address does not contain the protocol or port</string>
+    <string name="image_overlay_hud">Image Overlay HUD</string>
+    <string name="image_overlay_warning">This option will permanently overlay metadata onto the image. Continue?</string>
+    <string name="kml_network_link">KML Network Link</string>
+    <string name="kml_links_added_msg">Added %d KML network links</string>
+    <string name="kml_links_added_failed_msg">Failed to add KML network links</string>
+    <string name="import_kml_network_link">Import KML Network Link</string>
+    <string name="kml_link_desc">%1$s (%2$d sub-links)</string>
+    <string name="resection_ideal_conditions_label">Ideal Conditions</string>
+    <string name="resection_relative_accuracy_label">Relative Accuracy</string>
+    <string name="resection_details_label">%s Details</string>
+    <string name="polygon_area_prompt">Tap points along the route wish to select.</string>
+    <string name="lasso_area_prompt">Tap points or drag to draw along the route you wish to select.</string>
+    <string name="lasso">Lasso</string>
 
 </resources>

@@ -204,7 +204,7 @@ public class GdalTileReader extends TileReader {
             };
             for (int i = 1; i <= numBands; i++) {
                 if (this.dataset.GetRasterBand(i).GetColorInterpretation() != gdalconst.GCI_AlphaBand) {
-                    alphaBand = i;
+                    this.bandRequest[0] = i;
                     break;
                 }
             }

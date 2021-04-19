@@ -14,6 +14,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
+import com.atakmap.math.PointD;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLNinePatch;
 import com.atakmap.opengl.GLText;
@@ -35,11 +36,11 @@ public class GLAngleOverlay extends GLAutoSizeAngleOverlay {
 
         ortho.scratch.geo.set(sw.getCenter().get());
         ortho.scratch.geo.set(GeoPoint.UNKNOWN);
-        centerD = ortho.forward(ortho.scratch.geo, centerD);
+        centerD = unwrapAndForward(ortho, ortho.scratch.geo, centerD);
         center = new PointF((float) centerD.x, (float) centerD.y);
         GeoPoint[] arrowEndPoints = sw.getInnerArrowPoints();
 
-        top = ortho.forward(arrowEndPoints[0]);
+        top = unwrapAndForward(ortho, arrowEndPoints[0]);
 
         if (!sw.showSimpleSpokeView()) {
             double dist = ortho.inverse(top).distanceTo(sw.getCenter().get());
@@ -61,13 +62,30 @@ public class GLAngleOverlay extends GLAutoSizeAngleOverlay {
 
         radius = newRadius;
 
-        right = ortho.forward(arrowEndPoints[1]);
+        right = unwrapAndForward(ortho, arrowEndPoints[1]);
 
-        bottom = ortho.forward(arrowEndPoints[2]);
+        bottom = unwrapAndForward(ortho, arrowEndPoints[2]);
 
-        left = ortho.forward(arrowEndPoints[3]);
+        left = unwrapAndForward(ortho, arrowEndPoints[3]);
 
         return true;
+    }
+
+    private static PointD unwrapAndForward(GLMapView ortho, GeoPoint g, PointD xyz) {
+        if(g != ortho.scratch.geo)
+            ortho.scratch.geo.set(g);
+        // handle IDL crossing
+        if(ortho.drawSrid == 4326 && ortho.currentPass.crossesIDL && ortho.currentPass.drawLng*ortho.scratch.geo.getLongitude() < 0d)
+            ortho.scratch.geo.set(ortho.scratch.geo.getLatitude(), ortho.scratch.geo.getLongitude()+(360d*Math.signum(ortho.drawLng)));
+        if(xyz == null)
+            xyz = new PointD(0d, 0d, 0d);
+        ortho.currentPass.scene.forward(ortho.scratch.geo, xyz);
+        return xyz;
+    }
+
+    private static PointF unwrapAndForward(GLMapView ortho, GeoPoint g) {
+        unwrapAndForward(ortho, g, ortho.scratch.pointD);
+        return new PointF((float)ortho.scratch.pointD.x, (float)ortho.scratch.pointD.y);
     }
 
     @Override
@@ -89,8 +107,8 @@ public class GLAngleOverlay extends GLAutoSizeAngleOverlay {
 
         //check to see if the overlay should be an ellipse
         if (sw.getProjectionProportition()) {
-            PointF offsetX = ortho.forward(sw.getXTestOffset());
-            PointF offsetY = ortho.forward(sw.getYTestOffset());
+            PointF offsetX = unwrapAndForward(ortho, sw.getXTestOffset());
+            PointF offsetY = unwrapAndForward(ortho, sw.getYTestOffset());
 
             double xOffset = Math.abs(center.x - offsetX.x);
             double yOffset = Math.abs(center.y - offsetY.y);

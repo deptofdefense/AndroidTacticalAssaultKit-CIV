@@ -18,7 +18,7 @@ namespace QuantizedMesh {
 
         Indices edges[4];
 
-        EdgeIndicies(VertexData *vertexData, bool is32bit, Util::FileInput2 *buffer) {
+        EdgeIndicies(VertexData * /*vertexData*/, bool is32bit, Util::FileInput2 *buffer) {
 
             int south;
             int east;

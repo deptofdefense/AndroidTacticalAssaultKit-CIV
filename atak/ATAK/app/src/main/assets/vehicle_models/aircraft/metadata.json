@@ -134,6 +134,10 @@
       "file": "emb-314.zip"
     },
     {
+      "name": "EP-3",
+      "file": "ep-3.zip"
+    },
+    {
       "name": "F-15",
       "file": "f-15.zip"
     },
@@ -154,6 +158,10 @@
       "file": "f-35.zip"
     },
     {
+      "name": "F-4E",
+      "file": "f-4.zip"
+    },
+    {
       "name": "F-117",
       "file": "f-117.zip"
     },
@@ -164,6 +172,14 @@
     {
       "name": "KC-10",
       "file": "kc-10.zip"
+    },
+    {
+      "name": "KC-46",
+      "file": "kc-46.zip"
+    },
+    {
+      "name": "KC-130",
+      "file": "kc-130.zip"
     },
     {
       "name": "KC-135",
@@ -200,6 +216,10 @@
     {
       "name": "PC-12",
       "file": "pc-12.zip"
+    },
+    {
+      "name": "RQ-21",
+      "file": "rq-21.zip"
     },
     {
       "name": "SH-3D",

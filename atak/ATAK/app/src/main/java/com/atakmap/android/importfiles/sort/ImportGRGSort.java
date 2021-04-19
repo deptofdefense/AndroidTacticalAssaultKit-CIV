@@ -11,7 +11,11 @@ import com.atakmap.app.R;
 import com.atakmap.app.system.ResourceUtil;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
+import com.atakmap.map.gdal.GdalLibrary;
 import com.atakmap.map.layer.raster.ImageryFileType;
+import com.atakmap.map.layer.raster.gdal.GdalDatasetProjection2;
+
+import org.gdal.gdal.Dataset;
 
 import java.io.File;
 
@@ -44,12 +48,16 @@ public class ImportGRGSort extends ImportInPlaceResolver {
             ImageryFileType.AbstractFileType type = ImageryFileType
                     .getFileType(file);
 
-            if (type == null) {
+            // Unsupported file extension/mime type
+            if (type == null)
                 return false;
-            }
 
+            // For PDF files, check if this is a GeoPDF
+            if (type.getID() == ImageryFileType.PDF && !isGeoPDF(file))
+                return false;
+
+            // Check if path matches
             String path = type.getPath(file);
-
             if ("grg".equals(path)) {
                 return true;
             }
@@ -80,5 +88,20 @@ public class ImportGRGSort extends ImportInPlaceResolver {
     public Pair<String, String> getContentMIME() {
         return new Pair<>(GRGMapComponent.IMPORTER_CONTENT_TYPE,
                 GRGMapComponent.IMPORTER_DEFAULT_MIME_TYPE);
+    }
+
+    private boolean isGeoPDF(File file) {
+        Dataset dataset = null;
+        try {
+            dataset = GdalLibrary.openDatasetFromFile(file);
+            if (dataset == null)
+                return false;
+            return GdalDatasetProjection2.getInstance(dataset) != null;
+        } catch (Exception ignored) {
+            return false;
+        } finally {
+            if (dataset != null)
+                dataset.delete();
+        }
     }
 }

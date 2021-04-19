@@ -27,6 +27,7 @@ public class TAKServer {
     public static final String USEAUTH_KEY = "useAuth";
     public static final String USERNAME_KEY = "username";
     public static final String ENROLL_FOR_CERT_KEY = "enrollForCertificateWithTrust";
+    public static final String EXPIRATION_KEY = "expiration";
 
     // Fortify has flagged this as Password Management: Hardcoded Password
     // this is only a key.

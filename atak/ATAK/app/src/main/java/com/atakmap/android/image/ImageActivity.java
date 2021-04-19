@@ -236,14 +236,9 @@ public class ImageActivity {
     }
 
     public void saveImageFile(byte[] data) {
-        FileOutputStream outStream = null;
-        try {
-            outStream = IOProviderFactory.getOutputStream(_output);
-            try {
-                outStream.write(data);
-            } finally {
-                outStream.close();
-            }
+        try(OutputStream outStream = IOProviderFactory
+                .getOutputStream(_output)) {
+            outStream.write(data);
 
             insertExifLocationData(_output);
             broadcastIntentToListeners(_output.getAbsolutePath(), _uid);

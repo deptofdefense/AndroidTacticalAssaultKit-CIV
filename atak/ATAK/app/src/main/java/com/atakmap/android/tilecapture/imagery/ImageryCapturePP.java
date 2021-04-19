@@ -38,7 +38,9 @@ import com.atakmap.map.layer.raster.DatasetProjection2;
 import com.atakmap.math.PointD;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
@@ -373,12 +375,11 @@ public class ImageryCapturePP extends CapturePP {
                 + "</gx:LatLonQuad>"
                 + "</GroundOverlay>"
                 + "</kml>";
-        try {
-            PrintWriter out = new PrintWriter(new OutputStreamWriter(
-                    IOProviderFactory.getOutputStream(docKml),
-                    FileSystemUtils.UTF8_CHARSET.name()));
+        try(OutputStream os = IOProviderFactory.getOutputStream(docKml);
+            OutputStreamWriter osw = new OutputStreamWriter(
+                os,FileSystemUtils.UTF8_CHARSET.name());
+            PrintWriter out = new PrintWriter(osw)) {
             out.println(docSkel);
-            out.close();
         } catch (IOException ioe) {
             Log.d(TAG, "error occurred writing the doc.xml file", ioe);
         }

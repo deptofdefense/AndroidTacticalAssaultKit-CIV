@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ~ Copyright 2020 PAR Government Systems
+  ~  
+  ~  Unlimited Rights:
+  ~  PAR Government retains ownership rights to this software.  The Government has Unlimited Rights
+  ~  to use, modify, reproduce, release, perform, display, or disclose this
+  ~  software as identified in the purchase order contract. Any
+  ~  reproduction of computer software or portions thereof marked with this
+  ~  legend must also reproduce the markings. Any person who has been provided
+  ~  access to this software must be aware of the above restrictions.
+  -->
+
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="5dp">
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:textStyle="bold"
+            android:text="@string/description" />
+
+        <TextView
+            android:id="@+id/txtDescription"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:paddingTop="5dp"
+            android:textStyle="bold"
+            android:text="@string/resection_ideal_conditions_label" />
+
+        <TextView
+            android:id="@+id/txtIdealConditions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:paddingTop="5dp"
+            android:textStyle="bold"
+            android:text="@string/resection_relative_accuracy_label" />
+
+        <TextView
+            android:id="@+id/txtRelativeAccuracy"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+
+</ScrollView>

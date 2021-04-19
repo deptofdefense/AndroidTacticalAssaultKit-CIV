@@ -14,6 +14,7 @@ import com.atakmap.map.layer.control.ColorControl;
 import com.atakmap.map.layer.model.Mesh;
 import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.ModelInfo;
+import com.atakmap.map.layer.model.Models;
 import com.atakmap.map.layer.model.opengl.GLMesh;
 import com.atakmap.map.layer.model.opengl.MaterialManager;
 import com.atakmap.map.opengl.GLMapView;
@@ -77,6 +78,10 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
     // Subject was released
     protected boolean _released;
 
+    // Used to update the model's altitude offset, so it's rendered at the correct altitude
+    protected boolean _updateAltitudeOffset;
+    protected double _altitudeOffset;
+
     public GLRubberModel(MapRenderer ctx, RubberModel subject) {
         super(ctx, subject, GLMapView.RENDER_PASS_SCENES);
         _renderCtx = ctx;
@@ -90,6 +95,8 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
         File texDir = new File(RubberSheetManager.DIR, _subject.getUID());
         _matManager = new MaterialManager(_renderCtx,
                 new TextureLoader(_renderCtx, texDir, 4096));
+        _updateAltitudeOffset = true;
+        _altitudeOffset = Double.NaN;
         startObserving();
     }
 
@@ -183,6 +190,7 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
         if (_modelInfo == null || _model == null)
             return;
 
+        _updateAltitudeOffset = true;
         // Translate the center by the model offset in meters
         GeoPoint center = _subject.getCenterPoint();
         double[] scale = _subject.getModelScale();
@@ -241,7 +249,6 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
         // Sub-classes can update stuff here
     }
 
-    @Override
     public void draw(GLMapView view, int renderPass) {
         if (!shouldRender() || !MathUtils.hasBits(renderPass, getRenderPass()))
             return;
@@ -261,6 +268,16 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
 
     protected void onDrawVersionChanged(GLMapView view) {
         // Update the model anchor point
+        if (Double.isNaN(_altitudeOffset)) {
+            PointD anchorPoint = Models.findAnchorPoint(_model);
+            PointD base = _matrix.transform(anchorPoint, null);
+            _altitudeOffset = (view.getTerrainMeshElevation(base.y, base.x) - anchorPoint.z) - (view.getTerrainMeshElevation(_anchorPoint.getLatitude(), _anchorPoint.getLongitude()));
+        }
+        if (_updateAltitudeOffset) {
+            _modelInfo.localFrame.translate(0, 0, _altitudeOffset);
+            _updateAltitudeOffset = false;
+        }
+
         forward(view, _anchorPoint, _modelAnchorPoint);
 
         // Check if it's worth rendering the model from our current view
@@ -299,7 +316,7 @@ public class GLRubberModel extends AbstractGLMapItem2 implements
     protected GLMesh[] createGLMeshes() {
         GLMesh[] meshes = new GLMesh[_model.getNumMeshes()];
         for (int i = 0; i < _model.getNumMeshes(); ++i) {
-            Mesh mesh = _model.getMesh(i);
+            Mesh mesh = _model.getMesh(i, false);
             GLMesh glMesh = new GLMesh(_modelInfo, mesh,
                     _modelAnchorPoint, _matManager);
             glMesh.setDisposeMesh(!_subject.isSharedModel());

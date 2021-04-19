@@ -13,15 +13,26 @@ import com.atakmap.android.importfiles.resource.RemoteResource;
 class RemoteResourceRequest extends GetFileRequest {
 
     private final RemoteResource _resource;
+    private final boolean _showNotifications;
 
     RemoteResourceRequest(RemoteResource resource, String dir,
-            int notificationId) {
-        super(resource.getUrl(), resource.getName(), dir, notificationId);
+            int notificationId, boolean showNotifications) {
+        this(resource, resource.getName(), dir, notificationId, showNotifications);
+    }
+
+    RemoteResourceRequest(RemoteResource resource, String fileName, String dir,
+            int notificationId, boolean showNotifications) {
+        super(resource.getUrl(), fileName, dir, notificationId);
         _resource = resource;
+        _showNotifications = showNotifications;
     }
 
     public RemoteResource getResource() {
         return _resource;
+    }
+
+    public boolean showNotifications() {
+        return _showNotifications;
     }
 
     @Override
@@ -29,6 +40,7 @@ class RemoteResourceRequest extends GetFileRequest {
         if (isValid()) {
             super.writeToParcel(dest, flags);
             dest.writeParcelable(_resource, flags);
+            dest.writeByte((byte) (_showNotifications ? 1 : 0));
         }
     }
 
@@ -47,6 +59,7 @@ class RemoteResourceRequest extends GetFileRequest {
     private RemoteResourceRequest(Parcel in) {
         super(in);
         _resource = in.readParcelable(RemoteResource.class.getClassLoader());
+        _showNotifications = in.readByte() == 1;
     }
 
     @Override

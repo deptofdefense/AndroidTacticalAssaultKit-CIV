@@ -1,9 +1,11 @@
 
 package com.atakmap.android.offscreenindicators;
 
+import com.atakmap.android.maps.AnchoredMapItem;
 import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.Marker;
+import com.atakmap.android.maps.PointMapItem;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -43,6 +45,11 @@ public class ObserverNode implements MapGroup.OnItemListChangedListener,
                 Marker marker = (Marker) item;
                 _candidates.addMarker(marker);
             }
+        } else if (item instanceof AnchoredMapItem) {
+            AnchoredMapItem anc = (AnchoredMapItem) item;
+            PointMapItem pmi = anc.getAnchorItem();
+            if (pmi instanceof Marker)
+                onItemAdded(pmi, pmi.getGroup());
         }
     }
 

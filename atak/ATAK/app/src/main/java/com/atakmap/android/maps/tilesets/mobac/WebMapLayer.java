@@ -285,13 +285,8 @@ public abstract class WebMapLayer {
                 FileSystemUtils.delete(f);
         }
 
-        FileOutputStream stream = null;
-        try {
-            stream = IOProviderFactory.getOutputStream(f);
+        try (FileOutputStream stream = IOProviderFactory.getOutputStream(f)) {
             service.generateConfigFile(stream);
-        } finally {
-            if (stream != null)
-                stream.close();
         }
 
         Intent loadIntent = new Intent();

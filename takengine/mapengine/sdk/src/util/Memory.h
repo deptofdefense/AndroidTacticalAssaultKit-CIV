@@ -169,7 +169,7 @@ namespace TAK {
             {}
 
             template<class Iface>
-            inline void Memory_leaker_const(const Iface *obj)
+            inline void Memory_leaker_const(const Iface * /*obj*/)
             {}
 
             template<class T>

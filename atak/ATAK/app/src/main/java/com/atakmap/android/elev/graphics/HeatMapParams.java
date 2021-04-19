@@ -1,6 +1,8 @@
 
 package com.atakmap.android.elev.graphics;
 
+import android.os.CancellationSignal;
+
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.math.MathUtils;
 
@@ -30,6 +32,8 @@ class HeatMapParams {
     float lutAlpha;
     float lutSaturation;
     float lutValue;
+
+    final CancellationSignal querySignal = new CancellationSignal();
 
     double getMaxLatitude() {
         return MathUtils.max(

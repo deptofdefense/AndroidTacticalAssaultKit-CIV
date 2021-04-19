@@ -39,13 +39,8 @@ public class WidgetBackground {
 
         // InputStream in = cfgRes.resolveInputStream(bgPath);
         Uri bgUri = Uri.parse(bgUriString);
-        InputStream in = config.getMapAssets().getInputStream(bgUri);
-        try {
+        try (InputStream in = config.getMapAssets().getInputStream(bgUri)) {
             bg = _parseBackgroundXml(config, in);
-        } finally {
-            if (in != null) {
-                in.close();
-            }
         }
         return bg;
     }

@@ -63,20 +63,11 @@ public class MemoryMappedModel {
             File f = new File(object.uri);
             if (!IOProviderFactory.exists(f))
                 return null;
-            FileChannel fis = null;
-            try {
-                fis = IOProviderFactory.getChannel(f, "r");
+            try (FileChannel fis = IOProviderFactory.getChannel(f, "r")) {
                 return read(fis, Integer.MAX_VALUE);
             } catch (Throwable t) {
                 Log.e(TAG, "error", t);
                 return null;
-            } finally {
-                if (fis != null) {
-                    try {
-                        fis.close();
-                    } catch (IOException ignored) {
-                    }
-                }
             }
         }
 

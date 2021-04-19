@@ -20,6 +20,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import android.content.res.XmlResourceParser;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -701,32 +702,32 @@ public class WMSQueryLayers extends QueryLayers {
             }
 
             // and print out the XML itself.
-            PrintWriter out = new PrintWriter(
-                    IOProviderFactory.getFileWriter(f));
-            out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-            out.println("<customWmsMapSource>");
-            out.println("    <name>" + title + " on "
-                    + queryLayer.getServiceTitle()
-                    + "</name>");
-            out.println("    <version>" + version + "</version>");
-            out.println("    <minZoom>" + minZoom + "</minZoom>");
-            out.println("    <maxZoom>" + Math.max(minZoom, 23) + "</maxZoom>");
-            out.println("    <tileType>" + format + "</tileType>");
-            out.println("    <url>" + queryLayer.getGetMapURL() + "</url>");
-            out.println("    <coordinatesystem>EPSG:" + srid
-                    + "</coordinatesystem>");
-            out.println("    <layers>" + name + "</layers>");
-            out.println("    <styles>" + styleName + "</styles>");
-            out.println("    <north>" + myBounds.getNorth() + "</north>");
-            out.println("    <east>" + myBounds.getEast() + "</east>");
-            out.println("    <south>" + myBounds.getSouth() + "</south>");
-            out.println("    <west>" + myBounds.getWest() + "</west>");
-            out.println("    <backgroundColor>#000000</backgroundColor>");
-            if (format.equals("png"))
-                out.println(
-                        "    <aditionalparameters>&amp;transparent=true</aditionalparameters>");
-            out.println("</customWmsMapSource>");
-            out.close();
+            try(FileWriter w = IOProviderFactory.getFileWriter(f);
+                PrintWriter out = new PrintWriter(w)) {
+                out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+                out.println("<customWmsMapSource>");
+                out.println("    <name>" + title + " on "
+                        + queryLayer.getServiceTitle()
+                        + "</name>");
+                out.println("    <version>" + version + "</version>");
+                out.println("    <minZoom>" + minZoom + "</minZoom>");
+                out.println("    <maxZoom>" + Math.max(minZoom, 23) + "</maxZoom>");
+                out.println("    <tileType>" + format + "</tileType>");
+                out.println("    <url>" + queryLayer.getGetMapURL() + "</url>");
+                out.println("    <coordinatesystem>EPSG:" + srid
+                        + "</coordinatesystem>");
+                out.println("    <layers>" + name + "</layers>");
+                out.println("    <styles>" + styleName + "</styles>");
+                out.println("    <north>" + myBounds.getNorth() + "</north>");
+                out.println("    <east>" + myBounds.getEast() + "</east>");
+                out.println("    <south>" + myBounds.getSouth() + "</south>");
+                out.println("    <west>" + myBounds.getWest() + "</west>");
+                out.println("    <backgroundColor>#000000</backgroundColor>");
+                if (format.equals("png"))
+                    out.println(
+                            "    <aditionalparameters>&amp;transparent=true</aditionalparameters>");
+                out.println("</customWmsMapSource>");
+            }
 
             return f;
         }
