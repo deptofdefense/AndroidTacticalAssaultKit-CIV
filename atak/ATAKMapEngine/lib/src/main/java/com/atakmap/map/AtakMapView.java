@@ -253,16 +253,28 @@ public class AtakMapView extends ViewGroup {
         public void onActionBarToggled(boolean showing);
     }
 
-
-    /** 
-       @deprecated this does not support rotation
-    */
-    @Deprecated
-    @DeprecatedApi(since = "4.1")
+    /**
+     * Get the axis-aligned geo boundaries of the map view
+     * @return Geo-bounds
+     */
     public GeoBounds getBounds() {
-        GeoPoint sw = this.inverse(new PointF(0, getHeight())).get();
-        GeoPoint ne = this.inverse(new PointF(getWidth(), 0)).get();
-        return new GeoBounds(sw, ne);
+        return GeoBounds.createFromPoints(getGeoCorners(),
+                isContinuousScrollEnabled());
+    }
+
+    /**
+     * Get the geodetic coordinates of each corner of the map view in
+     * clockwise order starting from north-west
+     * @return Geo-points
+     */
+    public GeoPoint[] getGeoCorners() {
+        int w = getWidth(), h = getHeight();
+        return new GeoPoint[] {
+                inverse(new PointF(0, 0)).get(), // North-west
+                inverse(new PointF(w, 0)).get(), // North-east
+                inverse(new PointF(w, h)).get(), // South-east
+                inverse(new PointF(0, h)).get()  // South-west
+        };
     }
 
     /**

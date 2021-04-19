@@ -364,14 +364,7 @@ public class ATAKConstants {
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.dismiss();
                             try {
-                                File file = FileSystemUtils
-                                        .getItem(
-                                                FileSystemUtils.SUPPORT_DIRECTORY
-                                                        + File.separatorChar
-                                                        + "license"
-                                                        + File.separatorChar
-                                                        + "LICENSE.txt");
-                                WebViewer.show(file,
+                                WebViewer.show("file:///android_asset/support/license/LICENSE.txt",
                                         context, 250);
                             } catch (Exception e) {
                                 Log.e(TAG, "error loading license.txt", e);

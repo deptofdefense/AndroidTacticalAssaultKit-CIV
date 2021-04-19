@@ -1,5 +1,11 @@
 # Version History
 
+## 4.2.1.1
+
+* Fix reported issue with BP/HA placement
+* Align BP/HA dimension input with USMC doctrine
+* Update Mission Package Manager to store certs with connection vs defaults
+
 ## 4.2.1.0
 
 * Add lasso tool to support region based imagery download
