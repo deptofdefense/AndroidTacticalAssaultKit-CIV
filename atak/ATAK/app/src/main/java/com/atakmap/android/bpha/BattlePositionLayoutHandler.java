@@ -2,6 +2,8 @@
 package com.atakmap.android.bpha;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -16,6 +18,7 @@ import android.widget.TextView;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.util.AfterTextChangedWatcher;
 import com.atakmap.app.R;
+import com.atakmap.coremap.log.Log;
 
 public class BattlePositionLayoutHandler implements View.OnClickListener {
 
@@ -57,7 +60,12 @@ public class BattlePositionLayoutHandler implements View.OnClickListener {
                 true).findViewById(R.id.GridSelectionHolder);
 
         _RowsET = _RootView.findViewById(R.id.rowsET);
+        _RowsET.setSelectAllOnFocus(true);
+
+
         _ColumnsET = _RootView.findViewById(R.id.columnsET);
+        _ColumnsET.setSelectAllOnFocus(true);
+
         _FixedGridSelector = _RootView.findViewById(R.id.fixedGridsSelector);
         _FixedGridSelector2 = _RootView.findViewById(R.id.fixedGridsSelector2);
         _CustomGridSelector = _RootView.findViewById(R.id.customGridsSelector);
@@ -73,63 +81,6 @@ public class BattlePositionLayoutHandler implements View.OnClickListener {
         ((View) _3x2.getParent()).setOnClickListener(this);
 
         _Custom.setOnClickListener(this);
-        _RowsET.addTextChangedListener(new AfterTextChangedWatcher() {
-            @Override
-            public void afterTextChanged(Editable editable) {
-                if (!_RowsET.getText().toString().equals("")) {
-                    _BPHA.setRows(Integer
-                            .parseInt(_RowsET.getText().toString()));
-                    setGridSizeText();
-                    if (handler != null) {
-                        handler.onGridSelected(_BPHA);
-                    }
-                }
-            }
-        });
-
-        //Inline on touch listener so the keyboard doesn't cover the Edit text fields
-        _RowsET.setOnTouchListener(new View.OnTouchListener() {
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                _RowsET.requestLayout();
-                Activity a = (Activity) MapView.getMapView().getContext();
-                a.getWindow().setSoftInputMode(
-                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
-                _RowsET.setCursorVisible(true);
-                _RowsET.requestFocus();
-                return false;
-            }
-        });
-
-        _ColumnsET.addTextChangedListener(new AfterTextChangedWatcher() {
-            @Override
-            public void afterTextChanged(Editable editable) {
-                if (!_ColumnsET.getText().toString().equals("")) {
-                    _BPHA.setColumns(Integer.parseInt(_ColumnsET.getText()
-                            .toString()));
-                    setGridSizeText();
-                    if (handler != null) {
-                        handler.onGridSelected(_BPHA);
-                    }
-                }
-            }
-        });
-
-        //Inline on touch listener so the keyboard doesn't cover the Edit text fields
-        _ColumnsET.setOnTouchListener(new View.OnTouchListener() {
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                _ColumnsET.requestLayout();
-                Activity a = (Activity) MapView.getMapView().getContext();
-                a.getWindow().setSoftInputMode(
-                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
-                _ColumnsET.setCursorVisible(true);
-                _ColumnsET.requestFocus();
-                return false;
-            }
-        });
 
         _FixedGridSelector.setVisibility(View.VISIBLE);
         _FixedGridSelector2.setVisibility(View.VISIBLE);
@@ -144,8 +95,19 @@ public class BattlePositionLayoutHandler implements View.OnClickListener {
         _3x2.set_Columns(2);
         _3x2.set_Rows(3);
 
+        int row = 2;
+        int col = 2;
+        try {
+            SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(_RootView.getContext());
+            row = sp.getInt("bpha_custom_row", 2);
+            col = sp.getInt("bpha_custom_col", 2);
+            _RowsET.setText(String.valueOf(row));
+            _ColumnsET.setText(String.valueOf(col));
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to read BPHA preferences", e);
+        }
         if (_BPHA == null) {
-            _BPHA = new BattlePositionHoldingArea(2, 2);
+            _BPHA = new BattlePositionHoldingArea(row, col);
         }
 
         Button customOKButton = _RootView
@@ -165,6 +127,43 @@ public class BattlePositionLayoutHandler implements View.OnClickListener {
         });
 
         setSelected();
+
+        _RowsET.addTextChangedListener(new AfterTextChangedWatcher() {
+            @Override
+            public void afterTextChanged(Editable editable) {
+                if (!_RowsET.getText().toString().equals("")) {
+                    _BPHA.setRows(Integer
+                            .parseInt(_RowsET.getText().toString()));
+                    setGridSizeText();
+                    if (handler != null) {
+                        handler.onGridSelected(_BPHA);
+                    }
+                    try {
+                        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(_RootView.getContext());
+                        sp.edit().putInt("bpha_custom_row", _BPHA.getRows()).apply();
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+        });
+        _ColumnsET.addTextChangedListener(new AfterTextChangedWatcher() {
+            @Override
+            public void afterTextChanged(Editable editable) {
+                if (!_ColumnsET.getText().toString().equals("")) {
+                    _BPHA.setColumns(Integer.parseInt(_ColumnsET.getText()
+                            .toString()));
+                    setGridSizeText();
+                    if (handler != null) {
+                        handler.onGridSelected(_BPHA);
+                    }
+                    try {
+                        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(_RootView.getContext());
+                        sp.edit().putInt("bpha_custom_col", _BPHA.getColumns()).apply();
+                    } catch (Exception ignored) {
+                    }
+                }
+            }
+        });
     }
 
     private void setSelected() {
@@ -205,7 +204,7 @@ public class BattlePositionLayoutHandler implements View.OnClickListener {
             _ColumnsET.setText("1");
         }
 
-        final String value = rows + " x " + columns;
+        final String value = columns + " x " + rows;
         _CustomButtonFooter.setText(value);
     }
 
@@ -224,6 +223,7 @@ public class BattlePositionLayoutHandler implements View.OnClickListener {
             _FixedGridSelector.setVisibility(View.GONE);
             _FixedGridSelector2.setVisibility(View.GONE);
             _CustomGridSelector.setVisibility(View.VISIBLE);
+
         }
         setSelected();
         if (handler != null) {

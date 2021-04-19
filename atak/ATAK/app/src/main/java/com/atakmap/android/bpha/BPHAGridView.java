@@ -66,15 +66,15 @@ public class BPHAGridView extends View {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-        int hight = (_Rows * squareWidth) + getPaddingTop()
+        int height = (_Rows * squareWidth) + getPaddingTop()
                 + getPaddingBottom();
         int width = (_Columns * squareWidth) + getPaddingLeft()
                 + getPaddingRight();
 
-        int hightSizeAndState = resolveSizeAndState(hight, heightMeasureSpec,
+        int heightSizeAndState = resolveSizeAndState(height, heightMeasureSpec,
                 0);
         int widthSizeAndState = resolveSizeAndState(width, widthMeasureSpec, 0);
-        setMeasuredDimension(widthSizeAndState, hightSizeAndState);
+        setMeasuredDimension(widthSizeAndState, heightSizeAndState);
     }
 
     private void drawBlocksForRow(int row, Path path) {

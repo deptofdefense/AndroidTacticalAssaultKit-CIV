@@ -3579,7 +3579,7 @@
     <string name="preferences_text227">Tap to manage connections to TAK Server</string>
     <string name="tak_server_client_cert">TAK Server Client Certificate</string>
     <string name="preferences_text110">Reporting rate in seconds (e.g. once per 180 seconds when standing still) for reliable protocols (e.g. TAK Server). Note: other events may also trigger reporting (e.g. a callsign change)</string>
-    <string name="preferences_text112">Minimum reporting rate in seconds (e.g. once per 20 seconds when moving slow) for unreliable protocols (e.g. TAK Server). Note: other events may also trigger reporting (e.g. a callsign change)</string>
+    <string name="preferences_text112">Minimum reporting rate in seconds (e.g. once per 20 seconds when moving slow) for reliable protocols (e.g. TAK Server). Note: other events may also trigger reporting (e.g. a callsign change)</string>
     <string name="preferences_text114">Maximum reporting rate in seconds (e.g. every other second when moving fast) for reliable protocols (e.g. TAK Server). Note: other events may also trigger reporting (e.g. a callsign change)</string>
 
 
