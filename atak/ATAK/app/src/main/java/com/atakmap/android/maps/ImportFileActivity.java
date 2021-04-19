@@ -17,6 +17,7 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.util.zip.IoUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -65,24 +66,10 @@ public class ImportFileActivity extends MetricActivity {
 
             final File fileToImport = new File(sendtoLocation, fileName);
 
-            InputStream is = null;
-            FileOutputStream fos = null;
-            try {
-                is = resolver.openInputStream(uri);
-                FileSystemUtils.copy(is,
-                        fos = new FileOutputStream(fileToImport));
-
-            } catch (IOException ioe) {
-                if (is != null)
-                    try {
-                        is.close();
-                    } catch (Exception ignored) {
-                    }
-                if (fos != null)
-                    try {
-                        fos.close();
-                    } catch (Exception ignored) {
-                    }
+            try(InputStream is = resolver.openInputStream(uri);
+                FileOutputStream fos = new FileOutputStream(fileToImport)) {
+                FileSystemUtils.copy(is,fos);
+            } catch (Exception ignored){
             }
 
             Intent atakFrontIntent = new Intent();

@@ -220,7 +220,7 @@ public class Arrow extends Shape {
     @Override
     public GeoPointMetaData getCenter() {
         MapView mv = MapView.getMapView();
-        return GeoPointMetaData.wrap(GeoCalculations.midPoint(_point1.get(),
+        return GeoPointMetaData.wrap(GeoCalculations.midPointCartesian(_point1.get(),
                 _point2.get(), mv != null
                         && mv.isContinuousScrollEnabled()));
     }

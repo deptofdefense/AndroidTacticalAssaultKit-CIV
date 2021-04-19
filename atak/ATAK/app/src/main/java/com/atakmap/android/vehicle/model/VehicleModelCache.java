@@ -236,7 +236,8 @@ public class VehicleModelCache {
                 return;
 
             // Delete icon cache if we're updating
-            FileSystemUtils.delete(ICON_DIR);
+            if (ICON_DIR.exists())
+                FileSystemUtils.delete(ICON_DIR);
         }
 
         // Read categories we need to load from
@@ -306,7 +307,7 @@ public class VehicleModelCache {
             String name = vehicle.getString("name");
             String path = vehicle.getString("file");
             File vehFile = new File(dir, path);
-            if (updating) {
+            if (updating && vehFile.exists()) {
                 // File is no longer up to date - delete so we can load from
                 // assets later
                 FileSystemUtils.delete(vehFile);

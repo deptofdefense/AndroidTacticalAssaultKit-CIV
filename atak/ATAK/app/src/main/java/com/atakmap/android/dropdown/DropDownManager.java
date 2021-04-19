@@ -561,8 +561,6 @@ public class DropDownManager extends BroadcastReceiver {
             // XXX:   this was severely insane that the sidePane had absolutely no
             // idea about the dropdown it was associated with prior to the creation
             // of this method.
-            sidePane.setTitle(ddr.getToolbarTitle());
-            sidePane.setButtons(ddr.getToolbarButtons());
             sidePane.setDropDown(dd);
             sidePane.open();
         }

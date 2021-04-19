@@ -13,6 +13,7 @@
 package com.atakmap.map.opengl;
 
 import android.opengl.GLES30;
+import android.util.Pair;
 
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.lang.Unsafe;
@@ -63,6 +64,10 @@ public class GLAntiAliasedLine {
     private double _rtcY;
     private double _rtcZ;
 
+    // records information for IDL crossing
+    private boolean _crossesIDL;
+    private int _primaryHemi;
+
     public GLAntiAliasedLine() {
         _forwardSegmentsSrid = -1;
         _forwardSegmentsTerrainVersion = -1;
@@ -70,6 +75,8 @@ public class GLAntiAliasedLine {
         _rtcX = 0d;
         _rtcY = 0d;
         _rtcZ = 0d;
+
+        _crossesIDL = false;
 
         _altMode = Feature.AltitudeMode.Absolute;
     }
@@ -114,6 +121,8 @@ public class GLAntiAliasedLine {
      */
     public void setLineData(DoubleBuffer verts, int componentCount, ConnectionType type, Feature.AltitudeMode altMode) {
         _altMode = altMode;
+        _crossesIDL = false;
+        _primaryHemi = 0;
 
         int capacity = verts.limit(); // > 0 ? verts.limit() : verts.capacity();
         if (capacity <= 3) {
@@ -156,11 +165,18 @@ public class GLAntiAliasedLine {
             else if(y > maxY)
                 maxY = y;
         }
+        _lineStrip.flip();
         _forwardSegmentsSrid = -1;
 
         // update RTC
         _centroidLng = (minX+maxX)/2d;
         _centroidLat = (minY+maxY)/2d;
+
+        final int idlInfo = GLAntiMeridianHelper.normalizeHemisphere(componentCount, _lineStrip, _lineStrip);
+        _lineStrip.flip();
+
+        _primaryHemi = (idlInfo&GLAntiMeridianHelper.MASK_PRIMARY_HEMISPHERE);
+        _crossesIDL = (idlInfo&GLAntiMeridianHelper.MASK_IDL_CROSS) != 0;
     }
 
     /**
@@ -377,6 +393,10 @@ public class GLAntiAliasedLine {
 
         // set Model-View as current scene forward
         view.scratch.matrix.set(view.scene.forward);
+        // apply hemisphere shift if necessary
+        final double unwrap = GLAntiMeridianHelper.getUnwrap(view, _crossesIDL, _primaryHemi);
+        view.scratch.matrix.translate(unwrap, 0d, 0d);
+
         // apply the RTC offset to translate from local to world coordinate system (map projection)
         view.scratch.matrix.translate(_rtcX, _rtcY, _rtcZ);
         view.scratch.matrix.get(view.scratch.matrixD, Matrix.MatrixOrder.COLUMN_MAJOR);

@@ -241,6 +241,9 @@ public class ImportCertSort extends ImportInternalSDResolver {
             enrollForCertificateWithTrust = !properties.getProperty(
                     "enrollForCertificateWithTrust", "0").equals("0");
 
+            Long expiration = Long.parseLong(properties.getProperty(
+                    TAKServer.EXPIRATION_KEY, "-1"));
+
             reconnect |= importCertificatesFromProperties(
                     properties,
                     "caLocation", "caPassword",
@@ -254,7 +257,7 @@ public class ImportCertSort extends ImportInternalSDResolver {
                 String cacheCreds = properties.getProperty("cacheCreds", "");
                 CertificateEnrollmentClient.getInstance().enroll(
                         MapView.getMapView().getContext(),
-                        description, connectString, cacheCreds, null, true);
+                        description, connectString, cacheCreds, expiration, null, true);
             }
         }
 

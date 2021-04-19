@@ -175,6 +175,19 @@ public abstract class AbstractGLMapItem2 implements GLMapItem2,
     }
 
     /**
+     * Run a method on the GL thread
+     * Unlike calling {@link MapRenderer#queueEvent} directly, this will
+     * run the method immediately if we're already on the GL thread
+     * @param r Runnable
+     */
+    protected void runOnGLThread(Runnable r) {
+        if (context.isRenderThread())
+            r.run();
+        else
+            context.queueEvent(r);
+    }
+
+    /**
      * Transforms the specified coordinate, applying any elevation adjustments
      * (e.g. exaggeration/offset) that is used by the renderer. The value is
      * returned via <code>point</code>.

@@ -22,6 +22,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -112,8 +113,7 @@ public class RubberSheetManager implements MapGroup.OnItemListChangedListener,
                     data.add(rmd);
             }
         }
-        FileOutputStream fos = null;
-        try {
+        try(OutputStream fos = IOProviderFactory.getOutputStream(SAVE_FILE)) {
             JSONArray arr = new JSONArray();
             for (AbstractSheetData rsd : data) {
                 JSONObject o = rsd.toJSON();
@@ -121,17 +121,10 @@ public class RubberSheetManager implements MapGroup.OnItemListChangedListener,
                     continue;
                 arr.put(o);
             }
-            fos = IOProviderFactory.getOutputStream(SAVE_FILE);
             FileSystemUtils.write(fos, arr.toString());
         } catch (Exception e) {
             Log.e(TAG, "Failed to write rubber sheet data to: "
                     + SAVE_FILE, e);
-        } finally {
-            try {
-                if (fos != null)
-                    fos.close();
-            } catch (Exception ignore) {
-            }
         }
         _saveLoadBusy = false;
     }

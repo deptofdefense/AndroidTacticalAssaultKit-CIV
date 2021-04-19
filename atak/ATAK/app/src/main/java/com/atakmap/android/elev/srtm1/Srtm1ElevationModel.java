@@ -97,21 +97,11 @@ public class Srtm1ElevationModel {
     private double _fromHgtFile(File file, double latitude, double longitude) {
 
         double result = Double.NaN;
-        FileInputStream fis = null;
 
-        try {
-            fis = IOProviderFactory.getInputStream(file);
+        try(FileInputStream fis = IOProviderFactory.getInputStream(file)) {
             result = _getHeightFromInputStream(fis, latitude, longitude);
         } catch (IOException e) {
             Log.e(TAG, "error: ", e);
-        } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException e) {
-                    Log.e(TAG, "error: ", e);
-                }
-            }
         }
 
         return result;

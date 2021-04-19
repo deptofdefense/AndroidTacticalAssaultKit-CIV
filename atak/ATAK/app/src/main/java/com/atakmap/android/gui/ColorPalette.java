@@ -34,7 +34,7 @@ import com.atakmap.app.R;
 public class ColorPalette extends LinearLayout {
 
     /** Callback listener for when a color is selected */
-    private OnColorSelectedListener _listener;
+    protected OnColorSelectedListener _listener;
 
     /**
      * Note this pallet is referenced by other sections of code
@@ -50,13 +50,13 @@ public class ColorPalette extends LinearLayout {
     // XXX If someone changes these colors make sure you format them so they are
     // in an order that goes from
     // light to dark, dark to light, etc.
-    private static final Integer[] colorArray = new Integer[] {
+    protected static final Integer[] colorArray = new Integer[] {
             COLOR1, COLOR2, COLOR3, COLOR4, COLOR5,
             COLOR6, COLOR7, COLOR8, COLOR9, COLOR10,
             COLOR11, COLOR12, COLOR13, COLOR14, COLOR15
     };
 
-    private static final String[] colorLabelArray = new String[] {
+    protected static final String[] colorLabelArray = new String[] {
             "White", "Yellow", "Orange", "Magenta", "Red",
             "Brown", "Purple", "Navy", "Blue", "Cyan",
             "Turqoise", "Green", "Forest", "Gray", "Black"
@@ -86,7 +86,7 @@ public class ColorPalette extends LinearLayout {
             OnColorSelectedListener listener) {
         super(context, attrs, defStyle);
         _listener = listener;
-        _init(initialColor);
+        init(initialColor);
     }
 
     /**
@@ -102,7 +102,7 @@ public class ColorPalette extends LinearLayout {
             OnColorSelectedListener listener) {
         super(context, attrs);
         _listener = listener;
-        _init(initialColor);
+        init(initialColor);
     }
 
     /**
@@ -117,7 +117,7 @@ public class ColorPalette extends LinearLayout {
             OnColorSelectedListener listener) {
         super(context);
         _listener = listener;
-        _init(initialColor);
+        init(initialColor);
     }
 
     /**
@@ -128,7 +128,7 @@ public class ColorPalette extends LinearLayout {
      */
     public ColorPalette(Context context, int initialColor) {
         super(context);
-        _init(initialColor);
+        init(initialColor);
     }
 
     /**
@@ -144,7 +144,7 @@ public class ColorPalette extends LinearLayout {
     /*
      * Initialize the Color Palette view with the color buttons separated and of a static height
      */
-    private void _init(final int initialColor) {
+    protected void init(final int initialColor) {
         final Context context = this.getContext();
         this.setOrientation(LinearLayout.VERTICAL);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(

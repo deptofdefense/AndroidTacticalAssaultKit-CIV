@@ -643,11 +643,10 @@ public class AddNetInfoActivity extends MetricActivity {
                         .sanitizeWithSpacesAndSlashes(FileSystemUtils.getRoot()
                                 + "/cert/" + description + "_clientCert.p12");
 
-                FileOutputStream fos = null;
-                try {
-                    fos = IOProviderFactory.getOutputStream(new File(
-                            absolutePath));
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                try(FileOutputStream fos = IOProviderFactory
+                        .getOutputStream(new File(absolutePath));
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
                     if (clientCertificate != null) {
                         baos.write(clientCertificate);
                     }
@@ -655,12 +654,6 @@ public class AddNetInfoActivity extends MetricActivity {
                 } catch (Exception e) {
                     Log.e(TAG, "Exception exporting client certificate!", e);
                     return;
-                } finally {
-                    if (fos != null)
-                        try {
-                            fos.close();
-                        } catch (Exception ignored) {
-                        }
                 }
 
                 new AlertDialog.Builder(AddNetInfoActivity.this)

@@ -43,7 +43,7 @@ public abstract class MapActivity extends MetricFragmentActivity {
     private MapAssets _mapAssets;
     private final ConcurrentLinkedQueue<MapComponent> _observers = new ConcurrentLinkedQueue<>();
 
-    private final Object startlock = new Object();
+    private final Object lifecycleTransitionLock = new Object();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -125,7 +125,7 @@ public abstract class MapActivity extends MetricFragmentActivity {
     @Override
     public void onStart() {
         super.onStart();
-        synchronized (startlock) {
+        synchronized (lifecycleTransitionLock) {
             _isActive = true;
 
             MapView view = getMapView();
@@ -143,7 +143,7 @@ public abstract class MapActivity extends MetricFragmentActivity {
     @Override
     public void onStop() {
         super.onStop();
-        synchronized (startlock) {
+        synchronized (lifecycleTransitionLock) {
             _isActive = false;
 
             MapView view = getMapView();
@@ -204,7 +204,7 @@ public abstract class MapActivity extends MetricFragmentActivity {
     }
 
     public boolean isActive() {
-        synchronized (startlock) {
+        synchronized (lifecycleTransitionLock) {
             return _isActive;
         }
     }
@@ -255,11 +255,11 @@ public abstract class MapActivity extends MetricFragmentActivity {
      * @see MapComponent
      * @param observer the MapComponent
      */
-    public synchronized void registerMapComponent(final MapComponent observer) {
+    public void registerMapComponent(final MapComponent observer) {
+        synchronized (lifecycleTransitionLock) {
+            long s = SystemClock.elapsedRealtime();
+            if (observer != null) {
 
-        long s = SystemClock.elapsedRealtime();
-        if (observer != null) {
-            synchronized (startlock) {
                 _observers.add(observer);
                 observer.onCreate(this, getIntent(), getMapView());
                 if (_isActive) {
@@ -280,14 +280,16 @@ public abstract class MapActivity extends MetricFragmentActivity {
      *
      * @param observer the map component to remove
      */
-    public synchronized void unregisterMapComponent(MapComponent observer) {
-        if (!_observers.remove(observer))
-            return;
+    public void unregisterMapComponent(MapComponent observer) {
+        synchronized (lifecycleTransitionLock) {
+            if (!_observers.remove(observer))
+                return;
 
-        MapView view = getMapView();
-        observer.onPause(this, view);
-        observer.onStop(this, view);
-        observer.onDestroy(this, view);
+            MapView view = getMapView();
+            observer.onPause(this, view);
+            observer.onStop(this, view);
+            observer.onDestroy(this, view);
+        }
     }
 
     /**

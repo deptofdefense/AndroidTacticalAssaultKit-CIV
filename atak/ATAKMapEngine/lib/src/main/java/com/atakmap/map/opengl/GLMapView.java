@@ -123,57 +123,187 @@ public class GLMapView implements
     private final static boolean depthEnabled = true;
     private final Cleaner cleaner;
 
-    /** The scale that the map is being drawn at. */
+    /**
+     * The scale that the map is being drawn at.
+     * @deprecated use {@link #currentPass}.{@link State#drawMapResolution drawMapResolution}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public double drawMapScale = 2.5352504279048383E-9d;
-    /** The resolution in meters-per-pixel that the map is being drawn at. */
+    /**
+     * The resolution in meters-per-pixel that the map is being drawn at.
+     * @deprecated use {@link #currentPass}.{@link State#drawMapResolution drawMapResolution}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public double drawMapResolution = 0.0d;
-    /** The latitude of the center point of the rendering */
+    /**
+     * The latitude of the center point of the rendering
+     * @deprecated use {@link #currentPass}.{@link State#drawLat drawLat}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public double drawLat = 0d;
-    /** The longitude of the center point of the rendering */
+    /**
+     * The longitude of the center point of the rendering
+     * @deprecated use {@link #currentPass}.{@link State#drawLng drawLng}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public double drawLng = 0d;
-    /** The rotation, in radians, of the map about the center point */
+    /**
+     * The rotation, in radians, of the map about the center point
+     * @deprecated use {@link #currentPass}.{@link State#drawRotation drawRotation}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public double drawRotation = 0d;
-    /** The tilt, in radians, of the map about the center point */
+    /**
+     * The tilt, in radians, of the map about the center point
+     * @deprecated use {@link #currentPass}.{@link State#drawTilt drawTilt}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public double drawTilt = 0d;
     /** The current animation factor for transitions */
     public double animationFactor = 0.3d;
     /**
      * The current version of the draw parameters. Must be incremented each time the parameters
      * change.
+     * @deprecated use {@link #currentPass}.{@link State#drawVersion drawVersion}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public int drawVersion = 0;
 
     /** Flag indicating whether or not this view is used for targeting */
     public boolean targeting = false;
 
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#westBound westBound}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public double westBound = -180d;
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#southBound southBound}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public double southBound = -90d;
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#northBound northBound}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public double northBound = 90d;
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#eastBound eastBound}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public double eastBound = 180d;
+    /**
+     * @deprecated to be removed without replacement
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public double eastBoundUnwrapped = 180d;
+    /**
+     * @deprecated to be removed without replacement
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public double westBoundUnwrapped = -180d;
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#crossesIDL crossesIDL}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public boolean crossesIDL = false;
+
     public final GLAntiMeridianHelper idlHelper = new GLAntiMeridianHelper();
 
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#left left}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public int _left;
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#right right}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public int _right;
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#top top}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public int _top;
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#bottom bottom}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public int _bottom;
 
     private RenderContext _context;
     private RenderSurface _surface;
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#drawSrid drawSrid}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public int drawSrid = -1;
     private Projection drawProjection;
 
-    public float focusx, focusy;
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#focusx focusx}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
+    public float focusx;
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#focusy focusy}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
+    public float focusy;
 
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#upperLeft upperLeft}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public GeoPoint upperLeft;
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#upperRight upperRight}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public GeoPoint upperRight;
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#lowerRight lowerRight}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public GeoPoint lowerRight;
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#lowerLeft lowerLeft}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public GeoPoint lowerLeft;
 
     public boolean settled;
 
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#renderPump renderPump}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public int renderPump;
 
     protected Animator animator;
@@ -201,8 +331,19 @@ public class GLMapView implements
     public long animationDelta = -1L;
 
     private int sceneModelVersion;
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#scene scene}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public MapSceneModel scene;
+    // XXX - unused; remove field usage from JNI
     private MapSceneModel oscene;
+    /**
+     * @deprecated use {@link #currentPass}.{@link State#sceneModelForwardMatrix sceneModelForwardMatrix}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public float[] sceneModelForwardMatrix;
 
     public final static double recommendedGridSampleDistance = 0.125d;
@@ -234,6 +375,34 @@ public class GLMapView implements
     private int syncVersion;
     private int syncPass;
 
+    private int terrainTilesVersion;
+
+    /**
+     * Flag indicating if the pass is being executed in multiple parts. If
+     * <code>true</code>, {@link #currentPass} represents only part of the
+     * rendering pass. If <code>false</code>, there are no remaining parts to
+     * the rendering pass.
+     *
+     * <P>All instances of {@link #currentPass} that are parts for a given
+     * pass will share the same value for
+     * {@link #currentPass}.{@link State#renderPump renderPump}, however, they
+     * may have different values for
+     * {@link #currentPass}.{@link State#drawVersion drawVersion} as the
+     * various parameters may be different (e.g. each part renders different
+     * regions of a large orthographic view).
+     */
+    public boolean multiPartPass;
+
+    /**
+     * The state for the current pass. Scenes may be rendered in multiple
+     * passes, using different parameters and cameras.
+     */
+    public final State currentPass = new State();
+    /**
+     * The scene that is the final render target.
+     */
+    public final State currentScene = new State();
+
     private final RenderSurface.OnSizeChangedListener sizeChangedHandler = new RenderSurface.OnSizeChangedListener() {
         @Override
         public void onSizeChanged(RenderSurface surface, int width, int height) {
@@ -247,43 +416,6 @@ public class GLMapView implements
             }
         }
     };
-    // XXX - move offscreen into single struct for easier management
-
-    // offscreen rendering
-
-
-    static class Offscreen {
-        static class Program {
-            int handle;
-
-            int uProjection;
-            int uModelView;
-            int uModelViewOffscreen;
-            int uTexWidth;
-            int uTexHeight;
-            int aVertexCoords;
-
-            int uTexture;
-
-            Program() {
-                handle = 0;
-            }
-        }
-
-        /** offscreen texture */
-        GLTexture texture;
-        /** offscreen scene */
-        MapSceneModel scene;
-
-        /** offscreen FBO handles, index 0 is FBO, index 1 is depth buffer */
-        int[] fbo;
-
-        double hfactor = Double.NaN;
-
-        int terrainTilesVersion = -1;
-    }
-
-    Offscreen offscreen;
 
     private Set<OnControlsChangedListener> controlsListeners;
 
@@ -337,8 +469,6 @@ public class GLMapView implements
         this.controls = new IdentityHashMap<Layer2, Collection<MapControl>>();
 
         this.terrain = new ElMgrTerrainRenderService(getTerrainRenderService(this.pointer.raw), this);
-
-        this.offscreen = new Offscreen();
 
         this.controlsListeners = Collections.newSetFromMap(new IdentityHashMap<OnControlsChangedListener, Boolean>());
 
@@ -724,7 +854,7 @@ public class GLMapView implements
     }
 
     public int getTerrainVersion() {
-        return offscreen.terrainTilesVersion;
+        return terrainTilesVersion;
     }
 
     /**
@@ -747,7 +877,10 @@ public class GLMapView implements
      *
      * @param p A geodetic coordinate
      * @return The OpenGL coordinate that corresponds to <code>p</code>
+     * @deprecated Use {@link #currentPass}.{@link MapSceneModel#forward(GeoPoint, PointF) forward(GeoPoint, PointF)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public PointF forward(GeoPoint p) {
         return this.forward(p, new PointF());
     }
@@ -761,7 +894,10 @@ public class GLMapView implements
      *            have its value set to the transformed coordinate. If <code>null</code> a new
      *            <code>PointF</code> will be allocated and returned.
      * @return The OpenGL coordinate that corresponds to <code>p</code>
+     * @deprecated Use {@link #currentPass}.{@link MapSceneModel#forward(GeoPoint, PointF) forward(GeoPoint, PointF)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public PointF forward(GeoPoint p, PointF retval) {
         if (retval == null)
             retval = new PointF();
@@ -779,7 +915,10 @@ public class GLMapView implements
      *            , elements will only be instantiated and assigned if <code>null</code>.
      * @return The OpenGL coordinates that correspond to <code>p</code>
      * @see {@link #forward(GeoPoint, PointF)}
+     * @deprecated Use {@link #currentPass}.{@link MapSceneModel#forward(GeoPoint, PointF) forward(GeoPoint, PointF)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public PointF[] forward(GeoPoint[] p, PointF[] retval) {
         if (retval == null)
             retval = new PointF[p.length];
@@ -792,6 +931,16 @@ public class GLMapView implements
         return retval;
     }
 
+    /**
+     *
+     * @param p
+     * @param retval
+     * @return
+     *
+     * @deprecated Use {@link #currentPass}.{@link MapSceneModel#forward(GeoPoint, PointD) forward(GeoPoint, PointD)}
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public PointD forward(GeoPoint p, PointD retval) {
         if (retval == null)
             retval = new PointD(0d, 0d, 0d);
@@ -935,7 +1084,10 @@ public class GLMapView implements
      *
      * @param p A pixel in the OpenGL coordinate space
      * @return The geodetic coordinate that corresponds to <code>p</code>
+     * @deprecated Use {@link #currentPass}.{@link MapSceneModel#inverse(PointF, GeoPoint) inverse(PointF, GeoPoint)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public GeoPoint inverse(PointF p) {
         return this.inverse(p, GeoPoint.createMutable());
     }
@@ -951,7 +1103,10 @@ public class GLMapView implements
      *            <code>GeoPoint<code> instance will be returned (whether
      *                  or not it is a <code>MutableGeoPoint</code> is undefined).
      * @return The geodetic coordinate that corresponds to <code>p</code>
+     * @deprecated Use {@link #currentPass}.{@link MapSceneModel#inverse(PointF, GeoPoint) inverse(PointF, GeoPoint)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public GeoPoint inverse(PointF p, GeoPoint retval) {
         if (retval == null)
             retval = GeoPoint.createMutable();
@@ -970,7 +1125,10 @@ public class GLMapView implements
      *            <code>MutableGeoPoint</code> will have their values set, otherwise the element
      *            will be assigned a newly allocated <code>GeoPoint</code> instance.
      * @return The geodetic coordinates that correspond to <code>p</code>
+     * @deprecated Use {@link #currentPass}.{@link MapSceneModel#inverse(PointF, GeoPoint) inverse(PointF, GeoPoint)}
      */
+    @Deprecated
+    @DeprecatedApi(since = "4.2", forRemoval = true, removeAt = "4.5")
     public GeoPoint[] inverse(PointF[] p, GeoPoint[] retval) {
         if (retval == null)
             retval = new GeoPoint[p.length];
@@ -1035,7 +1193,10 @@ public class GLMapView implements
         // update IDL helper
         this.idlHelper.update(this);
 
-        this.offscreen.terrainTilesVersion = getTerrainVersion(this.pointer.raw);
+        this.terrainTilesVersion = getTerrainVersion(this.pointer.raw);
+
+        this.currentScene.copy(this);
+        this.currentPass.copy(this);
     }
 
     /**
@@ -1942,10 +2103,12 @@ public class GLMapView implements
 
     public GeoPoint intersectWithTerrain2(MapSceneModel scene, float x, float y) {
         GeoPoint result = GeoPoint.createMutable();
-        synchronized(this.offscreen) {
-            if (intersectWithTerrain2(this.pointer.raw, MapSceneModel_interop.getPointer(scene), x, y, result))
+        rwlock.acquireRead();
+        try {
+            if (this.pointer.raw != 0L && intersectWithTerrain2(this.pointer.raw, MapSceneModel_interop.getPointer(scene), x, y, result))
                 return result;
-
+        } finally {
+            rwlock.releaseRead();
         }
         return scene.inverse(new PointF(x, y), null);
     }
@@ -1990,48 +2153,38 @@ public class GLMapView implements
         return estimateResolutionFromModelSphere(MapSceneModel_interop.getPointer(model), center.x, center.y, center.z, radius, closest);
     }
 
-    private final static class State {
-        private double drawMapScale = 2.5352504279048383E-9d;
-        private double drawMapResolution = 0.0d;
-        private double drawLat = 0d;
-        private double drawLng = 0d;
-        private double drawRotation = 0d;
-        private double drawTilt = 0d;
-        private double animationFactor = 0.3d;
-        private int drawVersion = 0;
-        private boolean targeting = false;
-        private double westBound = -180d;
-        private double southBound = -90d;
-        private double northBound = 90d;
-        private double eastBound = 180d;
-        private int _left;
-        private int _right;
-        private int _top;
-        private int _bottom;
-        private int drawSrid = -1;
-        private Projection drawProjection;
-        private float focusx, focusy;
-        private GeoPoint upperLeft;
-        private GeoPoint upperRight;
-        private GeoPoint lowerRight;
-        private GeoPoint lowerLeft;
-        private boolean settled;
-        private int renderPump;
-        private Matrix verticalFlipTranslate;
-        private int verticalFlipTranslateHeight;
-        private boolean rigorousRegistrationResolutionEnabled;
-        private long animationLastTick = -1L;
-        private long animationDelta = -1L;
-        private int sceneModelVersion;
+    public final static class State {
+        public double drawMapResolution = 0.0d;
+        public double drawLat = 0d;
+        public double drawLng = 0d;
+        public double drawRotation = 0d;
+        public double drawTilt = 0d;
+        public int drawVersion = 0;
+        public boolean targeting = false;
+        public double westBound = -180d;
+        public double southBound = -90d;
+        public double northBound = 90d;
+        public double eastBound = 180d;
+        public int left;
+        public int right;
+        public int top;
+        public int bottom;
+        public int drawSrid = -1;
+        public float focusx, focusy;
+        public final GeoPoint upperLeft;
+        public final GeoPoint upperRight;
+        public final GeoPoint lowerRight;
+        public final GeoPoint lowerLeft;
+        public int renderPump;
         public MapSceneModel scene;
-        private float[] sceneModelForwardMatrix;
+        public final float[] sceneModelForwardMatrix;
+        public boolean crossesIDL;
 
         public State() {
             this.upperLeft = GeoPoint.createMutable();
             this.upperRight = GeoPoint.createMutable();
             this.lowerRight = GeoPoint.createMutable();
             this.lowerLeft = GeoPoint.createMutable();
-            this.verticalFlipTranslate = Matrix.getIdentity();
             this.sceneModelForwardMatrix = new float[16];
             this.scene = null;
         }
@@ -2041,40 +2194,60 @@ public class GLMapView implements
          *
          * @param view
          */
-        public void save(GLMapView view) {
-            this.drawMapScale = view.drawMapScale;
+        void copy(GLMapView view) {
             this.drawMapResolution = view.drawMapResolution;
             this.drawLat = view.drawLat;
             this.drawLng = view.drawLng;
             this.drawRotation = view.drawRotation;
             this.drawTilt = view.drawTilt;
-            this.animationFactor = view.animationFactor;
             this.drawVersion = view.drawVersion;
             this.targeting = view.targeting;
             this.westBound = view.westBound;
             this.southBound = view.southBound;
             this.northBound = view.northBound;
             this.eastBound = view.eastBound;
-            this._left = view._left;
-            this._right = view._right;
-            this._top = view._top;
-            this._bottom = view._bottom;
+            this.crossesIDL = view.crossesIDL;
+            this.left = view._left;
+            this.right = view._right;
+            this.top = view._top;
+            this.bottom = view._bottom;
             this.drawSrid = view.drawSrid;
-            this.drawProjection = view.drawProjection;
             this.focusx = view.focusx;
             this.focusy = view.focusy;
             this.upperLeft.set(view.upperLeft);
             this.upperRight.set(view.upperRight);
             this.lowerRight.set(view.lowerRight);
             this.lowerLeft.set(view.lowerLeft);
-            this.settled = view.settled;
             this.renderPump = view.renderPump;
-            this.verticalFlipTranslate.set(view.verticalFlipTranslate);
-            this.verticalFlipTranslateHeight = view.verticalFlipTranslateHeight;
-            this.rigorousRegistrationResolutionEnabled = view.rigorousRegistrationResolutionEnabled;
-            this.animationLastTick = view.animationLastTick;
-            this.animationDelta = view.animationDelta;
-            this.sceneModelVersion = view.sceneModelVersion;
+            this.scene = view.scene;
+            System.arraycopy(view.sceneModelForwardMatrix, 0, this.sceneModelForwardMatrix, 0, 16);
+        }
+
+        public void copy(GLMapView.State view) {
+            this.drawMapResolution = view.drawMapResolution;
+            this.drawLat = view.drawLat;
+            this.drawLng = view.drawLng;
+            this.drawRotation = view.drawRotation;
+            this.drawTilt = view.drawTilt;
+            this.drawVersion = view.drawVersion;
+            this.targeting = view.targeting;
+            this.westBound = view.westBound;
+            this.southBound = view.southBound;
+            this.northBound = view.northBound;
+            this.eastBound = view.eastBound;
+            this.crossesIDL = view.crossesIDL;
+            this.left = view.left;
+            this.right = view.right;
+            this.top = view.top;
+            this.bottom = view.bottom;
+            this.drawSrid = view.drawSrid;
+            this.focusx = view.focusx;
+            this.focusy = view.focusy;
+            this.upperLeft.set(view.upperLeft);
+            this.upperRight.set(view.upperRight);
+            this.lowerRight.set(view.lowerRight);
+            this.lowerLeft.set(view.lowerLeft);
+            this.renderPump = view.renderPump;
             this.scene = view.scene;
             System.arraycopy(view.sceneModelForwardMatrix, 0, this.sceneModelForwardMatrix, 0, 16);
         }
@@ -2084,39 +2257,65 @@ public class GLMapView implements
          * @param view
          */
         public void restore(GLMapView view) {
-            view.drawMapScale = this.drawMapScale;
+            view.drawMapScale = Globe.getMapScale(view.getSurface().getDpi(), this.drawMapResolution);
             view.drawMapResolution = this.drawMapResolution;
             view.drawLat = this.drawLat;
             view.drawLng = this.drawLng;
             view.drawRotation = this.drawRotation;
             view.drawTilt = this.drawTilt;
-            view.animationFactor = this.animationFactor;
             view.drawVersion = this.drawVersion;
             view.targeting = this.targeting;
             view.westBound = this.westBound;
             view.southBound = this.southBound;
             view.northBound = this.northBound;
             view.eastBound = this.eastBound;
-            view._left = this._left;
-            view._right = this._right;
-            view._top = this._top;
-            view._bottom = this._bottom;
+            view.crossesIDL = this.crossesIDL;
+            view._left = this.left;
+            view._right = this.right;
+            view._top = this.top;
+            view._bottom = this.bottom;
             view.drawSrid = this.drawSrid;
-            view.drawProjection = this.drawProjection;
+            view.drawProjection = this.scene.mapProjection;
             view.focusx = this.focusx;
             view.focusy = this.focusy;
             (view.upperLeft).set(this.upperLeft);
             (view.upperRight).set(this.upperRight);
             (view.lowerRight).set(this.lowerRight);
             (view.lowerLeft).set(this.lowerLeft);
-            view.settled = this.settled;
             view.renderPump = this.renderPump;
-            view.verticalFlipTranslate.set(this.verticalFlipTranslate);
-            view.verticalFlipTranslateHeight = this.verticalFlipTranslateHeight;
-            view.rigorousRegistrationResolutionEnabled = this.rigorousRegistrationResolutionEnabled;
-            view.animationLastTick = this.animationLastTick;
-            view.animationDelta = this.animationDelta;
-            view.sceneModelVersion = this.sceneModelVersion;
+            view.scene = this.scene;
+            System.arraycopy(this.sceneModelForwardMatrix, 0, view.sceneModelForwardMatrix, 0, 16);
+        }
+
+        /**
+         * Restores the state of the specified GLMapView.
+         * @param view
+         */
+        public void restore(GLMapView.State view) {
+            view.drawMapResolution = this.drawMapResolution;
+            view.drawLat = this.drawLat;
+            view.drawLng = this.drawLng;
+            view.drawRotation = this.drawRotation;
+            view.drawTilt = this.drawTilt;
+            view.drawVersion = this.drawVersion;
+            view.targeting = this.targeting;
+            view.westBound = this.westBound;
+            view.southBound = this.southBound;
+            view.northBound = this.northBound;
+            view.eastBound = this.eastBound;
+            view.crossesIDL = this.crossesIDL;
+            view.left = this.left;
+            view.right = this.right;
+            view.top = this.top;
+            view.bottom = this.bottom;
+            view.drawSrid = this.drawSrid;
+            view.focusx = this.focusx;
+            view.focusy = this.focusy;
+            (view.upperLeft).set(this.upperLeft);
+            (view.upperRight).set(this.upperRight);
+            (view.lowerRight).set(this.lowerRight);
+            (view.lowerLeft).set(this.lowerLeft);
+            view.renderPump = this.renderPump;
             view.scene = this.scene;
             System.arraycopy(this.sceneModelForwardMatrix, 0, view.sceneModelForwardMatrix, 0, 16);
         }

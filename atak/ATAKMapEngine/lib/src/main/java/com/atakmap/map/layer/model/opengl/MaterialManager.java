@@ -6,6 +6,8 @@ import android.util.Pair;
 
 import com.atakmap.android.maps.graphics.GLBitmapLoader;
 import com.atakmap.android.maps.tilesets.graphics.GLPendingTexture;
+import com.atakmap.coremap.filesystem.FileSystemUtils;
+import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.layer.model.Material;
 import com.atakmap.map.opengl.GLRenderGlobals;
@@ -143,9 +145,10 @@ public final class MaterialManager implements Disposable {
 
         @Override
         public FutureTask<Bitmap> load(String uri) {
-            if(uri.contains(".zip") && !uri.startsWith("zip://")) {
+            if(!uri.startsWith("zip://") && FileSystemUtils.isZipPath(uri)) {
                 StringBuilder sb = new StringBuilder("zip://");
-                final int extIdx = uri.indexOf(".zip");
+                final int extIdx = uri.toLowerCase(LocaleUtil.getCurrent())
+                        .indexOf(".zip");
                 if(extIdx < 0)
                     throw new IllegalStateException();
                 sb.append(uri.substring(0, extIdx+4));

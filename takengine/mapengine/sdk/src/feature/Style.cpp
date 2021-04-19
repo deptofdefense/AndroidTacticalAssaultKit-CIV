@@ -357,7 +357,8 @@ Style* Style::parseStyle (const char* styleOGR)
                                                    hAlign,
                                                    vAlign,
                                                    !relativeRotation ? -tmpLabel->angle : -tmpLabel->relativeAngle, 
-                                                   !relativeRotation)));
+                                                   !relativeRotation,
+                                                   tmpLabel->stretch / 100.0f)));
         }
     }
 
@@ -672,7 +673,8 @@ LabelPointStyle::LabelPointStyle (const char* text,
                                   bool absoluteRotation,
                                   float paddingX,
                                   float paddingY,
-                                  double labelMinRenderResolution) :
+                                  double labelMinRenderResolution,
+                                  float labelScale) :
     atakmap::feature::Style(TESC_LabelPointStyle),
     text (text),
     foreColor (textColor),
@@ -686,6 +688,7 @@ LabelPointStyle::LabelPointStyle (const char* text,
     paddingY(paddingY),
     absoluteRotation (absoluteRotation),
     labelMinRenderResolution (labelMinRenderResolution),
+    labelScale (labelScale),
     offsetX(offsetX),
     offsetY(offsetY),
     face(face),
@@ -719,7 +722,8 @@ LabelPointStyle::LabelPointStyle (const char* text,
                                   bool absoluteRotation,
                                   float paddingX,
                                   float paddingY,
-                                  double labelMinRenderResolution) :
+                                  double labelMinRenderResolution,
+                                  float labelScale) :
     atakmap::feature::Style(TESC_LabelPointStyle),
     text (text),
     foreColor (textColor),
@@ -733,6 +737,7 @@ LabelPointStyle::LabelPointStyle (const char* text,
     paddingY(paddingY),
     absoluteRotation (absoluteRotation),
     labelMinRenderResolution (labelMinRenderResolution),
+    labelScale (labelScale),
     offsetX(offsetX),
     offsetY(offsetY),
     face(face),
@@ -1025,11 +1030,12 @@ TAKErr atakmap::feature::LabelPointStyle_create(StylePtr &value, const char* tex
                                                                  bool absoluteRotation, // Relative to screen.
                                                                  float paddingX, // offset from alignment position
                                                                  float paddingY, 
-                                                                 double labelMinRenderResolution) NOTHROWS
+                                                                 double labelMinRenderResolution,
+                                                                 float labelScale) NOTHROWS
 {
     try {
 
-        value = StylePtr(new LabelPointStyle(text, textColor, backColor, mode, nullptr, textSize, (LabelPointStyle::Style)0, 0.0, 0.0, hAlign, vAlign, rotation, absoluteRotation, paddingX, paddingY, labelMinRenderResolution), Memory_deleter_const<Style, LabelPointStyle>);
+        value = StylePtr(new LabelPointStyle(text, textColor, backColor, mode, nullptr, textSize, (LabelPointStyle::Style)0, 0.0, 0.0, hAlign, vAlign, rotation, absoluteRotation, paddingX, paddingY, labelMinRenderResolution, labelScale), Memory_deleter_const<Style, LabelPointStyle>);
         return TE_Ok;
     } catch(const std::invalid_argument &) {
         return TE_InvalidArg;

@@ -18,6 +18,8 @@ import com.atakmap.android.attachment.AttachmentMapOverlay;
 import com.atakmap.android.attachment.export.AttachmentExportMarshal;
 import com.atakmap.android.attachment.export.AttachmentExportMarshal.FileExportable;
 import com.atakmap.android.contact.ContactPresenceDropdown;
+import com.atakmap.android.data.URIContentHandler;
+import com.atakmap.android.data.URIContentManager;
 import com.atakmap.android.dropdown.DropDown;
 import com.atakmap.android.filesystem.MIMETypeMapper;
 import com.atakmap.android.filesystem.ResourceFile;
@@ -224,8 +226,8 @@ public class ImageGalleryFileAdapter extends ImageGalleryBaseAdapter
         return selection.toArray(new String[0]);
     }
 
-    public void removeImages(String[] imagePaths) {
-        if (imagePaths != null && imagePaths.length > 0) {
+    public void removeImages(String... imagePaths) {
+        if (!FileSystemUtils.isEmpty(imagePaths)) {
             List<GalleryFileItem> files = new ArrayList<>();
             synchronized (allItems) {
                 for (String path : imagePaths) {
@@ -249,9 +251,7 @@ public class ImageGalleryFileAdapter extends ImageGalleryBaseAdapter
     }
 
     public void removeFile(File f) {
-        removeImages(new String[] {
-                f.getAbsolutePath()
-        });
+        removeImages(f.getAbsolutePath());
     }
 
     /**
@@ -270,6 +270,9 @@ public class ImageGalleryFileAdapter extends ImageGalleryBaseAdapter
             if (metadata != null)
                 FileSystemUtils.deleteFile(f);
             FileSystemUtils.deleteFile(f);
+            URIContentHandler h = URIContentManager.getInstance().getHandler(f);
+            if (h != null)
+                h.deleteContent();
         }
     }
 

@@ -25,7 +25,7 @@ public final class Pix4dGeoreferencer implements Georeferencer {
     public boolean locate(ModelInfo model) {
         try {
             File f = new File(model.uri);
-            if(model.uri.endsWith(".zip") || model.uri.contains(".zip")) {
+            if(FileSystemUtils.isZipPath(model.uri)) {
                 try {
                     f = new ZipVirtualFile(model.uri);
                 } catch(IllegalArgumentException ignored) {}

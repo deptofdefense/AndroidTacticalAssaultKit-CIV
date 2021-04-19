@@ -472,8 +472,16 @@ public class ZipVirtualFile extends File {
 
     /**************************************************************************/
 
+    private static String sanitize(String path) {
+        // Remove file:// or zip:// from the path in case a URI is passed in
+        int scheme = path.indexOf("://");
+        if (scheme != -1)
+            path = path.substring(scheme + 3);
+        return path;
+    }
+
     private static File getZipFile(String f) {
-        return getZipFile(new File(f));
+        return getZipFile(new File(sanitize(f)));
     }
 
     private static File getZipFile(File f) {
@@ -501,7 +509,7 @@ public class ZipVirtualFile extends File {
     }
 
     private static String getZipEntryPath(String f) {
-        return getZipEntryPath(new File(f));
+        return getZipEntryPath(new File(sanitize(f)));
     }
 
     private static String getZipEntryPath(File f) {

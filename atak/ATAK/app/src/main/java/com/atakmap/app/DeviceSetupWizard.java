@@ -186,6 +186,8 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
             final boolean enrollForCertificateWithTrust = !properties
                     .getProperty("enrollForCertificateWithTrust", "0")
                     .equals("0");
+            final Long expiration = Long.parseLong(
+                    properties.getProperty(TAKServer.EXPIRATION_KEY, "-1"));
 
             if (!isEnabled) {
                 continue;
@@ -252,7 +254,7 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
                                         MapView.getMapView()
                                                 .getContext(),
                                         desc, connectString,
-                                        cacheCreds, null, true);
+                                        cacheCreds, expiration, null, true);
                     }
                 });
 
@@ -278,7 +280,7 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
 
                     CredentialsDialog.createCredentialDialog(desc,
                             connectString, usernameString,
-                            passwordString, cacheCreds, _context, this); //display if credentials are missing
+                            passwordString, cacheCreds, expiration, _context, this); //display if credentials are missing
                 }
             }
         }
@@ -312,7 +314,7 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
     public void onCredentialsEntered(final String connectString,
             String cacheCreds,
             String description,
-            String username, String password) {
+            String username, String password, final Long expiration) {
 
         final int connectionIndex = findConnectionIndex(connectString);
         if (connectionIndex == -1) {
@@ -341,7 +343,7 @@ class DeviceSetupWizard implements CredentialsDialog.Callback {
                                     MapView.getMapView()
                                             .getContext(),
                                     finalDescription, connectString,
-                                    finalCacheCreds, null, true);
+                                    finalCacheCreds, expiration, null, true);
                 }
             });
         }

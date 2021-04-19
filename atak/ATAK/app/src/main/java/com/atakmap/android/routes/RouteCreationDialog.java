@@ -202,19 +202,13 @@ public class RouteCreationDialog extends BroadcastReceiver implements
      * Load the recently used lookups.
      */
     private void loadRecentlyUsed() {
-        BufferedReader reader = null;
-        InputStream is = null;
         String line;
         RECENT_ADDRESSES.clear();
 
 
         if (IOProviderFactory.exists(recentlyUsed)) {
-            try {
-                reader = new BufferedReader(
-                        new InputStreamReader(is =
-                                IOProviderFactory.getInputStream(recentlyUsed),
-                                FileSystemUtils.UTF8_CHARSET));
-
+            try(InputStream is = IOProviderFactory.getInputStream(recentlyUsed);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is, FileSystemUtils.UTF8_CHARSET)) ) {
                 while ((line = reader.readLine()) != null) {
                     String[] info = line.split("\t");
                     RECENT_ADDRESSES.add(new Pair<>(info[0],
@@ -225,15 +219,6 @@ public class RouteCreationDialog extends BroadcastReceiver implements
                 Log.e(TAG,
                         "Unable to load recently used lookups due to an error",
                         e);
-            } finally {
-                try {
-                    if (reader != null)
-                        reader.close();
-                } catch (Exception ignored) { }
-                try {
-                    if (is != null)
-                        is.close();
-                } catch (Exception ignored) { }
             }
         }
     }
@@ -244,10 +229,8 @@ public class RouteCreationDialog extends BroadcastReceiver implements
             RECENT_ADDRESSES.remove(RECENT_ADDRESSES.size() - 1);
         }
 
-        BufferedWriter bufferedWriter = null;
-        try {
-            bufferedWriter = new BufferedWriter(
-                    IOProviderFactory.getFileWriter(recentlyUsed));
+        try (BufferedWriter bufferedWriter = new BufferedWriter(
+                IOProviderFactory.getFileWriter(recentlyUsed))) {
 
             for (Pair<String, GeoPointMetaData> item : RECENT_ADDRESSES) {
                 bufferedWriter.write(item.first + "\t" + item.second + "\n");
@@ -256,14 +239,8 @@ public class RouteCreationDialog extends BroadcastReceiver implements
             Log.e(TAG,
                     "Unable to save recently used addresses due to an exception: ",
                     e);
-        } finally {
-            try {
-                if (bufferedWriter != null)
-                    bufferedWriter.close();
-            } catch (Exception e) {
-                // Ignored
-            }
         }
+        // Ignored
     }
 
     /** DEPRECIATED: This is the old API. Use the version with 5 arguments (which is actually static) */

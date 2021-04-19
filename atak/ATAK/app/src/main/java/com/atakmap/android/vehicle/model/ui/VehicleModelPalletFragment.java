@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -222,6 +223,7 @@ public class VehicleModelPalletFragment extends Fragment implements
         VehicleModel vehicle = new VehicleModel(info, gp, uid);
         vehicle.setTitle(name);
         vehicle.setMetaString("entry", "user");
+        vehicle.updateOffscreenInterest();
         vehicle.setStrokeColor(getColor());
         if (_outlineCB.isChecked()) {
             vehicle.setShowOutline(true);

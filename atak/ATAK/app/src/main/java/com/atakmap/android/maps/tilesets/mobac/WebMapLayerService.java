@@ -3,6 +3,7 @@ package com.atakmap.android.maps.tilesets.mobac;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.List;
@@ -56,9 +57,9 @@ public class WebMapLayerService implements Service {
         File f = null;
         try {
             f = impl.writeMobacXML(style);
-            FileSystemUtils.copyStream(IOProviderFactory.getInputStream(f),
-                    true, sink,
-                    false);
+            try (InputStream is = IOProviderFactory.getInputStream(f)) {
+                FileSystemUtils.copyStream(is,true, sink,false);
+            }
         } finally {
             if (f != null)
                 FileSystemUtils.delete(f);

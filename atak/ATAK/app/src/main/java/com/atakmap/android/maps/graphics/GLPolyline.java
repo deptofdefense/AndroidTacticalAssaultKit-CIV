@@ -6,6 +6,7 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.opengl.GLES30;
+import android.util.Pair;
 
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapTextFormat;
@@ -26,6 +27,7 @@ import com.atakmap.lang.Unsafe;
 import com.atakmap.map.MapRenderer;
 import com.atakmap.map.MapRenderer2;
 import com.atakmap.map.layer.feature.Feature.AltitudeMode;
+import com.atakmap.map.layer.feature.geometry.Envelope;
 import com.atakmap.map.layer.feature.geometry.LineString;
 import com.atakmap.map.layer.feature.geometry.Polygon;
 import com.atakmap.map.layer.feature.geometry.opengl.GLBatchLineString;
@@ -36,6 +38,7 @@ import com.atakmap.map.layer.feature.style.BasicStrokeStyle;
 import com.atakmap.map.layer.feature.style.CompositeStyle;
 import com.atakmap.map.layer.feature.style.PatternStrokeStyle;
 import com.atakmap.map.layer.feature.style.Style;
+import com.atakmap.map.opengl.GLAntiMeridianHelper;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLRenderGlobals;
 import com.atakmap.math.MathUtils;
@@ -62,7 +65,6 @@ public class GLPolyline extends GLShape2 implements
     public static final String TAG = "GLPolyline";
 
     private final static double DEFAULT_MIN_RENDER_SCALE = (1.0d / 100000.0d);
-    private static final int PARTITION_SIZE = 25;
 
     private final Polyline _subject;
     private boolean _closed;
@@ -108,14 +110,17 @@ public class GLPolyline extends GLShape2 implements
     protected boolean needsProjectVertices;
 
     // Height extrusion
-    protected DoubleBuffer _3dPointsPreForward;
-    protected FloatBuffer _3dPoints;
-    protected DoubleBuffer _outlinePointsPreForward;
-    protected FloatBuffer _outlinePoints;
-    protected boolean _shouldReextrude;
-    protected double _height = Double.NaN;
-    protected boolean _hasHeight;
-    protected int _heightStyle;
+    private DoubleBuffer _3dPointsPreForward;
+    private FloatBuffer _3dPoints;
+    private DoubleBuffer _outlinePointsPreForward;
+    private FloatBuffer _outlinePoints;
+    private boolean _shouldReextrude;
+    private double _height = Double.NaN;
+    private boolean _hasHeight;
+    private int _heightStyle;
+    private int _extrudeMode;
+    private boolean _extrudeCrossesIDL;
+    private int _extrudePrimaryHemi;
 
     // Hit testing
     protected RectF _screenRect = new RectF();
@@ -154,9 +159,9 @@ public class GLPolyline extends GLShape2 implements
     @Override
     public void startObserving() {
         super.startObserving();
-        this.onPointsChanged(_subject);
-        this.onLabelsChanged(_subject);
-        this.refreshStyle();
+        onPointsChanged(_subject);
+        onLabelsChanged(_subject);
+        refreshStyle();
         _subject.addOnPointsChangedListener(this);
         _subject.addOnBasicLineStyleChangedListener(this);
         _subject.addOnLabelsChangedListener(this);
@@ -305,22 +310,25 @@ public class GLPolyline extends GLShape2 implements
                     composite.toArray(new Style[0]));
         }
 
-        impl.setStyle(s);
+        final Style fs = s;
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                impl.setStyle(fs);
+            }
+        });
     }
 
     @Override
     public void onPointsChanged(Shape polyline) {
         final GeoPoint center = polyline.getCenter().get();
         final GeoPoint[] points = polyline.getPoints();
-        if (context.isRenderThread())
-            this.updatePointsImpl(center, points);
-        else
-            context.queueEvent(new Runnable() {
-                @Override
-                public void run() {
-                    GLPolyline.this.updatePointsImpl(center, points);
-                }
-            });
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                GLPolyline.this.updatePointsImpl(center, points);
+            }
+        });
     }
 
     /**
@@ -340,7 +348,8 @@ public class GLPolyline extends GLShape2 implements
 
         if (points == null)
             points = new GeoPoint[0];
-        _pointsSize = altitudeMode == AltitudeMode.ClampToGround ? 2 : 3;
+        _pointsSize = altitudeMode == AltitudeMode.ClampToGround
+                && !_hasHeight ? 2 : 3;
         centerPoint = center;
         int pLen = points.length * _pointsSize;
         if (_points == null || _points.capacity() < pLen) {
@@ -348,11 +357,8 @@ public class GLPolyline extends GLShape2 implements
             _points = Unsafe.allocateDirect(pLen, DoubleBuffer.class);
         }
 
-        LineString ls = new LineString(3);
+        final LineString ls = new LineString(3);
 
-        MapView mv = MapView.getMapView();
-        boolean wrap180 = mv != null && mv.isContinuousScrollEnabled();
-        bounds.set(points, wrap180);
         _points.clear();
         for (GeoPoint gp : points) {
             _points.put(gp.getLongitude());
@@ -369,11 +375,6 @@ public class GLPolyline extends GLShape2 implements
                             : points[0].getAltitude());
         }
 
-        if (this.impl instanceof GLBatchPolygon)
-            ((GLBatchPolygon) this.impl).setGeometry(new Polygon(ls));
-        else
-            this.impl.setGeometry(ls);
-
         _points.flip();
         this.origPoints = points;
         this.numPoints = points.length;
@@ -383,10 +384,31 @@ public class GLPolyline extends GLShape2 implements
         // force a redraw
         currentDraw = 0;
 
-        this.dispatchOnBoundsChanged();
-        if (_hasHeight) {
+        // Need to update the height extrusion
+        if (_hasHeight)
             _shouldReextrude = true;
-        }
+
+        // Update points and bounds on the GL thread
+        runOnGLThread(new Runnable() {
+            @Override
+            public void run() {
+                if (impl instanceof GLBatchPolygon)
+                    ((GLBatchPolygon) impl).setGeometry(new Polygon(ls));
+                else
+                    impl.setGeometry(ls);
+
+                MapView mv = MapView.getMapView();
+                if (mv != null) {
+                    Envelope env = impl.getBounds(mv.getProjection()
+                            .getSpatialReferenceID());
+                    if (env != null) {
+                        bounds.setWrap180(mv.isContinuousScrollEnabled());
+                        bounds.set(env.minY, env.minX, env.maxY, env.maxX);
+                        dispatchOnBoundsChanged();
+                    }
+                }
+            }
+        });
     }
 
     @Override
@@ -437,6 +459,7 @@ public class GLPolyline extends GLShape2 implements
     private void refreshHeight() {
         final double height = _subject.getHeight();
         final int heightStyle = _subject.getHeightStyle();
+        final int extrudeMode = _subject.getHeightExtrudeMode();
         final boolean hasHeight = !Double.isNaN(height)
                 && Double.compare(height, 0) != 0
                 && heightStyle != Polyline.HEIGHT_STYLE_NONE;
@@ -445,6 +468,7 @@ public class GLPolyline extends GLShape2 implements
             public void run() {
                 setHeightEnabled(hasHeight);
                 _height = height;
+                _extrudeMode = extrudeMode;
                 if (_heightStyle != heightStyle) {
                     _heightStyle = heightStyle;
                     if (_hasHeight)
@@ -481,6 +505,27 @@ public class GLPolyline extends GLShape2 implements
         }
     }
 
+    /**
+     * Get the current extrude mode
+     * @return Current extrude mode
+     */
+    private int getExtrudeMode() {
+        int extrudeMode = _extrudeMode;
+
+        // Extrude mode based on shape properties
+        if (extrudeMode == Polyline.HEIGHT_EXTRUDE_DEFAULT) {
+            // By default closed shapes use "building style" extrusion
+            // where the top/bottom of the polygon is flat
+            // Open shapes use per-point extrusion like a fence or wall
+            if (_closed)
+                extrudeMode = Polyline.HEIGHT_EXTRUDE_CENTER_ALT;
+            else
+                extrudeMode = Polyline.HEIGHT_EXTRUDE_PER_POINT;
+        }
+
+        return extrudeMode;
+    }
+
     @Override
     public void draw(GLMapView ortho, int renderPass) {
         if ((renderPass & this.renderPass) == 0)
@@ -515,25 +560,80 @@ public class GLPolyline extends GLShape2 implements
 
             if (_shouldReextrude) {
                 updatePointsImpl(centerPoint, origPoints);
-                double altitude = ortho.getTerrainMeshElevation(
-                        centerPoint.getLatitude(), centerPoint.getLongitude());
+
+                // Find min/max altitude
+                boolean clampToGround = altitudeMode == AltitudeMode.ClampToGround;
+                double minAlt = Double.MAX_VALUE;
+                double maxAlt = -Double.MAX_VALUE;
+                double[] alts = new double[origPoints.length];
+                for (int i = 0; i < origPoints.length; i++) {
+                    GeoPoint gp = origPoints[i];
+                    double alt = gp.getAltitude();
+                    if (clampToGround || !gp.isAltitudeValid())
+                        alt = ortho.getTerrainMeshElevation(gp.getLatitude(),
+                                gp.getLongitude());
+                    minAlt = Math.min(alt, minAlt);
+                    maxAlt = Math.max(alt, maxAlt);
+                    alts[i] = alt;
+                }
+
+                // Center altitude is meant to be (min + max) / 2 based on
+                // how KMLs render relative height
+                double centerAlt = (maxAlt + minAlt) / 2;
+
+                int extrudeMode = getExtrudeMode();
+                double height = _height;
+                double baseAltitude = minAlt;
+
+                if (extrudeMode == Polyline.HEIGHT_EXTRUDE_MAX_ALT)
+                    baseAltitude = maxAlt;
+                else if (extrudeMode == Polyline.HEIGHT_EXTRUDE_CENTER_ALT)
+                    baseAltitude = centerAlt; // KML style
+
+                // Update point buffer with terrain elevations if we're clamped
+                if (clampToGround) {
+                    int p = 0;
+                    for (double alt : alts) {
+                        _points.put(p + 2, alt);
+                        p += 3;
+                    }
+                }
+
+                // Generate height offsets to create flat top/bottom effect
+                double[] heights;
+                if (extrudeMode != Polyline.HEIGHT_EXTRUDE_PER_POINT) {
+                    heights = new double[alts.length];
+                    for (int i = 0; i < alts.length; i++)
+                        heights[i] = (baseAltitude + height) - alts[i];
+                } else
+                    heights = new double[] { height };
 
                 if (renderPolygon) {
                     _3dPointsPreForward = GLExtrude.extrudeRelative(
-                            altitude, _height, origPoints, _closed);
+                            Double.NaN, _points, 3, _closed, heights);
                     _3dPoints = Unsafe.allocateDirect(
                             _3dPointsPreForward.limit(), FloatBuffer.class);
                     _3dPointsPreForward.rewind();
+
+                    final int idlInfo = GLAntiMeridianHelper.normalizeHemisphere(3, _3dPointsPreForward, _3dPointsPreForward);
+                    _3dPointsPreForward.flip();
+                    _extrudePrimaryHemi = (idlInfo&GLAntiMeridianHelper.MASK_PRIMARY_HEMISPHERE);
+                    _extrudeCrossesIDL = (idlInfo&GLAntiMeridianHelper.MASK_IDL_CROSS) != 0;
                 }
 
                 if (renderOutline) {
                     _outlinePointsPreForward = GLExtrude.extrudeOutline(
-                            altitude, _height, origPoints,
-                            _closed, simpleOutline);
+                            Double.NaN, _points, 3, _closed,
+                            simpleOutline, heights);
                     _outlinePoints = Unsafe.allocateDirect(
                             _outlinePointsPreForward.limit(),
                             FloatBuffer.class);
                     _outlinePointsPreForward.rewind();
+
+                    final int idlInfo = GLAntiMeridianHelper.normalizeHemisphere(3, _outlinePointsPreForward, _outlinePointsPreForward);
+                    _outlinePointsPreForward.flip();
+                    _extrudePrimaryHemi = (idlInfo&GLAntiMeridianHelper.MASK_PRIMARY_HEMISPHERE);
+                    _extrudeCrossesIDL = (idlInfo&GLAntiMeridianHelper.MASK_IDL_CROSS) != 0;
                 }
 
                 _shouldReextrude = false;
@@ -563,7 +663,23 @@ public class GLPolyline extends GLShape2 implements
                 GLES20FixedPipeline.glVertexPointer(3,
                         GLES20FixedPipeline.GL_FLOAT, 0, _3dPoints);
 
-                ortho.forward(_3dPointsPreForward, 3, _3dPoints, 3);
+                final double unwrap = GLAntiMeridianHelper.getUnwrap(ortho, _extrudeCrossesIDL, _extrudePrimaryHemi);
+                if(unwrap == 0d) {
+                    ortho.forward(_3dPointsPreForward, 3, _3dPoints, 3);
+                } else {
+                    _3dPoints.clear();
+                    for(int i = 0; i < _3dPointsPreForward.limit()/3; i++) {
+                        final double lng = _3dPointsPreForward.get(i*3) + unwrap;
+                        final double lat = _3dPointsPreForward.get(i*3+1);
+                        final double alt = _3dPointsPreForward.get(i*3+2);
+                        ortho.scratch.geo.set(lat, lng, alt);
+                        ortho.currentPass.scene.forward(ortho.scratch.geo, ortho.scratch.pointD);
+                        _3dPoints.put((float)ortho.scratch.pointD.x);
+                        _3dPoints.put((float)ortho.scratch.pointD.y);
+                        _3dPoints.put((float)ortho.scratch.pointD.z);
+                    }
+                    _3dPoints.flip();
+                }
                 int pCount = _3dPoints.limit() / 3;
 
                 // Simple order independent transparency, only apply when needed
@@ -593,7 +709,23 @@ public class GLPolyline extends GLShape2 implements
 
             // Outline around height polygon (only when map is tilted)
             if (renderOutline && ortho.drawTilt > 0) {
-                ortho.forward(_outlinePointsPreForward, 3, _outlinePoints, 3);
+                final double unwrap = GLAntiMeridianHelper.getUnwrap(ortho, _extrudeCrossesIDL, _extrudePrimaryHemi);
+                if(unwrap == 0d) {
+                    ortho.forward(_outlinePointsPreForward, 3, _outlinePoints, 3);
+                } else {
+                    _outlinePoints.clear();
+                    for(int i = 0; i < _outlinePointsPreForward.limit()/3; i++) {
+                        final double lng = _outlinePointsPreForward.get(i*3) + unwrap;
+                        final double lat = _outlinePointsPreForward.get(i*3+1);
+                        final double alt = _outlinePointsPreForward.get(i*3+2);
+                        ortho.scratch.geo.set(lat, lng, alt);
+                        ortho.currentPass.scene.forward(ortho.scratch.geo, ortho.scratch.pointD);
+                        _outlinePoints.put((float)ortho.scratch.pointD.x);
+                        _outlinePoints.put((float)ortho.scratch.pointD.y);
+                        _outlinePoints.put((float)ortho.scratch.pointD.z);
+                    }
+                    _outlinePoints.flip();
+                }
                 GLES20FixedPipeline.glLineWidth(this.strokeWeight);
                 GLES20FixedPipeline.glVertexPointer(3, GLES30.GL_FLOAT, 0,
                         _outlinePoints);
@@ -1297,7 +1429,7 @@ public class GLPolyline extends GLShape2 implements
                         Math.max(partition.bottom, y));
             }
 
-            if (partIdx == PARTITION_SIZE || i == maxIdx - _verts2Size) {
+            if (partIdx == Polyline.PARTITION_SIZE || i == maxIdx - _verts2Size) {
                 if (partCount >= _partitionRects.size())
                     _partitionRects.add(partition);
                 partition.endIndex = idx;

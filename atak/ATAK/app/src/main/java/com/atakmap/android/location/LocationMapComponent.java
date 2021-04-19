@@ -3,6 +3,7 @@ package com.atakmap.android.location;
 
 import android.annotation.SuppressLint;
 import android.app.Service;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -1128,10 +1129,14 @@ public class LocationMapComponent extends AbstractMapComponent implements
 
                                             @Override
                                             public void postHint() {
-                                                final Intent intent = new Intent(
-                                                        Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                                                _mapView.getContext()
-                                                        .startActivity(intent);
+                                                try {
+                                                    final Intent intent = new Intent(
+                                                            Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                                                    _mapView.getContext()
+                                                            .startActivity(intent);
+                                                } catch (ActivityNotFoundException ane) {
+                                                    Log.d(TAG, "no Settings.ACTION_LOCATION_SOURCE_SETTINGS activity found on this device");
+                                                }
                                             }
                                         }, false);
                     }

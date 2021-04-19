@@ -54,20 +54,10 @@ public class ImportCotSort extends ImportResolver {
             return false;
 
         // it is a .cot, now lets see if it contains reasonable CoT
-        FileInputStream fis = null;
-        try {
-            return isCoT(fis = IOProviderFactory.getInputStream(file),
-                    _charBuffer);
+        try(FileInputStream fis = IOProviderFactory.getInputStream(file)) {
+            return isCoT(fis, _charBuffer);
         } catch (IOException e) {
             Log.e(TAG, "Error checking if CoT: " + file.getAbsolutePath(), e);
-        } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException ignore) {
-                    Log.e(TAG, "error closing stream");
-                }
-            }
         }
 
         return false;
@@ -124,22 +114,13 @@ public class ImportCotSort extends ImportResolver {
     @Override
     public boolean beginImport(final File file, final Set<SortFlags> flags) {
         String event = null;
-        FileInputStream fis = null;
-        try {
-            event = FileSystemUtils.copyStreamToString(
-                    fis = IOProviderFactory.getInputStream(file), true,
+        try(FileInputStream fis = IOProviderFactory.getInputStream(file)) {
+            event = FileSystemUtils.copyStreamToString(fis, true,
                     FileSystemUtils.UTF8_CHARSET, _charBuffer);
         } catch (Exception e) {
             Log.e(TAG, "Failed to load CoT Event: " + file.getAbsolutePath(),
                     e);
             return false;
-        } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (Exception ignore) {
-                }
-            }
         }
 
         if (FileSystemUtils.isEmpty(event)) {

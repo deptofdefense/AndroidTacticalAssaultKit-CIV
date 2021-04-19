@@ -47,18 +47,18 @@ namespace takenginetests {
 			VisitorInfo* visitInfo = static_cast<VisitorInfo*>(opaque);
 			visitorSimpleCommon(visitInfo, tileset, tile);
 			EXPECT_TRUE(tile->boundingVolume.type == C3DTVolume::Box);
-			EXPECT_EQ(tile->boundingVolume.object.box.centerX, 0.0);
-			EXPECT_EQ(tile->boundingVolume.object.box.centerY, 1.0);
-			EXPECT_EQ(tile->boundingVolume.object.box.centerZ, 2.0);
-			EXPECT_EQ(tile->boundingVolume.object.box.xDirHalfLen[0], 3.0);
-			EXPECT_EQ(tile->boundingVolume.object.box.xDirHalfLen[1], 4.0);
-			EXPECT_EQ(tile->boundingVolume.object.box.xDirHalfLen[2], 5.0);
-			EXPECT_EQ(tile->boundingVolume.object.box.yDirHalfLen[0], 6.0);
-			EXPECT_EQ(tile->boundingVolume.object.box.yDirHalfLen[1], 7.0);
-			EXPECT_EQ(tile->boundingVolume.object.box.yDirHalfLen[2], 8.0);
-			EXPECT_EQ(tile->boundingVolume.object.box.zDirHalfLen[0], 9.0);
-			EXPECT_EQ(tile->boundingVolume.object.box.zDirHalfLen[1], 10.0);
-			EXPECT_EQ(tile->boundingVolume.object.box.zDirHalfLen[2], 11.0);
+			EXPECT_EQ(tile->boundingVolume.object.box.center.x, 0.0);
+			EXPECT_EQ(tile->boundingVolume.object.box.center.y, 1.0);
+			EXPECT_EQ(tile->boundingVolume.object.box.center.z, 2.0);
+			EXPECT_EQ(tile->boundingVolume.object.box.xDirHalfLen.x, 3.0);
+			EXPECT_EQ(tile->boundingVolume.object.box.xDirHalfLen.y, 4.0);
+			EXPECT_EQ(tile->boundingVolume.object.box.xDirHalfLen.z, 5.0);
+			EXPECT_EQ(tile->boundingVolume.object.box.yDirHalfLen.x, 6.0);
+			EXPECT_EQ(tile->boundingVolume.object.box.yDirHalfLen.y, 7.0);
+			EXPECT_EQ(tile->boundingVolume.object.box.yDirHalfLen.z, 8.0);
+			EXPECT_EQ(tile->boundingVolume.object.box.zDirHalfLen.x, 9.0);
+			EXPECT_EQ(tile->boundingVolume.object.box.zDirHalfLen.y, 10.0);
+			EXPECT_EQ(tile->boundingVolume.object.box.zDirHalfLen.z, 11.0);
 			return TE_Ok;
 		}
 
@@ -66,9 +66,9 @@ namespace takenginetests {
 			VisitorInfo* visitInfo = static_cast<VisitorInfo*>(opaque);
 			visitorSimpleCommon(visitInfo, tileset, tile);
 			EXPECT_TRUE(tile->boundingVolume.type == C3DTVolume::Sphere);
-			EXPECT_EQ(tile->boundingVolume.object.sphere.centerX, 0.0);
-			EXPECT_EQ(tile->boundingVolume.object.sphere.centerY, 1.0);
-			EXPECT_EQ(tile->boundingVolume.object.sphere.centerZ, 2.0);
+			EXPECT_EQ(tile->boundingVolume.object.sphere.center.x, 0.0);
+			EXPECT_EQ(tile->boundingVolume.object.sphere.center.y, 1.0);
+			EXPECT_EQ(tile->boundingVolume.object.sphere.center.z, 2.0);
 			EXPECT_EQ(tile->boundingVolume.object.sphere.radius, 3.0);
 			return TE_Ok;
 		}

@@ -195,6 +195,7 @@ set (takengine_COMMON_SRCS
     ${SRCDIR}/renderer/GLDepthSampler.cpp
     ${SRCDIR}/renderer/GLES20FixedPipeline.cpp
     ${SRCDIR}/renderer/GLMatrix.cpp
+    ${SRCDIR}/renderer/GLMegaTexture.cpp
     ${SRCDIR}/renderer/GLOffscreenFramebuffer.cpp
     ${SRCDIR}/renderer/GLRenderBatch.cpp
     ${SRCDIR}/renderer/GLRenderBatch2.cpp
@@ -221,6 +222,7 @@ set (takengine_COMMON_SRCS
     ${SRCDIR}/renderer/core/GLMapRenderable2.cpp
     ${SRCDIR}/renderer/core/GLMapView2.cpp
     ${SRCDIR}/renderer/elevation/ElMgrTerrainRenderService.cpp
+    ${SRCDIR}/renderer/elevation/GLTerrainTile.cpp
     ${SRCDIR}/renderer/elevation/TerrainRenderService.cpp
 
     # Thread

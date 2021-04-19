@@ -11,7 +11,7 @@
             android:id="@+id/driving_walking_option"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1" 
+            android:layout_weight="1"
             android:entries="@array/route_travel_type" />
 
         <com.atakmap.android.gui.ThemedSpinner
@@ -22,7 +22,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1" 
             android:entries="@array/route_direction" />
-        
+
         <com.atakmap.android.gui.ThemedSpinner
             android:textColor="@color/white"
             android:padding="@dimen/scroll_margin" style="@style/darkButton"

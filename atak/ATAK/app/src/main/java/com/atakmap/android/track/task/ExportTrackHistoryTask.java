@@ -47,6 +47,7 @@ import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.spatial.kml.KMLUtil;
+import com.atakmap.util.zip.IoUtils;
 import com.ekito.simpleKML.model.Document;
 import com.ekito.simpleKML.model.Feature;
 import com.ekito.simpleKML.model.Folder;
@@ -66,8 +67,7 @@ import com.ekito.simpleKML.model.Track;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.Writer;
-import java.io.OutputStreamWriter;
+import java.io.OutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -457,12 +457,9 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
 
         File kml = new File(kmlFile);
         File kmz = new File(kml.getParentFile(), name + ".kmz");
-        ZipOutputStream zos = null;
-        FileOutputStream fos = null;
-        try {
-
-            fos = IOProviderFactory.getOutputStream(kmz);
-            zos = new ZipOutputStream(new BufferedOutputStream(fos));
+        try(FileOutputStream fos = IOProviderFactory.getOutputStream(kmz);
+            BufferedOutputStream bfos = new BufferedOutputStream(fos);
+            ZipOutputStream zos = new ZipOutputStream(bfos)) {
 
             //and doc.kml
             FileSystemUtils.addFile(zos, kml, "doc.kml");
@@ -474,19 +471,6 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
         } catch (Exception e) {
             Log.e(TAG, "Failed to create KMZ file", e);
             return null;
-        } finally {
-            if (zos != null) {
-                try {
-                    zos.close();
-                } catch (Exception e) {
-                    Log.w(TAG, "Failed to close KMZ: " + kmz.getAbsolutePath());
-                }
-            }
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (Exception ignored) { }
-            }
         }
     }
 
@@ -507,11 +491,9 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
         File kml = new File(kmlFile);
         File kmz = new File(kml.getParentFile(), name + ".kmz");
         ZipOutputStream zos = null;
-        FileOutputStream fos = null;
-        try {
-
-            fos = IOProviderFactory.getOutputStream(kmz);
-            zos = new ZipOutputStream(new BufferedOutputStream(fos));
+        try(OutputStream fos = IOProviderFactory.getOutputStream(kmz);
+            BufferedOutputStream bfos = new BufferedOutputStream(fos)) {
+            zos = new ZipOutputStream(bfos);
 
             //and doc.kml
             FileSystemUtils.addFile(zos, kml, "doc.kml");
@@ -524,19 +506,7 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
             Log.e(TAG, "Failed to create KMZ file", e);
             return null;
         } finally {
-            if (zos != null) {
-                try {
-                    zos.close();
-                } catch (Exception e) {
-                    Log.w(TAG, "Failed to close KMZ: " + kmz.getAbsolutePath());
-                }
-            }
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (Exception ignored) { }
-            }
-
+            IoUtils.close(zos, TAG, "Failed to close KMZ: " + kmz.getAbsolutePath());
         }
     }
 
@@ -1038,14 +1008,12 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
             exportPath += ".csv";
         File exportFile = new File(exportPath);
 
-        Writer fileWriter = null;
-        try {
-            fileWriter = new OutputStreamWriter(
-                    IOProviderFactory.getOutputStream(exportFile),
-                    FileSystemUtils.UTF8_CHARSET);
+        try(OutputStream os = IOProviderFactory.getOutputStream(exportFile)) {
 
+            StringBuilder sb = new StringBuilder();
+            
             if (bExportHeaders) {
-                fileWriter.append(HEADER + NEW_LINE);
+                sb.append(HEADER + NEW_LINE);
             }
 
             // get points from each track log
@@ -1075,58 +1043,37 @@ public class ExportTrackHistoryTask extends AsyncTask<Void, String, String> {
                     }
 
                     //write out to file
-                    fileWriter.append(currentTrack.getMetaString(
-                            CrumbDatabase.META_TRACK_NODE_UID, "")).append(
-                                    DELIMITER);
-                    fileWriter.append(currentTrack.getMetaString(
-                            CrumbDatabase.META_TRACK_NODE_TITLE, "")).append(
-                                    DELIMITER);
-                    fileWriter.append(String.valueOf(c.timestamp)).append(
-                            DELIMITER);
-                    fileWriter.append(String.valueOf(c.gp.getLatitude()))
-                            .append(
-                                    DELIMITER);
-                    fileWriter.append(String.valueOf(c.gp.getLongitude()))
+                    sb.append(currentTrack.getMetaString(
+                            CrumbDatabase.META_TRACK_NODE_UID, ""))
                             .append(DELIMITER);
-                    fileWriter.append(c.gp.isAltitudeValid()
-                            ? String.valueOf(c.gp.getAltitude())
-                            : "").append(DELIMITER);
-                    fileWriter.append(String.valueOf(c.gp.getCE()))
+                    sb.append(currentTrack.getMetaString(
+                            CrumbDatabase.META_TRACK_NODE_TITLE, ""))
                             .append(DELIMITER);
-                    fileWriter.append(String.valueOf(c.gp.getLE()))
+                    sb.append(c.timestamp).append(DELIMITER);
+                    sb.append(c.gp.getLatitude()).append(DELIMITER);
+                    sb.append(c.gp.getLongitude()).append(DELIMITER);
+                    sb.append(c.gp.isAltitudeValid() ? c.gp.getAltitude() : "")
                             .append(DELIMITER);
-                    fileWriter.append(String.valueOf(c.bearing))
+                    sb.append(c.gp.getCE()).append(DELIMITER);
+                    sb.append(c.gp.getLE()).append(DELIMITER);
+                    sb.append(c.bearing).append(DELIMITER);
+                    sb.append(c.speed).append(DELIMITER);
+                    sb.append(c.gpm.getGeopointSource())
                             .append(DELIMITER);
-                    fileWriter.append(String.valueOf(c.speed))
+                    sb.append(c.gpm.getAltitudeSource())
                             .append(DELIMITER);
-                    fileWriter.append(c.gpm.getGeopointSource())
-                            .append(DELIMITER);
-                    fileWriter.append(c.gpm.getAltitudeSource())
-                            .append(DELIMITER);
-                    fileWriter.append("MakePoint(").append(String.valueOf(
-                            c.gp.getLongitude())).append(", ").append(
-                                    String.valueOf(c.gp.getLatitude()))
+                    sb.append("MakePoint(").append(c.gp.getLongitude())
+                            .append(", ").append(c.gp.getLatitude())
                             .append(", 4326)");
-                    fileWriter.append(NEW_LINE);
+                    sb.append(NEW_LINE);
 
                     lastTimestep = c.timestamp;
                 } //end crumbs loop
             } //end track loop
+
+            os.write(sb.toString().getBytes(FileSystemUtils.UTF8_CHARSET));
         } catch (IOException e) {
             Log.w(TAG, "Error while exporting tracks to CSV", e);
-        } finally {
-            try {
-                if (fileWriter != null)
-                    fileWriter.flush();
-            } catch (IOException e) {
-                Log.w(TAG, "Error while closing CSV", e);
-            }
-            try {
-                if (fileWriter != null)
-                    fileWriter.close();
-            } catch (IOException e) {
-                Log.w(TAG, "Error while closing CSV", e);
-            }
         }
 
         return exportFile.getAbsolutePath();

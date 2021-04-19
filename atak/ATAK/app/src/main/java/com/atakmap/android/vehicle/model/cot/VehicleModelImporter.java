@@ -118,6 +118,10 @@ public class VehicleModelImporter extends MapItemImporter {
         veh.setVisible(extras.getBoolean("visible",
                 veh.getVisible(true)), false);
 
+        // Update offscreen indicator timeout if this is a newly received item
+        if (existing == null && !isStateSaverImport(extras))
+            veh.updateOffscreenInterest();
+
         // Persist to the statesaver if needed
         persist(veh, extras);
 

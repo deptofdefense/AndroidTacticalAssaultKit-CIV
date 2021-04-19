@@ -695,6 +695,7 @@ public class CotService implements OnSharedPreferenceChangeListener,
             boolean useAuth = prefs.getBoolean("useAuth" + i, false);
             boolean enrollForCertificateWithTrust = prefs.getBoolean(
                     "enrollForCertificateWithTrust" + i, false);
+            long expiration = prefs.getLong(TAKServer.EXPIRATION_KEY + i, -1);
 
             Bundle input = new Bundle();
             input.putString("description", desc);
@@ -704,6 +705,7 @@ public class CotService implements OnSharedPreferenceChangeListener,
             input.putBoolean("useAuth", useAuth);
             input.putBoolean("enrollForCertificateWithTrust",
                     enrollForCertificateWithTrust);
+            input.putLong(TAKServer.EXPIRATION_KEY, expiration);
 
             NetConnectString ncs = NetConnectString
                     .fromString(connectString);
@@ -887,6 +889,9 @@ public class CotService implements OnSharedPreferenceChangeListener,
             props.setProperty("compress",
                     data.getBoolean("compress", false) ? "1" : "0");
 
+            props.setProperty(TAKServer.EXPIRATION_KEY,
+                    Long.toString(data.getLong(TAKServer.EXPIRATION_KEY, -1)));
+
             boolean useAuth = data.getBoolean("useAuth", false);
             props.setProperty("useAuth", useAuth ? "1" : "0");
 
@@ -915,7 +920,7 @@ public class CotService implements OnSharedPreferenceChangeListener,
                         ncs.getHost(),
                         (cacheUsername == null) ? "" : cacheUsername,
                         (cachePassword == null) ? "" : cachePassword,
-                        true);
+                        data.getLong(TAKServer.EXPIRATION_KEY, -1));
 
                 AtakBroadcast
                         .getInstance()

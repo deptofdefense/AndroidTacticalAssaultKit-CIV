@@ -1,7 +1,7 @@
 <PersistedActionMenu baseline="true" hideable="true" iconPath="ic_resection_compass"  title="actionbar_resection">
    <ClickData actionType="click">
       <broadcast>
-         <action>com.atakmap.andrdoid.resection.RESECTION_WORFLOW</action>
+         <action>com.atakmap.android.resection.RESECTION_WORKFLOW</action>
          <extras/>
       </broadcast>
    </ClickData>

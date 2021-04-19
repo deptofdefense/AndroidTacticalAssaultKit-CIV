@@ -2,6 +2,7 @@
 
 #ifdef _MSC_VER
 
+#include <codecvt>
 #include <Windows.h>
 #include <ObjIdl.h>
 
@@ -60,9 +61,9 @@ namespace
         static const unsigned char COMMON_CHAR_END = 254;
 
         char_metrics_t common_char_metrics_[COMMON_CHAR_END - COMMON_CHAR_START + 1];
-        std::map<char, char_metrics_t> char_metrics_;
+        std::map<unsigned int, char_metrics_t> char_metrics_;
 
-        static char_metrics_t MeasureDisplayStringBounds(const char *text, std::size_t index, std::size_t length, Gdiplus::Font &font);
+        static char_metrics_t MeasureDisplayStringBounds(const wchar_t *text, std::size_t index, std::size_t length, Gdiplus::Font &font);
 
         float char_height_;
         int font_size_;
@@ -82,10 +83,12 @@ namespace
 
         TAKErr loadGlyph(BitmapPtr &value, const unsigned int c) NOTHROWS override;
     private:
-        void getCharMetrics(char_metrics_t *metrics, const char c);
+        void getCharMetrics(char_metrics_t *metrics, const unsigned int c);
     private:
         int designUnitsToPixels(float value);
     };
+
+    std::wstring getWideString(unsigned int c);
 
     float computeDescent(Gdiplus::Font &font, Gdiplus::FontStyle style);
 
@@ -190,7 +193,7 @@ TAKErr TAK::Engine::Renderer::TextFormat2_createTextFormat(TAK::Engine::Renderer
 
 namespace
 {
-    CLITextFormat2::char_metrics_t CLITextFormat2::MeasureDisplayStringBounds(const char *text, std::size_t index, std::size_t length, Gdiplus::Font &font)
+    CLITextFormat2::char_metrics_t CLITextFormat2::MeasureDisplayStringBounds(const wchar_t *text, std::size_t index, std::size_t length, Gdiplus::Font &font)
     {
         Gdiplus::Bitmap bitmap(1, 1, PixelFormat32bppARGB);
         std::unique_ptr<Gdiplus::Graphics> graphics(Gdiplus::Graphics::FromImage(&bitmap));
@@ -204,12 +207,8 @@ namespace
 
         format.SetMeasurableCharacterRanges(1u, &ranges);
 
-        array_ptr<wchar_t> wtext(new wchar_t[strlen(text) + 1]);
-        mbstowcs(wtext.get(), text, index + length);
-        wtext[index + length] = '\0';
-
         Gdiplus::Region region;
-        graphics->MeasureCharacterRanges(wtext.get(), 1, &font, rect, &format, 1, &region);
+        graphics->MeasureCharacterRanges(text, 1, &font, rect, &format, 1, &region);
         region.GetBounds(&rect, graphics.get());
 
         char_metrics_t retval;
@@ -228,9 +227,9 @@ namespace
         font_size_(static_cast<int>(font_->GetSize())),
         descent_(computeDescent(*font_, Gdiplus::FontStyleRegular))
     {
-        for (unsigned char c = COMMON_CHAR_START; c <= COMMON_CHAR_END; ++c) {
-            char str[2];
-            str[0] = c;
+        for (unsigned int c = COMMON_CHAR_START; c <= COMMON_CHAR_END; ++c) {
+            wchar_t str[2];
+            str[0] = (char)c;
             str[1] = '\0';
             common_char_metrics_[c - COMMON_CHAR_START] = MeasureDisplayStringBounds(str, 0, 1, *font_);
         }
@@ -241,20 +240,23 @@ namespace
         float maxWidth = 0;
         float curWidth = 0;
 
-        while (*text) {
-            if (*text == '\r') {
-                text++;
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
+        std::wstring wstr = convert.from_bytes(text);
+        const wchar_t *wtext = wstr.c_str();
+
+        while (*wtext) {
+            if (*wtext == '\r') {
+                wtext++;
                 continue;
             }
-            if (*text == '\n') {
+            if (*wtext == '\n') {
                 if (curWidth > maxWidth)
                     maxWidth = curWidth;
                 curWidth = 0;
+            } else {
+                curWidth += getCharWidth((unsigned)wtext[0]);
             }
-            else {
-                curWidth += getCharWidth(*text);
-            }
-            text++;
+            wtext++;
         }
         if (curWidth > maxWidth)
             maxWidth = curWidth;
@@ -265,7 +267,7 @@ namespace
     {
         if (!char_height_) {
             Lock lock(mutex_);
-            char_metrics_t retval = MeasureDisplayStringBounds(" \tabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ~`()-_=+[]{}:;\"\'<>,./?", 0, 1, *font_);
+            char_metrics_t retval = MeasureDisplayStringBounds(L" \tabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ~`()-_=+[]{}:;\"\'<>,./?", 0, 1, *font_);
             char_height_ = retval.height;
         }
         return char_height_;
@@ -278,22 +280,19 @@ namespace
         return metrics.width;
     }
 
-    void CLITextFormat2::getCharMetrics(char_metrics_t *metrics, const char c)
+    void CLITextFormat2::getCharMetrics(char_metrics_t *metrics, const unsigned int c)
     {
-        if (c >= COMMON_CHAR_START || c <= COMMON_CHAR_END) {
+        if (c >= COMMON_CHAR_START && c <= COMMON_CHAR_END) {
             *metrics = common_char_metrics_[c - COMMON_CHAR_START];
         }
         else {
-            std::map<char, char_metrics_t>::iterator entry;
-            entry = char_metrics_.find(c);
+            auto entry = char_metrics_.find(c);
             if (entry != char_metrics_.end()) {
                 *metrics = entry->second;
             } else {
                 Lock lock(mutex_);
-                char str[2];
-                str[0] = c;
-                str[1] = '\0';
-                char_metrics_t retval = MeasureDisplayStringBounds(str, 0, 1, *font_);
+                std::wstring wstr = getWideString(c);
+                char_metrics_t retval = MeasureDisplayStringBounds(wstr.c_str(), 0, 1, *font_);
                 char_metrics_[c] = retval;
                 *metrics = retval;
             }
@@ -302,7 +301,7 @@ namespace
 
     float CLITextFormat2::getCharPositionWidth(const char *text, int position) NOTHROWS
     {
-        return getCharWidth(text[position]);
+        return getCharWidth((unsigned)(text[position]&0xFF));
     }
 
     float CLITextFormat2::getDescent() NOTHROWS
@@ -336,9 +335,8 @@ namespace
             char_metrics_t metrics;
             getCharMetrics(&metrics, c);
 
-            int charWidth = static_cast<int>(std::max(metrics.width, 1.0f));
-            int charHeight = static_cast<int>(std::max(getCharHeight(), 1.0f));
-
+            int charWidth = std::max(static_cast<int>(metrics.width), 1);
+            int charHeight = std::max(static_cast<int>(getCharHeight()), 1);
             sbmap.reset(new Gdiplus::Bitmap(
                 charWidth,
                 charHeight,
@@ -360,19 +358,17 @@ namespace
 
             Gdiplus::GraphicsPath p;
             // since our string is only a single character and source is not multi-byte, shouldn't need to run mbtowcs
-            wchar_t str[2];
-            str[0] = (unsigned char)c;
-            str[1] = '\0';
+            std::wstring wstr = getWideString(c);
             Gdiplus::FontFamily family;
             font_->GetFamily(&family);
             p.AddString(
-                str,             // text to draw
+                wstr.c_str(),       // text to draw
                 1,
-                &family,  // or any other font family
-                font_->GetStyle(),      // font style (bold, italic, etc.)
-                size,       // em size
-                loc,              // location where to draw text
-                &format);          // set options here (e.g. center alignment)
+                &family,            // or any other font family
+                font_->GetStyle(),  // font style (bold, italic, etc.)
+                size,               // em size
+                loc,                // location where to draw text
+                &format);           // set options here (e.g. center alignment)
 
             Gdiplus::Pen outlinePen(Gdiplus::Color::Black);
             outlinePen.SetWidth(3);
@@ -389,7 +385,45 @@ namespace
             return TE_Err;
         }
 
+        // ensure that the bitmap is valid
+        if (sbmap->GetLastStatus() != Gdiplus::Status::Ok)
+            return TE_Err;
+
         return BitmapAdapter_adapt(value, *sbmap);
+    }
+
+    std::wstring getWideString(unsigned int c) {
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
+        char buf[5u];
+        std::wstring wstring;
+        if (c < 0xFF) {
+            // 7 bits, emit
+            wstring += (unsigned char)c;
+            wstring += L'\0';
+        } else if (c < 0x800) {
+            // 11 bits
+            buf[0] = 0xC0 | ((c >> 6) & 0x1F);
+            buf[1] = 0x80 | (c & 0x3F);
+            buf[2] = '\0';
+            wstring = convert.from_bytes(buf);
+        } else if (c < 0x10000) {
+            // 16 bits
+            buf[0] = 0xE0 | ((c >> 12) & 0x0F);
+            buf[1] = 0x80 | ((c >> 6) & 0x3F);
+            buf[2] = 0x80 | (c & 0x3F);
+            buf[3] = '\0';
+            wstring = convert.from_bytes(buf);
+        } else {
+            // truncated to 21 bits
+            buf[0] = 0xF0 | ((c >> 18) & 0x07);
+            buf[1] = 0x80 | ((c >> 12) & 0x3F);
+            buf[2] = 0x80 | ((c >> 6) & 0x3F);
+            buf[3] = 0x80 | (c & 0x3F);
+            buf[4] = '\0';
+            wstring = convert.from_bytes(buf);
+        }
+
+        return wstring;
     }
 
     float computeDescent(Gdiplus::Font &font, Gdiplus::FontStyle style)

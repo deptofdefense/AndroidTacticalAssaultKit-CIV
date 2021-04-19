@@ -13,10 +13,10 @@ namespace QuantizedMesh {
         bool is32bit;
 
         std::unique_ptr<Util::FileInput2> buffer;
-        std::unique_ptr<Util::DynamicOutput> indexBuffer;
+        // std::unique_ptr<Util::DynamicOutput> indexBuffer;
 
-        int *indexArray32;
-        short *indexArray16;
+        unsigned int *indexArray32;
+        unsigned short *indexArray16;
 
         Indices()
             : length(0),
@@ -30,16 +30,8 @@ namespace QuantizedMesh {
         Indices(int length, bool is32bit, bool compressed, Util::FileInput2 *buffer) {
             this->length = length;
             this->is32bit = is32bit;
-            this->indexBuffer = std::make_unique<Util::DynamicOutput>();
-            this->indexArray32 = new int[length];
-            this->indexArray16 = new short[length];
-
-            if(is32bit) {
-                indexBuffer->open(length*4);
-            }
-            else {
-                indexBuffer->open(length*2);
-            }
+            this->indexArray32 = new unsigned int[length];
+            this->indexArray16 = new unsigned short[length];
 
             if(compressed) {
                 int highest = 0;
@@ -52,18 +44,20 @@ namespace QuantizedMesh {
                         if(code == 0)
                             ++highest;
                         
-                        indexBuffer->writeInt(index);
-                        indexArray32[i] = index;
+                        // indexBuffer->writeInt(index);
+                        indexArray32[i] = static_cast<unsigned>(index);
                     }
                     else {
                         short code;
                         buffer->readShort(&code);
-                        int index = highest - code;
-                        if(code == 0) 
+                        unsigned short codes = static_cast<unsigned>(code);
+                        short index = highest - codes;
+                        if(codes == 0) 
                             ++highest;
 
-                        indexBuffer->writeShort(index);
-                        indexArray16[i] = index;
+                        // indexBuffer->writeShort(index);
+                        unsigned short t = static_cast<unsigned>(index);
+                        indexArray16[i] = t;
                     }
                 }
             }
@@ -73,14 +67,14 @@ namespace QuantizedMesh {
                     if(is32bit) {
                         int value;
                         buffer->readInt(&value);
-                        indexBuffer->writeInt(value);
-                        indexArray32[i] = value;
+                        // indexBuffer->writeInt(value);
+                        indexArray32[i] = static_cast<unsigned>(value);
                     }
                     else {
                         short value;
                         buffer->readShort(&value);
-                        indexBuffer->writeShort(value);
-                        indexArray16[i] = value;
+                        // indexBuffer->writeShort(value);
+                        indexArray16[i] = static_cast<unsigned>(value);
                     }
                 }
             }

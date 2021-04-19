@@ -15,7 +15,9 @@ import org.json.JSONTokener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
@@ -119,31 +121,31 @@ public class RouteAroundRegionManager {
             return;
         }
         // Read a string from the file
-        BufferedReader reader = new BufferedReader(
-                IOProviderFactory.getFileReader(new File(f.getAbsolutePath())));
-        StringBuilder stringBuilder = new StringBuilder();
-        char[] buffer = new char[10];
-        while (reader.read(buffer) != -1) {
-            stringBuilder.append(new String(buffer));
-            buffer = new char[10];
+        try(Reader r = IOProviderFactory.getFileReader(new File(f.getAbsolutePath()));
+            BufferedReader reader = new BufferedReader(r)) {
+            StringBuilder stringBuilder = new StringBuilder();
+            char[] buffer = new char[10];
+            while (reader.read(buffer) != -1) {
+                stringBuilder.append(new String(buffer));
+                buffer = new char[10];
+            }
+            String rawDoc = stringBuilder.toString();
+
+            JSONObject doc = (JSONObject) new JSONTokener(rawDoc).nextValue();
+            JSONArray regionUidsArray = doc.getJSONArray("regionUids");
+            boolean routeAroundGeoFences = doc.getBoolean("routeAroundGeoFences");
+
+            ArrayList<String> regionUids = new ArrayList<>();
+
+            for (int i = 0; i < regionUidsArray.length(); i++) {
+                String entry = (String) regionUidsArray.get(i);
+                regionUids.add(entry);
+            }
+            RegionManagerState state = new RegionManagerState(routeAroundGeoFences,
+                    regionUids);
+            restoreManagerFromState(state);
+            _isLoaded = true;
         }
-        reader.close();
-        String rawDoc = stringBuilder.toString();
-
-        JSONObject doc = (JSONObject) new JSONTokener(rawDoc).nextValue();
-        JSONArray regionUidsArray = doc.getJSONArray("regionUids");
-        boolean routeAroundGeoFences = doc.getBoolean("routeAroundGeoFences");
-
-        ArrayList<String> regionUids = new ArrayList<>();
-
-        for (int i = 0; i < regionUidsArray.length(); i++) {
-            String entry = (String) regionUidsArray.get(i);
-            regionUids.add(entry);
-        }
-        RegionManagerState state = new RegionManagerState(routeAroundGeoFences,
-                regionUids);
-        restoreManagerFromState(state);
-        _isLoaded = true;
     }
 
     /** Saves the manager state by serializing it to a file
@@ -168,14 +170,11 @@ public class RouteAroundRegionManager {
         String serializedState = doc.toString();
 
         // Write the serialized state to a string.
-        BufferedWriter out = new BufferedWriter(
-                IOProviderFactory.getFileWriter(new File(f.getAbsolutePath())));
-        try {
+        try (BufferedWriter out = new BufferedWriter(
+                IOProviderFactory.getFileWriter(new File(f.getAbsolutePath())))) {
             out.write(serializedState);
         } catch (IOException e) {
             Log.e(TAG, e.getMessage());
-        } finally {
-            out.close();
         }
     }
 }

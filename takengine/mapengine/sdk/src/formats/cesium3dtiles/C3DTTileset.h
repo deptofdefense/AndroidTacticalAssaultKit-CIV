@@ -4,6 +4,9 @@
 #include "util/Error.h"
 #include "port/String.h"
 #include "util/DataInput2.h"
+#include "math/Point2.h"
+#include "math/Matrix2.h"
+#include "math/AABB.h"
 
 namespace TAK {
     namespace Engine {
@@ -17,32 +20,19 @@ namespace TAK {
         namespace Formats {
             namespace Cesium3DTiles {
 
-                struct ENGINE_API C3DTAsset {
-                    C3DTAsset();
-                    ~C3DTAsset() NOTHROWS;
-
+                struct C3DTAsset {
                     Port::String version;
                     Port::String tilesetVersion;
                 };
 
-                struct ENGINE_API C3DTBox {
-
-                    C3DTBox() NOTHROWS;
-                    ~C3DTBox() NOTHROWS;
-
-                    double centerX;
-                    double centerY;
-                    double centerZ;
-                    double xDirHalfLen[3];
-                    double yDirHalfLen[3];
-                    double zDirHalfLen[3];
+                struct C3DTBox {
+                    TAK::Engine::Math::Point2<double> center;
+                    TAK::Engine::Math::Point2<double> xDirHalfLen;
+                    TAK::Engine::Math::Point2<double> yDirHalfLen;
+                    TAK::Engine::Math::Point2<double> zDirHalfLen;
                 };
 
-                struct ENGINE_API C3DTRegion {
-
-                    C3DTRegion() NOTHROWS;
-                    ~C3DTRegion() NOTHROWS;
-
+                struct C3DTRegion {
                     double west;
                     double south;
                     double east;
@@ -51,38 +41,56 @@ namespace TAK {
                     double maximumHeight;
                 };
 
-                struct ENGINE_API D3DTSphere {
+                /**
+                 * Auxiliary data for faster culling math
+                 */
+                struct C3DTRegionAux {
+                    TAK::Engine::Math::Point2<double> swPos;
+                    TAK::Engine::Math::Point2<double> nePos;
+                    TAK::Engine::Math::Point2<double> southNorm;
+                    TAK::Engine::Math::Point2<double> westNorm;
+                    TAK::Engine::Math::Point2<double> northNorm;
+                    TAK::Engine::Math::Point2<double> eastNorm;
+                    C3DTBox boundingBox;
+                };
 
-                    D3DTSphere() NOTHROWS;
-                    ~D3DTSphere() NOTHROWS;
+                Util::TAKErr C3DTRegion_calcAux(C3DTRegionAux* aux, const C3DTRegion& reg) NOTHROWS;
 
-                    double centerX;
-                    double centerY;
-                    double centerZ;
+                struct C3DTSphere {
+                    TAK::Engine::Math::Point2<double> center;
                     double radius;
                 };
 
-                struct ENGINE_API C3DTVolume {
+                struct C3DTVolume {
 
-                    C3DTVolume() NOTHROWS;
-                    ~C3DTVolume() NOTHROWS;
+                    C3DTVolume()
+                    : type(Undefined) {}
 
                     enum Type {
                         Undefined,
                         Box,
                         Region,
-                        Sphere
+                        Sphere,
+                        RegionAux
                     };
 
                     union VolumeObject {
-                        VolumeObject() NOTHROWS;
-                        ~VolumeObject() NOTHROWS;
+                        VolumeObject() {}
+                        ~VolumeObject() {}
                         C3DTBox box;
                         C3DTRegion region;
-                        D3DTSphere sphere;
+                        C3DTSphere sphere;
+                        struct {
+                            C3DTRegion region;
+                            C3DTRegionAux aux;
+                        } region_aux;
                     } object;
                     Type type;
                 };
+
+                Util::TAKErr C3DTVolume_toRegionAABB(TAK::Engine::Feature::Envelope2* aabb, const C3DTVolume* volume) NOTHROWS;
+                Util::TAKErr C3DTVolume_distanceSquaredToPosition(double* result, const C3DTVolume& vol, const TAK::Engine::Math::Point2<double>& pos) NOTHROWS;
+                Util::TAKErr C3DTVolume_transform(C3DTVolume* result, const C3DTVolume& volume, const Math::Matrix2& transform) NOTHROWS;
 
                 enum class C3DTRefine {
                     Undefined,
@@ -90,18 +98,16 @@ namespace TAK {
                     Replace
                 };
 
-                struct ENGINE_API C3DTContent {
-
-                    C3DTContent();
-                    ~C3DTContent() NOTHROWS;
-
+                struct C3DTContent {
+                    C3DTContent() {}
+                    ~C3DTContent() {}
                     C3DTVolume boundingVolume;
                     Port::String uri;
                 };
 
-                struct ENGINE_API C3DTTile {
+                struct C3DTTile {
+                    
                     C3DTTile();
-                    ~C3DTTile() NOTHROWS;
 
                     const C3DTTile *parent;
                     C3DTVolume boundingVolume;
@@ -109,26 +115,22 @@ namespace TAK {
                     double geometricError;
                     C3DTRefine refine;
                     C3DTContent content;
-                    double transform[16];
+                    Math::Matrix2 transform;
                     size_t childCount;
                     bool hasTransform;
                 };
 
-                struct ENGINE_API C3DTExtras {
-
+                struct C3DTExtras {
                     C3DTExtras() NOTHROWS;
-                    ~C3DTExtras() NOTHROWS;
-
-                    Util::TAKErr getString(Port::String *value, const char *name) const NOTHROWS;
+                    ENGINE_API Util::TAKErr getString(Port::String *value, const char *name) const NOTHROWS;
 
                     struct Impl;
                     Impl *impl;
                 };
 
-                struct ENGINE_API C3DTTileset {
+                struct C3DTTileset {
 
                     C3DTTileset();
-                    ~C3DTTileset() NOTHROWS;
 
                     C3DTAsset asset;
                     C3DTExtras extras;
@@ -160,10 +162,7 @@ namespace TAK {
                     // TODO-- i3dm, pnt
                 };
 
-                /**
-                 * 
-                 */
-                ENGINE_API Util::TAKErr C3DT_probeSupport(
+                Util::TAKErr C3DT_probeSupport(
                     C3DTFileType *type, 
                     Port::String *fileURI,
                     Port::String *tilesetURI,
@@ -172,13 +171,14 @@ namespace TAK {
                     const char* URI) NOTHROWS;
 
 
-                ENGINE_API Util::TAKErr C3DTTileset_isSupported(bool *result, const char *URI) NOTHROWS;
+                Util::TAKErr C3DTTileset_isSupported(bool *result, const char *URI) NOTHROWS;
 
-                ENGINE_API Util::TAKErr C3DTTileset_open(Util::DataInput2Ptr &result, Port::String *baseURI, bool *isStreaming, const char *URI) NOTHROWS;
+                Util::TAKErr C3DTTileset_open(Util::DataInput2Ptr &result, Port::String *baseURI, bool *isStreaming, const char *URI) NOTHROWS;
 
-                ENGINE_API Util::TAKErr C3DTTileset_accumulate(Math::Matrix2* result, const C3DTTile* tile) NOTHROWS;
+                Util::TAKErr C3DTTileset_accumulate(Math::Matrix2* result, const C3DTTile* tile) NOTHROWS;
 
-                ENGINE_API Util::TAKErr C3DTTileset_approximateTileBounds(Feature::Envelope2 *aabb, const C3DTTile *tile) NOTHROWS;
+                Util::TAKErr C3DTTileset_approximateTileBounds(Feature::Envelope2 *aabb, const C3DTTile *tile, bool accum = true) NOTHROWS;
+
             }
         }
     }

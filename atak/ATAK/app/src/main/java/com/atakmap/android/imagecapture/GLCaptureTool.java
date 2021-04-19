@@ -48,6 +48,7 @@ import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.map.opengl.GLResolvableMapRenderable;
 import com.atakmap.math.MathUtils;
 import com.atakmap.opengl.GLES20FixedPipeline;
+import com.atakmap.opengl.GLResolvable;
 import com.atakmap.opengl.GLResolvable.State;
 
 import org.gdal.gdal.Dataset;
@@ -467,11 +468,11 @@ public class GLCaptureTool extends GLMapView implements GLLayer2,
             return false;
 
         for (GLMapRenderable r : renderables) {
-            State state = State.RESOLVED;
+            GLResolvable.State state = GLResolvable.State.RESOLVED;
             if (r instanceof GLResolvableMapRenderable)
                 state = ((GLResolvableMapRenderable) r).getState();
-            if (!state.equals(State.RESOLVED)
-                    || state.equals(State.UNRESOLVABLE))
+            if (!state.equals(GLResolvable.State.RESOLVED)
+                    || state.equals(GLResolvable.State.UNRESOLVABLE))
                 return false;
         }
 

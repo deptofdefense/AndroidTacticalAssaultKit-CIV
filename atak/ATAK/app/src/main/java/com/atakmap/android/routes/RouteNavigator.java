@@ -374,26 +374,32 @@ public class RouteNavigator {
 
                             while (!Thread.currentThread().isInterrupted()) {
 
-                                if (navManager != null) {
+                                try { 
+                                    if (navManager != null) {
 
-                                    GeoPoint pt = self.getPoint();
-                                    double bubble = getBubbleRadius(
-                                            route.getRouteMethod(), navPrefs,
-                                            false);
-                                    double offRouteBubble = getBubbleRadius(
-                                            route.getRouteMethod(), navPrefs,
-                                            true);
-
-                                    if (!Double.isNaN(pt.getCE())) {
-                                        bubble += pt.getCE();
+                                        GeoPoint pt = self.getPoint();
+                                        double bubble = getBubbleRadius(
+                                                route.getRouteMethod(), navPrefs,
+                                                false);
+                                        double offRouteBubble = getBubbleRadius(
+                                                route.getRouteMethod(), navPrefs,
+                                                true);
+    
+                                        if (!Double.isNaN(pt.getCE())) {
+                                            bubble += pt.getCE();
+                                        }
+    
+                                        navManager.setBubbleRadius(bubble);
+                                        navManager.setOffRouteBubbleRadius(
+                                                offRouteBubble);
+                                        navManager.setLocation(self.getPoint());
                                     }
-
-                                    navManager.setBubbleRadius(bubble);
-                                    navManager.setOffRouteBubbleRadius(
-                                            offRouteBubble);
-                                    navManager.setLocation(self.getPoint());
+                                } catch (NullPointerException ignore) { 
+                                    // RouteNavigator: NullPointer Exception (ATAK-14231)
+                                    // navManager can be set to null after the null check on this thread
+                                    // minimize the patch for backporting
                                 }
-
+    
                                 try {
                                     Thread.sleep(1500);
                                 } catch (InterruptedException ignored) {

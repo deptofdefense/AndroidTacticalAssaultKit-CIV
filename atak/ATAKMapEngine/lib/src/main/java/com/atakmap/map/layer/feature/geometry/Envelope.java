@@ -45,6 +45,11 @@ public final class Envelope {
         // For IDL calculations
         private double eastMinX = Double.MAX_VALUE;
         private double westMaxX = -Double.MAX_VALUE;
+        private boolean handleIdlCross = true;
+
+        public void setHandleIdlCross(boolean b) {
+            handleIdlCross = b;
+        }
 
         public void add(double x, double y, double z) {
             if (e == null) {
@@ -79,10 +84,12 @@ public final class Envelope {
                 return null;
 
             // IDL bounds correction
-            if (e.minX < -180 && westMaxX > e.minX)
-                e.maxX = westMaxX;
-            else if (e.maxX > 180 && eastMinX < e.maxX)
-                e.minX = eastMinX;
+            if(handleIdlCross) {
+                if (e.minX < -180 && westMaxX > e.minX)
+                    e.maxX = westMaxX;
+                else if (e.maxX > 180 && eastMinX < e.maxX)
+                    e.minX = eastMinX;
+            }
             return e;
         }
     }

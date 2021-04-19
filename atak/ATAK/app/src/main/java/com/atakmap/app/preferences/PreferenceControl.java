@@ -203,14 +203,9 @@ public class PreferenceControl implements ConnectionListener {
         }
         sb.append("</preferences>\r\n");
 
-        try {
-            BufferedWriter bw = new BufferedWriter(
-                    IOProviderFactory.getFileWriter(configFile));
-            try {
-                bw.write(sb.toString());
-            } finally {
-                bw.close();
-            }
+        try(BufferedWriter bw = new BufferedWriter(
+                IOProviderFactory.getFileWriter(configFile))) {
+            bw.write(sb.toString());
         } catch (IOException e) {
             Log.e(TAG, "error: ", e);
         }
@@ -497,6 +492,9 @@ public class PreferenceControl implements ConnectionListener {
                         .parseBoolean(mapping
                                 .get("enrollForCertificateWithTrust" + j));
 
+                String exp = mapping.get(TAKServer.EXPIRATION_KEY + j);
+                Long expiration = exp == null ? -1 : Long.parseLong(exp);
+
                 Bundle data = new Bundle();
                 data.putString("description", description);
                 data.putBoolean("enabled", enabled);
@@ -511,6 +509,7 @@ public class PreferenceControl implements ConnectionListener {
 
                 data.putBoolean("enrollForCertificateWithTrust",
                         enrollForCertificateWithTrust);
+                data.putLong(TAKServer.EXPIRATION_KEY, expiration);
 
                 Log.d(TAG, "Loading " + connection.getName()
                         + " connection " + connectString);

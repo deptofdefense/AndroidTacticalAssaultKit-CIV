@@ -178,7 +178,7 @@ namespace TAK {
             }
 
             template<class T, class Allocator>
-            inline void STLVectorAdapter<T, Allocator>::deleteNone(const VectorImpl *ptr)
+            inline void STLVectorAdapter<T, Allocator>::deleteNone(const VectorImpl * /*ptr*/)
             {}
 
             template<class T, class Allocator>

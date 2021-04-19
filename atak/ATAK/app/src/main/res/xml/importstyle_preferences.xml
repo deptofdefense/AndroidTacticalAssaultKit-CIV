@@ -7,11 +7,5 @@
             android:summary="@string/preferences_text184"
             android:key="pref_overlay_style_outline_color" 
             android:title="@string/preferences_text185" />
-        <com.atakmap.android.gui.PanEditTextPreference 
-            android:title="@string/preferences_text186"
-            android:key="pref_overlay_style_outline_width"
-            android:summary="@string/preferences_text187"
-            android:inputType="number"
-            android:defaultValue="2" />
     </PreferenceCategory>
 </PreferenceScreen>

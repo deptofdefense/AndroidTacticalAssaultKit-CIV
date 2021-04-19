@@ -144,7 +144,7 @@ public class MapView extends AtakMapView {
         this.overlayManager = new MapOverlayManager(this);
 
         _rootGroup = new RootMapGroup();
-        _touchController = new MapTouchController(this);
+        _touchController = MapTouchControllerCompat.getInstance(this);
 
         _rootGroup.addOnGroupListChangedListener(groupListChangedListener);
         _rootGroup.addOnItemListChangedListener(itemListChangedListener);
@@ -307,9 +307,6 @@ public class MapView extends AtakMapView {
         copyPrefToConfigOptions(this.preferenceManager,
                 "pref_overlay_style_outline_color",
                 OgrFeatureDataSource.SYS_PROP_DEFAULT_STROKE_COLOR);
-        copyPrefToConfigOptions(this.preferenceManager,
-                "pref_overlay_style_outline_width",
-                OgrFeatureDataSource.SYS_PROP_DEFAULT_STROKE_WIDTH);
         ConfigOptions.setOption(OgrFeatureDataSource.SYS_PROP_DEFAULT_ICON_URI,
                 "asset:/icons/reference_point.png");
 
@@ -342,11 +339,6 @@ public class MapView extends AtakMapView {
                         copyPrefToConfigOptions(preferenceManager,
                                 "pref_overlay_style_outline_color",
                                 OgrFeatureDataSource.SYS_PROP_DEFAULT_STROKE_COLOR);
-                        break;
-                    case "pref_overlay_syle_outline_width":
-                        copyPrefToConfigOptions(preferenceManager,
-                                "pref_overlay_style_outline_width",
-                                OgrFeatureDataSource.SYS_PROP_DEFAULT_STROKE_WIDTH);
                         break;
                     case "atakContinuousRender":
                         getRenderer().setContinuousRenderEnabled(

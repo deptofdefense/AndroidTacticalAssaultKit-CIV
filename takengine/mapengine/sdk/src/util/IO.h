@@ -130,7 +130,7 @@ enum
 
 class ENGINE_API DataInput {
 public:
-    static const size_t EndOfStream = -1; //-XXX
+    static const size_t EndOfStream = SIZE_MAX; //-XXX
 
     DataInput();
     virtual ~DataInput();

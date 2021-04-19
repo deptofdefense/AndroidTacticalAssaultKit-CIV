@@ -14,6 +14,7 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.spatial.file.KmlFileSpatialDb;
 import com.atakmap.spatial.kml.FeatureHandler;
 import com.atakmap.spatial.kml.KMLUtil;
+import com.atakmap.util.zip.IoUtils;
 import com.ekito.simpleKML.model.Feature;
 import com.ekito.simpleKML.model.Folder;
 import com.ekito.simpleKML.model.Placemark;
@@ -161,9 +162,7 @@ public class KMZExportMarshal extends KMLExportMarshal {
         //TODO sits at 94% during serialization to KMZ/zip. Could serialize during marshall above
         ZipOutputStream zos = null;
         File kmz = getFile();
-        FileOutputStream fos = null;
-        try {
-            fos = IOProviderFactory.getOutputStream(kmz);
+        try(FileOutputStream fos = IOProviderFactory.getOutputStream(kmz)) {
             zos = new ZipOutputStream(new BufferedOutputStream(fos));
 
             //and doc.kml
@@ -186,18 +185,7 @@ public class KMZExportMarshal extends KMLExportMarshal {
             Log.e(TAG, "Failed to create KMZ file", e);
             throw new IOException(e);
         } finally {
-            if (zos != null) {
-                try {
-                    zos.close();
-                } catch (Exception e) {
-                    Log.w(TAG, "Failed to close KMZ: " + kmz.getAbsolutePath());
-                }
-            }
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException ioe) {}
-            }
+            IoUtils.close(zos,TAG,"Failed to close KMZ: " + kmz.getAbsolutePath());
         }
     }
 
@@ -230,14 +218,12 @@ public class KMZExportMarshal extends KMLExportMarshal {
     }
 
     private void addFile(ZipOutputStream zos, Pair<String, String> file) {
-        InputStream in = null;
-        try {
+        try(InputStream in = getInputStream(context, file.first)) {
             // create new zip entry
             ZipEntry entry = new ZipEntry(file.second);
             zos.putNextEntry(entry);
 
             // stream file into zipstream
-            in = getInputStream(context, file.first);
             FileSystemUtils.copyStream(in, true, zos, false, _buffer);
 
             // close current file & corresponding zip entry
@@ -250,12 +236,6 @@ public class KMZExportMarshal extends KMLExportMarshal {
                 try {
                     zos.closeEntry();
                 } catch (IOException e) { }
-            }
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException ioe) {
-                }
             }
         }
     }

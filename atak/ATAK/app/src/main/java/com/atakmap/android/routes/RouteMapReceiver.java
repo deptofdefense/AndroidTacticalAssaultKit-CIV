@@ -98,6 +98,7 @@ public class RouteMapReceiver extends BroadcastReceiver implements
     public static final String DELETE_ACTION = "com.atakmap.android.maps.ROUTE_DELETE";
     public static final String SHOW_ACTION = "com.atakmap.android.maps.ROUTE_DETAILS";
     public static final String SHARE_ACTION = "com.atakmap.android.maps.ROUTE_SHARE";
+    public static final String SHOW_EDIT_ACTION = "com.atakmap.android.maps.EDIT_ROUTE_DETAILS";
 
     public static final String EDIT_CUES_ACTION = "com.atakmap.android.maps.ROUTE_EDIT_CUE";
 
@@ -137,9 +138,9 @@ public class RouteMapReceiver extends BroadcastReceiver implements
     public final Context _context;
     public final MapView _mapView;
 
-    private RoutePlannerView _plannerView;
+    protected RoutePlannerView _plannerView;
 
-    private final RouteNavigator _navigator;
+    protected final RouteNavigator _navigator;
     private final NavigationUxManager _uxManager;
     private final AttachmentBillboardLayer _billboardLayer;
 

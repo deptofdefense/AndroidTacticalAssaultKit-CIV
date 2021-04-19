@@ -138,7 +138,11 @@ public class MapGroupHierarchyListItem extends AbstractHierarchyListItem2
 
     @Override
     public String getTitle() {
-        return this.group.getFriendlyName();
+        final String name = group.getMetaString("omNameOverride", null);
+        if (name != null)
+            return name;
+        else
+            return this.group.getFriendlyName();
     }
 
     @Override

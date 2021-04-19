@@ -8,6 +8,7 @@ import android.content.Intent;
 
 import com.atakmap.android.data.ClearContentRegistry;
 import com.atakmap.android.data.URIContentManager;
+import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.ipc.AtakBroadcast.DocumentedIntentFilter;
 
 import android.content.SharedPreferences;
@@ -61,8 +62,8 @@ import com.atakmap.map.layer.raster.RasterDataStore;
 import com.atakmap.map.layer.raster.RasterLayer2;
 import com.atakmap.map.layer.raster.mobileimagery.MobileImageryRasterLayer2;
 import com.atakmap.map.layer.raster.nativeimagery.NativeImageryRasterLayer2;
-import com.atakmap.map.projection.Projection;
 import com.atakmap.math.Rectangle;
+import com.atakmap.android.importfiles.resource.RemoteResourceImporter;
 
 import java.io.File;
 import java.util.Collection;
@@ -113,18 +114,19 @@ public class LayersMapComponent extends AbstractMapComponent
     private Handler _contentHandler;
     private ContentObserver _contentObserver;
     private Map<String, LayerSelection> _layerSelections;
-    private LayerSelectionAdapter _nativeLayersAdapter;
-    private MobileLayerSelectionAdapter _mobileLayersAdapter2;
-    private LayersManagerBroadcastReceiver _layersManagerReceiver;
+    protected LayerSelectionAdapter _nativeLayersAdapter;
+    protected MobileLayerSelectionAdapter _mobileLayersAdapter2;
+    protected LayersManagerBroadcastReceiver _layersManagerReceiver;
     private ZoomToLayerReceiver _zoomToLayerReceiver;
     private MapView _mapView;
     private Context _context;
     private ExternalLayerDataImporter _externalLayerDataImporter;
-    private MobileOutlinesDataStore mobileOutlines;
-    private OutlinesFeatureDataStore nativeOutlines;
+    protected MobileOutlinesDataStore mobileOutlines;
+    protected OutlinesFeatureDataStore nativeOutlines;
     private FeatureLayer mobileOutlinesLayer;
     private FeatureLayer nativeOutlinesLayer;
     private LayerContentResolver _contentResolver;
+    private RemoteResourceImporter _kmlLinkImporter;
 
     public static final String IMPORTER_CONTENT_TYPE = "External Native Data";
     public static final String IMPORTER_DEFAULT_MIME_TYPE = "application/octet-stream";
@@ -138,10 +140,10 @@ public class LayersMapComponent extends AbstractMapComponent
             "native", null
     };
 
-    private AbstractDataStoreRasterLayer2 nativeLayers;
-    private AbstractDataStoreRasterLayer2 mobileLayers2;
+    protected AbstractDataStoreRasterLayer2 nativeLayers;
+    protected AbstractDataStoreRasterLayer2 mobileLayers2;
 
-    private CardLayer rasterLayers;
+    protected CardLayer rasterLayers;
 
     private Map<RasterLayer2, LayerSelectionAdapter> layerToAdapter;
 
@@ -415,6 +417,9 @@ public class LayersMapComponent extends AbstractMapComponent
         }
 
         this.mapControls = new MapControlsOverlay(_mapView);
+
+        ImportExportMapComponent.getInstance().addImporterClass(
+                _kmlLinkImporter = new RemoteResourceImporter(view));
     }
 
     private void _initializeLayers() {
@@ -561,6 +566,9 @@ public class LayersMapComponent extends AbstractMapComponent
 
         if (this.grgs != null)
             this.grgs.onDestroy(context, view);
+
+        ImportExportMapComponent.getInstance().removeImporterClass(
+                _kmlLinkImporter);
     }
 
     private void destroyMapViewLayers() {

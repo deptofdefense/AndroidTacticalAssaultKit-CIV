@@ -1056,26 +1056,33 @@ public class BloodHoundTool extends ButtonTool implements
                     }
                 });
 
-        if (_startItem.getType().equals("b-m-p-s-p-i"))
-            _startItem.addOnVisibleChangedListener(linkListener);
-        if (_endItem.getType().equals("b-m-p-s-p-i"))
-            _endItem.addOnVisibleChangedListener(linkListener);
-        if (_startItem.getUID().equals(_mapView.getSelfMarker().getUID()))
-            ((Marker) _startItem)
-                    .addOnTrackChangedListener(_trackChangedListener);
-        _linkGroup.addItem(linkListener.line);
+        try { 
 
-        _startItem.addOnPointChangedListener(_pointChangedListener);
-        _endItem.addOnPointChangedListener(_pointChangedListener);
-        _updateLinkInfo();
-
-        _startItem.addOnGroupChangedListener(linkListener);
-        _endItem.addOnGroupChangedListener(linkListener);
-
-        _startItem.setMetaBoolean("pairingline_on", true);
-        _endItem.setMetaBoolean("pairingline_on", true);
-
-        _link = linkListener;
+            if (_startItem.getType().equals("b-m-p-s-p-i"))
+                _startItem.addOnVisibleChangedListener(linkListener);
+            if (_endItem.getType().equals("b-m-p-s-p-i"))
+                _endItem.addOnVisibleChangedListener(linkListener);
+            if (_startItem.getUID().equals(_mapView.getSelfMarker().getUID()))
+                ((Marker) _startItem)
+                        .addOnTrackChangedListener(_trackChangedListener);
+            _linkGroup.addItem(linkListener.line);
+    
+            _startItem.addOnPointChangedListener(_pointChangedListener);
+            _endItem.addOnPointChangedListener(_pointChangedListener);
+            _updateLinkInfo();
+    
+            _startItem.addOnGroupChangedListener(linkListener);
+            _endItem.addOnGroupChangedListener(linkListener);
+    
+            _startItem.setMetaBoolean("pairingline_on", true);
+            _endItem.setMetaBoolean("pairingline_on", true);
+    
+            _link = linkListener;
+        } catch (Exception ignored) { 
+            // ATAK-14272 NullPointerException Bloodhound Tool - since this logic in thread unsafe
+            // but it is lower risk during this sprint than syncronizing modifications to the startItem
+            // and endItem
+        }
     }
 
     private boolean _removeLink(final String uid1, final String uid2) {

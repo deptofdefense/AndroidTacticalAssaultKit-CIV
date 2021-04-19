@@ -83,7 +83,7 @@ TAKErr MaterialManager::load(GLMaterial **value, const TAK::Engine::Model::Mater
         TAK::Engine::Util::FutureTask<std::shared_ptr<Bitmap2>> pendingTex;
         code = loader->load(pendingTex, textureUri);
 
-        // unsuppoted, try parent
+        // unsupported, try parent
         if (code == TE_Unsupported && this->parent)
             return this->parent->load(value, m, hints);
 

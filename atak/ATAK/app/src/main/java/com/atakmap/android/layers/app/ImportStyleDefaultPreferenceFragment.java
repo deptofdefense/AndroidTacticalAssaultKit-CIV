@@ -92,9 +92,6 @@ public class ImportStyleDefaultPreferenceFragment extends
                             }
                         });
 
-        ((PanEditTextPreference) findPreference(
-                "pref_overlay_style_outline_width"))
-                        .checkValidWidth();
     }
 
     @Override

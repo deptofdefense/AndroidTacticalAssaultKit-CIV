@@ -87,7 +87,7 @@ Frustum2::Plane::Plane(const Vector4<double> &normal_, double dist_) :
             }
 
 
-            bool Frustum2::intersects(const Sphere2& s) NOTHROWS
+            bool Frustum2::intersects(const Sphere2& s) const NOTHROWS
             {
                 const Vector4<double> vd(s.center.x, s.center.y, s.center.z);
                 for (int x = 0; x < 6; ++x)
@@ -99,7 +99,7 @@ Frustum2::Plane::Plane(const Vector4<double> &normal_, double dist_) :
                 return true;
             }
 
-            bool Frustum2::intersects(const AABB& aabb) NOTHROWS
+            bool Frustum2::intersects(const AABB& aabb) const NOTHROWS
             {
                 // derived from "Foundations of Game Engine Development"
                 Vector4<double> vd(0, 0, 0);
@@ -123,7 +123,7 @@ Frustum2::Plane::Plane(const Vector4<double> &normal_, double dist_) :
                 return true;
             }
 
-            double Frustum2::depthIfInside(const Sphere2& s) NOTHROWS
+            double Frustum2::depthIfInside(const Sphere2& s) const NOTHROWS
             {
                 double dist = NAN;
                 Vector4<double> vd(s.center.x, s.center.y, s.center.z);
@@ -138,7 +138,7 @@ Frustum2::Plane::Plane(const Vector4<double> &normal_, double dist_) :
             }
 
 
-            Matrix2 Frustum2::getClip() NOTHROWS
+            Matrix2 Frustum2::getClip() const NOTHROWS
             {
                 return clip;
             }

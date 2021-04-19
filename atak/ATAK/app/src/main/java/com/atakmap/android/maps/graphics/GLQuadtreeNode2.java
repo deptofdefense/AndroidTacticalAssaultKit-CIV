@@ -8,6 +8,7 @@ import com.atakmap.android.maps.MapGroup;
 import com.atakmap.android.maps.MapItem;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.MutableGeoBounds;
 import com.atakmap.lang.Unsafe;
@@ -17,6 +18,7 @@ import com.atakmap.map.opengl.GLMapBatchable2;
 import com.atakmap.map.opengl.GLMapRenderable2;
 import com.atakmap.map.opengl.GLMapView;
 import com.atakmap.math.MathUtils;
+import com.atakmap.math.PointD;
 import com.atakmap.opengl.GLES20FixedPipeline;
 import com.atakmap.opengl.GLRenderBatch;
 import com.atakmap.opengl.GLRenderBatch2;
@@ -749,8 +751,32 @@ public class GLQuadtreeNode2 extends
         final double metersDegLng;
 
         DepthComparator(ViewState state) {
-            camera = state.scene.mapProjection
-                    .inverse(state.scene.camera.location, null);
+            // ortho camera is "in scene" at higher zoom levels, so we need to
+            // push it back for purposes of computing range for depth sort. The
+            // distance we move the camera back isn't strictly important as we
+            // are only looking to establish relative back to front
+            if(!state.scene.camera.perspective) {
+                final double dx = state.scene.camera.location.x-state.scene.camera.target.x;
+                final double dy = state.scene.camera.location.y-state.scene.camera.target.y;
+                final double dz = state.scene.camera.location.z-state.scene.camera.target.z;
+                final double range = Math.max(MathUtils.distance(
+                        dx*state.scene.displayModel.projectionXToNominalMeters,
+                        dy*state.scene.displayModel.projectionYToNominalMeters,
+                        dz*state.scene.displayModel.projectionZToNominalMeters,
+                        0d, 0d, 0d
+                ), 4000);
+
+                camera = state.scene.mapProjection
+                        .inverse(
+                                new PointD(
+                                    state.scene.camera.target.x+(dx*range)/state.scene.displayModel.projectionXToNominalMeters,
+                                    state.scene.camera.target.y+(dy*range)/state.scene.displayModel.projectionYToNominalMeters,
+                                    state.scene.camera.target.z+(dz*range)/state.scene.displayModel.projectionZToNominalMeters
+                                ), null);
+            } else {
+                camera = state.scene.mapProjection
+                        .inverse(state.scene.camera.location, null);
+            }
 
             scratchBounds = new MutableGeoBounds(GeoPoint.ZERO_POINT,
                     GeoPoint.ZERO_POINT);
@@ -799,35 +825,25 @@ public class GLQuadtreeNode2 extends
 
             a.getBounds(scratchBounds);
             final double adlat = ((scratchBounds.getNorth()
-                    + scratchBounds.getSouth()) / 2d)
-                    - camera.getLatitude();
+                    + scratchBounds.getSouth()) / 2d);
             final double adlng = ((scratchBounds.getEast()
-                    + scratchBounds.getWest()) / 2d)
-                    - camera.getLongitude();
+                    + scratchBounds.getWest()) / 2d);
 
             b.getBounds(scratchBounds);
             final double bdlat = ((scratchBounds.getNorth()
-                    + scratchBounds.getSouth()) / 2d)
-                    - camera.getLatitude();
+                    + scratchBounds.getSouth()) / 2d);
             final double bdlng = ((scratchBounds.getEast()
-                    + scratchBounds.getWest()) / 2d)
-                    - camera.getLongitude();
+                    + scratchBounds.getWest()) / 2d);
 
             // approximate meters per degree given center
 
             // compute distance-squared for comparison
-            final double aDistSq = ((adlat * adlat)
-                    * (metersDegLat * metersDegLat))
-                    + ((adlng * adlng) * (metersDegLng * metersDegLng))
-                    + camera.getAltitude() * camera.getAltitude();
-            final double bDistSq = ((bdlat * bdlat)
-                    * (metersDegLat * metersDegLat))
-                    + ((bdlng * bdlng) * (metersDegLng * metersDegLng))
-                    + camera.getAltitude() * camera.getAltitude();
+            final double aDistSq = GeoCalculations.slantDistanceTo(camera, new GeoPoint(adlat, adlng));
+            final double bDistSq = GeoCalculations.slantDistanceTo(camera, new GeoPoint(bdlat, bdlng));
 
-            if (aDistSq > bDistSq)
+            if (aDistSq < bDistSq)
                 return 1;
-            else if (aDistSq < bDistSq)
+            else if (aDistSq > bDistSq)
                 return -1;
             else
                 return ITEM_COMPARATOR.compare(a, b);

@@ -79,7 +79,17 @@ namespace TAK {
 
                     bool reset = false;
                     std::size_t numPosts;
-                    double resadj;
+                    /**
+                     * scalar adjustment applied to nominal node resolution for
+                     * GSD constraints passed to ElevationManager during node
+                     * mesh population
+                     */
+                    double fetchResolutionAdjustment;
+                    /**
+                     * Scalar adjustment applied to node level selection based
+                     * on current camera.
+                     */
+                    double nodeSelectResolutionAdjustment;
 
                     Util::BlockPoolAllocator meshAllocator;
                     Util::PoolAllocator<TerrainTile> tileAllocator;

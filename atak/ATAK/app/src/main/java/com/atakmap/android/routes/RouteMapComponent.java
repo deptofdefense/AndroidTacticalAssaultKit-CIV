@@ -43,15 +43,15 @@ public class RouteMapComponent extends AbstractWidgetMapComponent implements
         ConnectionListener {
 
     RouteImporter _routeImporter;
-    private RouteMapReceiver _routeReceiver;
-    private EditablePolylineReceiver _editablePolylineReceiver;
-    private DoghouseReceiver _doghouseReceiver;
-    private NavigationCueHandler _cueHandler;
+    protected RouteMapReceiver _routeReceiver;
+    protected EditablePolylineReceiver _editablePolylineReceiver;
+    protected DoghouseReceiver _doghouseReceiver;
+    protected NavigationCueHandler _cueHandler;
 
-    private final CotServiceRemote cotService_ = new CotServiceRemote();
+    protected final CotServiceRemote cotService_ = new CotServiceRemote();
 
-    private RouteToolbarBroadcastReceiver _routeToolbarReceiver;
-    private GoToMapTool _goTo;
+    protected RouteToolbarBroadcastReceiver _routeToolbarReceiver;
+    protected GoToMapTool _goTo;
 
     private RoutePlannerManager _routePlannerManager = new RoutePlannerManager();
 
@@ -204,6 +204,7 @@ public class RouteMapComponent extends AbstractWidgetMapComponent implements
         AtakBroadcast.getInstance().unregisterReceiver(_routeReceiver);
         AtakBroadcast.getInstance().unregisterReceiver(_routeToolbarReceiver);
 
+
         ClearContentRegistry.getInstance().unregisterListener(dataMgmtReceiver);
 
         _editablePolylineReceiver.dispose();
@@ -213,16 +214,17 @@ public class RouteMapComponent extends AbstractWidgetMapComponent implements
         _goTo.dispose();
     }
 
-    private final ClearContentRegistry.ClearContentListener dataMgmtReceiver = new ClearContentRegistry.ClearContentListener() {
-        @Override
-        public void onClearContent(boolean clearmaps) {
+    protected final ClearContentRegistry.ClearContentListener dataMgmtReceiver =
+            new  ClearContentRegistry.ClearContentListener() {
+                @Override
+                public void onClearContent(boolean clearmaps) {
 
-            // Delete the serialization file for the route around region manager.
-            FileSystemUtils
-                    .delete(RouteAroundRegionViewModel.SERIALIZATION_FILE);
+                    // Delete the serialization file for the route around region manager.
+                    FileSystemUtils
+                            .delete(RouteAroundRegionViewModel.SERIALIZATION_FILE);
 
-        }
-    };
+                }
+            };
 
     public RouteMapReceiver getRouteMapReceiver() {
         return _routeReceiver;

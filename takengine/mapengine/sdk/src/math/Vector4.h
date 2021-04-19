@@ -97,6 +97,11 @@ namespace TAK
                 return code;
             }
             template<class T>
+            Point2<T> Vector2_normalize(const Point2<T>& src) NOTHROWS
+            {
+                return Vector2_multiply(src, 1.0 / Vector2_length(src));
+            }
+            template<class T>
             Point2<T> Vector2_cross(const Point2<T> &a, const Point2<T> &b) NOTHROWS
             {
                 const double x = a.y*b.z - a.z*b.y;

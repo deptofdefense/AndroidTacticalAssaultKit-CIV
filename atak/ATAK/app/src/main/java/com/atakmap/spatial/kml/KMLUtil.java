@@ -2,6 +2,7 @@
 package com.atakmap.spatial.kml;
 
 import android.graphics.Color;
+import android.util.Xml;
 
 import com.atakmap.android.importexport.ExportFilters;
 import com.atakmap.android.importexport.Exportable;
@@ -17,6 +18,7 @@ import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 import com.atakmap.spatial.file.export.KMZFolder;
+import com.atakmap.util.zip.IoUtils;
 import com.atakmap.util.zip.ZipEntry;
 import com.atakmap.util.zip.ZipFile;
 import com.ekito.simpleKML.model.Boundary;
@@ -44,11 +46,14 @@ import com.ekito.simpleKML.model.Track;
 
 import org.simpleframework.xml.Serializer;
 import org.simpleframework.xml.core.Persister;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
@@ -71,7 +76,7 @@ public class KMLUtil {
 
     private static final String TAG = "KMLUtil";
 
-    public static final long MIN_NETWORKLINK_INTERVAL_SECS = 30; // 30 seconds
+    public static final long MIN_NETWORKLINK_INTERVAL_SECS = 10; // 10 seconds
     public static final long DEFAULT_NETWORKLINK_INTERVAL_SECS = 300; // 5 minutes
 
     private static final String XML_PROLOG = "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>";
@@ -244,6 +249,113 @@ public class KMLUtil {
             folder.setFeatureList(features);
         }
         return features.add(feature);
+    }
+
+    /**
+     * Parse a list of network links given an XML input stream
+     * Note: Due to a bug with SimpleKML (ATAK-7343) this is performed with
+     * an XML parser as opposed to their built-in parser
+     * @param is Input stream
+     * @param handler Feature handler (null to ignore)
+     * @return List of network links
+     */
+    public static List<NetworkLink> parseNetworkLinks(InputStream is,
+            FeatureHandler<NetworkLink> handler) {
+        List<NetworkLink> ret = new ArrayList<>();
+        XmlPullParser parser = Xml.newPullParser();
+        NetworkLink nl = null;
+        Link link = null;
+        try {
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+            parser.setInput(is, null);
+            int eventType;
+            do {
+                eventType = parser.next();
+                String tag = parser.getName();
+                switch (eventType) {
+                    case XmlPullParser.START_TAG:
+                        // New network link
+                        if (tag.equals("NetworkLink")) {
+                            nl = new NetworkLink();
+                            for (int i = 0; i < parser.getAttributeCount(); i++) {
+                                String attr = parser.getAttributeName(i);
+                                String value = parser.getAttributeValue(i);
+                                if (attr.equals("id"))
+                                    nl.setId(value);
+                            }
+                            continue;
+                        }
+
+                        // No NetworkLink read - skip
+                        if (nl == null)
+                            continue;
+
+                        // Top-level attributes/elements for NetworkLink
+                        switch (tag) {
+                            case "name":
+                                nl.setName(getValue(parser, null));
+                                break;
+                            case "visibility":
+                                nl.setVisibility(getValue(parser, "1").equals("1"));
+                                break;
+                            case "open":
+                                nl.setOpen(getValue(parser, "1").equals("1"));
+                                break;
+                            case "Link":
+                                nl.setLink(link = new Link());
+                                break;
+                        }
+
+                        // No Link read - skip
+                        if (link == null)
+                            continue;
+
+                        switch (tag) {
+                            case "href":
+                                link.setHref(getValue(parser, null));
+                                break;
+                            case "refreshInterval":
+                                link.setRefreshInterval(Float.parseFloat(
+                                        getValue(parser, "-1")));
+                                break;
+                            case "refreshMode":
+                                link.setRefreshMode(getValue(parser, null));
+                                break;
+                        }
+
+                        break;
+
+                    // Finish parsing network link
+                    case XmlPullParser.END_TAG:
+                        if (nl != null && tag.equals("NetworkLink")) {
+                            ret.add(nl);
+                            // True = stop processing
+                            if (handler.process(nl))
+                                return ret;
+                            nl = null;
+                        }
+                        break;
+
+                    // Unhandled
+                    case XmlPullParser.TEXT:
+                    case XmlPullParser.END_DOCUMENT:
+                    default:
+                        break;
+                }
+            } while (eventType != XmlPullParser.END_DOCUMENT);
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error parsing XML", e);
+        }
+        return ret;
+    }
+
+    private static String getValue(XmlPullParser parser, String def)
+            throws IOException, XmlPullParserException {
+        int eventType = parser.next();
+        if (eventType == XmlPullParser.TEXT)
+            return parser.getText();
+        return def;
     }
 
     /**
@@ -1143,26 +1255,16 @@ public class KMLUtil {
                         ++i;
                     } while (i < tempNameArr.length - 2);
 
-                    FileOutputStream fileOutStream = null;
-                    try {
+                    try(InputStream is = zip.getInputStream(ze)) {
                         tempFile = IOProviderFactory.createTempFile(tempName,
                                 ".kml",
                                 tmpDir);
-                        fileOutStream = IOProviderFactory.getOutputStream(
-                                tempFile);
-                        FileSystemUtils.copy(zip.getInputStream(ze),
-                                fileOutStream);
+                        try(OutputStream os = IOProviderFactory
+                                .getOutputStream(tempFile)){
+                            FileSystemUtils.copy(is, os);
+                        }
                     } finally {
-                        if (fileOutStream != null) {
-                            try {
-                                fileOutStream.close();
-                            } catch (IOException ignored) {
-                            }
-                        }
-                        try {
-                            zip.close();
-                        } catch (IOException ignored) {
-                        }
+                        IoUtils.close(zip);
                     }
                     break;
                 }
@@ -1242,10 +1344,8 @@ public class KMLUtil {
                         "Failed to create directory(s)"
                                 + parent.getAbsolutePath());
 
-        PrintWriter out = null;
-        try {
-            out = new PrintWriter(new BufferedWriter(
-                    IOProviderFactory.getFileWriter(file)));
+        try (PrintWriter out = new PrintWriter(new BufferedWriter(
+                IOProviderFactory.getFileWriter(file)))) {
             if (!kml.startsWith("<?xml")) {
                 out.println(XML_PROLOG);
             }
@@ -1253,9 +1353,6 @@ public class KMLUtil {
             out.println(kml);
         } catch (IOException e) {
             Log.e(TAG, "Failed to write KML: " + file.getAbsolutePath(), e);
-        } finally {
-            if (out != null)
-                out.close();
         }
     }
 

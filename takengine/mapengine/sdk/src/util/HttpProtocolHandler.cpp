@@ -408,7 +408,7 @@ namespace {
         if (numRead)
             *numRead = copyNum;
 
-        return TE_Ok;
+        return copyNum ? TE_Ok : TE_EOF;
     }
     
     TAKErr CURLDataInput::readByte(uint8_t* value) NOTHROWS {

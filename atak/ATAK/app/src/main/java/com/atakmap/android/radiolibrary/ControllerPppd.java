@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import com.atakmap.android.ipc.AtakBroadcast;
 import com.atakmap.annotations.ModifierApi;
+import com.atakmap.coremap.io.DefaultIOProvider;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.comms.NetworkDeviceManager;
 
@@ -43,7 +44,7 @@ public class ControllerPppd extends BroadcastReceiver implements Runnable {
         cancelled = false;
         try {
             FileSystemUtils.copyFile(new File(root, "options"),
-                    FileSystemUtils.getItem("tools/.options"));
+                    FileSystemUtils.getItem("tools/.options"), new DefaultIOProvider());
         } catch (Exception e) {
             Log.e(TAG, "error copying file over", e);
         }
@@ -94,7 +95,7 @@ public class ControllerPppd extends BroadcastReceiver implements Runnable {
         if (t != null)
             t.interrupt();
         t = null;
-        FileSystemUtils.delete(FileSystemUtils.getItem("tools/.options"));
+        FileSystemUtils.getItem("tools/.options").delete();
     }
 
     /**
@@ -131,7 +132,7 @@ public class ControllerPppd extends BroadcastReceiver implements Runnable {
      */
     private boolean find(final String term, final File f) {
         try {
-            String s = FileSystemUtils.copyStreamToString(f);
+            String s = FileSystemUtils.copyStreamToString(f, new DefaultIOProvider());
             if (s != null && s.contains(term))
                 return true;
         } catch (IOException ioe) {

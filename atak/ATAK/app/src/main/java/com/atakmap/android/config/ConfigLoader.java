@@ -6,6 +6,7 @@ import android.util.Base64;
 
 import com.atakmap.android.maps.assets.MapAssets;
 
+import com.atakmap.util.zip.IoUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -81,13 +82,7 @@ public class ConfigLoader<T> {
                 t = loadFromElem(doc.getDocumentElement(), configEnvironment);
             }
         } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException ioe) {
-                    Log.d(TAG, "failed to close the stream");
-                }
-            }
+            IoUtils.close(in, TAG, "failed to close the stream");
         }
         return t;
     }

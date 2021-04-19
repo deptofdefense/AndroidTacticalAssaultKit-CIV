@@ -34,6 +34,7 @@ private:
     std::vector<std::vector<std::vector<std::vector<int>>>> quadtree;
 
 public:
+    
     IndexData(VertexData* vData, Util::FileInput2* buffer) {
 
         sizes = std::vector<int>(TriangleIndices::LEVEL_COUNT);
@@ -42,6 +43,8 @@ public:
         }
 
         buffer->readInt(&triangleCount);
+        triangleCount = static_cast<unsigned>(triangleCount);
+        
         is32bit = vData->vertexCount > 65536;
         int length = triangleCount * 3;
 
@@ -50,18 +53,22 @@ public:
         quadtree.resize(TriangleIndices::LEVEL_COUNT);
         for(int l = 0; l < TriangleIndices::LEVEL_COUNT; l++) {
             int m = 1 << l;
-            std::vector<std::vector<std::vector<int>>> holder = std::vector<std::vector<std::vector<int>>>(m);
-            auto intvector = std::vector<int>();
+            
             auto yvector = std::vector<std::vector<int>>(m);
             auto xvector = std::vector<std::vector<std::vector<int>>>(m);
             xvector.resize(m);
             yvector.resize(m);
+            
             for(int i = 0 ;i < m ; i++){
-                yvector[i] = intvector;
-                for( int j = 0; j < m; j++) {
-                    xvector[j] = yvector;
-                    quadtree[l].push_back(xvector[j]);
-                }
+                yvector[i] = std::vector<int>();
+            }
+            
+            for(int i=0; i < m; i++ ) {
+                xvector[i] = yvector;
+            }
+            
+            for(int i=0; i<m; i++) {
+                quadtree[l].push_back(xvector[i]);
             }
 
         }
@@ -107,6 +114,9 @@ public:
 
                 for (int ty = minTY; ty <= maxTY; ty++) {
                     for (int tx = minTX; tx <= maxTX; tx++ ) {
+                        // if(quadtree[l].size() >= tx) continue;
+                        // if(quadtree[l][tx].size() >= ty) continue;
+                        
                         auto ind = &quadtree[l][tx][ty];
                         ind->push_back(triIndex);
                         quadtreeSize += 4;

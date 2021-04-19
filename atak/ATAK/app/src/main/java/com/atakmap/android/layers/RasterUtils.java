@@ -1,16 +1,98 @@
 
 package com.atakmap.android.layers;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import com.atakmap.android.maps.CardLayer;
+import com.atakmap.android.maps.MapView;
+import com.atakmap.coremap.log.Log;
+import com.atakmap.coremap.maps.coords.GeoBounds;
+import com.atakmap.coremap.maps.coords.GeoPoint;
+import com.atakmap.map.layer.Layer;
+import com.atakmap.map.layer.raster.AbstractRasterLayer2;
+import com.atakmap.map.layer.raster.DatasetDescriptor;
+import com.atakmap.map.layer.raster.ImageDatasetDescriptor;
+import com.atakmap.map.layer.raster.LocalRasterDataStore;
+import com.atakmap.map.layer.raster.RasterDataStore.DatasetDescriptorCursor;
+import com.atakmap.map.layer.raster.RasterDataStore.DatasetQueryParameters;
 import com.atakmap.map.layer.raster.RasterLayer2;
+import com.atakmap.map.layer.raster.mobileimagery.MobileImageryRasterLayer2;
 
 import android.content.SharedPreferences;
 
-final class RasterUtils {
-    private RasterUtils() {
+public final class RasterUtils {
+
+    private static final String TAG = "RasterUtils";
+
+    /**
+     * Get currently loaded imagery
+     * @param mv Map view
+     * @param bounds Geo bounds to check (null to use current map bounds)
+     * @return List of imagery datasets
+     */
+    public static List<ImageDatasetDescriptor> getCurrentImagery(
+            MapView mv, GeoBounds bounds) {
+        List<ImageDatasetDescriptor> ret = new ArrayList<>();
+
+        // Find the raster layer
+        AbstractRasterLayer2 layer = null;
+        List<Layer> layers = mv.getLayers(MapView.RenderStack.MAP_LAYERS);
+        for (Layer l : layers) {
+            if (!l.getName().equals("Raster Layers"))
+                continue;
+            CardLayer cd = (CardLayer) l;
+            layer = (AbstractRasterLayer2) cd.get();
+            break;
+        }
+        if (layer == null)
+            return ret;
+
+        // Default to current map view bounds
+        if (bounds == null)
+            bounds = mv.getBounds();
+
+        // Setup query
+        boolean mobile = layer instanceof MobileImageryRasterLayer2;
+        LocalRasterDataStore db = LayersMapComponent.getLayersDatabase();
+        DatasetQueryParameters dp = new DatasetQueryParameters();
+
+        // Filter to mobile imagery if the mobile tab is selected
+        if (mobile) {
+            dp.names = Collections.singleton(layer.getSelection());
+            dp.providers = Collections.singleton("mobac");
+        }
+
+        // Filter that includes imagery within the given bounds
+        dp.spatialFilter = new DatasetQueryParameters.RegionSpatialFilter(
+                new GeoPoint(bounds.getNorth(), bounds.getWest()),
+                new GeoPoint(bounds.getSouth(), bounds.getEast()));
+
+        // Query datasets
+        DatasetDescriptorCursor c = null;
+        try {
+            c = db.queryDatasets(dp);
+            while (c != null && c.moveToNext()) {
+                DatasetDescriptor d = c.get();
+                if (!(d instanceof ImageDatasetDescriptor))
+                    continue;
+                ImageDatasetDescriptor info = (ImageDatasetDescriptor) d;
+                if (info.getProvider().equals("mobac") && !mobile)
+                    continue;
+                ret.add(info);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to query datasets", e);
+        } finally {
+            if (c != null)
+                c.close();
+        }
+
+        return ret;
     }
 
     static void saveSelectionVisibility(RasterLayer2 layer,

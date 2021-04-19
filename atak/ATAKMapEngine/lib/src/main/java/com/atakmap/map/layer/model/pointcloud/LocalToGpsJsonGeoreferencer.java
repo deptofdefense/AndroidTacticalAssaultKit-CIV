@@ -41,7 +41,7 @@ public class LocalToGpsJsonGeoreferencer implements Georeferencer {
             String path = uri;
             if (uri.startsWith("zip://"))
                 path = uri.substring(6);
-            if (path.toLowerCase().contains(".zip"))
+            if (FileSystemUtils.isZipPath(path))
                 file = new ZipVirtualFile(path);
             else
                 file = new File(path);
@@ -57,15 +57,13 @@ public class LocalToGpsJsonGeoreferencer implements Georeferencer {
                 1);
 
         if (geoRefFile != null) {
-            InputStream fr = null;
-            try {
+            try(InputStream fr = IOProviderFactory.getInputStream(geoRefFile)) {
                 double lat = 0.0;
                 double lng = 0.0;
                 double rotation = 0.0;
                 double hae = 0.0;
                 ModelInfo.AltitudeMode altMode = ModelInfo.AltitudeMode.Relative;
 
-                fr = IOProviderFactory.getInputStream(geoRefFile);
                 JSONObject json = new JSONObject(FileSystemUtils.copyStreamToString(fr, true,
                         FileSystemUtils.UTF8_CHARSET));
                 Iterator<String> keys = json.keys();
@@ -115,13 +113,6 @@ public class LocalToGpsJsonGeoreferencer implements Georeferencer {
 
             } catch(Exception e) {
                 Log.d(TAG, "failed to load or parse " + geoRefFile, e);
-            } finally {
-                if (fr != null) {
-                    try {
-                        fr.close();
-                    } catch (IOException ignored) {
-                    }
-                }
             }
         }
 

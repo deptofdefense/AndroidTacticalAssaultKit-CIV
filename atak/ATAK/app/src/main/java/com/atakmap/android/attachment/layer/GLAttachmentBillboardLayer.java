@@ -482,7 +482,7 @@ public class GLAttachmentBillboardLayer implements GLLayer3,
             // Need to crop the image to a square
             float ar = (float) w / h;
             mat.reset();
-            if (crop) {
+            if (crop && cropBmp != null) {
                 if (ar > 1) {
                     float scale = (float) cropBmp.getHeight() / h;
                     mat.postScale(scale, scale);

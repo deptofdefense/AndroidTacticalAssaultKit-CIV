@@ -21,6 +21,7 @@ import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.math.PointD;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.locale.LocaleUtil;
+import com.atakmap.util.zip.IoUtils;
 import org.gdal.gdal.*;
 
 import java.io.*;
@@ -484,8 +485,7 @@ public class PfpsUtils {
             if (r < 1)
                Log.d(TAG, "header read failed");
         } finally {
-            if (inputStream != null)
-                inputStream.close();
+            IoUtils.close(inputStream, TAG);
         }
 
         String s = getString(frame, 9);

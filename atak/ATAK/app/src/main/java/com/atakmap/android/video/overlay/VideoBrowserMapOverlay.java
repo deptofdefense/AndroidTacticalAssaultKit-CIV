@@ -48,7 +48,7 @@ public class VideoBrowserMapOverlay extends AbstractMapOverlay2
 
     private final MapView _mapView;
     private final Context _context;
-    protected View _listHeader;
+    protected  View _listHeader;
 
     private boolean _vizSupported = false;
     private ListModel _listModel;

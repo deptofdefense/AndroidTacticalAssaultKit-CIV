@@ -7,7 +7,6 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.PointF;
 import android.net.Uri;
@@ -56,8 +55,6 @@ import com.atakmap.android.favorites.FavoriteListAdapter;
 import com.atakmap.android.favorites.FavoriteListAdapter.Favorite;
 import com.atakmap.android.grg.GRGMapComponent;
 import com.atakmap.android.gui.HintDialogHelper;
-import com.atakmap.android.gui.TileButtonDialog;
-import com.atakmap.android.gui.TileButtonDialog.TileButton;
 import com.atakmap.android.importexport.ImportExportMapComponent;
 import com.atakmap.android.importexport.ImportReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -138,18 +135,17 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
      * on the dataset.
      */
     public final static String EXTRA_ZOOM_TO = "zoomTo";
+    private static final float defaultFontSize = 26;
 
-    private final SharedPreferences _prefs;
-    private DownloadAndCacheBroadcastReceiver downloadRecv = null;
+    protected final SharedPreferences _prefs;
+    protected DownloadAndCacheBroadcastReceiver downloadRecv = null;
 
     // these are not visible strings, rather tab identifiers - do not translate
-    final private static String IMAGERY_ID = "imagery";
-    final private static String MOBILE_ID = "mobile";
-    final private static String FAVS_ID = "favs";
-    private final FavoriteListAdapter _favAdapter;
-
-    TileButtonDialog tileButtonDialog;
-    TileButton rectangleButton, freeFormButton, mapSelectButton;
+    protected final static String IMAGERY_ID = "imagery";
+    protected final static String MOBILE_ID = "mobile";
+    final private static String GRG_ID = "grg";
+    protected final static String FAVS_ID = "favs";
+    protected FavoriteListAdapter _favAdapter;
 
     public static final int TILE_DOWNLOAD_LIMIT = 300000;
     private final static int ACTIVATED_COLOR = Color.parseColor("#008F00");
@@ -159,18 +155,18 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
     private static final NotificationIdRecycler _notificationId = new NotificationIdRecycler(
             85000, 4);
 
-    private TabHost tabHost = null;
-    private final AdapterSpec _nativeLayersAdapter;
-    private final AdapterSpec _mobileLayersAdapter;
-    private Button downloadButton;
-    private Button cancelButton;
-    private Button selectButton;
-    private Switch offlineOnlyCheckbox;
-    private OnlineLayersManagerView onlineView;
-    private OnlineLayersDownloadManager downloader;
+    protected TabHost tabHost = null;
+    protected final AdapterSpec _nativeLayersAdapter;
+    protected final AdapterSpec _mobileLayersAdapter;
+    protected Button downloadButton;
+    protected Button cancelButton;
+    protected Button selectButton;
+    protected Switch offlineOnlyCheckbox;
+    protected OnlineLayersManagerView onlineView;
+    protected OnlineLayersDownloadManager downloader;
     private AlertDialog listDialog;
     private LayersManagerView nativeManagerView;
-    private final Set<LayerSelectionAdapter> adapters;
+    protected final Set<LayerSelectionAdapter> adapters;
     private final CardLayer rasterLayers;
     private final Map<Layer, LayerSelectionAdapter> layerToAdapter;
 
@@ -222,7 +218,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         _favAdapter = new FavoriteListAdapter(mapView.getContext());
     }
 
-    private LayerSelectionAdapter getActiveLayers() {
+    protected LayerSelectionAdapter getActiveLayers() {
         for (LayerSelectionAdapter l : this.adapters)
             if (l.isActive())
                 return l;
@@ -231,18 +227,12 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
 
     @Override
     public void disposeImpl() {
-        try {
-            if (downloadRecv != null)
-                AtakBroadcast.getInstance()
-                        .unregisterReceiver(downloadRecv);
-        } catch (Exception e) {
-            Log.d(TAG, "error unregistering the download receiver", e);
-        }
-
+        if (downloader != null)
+            downloader.setCallback(null);
         _prefs.unregisterOnSharedPreferenceChangeListener(this);
     }
 
-    private void showImageryHint() {
+    protected void showImageryHint() {
         showHint(
                 "imagery.display",
                 getMapView().getContext().getString(R.string.imagery_change),
@@ -251,7 +241,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                         R.string.imagery_change_summ));
     }
 
-    private void showMobileHint() {
+    protected void showMobileHint() {
         showHint(
                 "mobile.display",
                 getMapView().getContext().getString(R.string.mobile_imagery),
@@ -502,23 +492,6 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         else if (_mobileLayersAdapter.adapter.isActive())
             tabHost.setCurrentTab(1);
 
-        Context c = getMapView().getContext();
-        Resources r = c.getResources();
-        tileButtonDialog = new TileButtonDialog(getMapView());
-        rectangleButton = tileButtonDialog.addButton(
-                r.getDrawable(R.drawable.rectangle),
-                r.getString(R.string.rectangle));
-        rectangleButton.setOnClickListener(this);
-
-        freeFormButton = tileButtonDialog.addButton(
-                r.getDrawable(R.drawable.sse_shape),
-                r.getString(R.string.free_form));
-        freeFormButton.setOnClickListener(this);
-        mapSelectButton = tileButtonDialog.addButton(
-                r.getDrawable(R.drawable.select_from_map),
-                r.getString(R.string.map_select));
-        mapSelectButton.setOnClickListener(this);
-
         showImageryHint();
 
         onDropDownVisible(true);
@@ -601,7 +574,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         }
     }
 
-    private void configureTabLongPressListener(int tabNum,
+    protected void configureTabLongPressListener(int tabNum,
             final LayerSelectionAdapter adapter) {
         tabHost.getTabWidget().getChildAt(tabNum)
                 .setOnLongClickListener(new View.OnLongClickListener() {
@@ -613,7 +586,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                 });
     }
 
-    private void activateLayer(LayerSelectionAdapter adapter,
+    protected void activateLayer(LayerSelectionAdapter adapter,
             boolean forceAuto) {
         this.rasterLayers.show(adapter.layer.getName());
 
@@ -621,7 +594,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         adapter.setLocked(!auto);
     }
 
-    private View instantiateFavsView(final Context context) {
+    protected View instantiateFavsView(final Context context) {
 
         final LinearLayout favView = (LinearLayout) LayoutInflater
                 .from(context).inflate(
@@ -716,7 +689,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
 
     }
 
-    private void view(Favorite fav) {
+    protected void view(Favorite fav) {
         if (fav == null) {
             Log.w(TAG, "view fav invalid");
             return;
@@ -764,7 +737,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         _favAdapter.writeList();
     }
 
-    private void add(String name, double lat, double lon, double scale,
+    protected void add(String name, double lat, double lon, double scale,
             double tilt, double rotation,
             String layer, String selection, boolean locked) {
         if (_favAdapter == null)
@@ -811,14 +784,14 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         AtakBroadcast.getInstance().sendBroadcast(deleteIntent);
     }
 
-    private View instantiateNativeMapManagerView(Context context) {
+    protected View instantiateNativeMapManagerView(Context context) {
         if (nativeManagerView == null)
             nativeManagerView = instantiateMapManagerView(context,
                     _nativeLayersAdapter);
         return nativeManagerView;
     }
 
-    private LayersManagerView instantiateMapManagerView(Context context,
+    protected LayersManagerView instantiateMapManagerView(Context context,
             final AdapterSpec adapter) {
         final LayerSelectionAdapter layersAdapter = adapter.adapter;
 
@@ -874,11 +847,11 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         return retval;
     }
 
-    private void drillIn(LayerSelectionAdapter adapter, int zoomTo) {
+    protected void drillIn(LayerSelectionAdapter adapter, int zoomTo) {
         this.drillImpl(adapter, zoomTo, 1);
     }
 
-    private void drillOut(LayerSelectionAdapter adapter, int zoomTo) {
+    protected void drillOut(LayerSelectionAdapter adapter, int zoomTo) {
         this.drillImpl(adapter, zoomTo, -1);
     }
 
@@ -1021,7 +994,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
      * Control the state of the download expanded layout in the mobile 
      * tab.
      */
-    private void setExpandedDownloadState(final boolean enabled) {
+    protected void setExpandedDownloadState(final boolean enabled) {
         if (enabled) {
             _mobileLayersAdapter.adapter
                     .addOnItemSelectedListener(mobileDownloadSelectionListener);
@@ -1037,7 +1010,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
     }
 
     // set up the online tab
-    private View instantiateMobileView(final Context c) {
+    protected View instantiateMobileView(final Context c) {
         onlineView = (OnlineLayersManagerView) this
                 .instantiateLayersManagerViewImpl(c,
                         R.layout.layers_manager_online_view,
@@ -1049,14 +1022,10 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                 .findViewById(R.id.mobileTools);
         downloader = new OnlineLayersDownloadManager(getMapView(), this,
                 progressView, mobileTools);
-
-        selectButton = onlineView.findViewById(R.id.selectAreaBtn);
-
-        DocumentedIntentFilter filter = new DocumentedIntentFilter(
-                DownloadAndCacheService.BROADCAST_ACTION);
         downloadRecv = new DownloadAndCacheBroadcastReceiver(
                 downloader, this);
-        AtakBroadcast.getInstance().registerReceiver(downloadRecv, filter);
+
+        selectButton = onlineView.findViewById(R.id.selectAreaBtn);
 
         final CheckBox showAllOffline = onlineView
                 .findViewById(R.id.showall);
@@ -1156,7 +1125,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
     /**
      * Cancel all aspects of the download workflow.
      */
-    private void cancelDownloadWorkflow() {
+    protected void cancelDownloadWorkflow() {
         // cancel the current operation
 
         setExpandedDownloadState(false);
@@ -1225,7 +1194,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         }
     }
 
-    private AbstractLayersManagerView instantiateLayersManagerViewImpl(
+    protected AbstractLayersManagerView instantiateLayersManagerViewImpl(
             final Context context, int viewId,
             final AdapterSpec adapter) {
         AbstractLayersManagerView retval = (AbstractLayersManagerView) LayoutInflater
@@ -1389,7 +1358,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         }
     }
 
-    private static boolean isUniqueLayerName(String name) {
+    protected static boolean isUniqueLayerName(String name) {
         RasterDataStore dataStore = LayersMapComponent.getLayersDatabase();
 
         RasterDataStore.DatasetQueryParameters params = new RasterDataStore.DatasetQueryParameters();
@@ -1400,7 +1369,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
 
     // Query a WMS or WMTS server to find what layers it provides.
     // This is done off of the main thread due to network access.
-    private void queryMapService(String servicePath) {
+    protected void queryMapService(String servicePath) {
         servicePath = servicePath.trim();
         if (servicePath.isEmpty())
             return;
@@ -1710,7 +1679,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         // XXX - add to dialog. My android-fu has failed me temporarily.
     }
 
-    private void startDownload(final String layerTitle) {
+    protected void startDownload(final String layerTitle) {
         setExpandedDownloadState(false);
         downloader.freezeRegionShape();
         final Map<LayerSelection, Pair<Double, Double>> toDownload = ((MobileLayerSelectionAdapter) _mobileLayersAdapter.adapter)
@@ -1729,7 +1698,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
         }
     }
 
-    private void createNewLayer() {
+    protected void createNewLayer() {
         // pop up dialog to get the name of the cache from the user
         final Context c = getMapView().getContext();
         final View title = LayoutInflater.from(c).inflate(
@@ -1787,7 +1756,7 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
                 });
     }
 
-    private void showDownloadProgress(boolean b) {
+    protected void showDownloadProgress(boolean b) {
         final View mobileTools = onlineView.findViewById(R.id.mobileTools);
         final View progressView = onlineView
                 .findViewById(R.id.downloadProgressLayout);
@@ -2052,8 +2021,14 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
 
         // Select region
         if (v == selectButton) {
-            tileButtonDialog.show(R.string.select_area);
-            return;
+            downloader.promptSelectRegion();
+            ((MobileLayerSelectionAdapter) _mobileLayersAdapter.adapter)
+                    .reset();
+            cancelButton.setEnabled(true);
+            cancelButton.setText(R.string.cancel);
+            downloadButton.setEnabled(false);
+            selectButton.setEnabled(false);
+            setRetain(true);
         }
 
         // Download selected region
@@ -2149,23 +2124,5 @@ public class LayersManagerBroadcastReceiver extends DropDownReceiver implements
             b.setNegativeButton(R.string.cancel, null);
             b.show();
         }
-
-        // Select region tile buttons
-        if (rectangleButton == v.getTag())
-            downloader.selectRegion(OnlineLayersDownloadManager.MODE_RECTANGLE);
-        else if (freeFormButton == v.getTag())
-            downloader.selectRegion(OnlineLayersDownloadManager.MODE_FREE_FORM);
-        else if (mapSelectButton == v.getTag())
-            downloader
-                    .selectRegion(OnlineLayersDownloadManager.MODE_MAP_SELECT);
-        else
-            return;
-        ((MobileLayerSelectionAdapter) _mobileLayersAdapter.adapter)
-                .reset();
-        cancelButton.setEnabled(true);
-        cancelButton.setText(R.string.cancel);
-        downloadButton.setEnabled(false);
-        selectButton.setEnabled(false);
-        setRetain(true);
     }
 }

@@ -225,10 +225,8 @@ public class CotEvent implements Parcelable {
                 fileWriter = new PrintWriter(new OutputStreamWriter(
                         IOProviderFactory.getOutputStream(lf),
                         FileSystemUtils.UTF8_CHARSET.name()));
-            } catch (UnsupportedEncodingException uee) {
+            } catch (IOException uee) {
                 Log.e(TAG, "error: ", uee);
-            } catch (IOException ioe) {
-                Log.e(TAG, "error: ", ioe);
             }
         } else {
             if (fileWriter != null)

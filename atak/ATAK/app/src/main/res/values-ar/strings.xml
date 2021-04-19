@@ -216,8 +216,7 @@
     <string name="fah_distance"> مسافةFAH(NM)</string>
     <string name="fah_distance_summary"> حجم الهجوم النهائي بالميل البحري .ملاحظه :اذا حددت القيمه على درجة(صفر),هذا الحجم من الليزر سوف يتكون بشكل اتوماتيكي كما هي المسافه من فوق الرؤوس بين المصمم والهدف او قيمة المسافه في الخط3 </string>
     <string name="laser_basket_distance"> مسافة  سلة  الليزر </string>
-    <string name="laser_basket_distance_summary">قيمة حجم او مقدار سلة  الليزر في الميل البحري     
-اذا هذه القيمة تضبط الى درجة صفر هذا المقدار يحسب اتوماتيكي كما هي المسافة بين محدد الهدف الليزري والهدف                               </string>
+    <string name="laser_basket_distance_summary">قيمة حجم او مقدار سلة  الليزر في الميل البحري     اذا هذه القيمة تضبط الى درجة صفر هذا المقدار يحسب اتوماتيكي كما هي المسافة بين محدد الهدف الليزري والهدف                               </string>
     <string name="laser_basket_measurements">قياسات سلة  الليزر</string>
     <string name="laser_basket_measurements_summary">تشغيل او تعطيل درجة القياسات تعرض على سلة  الليزر </string>
     <string name="spi_update_delay"> فترة تحديث النقاط المثيره للاهتمام</string>
@@ -301,8 +300,7 @@
     <string name="preferences_text45">    حذف المواد او الفقرات من الجهاز بعد ان كانت قد انتهت الفائده منها في هذه الدقائق</string>
     <string name="preferences_text46">إزالة العلامات المجهولة عندما تصبح قديمة</string>
     <string name="preferences_text47">قم بالتفعيل لحذف أنواع العلامات المجهولة من الجهاز عندما يحين وقت إنتهاء صلاحيتها</string>
-    <string name="preferences_text48"> انهاء  التطبيق عند الضغط على زر الرجوع
-  </string>
+    <string name="preferences_text48"> انهاء  التطبيق عند الضغط على زر الرجوع </string>
     <string name="preferences_text49">     إنهاء التطبيق  عند الضغط على علامة الرجوع الموجوده على وجه الجهاز</string>
     <string name="preferences_text50">إسئل قبل إنهاء التطبيق  </string>
     <string name="preferences_text51">     سؤال فوري يطلب  إنهاء التطبيق  بدلاَ من الغلق مباشرة</string>
@@ -2579,8 +2577,8 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
     <string name="select_the_type_of_emergency">انتخب   نوع الطوارئ</string>
     <string name="send_sms_for_emergency">إرسال رسالة قصيرة للطوارئ:</string>
     <string name="must_select_emergency_type">يجب تحديد نوع الطوارئ أولاً</string>
-    <string name="emergency_notice_canceled">تم إلغاء ملاحظه%s</string>
-    <string name="emergency_notice_initiated">تمت تهيئة ملاحظه%s</string>
+    <string name="emergency_notice_canceled">تم إلغاء ملاحظه %s</string>
+    <string name="emergency_notice_initiated">تمت تهيئة ملاحظه %s</string>
     <string name="delete_emergency_alert">حذف تنبيه الطوارئ: %s</string>
     <string name="emergency_removing_alert">حذف تنبيه %s</string>
     <!-- Image Capture -->
@@ -2723,7 +2721,7 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
     <string name="url_invalid"> غير صحيح UR </string>
     <string name="importmgr_specify_valid_url_for_resource">يُرجى تحديد للمصادرURLصحيح</string>
     <string name="importmgr_invalid_refresh_rate">معدل تنشيط غير صحيح</string>
-    <string name="importmgr_specify_valid_refresh_rate_for_resource">يُرجى تحديد معدل تنشيط صحيح (لا يقل عن 30 ثانية) للمورد</string>
+    <string name="importmgr_specify_valid_refresh_rate_for_resource">يُرجى تحديد معدل تنشيط صحيح (لا يقل عن %d ثانية) للمورد</string>
     <string name="importmgr_remote_resource_configuration_received">تم استلام تهيئة المصدر البعيد</string>
     <string name="download_available_via_import_manager">%s يتوفر تنزيل بواسطة مدير الاستيراد</string>
     <string name="switch_orientation">تشغيل التوجه</string>
@@ -3891,5 +3889,30 @@ PRC-161,حيث بيانات الموقف ترسل عبر الشبكه –هذا 
     <string name="delete_elevation_data_warning">You cannot delete the entire elevation data set. Please select a specific set.</string>
     <string name="are_you_sure_delete_elevation">Are you sure you want to delete %s elevation data?</string>
     <string name="delete_elevation_please_lock">Please lock both switches to delete elevation</string>
+
+    <string name="resection_update_location_title">Update location?</string>
+    <string name="resection_update_location_message">Do you want to update your location to the resection estimate?\nLocation: %s</string>
+    <string name="resection_estimate_label">Provider: %1$s\nLocation: %2$s\nConfidence: %3$s</string>
+    <string name="resection_select_estimates_prompt_title">Select which location estimates to use</string>
+    <string name="resection_run_another_title">Run another Resection tool?</string>
+    <string name="resection_run_another_message">Do you want to run another Resection tool to get another estimate?</string>
+    <string name="resection_no_estimates_selected">No estimates were selected--unable to compute a location</string>
+    <string name="resection_classic_tool_description">Classic resection. Takes lines of bearing from observer\'s point to 2 or more landmarks</string>
+    <string name="resection_classic_tool_ideal_conditions">When there are landmarks you are able to identify and match to the map. Highest accuracy when angle between landmarks approaches 90 degrees</string>
+    <string name="resection_classic_tool_relative_accuracy">Dependent upon how accurately the landmarks and relative bearings are identified</string>
+    <string name="invalid_cot_address">Invalid output encountered, make sure the address does not contain the protocol or port</string>
+    <string name="image_overlay_hud">Image Overlay HUD</string>
+    <string name="image_overlay_warning">This option will permanently overlay metadata onto the image. Continue?</string>
+    <string name="kml_network_link">KML Network Link</string>
+    <string name="kml_links_added_msg">Added %d KML network links</string>
+    <string name="kml_links_added_failed_msg">Failed to add KML network links</string>
+    <string name="import_kml_network_link">Import KML Network Link</string>
+    <string name="kml_link_desc">%1$s (%2$d sub-links)</string>
+    <string name="resection_ideal_conditions_label">Ideal Conditions</string>
+    <string name="resection_relative_accuracy_label">Relative Accuracy</string>
+    <string name="resection_details_label">%s Details</string>
+    <string name="polygon_area_prompt">Tap points along the route wish to select.</string>
+    <string name="lasso_area_prompt">Tap points or drag to draw along the route you wish to select.</string>
+    <string name="lasso">Lasso</string>
 
 </resources>

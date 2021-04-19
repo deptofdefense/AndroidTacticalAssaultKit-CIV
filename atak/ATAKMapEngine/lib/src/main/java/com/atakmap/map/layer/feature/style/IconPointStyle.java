@@ -54,6 +54,36 @@ public final class IconPointStyle extends Style {
         rotationAbsolute), null);
     }
 
+    /**
+     * Creates a new icon style with the specified properties.
+     *
+     * @param color             The icon color
+     * @param iconUri           The icon URI
+     * @param scale             scaling to apply to the icon when rendered
+     * @param alignX            The horizontal alignment of the icon. Less than
+     *                          <code>0</code> for to the left, <code>0</code>
+     *                          for horizontal centered, greater than
+     *                          <code>0</code> for to the right
+     * @param alignY            The vertical alignment of the icon. Less than
+     *                          <code>0</code> for above, <code>0</code> for
+     *                          vertically centered, greater than <code>0</code>
+     *                          for below
+     * @param rotation          The rotation of the icon, in radians
+     * @param rotationAbsolute  <code>true</code> if the rotation is absolute
+     *                          (relative to North), <code>false</code> if the
+     *                          rotation is relative.
+     */
+    public IconPointStyle(int color, String iconUri, float scale, int alignX, int alignY, float rotation, boolean rotationAbsolute) {
+        this(IconPointStyle_create(color,
+                iconUri,
+                scale,
+                (alignX == 0) ? getIconPointStyle_HorizontalAlignment_H_CENTER() : (alignX > 0 ? getIconPointStyle_HorizontalAlignment_RIGHT() : getIconPointStyle_HorizontalAlignment_LEFT()),
+                (alignY == 0) ? getIconPointStyle_VerticalAlignment_V_CENTER() : (alignY > 0 ? getIconPointStyle_VerticalAlignment_BELOW() : getIconPointStyle_VerticalAlignment_ABOVE()),
+                rotation,
+                rotationAbsolute),
+  null);
+    }
+
     IconPointStyle(Pointer pointer, Object owner) {
         super(pointer, owner);
     }
@@ -75,6 +105,21 @@ public final class IconPointStyle extends Style {
         }
     }
     
+    /**
+     * Returns the scaling to be applied to the icon when rendering.
+     * If this returns 0, no scaling is to be applied
+     *
+     * @return  Scale factor to be applied when rendering the icon
+     */
+    public float getIconScaling() {
+        this.rwlock.acquireRead();
+        try {
+            return IconPointStyle_getScaling(this.pointer.raw);
+        } finally {
+            this.rwlock.releaseRead();
+        }
+    }
+
     /**
      * Returns the rotation to be applied to the icon. The value of
      * {@link #isRotationAbsolute()} should be evaluated to correctly interpret

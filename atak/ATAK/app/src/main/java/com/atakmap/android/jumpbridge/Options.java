@@ -66,7 +66,8 @@ public class Options {
                 R.string.currentlocation_jm),
         ETA(R.string.eta_jm),
         X_TRACK(
-                R.string.xtrack_jm);
+                R.string.xtrack_jm),
+        PROJ_DIST(R.string.proj_dist_jm);
         private final String name;
 
         FieldOptions(int v) {

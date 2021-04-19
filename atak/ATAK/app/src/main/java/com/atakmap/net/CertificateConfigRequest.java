@@ -20,6 +20,7 @@ public class CertificateConfigRequest implements Parcelable {
     private final String username;
     private final String password;
     private boolean hasTruststore;
+    private Long expiration;
 
     /**
      * @deprecated Certificate Enrollment only stores certificates with the connection
@@ -45,6 +46,14 @@ public class CertificateConfigRequest implements Parcelable {
         this.hasTruststore = false;
         this.saveAsDefault = false;
         this.allowAllHostnames = false;
+    }
+
+    public CertificateConfigRequest(
+            String connectString, String cacheCreds, String description,
+            String username, String password, Long expiration) {
+
+        this(connectString, cacheCreds, description, username, password);
+        this.expiration = expiration;
     }
 
     public boolean isValid() {
@@ -81,6 +90,14 @@ public class CertificateConfigRequest implements Parcelable {
 
     public void setHasTruststore(boolean hasTruststore) {
         this.hasTruststore = hasTruststore;
+    }
+
+    public Long getExpiration() {
+        return expiration;
+    }
+
+    public void setExpiration(Long expiration) {
+        this.expiration = expiration;
     }
 
     /**
@@ -129,6 +146,7 @@ public class CertificateConfigRequest implements Parcelable {
             dest.writeByte((byte) (hasTruststore ? 1 : 0));
             dest.writeByte((byte) (saveAsDefault ? 1 : 0));
             dest.writeByte((byte) (allowAllHostnames ? 1 : 0));
+            dest.writeLong(expiration);
         }
     }
 
@@ -155,6 +173,7 @@ public class CertificateConfigRequest implements Parcelable {
         hasTruststore = in.readByte() != 0;
         saveAsDefault = in.readByte() != 0;
         allowAllHostnames = in.readByte() != 0;
+        expiration = in.readLong();
     }
 
     @Override

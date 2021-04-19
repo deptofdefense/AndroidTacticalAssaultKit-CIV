@@ -335,7 +335,7 @@ public final class AtakCertificateDatabaseAdapter implements AtakCertificateData
      * @param type the type of certificate
      * @param cert the certificate represented as a <code>byte[]</code>
      * @param hash the hash of the certificate.
-     * @return True if successful, false otherwise.
+     * @return true if successful, false otherwise.
      */
     private boolean saveCertificate(String type, byte[] cert, String hash) {
         byte[] existing = getCertificate(type);
@@ -497,7 +497,7 @@ public final class AtakCertificateDatabaseAdapter implements AtakCertificateData
      * @param cert   the certificate represented as a <code>byte[]</code>
      * @param hash   the hash of the certificate.
      * @param server the server
-     * @return True if successful, false otherwise.
+     * @return true if successful, false otherwise.
      */
     private boolean saveCertificateForServer(String type, String server, byte[] cert,
                                                String hash) {

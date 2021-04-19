@@ -38,9 +38,8 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * REST Operation to GET an ATAK Mission Package Delay operation if previously failed Files(s) are
@@ -183,28 +182,21 @@ public final class GetFileTransferOperation extends HTTPOperation {
             response.verifyOk();
 
             // open up for writing
-            FileOutputStream fos = null;
-            InputStream in = null;
+            // stream in content, keep user notified on progress
+            builder.setProgress(100, 1, false);
+            if (notifyManager != null)
+                notifyManager.notify(fileRequest.getNotificationId(),
+                        builder.build());
 
-            try {
+            int len;
+            byte[] buf = new byte[8192];
+            progressTracker = new DownloadProgressTracker(fileRequest
+                    .getFileTransfer().getSize());
+            // if this is a restart, update initial content length
+            progressTracker.setCurrentLength((bRestart ? existingLength : 0));
 
-                fos = IOProviderFactory.getOutputStream(temp,
-                        bRestart);
-                // stream in content, keep user notified on progress
-                builder.setProgress(100, 1, false);
-                if (notifyManager != null)
-                    notifyManager.notify(fileRequest.getNotificationId(),
-                            builder.build());
-
-                int len;
-                byte[] buf = new byte[8192];
-                progressTracker = new DownloadProgressTracker(fileRequest
-                        .getFileTransfer().getSize());
-                // if this is a restart, update initial content length
-                progressTracker.setCurrentLength((bRestart ? existingLength : 0));
-
-
-                in = resEntity.getContent();
+            try (OutputStream fos = IOProviderFactory.getOutputStream(temp, bRestart);
+                 InputStream in = resEntity.getContent()) {
                 while ((len = in.read(buf)) > 0) {
                     fos.write(buf, 0, len);
 
@@ -242,19 +234,6 @@ public final class GetFileTransferOperation extends HTTPOperation {
                         progressTracker.notified(currentTime);
                     }
                 } // end read loop
-            } finally {
-                if (in != null) {
-                    try {
-                        in.close();
-                    } catch (IOException ignored) {
-                    }
-                }
-                if (fos != null) {
-                    try {
-                        fos.close();
-                    } catch (IOException ignored) {
-                    }
-                }
             }
 
             // Now verify we got download correctly

@@ -1,6 +1,8 @@
 
 package com.atakmap.android.video;
 
+import android.net.Uri;
+
 import com.atakmap.android.video.manager.VideoManager;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -262,8 +264,7 @@ public class ConnectionEntry implements Serializable {
         protoIndex += 3;
         int portIndex = uri.indexOf(":", protoIndex);
         // if there is no port, start searching for a path after the protocol
-        int pathIndex = uri.indexOf("/",
-                portIndex > -1 ? portIndex : protoIndex);
+        int pathIndex = uri.indexOf("/", protoIndex);
 
         // if there is a colon in the url and no port specified,
         // reset the portIndex and just grab the path starting after the address

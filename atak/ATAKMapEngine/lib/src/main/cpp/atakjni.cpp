@@ -3,9 +3,15 @@
 #include <cstring>
 #include <cmath>
 
+#include <core/MapSceneModel2.h>
+
+using namespace TAK::Engine::Core;
+using namespace TAK::Engine::Math;
+
 JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_geometry_opengl_GLBatchGeometryRenderer_fillVertexArrays
-  (JNIEnv *env, jclass clazz, jint vertSize, jobject jtranslations, jobject jtexAtlasIndices, jint iconSize, jint textureSize, jobject jvertsTexCoords, jint count)
+  (JNIEnv *env, jclass clazz, jlong scenePtr, jint vertSize, jobject jtranslations, jobject jtexAtlasIndices, jint iconSize, jint textureSize, jobject jvertsTexCoords, jint count)
 {
+    const MapSceneModel2 *cscene = JLONG_TO_INTPTR(MapSceneModel2, scenePtr);
 
     jfloat *translations = GET_BUFFER_POINTER(jfloat, jtranslations);
     jint *texAtlasIndices = GET_BUFFER_POINTER(jint, jtexAtlasIndices);
@@ -39,80 +45,94 @@ JNIEXPORT void JNICALL Java_com_atakmap_map_layer_feature_geometry_opengl_GLBatc
     int iconIndex;
 
     if(vertSize == 2) {
+    	const std::size_t vertStride = (vertSize+1u);
         for(int i = 0; i < count; i++) {
-            tx = translations[i*vertSize];
-            ty = translations[i*vertSize+1];
+            tx = translations[i*vertStride];
+            ty = translations[i*vertStride+1];
+            const float scale = translations[i*vertStride+2];
+            Point2<double> xyz;
+            cscene->forward(&xyz, GeoPoint2(ty, tx));
+            tx = (float)xyz.x;
+            ty = (float)xyz.y;
+
 
             iconIndex = texAtlasIndices[i];
 
             iconX = (iconIndex % numIconsX) * iconSize;
 			iconY = (iconIndex / numIconsX) * iconSize;
 
-			(*pVertsTexCoords++) = vertices[0]+tx;
-			(*pVertsTexCoords++) = vertices[1]+ty;
+			(*pVertsTexCoords++) = vertices[0]*scale+tx;
+			(*pVertsTexCoords++) = vertices[1]*scale+ty;
 			(*pVertsTexCoords++) = iconX / fTextureSize;                 // upper-left
 			(*pVertsTexCoords++) = (iconY + fIconSize) / fTextureSize;
-			(*pVertsTexCoords++) = vertices[2]+tx;
-			(*pVertsTexCoords++) = vertices[3]+ty;
+			(*pVertsTexCoords++) = vertices[2]*scale+tx;
+			(*pVertsTexCoords++) = vertices[3]*scale+ty;
 			(*pVertsTexCoords++) = (iconX + fIconSize) / fTextureSize;   // upper-right
 			(*pVertsTexCoords++) = (iconY + fIconSize) / fTextureSize;
-			(*pVertsTexCoords++) = vertices[4]+tx;
-			(*pVertsTexCoords++) = vertices[5]+ty;
+			(*pVertsTexCoords++) = vertices[4]*scale+tx;
+			(*pVertsTexCoords++) = vertices[5]*scale+ty;
 			(*pVertsTexCoords++) = iconX / fTextureSize;                 // lower-left
 			(*pVertsTexCoords++) = iconY / fTextureSize;
-			(*pVertsTexCoords++) = vertices[6]+tx;
-			(*pVertsTexCoords++) = vertices[7]+ty;
+			(*pVertsTexCoords++) = vertices[6]*scale+tx;
+			(*pVertsTexCoords++) = vertices[7]*scale+ty;
 			(*pVertsTexCoords++) = (iconX + fIconSize) / fTextureSize;   // upper-right
 			(*pVertsTexCoords++) = (iconY + fIconSize) / fTextureSize;
-			(*pVertsTexCoords++) = vertices[8]+tx;
-			(*pVertsTexCoords++) = vertices[9]+ty;
+			(*pVertsTexCoords++) = vertices[8]*scale+tx;
+			(*pVertsTexCoords++) = vertices[9]*scale+ty;
 			(*pVertsTexCoords++) = iconX / fTextureSize;                 // lower-left
 			(*pVertsTexCoords++) = iconY / fTextureSize;
-			(*pVertsTexCoords++) = vertices[10]+tx;
-			(*pVertsTexCoords++) = vertices[11]+ty;
+			(*pVertsTexCoords++) = vertices[10]*scale+tx;
+			(*pVertsTexCoords++) = vertices[11]*scale+ty;
 			(*pVertsTexCoords++) = (iconX + fIconSize) / fTextureSize;   // lower-right
 			(*pVertsTexCoords++) = iconY / fTextureSize;
 		}
     } else if(vertSize == 3) {
     	float tz;
 
+    	const std::size_t vertStride = (vertSize+1u);
         for(int i = 0; i < count; i++) {
-            tx = translations[i*vertSize];
-            ty = translations[i*vertSize+1];
-            tz = translations[i*vertSize+2];
+            tx = translations[i*vertStride];
+            ty = translations[i*vertStride+1];
+            tz = translations[i*vertStride+2];
+            const float scale = translations[i*vertStride+3];
+            Point2<double> xyz;
+            cscene->forward(&xyz, GeoPoint2(ty, tx, tz, AltitudeReference::HAE));
+            tx = (float)xyz.x;
+            ty = (float)xyz.y;
+            tz = (float)xyz.z;
 
             iconIndex = texAtlasIndices[i];
 
             iconX = (iconIndex % numIconsX) * iconSize;
 			iconY = (iconIndex / numIconsX) * iconSize;
 
-			(*pVertsTexCoords++) = vertices[0]+tx;
-			(*pVertsTexCoords++) = vertices[1]+ty;
+			(*pVertsTexCoords++) = vertices[0]*scale+tx;
+			(*pVertsTexCoords++) = vertices[1]*scale+ty;
 			(*pVertsTexCoords++) = tz;
 			(*pVertsTexCoords++) = iconX / fTextureSize;                 // upper-left
 			(*pVertsTexCoords++) = (iconY + fIconSize) / fTextureSize;
-			(*pVertsTexCoords++) = vertices[2]+tx;
-			(*pVertsTexCoords++) = vertices[3]+ty;
+			(*pVertsTexCoords++) = vertices[2]*scale+tx;
+			(*pVertsTexCoords++) = vertices[3]*scale+ty;
 			(*pVertsTexCoords++) = tz;
 			(*pVertsTexCoords++) = (iconX + fIconSize) / fTextureSize;   // upper-right
 			(*pVertsTexCoords++) = (iconY + fIconSize) / fTextureSize;
-			(*pVertsTexCoords++) = vertices[4]+tx;
-			(*pVertsTexCoords++) = vertices[5]+ty;
+			(*pVertsTexCoords++) = vertices[4]*scale+tx;
+			(*pVertsTexCoords++) = vertices[5]*scale+ty;
 			(*pVertsTexCoords++) = tz;
 			(*pVertsTexCoords++) = iconX / fTextureSize;                 // lower-left
 			(*pVertsTexCoords++) = iconY / fTextureSize;
-			(*pVertsTexCoords++) = vertices[6]+tx;
-			(*pVertsTexCoords++) = vertices[7]+ty;
+			(*pVertsTexCoords++) = vertices[6]*scale+tx;
+			(*pVertsTexCoords++) = vertices[7]*scale+ty;
 			(*pVertsTexCoords++) = tz;
 			(*pVertsTexCoords++) = (iconX + fIconSize) / fTextureSize;   // upper-right
 			(*pVertsTexCoords++) = (iconY + fIconSize) / fTextureSize;
-			(*pVertsTexCoords++) = vertices[8]+tx;
-			(*pVertsTexCoords++) = vertices[9]+ty;
+			(*pVertsTexCoords++) = vertices[8]*scale+tx;
+			(*pVertsTexCoords++) = vertices[9]*scale+ty;
 			(*pVertsTexCoords++) = tz;
 			(*pVertsTexCoords++) = iconX / fTextureSize;                 // lower-left
 			(*pVertsTexCoords++) = iconY / fTextureSize;
-			(*pVertsTexCoords++) = vertices[10]+tx;
-			(*pVertsTexCoords++) = vertices[11]+ty;
+			(*pVertsTexCoords++) = vertices[10]*scale+tx;
+			(*pVertsTexCoords++) = vertices[11]*scale+ty;
 			(*pVertsTexCoords++) = tz;
 			(*pVertsTexCoords++) = (iconX + fIconSize) / fTextureSize;   // lower-right
 			(*pVertsTexCoords++) = iconY / fTextureSize;

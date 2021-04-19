@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.graphics.Matrix;
 import android.preference.PreferenceManager;
 
 import android.content.pm.PackageManager;
@@ -50,7 +51,10 @@ import com.atakmap.coremap.maps.conversion.EGM96;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 import com.atakmap.coremap.maps.time.CoordinatedTime.SimpleDateFormatThread;
+import com.atakmap.math.MathUtils;
+import com.atakmap.util.zip.IoUtils;
 import com.partech.mobilevid.*;
+import com.partech.mobilevid.gl.GLMisc;
 import com.partech.pgscmedia.MediaFormat;
 import com.partech.pgscmedia.MediaProcessor;
 import com.partech.pgscmedia.VideoMediaFormat;
@@ -60,7 +64,6 @@ import com.partech.pgscmedia.consumers.StatusUpdateConsumer;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
@@ -260,7 +263,21 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                     public void videoSizeChanged(final int w, final int h) {
                         mapView.post(new Runnable() {
                             public void run() {
+                                // Update video size for GL view
                                 glView.sourceSizeUpdate(w, h);
+
+                                // Notify overlays of video size too
+                                for (VideoViewLayer vvl : activeLayers) {
+                                    try {
+                                        vvl.videoSizeChanged(w, h);
+                                    } catch (Exception e) {
+                                        Log.e(TAG, "error with a layer", e);
+                                    }
+                                }
+
+                                // Update view matrix since it depends on the
+                                // video size
+                                updateViewMatrix();
                             }
                         });
                         vo.dispatchSizeChange(w, h);
@@ -315,9 +332,11 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
         connectionText = videoView.findViewById(R.id.progress);
 
         overlays = videoView.findViewById(R.id.overlays);
+        overlays.setEnabled(false);
 
         vmd.useKlvElevation = _prefs.getBoolean("prefs_use_klv_elevation",
                 false);
+
     }
 
     @Override
@@ -620,12 +639,10 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
 
         try {
             for (VideoViewLayer vvl : activeLayers) {
-                if (vvl.mcb != null) {
-                    try {
-                        vvl.mcb.metadataChanged(klvData, items);
-                    } catch (Exception e) {
-                        Log.e(TAG, "error with a layer", e);
-                    }
+                try {
+                    vvl.metadataChanged(klvData, items);
+                } catch (Exception e) {
+                    Log.e(TAG, "error with a layer", e);
                 }
             }
         } catch (Exception ignored) {
@@ -657,7 +674,6 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
     @Override
     public void onReceive(final Context c, final Intent intent) {
 
-        Log.e(TAG, "SHOW VIDEO LIST");
         final String action = intent.getAction();
         if (action == null)
             return;
@@ -730,6 +746,8 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                     public void run() {
                         overlays.removeAllViews();
                         activeLayers.clear();
+                        // only enable structured decoding if a plugin wants structured decoding.
+                        metadataDecoder.setStructuredItemDecodeEnabled(false);
                         if (layers != null) {
                             for (String layer : layers) {
                                 VideoViewLayer vvl = videoviewlayers.get(layer);
@@ -737,6 +755,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
                                     try {
                                         overlays.addView(vvl.v, vvl.rlp);
                                         activeLayers.add(vvl);
+                                        vvl.init(processor, metadataDecoder, vmd.connectionEntry);
                                     } catch (Exception e) {
                                         Log.e(TAG, "error adding: " + layer, e);
                                     }
@@ -1103,6 +1122,13 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
     public void onDropDownSizeChanged(double width, double height) {
         currWidth = width;
         currHeight = height;
+        getMapView().post(new Runnable() {
+            @Override
+            public void run() {
+                // View matrix depends on drop-down size
+                updateViewMatrix();
+            }
+        });
     }
 
     @Override
@@ -1244,18 +1270,9 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
             if (!IOProviderFactory.createNewFile(file)) {
                 toast("Snapshot already exists", Toast.LENGTH_SHORT);
             } else {
-                FileOutputStream ostream = null;
-                try {
-                    ostream = IOProviderFactory
-                            .getOutputStream(file);
+                try(OutputStream ostream = IOProviderFactory
+                        .getOutputStream(file)) {
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 100, ostream);
-                } finally {
-                    if (ostream != null) {
-                        try {
-                            ostream.close();
-                        } catch (IOException ignored) {
-                        }
-                    }
                 }
             }
 
@@ -1338,14 +1355,8 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
             }
 
         } else {
-            try {
-                if (recordingStream != null)
-                    recordingStream.close();
-                recordingStream = null;
-
-            } catch (IOException ioe) {
-                Log.e(TAG, "error closing out the recording stream");
-            }
+            IoUtils.close(recordingStream, TAG, "error closing out the recording stream");
+            recordingStream = null;
         }
 
     }
@@ -1407,25 +1418,121 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
     private final ScaleGestureDetector scaleDetector;
 
     private void resetPanAndScale() {
-        glView.setScale(1.0f);
-        glView.setPanOffset(0, 0);
         currentScale = 1.0f;
         currentPanX = currentPanY = 0;
+        updateViewMatrix();
+    }
+
+    void updateViewMatrix() {
+
+        // Pass raw values to GL
+        glView.setScale(currentScale);
+        glView.setPanOffset((int) currentPanX, (int) currentPanY);
+
+        // Need to transform the raw pan X/Y to a value that works for the overlays
+        // Reference: GLVidRenderer.resizeVideo
+        float surfaceW = glView.getWidth();
+        float surfaceH = glView.getHeight();
+        int sourceHeight = glView.getSourceHeight();
+        int sourceWidth = glView.getSourceWidth();
+
+        int clampSH = sourceHeight == 0 ? 1 : sourceHeight;
+        int clampSW = sourceWidth == 0 ? 1 : sourceWidth;
+        float ar = (float)sourceWidth / (float)clampSH;
+        float destAR = surfaceW / surfaceH;
+        float w;
+        float h;
+        if (destAR > ar) {
+            h = surfaceH;
+            w = h * ar;
+        } else {
+            w = surfaceW;
+            h = w / ar;
+        }
+
+        int scaleW = (int)Math.floor((double)((float)sourceWidth * currentScale));
+        int scaleH = (int)Math.floor((double)((float)sourceHeight * currentScale));
+        int scaleDw = scaleW - sourceWidth;
+        int scaleDh = scaleH - sourceHeight;
+        float clampedPanX = MathUtils.clamp(currentPanX,
+                -scaleDw / 2f, scaleDw / 2f);
+        float clampedPanY = MathUtils.clamp(currentPanY,
+                -scaleDh / 2f, scaleDh / 2f);
+
+        // Perform the same matrix calculations that are in GLVidRenderer
+        float[] fm = new float[16];
+        System.arraycopy(GLMisc.IDENTITY, 0, fm, 0, 16);
+        android.opengl.Matrix.scaleM(fm, 0, w / surfaceW, h / surfaceH, 1.0f);
+        android.opengl.Matrix.translateM(fm, 0, -2 * clampedPanX / clampSW,
+                -clampedPanY / clampSH, 0);
+        android.opengl.Matrix.scaleM(fm, 0, currentScale, currentScale, 1.0f);
+        android.opengl.Matrix.translateM(fm, 0, 2 * clampedPanX / clampSW,
+                clampedPanY / clampSH, 0);
+
+        // Convert the above 4x4 matrix to 3x3 and flip columns/rows
+        // Also need to negate the y-translate since it's flipped in Android
+        // view code
+        Matrix m1 = new Matrix();
+        m1.setValues(new float[] {
+                fm[0], 0f, fm[12],
+                0f, fm[5], -fm[13],
+                0f, 0f, 1f
+        });
+
+        // Need half surface width and height for below matrix
+        float halfW = surfaceW / 2f;
+        float halfH = surfaceH / 2f;
+
+        // Need to perform a translate and scale before applying the GL matrix above
+        Matrix m2 = new Matrix();
+
+        // Move surface so its bounds are [-w/2, -h/2] to [w/2, h/2]
+        // This will make scale operations center-oriented instead of
+        // top-left oriented
+        m2.postTranslate(-halfW, -halfH);
+
+        // Scale down dimensions so they're normalized [-1, -1] to [1, 1]
+        m2.postScale(1f / halfW, 1f / halfH);
+
+        // Now that the input dimensions are the same as what GL expects,
+        // concat our converted 3x3 GL matrix
+        m2.postConcat(m1);
+
+        // Scale and translate back to original position
+        m2.postScale(halfW, halfH);
+        m2.postTranslate(halfW, halfH);
+
+        // Set view matrix on layers
+        try {
+            for (VideoViewLayer vvl : activeLayers) {
+                try {
+                    vvl.setPan((int) currentPanX, (int) currentPanY);
+                    vvl.setScale(currentScale);
+                    vvl.setViewMatrix(m2);
+                } catch (Exception e) {
+                    Log.e(TAG, "error with a layer", e);
+                }
+            }
+        } catch (Exception ignored) {
+        }
     }
 
     private void setPan(float x, float y) {
         currentPanX -= x;
         currentPanY += y;
-        glView.setPanOffset((int) currentPanX, (int) currentPanY);
+
+        currentPanY = Math.max(Math.min(currentPanY, glView.getWidth()), -glView.getWidth());
+        currentPanX = Math.max(Math.min(currentPanX, glView.getHeight()), -glView.getHeight());
+
+        updateViewMatrix();
     }
 
     private void setScale(float scale) {
         currentScale += scale;
-
-        if (currentScale < 1f) {
+        if (currentScale < 1f)
             currentScale = 1f;
-        }
-        glView.setScale(currentScale);
+
+        updateViewMatrix();
     }
 
     class ScaleGestureListener
@@ -1460,7 +1567,7 @@ public class VideoDropDownReceiver extends DropDownReceiver implements
 
         @Override
         public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX,
-                float distanceY) {
+                                float distanceY) {
             setPan(distanceX, distanceY);
             return true;
         }

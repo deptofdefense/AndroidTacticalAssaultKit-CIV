@@ -51,6 +51,61 @@ bool Cesium3DTilesSceneInfoSpi::isSupported(const char* URI) NOTHROWS {
 	return C3DT_probeSupport(nullptr, nullptr, nullptr, nullptr, nullptr, URI) == TE_Ok;
 }
 
+namespace TAK {
+	namespace Engine {
+		namespace Model {
+			TAKErr C3DT_parseB3DMScene(ScenePtr& scenePtr, SceneInfoPtr& sceneInfoPtr, DataInput2* input, const char* baseURI, const char* URI) NOTHROWS {
+				TAKErr code = B3DM_parse(scenePtr, input, baseURI);
+				TE_CHECKRETURN_CODE(code);
+
+				Matrix2 localFrame;
+				GeoPoint2 locPoint;
+				Envelope2 aabb;
+
+				// should always be the case
+				if (scenePtr->getRootNode().getLocalFrame())
+					localFrame = *scenePtr->getRootNode().getLocalFrame();
+
+				MeshTransformOptions aabb_src;
+				aabb_src.srid = 4978;
+				aabb_src.localFrame = Matrix2Ptr(new Matrix2(localFrame), Memory_deleter_const<Matrix2>);
+
+				MeshTransformOptions aabb_dst;
+				aabb_dst.srid = 4978;
+
+				Envelope2 aabbSrc = scenePtr->getAABB();
+				Mesh_transform(&aabb, aabbSrc, aabb_src, aabb_dst);
+
+				Projection2Ptr proj(nullptr, nullptr);
+				code = ProjectionFactory3_create(proj, 4978);
+				TE_CHECKRETURN_CODE(code);
+
+				Point2<double> centerPoint;
+				localFrame.transform(&centerPoint, centerPoint);
+				proj->inverse(&locPoint, centerPoint);
+
+				SceneInfoPtr model(new (std::nothrow) SceneInfo());
+				if (!model)
+					return TE_OutOfMemory;
+
+				model->type = Cesium3DTilesSceneInfoSpi::getStaticName();
+				model->altitudeMode = TAK::Engine::Feature::TEAM_ClampToGround;
+				model->minDisplayResolution = 1.0;//std::numeric_limits<double>::max();
+				model->maxDisplayResolution = 0.0;
+				model->srid = 4978;
+				model->uri = URI;
+				model->aabb = Envelope2Ptr(new Envelope2(aabb), Memory_deleter_const<Envelope2>);
+				model->localFrame = Matrix2Ptr(new Matrix2(), Memory_deleter_const<Matrix2>);
+				model->location =
+					TAK::Engine::Core::GeoPoint2Ptr(new TAK::Engine::Core::GeoPoint2(locPoint), Memory_deleter_const<TAK::Engine::Core::GeoPoint2>);
+
+				sceneInfoPtr = model;
+				return code;
+			}
+		}
+	}
+}
+
 TAK::Engine::Util::TAKErr Cesium3DTilesSceneInfoSpi::create(TAK::Engine::Port::Collection<SceneInfoPtr>& scenes, const char* URI) NOTHROWS {
 
 	TAKErr code = TE_Unsupported;
@@ -89,6 +144,7 @@ TAK::Engine::Util::TAKErr Cesium3DTilesSceneInfoSpi::create(TAK::Engine::Port::C
 
 		code = scenes.add(model);
 	} else if (type == C3DTFileType_B3DM) {
+#if 0
 		ScenePtr scenePtr(nullptr, nullptr);
 		code = B3DM_parse(scenePtr, input.get(), baseURI);
 		TE_CHECKRETURN_CODE(code);
@@ -133,8 +189,13 @@ TAK::Engine::Util::TAKErr Cesium3DTilesSceneInfoSpi::create(TAK::Engine::Port::C
 		model->localFrame = Matrix2Ptr(new Matrix2(), Memory_deleter_const<Matrix2>);
 		model->location =
 			TAK::Engine::Core::GeoPoint2Ptr(new TAK::Engine::Core::GeoPoint2(locPoint), Memory_deleter_const<TAK::Engine::Core::GeoPoint2>);
-
-		code = scenes.add(model);
+#else
+		SceneInfoPtr model;
+		ScenePtr scenePtr(nullptr, nullptr);
+		code = C3DT_parseB3DMScene(scenePtr, model, input.get(), baseURI, URI);
+#endif
+		if (code == TE_Ok)
+			code = scenes.add(model);
 	} else {
 		code = TE_Unsupported;
 	}
@@ -148,11 +209,12 @@ TAK::Engine::Util::TAKErr Cesium3DTilesSceneInfoSpi::create(TAK::Engine::Port::C
 
 namespace {
 	TAKErr setLocTransform(SceneInfo* sceneInfo, TAK::Engine::Math::Point2<double> &center, const C3DTTile* root) {
-		TAK::Engine::Math::Matrix2 transform(
+		/*TAK::Engine::Math::Matrix2 transform(
 			root->transform[0], root->transform[4], root->transform[8], root->transform[12],
 			root->transform[1], root->transform[5], root->transform[9], root->transform[13],
 			root->transform[2], root->transform[6], root->transform[10], root->transform[14],
-			root->transform[3], root->transform[7], root->transform[11], root->transform[15]);
+			root->transform[3], root->transform[7], root->transform[11], root->transform[15]);*/
+		TAK::Engine::Math::Matrix2 transform = root->transform;
 		transform.transform(&center, center);
 		Projection2Ptr ecefProj(nullptr, nullptr);
 		TAKErr code = ProjectionFactory3_create(ecefProj, 4978);
@@ -179,18 +241,18 @@ namespace {
 				break;
 			case C3DTVolume::Box: {
 				TAK::Engine::Math::Point2<double> center(
-					root->boundingVolume.object.box.centerX,
-					root->boundingVolume.object.box.centerY,
-					root->boundingVolume.object.box.centerZ);
+					root->boundingVolume.object.box.center.x,
+					root->boundingVolume.object.box.center.y,
+					root->boundingVolume.object.box.center.z);
 				TAKErr code = setLocTransform(sceneInfo, center, root);
 				if (code != TE_Ok) return code;
 			}
 				break;
 			case C3DTVolume::Sphere: {
 				TAK::Engine::Math::Point2<double> center(
-					root->boundingVolume.object.sphere.centerX,
-					root->boundingVolume.object.sphere.centerY,
-					root->boundingVolume.object.sphere.centerZ);
+					root->boundingVolume.object.sphere.center.x,
+					root->boundingVolume.object.sphere.center.y,
+					root->boundingVolume.object.sphere.center.z);
 				TAKErr code = setLocTransform(sceneInfo, center, root);
 				if (code != TE_Ok) return code;
 			}

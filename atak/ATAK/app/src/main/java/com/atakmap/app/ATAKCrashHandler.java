@@ -16,6 +16,7 @@ import com.atakmap.coremap.locale.LocaleUtil;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.time.CoordinatedTime;
 
+import com.atakmap.util.zip.IoUtils;
 import org.acra.ReportField;
 import org.acra.collector.CrashReportData;
 import org.acra.sender.ReportSender;
@@ -175,9 +176,7 @@ class ATAKCrashHandler implements ReportSender {
         } catch (IOException | JSONReportBuilder.JSONReportException e) {
             Log.e(TAG, "error: ", e);
         } finally {
-            if (pw != null) {
-                pw.close();
-            }
+            IoUtils.close(pw, TAG, "PrintWriter failed to close");
         }
     }
 

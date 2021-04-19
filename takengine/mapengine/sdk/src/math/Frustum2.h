@@ -28,10 +28,10 @@ namespace TAK
                 Frustum2(const Matrix2 &clip) NOTHROWS;
                 void update(const Matrix2 &matrix_clip) NOTHROWS;
                 void update(const Matrix2 &proj, const Matrix2 &model) NOTHROWS;
-                bool intersects(const Sphere2 &s) NOTHROWS;
-                bool intersects(const AABB &a) NOTHROWS;
-                double depthIfInside(const Sphere2 &s) NOTHROWS;
-                Matrix2 getClip() NOTHROWS;
+                bool intersects(const Sphere2 &s) const NOTHROWS;
+                bool intersects(const AABB &a) const NOTHROWS;
+                double depthIfInside(const Sphere2 &s) const NOTHROWS;
+                Matrix2 getClip() const NOTHROWS;
             private :
                 static void normalize(Plane *dst, const Plane &src);
                 static double distance(const Plane &dst, const Vector4<double> &v);

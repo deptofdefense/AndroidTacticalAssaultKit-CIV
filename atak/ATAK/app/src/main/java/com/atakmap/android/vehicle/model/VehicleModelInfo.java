@@ -9,7 +9,7 @@ import android.graphics.drawable.Drawable;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.rubbersheet.data.ModelProjection;
 import com.atakmap.android.rubbersheet.data.create.ModelLoader;
-import com.atakmap.android.vehicle.model.icon.GLOffscreenCaptureService;
+import com.atakmap.android.imagecapture.opengl.GLOffscreenCaptureService;
 import com.atakmap.android.vehicle.model.icon.PendingDrawable;
 import com.atakmap.android.vehicle.model.icon.VehicleModelCaptureRequest;
 import com.atakmap.android.vehicle.model.icon.VehicleOutlineCaptureRequest;
@@ -23,6 +23,7 @@ import com.atakmap.map.layer.model.ModelInfo;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -51,8 +52,9 @@ public class VehicleModelInfo implements ModelLoader.Callback {
     private ModelInfo info;
     private Model model;
     private List<PointF> outline;
-    private boolean loading, loaded;
+    private boolean loaded;
     private boolean loadingOutline;
+    private final List<Runnable> outlineCallbacks = new ArrayList<>();
 
     // Icon
     private final PendingDrawable icon;
@@ -88,7 +90,7 @@ public class VehicleModelInfo implements ModelLoader.Callback {
         this.icon = new PendingDrawable(placeholder);
     }
 
-    public void dispose() {
+    public synchronized void dispose() {
         if (this.model != null)
             this.model.dispose();
         this.model = null;
@@ -101,23 +103,22 @@ public class VehicleModelInfo implements ModelLoader.Callback {
         return this.category + "/" + this.name;
     }
 
+    /**
+     * Get a drawable icon for this vehicle
+     * Note: The drawable returned may show a generic placeholder icon while
+     * the real vehicle icon is busy being generated. This should auto-update
+     * once finished if used in a view. You can also use
+     * {@link Drawable#setCallback(Drawable.Callback)} to listen for the update
+     * event.
+     * @return Pending vehicle icon
+     */
     public synchronized PendingDrawable getIcon() {
         // Cached icon
         if (!this.icon.isPending() || this.iconBusy)
             return this.icon;
 
         // Load from file
-        Bitmap bmp = null;
-        String fileName = FileSystemUtils.sanitizeWithSpacesAndSlashes(
-                this.category + File.separator + this.fileName + ".png");
-        File iconFile = new File(VehicleModelCache.ICON_DIR, fileName);
-        if (IOProviderFactory.exists(iconFile))
-            try (FileInputStream fis = IOProviderFactory
-                    .getInputStream(iconFile)) {
-                bmp = BitmapFactory.decodeStream(fis);
-            } catch (IOException e) {
-                // `bmp` remains `null`
-            }
+        Bitmap bmp = getCachedIcon();
         if (bmp != null) {
             this.icon.setBitmap(bmp);
             return this.icon;
@@ -125,12 +126,7 @@ public class VehicleModelInfo implements ModelLoader.Callback {
 
         // Generate and save icon
         this.iconBusy = true;
-        VehicleModelCaptureRequest req = new VehicleModelCaptureRequest(this);
-        req.setOutputFile(iconFile);
-        req.setOutputSize(ICON_SIZE, false);
-        req.setStrokeEnabled(true);
-        req.setStrokeWidth(2);
-        req.setStrokeColorContrast(true);
+        VehicleModelCaptureRequest req = getIconRequest();
         req.setCallback(new VehicleModelCaptureRequest.Callback() {
             @Override
             public void onCaptureFinished(File file, final Bitmap bmp) {
@@ -141,7 +137,10 @@ public class VehicleModelInfo implements ModelLoader.Callback {
                     @Override
                     public void run() {
                         synchronized (VehicleModelInfo.this) {
-                            icon.setBitmap(bmp);
+                            if (bmp != null)
+                                icon.setBitmap(bmp);
+                            else
+                                Log.w(TAG, "Failed to generate icon for " + name);
                             iconBusy = false;
                         }
                     }
@@ -152,12 +151,61 @@ public class VehicleModelInfo implements ModelLoader.Callback {
         return this.icon;
     }
 
-    public ModelInfo getInfo() {
+    /**
+     * Get the capture request used to create an icon for this vehicle
+     * @return Vehicle model capture request (without callback)
+     */
+    public VehicleModelCaptureRequest getIconRequest() {
+        VehicleModelCaptureRequest req = new VehicleModelCaptureRequest(this);
+        req.setOutputFile(getCachedIconFile());
+        req.setOutputSize(ICON_SIZE, false);
+        req.setStrokeEnabled(true);
+        req.setStrokeWidth(2);
+        req.setStrokeColorContrast(true);
+        return req;
+    }
+
+    /**
+     * Get the file this vehicle icon uses in cache
+     * @return Icon file cache
+     */
+    public File getCachedIconFile() {
+        String fileName = FileSystemUtils.sanitizeWithSpacesAndSlashes(
+                this.category + File.separator + this.fileName + ".png");
+        return new File(VehicleModelCache.ICON_DIR, fileName);
+    }
+
+    /**
+     * Get the cached vehicle icon
+     * @return Icon bitmap or null if doesn't exist
+     */
+    public Bitmap getCachedIcon() {
+        File iconFile = getCachedIconFile();
+        if (IOProviderFactory.exists(iconFile)) {
+            try (FileInputStream fis = IOProviderFactory
+                    .getInputStream(iconFile)) {
+                return BitmapFactory.decodeStream(fis);
+            } catch (IOException e) {
+                // `bmp` remains `null`
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get a URI for this vehicle's icon
+     * @return Icon URI
+     */
+    public String getIconURI() {
+        return "vehicle://" + category + "/" + name;
+    }
+
+    public synchronized ModelInfo getInfo() {
         checkLoaded();
         return this.info;
     }
 
-    public Model getModel() {
+    public synchronized Model getModel() {
         checkLoaded();
         return this.model;
     }
@@ -168,10 +216,13 @@ public class VehicleModelInfo implements ModelLoader.Callback {
      *          (if they need to be loaded)
      * @return List of points or null if loading
      */
-    public synchronized List<PointF> getOutline(final Runnable cb) {
+    public synchronized List<PointF> getOutline(Runnable cb) {
         // Already loaded points
         if (this.outline != null)
             return this.outline;
+
+        // Register callback when loading is finished
+        this.outlineCallbacks.add(cb);
 
         // Already in the process of loading points
         if (this.loadingOutline)
@@ -184,11 +235,14 @@ public class VehicleModelInfo implements ModelLoader.Callback {
         req.setCallback(new VehicleOutlineCaptureRequest.Callback() {
             @Override
             public void onCaptureFinished(List<PointF> points) {
+                List<Runnable> callbacks;
                 synchronized (VehicleModelInfo.this) {
                     outline = points;
                     loadingOutline = false;
+                    callbacks = new ArrayList<>(outlineCallbacks);
+                    outlineCallbacks.clear();
                 }
-                if (cb != null)
+                for (Runnable cb : callbacks)
                     cb.run();
             }
         });
@@ -201,10 +255,8 @@ public class VehicleModelInfo implements ModelLoader.Callback {
      */
     private void checkLoaded() {
         // Don't load when we don't need to
-        synchronized (this) {
-            if (this.loaded || this.loading)
-                return;
-        }
+        if (this.loaded)
+            return;
 
         // Copy the file from assets if we haven't already
         if (!IOProviderFactory.exists(file)) {
@@ -222,10 +274,7 @@ public class VehicleModelInfo implements ModelLoader.Callback {
         loader.load();
 
         // Finished
-        synchronized (this) {
-            this.loaded = true;
-            this.loading = false;
-        }
+        this.loaded = this.info != null && this.model != null;
     }
 
     @Override

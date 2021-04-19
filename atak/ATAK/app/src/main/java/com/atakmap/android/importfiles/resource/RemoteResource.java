@@ -14,6 +14,7 @@ import com.atakmap.coremap.maps.time.CoordinatedTime;
 import org.simpleframework.xml.Element;
 import org.simpleframework.xml.ElementList;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import com.atakmap.coremap.locale.LocaleUtil;
@@ -75,35 +76,74 @@ public class RemoteResource implements Parcelable {
         EXTERNAL
     }
 
-    private Source source = Source.LOCAL_STORAGE;
+    private transient Source source = Source.LOCAL_STORAGE;
 
     /**
      * Java epoch millis Not serialized to XML, used to hold state while ATAK is running
      */
-    private long lastRefreshed;
+    private transient long lastRefreshed;
+
+    /**
+     * Parent remote resource
+     */
+    private transient RemoteResource parent;
 
     @ElementList(entry = "ChildResource", inline = true, required = false)
-    private List<ChildResource> childResources;
+    private List<RemoteResource> childResources;
 
-    public void clearChildren() {
+    public synchronized void clearChildren() {
         if (childResources != null)
             childResources.clear();
     }
 
-    public void addChild(ChildResource child) {
-        if (child == null)
+    public synchronized void addChild(RemoteResource child) {
+        if (child == null) {
             Log.w(TAG, "Discarding null child");
-
-        List<ChildResource> children = getChildren();
-        if (!children.contains(child))
-            children.add(child);
+            return;
+        }
+        List<RemoteResource> children = getChildren();
+        children.add(child);
+        child.setParent(this);
     }
 
-    public List<ChildResource> getChildren() {
+    public synchronized void removeChild(RemoteResource child) {
+        if (childResources != null && childResources.remove(child))
+            child.setParent(null);
+    }
+
+    public synchronized List<RemoteResource> getChildren() {
         if (childResources == null)
             childResources = new ArrayList<>();
 
         return childResources;
+    }
+
+    public synchronized RemoteResource findChildByName(String name) {
+        for (RemoteResource res : childResources) {
+            if (FileSystemUtils.isEquals(res.getName(), name))
+                return res;
+        }
+        return null;
+    }
+
+    public synchronized RemoteResource findChildByPath(String path) {
+        for (RemoteResource res : childResources) {
+            if (FileSystemUtils.isEquals(res.getLocalPath(), path))
+                return res;
+        }
+        return null;
+    }
+
+    public synchronized RemoteResource findChildByURL(String url) {
+        for (RemoteResource res : childResources) {
+            if (FileSystemUtils.isEquals(res.getUrl(), url))
+                return res;
+        }
+        return null;
+    }
+
+    public synchronized boolean hasChildren() {
+        return !FileSystemUtils.isEmpty(childResources);
     }
 
     public String getName() {
@@ -128,7 +168,21 @@ public class RemoteResource implements Parcelable {
     }
 
     public void setType(String type) {
-        this.type = type;
+        this.type = type != null ? type.toUpperCase(LocaleUtil.getCurrent())
+                : "OTHER";
+    }
+
+    public void setType(RemoteResource.Type type) {
+        setType(type.toString());
+    }
+
+    public void setTypeFromURL(String url) {
+        String ext = FileSystemUtils.sanitizeFilename(
+                url.substring(url.lastIndexOf('.') + 1));
+        int quesIdx = ext.indexOf('?');
+        if (quesIdx > 0)
+            ext = ext.substring(0, quesIdx);
+        setType(ext);
     }
 
     public String getUrl() {
@@ -145,6 +199,10 @@ public class RemoteResource implements Parcelable {
 
     public void setLocalPath(String localPath) {
         this.localPath = localPath;
+    }
+
+    public void setLocalPath(File file) {
+        setLocalPath(file.getAbsolutePath());
     }
 
     public String getMd5() {
@@ -171,6 +229,10 @@ public class RemoteResource implements Parcelable {
         this.refreshSeconds = refreshSeconds;
     }
 
+    public void setRefreshSeconds(Float refreshSeconds) {
+        setRefreshSeconds(refreshSeconds != null ? refreshSeconds.longValue() : 0L);
+    }
+
     public long getLastRefreshed() {
         return lastRefreshed;
     }
@@ -185,6 +247,14 @@ public class RemoteResource implements Parcelable {
 
     public void setSource(Source source) {
         this.source = source;
+    }
+
+    public void setParent(RemoteResource parent) {
+        this.parent = parent;
+    }
+
+    public RemoteResource getParent() {
+        return this.parent;
     }
 
     public boolean isValid() {
@@ -339,7 +409,7 @@ public class RemoteResource implements Parcelable {
         parcel.writeLong(lastRefreshed);
         int cnt = getChildren().size();
         parcel.writeInt(cnt);
-        for (ChildResource child : getChildren())
+        for (RemoteResource child : getChildren())
             parcel.writeParcelable(child, flags);
         // TODO remove logging after testing
         // Log.d(TAG, "writeToParcel child count: " + cnt);
@@ -361,8 +431,8 @@ public class RemoteResource implements Parcelable {
             ret.setLastRefreshed(in.readLong());
             int size = in.readInt();
             for (int i = 0; i < size; i++) {
-                ChildResource child = in
-                        .readParcelable(ChildResource.class
+                RemoteResource child = in
+                        .readParcelable(RemoteResource.class
                                 .getClassLoader());
                 if (child == null) {
                     Log.w(TAG, "Failed to read in child RemoteResource");

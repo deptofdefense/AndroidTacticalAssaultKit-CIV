@@ -11,6 +11,7 @@ import com.atakmap.opengl.GLTexture;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
@@ -265,15 +266,12 @@ public abstract class GLCapture {
     public static void compress(Bitmap bitmap, int quality,
             Bitmap.CompressFormat compressFmt, File target,
             boolean recycleOnExit) throws IOException {
-        FileOutputStream outputStream = null;
-        try {
-            outputStream = IOProviderFactory.getOutputStream(target);
+        try (OutputStream outputStream = IOProviderFactory
+                .getOutputStream(target)) {
             bitmap.compress(compressFmt, quality, outputStream);
         } finally {
             if (recycleOnExit)
                 bitmap.recycle();
-            if (outputStream != null)
-                outputStream.close();
         }
     }
 

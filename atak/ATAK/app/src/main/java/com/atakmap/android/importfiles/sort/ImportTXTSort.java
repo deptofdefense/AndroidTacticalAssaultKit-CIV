@@ -116,20 +116,11 @@ final public class ImportTXTSort extends ImportInternalSDResolver {
 
         // it is a .xml or .txt, now lets see if content inspection passes
         TxtType t = null;
-        FileInputStream fis = null;
-        try {
-            t = getType(fis = IOProviderFactory.getInputStream(file));
+        try(InputStream fis = IOProviderFactory.getInputStream(file)) {
+            t = getType(fis);
         } catch (IOException e) {
             Log.e(TAG, "Failed to match TXT file: " + file.getAbsolutePath(),
                     e);
-        } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException ignore) {
-                    Log.e(TAG, "error closing stream");
-                }
-            }
         }
 
         return t != null;
@@ -172,20 +163,11 @@ final public class ImportTXTSort extends ImportInternalSDResolver {
     public File getDestinationPath(File file) {
 
         TxtType t = null;
-        FileInputStream fis = null;
-        try {
-            t = getType(fis = IOProviderFactory.getInputStream(file));
+        try(InputStream is = IOProviderFactory.getInputStream(file)) {
+            t = getType(is);
         } catch (IOException e) {
             Log.e(TAG, "Failed to match TXT file: " + file.getAbsolutePath(),
                     e);
-        } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException ignore) {
-                    Log.e(TAG, "error closing stream");
-                }
-            }
         }
 
         if (t == null) {
@@ -315,9 +297,8 @@ final public class ImportTXTSort extends ImportInternalSDResolver {
 
         //special case import actions
         TxtType t;
-        FileInputStream fis = null;
-        try {
-            t = getType(fis = IOProviderFactory.getInputStream(dst));
+        try(InputStream fis = IOProviderFactory.getInputStream(dst)) {
+            t = getType(fis);
             if (t != null && t.action != null)
                 t.action.doAction(dst);
         } catch (IOException e) {
@@ -325,14 +306,6 @@ final public class ImportTXTSort extends ImportInternalSDResolver {
                     "onFileSorted Failed to match TXT file: "
                             + dst.getAbsolutePath(),
                     e);
-        } finally {
-            if (fis != null) {
-                try {
-                    fis.close();
-                } catch (IOException ignore) {
-                    Log.e(TAG, "error closing stream");
-                }
-            }
         }
     }
 

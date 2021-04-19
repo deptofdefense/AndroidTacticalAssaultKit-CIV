@@ -157,7 +157,7 @@ JNIEXPORT jfloat JNICALL Java_com_atakmap_map_layer_feature_style_Style_BasicPoi
 /*****************************************************************************/
 // IconPointStyle
 
-JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_style_Style_IconPointStyle_1create
+JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_style_Style_IconPointStyle_1create__ILjava_lang_String_2FFIIFZ
   (JNIEnv *env, jclass clazz, jint color, jstring juri, jfloat width, jfloat height, jint halign, jint valign, jfloat rotation, jboolean isRotationAbsolute)
 {
     TAKErr code(TE_Ok);
@@ -171,6 +171,23 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_style_Style_IconPoi
                                          (IconPointStyle::VerticalAlignment)valign,
                                          rotation,
                                          isRotationAbsolute);
+    if(ATAKMapEngineJNI_checkOrThrow(env, code))
+        return NULL;
+    return NewPointer(env, std::move(retval));
+}
+JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_style_Style_IconPointStyle_1create__ILjava_lang_String_2FIIFZ
+        (JNIEnv *env, jclass clazz, jint color, jstring juri, jfloat scale, jint halign, jint valign, jfloat rotation, jboolean isRotationAbsolute)
+{
+    TAKErr code(TE_Ok);
+    JNIStringUTF uri(*env, juri);
+    StylePtr retval(nullptr, nullptr);
+    code = IconPointStyle_create(retval, color,
+                                 uri,
+                                 scale,
+                                 (IconPointStyle::HorizontalAlignment)halign,
+                                 (IconPointStyle::VerticalAlignment)valign,
+                                 rotation,
+                                 isRotationAbsolute);
     if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return NULL;
     return NewPointer(env, std::move(retval));
@@ -216,6 +233,11 @@ JNIEXPORT jfloat JNICALL Java_com_atakmap_map_layer_feature_style_Style_IconPoin
 {
     STYLE_IMPL_ACCESSOR_BODY(IconPointStyle, getRotation)
 }
+JNIEXPORT jfloat JNICALL Java_com_atakmap_map_layer_feature_style_Style_IconPointStyle_1getScaling
+        (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    STYLE_IMPL_ACCESSOR_BODY(IconPointStyle, getScaling)
+}
 JNIEXPORT jboolean JNICALL Java_com_atakmap_map_layer_feature_style_Style_IconPointStyle_1isRotationAbsolute
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
@@ -258,7 +280,7 @@ JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_style_Style_getIconPoi
 // LabelPointStyle
 
 JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_style_Style_LabelPointStyle_1create
-  (JNIEnv *env, jclass clazz, jstring jtext, jint color, jint bgColor, jint scrollMode, jfloat size, jint halign, jint valign, jfloat rotation, jboolean isRotationAbsolute, jdouble labelMinRenderResolution)
+  (JNIEnv *env, jclass clazz, jstring jtext, jint color, jint bgColor, jint scrollMode, jfloat size, jint halign, jint valign, jfloat rotation, jboolean isRotationAbsolute, jdouble labelMinRenderResolution, jfloat labelScale)
 {
     TAKErr code(TE_Ok);
     JNIStringUTF text(*env, jtext);
@@ -273,7 +295,8 @@ JNIEXPORT jobject JNICALL Java_com_atakmap_map_layer_feature_style_Style_LabelPo
                                            (LabelPointStyle::VerticalAlignment)valign,
                                            rotation,
                                            isRotationAbsolute, 0.0, 0.0,
-                                           labelMinRenderResolution);
+                                           labelMinRenderResolution,
+                                           labelScale);
 
     if(ATAKMapEngineJNI_checkOrThrow(env, code))
         return NULL;
@@ -314,6 +337,11 @@ JNIEXPORT jdouble JNICALL Java_com_atakmap_map_layer_feature_style_Style_LabelPo
   (JNIEnv *env, jclass clazz, jlong ptr)
 {
     STYLE_IMPL_ACCESSOR_BODY(LabelPointStyle, getLabelMinRenderResolution)
+}
+JNIEXPORT jfloat JNICALL Java_com_atakmap_map_layer_feature_style_Style_LabelPointStyle_1getLabelScale
+        (JNIEnv *env, jclass clazz, jlong ptr)
+{
+    STYLE_IMPL_ACCESSOR_BODY(LabelPointStyle, getLabelScale)
 }
 JNIEXPORT jint JNICALL Java_com_atakmap_map_layer_feature_style_Style_LabelPointStyle_1getHorizontalAlignment
   (JNIEnv *env, jclass clazz, jlong ptr)

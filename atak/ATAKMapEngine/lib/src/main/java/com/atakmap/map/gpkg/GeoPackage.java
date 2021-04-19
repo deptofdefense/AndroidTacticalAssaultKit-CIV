@@ -28,6 +28,7 @@ import com.atakmap.spatial.SpatiaLiteDB;
 
 import android.database.sqlite.SQLiteException;
 import android.graphics.Bitmap;
+import com.atakmap.util.zip.IoUtils;
 
 /**
  * Format reader class for parsing and accessing data from the OGC GeoPackage
@@ -585,13 +586,7 @@ public class GeoPackage {
                             + " to see if it is a GeoPackage File!", e);
             return false;
         }finally{
-            if(is != null){
-                try{
-                    is.close();
-                }catch(IOException e){
-                    // Ignore
-                }
-            }
+            IoUtils.close(is);
         }
     }
 

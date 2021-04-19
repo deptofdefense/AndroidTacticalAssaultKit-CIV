@@ -18,7 +18,7 @@ import com.atakmap.android.maps.MapView;
 import com.atakmap.android.user.EnterLocationDropDownReceiver;
 import com.atakmap.android.vehicle.model.cot.VehicleModelDetailHandler;
 import com.atakmap.android.vehicle.model.cot.VehicleModelImporter;
-import com.atakmap.android.vehicle.model.icon.GLOffscreenCaptureService;
+import com.atakmap.android.imagecapture.opengl.GLOffscreenCaptureService;
 import com.atakmap.android.vehicle.model.VehicleModelCache;
 import com.atakmap.android.vehicle.model.VehicleModelLayer;
 import com.atakmap.android.vehicle.model.ui.VehicleModelPallet;

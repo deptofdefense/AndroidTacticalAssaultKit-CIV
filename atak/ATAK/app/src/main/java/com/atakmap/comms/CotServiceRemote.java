@@ -114,9 +114,19 @@ public class CotServiceRemote {
         void onCotServiceDisconnected();
     }
 
+    /**
+     * Sets the CotEventListener for the remote service.
+     * @param cel the cot event listener to use.   If a previous one is set, then it is unregistered
+     */
     public void setCotEventListener(final CotEventListener cel) {
+        if (this.cel != null) { 
+            CommsMapComponent.getInstance().removeOnCotEventListener(this.cel);
+        } 
+        
         this.cel = cel;
-        CommsMapComponent.getInstance().addOnCotEventListener(cel);
+
+        if (cel != null) 
+            CommsMapComponent.getInstance().addOnCotEventListener(cel);
     }
 
     /**

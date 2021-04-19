@@ -335,8 +335,10 @@ public class ConversationFragment extends Fragment implements
 
                     @Override
                     public void onClick(View v) {
+                        // When using quick keys, just add in a " " at the end to provide the user the ability
+                        // to either add another quick key or start typing without hitting the space bar.
                         if (btn.getTag() != null)
-                            inputMessage.append((String) btn.getTag());
+                            inputMessage.append(btn.getTag() + " ");
                         v.setPressed(false);
                     }
                 });
@@ -539,11 +541,20 @@ public class ConversationFragment extends Fragment implements
 
         // Send message
         else if (id == R.id.sendButton) {
+            // trim any trailing spaces
             String msg = inputMessage.getText().toString();
+
+            // trim any trailing spaces
+            try {
+                msg = msg.replaceFirst("\\s++$", "");
+            } catch (Exception e) { }
+
 
             // Ignore empty message
             if (msg.isEmpty())
                 return;
+
+
 
             // Check if the message has anywhere to go
             final List<Contact> contacts = _destinations.getDestinations();

@@ -445,9 +445,7 @@ public class ATAKDatabaseHelper {
 
             final String s = "SQLite format 3";
             final byte[] b = new byte[s.length()];
-            FileInputStream fis = null;
-            try {
-                fis = IOProviderFactory.getInputStream(dbFile);
+            try (FileInputStream fis = IOProviderFactory.getInputStream(dbFile)) {
                 final int bytesRead = fis.read(b);
                 if (bytesRead == s.length() && s
                         .equals(new String(b, FileSystemUtils.UTF8_CHARSET))) {
@@ -455,12 +453,6 @@ public class ATAKDatabaseHelper {
                 }
             } catch (Exception ignored) {
                 return false;
-            } finally {
-                try {
-                    if (fis != null)
-                        fis.close();
-                } catch (IOException ignored) {
-                }
             }
 
             DatabaseIface ctDb = Databases.openOrCreateDatabase(

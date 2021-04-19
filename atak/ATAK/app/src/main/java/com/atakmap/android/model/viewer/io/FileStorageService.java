@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.provider.OpenableColumns;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
@@ -50,8 +51,7 @@ public final class FileStorageService {
         for (FileDto fileDto : fileDtos) {
             File file = createFile(fileDto.getFilename());
             try (FileOutputStream fileOutputStream = IOProviderFactory
-                    .getOutputStream(
-                            file)) {
+                    .getOutputStream(file)) {
                 fileOutputStream.write(fileDto.getBytes());
                 Log.d(TAG, "wrote fileDto=" + fileDto);
             }
@@ -147,7 +147,7 @@ public final class FileStorageService {
         if (path == null)
             return null;
         File f = new File(path);
-        if (path.contains(".zip"))
+        if (FileSystemUtils.isZipPath(path))
             f = new ZipVirtualFile(path);
         if (IOProviderFactory.exists(f))
             return f;

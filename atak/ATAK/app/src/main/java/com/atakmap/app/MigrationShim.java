@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -57,69 +58,67 @@ class MigrationShim {
     private static void unzip(final File file, Activity activity)
             throws IOException {
 
-        ZipFile zipFile = new ZipFile(file);
-        Enumeration<? extends ZipEntry> zipFileEntries = zipFile.entries();
-        // Process each entry
-        while (zipFileEntries.hasMoreElements()) {
-            // grab a zip file entry
-            ZipEntry entry = zipFileEntries.nextElement();
-            final String currentEntry = entry.getName();
+        ZipFile zipFile = null;
+        try {
+            zipFile = new ZipFile(file);
+            Enumeration<? extends ZipEntry> zipFileEntries = zipFile.entries();
+            // Process each entry
+            while (zipFileEntries.hasMoreElements()) {
+                // grab a zip file entry
+                ZipEntry entry = zipFileEntries.nextElement();
+                final String currentEntry = entry.getName();
 
-            BufferedInputStream is = null;
-            try {
-                is = new BufferedInputStream(zipFile
-                        .getInputStream(entry));
+                try (BufferedInputStream is = new BufferedInputStream(zipFile
+                        .getInputStream(entry))) {
 
-                if (!entry.isDirectory()) {
+                    if (!entry.isDirectory()) {
 
-                    if (currentEntry.startsWith("databases")) {
+                        if (currentEntry.startsWith("databases")) {
 
-                        final String dbName = currentEntry.substring(10);
-                        File dbFile = activity.getDatabasePath(dbName);
+                            final String dbName = currentEntry.substring(10);
+                            File dbFile = activity.getDatabasePath(dbName);
 
-                        try {
-                            dbFile.getParentFile().mkdirs();
-                        } catch (Exception ignored) {
+                            try {
+                                dbFile.getParentFile().mkdirs();
+                            } catch (Exception ignored) {
+                            }
+
+                            //Log.d(TAG, "debug.remove writing: " + dbFile);
+                            try (OutputStream os = new FileOutputStream(dbFile)) {
+                                FileSystemUtils.copy(is, os);
+                            }
+                        } else if (currentEntry.startsWith("files")) {
+
+                            final String fileName = currentEntry.substring(6);
+                            final String gdalDataPath = activity.getFilesDir()
+                                    .getAbsolutePath() + File.separator + "GDAL";
+
+                            try {
+                                activity.getFilesDir().getParentFile().mkdirs();
+                            } catch (Exception ignored) {
+                            }
+
+                            File f = new File(gdalDataPath, fileName);
+                            if (!f.getParentFile().exists()
+                                    && !f.getParentFile().mkdirs()) {
+                                //Log.d(TAG, "debug.remove could not create: " + fileName);
+                            } else {
+                                //Log.d(TAG, "debug.remove writing: " + fileName);
+                                FileSystemUtils.copy(is, new FileOutputStream(f));
+                            }
+                        } else if (currentEntry.startsWith("shared_prefs")) {
+                            // process the preferences
+                            parsePreferences(currentEntry.substring(13), is,
+                                    activity);
                         }
-
-                        //Log.d(TAG, "debug.remove writing: " + dbFile);
-                        FileSystemUtils.copy(is, new FileOutputStream(dbFile));
-                    } else if (currentEntry.startsWith("files")) {
-
-                        final String fileName = currentEntry.substring(6);
-                        final String gdalDataPath = activity.getFilesDir()
-                                .getAbsolutePath() + File.separator + "GDAL";
-
-                        try {
-                            activity.getFilesDir().getParentFile().mkdirs();
-                        } catch (Exception ignored) {
-                        }
-
-                        File f = new File(gdalDataPath, fileName);
-                        if (!f.getParentFile().exists()
-                                && !f.getParentFile().mkdirs()) {
-                            //Log.d(TAG, "debug.remove could not create: " + fileName);
-                        } else {
-                            //Log.d(TAG, "debug.remove writing: " + fileName);
-                            FileSystemUtils.copy(is, new FileOutputStream(f));
-                        }
-                    } else if (currentEntry.startsWith("shared_prefs")) {
-                        // process the preferences
-                        parsePreferences(currentEntry.substring(13), is,
-                                activity);
                     }
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "error extracting", e);
-            } finally {
-                try {
-                    if (is != null)
-                        is.close();
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    Log.e(TAG, "error extracting", e);
                 }
             }
+        } finally {
+            zipFile.close();
         }
-        zipFile.close();
     }
 
     private static void parsePreferences(final String file,

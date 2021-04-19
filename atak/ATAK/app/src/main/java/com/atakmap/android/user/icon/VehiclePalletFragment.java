@@ -206,6 +206,7 @@ public class VehiclePalletFragment extends Fragment implements
         }
         vs.setup(_selectedType, name, gp, 0, true);
         vs.setColor(color);
+        vs.updateOffscreenInterest();
         vs.save();
         return vs;
     }

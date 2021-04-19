@@ -359,18 +359,6 @@ public abstract class SpatialDbContentSource implements Importer {
                             true);
 
                 }
-            } else {
-                if (success) {
-                    //TODO add a pending intent to zoom/focus on data when notification is clicked
-                    NotificationUtil.getInstance().postNotification(
-                            getNotificationId(),
-                            getIconId(), NotificationUtil.WHITE,
-                            "Imported " + getContentType() + " file ",
-                            " Imported: " + file.getName(),
-                            "Imported " + getContentType() + " file: "
-                                    + file.getName(),
-                            i, true);
-                }
             }
             if (success && zoomToFile)
                 AtakBroadcast.getInstance().sendBroadcast(i);

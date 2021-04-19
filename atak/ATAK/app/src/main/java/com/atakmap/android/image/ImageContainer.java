@@ -503,6 +503,7 @@ public abstract class ImageContainer implements OnTouchListener,
         if (disposed || layout == null)
             return;
         final HashtagEditText caption = layout.findViewById(R.id.image_caption);
+        layout.findViewById(R.id.markupImage).setEnabled(false);
         File dir = bmpFile.getParentFile();
         String name = bmpFile.getName().toLowerCase(LocaleUtil.getCurrent());
         if (JPEG_FilenameFilter.accept(dir, name))
@@ -542,6 +543,8 @@ public abstract class ImageContainer implements OnTouchListener,
                     .findViewById(R.id.image_date_text);
             final HashtagEditText caption = layout
                     .findViewById(R.id.image_caption);
+            final ImageButton overlayBtn = layout.findViewById(
+                    R.id.markupImage);
 
             String dateTime = null, imageCaption = null;
             if (exif != null) {
@@ -555,6 +558,10 @@ public abstract class ImageContainer implements OnTouchListener,
                 TiffImageMetadata.GPSInfo gpsInfo = exif.getGPS();
                 if (gpsInfo != null)
                     populateLocation(locText, layout, gpsInfo, exif);
+
+                // Disable button if overlay has already been applied
+                overlayBtn.setEnabled(!ExifHelper.getExtra(exif,
+                        "Markup", false));
             }
             setText(dateText, dateTime);
             setText(caption, imageCaption);

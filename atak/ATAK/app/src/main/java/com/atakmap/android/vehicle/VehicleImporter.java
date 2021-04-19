@@ -84,6 +84,10 @@ class VehicleImporter extends MapItemImporter {
         veh.setVisible(extras.getBoolean("visible",
                 veh.getVisible(true)), false);
 
+        // Update offscreen indicator interest
+        if (existing == null && !isStateSaverImport(extras))
+            veh.updateOffscreenInterest();
+
         // Persist to the statesaver if needed
         persist(veh, extras);
 

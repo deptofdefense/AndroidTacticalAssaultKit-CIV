@@ -134,6 +134,63 @@ TAKErr TAK::Engine::Util::URI_getParent(Port::String* result, const char* URI) N
     return TE_Ok;
 }
 
+TAKErr TAK::Engine::Util::URI_combine(Port::String* result, const char* base, const char* suffix) NOTHROWS {
+
+    if (!result || !base || !suffix)
+        return TE_InvalidArg;
+
+    // deconstruct
+    String scheme;
+    String auth;
+    String path;
+    String query;
+    String frag;
+    bool treatAsFilePath = false;
+
+    TAKErr code = URI_parse(&scheme, &auth, nullptr, &path, &query, &frag, base);
+
+    if (scheme && code == TE_Ok) {
+        
+        // assume path sep is '/'
+        const char *sep = "/";
+        if (auth && String_endsWith(auth, "/"))
+            sep = "";
+
+        StringBuilder sb;
+        code = StringBuilder_combine(sb, 
+            scheme, 
+            ":",
+            auth.get() ? auth.get() : "",
+            sep, 
+            suffix, 
+            query.get() ? query.get() : "", 
+            frag.get() ? frag.get() : "");
+        if (code != TE_Ok)
+            return code;
+
+        *result = sb.c_str();
+        return TE_Ok;
+    }
+
+    // no scheme-- treat as just a path
+
+    char sep[2] = { Platform_pathSep(), '\0' };
+    
+    // already ends with sep?
+    if (String_endsWith(base, "\\") ||
+        String_endsWith(base, "/")) {
+        sep[0] = '\0';
+    }
+
+    StringBuilder sb;
+    code = StringBuilder_combine(sb, base, sep, suffix);
+    if (code != TE_Ok)
+        return code;
+
+    // correct any seps not native to platform
+    return IO_correctPathSeps(*result, sb.c_str());
+}
+
 namespace {
     TAKErr URIFactoryRegistry::registerProtocolHandler(std::shared_ptr<ProtocolHandler> protHandler, int priority) {
         if (!protHandler)

@@ -12,6 +12,7 @@ import com.atakmap.android.routes.Route;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 import com.atakmap.coremap.maps.coords.GeoPointMetaData;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -282,10 +283,6 @@ public final class DoghouseViewModel {
 
     /**************************************** Package API *****************************************/
     void addDoghouses(Route route) {
-        final Doghouse.DoghouseLocation pref = Doghouse.DoghouseLocation
-                .fromConstant(
-                        _prefs.getInt(DoghouseReceiver.RELATIVE_LOCATION, 1));
-
         if (route.getNumPoints() - 1 > Doghouse.MAX_DENSITY) {
             Toast.makeText(
                     MapView.getMapView().getContext(),
@@ -303,18 +300,7 @@ public final class DoghouseViewModel {
         for (int i = 0; i < route.getNumPoints() - 1; i++) {
             Doghouse dh = buildDoghouse(i, route);
             if (dh != null) {
-                Doghouse.DoghouseLocation loc = pref;
-                if (pref == Doghouse.DoghouseLocation.OUTSIDE_OF_TURN) {
-                    byte[] turns = computeTurns(route);
-                    byte turn = 0;
-                    if (turns != null && (i > 0 && i <= turns.length)) {
-                        turn = turns[i - 1];
-                    }
-                    loc = turn >= 0
-                            ? Doghouse.DoghouseLocation.LEFT_OF_ROUTE
-                            : Doghouse.DoghouseLocation.RIGHT_OF_ROUTE;
-                }
-                dh.setRelativeLocation(loc);
+                updateRelativeLocation(i, dh, route);
                 dh.setVisible(route.getVisible());
                 doghouses.add(dh);
                 _doghouseGroup.addItem(dh);
@@ -324,8 +310,38 @@ public final class DoghouseViewModel {
         _cache.put(route.getUID(), doghouses);
     }
 
-    void addDoghouse(@NonNull
-    final Route route) {
+
+    void updateDoghouses(Route route) {
+        List<Doghouse> doghouses = _cache.get(route.getUID());
+        if (doghouses == null) {
+            return;
+        }
+        ArrayList<GeoPointMetaData> points = route._points;
+        int index = 0;
+        while ((index + 1) < points.size()) {
+            if (index >= doghouses.size()) {
+                Doghouse dh = buildDoghouse(index, route);
+                updateRelativeLocation(index, dh, route);
+                doghouses.add(index, dh);
+                _doghouseGroup.addItem(dh);
+            } else {
+                Doghouse dh = doghouses.get(index);
+                GeoPointMetaData source = points.get(index);
+                GeoPointMetaData target = points.get(index + 1);
+                dh.setSource(source);
+                dh.setTarget(target);
+                updateRelativeLocation(index, dh, route);
+            }
+            index++;
+        }
+        for (int i = doghouses.size() - 1; i >= index; i--) {
+            Doghouse dh = doghouses.get(i);
+            doghouses.remove(i);
+            dh.destroy();
+        }
+    }
+
+    void addDoghouse(@NonNull final Route route) {
         List<Doghouse> doghouses = getDoghousesForRoute(route);
         if (doghouses != null) {
             Doghouse dh = buildDoghouse(route.getNumPoints() - 2, route);
@@ -637,8 +653,25 @@ public final class DoghouseViewModel {
             // update the turnpoint id of all doghouses after the new one
             for (int i = index + 1; i < doghouses.size(); i++) {
                 Doghouse doghouse = doghouses.get(i);
-                doghouse.setTurnpointId(i);
+                doghouse.setTurnpointId(i + 1);
             }
         }
+    }
+
+    private void updateRelativeLocation(int index, Doghouse doghouse, Route route) {
+        final Doghouse.DoghouseLocation pref = Doghouse.DoghouseLocation
+                .fromConstant(_prefs.getInt(DoghouseReceiver.RELATIVE_LOCATION, 1));
+        Doghouse.DoghouseLocation loc = pref;
+        if (pref == Doghouse.DoghouseLocation.OUTSIDE_OF_TURN) {
+            byte[] turns = computeTurns(route);
+            byte turn = 0;
+            if (turns != null && (index > 0 && index <= turns.length)) {
+                turn = turns[index - 1];
+            }
+            loc = turn >= 0
+                    ? Doghouse.DoghouseLocation.LEFT_OF_ROUTE
+                    : Doghouse.DoghouseLocation.RIGHT_OF_ROUTE;
+        }
+        doghouse.setRelativeLocation(loc);
     }
 }

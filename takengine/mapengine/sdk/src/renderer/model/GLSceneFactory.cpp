@@ -3,7 +3,6 @@
 #include <set>
 
 #include "renderer/model/GLScene.h"
-#include "renderer/model/GLProgressiveScene.h"
 #include "thread/RWMutex.h"
 
 using namespace TAK::Engine::Renderer::Model;

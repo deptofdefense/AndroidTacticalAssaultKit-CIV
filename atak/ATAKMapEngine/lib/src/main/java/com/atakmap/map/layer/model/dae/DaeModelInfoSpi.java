@@ -301,7 +301,7 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
         Set<ModelInfo> result = new HashSet<>();
         for (File f : daeFiles) {
             ModelInfo info = new ModelInfo();
-            if (name.endsWith(".zip"))
+            if (FileSystemUtils.checkExtension(name, "zip"))
                 info.uri = "zip://" + f.getAbsolutePath();
             else
                 info.uri = f.getAbsolutePath();
@@ -330,8 +330,7 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
     public Set<ModelInfo> create(String path) {
         try {
             File file = new File(path);
-            String lowerName = file.getName().toLowerCase(LocaleUtil.getCurrent());
-            if (lowerName.endsWith(".kmz")) {
+            if (FileSystemUtils.checkExtension(file, "kmz")) {
                 // Geospatial DAE (requires doc.kml)
                 ZipVirtualFile zf = new ZipVirtualFile(path);
                 List<File> kmlFiles = ModelFileUtils.findFiles(zf, Collections.singleton("kml"));
@@ -374,13 +373,13 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
                     }
                 }
                 return modelInfos(models);
-            } else if (lowerName.endsWith(".zip")) {
+            } else if (FileSystemUtils.checkExtension(file, "zip")) {
                 // Zipped DAE (no geospatial info)
                 ZipVirtualFile zf = new ZipVirtualFile(path);
                 List<File> daeFiles = ModelFileUtils.findFiles(zf,
                         Collections.singleton("dae"));
                 return modelInfos(file.getName(), daeFiles);
-            } else if (lowerName.endsWith(".dae")) {
+            } else if (FileSystemUtils.checkExtension(file, "dae")) {
                 // Single DAE file
                 return modelInfos(file.getName(),
                         Collections.singletonList(file));
@@ -394,9 +393,7 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
     }
 
     private static int determineUpAxis(String uri) {
-        InputStream inputStream = null;
-        try {
-            inputStream = ModelFileUtils.openInputStream(uri);
+        try (InputStream inputStream = ModelFileUtils.openInputStream(uri)) {
             if (inputStream == null)
                 return DOES_NOT_EXIST;
             final Scanner scanner = new Scanner(inputStream);
@@ -422,13 +419,6 @@ public class DaeModelInfoSpi implements ModelInfoSpi {
             }
         } catch (Exception e) {
             // undetermined
-        } finally {
-            if (inputStream != null) {
-                try {
-                    inputStream.close();
-                } catch (IOException ignored) {
-                }
-            }
         }
         return UNDETERMINED;
     }

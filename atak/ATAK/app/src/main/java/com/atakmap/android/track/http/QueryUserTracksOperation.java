@@ -39,6 +39,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -154,12 +155,9 @@ public final class QueryUserTracksOperation extends HTTPOperation {
                     tempFileName);
             Log.d(TAG,
                     "processing response into file: " + temp.getAbsolutePath());
-            FileOutputStream fos = null;
-            InputStream in = null;
 
-            try {
-                fos = IOProviderFactory.getOutputStream(temp);
-
+            try(OutputStream fos = IOProviderFactory.getOutputStream(temp);
+                InputStream in = resEntity.getContent()) {
                 // stream in content, keep user notified on progress
                 builder.setProgress(100, 1, false);
                 if (notifyManager != null) {
@@ -167,20 +165,7 @@ public final class QueryUserTracksOperation extends HTTPOperation {
                             builder.build());
                 }
 
-                in = resEntity.getContent();
                 FileSystemUtils.copy(in, fos);
-            } finally {
-                if (in != null) {
-                    try {
-                        in.close();
-                    } catch (IOException ignored) {
-                    }
-                }
-                if (fos != null) {
-                    try {
-                        fos.close();
-                    } catch (IOException ignored) { }
-                }
             }
 
             // Now verify we got download correctly

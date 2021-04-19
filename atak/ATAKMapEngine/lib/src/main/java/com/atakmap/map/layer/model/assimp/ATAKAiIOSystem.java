@@ -1,11 +1,13 @@
 package com.atakmap.map.layer.model.assimp;
 
+import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
 import com.atakmap.io.ZipVirtualFile;
 import com.atakmap.map.layer.model.ModelSpi;
 import com.atakmap.util.Disposable;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,7 +30,7 @@ public class ATAKAiIOSystem implements AiIOSystem<AiIOStream>, Disposable {
 
     private Set<InputStreamAiIOStream> streams = Collections.newSetFromMap(new IdentityHashMap<InputStreamAiIOStream, Boolean>());
 
-    private static class InputStreamAiIOStream implements AiIOStream {
+    private static class InputStreamAiIOStream implements AiIOStream, Closeable {
 
         private ModelSpi.Callback callback;
         private int maxProgress;
@@ -201,7 +203,7 @@ public class ATAKAiIOSystem implements AiIOSystem<AiIOStream>, Disposable {
     }
 
     static boolean isZipFile(File file) {
-        return file.getName().endsWith(".zip") || file.getAbsolutePath().contains(".zip");
+        return FileSystemUtils.isZipPath(file);
     }
 
     @Override

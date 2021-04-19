@@ -1,17 +1,7 @@
 
 package com.atakmap.android.resection;
 
-import android.app.AlertDialog;
-import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.os.Bundle;
-import android.text.Editable;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.widget.ImageButton;
-import android.widget.ListView;
-import android.widget.TextView;
+import java.util.List;
 
 import com.atakmap.android.dropdown.DropDownReceiver;
 import com.atakmap.android.ipc.AtakBroadcast;
@@ -28,7 +18,17 @@ import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.maps.coords.GeoPoint;
 
-import java.util.List;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.os.Bundle;
+import android.text.Editable;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.TextView;
 
 /**
  * The default resection workflow - shown in a drop-down
@@ -48,6 +48,8 @@ public class ResectionDropDownReceiver extends DropDownReceiver
 
     private ImageButton _addBtn;
     private final ResectionLandmarkAdapter _adapter;
+
+    private OnResectionResult resectionResultCallback;
 
     ResectionDropDownReceiver(MapView mapView) {
         super(mapView);
@@ -75,7 +77,28 @@ public class ResectionDropDownReceiver extends DropDownReceiver
     }
 
     @Override
-    public void start() {
+    public String getName() {
+        return "Resection";
+    }
+
+    @Override
+    public String getDescription() {
+        return _context.getString(R.string.resection_classic_tool_description);
+    }
+
+    @Override
+    public String getIdealConditions() {
+        return _context.getString(R.string.resection_classic_tool_ideal_conditions);
+    }
+
+    @Override
+    public String getRelativeAccuracy() {
+        return _context.getString(R.string.resection_classic_tool_relative_accuracy);
+    }
+
+    @Override
+    public void start(OnResectionResult callback) {
+        resectionResultCallback = callback;
         showDropDown();
     }
 
@@ -136,9 +159,11 @@ public class ResectionDropDownReceiver extends DropDownReceiver
             // Stop highlighting button when tool ends
             case ToolManagerBroadcastReceiver.END_TOOL:
                 if (FileSystemUtils.isEquals(intent.getStringExtra("tool"),
-                        MapClickTool.TOOL_NAME))
+                        MapClickTool.TOOL_NAME)) {
                     if (_addBtn != null)
                         _addBtn.setSelected(false);
+                }
+
                 break;
         }
     }
@@ -251,5 +276,19 @@ public class ResectionDropDownReceiver extends DropDownReceiver
                 d.show();
             }
         }
+    }
+
+    @Override
+    protected boolean onBackButtonPressed() {
+        // TODO: Should we only fire this callback explicitly with the resection button?
+        if (isVisible() && resectionResultCallback != null) {
+            ResectionLocationEstimate estimate = new ResectionLocationEstimate();
+            estimate.setSource(getName());
+            estimate.setPoint(_manager.getIntersectionPoint());
+            resectionResultCallback.result(this, estimate);
+            resectionResultCallback = null;
+        }
+
+        return super.onBackButtonPressed();
     }
 }

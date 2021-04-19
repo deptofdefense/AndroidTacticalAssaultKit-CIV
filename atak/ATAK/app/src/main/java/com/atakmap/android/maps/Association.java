@@ -561,7 +561,7 @@ public class Association extends Shape implements AnchoredMapItem {
     public GeoPointMetaData getCenter() {
         MapView mv = MapView.getMapView();
         return GeoPointMetaData.wrap(
-                GeoCalculations.midPoint(_firstItem.getPoint(),
+                GeoCalculations.midPointCartesian(_firstItem.getPoint(),
                         _secondItem.getPoint(),
                         mv != null && mv.isContinuousScrollEnabled()),
                 GeoPointMetaData.CALCULATED, GeoPointMetaData.CALCULATED);

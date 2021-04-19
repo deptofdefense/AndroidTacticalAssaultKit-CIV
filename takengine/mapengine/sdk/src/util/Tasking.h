@@ -11,6 +11,7 @@ namespace TAK {
 			// Forward decls
 			template <typename T> class FutureTask;
 			template <typename T> class AsyncResult;
+			template <typename T> class AsyncPromise;
 			template <typename T> class WeakFuture;
 			
 			template <typename Func>
@@ -52,6 +53,11 @@ namespace TAK {
 				TAKErr await(T &value, TAKErr &err) NOTHROWS;
 
 				void detach() NOTHROWS { impl = nullptr; }
+
+				/**
+				 * Cancel the pending future. All subsequent tasks are canceled.
+				 */
+				TAKErr cancel() NOTHROWS;
 
 				operator bool() const NOTHROWS { return impl != nullptr; }
 
@@ -97,6 +103,28 @@ namespace TAK {
 			};
 
 			/**
+			 *
+			 */
+			template <typename T>
+			class Promise {
+			public:
+				Promise()
+					: impl_(std::make_shared<AsyncPromise<T>>()) {}
+
+				Promise& operator=(const T& value) NOTHROWS {
+					if (impl_) impl_->setValue(value);
+					return *this;
+				}
+
+				Future<T> getFuture() NOTHROWS {
+					return Future<T>(impl_);
+				}
+
+			private:
+				std::shared_ptr<AsyncPromise<T>> impl_;
+			};
+
+			/**
 			 * A Future<T> that represents a pending task on a TaskQueue and may be canceled
 			 */
 			template <typename T>
@@ -105,11 +133,6 @@ namespace TAK {
 				FutureTask() NOTHROWS;
 
 				explicit FutureTask(std::shared_ptr<AsyncResult<T>> asyncResult, SharedWorkerPtr worker) NOTHROWS;
-
-				/**
-				 * Cancel the pending task. All subsequent tasks are canceled.
-				 */
-				TAKErr cancel() NOTHROWS;
 
 				void detach() NOTHROWS { Future<T>::detach();  worker = nullptr; }
 

@@ -6,6 +6,7 @@ import android.content.Context;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 import com.atakmap.coremap.io.IOProviderFactory;
 import com.atakmap.coremap.log.Log;
+import com.atakmap.util.zip.IoUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -341,14 +342,7 @@ public class ProductRepository {
         } catch (Exception ioe) {
             Log.d(TAG, "error occurred handling updates", ioe);
         } finally {
-
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    Log.d(TAG, "error closing the input stream", e);
-                }
-            }
+            IoUtils.close(in,TAG,"error closing the input stream");
         }
 
         if (FileSystemUtils.isEmpty(products)) {
@@ -375,8 +369,9 @@ public class ProductRepository {
         }
 
         try {
-            return parseRepo(context, in.getAbsolutePath(), repoType,
-                    new BufferedReader(IOProviderFactory.getFileReader(in)));
+            // Closed in passed-to method
+            BufferedReader reader = new BufferedReader(IOProviderFactory.getFileReader(in));
+            return parseRepo(context, in.getAbsolutePath(), repoType, reader);
         } catch (IOException ex) {
             Log.w(TAG, "Failed parse: " + in.getAbsolutePath(), ex);
         }

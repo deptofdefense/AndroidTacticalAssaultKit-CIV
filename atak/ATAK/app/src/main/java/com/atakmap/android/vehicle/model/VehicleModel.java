@@ -11,6 +11,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.SystemClock;
 
 import com.atakmap.android.cot.detail.CotDetailManager;
 import com.atakmap.android.icons.UserIcon;
@@ -22,6 +23,7 @@ import com.atakmap.android.maps.MapItem;
 import com.atakmap.android.maps.MapView;
 import com.atakmap.android.maps.Marker;
 import com.atakmap.android.maps.PointMapItem;
+import com.atakmap.android.model.opengl.GLModelCaptureCache;
 import com.atakmap.android.rubbersheet.data.ModelProjection;
 import com.atakmap.android.rubbersheet.data.RubberModelData;
 import com.atakmap.android.rubbersheet.data.RubberSheetUtils;
@@ -29,15 +31,12 @@ import com.atakmap.android.rubbersheet.maps.LoadState;
 import com.atakmap.android.rubbersheet.maps.RubberModel;
 import com.atakmap.android.util.ATAKUtilities;
 import com.atakmap.android.vehicle.VehicleMapItem;
-import com.atakmap.android.vehicle.model.icon.GLOffscreenCaptureService;
 import com.atakmap.android.vehicle.model.icon.VehicleModelCaptureRequest;
 import com.atakmap.app.R;
 import com.atakmap.coremap.cot.event.CotDetail;
 import com.atakmap.coremap.cot.event.CotEvent;
 import com.atakmap.coremap.cot.event.CotPoint;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
-import com.atakmap.coremap.io.IOProviderFactory;
-import com.atakmap.coremap.log.Log;
 import com.atakmap.coremap.maps.coords.DistanceCalculations;
 import com.atakmap.coremap.maps.coords.GeoCalculations;
 import com.atakmap.coremap.maps.coords.GeoPoint;
@@ -51,7 +50,7 @@ import com.atakmap.map.layer.model.Model;
 import com.atakmap.map.layer.model.ModelInfo;
 
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.List;
 
 /**
@@ -134,13 +133,24 @@ public class VehicleModel extends RubberModel implements Capturable,
 
         _info = info;
         VehicleModelCache.getInstance().registerUsage(info, getUID());
-        onLoad(new ModelInfo(info.getInfo()), info.getModel());
+        ModelInfo mInfo = info.getInfo();
+        if (mInfo != null)
+            mInfo = new ModelInfo(mInfo);
+        onLoad(mInfo, info.getModel());
         double[] dim = getModelDimensions(false);
         _width = dim[0];
         _length = dim[1];
         _height = dim[2];
-        updateIconPath();
+        updateLegacyIconPath();
         setLoadState(LoadState.SUCCESS);
+
+        // Update offscreen indicator icon
+        Marker center = getCenterMarker();
+        if (center != null)
+            center.setMetaString("offscreen_icon_uri", info.getIconURI());
+
+        // Update points
+        setPoints(getCenter(), getWidth(), getLength(), getHeading());
     }
 
     public VehicleModelInfo getVehicleInfo() {
@@ -196,6 +206,14 @@ public class VehicleModel extends RubberModel implements Capturable,
 
     public void setCenter(GeoPointMetaData point) {
         setPoints(point, getWidth(), getLength(), getHeading());
+    }
+
+    @Override
+    public void setStrokeColor(int strokeColor) {
+        super.setStrokeColor(strokeColor);
+        Marker center = getCenterMarker();
+        if (center != null)
+            center.setMetaInteger("offscreen_icon_color", strokeColor);
     }
 
     /**
@@ -279,6 +297,13 @@ public class VehicleModel extends RubberModel implements Capturable,
         return hasMetaValue("outline");
     }
 
+    public void updateOffscreenInterest() {
+        Marker center = getCenterMarker();
+        if (center != null)
+            center.setMetaLong("offscreen_interest",
+                    SystemClock.elapsedRealtime());
+    }
+
     @Override
     protected boolean isModelVisible() {
         return super.isModelVisible() || showOutline();
@@ -288,7 +313,7 @@ public class VehicleModel extends RubberModel implements Capturable,
      * For legacy devices receiving this CoT that don't have the ability to
      * show the 3-D model, set a reasonable icon
      */
-    private void updateIconPath() {
+    private void updateLegacyIconPath() {
         String iconPath = "34ae1613-9645-4222-a9d2-e5f243dea2865/";
         switch (_info.category) {
             case "Aircraft":
@@ -428,11 +453,6 @@ public class VehicleModel extends RubberModel implements Capturable,
     // Maximum width/height for a vehicle capture
     private static final int MAX_RENDER_SIZE = 1024;
 
-    // Temporary storage for render captures, so we can read from a file
-    // instead of capturing every time
-    private static final File RENDER_CACHE_DIR = FileSystemUtils.getItem(
-            FileSystemUtils.TMP_DIRECTORY + "/vehicle_model_captures");
-
     @Override
     public Bundle preDrawCanvas(CapturePP cap) {
         Bundle data = new Bundle();
@@ -537,98 +557,13 @@ public class VehicleModel extends RubberModel implements Capturable,
      * @return Bitmap of the vehicle
      */
     private Bitmap getBitmap() {
-        File cacheDir = new File(RENDER_CACHE_DIR, _info.category);
-        File cacheFile = new File(cacheDir, _info.name + ".bmp");
-
-        // Check if cached screenshot already exists we can quickly read from
-        if (IOProviderFactory.exists(cacheFile)) {
-            try {
-                // XXX - BitmapFactory doesn't take bytes as input,
-                // for some (probably stupid) reason
-                byte[] d = FileSystemUtils.read(cacheFile);
-                int[] pixels = new int[(d.length / 4) - 1];
-                int p = 0;
-                int width = ((d[0] & 0xFF) << 8) | (d[1] & 0xFF);
-                int height = ((d[2] & 0xFF) << 8) | (d[3] & 0xFF);
-                for (int i = 4; i < d.length; i += 4) {
-                    int a = (d[i] & 0xFF) << 24;
-                    int r = (d[i + 1] & 0xFF) << 16;
-                    int g = (d[i + 2] & 0xFF) << 8;
-                    int b = (d[i + 3] & 0xFF);
-                    pixels[p++] = a | (r + g + b);
-                }
-                return Bitmap.createBitmap(pixels, width, height,
-                        Bitmap.Config.ARGB_8888);
-            } catch (Exception e) {
-                FileSystemUtils.delete(cacheFile);
-                Log.e(TAG, "Failed to read vehicle render cache: " + cacheFile);
-            }
-        }
-
-        // Setup capture request for the model
-        final Bitmap[] image = new Bitmap[1];
-        VehicleModelCaptureRequest req = new VehicleModelCaptureRequest(
-                _info);
+        VehicleModelCaptureRequest req = new VehicleModelCaptureRequest(_info);
         req.setOutputSize(MAX_RENDER_SIZE, true);
         req.setLightingEnabled(true);
-        req.setCallback(new VehicleModelCaptureRequest.Callback() {
-            @Override
-            public void onCaptureFinished(File file, Bitmap bmp) {
-                image[0] = bmp;
-                synchronized (VehicleModel.this) {
-                    VehicleModel.this.notify();
-                }
-            }
-        });
-        GLOffscreenCaptureService.getInstance().request(req);
 
-        // Wait for renderer for finish
-        synchronized (this) {
-            while (image[0] == null) {
-                try {
-                    this.wait();
-                } catch (Exception ignored) {
-                }
-            }
-        }
-
-        // Save bitmap data straight to file (no header data needed)
-        if (IOProviderFactory.exists(cacheDir)
-                || IOProviderFactory.mkdirs(cacheDir)) {
-            int width = image[0].getWidth();
-            int height = image[0].getHeight();
-            FileOutputStream fos = null;
-            try {
-                int[] pixels = new int[width * height];
-                image[0].getPixels(pixels, 0, width, 0, 0, width, height);
-                byte[] b = new byte[(pixels.length + 1) * 4];
-                b[0] = (byte) (width >> 8);
-                b[1] = (byte) (width & 0xFF);
-                b[2] = (byte) (height >> 8);
-                b[3] = (byte) (height & 0xFF);
-                int i = 4;
-                for (int p : pixels) {
-                    b[i] = (byte) (p >> 24);
-                    b[i + 1] = (byte) ((p >> 16) & 0xFF);
-                    b[i + 2] = (byte) ((p >> 8) & 0xFF);
-                    b[i + 3] = (byte) (p & 0xFF);
-                    i += 4;
-                }
-                fos = IOProviderFactory.getOutputStream(cacheFile);
-                fos.write(b);
-            } catch (Exception e) {
-                FileSystemUtils.delete(cacheFile);
-                Log.e(TAG, "Failed to read vehicle render cache: " + cacheFile);
-            } finally {
-                try {
-                    if (fos != null)
-                        fos.close();
-                } catch (Exception ignored) {
-                }
-            }
-        }
-
-        return image[0];
+        GLModelCaptureCache cache = new GLModelCaptureCache(
+                _info.category + "/" + _info.name);
+        return cache.getBitmap(req);
     }
 
     private List<PointF> getOutline() {

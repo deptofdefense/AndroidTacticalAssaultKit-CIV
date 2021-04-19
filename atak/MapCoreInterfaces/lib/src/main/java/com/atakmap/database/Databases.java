@@ -4,6 +4,7 @@ package com.atakmap.database;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -158,9 +159,8 @@ public final class Databases {
     // http://www.sqlite.org/fileformat2.html section 1.2
 
     public static boolean isSQLiteDatabase(String path) {
-        FileInputStream fis = null;
-        try {
-            fis = IOProviderFactory.getInputStream(new File(path));
+        try(InputStream fis = IOProviderFactory
+                .getInputStream(new File(path))) {
             byte[] buf = new byte[16];
             if (fis.read(buf) < 16)
                 return false;
@@ -170,12 +170,6 @@ public final class Databases {
         } catch (IOException ignored) {
             // quietly ignore -- this obviously isn't a sqlite file
             return false;
-        } finally {
-            if (fis != null)
-                try {
-                    fis.close();
-                } catch (IOException ignored) {
-                }
         }
     }
 

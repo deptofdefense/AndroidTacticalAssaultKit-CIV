@@ -45,6 +45,10 @@ public class AtakAuthenticationHandlerHTTP {
     public static int[] FORBIDDEN_ONLY =  new int[] { HttpsURLConnection.HTTP_FORBIDDEN };
 
 
+    /**
+     * For a provided Authentication, when completed, trigger this callback.
+     * @param callback the callback to trigger
+     */
     public static void setCallback(OnAuthenticateCallback callback) {
         Lock wlock = lock.writeLock();
         wlock.lock();
@@ -62,6 +66,13 @@ public class AtakAuthenticationHandlerHTTP {
         return uidpwd;
     }
 
+    /**
+     * Started an authenticated connection with a provided connection
+     * @param conn the connection to use
+     * @param loginAttempts the number of login attempts
+     * @return the connection which is valid and authenticated
+     * @throws IOException an exception if the connection could not be authenticated
+     */
     public static Connection makeAuthenticatedConnection(HttpURLConnection conn,
             int loginAttempts) throws IOException {
 

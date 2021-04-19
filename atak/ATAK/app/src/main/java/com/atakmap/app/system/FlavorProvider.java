@@ -3,7 +3,11 @@ package com.atakmap.app.system;
 
 import android.view.View;
 
+import com.atakmap.android.maps.MapComponent;
+
 import java.io.InputStream;
+
+import transapps.mapi.MapView;
 
 public interface FlavorProvider {
 
@@ -43,4 +47,10 @@ public interface FlavorProvider {
      * Deploy WMS Pointers specific to the flavor.
      */
     void deployWMSPointers();
+
+
+    /**
+     * Load components
+     */
+    MapComponent[] getFlavorMapComponents();
 }

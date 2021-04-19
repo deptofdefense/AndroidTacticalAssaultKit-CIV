@@ -63,6 +63,7 @@ import com.atakmap.android.warning.WarningComponent;
 import com.atakmap.android.warning.WarningMapComponent;
 import com.atakmap.android.wfs.WFSMapComponent;
 import com.atakmap.app.preferences.json.JSONPreferenceControl;
+import com.atakmap.app.system.FlavorProvider;
 import com.atakmap.app.system.SystemComponentLoader;
 import com.atakmap.comms.CommsMapComponent;
 import com.atakmap.coremap.log.Log;
@@ -218,9 +219,19 @@ public class MapComponentLoader {
                 activity.registerMapComponent(
                         (MapComponent) component.newInstance());
             } catch (Throwable t) {
-                Log.e(TAG, "error loading: " + component);
+                Log.e(TAG, "error loading: " + component, t);
             }
         }
 
+        final FlavorProvider fp = SystemComponentLoader.getFlavorProvider();
+        if (fp != null) {
+            for (MapComponent mc : fp.getFlavorMapComponents()) {
+                try {
+                    activity.registerMapComponent(mc);
+                } catch (Throwable t) {
+                    Log.e(TAG, "error loading: " + mc, t);
+                }
+            }
+        }
     }
 }

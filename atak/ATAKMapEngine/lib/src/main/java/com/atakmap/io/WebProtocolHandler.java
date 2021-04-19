@@ -1,6 +1,7 @@
 package com.atakmap.io;
 
 import android.util.Base64;
+import com.atakmap.util.zip.IoUtils;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -140,11 +141,7 @@ public class WebProtocolHandler implements ProtocolHandler {
     public long getContentLength(String uri) {
         UriFactory.OpenResult result = handleURI(uri);
         if (result != null) {
-            try {
-                result.inputStream.close();
-            } catch (IOException e) {
-                // ignore
-            }
+            IoUtils.close(result.inputStream);
             return result.contentLength;
         }
         return 0;

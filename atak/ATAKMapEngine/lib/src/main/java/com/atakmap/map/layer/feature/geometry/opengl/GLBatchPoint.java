@@ -116,6 +116,9 @@ public class GLBatchPoint extends GLBatchGeometry {
     private boolean labelRotationAbsolute = false;
 
     private double labelMinRenderResolution = defaultMinLabelRenderResolution;
+    private float labelScale = 1.0f;
+
+    float iconScale = 1.0f;
 
 
     public GLBatchPoint(GLMapSurface surface) {
@@ -346,6 +349,11 @@ public class GLBatchPoint extends GLBatchGeometry {
 
             GLES20FixedPipeline.glColor4f(this.colorR, this.colorG, this.colorB, this.colorA);
 
+            GLES20FixedPipeline.glPushMatrix();
+            GLES20FixedPipeline.glScalef(iconScale, iconScale, 1.0f);
+            GLES20FixedPipeline.glTranslatef(xpos, ypos, zpos);
+
+
             GLES20FixedPipeline.glDrawArrays(GLES20FixedPipeline.GL_TRIANGLE_FAN, 0, 4);
 
             GLES20FixedPipeline.glDisableClientState(GLES20FixedPipeline.GL_TEXTURE_COORD_ARRAY);
@@ -358,6 +366,7 @@ public class GLBatchPoint extends GLBatchGeometry {
         // if the displayLables preference is checked display the text if
         // the marker requested to always have the text show or if the scale is zoomed in enough
         if (name != null &&
+            labelScale > 0 &&
             (GLMapSurface.SETTING_displayLabels &&
              ortho.drawMapResolution < labelMinRenderResolution)) {
 
@@ -381,16 +390,16 @@ public class GLBatchPoint extends GLBatchGeometry {
                 final float textHeight = glText.getStringHeight();// _glText.getBaselineSpacing();
                 if (this.textureKey != 0L) {
                     if(labelAlignY > 0)
-                        offy = -iconHeight / 2f;
+                        offy = -iconHeight * iconScale / 2f;
                     else if(labelAlignY < 0)
-                        offy = iconHeight / 2f;
+                        offy = iconHeight * iconScale / 2f;
                     else
                         offy = -textHeight / 2;
 
                     if(labelAlignX > 0)
-                        offtx = -iconWidth / 2f;
+                        offtx = -iconWidth * iconScale / 2f;
                     else if(labelAlignX < 0)
-                        offtx = iconWidth / 2f;
+                        offtx = iconWidth * iconScale / 2f;
 
                     if(ortho.drawTilt > 0d)
                         offy = (offy*-1f) + textHeight + glText.getDescent();
@@ -483,6 +492,7 @@ public class GLBatchPoint extends GLBatchGeometry {
     public void setStyle(Style style) {
         int iconColor = -1;
         String iconUri = null;
+        float iconScale = 1.0f;
 
         int lblAlignX = 0;
         int lblAlignY = 0;
@@ -492,6 +502,7 @@ public class GLBatchPoint extends GLBatchGeometry {
         boolean lblRotationAbsolute = false;
         int lblTextSize = AtakMapView.getDefaultTextFormat().getFontSize();
         double lblMinRenderResolution = defaultMinLabelRenderResolution;
+        float lblScale = 1.0f;
 
         IconPointStyle istyle = (style instanceof IconPointStyle) ? (IconPointStyle)style : null;
         BasicPointStyle bstyle = (style instanceof BasicPointStyle) ? (BasicPointStyle) style : null;
@@ -507,6 +518,10 @@ public class GLBatchPoint extends GLBatchGeometry {
             iconColor = istyle.getColor();
             iconUri = istyle.getIconUri();
             lblAlignY = 1;
+            float s = istyle.getIconScaling();
+            if (s != 0)
+                iconScale = s;
+            // else keep scale at 1.0
         } else if(bstyle != null) {
             iconColor = bstyle.getColor();
             iconUri = defaultIconUri;
@@ -515,7 +530,6 @@ public class GLBatchPoint extends GLBatchGeometry {
 
         // if a label style is present, override default label settings (aka name)
         if(lstyle != null) {
-
             // mimics GoogleEarth when the label point style does not contain a textString
             if (!FileSystemUtils.isEmpty(lstyle.getText()))
                 this.name = GLText.localize(lstyle.getText());
@@ -527,6 +541,7 @@ public class GLBatchPoint extends GLBatchGeometry {
             lblRotation = (float)Math.toDegrees(lstyle.getLabelRotation());
             lblTextSize = Math.round(lstyle.getTextSize());
             lblMinRenderResolution = lstyle.getLabelMinRenderResolution();
+            lblScale  = lstyle.getLabelScale();
         }
 
         if ((iconUri == null || iconUri.trim().isEmpty()) && this.name == null)
@@ -539,6 +554,8 @@ public class GLBatchPoint extends GLBatchGeometry {
         this.labelRotationAbsolute = lblRotationAbsolute;
         this.labelRotation = lblRotation;
         this.labelMinRenderResolution = lblMinRenderResolution;
+        this.labelScale = lblScale;
+        this.iconScale = iconScale;
 
         if (lblTextSize > 0f)
             this.labelTextSize = lblTextSize;
@@ -665,16 +682,18 @@ public class GLBatchPoint extends GLBatchGeometry {
         if (this.iconUri != null)
             this.checkIcon(view.getRenderContext());
 
+        final float iconRenderW = iconWidth * iconScale;
+        final float iconRenderH = iconHeight * iconScale;
         if (this.textureKey != 0L) {
             final float iconX = ICON_ATLAS.getImageTextureOffsetX(this.textureIndex);
             final float iconY = ICON_ATLAS.getImageTextureOffsetY(this.textureIndex);
 
             final float textureSize = ICON_ATLAS.getTextureSize();
 
-            final float ulx = xpos - (iconWidth / 2f);
-            final float uly = ypos - (iconHeight / 2f);
-            final float lrx = xpos + (iconWidth / 2f);
-            final float lry = ypos + (iconHeight / 2f);
+            final float ulx = xpos - (iconRenderW / 2f);
+            final float uly = ypos - (iconRenderH / 2f);
+            final float lrx = xpos + (iconRenderW / 2f);
+            final float lry = ypos + (iconRenderH / 2f);
             final float ulu = iconX / textureSize;
             final float ulv = (iconY + iconWidth - 1.0f) / textureSize;
             final float lru = (iconX + iconHeight - 1.0f) / textureSize;
@@ -693,7 +712,7 @@ public class GLBatchPoint extends GLBatchGeometry {
         }
         // if the displayLables preference is checked display the text if
         // the marker requested to always have the text show or if the scale is zoomed in enough
-        if (name != null && GLMapSurface.SETTING_displayLabels && view.drawMapResolution < labelMinRenderResolution) {
+        if (name != null && labelScale > 0 && GLMapSurface.SETTING_displayLabels && view.drawMapResolution < labelMinRenderResolution) {
             final String text = this.name;
             if (text != null && text.length() > 0) {
                 if (glText == null) {
@@ -713,16 +732,16 @@ public class GLBatchPoint extends GLBatchGeometry {
                 final float textHeight = glText.getStringHeight();// _glText.getBaselineSpacing();
                 if (this.textureKey != 0L) {
                     if(labelAlignY > 0)
-                        offy = -iconHeight / 2f;
+                        offy = -iconRenderH / 2f;
                     else if(labelAlignY < 0)
-                        offy = iconHeight / 2f;
+                        offy = iconRenderH / 2f;
                     else
                         offy = -textHeight / 2;
 
                     if(labelAlignX > 0)
-                        offtx = -iconWidth / 2f;
+                        offtx = -iconRenderW / 2f;
                     else if(labelAlignX < 0)
-                        offtx = iconWidth / 2f;
+                        offtx = iconRenderW / 2f;
                     
                     if(view.drawTilt > 0d)
                         offy = (offy*-1f) + textHeight + glText.getDescent();
@@ -757,6 +776,7 @@ public class GLBatchPoint extends GLBatchGeometry {
                 } else {
                     Matrix.rotateM(view.scratch.matrixF, 0, (float) view.drawRotation + labelRotation, 0, 0, 1);
                 }
+                Matrix.scaleM(view.scratch.matrixF, 0, labelScale, labelScale, 1.0f);
                 Matrix.translateM(view.scratch.matrixF, 0, -xpos, -ypos, -zpos);
                 batch.setMatrix(GLES10.GL_MODELVIEW, view.scratch.matrixF, 0);
 

@@ -221,7 +221,7 @@ public final class AtakPluginRegistry {
      * Verifies that a specific package can be trusted.
      * @param context the context to use
      * @param pkgname the package name to look up
-     * @return
+     * @return true if trust can be verfied
      */
     public static boolean verifyTrust(final Context context,
             final String pkgname) {

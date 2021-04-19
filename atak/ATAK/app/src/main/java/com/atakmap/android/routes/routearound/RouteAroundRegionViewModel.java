@@ -87,7 +87,7 @@ public class RouteAroundRegionViewModel {
         try {
             manager.restoreManagerStateFromFile(SERIALIZATION_FILE);
         } catch (IOException | JSONException e) {
-            e.printStackTrace();
+            Log.e(TAG, "error encountered", e);
         }
         initalizeViews();
     }

@@ -2816,7 +2816,7 @@
     <string name="url_invalid">URL inválida</string>
     <string name="importmgr_specify_valid_url_for_resource">Especifique una URL válida para el recurso</string>
     <string name="importmgr_invalid_refresh_rate">Frecuencia de actualización no válida</string>
-    <string name="importmgr_specify_valid_refresh_rate_for_resource">Especifique una frecuencia de actualización válida (no menos de 30 segundos) para el recurso</string>
+    <string name="importmgr_specify_valid_refresh_rate_for_resource">Especifique una frecuencia de actualización válida (no menos de %d segundos) para el recurso</string>
     <string name="importmgr_remote_resource_configuration_received">Configuración remota de recursos recibida</string>
     <string name="download_available_via_import_manager">Descarga de %s disponible a través de Superposiciones&gt; Recursos remotos</string>
     <string name="switch_orientation">Cambiar orientación</string>
@@ -3757,5 +3757,29 @@
     <string name="are_you_sure_delete_elevation">Are you sure you want to delete %s elevation data?</string>
     <string name="delete_elevation_please_lock">Please lock both switches to delete elevation</string>
 
+    <string name="resection_update_location_title">Update location?</string>
+    <string name="resection_update_location_message">Do you want to update your location to the resection estimate?\nLocation: %s</string>
+    <string name="resection_estimate_label">Provider: %1$s\nLocation: %2$s\nConfidence: %3$s</string>
+    <string name="resection_select_estimates_prompt_title">Select which location estimates to use</string>
+    <string name="resection_run_another_title">Run another Resection tool?</string>
+    <string name="resection_run_another_message">Do you want to run another Resection tool to get another estimate?</string>
+    <string name="resection_no_estimates_selected">No estimates were selected--unable to compute a location</string>
+    <string name="resection_classic_tool_description">Classic resection. Takes lines of bearing from observer\'s point to 2 or more landmarks</string>
+    <string name="resection_classic_tool_ideal_conditions">When there are landmarks you are able to identify and match to the map. Highest accuracy when angle between landmarks approaches 90 degrees</string>
+    <string name="resection_classic_tool_relative_accuracy">Dependent upon how accurately the landmarks and relative bearings are identified</string>
+    <string name="invalid_cot_address">Invalid output encountered, make sure the address does not contain the protocol or port</string>
+    <string name="image_overlay_hud">Image Overlay HUD</string>
+    <string name="image_overlay_warning">This option will permanently overlay metadata onto the image. Continue?</string>
+    <string name="kml_network_link">KML Network Link</string>
+    <string name="kml_links_added_failed_msg">Failed to add KML network links</string>
+    <string name="kml_links_added_msg">Added %d KML network links</string>
+    <string name="import_kml_network_link">Import KML Network Link</string>
+    <string name="kml_link_desc">%1$s (%2$d sub-links)</string>
+    <string name="resection_ideal_conditions_label">Ideal Conditions</string>
+    <string name="resection_relative_accuracy_label">Relative Accuracy</string>
+    <string name="resection_details_label">%s Details</string>
+    <string name="polygon_area_prompt">Tap points along the route wish to select.</string>
+    <string name="lasso_area_prompt">Tap points or drag to draw along the route you wish to select.</string>
+    <string name="lasso">Lasso</string>
 
 </resources>
