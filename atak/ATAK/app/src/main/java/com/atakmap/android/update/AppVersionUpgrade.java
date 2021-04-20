@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -16,6 +18,7 @@ import com.atakmap.android.data.DataMgmtReceiver;
 import com.atakmap.android.favorites.FavoriteListAdapter;
 import com.atakmap.android.importfiles.ui.ImportManagerView;
 import com.atakmap.android.maps.MapView;
+import com.atakmap.android.missionpackage.MissionPackageReceiver;
 import com.atakmap.android.video.VideoBrowserDropDownReceiver;
 import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
@@ -258,9 +261,17 @@ public class AppVersionUpgrade {
             Log.d(TAG, "shuffle bluetooth success");
         }
 
-        if (shuffleDir(
-                FileSystemUtils.getItem(FileSystemUtils.TOOL_DATA_DIRECTORY
-                        + File.separatorChar + "missionpackage"),
+        File legacyDir = FileSystemUtils.getItem(FileSystemUtils.TOOL_DATA_DIRECTORY
+                + File.separatorChar + "missionpackage");
+
+        File[] legacyFiles = IOProviderFactory.listFiles(legacyDir);
+        if (legacyFiles != null) {
+            for (File f : legacyFiles) {
+                MissionPackageReceiver.addFileToSkip(f);
+            }
+        }
+
+        if (shuffleDir(legacyDir,
                 FileSystemUtils.getItem(FileSystemUtils.TOOL_DATA_DIRECTORY
                         + File.separatorChar + "datapackage"))) {
             Log.d(TAG, "shuffle datapackage success, removing missionpackage");

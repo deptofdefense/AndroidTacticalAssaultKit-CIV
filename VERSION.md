@@ -1,5 +1,11 @@
 # Version History
 
+## 4.2.1.6
+
+* Update `MissionPackageReceiver` to not trigger on files during directory shuffle on upgrade
+* Update bounds for drawing rectangle on points change
+
+
 ## 4.2.1.5
 
 * Fix logic error when checking for database credentials

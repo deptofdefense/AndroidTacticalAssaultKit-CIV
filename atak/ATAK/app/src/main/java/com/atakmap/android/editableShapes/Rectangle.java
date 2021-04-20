@@ -959,6 +959,13 @@ public abstract class Rectangle extends MetaShape implements AnchoredMapItem,
         this._avgAltitude = sum / (float) corners;
 
         _recalculateLabels();
+
+        // Update bounds
+        GeoPoint[] pts = new GeoPoint[gp.length];
+        for (int i = 0; i < pts.length; i++)
+            pts[i] = gp[i].get();
+        _bounds.set(pts, wrap180());
+
         // Notify listeners that points have changed;
         super.onPointsChanged();
     }
