@@ -380,7 +380,11 @@ public class GLModelCaptureRequest implements GLOffscreenCaptureRequest {
                 : GLES30.GL_FALSE);
 
         // Draw meshes
-        drawMeshes(meshes);
+        try {
+            drawMeshes(meshes);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to draw meshes for model: " + _name, e);
+        }
 
         // Now that the model has been drawn to a texture, draw the stroke around it
         if (_stroke) {

@@ -3779,7 +3779,7 @@
     <string name="resection_relative_accuracy_label">Relative Accuracy</string>
     <string name="resection_details_label">%s Details</string>
     <string name="polygon_area_prompt">Tap points along the route wish to select.</string>
-    <string name="lasso_area_prompt">Tap points or drag to draw along the route you wish to select.</string>
+    <string name="lasso_area_prompt">Drag to draw lasso around the area of interest.</string>
     <string name="lasso">Lasso</string>
 
 </resources>

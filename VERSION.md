@@ -1,5 +1,10 @@
 # Version History
 
+## 4.2.1.4
+
+* Add guard against spurious exception in mesh rendering causing crash
+* Update lasso area prompt text
+
 ## 4.2.1.3
 
 * Fix KML rendering style issues with <GroundOverlay> elements
