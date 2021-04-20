@@ -351,8 +351,6 @@ public class GLBatchPoint extends GLBatchGeometry {
 
             GLES20FixedPipeline.glPushMatrix();
             GLES20FixedPipeline.glScalef(iconScale, iconScale, 1.0f);
-            GLES20FixedPipeline.glTranslatef(xpos, ypos, zpos);
-
 
             GLES20FixedPipeline.glDrawArrays(GLES20FixedPipeline.GL_TRIANGLE_FAN, 0, 4);
 
@@ -360,6 +358,8 @@ public class GLBatchPoint extends GLBatchGeometry {
             GLES20FixedPipeline.glDisableClientState(GLES20FixedPipeline.GL_VERTEX_ARRAY);
 
             GLES20FixedPipeline.glDisable(GLES20FixedPipeline.GL_BLEND);
+
+            GLES20FixedPipeline.glPopMatrix();
         }
 
 

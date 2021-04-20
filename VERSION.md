@@ -1,5 +1,9 @@
 # Version History
 
+## 4.2.1.2
+
+* Fix bug in `GLBatchPoint` with bad matrix pop. This issue would most commonly manifest with the 3D model indicator on screen.
+
 ## 4.2.1.1
 
 * Fix reported issue with BP/HA placement
