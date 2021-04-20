@@ -65,6 +65,9 @@ public class ATAKDatabaseHelper {
                         AtakAuthenticationCredentials.TYPE_APK_DOWNLOADER,
                         "com.atakmap.app.v2");
 
+        if (credentials != null) credentials = new AtakAuthenticationCredentials();
+
+
         // DB doesn't exist and there is no key; create original key
         if (!IOProviderFactory.exists(testDb) && (credentials == null
                 || FileSystemUtils.isEmpty(credentials.username))) {
