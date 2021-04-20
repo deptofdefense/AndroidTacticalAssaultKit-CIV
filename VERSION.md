@@ -1,5 +1,9 @@
 # Version History
 
+## 4.2.1.5
+
+* Fix logic error when checking for database credentials
+
 ## 4.2.1.4
 
 * Add guard against spurious exception in mesh rendering causing crash
