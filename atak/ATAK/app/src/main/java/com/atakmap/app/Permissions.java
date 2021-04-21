@@ -142,7 +142,25 @@ public class Permissions {
                 new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        a.requestPermissions(locationPermissionsList, REQUEST_ID);
+
+                        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+                            AlertDialog.Builder ab = new AlertDialog.Builder(a);
+                            ab.setTitle("Android 11");
+                            ab.setMessage("Android 11 restricts the use of GPS in the background.  "
+                                    + "To continue publish your location for use by your team when ATAK is in the background, you will need to ATAK and enable \'Allow All of the Time\'\n\n"
+                                    + "Please note - ATAK does not collect GPS information while it is not running.");
+                            ab.setCancelable(false);
+                            ab.setPositiveButton(R.string.ok,
+                                    new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            a.requestPermissions(new String[] { Manifest.permission.ACCESS_BACKGROUND_LOCATION }, REQUEST_ID);
+                                        }
+                                    });
+                            ab.show();
+                        } else {
+                            a.requestPermissions(locationPermissionsList, REQUEST_ID);
+                        }
                     }
                 });
         AlertDialog ad = builder.create();

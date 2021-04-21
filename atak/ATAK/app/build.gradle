@@ -24,7 +24,7 @@ import java.util.regex.Pattern
 buildscript {
 
     ext.ATAK_VERSION = "4.2.1"
-    ext.ATAK_VERSION_SUBMINOR = ".7"
+    ext.ATAK_VERSION_SUBMINOR = ".8"
 
     ext.jacocoVersion = '0.8.5'
 
