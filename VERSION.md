@@ -1,5 +1,10 @@
 # Version History
 
+## 4.2.1.7
+
+* Adjust DPI for GeoPDF to make maps more readable
+* Fix bug with KML label scale interpretation
+
 ## 4.2.1.6
 
 * Update `MissionPackageReceiver` to not trigger on files during directory shuffle on upgrade
