@@ -1,5 +1,9 @@
 # Version History
 
+## 4.2.1.9
+
+* Fix off by one error in `Dt2File`
+
 ## 4.2.1.8
 
 * Implement custom removable storage handling for Android 11
