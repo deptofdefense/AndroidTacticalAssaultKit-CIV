@@ -308,5 +308,12 @@
 -keep class com.atakmap.math.Ray {*;}
 -keep class com.atakmap.math.Vector3D {*;}
 
+# For 4.2.1 to preserve the mapping
+
+-keep class com.atakmap.android.missionpackage.MissionPackageReceiver {
+      private static final java.util.List filesToSkip;
+      public static void addFileToSkip(java.io.File);
+}
+
 # make sure jassimp is happy
 -keep class jassimp.** {*;}

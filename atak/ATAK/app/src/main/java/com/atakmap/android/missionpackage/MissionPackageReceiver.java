@@ -76,6 +76,7 @@ import com.atakmap.android.routes.Route;
 import com.atakmap.android.routes.RouteMapComponent;
 import com.atakmap.android.util.NotificationUtil;
 import com.atakmap.android.util.ServerListDialog;
+import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.comms.CommsMapComponent.ImportResult;
 import com.atakmap.comms.NetworkUtils;
@@ -181,6 +182,8 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
     private final Context _context;
     private final SharedPreferences _prefs;
     private int curReceiveNotificationId = 83000;
+
+    private static final List<File> filesToSkip = new ArrayList<>();
 
     /**
      * HTTP Shared file download support
@@ -1143,9 +1146,38 @@ public class MissionPackageReceiver extends BroadcastReceiver implements
         return sender;
     }
 
+    /**
+     * When the mission package is being migrated over to the new directory structure,
+     * the directory watcher will incorrectly try to reimport the file.   This method
+     * makes sure that the migration does not cause any additional importing.
+     * @deprecated
+     */
+    @Deprecated
+    @DeprecatedApi(since = "4.3", forRemoval = true, removeAt = "4.6")
+    public static void addFileToSkip(File file) {
+        if (file != null && file.exists() && !file.isDirectory()) {
+            filesToSkip.add(file);
+        }
+    }
+
     @Override
     public void fileUpdateCallback(File file, OPERATION op,
             long newestFileTime) {
+
+
+        File fileToSkip = null;
+
+        for (File skip : filesToSkip) {
+            if (fileToSkip == null && skip.getName().equals(file.getName())) {
+                fileToSkip = skip;
+            }
+        }
+        if (fileToSkip != null) {
+            Log.d(TAG, "skipping : " + file.getName());
+            filesToSkip.remove(fileToSkip);
+            return;
+        }
+
         // Currently the DirectoryWatcher only watches for files manually placed, as we insert in
         // DB manually for newly created and downloaded/received files
         // Files received over network go directly to add() below

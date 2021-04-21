@@ -1018,7 +1018,7 @@ public class CotService implements OnSharedPreferenceChangeListener,
     }
 
     private void removeAllStreams(boolean soft) {
-        Log.d(TAG, "reconnectStreams");
+        Log.d(TAG, "removeAllStreams");
         Bundle b = CommsMapComponent.getInstance().getAllPortsBundle();
         Bundle[] streams = (Bundle[]) b.getParcelableArray("streams");
         if (streams != null) {
