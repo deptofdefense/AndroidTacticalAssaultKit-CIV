@@ -232,12 +232,12 @@ public class GLBatchLineString extends GLBatchGeometry {
             if(states.size() == olen+2) {
                 final RenderState a = states.get(olen);
                 final RenderState b = states.get(olen+1);
-                if(a.pattern == b.pattern && // same pattern definition
-                   a.factor == b.factor &&
-                   a.outlineWidth == 0f && // neither are outlined
-                   b.outlineWidth == 0 &&
-                   a.strokeWidth > b.strokeWidth // `a` is stroked wider than `b`
-                    ) {
+                if(a.pattern == b.pattern // Same pattern
+                        && a.factor == b.factor // Same "factor"
+                        && a.fillColor == 0f && b.fillColor == 0f // Neither have a fill
+                        && a.strokeColorA > 0f && b.strokeColorA > 0f // Both stroke colors visible
+                        && a.outlineWidth == 0f && b.outlineWidth == 0f // Neither have outlines
+                        && a.strokeWidth > b.strokeWidth) { // A must be wider than B
 
                     RenderState outlined = new RenderState();
                     // stroke
