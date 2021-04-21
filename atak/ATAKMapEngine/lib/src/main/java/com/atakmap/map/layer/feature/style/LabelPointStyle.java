@@ -80,7 +80,7 @@ public final class LabelPointStyle extends Style {
      * @param minRenderResolution The minimum render resolution for the label.
      */
     public LabelPointStyle(String text, int textColor, int bgColor, ScrollMode mode, float textSize, int alignX, int alignY, float rotation, boolean rotationAbsolute, double minRenderResolution) {
-        this(text, textColor, bgColor, mode, textSize, alignX, alignY, rotation, rotationAbsolute, minRenderResolution, 100.0f);
+        this(text, textColor, bgColor, mode, textSize, alignX, alignY, rotation, rotationAbsolute, minRenderResolution, 1.0f);
     }
 
     /**

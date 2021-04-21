@@ -91,6 +91,15 @@ public class GdalLibrary {
 
         gdal.SetConfigOption("GDAL_DISABLE_READDIR_ON_OPEN", "TRUE");
 
+
+        // NOTE: This has been added to address the usability requirements with GeoPDF
+        // and according to https://gdal.org/drivers/raster/pdf.html
+        // This setting moves the default from 150dpi to 300dpi, putting an increased
+        // demand on memory but provides a usable map for the firefighters.
+        // https://jira.takmaps.com/browse/ATAK-14344
+        gdal.SetConfigOption("GDAL_PDF_DPI", "300");
+
+
         if (!IOProviderFactory.exists(gdalDir)) {
             if (!IOProviderFactory.mkdirs(gdalDir)) {
                 Log.d("GdalLibrary", "XXX: bad could not make the gdalDir: " + gdalDir);
