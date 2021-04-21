@@ -1,5 +1,9 @@
 # Version History
 
+## 4.2.1.10
+
+* Better KML consistency with Google Earth for line style
+
 ## 4.2.1.9
 
 * Fix off by one error in `Dt2File`
