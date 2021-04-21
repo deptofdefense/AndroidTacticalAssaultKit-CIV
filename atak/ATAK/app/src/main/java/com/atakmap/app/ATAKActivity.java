@@ -49,6 +49,7 @@ import android.widget.Toast;
 
 import com.atakmap.android.data.ClearContentTask;
 import com.atakmap.android.dropdown.DropDownManager;
+import com.atakmap.coremap.filesystem.RemovableStorageHelper;
 import com.atakmap.os.FileObserver;
 import com.atakmap.android.gui.HintDialogHelper;
 import com.atakmap.android.http.rest.HTTPRequestService;
@@ -147,6 +148,8 @@ public class ATAKActivity extends MapActivity implements
     @SuppressLint("SourceLockedOrientationActivity")
     @Override
     public void onCreate(final Bundle savedInstanceState) {
+
+        RemovableStorageHelper.init(this);
 
         _controlPrefs = PreferenceManager.getDefaultSharedPreferences(this);
 

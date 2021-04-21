@@ -317,24 +317,20 @@ public class FileSystemUtils {
 
         String android_storage = System.getenv("ANDROID_STORAGE");
         if (android_storage != null) {
-            File f = new File(android_storage);
-            if (IOProviderFactory.exists(f) && IOProviderFactory.isDirectory(f)
-                    && IOProviderFactory.canRead(f)) {
-                File[] subdirs = IOProviderFactory.listFiles(f);
-                if (subdirs != null) {
-                    for (File subdir : subdirs) {
-                        if (subdir != null) {
-                            File root = new File(subdir,
-                                    ATAK_ROOT_DIRECTORY);
-                            if (IOProviderFactory.isDirectory(root)
-                                    && IOProviderFactory.canRead(root)) {
-                                try {
-                                    root = subdir.getCanonicalFile();
-                                    retval.add(root);
-                                    Log.d(TAG, "found atak directory under: "
-                                            + root);
-                                } catch (IOException ignored) {
-                                }
+            String[] directories = RemovableStorageHelper.getRemovableStorageDirectory();
+            if (directories != null) {
+                for (String subdir : directories) {
+                    if (subdir != null) {
+                        File root = new File(subdir,
+                                ATAK_ROOT_DIRECTORY);
+                        if (IOProviderFactory.isDirectory(root)
+                                && IOProviderFactory.canRead(root)) {
+                            try {
+                                root = new File(subdir).getCanonicalFile();
+                                retval.add(root);
+                                Log.d(TAG, "found atak directory under: "
+                                        + root);
+                            } catch (IOException ignored) {
                             }
                         }
                     }

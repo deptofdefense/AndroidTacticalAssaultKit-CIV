@@ -1,5 +1,10 @@
 # Version History
 
+## 4.2.1.8
+
+* Implement custom removable storage handling for Android 11
+* Add permission to publish GPS location in background on Android 11
+
 ## 4.2.1.7
 
 * Adjust DPI for GeoPDF to make maps more readable

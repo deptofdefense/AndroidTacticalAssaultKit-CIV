@@ -8,6 +8,7 @@ import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Environment;
 import androidx.annotation.NonNull;
 import android.util.AttributeSet;
@@ -35,6 +36,7 @@ import com.atakmap.annotations.DeprecatedApi;
 import com.atakmap.app.R;
 import com.atakmap.coremap.filesystem.FileSystemUtils;
 
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
@@ -48,6 +50,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import com.atakmap.coremap.filesystem.RemovableStorageHelper;
 import com.atakmap.coremap.io.DefaultIOProvider;
 import com.atakmap.coremap.io.IOProvider;
 import com.atakmap.coremap.io.IOProviderFactory;
@@ -120,7 +123,9 @@ public class ImportFileBrowser extends LinearLayout {
         sdcardButton.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View arg0) {
-                String android_storage = System.getenv("ANDROID_STORAGE");
+                final String android_storage =
+                        RemovableStorageHelper.getRemovableStorageDirectory()[0];
+
                 if (android_storage != null)
                     setCurrentPath(new File(android_storage));
             }
